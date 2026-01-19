@@ -25,7 +25,8 @@ class ExportAssistantContentCardTest {
     @Test
     fun whenLongTextProvided_thenAllContentIsAccessible() {
         // Arrange - Create a very long text that exceeds typical visible area
-        val longText = """
+        val longText =
+            """
             This is a very long text content that should be scrollable within the card.
             Line 1: This item is in excellent condition with minimal wear and tear.
             Line 2: It features premium materials and exceptional craftsmanship throughout.
@@ -38,7 +39,7 @@ class ExportAssistantContentCardTest {
             Line 9: Functional design that combines aesthetics with practical features.
             Line 10: Ships carefully packaged with tracking and insurance for your peace of mind.
             Line 11: This is the last line that proves text is not truncated with ellipsis.
-        """.trimIndent()
+            """.trimIndent()
 
         // Act - Render the ExportContentCard with long text
         composeTestRule.setContent {
@@ -46,7 +47,7 @@ class ExportAssistantContentCardTest {
                 label = "Description",
                 content = longText,
                 onCopy = {},
-                maxLines = 10
+                maxLines = 10,
             )
         }
 
@@ -79,7 +80,7 @@ class ExportAssistantContentCardTest {
                 label = "Title",
                 content = shortText,
                 onCopy = {},
-                maxLines = 3
+                maxLines = 3,
             )
         }
 
@@ -91,7 +92,8 @@ class ExportAssistantContentCardTest {
     @Test
     fun whenMultiParagraphText_thenAllParagraphsAreAccessible() {
         // Arrange - Multi-paragraph text like a description
-        val multiParagraphText = """
+        val multiParagraphText =
+            """
             First paragraph describes the item's main features and benefits to the buyer.
             This paragraph should be fully accessible in the UI.
 
@@ -100,7 +102,7 @@ class ExportAssistantContentCardTest {
 
             Third paragraph mentions shipping, returns, and other practical details.
             All of this content must be accessible, not cut off by ellipsis.
-        """.trimIndent()
+            """.trimIndent()
 
         // Act
         composeTestRule.setContent {
@@ -108,7 +110,7 @@ class ExportAssistantContentCardTest {
                 label = "Description",
                 content = multiParagraphText,
                 onCopy = {},
-                maxLines = 10
+                maxLines = 10,
             )
         }
 
@@ -130,21 +132,22 @@ class ExportAssistantContentCardTest {
     @Test
     fun whenBulletsCardWithManyBullets_thenAllBulletsAreDisplayed() {
         // Arrange
-        val bullets = listOf(
-            "Premium quality materials and construction",
-            "Excellent condition with minimal signs of use",
-            "Rare collectible item with increasing value",
-            "Original packaging and all accessories included",
-            "Authenticated and verified by experts",
-            "Limited edition variant",
-            "Comes from smoke-free environment"
-        )
+        val bullets =
+            listOf(
+                "Premium quality materials and construction",
+                "Excellent condition with minimal signs of use",
+                "Rare collectible item with increasing value",
+                "Original packaging and all accessories included",
+                "Authenticated and verified by experts",
+                "Limited edition variant",
+                "Comes from smoke-free environment",
+            )
 
         // Act
         composeTestRule.setContent {
             ExportBulletsCard(
                 bullets = bullets,
-                onCopy = {}
+                onCopy = {},
             )
         }
 
@@ -202,10 +205,11 @@ class ExportAssistantContentStateTest {
 
         composeTestRule.setContent {
             ExportAssistantContent(
-                state = ExportAssistantState.Error(
-                    message = errorMessage,
-                    isRetryable = true,
-                ),
+                state =
+                    ExportAssistantState.Error(
+                        message = errorMessage,
+                        isRetryable = true,
+                    ),
                 speakAnswersEnabled = false,
                 isSpeaking = false,
                 onSpeakOrStop = {},
@@ -230,21 +234,23 @@ class ExportAssistantContentStateTest {
         // Arrange
         val testTitle = "Vintage Collectible Item"
         val testDescription = "A rare and beautiful collectible in excellent condition."
-        val testBullets = listOf(
-            "Excellent condition",
-            "Original packaging",
-            "Rare variant",
-        )
+        val testBullets =
+            listOf(
+                "Excellent condition",
+                "Original packaging",
+                "Rare variant",
+            )
 
         composeTestRule.setContent {
             ExportAssistantContent(
-                state = ExportAssistantState.Success(
-                    title = testTitle,
-                    description = testDescription,
-                    bullets = testBullets,
-                    confidenceTier = ConfidenceTier.HIGH,
-                    pricingInsights = null,
-                ),
+                state =
+                    ExportAssistantState.Success(
+                        title = testTitle,
+                        description = testDescription,
+                        bullets = testBullets,
+                        confidenceTier = ConfidenceTier.HIGH,
+                        pricingInsights = null,
+                    ),
                 speakAnswersEnabled = false,
                 isSpeaking = false,
                 onSpeakOrStop = {},

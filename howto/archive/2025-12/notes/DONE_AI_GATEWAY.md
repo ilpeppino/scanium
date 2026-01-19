@@ -4,9 +4,12 @@ This document describes the AI Gateway API for the Scanium AI Assistant.
 
 ***REMOVED******REMOVED*** Overview
 
-The AI Gateway is a secure backend proxy that handles all LLM interactions. Mobile clients communicate with the gateway, which validates requests, applies security controls, and forwards sanitized requests to the LLM provider.
+The AI Gateway is a secure backend proxy that handles all LLM interactions. Mobile clients
+communicate with the gateway, which validates requests, applies security controls, and forwards
+sanitized requests to the LLM provider.
 
 **Key Features:**
+
 - Request validation and sanitization
 - Prompt injection detection
 - PII redaction
@@ -35,14 +38,14 @@ Send a message to the AI assistant.
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Request Headers
 
-| Header | Required | Description |
-|--------|----------|-------------|
-| `X-API-Key` | Yes | API key for authentication |
-| `X-Scanium-Correlation-Id` | No | Correlation ID for request tracing |
-| `X-Scanium-Device-Id` | No | Device ID (hashed) for rate limiting |
-| `X-Client` | No | Client identifier (e.g., `Scanium-Android`) |
-| `X-App-Version` | No | Client app version |
-| `Content-Type` | Yes | `application/json` or `multipart/form-data` |
+| Header                     | Required | Description                                 |
+|----------------------------|----------|---------------------------------------------|
+| `X-API-Key`                | Yes      | API key for authentication                  |
+| `X-Scanium-Correlation-Id` | No       | Correlation ID for request tracing          |
+| `X-Scanium-Device-Id`      | No       | Device ID (hashed) for rate limiting        |
+| `X-Client`                 | No       | Client identifier (e.g., `Scanium-Android`) |
+| `X-App-Version`            | No       | Client app version                          |
+| `Content-Type`             | Yes      | `application/json` or `multipart/form-data` |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Request Body
 
@@ -87,40 +90,41 @@ Send a message to the AI assistant.
 }
 ```
 
-| Field | Type | Required | Limits | Description |
-|-------|------|----------|--------|-------------|
-| `message` | string | Yes | 1-2000 chars | User's message |
-| `items` | array | No | 0-10 items | Context items (draft listings) |
-| `items[].itemId` | string | Yes | 100 chars | Item identifier |
-| `items[].title` | string | No | 200 chars | Item title |
-| `items[].description` | string | No | 1000 chars | Item description |
-| `items[].category` | string | No | 100 chars | Item category |
-| `items[].confidence` | number | No | 0.0-1.0 | Classification confidence |
-| `items[].attributes` | array | No | 20 entries | Item attributes |
-| `items[].priceEstimate` | number | No | - | Estimated price |
-| `items[].photosCount` | integer | No | - | Number of photos |
-| `history` | array | No | Last 10 | Conversation history |
-| `exportProfile` | object | No | - | Target marketplace profile |
+| Field                   | Type    | Required | Limits       | Description                    |
+|-------------------------|---------|----------|--------------|--------------------------------|
+| `message`               | string  | Yes      | 1-2000 chars | User's message                 |
+| `items`                 | array   | No       | 0-10 items   | Context items (draft listings) |
+| `items[].itemId`        | string  | Yes      | 100 chars    | Item identifier                |
+| `items[].title`         | string  | No       | 200 chars    | Item title                     |
+| `items[].description`   | string  | No       | 1000 chars   | Item description               |
+| `items[].category`      | string  | No       | 100 chars    | Item category                  |
+| `items[].confidence`    | number  | No       | 0.0-1.0      | Classification confidence      |
+| `items[].attributes`    | array   | No       | 20 entries   | Item attributes                |
+| `items[].priceEstimate` | number  | No       | -            | Estimated price                |
+| `items[].photosCount`   | integer | No       | -            | Number of photos               |
+| `history`               | array   | No       | Last 10      | Conversation history           |
+| `exportProfile`         | object  | No       | -            | Target marketplace profile     |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Multipart Request (with Images)
 
-When sending images for visual context, use `multipart/form-data` content type. The endpoint accepts both JSON-only and multipart requests for backward compatibility.
+When sending images for visual context, use `multipart/form-data` content type. The endpoint accepts
+both JSON-only and multipart requests for backward compatibility.
 
 **Field Structure:**
 
-| Field Name | Type | Required | Description |
-|------------|------|----------|-------------|
-| `payload` | text | Yes | JSON payload (same structure as JSON body above) |
-| `itemImages[<itemId>]` | file | No | Image file for the specified item ID |
+| Field Name             | Type | Required | Description                                      |
+|------------------------|------|----------|--------------------------------------------------|
+| `payload`              | text | Yes      | JSON payload (same structure as JSON body above) |
+| `itemImages[<itemId>]` | file | No       | Image file for the specified item ID             |
 
 **Image Limits:**
 
-| Limit | Value |
-|-------|-------|
-| Max images per item | 3 |
-| Max total images | 10 |
-| Max file size | 2 MB |
-| Allowed types | `image/jpeg`, `image/png` |
+| Limit               | Value                     |
+|---------------------|---------------------------|
+| Max images per item | 3                         |
+| Max total images    | 10                        |
+| Max file size       | 2 MB                      |
+| Allowed types       | `image/jpeg`, `image/png` |
 
 **Example multipart request:**
 
@@ -135,6 +139,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 ```
 
 **Notes:**
+
 - Images are processed in-memory only; they are not stored on disk
 - Only images with `itemId` matching an item in the payload are processed
 - Images are passed to the LLM provider as base64-encoded data for visual analysis
@@ -170,30 +175,31 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `reply` | string | Assistant's response text |
-| `actions` | array | Suggested actions (optional) |
-| `actions[].type` | string | Action type (see below) |
-| `actions[].payload` | object | Action-specific data |
-| `safety.blocked` | boolean | Whether the request was blocked |
-| `safety.reasonCode` | string | Reason code if blocked |
-| `safety.requestId` | string | Unique request identifier |
-| `correlationId` | string | Correlation ID for tracing |
+| Field               | Type    | Description                     |
+|---------------------|---------|---------------------------------|
+| `reply`             | string  | Assistant's response text       |
+| `actions`           | array   | Suggested actions (optional)    |
+| `actions[].type`    | string  | Action type (see below)         |
+| `actions[].payload` | object  | Action-specific data            |
+| `safety.blocked`    | boolean | Whether the request was blocked |
+| `safety.reasonCode` | string  | Reason code if blocked          |
+| `safety.requestId`  | string  | Unique request identifier       |
+| `correlationId`     | string  | Correlation ID for tracing      |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Action Types
 
-| Type | Description | Payload |
-|------|-------------|---------|
-| `APPLY_DRAFT_UPDATE` | Update draft listing fields | `itemId`, `title`, `description` |
-| `COPY_TEXT` | Copy text to clipboard | `label`, `text` |
-| `OPEN_POSTING_ASSIST` | Open posting assistant | `itemId` |
-| `OPEN_SHARE` | Open share dialog | `itemId` |
-| `OPEN_URL` | Open external URL | `url` (https only) |
+| Type                  | Description                 | Payload                          |
+|-----------------------|-----------------------------|----------------------------------|
+| `APPLY_DRAFT_UPDATE`  | Update draft listing fields | `itemId`, `title`, `description` |
+| `COPY_TEXT`           | Copy text to clipboard      | `label`, `text`                  |
+| `OPEN_POSTING_ASSIST` | Open posting assistant      | `itemId`                         |
+| `OPEN_SHARE`          | Open share dialog           | `itemId`                         |
+| `OPEN_URL`            | Open external URL           | `url` (https only)               |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Error Responses
 
 **401 Unauthorized**
+
 ```json
 {
   "error": {
@@ -210,6 +216,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 ```
 
 **400 Bad Request**
+
 ```json
 {
   "error": {
@@ -226,6 +233,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 ```
 
 **429 Too Many Requests**
+
 ```json
 {
   "error": {
@@ -242,9 +250,11 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 ```
 
 Headers included:
+
 - `Retry-After`: Seconds to wait before retrying
 
 **429 Quota Exceeded**
+
 ```json
 {
   "error": {
@@ -261,6 +271,7 @@ Headers included:
 ```
 
 **503 Service Unavailable**
+
 ```json
 {
   "error": {
@@ -278,25 +289,25 @@ Headers included:
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Safety Reason Codes
 
-| Code | Description |
-|------|-------------|
-| `RATE_LIMITED` | Request rate limit exceeded |
-| `QUOTA_EXCEEDED` | Daily quota exceeded |
-| `VALIDATION_ERROR` | Request validation failed |
-| `POLICY_VIOLATION` | Request violated content policy |
-| `INJECTION_ATTEMPT` | Prompt injection detected |
-| `DATA_EXFIL_ATTEMPT` | Data exfiltration attempt detected |
-| `PROVIDER_UNAVAILABLE` | LLM provider unavailable |
-| `PROVIDER_NOT_CONFIGURED` | LLM provider not configured |
+| Code                      | Description                        |
+|---------------------------|------------------------------------|
+| `RATE_LIMITED`            | Request rate limit exceeded        |
+| `QUOTA_EXCEEDED`          | Daily quota exceeded               |
+| `VALIDATION_ERROR`        | Request validation failed          |
+| `POLICY_VIOLATION`        | Request violated content policy    |
+| `INJECTION_ATTEMPT`       | Prompt injection detected          |
+| `DATA_EXFIL_ATTEMPT`      | Data exfiltration attempt detected |
+| `PROVIDER_UNAVAILABLE`    | LLM provider unavailable           |
+| `PROVIDER_NOT_CONFIGURED` | LLM provider not configured        |
 
 ***REMOVED******REMOVED*** Rate Limits
 
-| Limit | Default | Environment Variable |
-|-------|---------|---------------------|
-| Per-IP per minute | 60 | `ASSIST_IP_RATE_LIMIT_PER_MINUTE` |
-| Per-API-key per minute | 60 | `ASSIST_RATE_LIMIT_PER_MINUTE` |
-| Per-device per minute | 30 | `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` |
-| Daily quota per session | 200 | `ASSIST_DAILY_QUOTA` |
+| Limit                   | Default | Environment Variable                  |
+|-------------------------|---------|---------------------------------------|
+| Per-IP per minute       | 60      | `ASSIST_IP_RATE_LIMIT_PER_MINUTE`     |
+| Per-API-key per minute  | 60      | `ASSIST_RATE_LIMIT_PER_MINUTE`        |
+| Per-device per minute   | 30      | `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` |
+| Daily quota per session | 200     | `ASSIST_DAILY_QUOTA`                  |
 
 When rate limited, the response includes a `Retry-After` header indicating how many seconds to wait.
 
@@ -304,26 +315,26 @@ When rate limited, the response includes a `Retry-After` header indicating how m
 
 ***REMOVED******REMOVED******REMOVED*** Required
 
-| Variable | Description | Example |
-|----------|-------------|---------|
+| Variable                     | Description              | Example          |
+|------------------------------|--------------------------|------------------|
 | `SCANIUM_ASSISTANT_API_KEYS` | Comma-separated API keys | `key1,key2,key3` |
 
 ***REMOVED******REMOVED******REMOVED*** Optional
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SCANIUM_ASSISTANT_PROVIDER` | `mock` | Provider: `mock`, `openai`, `disabled` |
-| `OPENAI_API_KEY` | - | OpenAI API key (if using openai provider) |
-| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model to use |
-| `ASSIST_RATE_LIMIT_PER_MINUTE` | `60` | API key rate limit |
-| `ASSIST_IP_RATE_LIMIT_PER_MINUTE` | `60` | IP rate limit |
-| `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` | `30` | Device rate limit |
-| `ASSIST_DAILY_QUOTA` | `200` | Daily requests per session |
-| `ASSIST_MAX_INPUT_CHARS` | `2000` | Max message length |
-| `ASSIST_MAX_OUTPUT_TOKENS` | `500` | Max response tokens |
-| `ASSIST_MAX_CONTEXT_ITEMS` | `10` | Max items in context |
-| `ASSIST_PROVIDER_TIMEOUT_MS` | `30000` | Provider timeout |
-| `ASSIST_LOG_CONTENT` | `false` | Log message content (debug only) |
+| Variable                              | Default       | Description                               |
+|---------------------------------------|---------------|-------------------------------------------|
+| `SCANIUM_ASSISTANT_PROVIDER`          | `mock`        | Provider: `mock`, `openai`, `disabled`    |
+| `OPENAI_API_KEY`                      | -             | OpenAI API key (if using openai provider) |
+| `OPENAI_MODEL`                        | `gpt-4o-mini` | OpenAI model to use                       |
+| `ASSIST_RATE_LIMIT_PER_MINUTE`        | `60`          | API key rate limit                        |
+| `ASSIST_IP_RATE_LIMIT_PER_MINUTE`     | `60`          | IP rate limit                             |
+| `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` | `30`          | Device rate limit                         |
+| `ASSIST_DAILY_QUOTA`                  | `200`         | Daily requests per session                |
+| `ASSIST_MAX_INPUT_CHARS`              | `2000`        | Max message length                        |
+| `ASSIST_MAX_OUTPUT_TOKENS`            | `500`         | Max response tokens                       |
+| `ASSIST_MAX_CONTEXT_ITEMS`            | `10`          | Max items in context                      |
+| `ASSIST_PROVIDER_TIMEOUT_MS`          | `30000`       | Provider timeout                          |
+| `ASSIST_LOG_CONTENT`                  | `false`       | Log message content (debug only)          |
 
 ***REMOVED******REMOVED*** Local Development
 
@@ -350,6 +361,7 @@ When rate limited, the response includes a `Retry-After` header indicating how m
 ***REMOVED******REMOVED******REMOVED*** Testing with curl
 
 **Valid request:**
+
 ```bash
 curl -X POST http://localhost:8080/v1/assist/chat \
   -H "Content-Type: application/json" \
@@ -361,6 +373,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 ```
 
 **Expected response:**
+
 ```json
 {
   "reply": "Suggested title: \"Used Camera\".",
@@ -376,6 +389,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 ```
 
 **Test rate limiting:**
+
 ```bash
 for i in {1..70}; do
   curl -s -X POST http://localhost:8080/v1/assist/chat \
@@ -386,6 +400,7 @@ done
 ```
 
 **Test injection detection:**
+
 ```bash
 curl -X POST http://localhost:8080/v1/assist/chat \
   -H "Content-Type: application/json" \
@@ -406,7 +421,8 @@ npm test
 
 1. **API Keys**: Never commit API keys. Use environment variables.
 2. **Rate Limiting**: Enabled by default to prevent abuse.
-3. **PII Redaction**: Email, phone, and other PII patterns are automatically redacted before sending to LLM.
+3. **PII Redaction**: Email, phone, and other PII patterns are automatically redacted before sending
+   to LLM.
 4. **Prompt Injection**: Common injection patterns are detected and blocked.
 5. **Logging**: Message content is not logged by default. Enable only for debugging.
 

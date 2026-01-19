@@ -6,7 +6,9 @@
 
 ***REMOVED******REMOVED*** Executive Summary
 
-The DEV-flavor-only background health monitoring system is **already fully implemented** and working correctly. All requirements have been met with a robust, tested, and production-ready implementation.
+The DEV-flavor-only background health monitoring system is **already fully implemented** and working
+correctly. All requirements have been met with a robust, tested, and production-ready
+implementation.
 
 ---
 
@@ -14,25 +16,27 @@ The DEV-flavor-only background health monitoring system is **already fully imple
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Core Mission (All Met)
 
-| Requirement | Status | Implementation |
-|------------|--------|----------------|
-| DEV flavor only | ✅ COMPLETE | Runtime guards + navigation blocking |
-| 15-minute periodic checks | ✅ COMPLETE | WorkManager with 15min interval |
-| Multiple health endpoints | ✅ COMPLETE | 3 endpoints covering all 4 areas |
-| Failure notifications | ✅ COMPLETE | State-change notifications |
-| Recovery notifications | ✅ COMPLETE | Optional, user-configurable |
-| "Run Now" button | ✅ COMPLETE | One-time WorkRequest |
-| No beta/prod impact | ✅ COMPLETE | Triple-layer isolation |
+| Requirement               | Status     | Implementation                       |
+|---------------------------|------------|--------------------------------------|
+| DEV flavor only           | ✅ COMPLETE | Runtime guards + navigation blocking |
+| 15-minute periodic checks | ✅ COMPLETE | WorkManager with 15min interval      |
+| Multiple health endpoints | ✅ COMPLETE | 3 endpoints covering all 4 areas     |
+| Failure notifications     | ✅ COMPLETE | State-change notifications           |
+| Recovery notifications    | ✅ COMPLETE | Optional, user-configurable          |
+| "Run Now" button          | ✅ COMPLETE | One-time WorkRequest                 |
+| No beta/prod impact       | ✅ COMPLETE | Triple-layer isolation               |
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Endpoint Coverage
 
 **User Requirements:**
+
 1. Backend health → **✅ `/health`** (includes assistant readiness)
 2. Preflight → **✅ `/health`** (returns assistant.providerConfigured, providerReachable, state)
 3. Warmup → **✅ `/v1/assist/warmup`** (POST)
 4. AI health → **✅ `/health` + `/v1/assist/warmup`** (dual verification)
 
 **Current Implementation:**
+
 ```kotlin
 private val ENDPOINTS = listOf(
     EndpointSpec("/health", HttpMethod.GET, requiresAuth = false, allowedCodes = setOf(200)),
@@ -42,6 +46,7 @@ private val ENDPOINTS = listOf(
 ```
 
 **Backend `/health` Response:**
+
 ```json
 {
   "status": "ok",
@@ -56,6 +61,7 @@ private val ENDPOINTS = listOf(
 ```
 
 **Why this is better than calling `/v1/assist/chat` for preflight:**
+
 - `/health` provides assistant readiness WITHOUT the overhead of a full chat request
 - Avoids unnecessary API costs/rate limits
 - Runs every 15 minutes safely without adding load
@@ -65,6 +71,7 @@ private val ENDPOINTS = listOf(
 ***REMOVED******REMOVED*** DEV-Only Isolation (Triple-Layer Defense)
 
 ***REMOVED******REMOVED******REMOVED*** Layer 1: Navigation Blocking
+
 ```kotlin
 // NavGraph.kt:198-204
 composable(Routes.SETTINGS_DEVELOPER) {
@@ -78,9 +85,11 @@ composable(Routes.SETTINGS_DEVELOPER) {
     DeveloperOptionsScreen(...)
 }
 ```
+
 **Result:** Beta/prod users **cannot access** DeveloperOptionsScreen at all.
 
 ***REMOVED******REMOVED******REMOVED*** Layer 2: Worker Runtime Guard
+
 ```kotlin
 // DevHealthMonitorWorker.kt:51-54
 override suspend fun doWork(): Result {
@@ -91,9 +100,11 @@ override suspend fun doWork(): Result {
     ...
 }
 ```
+
 **Result:** Even if somehow scheduled, worker **exits immediately** in beta/prod.
 
 ***REMOVED******REMOVED******REMOVED*** Layer 3: Scheduler Runtime Guard
+
 ```kotlin
 // DevHealthMonitorScheduler.kt:41-44
 fun enable() {
@@ -104,9 +115,11 @@ fun enable() {
     ...
 }
 ```
+
 **Result:** Scheduling **fails silently** in beta/prod.
 
 ***REMOVED******REMOVED******REMOVED*** Build Configuration
+
 ```kotlin
 // build.gradle.kts
 productFlavors {
@@ -260,6 +273,7 @@ DevHealthMonitorStateStore.updateLastResult()
 ```
 
 **Coverage:**
+
 - ✅ Endpoint pass/fail logic
 - ✅ Authentication handling (with/without API key)
 - ✅ HTTP status code validation
@@ -272,6 +286,7 @@ DevHealthMonitorStateStore.updateLastResult()
 ***REMOVED******REMOVED*** Notification Strategy
 
 ***REMOVED******REMOVED******REMOVED*** Notification Channel
+
 ```kotlin
 Channel ID: "dev_health_monitor_channel"
 Name: "Scanium Dev Monitoring"
@@ -281,20 +296,21 @@ Description: "Background health check notifications (dev builds only)"
 
 ***REMOVED******REMOVED******REMOVED*** State Transition Rules
 
-| Previous | Current | Action | Reason |
-|----------|---------|--------|--------|
-| `null` (first run) | FAIL | ✅ Notify | Alert on initial failure |
-| `null` (first run) | OK | ❌ No notify | Silent success |
-| OK | FAIL | ✅ Notify immediately | New failure detected |
-| FAIL | OK | ✅ Notify (if enabled) | Recovery notification |
-| FAIL | FAIL (same) | ❌ No notify (< 6hr) | Rate limiting |
-| FAIL | FAIL (same) | ✅ Notify (≥ 6hr) | Reminder |
-| FAIL | FAIL (different) | ✅ Notify immediately | New failure type |
-| OK | OK | ❌ No notify | Stable |
+| Previous           | Current          | Action                | Reason                   |
+|--------------------|------------------|-----------------------|--------------------------|
+| `null` (first run) | FAIL             | ✅ Notify              | Alert on initial failure |
+| `null` (first run) | OK               | ❌ No notify           | Silent success           |
+| OK                 | FAIL             | ✅ Notify immediately  | New failure detected     |
+| FAIL               | OK               | ✅ Notify (if enabled) | Recovery notification    |
+| FAIL               | FAIL (same)      | ❌ No notify (< 6hr)   | Rate limiting            |
+| FAIL               | FAIL (same)      | ✅ Notify (≥ 6hr)      | Reminder                 |
+| FAIL               | FAIL (different) | ✅ Notify immediately  | New failure type         |
+| OK                 | OK               | ❌ No notify           | Stable                   |
 
 ***REMOVED******REMOVED******REMOVED*** Notification Content
 
 **Failure:**
+
 ```
 Title: "Scanium backend issue"
 Body: "health unreachable (timeout)"  // or specific failure reason
@@ -303,6 +319,7 @@ Auto-cancel: Yes
 ```
 
 **Recovery:**
+
 ```
 Title: "Scanium backend recovered"
 Body: "All checks passing"
@@ -311,6 +328,7 @@ Auto-cancel: Yes
 ```
 
 **Permission Handling:**
+
 - Android 13+: Requires `POST_NOTIFICATIONS` permission
 - If permission missing: Notification fails silently (logged)
 - UI shows hint: "Grant notification permission to receive alerts"
@@ -328,34 +346,34 @@ Settings → [DEV BUILD ONLY] Developer Options → Background Health Monitor
 ***REMOVED******REMOVED******REMOVED*** Controls
 
 1. **Enable monitoring** (Switch)
-   - Default: ON (in dev builds)
-   - Action: Schedules/cancels 15-minute periodic work
+    - Default: ON (in dev builds)
+    - Action: Schedules/cancels 15-minute periodic work
 
 2. **Notify on recovery** (Switch)
-   - Default: ON
-   - Action: Configures recovery notifications
+    - Default: ON
+    - Action: Configures recovery notifications
 
 3. **Base URL Override** (Text input + Save button)
-   - Default: Empty (uses `BuildConfig.SCANIUM_API_BASE_URL`)
-   - Purpose: Test against different backend instances
-   - Example: `http://192.168.1.100:3000` (LAN testing)
+    - Default: Empty (uses `BuildConfig.SCANIUM_API_BASE_URL`)
+    - Purpose: Test against different backend instances
+    - Example: `http://192.168.1.100:3000` (LAN testing)
 
 4. **Run Now** (Button)
-   - Action: Enqueues one-time health check immediately
-   - Useful for: Manual testing, debugging
+    - Action: Enqueues one-time health check immediately
+    - Useful for: Manual testing, debugging
 
 ***REMOVED******REMOVED******REMOVED*** Status Display
 
 - **Current Status Badge:**
-  - 🟢 "Enabled - Last check OK"
-  - 🔴 "Enabled - Last check FAILED"
-  - 🔵 "Enabled - Waiting for first check"
-  - ⚫ "Disabled"
+    - 🟢 "Enabled - Last check OK"
+    - 🔴 "Enabled - Last check FAILED"
+    - 🔵 "Enabled - Waiting for first check"
+    - ⚫ "Disabled"
 
 - **Last Check Details:**
-  - Timestamp: "at 14:52:30"
-  - Status: OK / FAIL
-  - Failure summary (if FAIL): "health unreachable (timeout)"
+    - Timestamp: "at 14:52:30"
+    - Status: OK / FAIL
+    - Failure summary (if FAIL): "health unreachable (timeout)"
 
 ---
 
@@ -390,6 +408,7 @@ androidApp/src/test/java/com/scanium/app/
 **Fix:** "background health monitor uses correct health endpoint"
 
 **Changes:**
+
 - ❌ Removed: `/v1/preflight` (GET) - endpoint doesn't exist
 - ❌ Removed: `/v1/assist/status` (GET) - endpoint doesn't exist
 - ✅ Added: `/v1/assist/warmup` (POST) - correct endpoint
@@ -439,6 +458,7 @@ policy = ExistingPeriodicWorkPolicy.UPDATE  // Update on config change
 ***REMOVED******REMOVED*** Safety Guarantees
 
 ***REMOVED******REMOVED******REMOVED*** 1. No PII/Secrets Logged
+
 ```kotlin
 // API key NEVER logged
 if (hasKey && spec.requiresAuth) {
@@ -447,18 +467,21 @@ if (hasKey && spec.requiresAuth) {
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 2. No Request Body Logging
+
 ```kotlin
 // Only HTTP codes and failure reasons logged
 Log.d(TAG, "${spec.path}: $code (passed=$passed)")  // ✅ Safe
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 3. No Retry Storms
+
 ```kotlin
 // Single request per endpoint, no retries
 val response = httpClient.newCall(request).execute()  // ✅ One shot
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 4. Minimal Network Traffic
+
 ```kotlin
 // Small requests:
 // - GET /health (no body)
@@ -467,6 +490,7 @@ val response = httpClient.newCall(request).execute()  // ✅ One shot
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 5. No Breaking Changes
+
 ```kotlin
 // All monitoring code:
 // - Is new (doesn't modify existing flows)
@@ -484,40 +508,41 @@ val response = httpClient.newCall(request).execute()  // ✅ One shot
 - [x] Navigate to Settings → Developer Options
 - [x] Verify "Background Health Monitor" section visible
 - [x] Toggle "Enable monitoring" ON
-  - [x] Work scheduled (check logcat: "Health monitor enabled")
+    - [x] Work scheduled (check logcat: "Health monitor enabled")
 - [x] Click "Run Now"
-  - [x] Work enqueued (check logcat: "One-time health check enqueued")
-  - [x] Health check runs (check logcat: "Starting health check...")
-  - [x] Status updates in UI (last check timestamp updates)
+    - [x] Work enqueued (check logcat: "One-time health check enqueued")
+    - [x] Health check runs (check logcat: "Starting health check...")
+    - [x] Status updates in UI (last check timestamp updates)
 - [x] Simulate failure:
-  - [x] Set Base URL Override to invalid host: `http://invalid.local:9999`
-  - [x] Click "Run Now"
-  - [x] Notification appears: "Scanium backend issue"
-  - [x] Status shows FAIL in UI
+    - [x] Set Base URL Override to invalid host: `http://invalid.local:9999`
+    - [x] Click "Run Now"
+    - [x] Notification appears: "Scanium backend issue"
+    - [x] Status shows FAIL in UI
 - [x] Restore correct URL:
-  - [x] Clear Base URL Override
-  - [x] Click "Run Now"
-  - [x] Notification appears: "Scanium backend recovered" (if notify on recovery ON)
-  - [x] Status shows OK in UI
+    - [x] Clear Base URL Override
+    - [x] Click "Run Now"
+    - [x] Notification appears: "Scanium backend recovered" (if notify on recovery ON)
+    - [x] Status shows OK in UI
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Beta/Prod Flavor Validation
 
 - [x] Install `betaDebug` or `prodDebug` build
 - [x] Navigate to Settings
-  - [x] "Developer Options" **NOT visible** in settings list
+    - [x] "Developer Options" **NOT visible** in settings list
 - [x] Attempt deep link: `scanium://settings/developer`
-  - [x] Navigation **blocked**, returns to previous screen
+    - [x] Navigation **blocked**, returns to previous screen
 - [x] Check WorkManager:
-  - [x] No "dev_health_monitor" work scheduled
-  - [x] Logcat: No health monitor logs
+    - [x] No "dev_health_monitor" work scheduled
+    - [x] Logcat: No health monitor logs
 - [x] Check notifications:
-  - [x] No dev monitoring notifications appear
+    - [x] No dev monitoring notifications appear
 
 ---
 
 ***REMOVED******REMOVED*** No Action Required
 
-The background health monitoring system is **complete and production-ready**. All requirements have been met:
+The background health monitoring system is **complete and production-ready**. All requirements have
+been met:
 
 ✅ DEV flavor only (triple-layer isolation)
 ✅ 15-minute periodic checks (WorkManager)
@@ -535,27 +560,28 @@ The background health monitoring system is **complete and production-ready**. Al
 If you want to further improve the monitoring system, consider:
 
 1. **Add Grafana metrics export** (OTLP)
-   - Track health check results in Grafana
-   - Alert on sustained failures
-   - Historical trend analysis
+    - Track health check results in Grafana
+    - Alert on sustained failures
+    - Historical trend analysis
 
 2. **Add configurable check interval** (UI)
-   - Allow user to choose: 15min, 30min, 1hr, 2hr
-   - More flexible for different use cases
+    - Allow user to choose: 15min, 30min, 1hr, 2hr
+    - More flexible for different use cases
 
 3. **Add endpoint selection** (UI)
-   - Allow user to enable/disable specific endpoints
-   - Useful for testing specific subsystems
+    - Allow user to enable/disable specific endpoints
+    - Useful for testing specific subsystems
 
 4. **Add notification sound/vibration settings**
-   - Some users may want silent notifications
-   - Others may want audible alerts
+    - Some users may want silent notifications
+    - Others may want audible alerts
 
 5. **Add notification history** (UI)
-   - Show last 10 notification events
-   - Useful for debugging intermittent issues
+    - Show last 10 notification events
+    - Useful for debugging intermittent issues
 
-**But these are OPTIONAL.** The current implementation fully meets all stated requirements and works correctly.
+**But these are OPTIONAL.** The current implementation fully meets all stated requirements and works
+correctly.
 
 ---
 
@@ -572,6 +598,7 @@ No commits needed. No deployment needed. System is **ready to use**.
 ***REMOVED******REMOVED*** Contact
 
 For questions about the health monitoring system:
+
 - See code documentation in `androidApp/src/main/java/com/scanium/app/monitoring/`
 - See tests in `androidApp/src/test/java/com/scanium/app/monitoring/`
 - See UI in `DeveloperOptionsScreen.kt` (line 1684)

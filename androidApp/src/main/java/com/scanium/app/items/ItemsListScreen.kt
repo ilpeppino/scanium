@@ -5,35 +5,52 @@ import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.view.WindowManager
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FolderZip
-import androidx.compose.material3.*
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -52,25 +69,16 @@ import com.scanium.app.ftue.ItemsListFtueOverlay
 import com.scanium.app.ftue.ItemsListFtueViewModel
 import com.scanium.app.ftue.ListHintType
 import com.scanium.app.ftue.tourTarget
-import com.scanium.app.ui.shimmerEffect
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.boundsInWindow
-import com.scanium.app.items.components.AttributeChipsRow
 import com.scanium.app.items.components.AttributeEditDialog
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
 import com.scanium.app.items.export.bundle.ExportBottomSheet
-import com.scanium.app.items.export.bundle.ExportState
 import com.scanium.app.items.export.bundle.ExportViewModel
-import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.app.model.resolveBytes
-import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
+import com.scanium.shared.core.models.items.ItemAttribute
 import kotlinx.coroutines.launch
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * Screen displaying all detected items in a list.
@@ -118,11 +126,12 @@ fun ItemsListScreen(
             if (listFtueCurrentStep != com.scanium.app.ftue.ItemsListFtueViewModel.ItemsListFtueStep.IDLE &&
                 listFtueCurrentStep != com.scanium.app.ftue.ItemsListFtueViewModel.ItemsListFtueStep.COMPLETED
             ) {
-                android.widget.Toast.makeText(
-                    context,
-                    "FTUE ItemsList step=${listFtueCurrentStep.name}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                android.widget.Toast
+                    .makeText(
+                        context,
+                        "FTUE ItemsList step=${listFtueCurrentStep.name}",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
             }
         }
     }
@@ -470,10 +479,11 @@ fun ItemsListScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { paddingValues ->
             // UI state holder for content
-            val listState = ItemsListState(
-                selectedIds = selectedIds.toSet(),
-                selectionMode = selectionMode,
-            )
+            val listState =
+                ItemsListState(
+                    selectedIds = selectedIds.toSet(),
+                    selectionMode = selectionMode,
+                )
 
             ItemsListContent(
                 items = items,
@@ -497,9 +507,10 @@ fun ItemsListScreen(
                     itemsViewModel.retryClassification(item.id)
                 },
                 tourViewModel = tourViewModel,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
             )
         }
 
@@ -556,11 +567,12 @@ fun ItemsListScreen(
                         .windowInsetsPadding(WindowInsets.navigationBars)
                         .padding(16.dp)
                         .semantics {
-                            contentDescription = if (selectedIds.size == items.size) {
-                                deselectAllLabel
-                            } else {
-                                selectAllLabel
-                            }
+                            contentDescription =
+                                if (selectedIds.size == items.size) {
+                                    deselectAllLabel
+                                } else {
+                                    selectAllLabel
+                                }
                         },
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -619,11 +631,12 @@ fun ItemsListScreen(
                     onClick = { showShareMenu = true },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = if (tourViewModel != null) {
-                        Modifier.tourTarget("items_share_button", tourViewModel)
-                    } else {
-                        Modifier
-                    }
+                    modifier =
+                        if (tourViewModel != null) {
+                            Modifier.tourTarget("items_share_button", tourViewModel)
+                        } else {
+                            Modifier
+                        },
                 ) {
                     if (isExporting) {
                         CircularProgressIndicator(
@@ -816,12 +829,15 @@ fun ItemsListScreen(
                         }
                     }
                 }
+
                 com.scanium.app.ftue.TourStepKey.COMPLETION -> {
                     com.scanium.app.ftue.CompletionOverlay(
                         onDismiss = { tourViewModel?.completeTour() },
                     )
                 }
-                else -> { /* Camera or EditItem steps */ }
+
+                else -> { // Camera or EditItem steps
+                }
             }
         }
     }
@@ -837,15 +853,16 @@ fun ItemsListScreen(
                 editingAttributeKey = key
                 editingAttribute = attribute
             },
-            onGenerateListing = if (item.attributes.isNotEmpty()) {
-                {
-                    // Navigate to generate listing screen with this item
-                    detailSheetItem = null
-                    onNavigateToGenerateListing(item.id)
-                }
-            } else {
-                null
-            },
+            onGenerateListing =
+                if (item.attributes.isNotEmpty()) {
+                    {
+                        // Navigate to generate listing screen with this item
+                        detailSheetItem = null
+                        onNavigateToGenerateListing(item.id)
+                    }
+                } else {
+                    null
+                },
         )
     }
 
@@ -858,8 +875,9 @@ fun ItemsListScreen(
         AttributeEditDialog(
             attributeKey = editingAttributeKey!!,
             attribute = editingAttribute!!,
-            visionAttributes = editingItem?.visionAttributes
-                ?: com.scanium.shared.core.models.items.VisionAttributes.EMPTY,
+            visionAttributes =
+                editingItem?.visionAttributes
+                    ?: com.scanium.shared.core.models.items.VisionAttributes.EMPTY,
             detectedValue = detectedValue,
             onDismiss = {
                 editingItemId = null

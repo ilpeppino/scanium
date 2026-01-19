@@ -39,28 +39,29 @@ object ConfidenceTiers {
      * - Higher steps: Progressively filter to higher confidence only
      * - Last step (rightmost): Show only highest confidence detections
      */
-    val tiers: List<Tier> = listOf(
-        Tier(
-            name = "All",
-            minConfidence = 0.0f,
-            description = "Show all detected bboxes",
-        ),
-        Tier(
-            name = "Low+",
-            minConfidence = 0.25f,
-            description = "Show low confidence and above (>=25%)",
-        ),
-        Tier(
-            name = "Medium+",
-            minConfidence = 0.50f,
-            description = "Show medium confidence and above (>=50%)",
-        ),
-        Tier(
-            name = "High only",
-            minConfidence = 0.75f,
-            description = "Show only high confidence detections (>=75%)",
-        ),
-    )
+    val tiers: List<Tier> =
+        listOf(
+            Tier(
+                name = "All",
+                minConfidence = 0.0f,
+                description = "Show all detected bboxes",
+            ),
+            Tier(
+                name = "Low+",
+                minConfidence = 0.25f,
+                description = "Show low confidence and above (>=25%)",
+            ),
+            Tier(
+                name = "Medium+",
+                minConfidence = 0.50f,
+                description = "Show medium confidence and above (>=50%)",
+            ),
+            Tier(
+                name = "High only",
+                minConfidence = 0.75f,
+                description = "Show only high confidence detections (>=75%)",
+            ),
+        )
 
     /**
      * Number of discrete steps for the slider.
@@ -73,9 +74,7 @@ object ConfidenceTiers {
      * @param stepIndex Index of the tier (0 to stepCount-1)
      * @return The tier at that index, or the first tier if out of bounds
      */
-    fun getTier(stepIndex: Int): Tier {
-        return tiers.getOrElse(stepIndex.coerceIn(0, tiers.lastIndex)) { tiers.first() }
-    }
+    fun getTier(stepIndex: Int): Tier = tiers.getOrElse(stepIndex.coerceIn(0, tiers.lastIndex)) { tiers.first() }
 
     /**
      * Get the minimum confidence threshold for a given step index.
@@ -83,9 +82,7 @@ object ConfidenceTiers {
      * @param stepIndex Index of the tier (0 to stepCount-1)
      * @return Minimum confidence threshold (0.0f - 1.0f)
      */
-    fun getMinConfidence(stepIndex: Int): Float {
-        return getTier(stepIndex).minConfidence
-    }
+    fun getMinConfidence(stepIndex: Int): Float = getTier(stepIndex).minConfidence
 
     /**
      * Get the display label for a given step index.
@@ -93,9 +90,7 @@ object ConfidenceTiers {
      * @param stepIndex Index of the tier (0 to stepCount-1)
      * @return Display name (e.g., "All", "Medium+")
      */
-    fun getLabel(stepIndex: Int): String {
-        return getTier(stepIndex).name
-    }
+    fun getLabel(stepIndex: Int): String = getTier(stepIndex).name
 
     /**
      * Get a formatted display string showing the current filter state.
@@ -119,7 +114,10 @@ object ConfidenceTiers {
      * @param stepIndex Index of the tier to use for filtering
      * @return Filtered list containing only detections at or above the tier's confidence threshold
      */
-    fun filterDetections(detections: List<OverlayTrack>, stepIndex: Int): List<OverlayTrack> {
+    fun filterDetections(
+        detections: List<OverlayTrack>,
+        stepIndex: Int,
+    ): List<OverlayTrack> {
         val minConfidence = getMinConfidence(stepIndex)
         return if (minConfidence <= 0f) {
             detections // No filtering for "All" tier

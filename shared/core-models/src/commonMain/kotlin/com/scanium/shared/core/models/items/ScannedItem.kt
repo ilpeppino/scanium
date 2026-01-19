@@ -134,7 +134,6 @@ data class ScannedItem<FullImageUri>(
      * Used to show "Enriching..." UI and track progress.
      */
     val enrichmentStatus: EnrichmentLayerStatus = EnrichmentLayerStatus(),
-    // Export Assistant fields (Phase 4)
     /**
      * AI-generated marketplace-ready title.
      * Set when user applies export assistant output.
@@ -165,7 +164,6 @@ data class ScannedItem<FullImageUri>(
      * Confidence tier of the AI-generated export (HIGH/MED/LOW).
      */
     val exportConfidenceTier: String? = null,
-    // Quality Loop fields (Phase 6)
     /**
      * Completeness score (0-100) based on category-specific required attributes.
      * Updated after each enrichment pass or manual edit.
@@ -245,35 +243,36 @@ data class ScannedItem<FullImageUri>(
                     ?: visionAttributes.primaryColor?.name?.trim()?.takeIf { it.isNotEmpty() }
 
             // Build label using vision attributes with priority
-            val label = when {
-                // Brand + ItemType + Color: "Labello Lip Balm · Blue"
-                brand != null && itemType != null && color != null ->
-                    "$brand $itemType · $color"
+            val label =
+                when {
+                    // Brand + ItemType + Color: "Labello Lip Balm · Blue"
+                    brand != null && itemType != null && color != null ->
+                        "$brand $itemType · $color"
 
-                // ItemType + Color: "Lip Balm · Blue"
-                itemType != null && color != null ->
-                    "$itemType · $color"
+                    // ItemType + Color: "Lip Balm · Blue"
+                    itemType != null && color != null ->
+                        "$itemType · $color"
 
-                // Brand + ItemType: "Labello Lip Balm"
-                brand != null && itemType != null ->
-                    "$brand $itemType"
+                    // Brand + ItemType: "Labello Lip Balm"
+                    brand != null && itemType != null ->
+                        "$brand $itemType"
 
-                // Brand + Color (no itemType): "Labello · Blue"
-                brand != null && color != null ->
-                    "$brand · $color"
+                    // Brand + Color (no itemType): "Labello · Blue"
+                    brand != null && color != null ->
+                        "$brand · $color"
 
-                // ItemType only: "Lip Balm"
-                itemType != null ->
-                    itemType
+                    // ItemType only: "Lip Balm"
+                    itemType != null ->
+                        itemType
 
-                // Brand only: "Labello"
-                brand != null ->
-                    brand
+                    // Brand only: "Labello"
+                    brand != null ->
+                        brand
 
-                // Fallback to labelText (suggestedLabel from backend)
-                else ->
-                    labelText?.trim()?.takeIf { it.isNotEmpty() }
-            }
+                    // Fallback to labelText (suggestedLabel from backend)
+                    else ->
+                        labelText?.trim()?.takeIf { it.isNotEmpty() }
+                }
 
             // Final fallback to category
             val result = label ?: category.displayName

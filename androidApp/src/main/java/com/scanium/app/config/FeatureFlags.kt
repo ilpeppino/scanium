@@ -16,7 +16,6 @@ import com.scanium.app.BuildConfig
  * @see docs/FLAVOR_GATING.md for complete documentation
  */
 object FeatureFlags {
-
     /**
      * Whether developer mode can be enabled by the user.
      * - DEV: true - Developer can toggle developer mode

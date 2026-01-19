@@ -1,22 +1,24 @@
 ***REMOVED*** Assistant API Curl Verification Example
 
-This document provides curl examples for verifying the `/v1/assist/chat` endpoint with multipart requests.
+This document provides curl examples for verifying the `/v1/assist/chat` endpoint with multipart
+requests.
 
 ***REMOVED******REMOVED*** Backend Contract
 
 The backend expects:
+
 - **Required headers:**
-  - `X-API-Key`: API key for authentication
-  - `X-Scanium-Device-Id`: Device identifier (raw, not hashed)
+    - `X-API-Key`: API key for authentication
+    - `X-Scanium-Device-Id`: Device identifier (raw, not hashed)
 - **Multipart fields:**
-  - `payload`: JSON string containing the request body
-  - `itemImages[<itemId>]`: Image files attached to specific items
+    - `payload`: JSON string containing the request body
+    - `itemImages[<itemId>]`: Image files attached to specific items
 - **Payload JSON structure:**
-  - `message`: Non-empty string (required)
-  - `items`: Array of objects, each with `itemId` (required)
-  - `history`: Optional array with `role`, `content`, `timestamp`
-  - `exportProfile`: Optional object with `id` and `displayName`
-  - `assistantPrefs`: Optional preferences object
+    - `message`: Non-empty string (required)
+    - `items`: Array of objects, each with `itemId` (required)
+    - `history`: Optional array with `role`, `content`, `timestamp`
+    - `exportProfile`: Optional object with `id` and `displayName`
+    - `assistantPrefs`: Optional preferences object
 
 ***REMOVED******REMOVED*** Example 1: Multipart Request with Images
 
@@ -376,6 +378,7 @@ curl -X POST "https://your-nas-url/api/v1/assist/chat" \
 ***REMOVED******REMOVED******REMOVED*** Issue: 400 VALIDATION_ERROR
 
 **Check:**
+
 1. Ensure `itemId` is present in all items
 2. Ensure `message` is non-empty
 3. Ensure history roles are valid (USER, ASSISTANT, SYSTEM)
@@ -384,18 +387,21 @@ curl -X POST "https://your-nas-url/api/v1/assist/chat" \
 ***REMOVED******REMOVED******REMOVED*** Issue: 401 UNAUTHORIZED
 
 **Check:**
+
 1. `X-API-Key` header is present and valid
 2. API key matches backend configuration
 
 ***REMOVED******REMOVED******REMOVED*** Issue: 429 RATE_LIMITED
 
 **Check:**
+
 1. Device/IP rate limits not exceeded
 2. Wait for `Retry-After` seconds before retrying
 
 ***REMOVED******REMOVED******REMOVED*** Issue: Image not processed
 
 **Check:**
+
 1. Field name is exactly `itemImages[<itemId>]`
 2. MIME type is `image/jpeg` or `image/png`
 3. File size is under 2MB

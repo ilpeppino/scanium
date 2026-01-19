@@ -34,7 +34,6 @@ class DevHealthMonitorWorker(
     appContext: Context,
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams) {
-
     companion object {
         private const val TAG = "DevHealthMonitor"
         const val WORK_NAME = "dev_health_monitor"
@@ -79,24 +78,26 @@ class DevHealthMonitorWorker(
         val apiKey = secureStore.getApiKey()
         val authToken = secureStore.getAuthToken()
 
-        val healthConfig = HealthMonitorConfig(
-            baseUrl = stateStore.getEffectiveBaseUrl(config),
-            apiKey = apiKey,
-            authToken = authToken,
-            notifyOnRecovery = config.notifyOnRecovery,
-        )
+        val healthConfig =
+            HealthMonitorConfig(
+                baseUrl = stateStore.getEffectiveBaseUrl(config),
+                apiKey = apiKey,
+                authToken = authToken,
+                notifyOnRecovery = config.notifyOnRecovery,
+            )
 
         // Perform the health check
         val result = repository.performHealthCheck(healthConfig)
 
         // Decide whether to notify
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = previousState.lastStatus,
-            currentResult = result,
-            previousFailureSignature = previousState.lastFailureSignature,
-            lastNotifiedAt = previousState.lastNotifiedAt,
-            notifyOnRecovery = config.notifyOnRecovery,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = previousState.lastStatus,
+                currentResult = result,
+                previousFailureSignature = previousState.lastFailureSignature,
+                lastNotifiedAt = previousState.lastNotifiedAt,
+                notifyOnRecovery = config.notifyOnRecovery,
+            )
 
         Log.d(TAG, "Health check result: ${result.status}, Decision: $decision")
 
@@ -109,10 +110,12 @@ class DevHealthMonitorWorker(
                 sendFailureNotification(decision.reason)
                 stateStore.updateLastNotifiedAt(System.currentTimeMillis())
             }
+
             is NotificationDecision.Decision.NotifyRecovery -> {
                 sendRecoveryNotification()
                 stateStore.updateLastNotifiedAt(System.currentTimeMillis())
             }
+
             NotificationDecision.Decision.NoNotification -> {
                 // No action needed
             }
@@ -122,30 +125,35 @@ class DevHealthMonitorWorker(
     private fun sendFailureNotification(reason: String) {
         ensureNotificationChannel()
 
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            // Add extra to navigate to settings
-            putExtra("navigate_to", "developer_options")
-        }
+        val intent =
+            Intent(applicationContext, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                // Add extra to navigate to settings
+                putExtra("navigate_to", "developer_options")
+            }
 
-        val pendingIntent = PendingIntent.getActivity(
-            applicationContext,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                applicationContext,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
-        val notification = NotificationCompat.Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_monochrome_lightning)
-            .setContentTitle("Scanium backend issue")
-            .setContentText(reason)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
+        val notification =
+            NotificationCompat
+                .Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_monochrome_lightning)
+                .setContentTitle("Scanium backend issue")
+                .setContentText(reason)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
 
         if (hasNotificationPermission()) {
-            NotificationManagerCompat.from(applicationContext)
+            NotificationManagerCompat
+                .from(applicationContext)
                 .notify(NOTIFICATION_ID_FAILURE, notification)
             Log.d(TAG, "Sent failure notification: $reason")
         } else {
@@ -156,29 +164,34 @@ class DevHealthMonitorWorker(
     private fun sendRecoveryNotification() {
         ensureNotificationChannel()
 
-        val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("navigate_to", "developer_options")
-        }
+        val intent =
+            Intent(applicationContext, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("navigate_to", "developer_options")
+            }
 
-        val pendingIntent = PendingIntent.getActivity(
-            applicationContext,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                applicationContext,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
-        val notification = NotificationCompat.Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_monochrome_lightning)
-            .setContentTitle("Scanium backend recovered")
-            .setContentText("All checks passing")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
+        val notification =
+            NotificationCompat
+                .Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_monochrome_lightning)
+                .setContentTitle("Scanium backend recovered")
+                .setContentText("All checks passing")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
 
         if (hasNotificationPermission()) {
-            NotificationManagerCompat.from(applicationContext)
+            NotificationManagerCompat
+                .from(applicationContext)
                 .notify(NOTIFICATION_ID_RECOVERY, notification)
             Log.d(TAG, "Sent recovery notification")
         }
@@ -186,21 +199,22 @@ class DevHealthMonitorWorker(
 
     private fun ensureNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID,
-                "Scanium Dev Monitoring",
-                NotificationManager.IMPORTANCE_DEFAULT,
-            ).apply {
-                description = "Background health check notifications (dev builds only)"
-            }
+            val channel =
+                NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID,
+                    "Scanium Dev Monitoring",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = "Background health check notifications (dev builds only)"
+                }
 
             val manager = applicationContext.getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
     }
 
-    private fun hasNotificationPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    private fun hasNotificationPermission(): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.checkSelfPermission(
                 applicationContext,
                 Manifest.permission.POST_NOTIFICATIONS,
@@ -208,5 +222,4 @@ class DevHealthMonitorWorker(
         } else {
             true
         }
-    }
 }

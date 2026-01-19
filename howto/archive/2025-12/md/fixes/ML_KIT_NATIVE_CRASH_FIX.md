@@ -2,7 +2,8 @@
 
 ***REMOVED******REMOVED*** Problem
 
-The app was crashing with a **native crash in ML Kit** after detecting the first frame of objects. No Java exception - just "Process has died".
+The app was crashing with a **native crash in ML Kit** after detecting the first frame of objects.
+No Java exception - just "Process has died".
 
 ***REMOVED******REMOVED******REMOVED*** Root Cause from Tombstone
 
@@ -22,9 +23,11 @@ The code was using a **multi-strategy fallback approach**:
 3. **Both detectors stay alive and process subsequent frames**
 
 The problem:
+
 - **STREAM_MODE** expects frame buffers to persist across multiple frames
 - **SINGLE_IMAGE_MODE** releases frame buffers immediately after processing
-- When both detectors try to process the same frame sequence, STREAM_MODE tries to access recycled buffers → **CRASH**
+- When both detectors try to process the same frame sequence, STREAM_MODE tries to access recycled
+  buffers → **CRASH**
 
 ***REMOVED******REMOVED*** The Fix
 
@@ -33,12 +36,15 @@ The problem:
 ***REMOVED******REMOVED******REMOVED*** Changes Made
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 1. CameraXManager.kt (line 257-259)
+
 Changed from:
+
 ```kotlin
 val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = true)
 ```
 
 To:
+
 ```kotlin
 // CRITICAL: Use SINGLE_IMAGE_MODE to avoid ML Kit frame buffer crash
 // STREAM_MODE causes native crashes when frames get recycled
@@ -46,7 +52,9 @@ val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode 
 ```
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 2. ObjectDetectorClient.kt (line 310)
+
 Disabled the fallback logic that mixed modes:
+
 ```kotlin
 // DISABLED: Don't mix STREAM and SINGLE_IMAGE modes - causes ML Kit crashes
 if (false && detectedObjects.isEmpty() && useStreamMode) {
@@ -55,12 +63,14 @@ if (false && detectedObjects.isEmpty() && useStreamMode) {
 ***REMOVED******REMOVED*** Trade-offs
 
 ***REMOVED******REMOVED******REMOVED*** STREAM_MODE (what we had before - BROKEN):
+
 - ✅ Better for tracking across frames
 - ✅ More efficient when it works
 - ❌ **CRASHES when frame buffers get recycled**
 - ❌ Doesn't work reliably on all devices
 
 ***REMOVED******REMOVED******REMOVED*** SINGLE_IMAGE_MODE (what we use now - WORKS):
+
 - ✅ **Stable - no crashes**
 - ✅ Works reliably on all devices
 - ✅ Still detects objects successfully
@@ -68,6 +78,7 @@ if (false && detectedObjects.isEmpty() && useStreamMode) {
 - ⚠️ Slightly less efficient (processes each frame independently)
 
 The trade-off is acceptable because:
+
 1. **Session-level de-duplication** handles the lack of tracking IDs
 2. **Stability > efficiency** - crashes are unacceptable
 3. Objects are still detected successfully
@@ -99,6 +110,7 @@ The trade-off is acceptable because:
 4. **Test**: Open app, long-press to scan multiple objects
 
 **Expected behavior**:
+
 - Objects detected continuously
 - Items appear with thumbnails
 - **No crashes** - app stays running
@@ -108,6 +120,7 @@ The trade-off is acceptable because:
 ***REMOVED******REMOVED*** Related Issues
 
 This fix addresses the tombstone error:
+
 ```
 statusor.cc:86] Attempting to fetch value instead of handling error NOT_FOUND:
 Failed to find the byte array of frame at timestamp: 1144982583000

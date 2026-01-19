@@ -7,6 +7,7 @@
 ***REMOVED******REMOVED*** Problem
 
 Configuration values are hardcoded throughout the codebase, making it difficult to:
+
 - Tune performance without recompiling
 - A/B test different thresholds
 - Understand what's configurable
@@ -17,16 +18,19 @@ Configuration values are hardcoded throughout the codebase, making it difficult 
 ***REMOVED******REMOVED******REMOVED*** 1. CameraXManager.kt
 
 **Line 131**: Camera resolution
+
 ```kotlin
 .setTargetResolution(android.util.Size(1280, 720)) // Higher resolution for better detection
 ```
 
 **Line 218**: Analysis interval
+
 ```kotlin
 val analysisIntervalMs = 800L // Analyze every 800ms for better tracking
 ```
 
 **Lines 57-62**: TrackerConfig inline
+
 ```kotlin
 private val objectTracker = ObjectTracker(
     config = TrackerConfig(
@@ -43,16 +47,19 @@ private val objectTracker = ObjectTracker(
 ***REMOVED******REMOVED******REMOVED*** 2. ObjectDetectorClient.kt
 
 **Line 34**: Confidence threshold
+
 ```kotlin
 private const val CONFIDENCE_THRESHOLD = 0.3f
 ```
 
 **Line 209**: Blank image detection
+
 ```kotlin
 val isLikelyBlank = totalVariance < 30
 ```
 
 **Line 587**: Thumbnail max dimension
+
 ```kotlin
 val maxDimension = 200
 ```
@@ -60,6 +67,7 @@ val maxDimension = 200
 ***REMOVED******REMOVED******REMOVED*** 3. CloudClassifier.kt
 
 **Lines 43-44**: Network timeouts
+
 ```kotlin
 connectTimeout = 5_000
 readTimeout = 8_000
@@ -68,6 +76,7 @@ readTimeout = 8_000
 ***REMOVED******REMOVED******REMOVED*** 4. SessionDeduplicator.kt (if not deleted per Issue ***REMOVED***003)
 
 **Lines 30-32**: Similarity thresholds
+
 ```kotlin
 private const val MAX_CENTER_DISTANCE_RATIO = 0.15f
 private const val MAX_SIZE_RATIO_DIFF = 0.4f
@@ -161,6 +170,7 @@ val resolution = Size(BuildConfig.CAMERA_WIDTH, BuildConfig.CAMERA_HEIGHT)
 ***REMOVED******REMOVED******REMOVED*** Why This Is Not Relevant
 
 **1. YAGNI Principle Violation**
+
 - No evidence of frequent tuning needed
 - No A/B testing requirements for PoC/demo app
 - No production hotfix requirements
@@ -168,12 +178,14 @@ val resolution = Size(BuildConfig.CAMERA_WIDTH, BuildConfig.CAMERA_HEIGHT)
 
 **2. Current Approach Is Appropriate**
 The hardcoded values are **tuning parameters**, not user configuration:
+
 - ✅ Well-documented with inline comments
 - ✅ Co-located near usage (easier to understand)
 - ✅ Discoverable via simple grep (`grep "private const val"`)
 - ✅ Named constants are self-documenting
 
 **3. Proposed Solution Adds Complexity Without Benefit**
+
 ```kotlin
 // Current (clear and simple):
 private const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
@@ -181,11 +193,13 @@ private const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
 // Proposed (unnecessary indirection):
 ScaniumConfig.Detection.confidenceThreshold
 ```
+
 - Requires jumping between files to understand values
 - Adds layer of abstraction with no proven ROI
 - Makes code harder to read, not easier
 
 **4. Android Best Practices**
+
 - **Co-location**: Keep config near usage for clarity
 - **KISS**: Inline constants are simpler than config objects
 - **Documentation**: Comments explain "why" better than config files
@@ -200,6 +214,7 @@ The issue correctly identifies a documentation problem, but proposes the wrong s
 **Example - TrackerConfig mismatch:**
 
 CLAUDE.md documents:
+
 ```kotlin
 minConfidence = 0.25f
 minBoxArea = 0.0f
@@ -209,6 +224,7 @@ expiryFrames = 30
 ```
 
 Actual code (CameraXManager.kt:56-63):
+
 ```kotlin
 minConfidence = 0.2f      // DIFFERENT!
 minBoxArea = 0.0005f      // DIFFERENT!
@@ -258,6 +274,7 @@ expiryFrames = 15         // DIFFERENT!
    ```
 
 **✅ Values are discoverable:**
+
 ```bash
 ***REMOVED*** Find all tuning constants
 grep -r "private const val" app/src/main/java/
@@ -271,24 +288,24 @@ grep -r "val.*= [0-9]" app/src/main/java/com/scanium/app/camera/
 Consider centralized configuration **only if**:
 
 1. **Production deployment** with need for:
-   - A/B testing different thresholds
-   - Feature flags for gradual rollout
-   - Remote config updates
+    - A/B testing different thresholds
+    - Feature flags for gradual rollout
+    - Remote config updates
 
 2. **Multiple build variants** requiring different values:
-   - Debug vs Release
-   - Free vs Premium
-   - Per-customer configurations
+    - Debug vs Release
+    - Free vs Premium
+    - Per-customer configurations
 
 3. **Frequent tuning** evidenced by:
-   - Multiple PRs changing same constants
-   - User-reported issues requiring threshold adjustments
-   - Performance testing requiring parameter sweeps
+    - Multiple PRs changing same constants
+    - User-reported issues requiring threshold adjustments
+    - Performance testing requiring parameter sweeps
 
 4. **Dynamic configuration** requirements:
-   - Runtime adjustment via settings UI
-   - Server-driven configuration
-   - ML-based auto-tuning
+    - Runtime adjustment via settings UI
+    - Server-driven configuration
+    - ML-based auto-tuning
 
 **None of these apply to current PoC/demo scope.**
 
@@ -302,6 +319,7 @@ Consider centralized configuration **only if**:
 4. ✅ **Follow YAGNI** - defer abstraction until needed
 
 **Example of good inline documentation:**
+
 ```kotlin
 // Analyze every 800ms to balance:
 // - Responsiveness: Catch objects quickly as user pans
@@ -321,6 +339,7 @@ val analysisIntervalMs = 800L
 
 ***REMOVED******REMOVED******REMOVED*** Conclusion
 
-This issue represents **premature optimization**. The current approach is appropriate for a PoC/demo app. Creating a centralized config object would add complexity without solving any real problem.
+This issue represents **premature optimization**. The current approach is appropriate for a PoC/demo
+app. Creating a centralized config object would add complexity without solving any real problem.
 
 **Close this issue and focus on Issue ***REMOVED***009** (fixing CLAUDE.md documentation mismatch) instead.

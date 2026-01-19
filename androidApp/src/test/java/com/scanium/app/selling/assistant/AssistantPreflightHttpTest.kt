@@ -41,10 +41,11 @@ class AssistantPreflightHttpTest {
         mockWebServer = MockWebServer()
         mockWebServer.start()
         // Use unified test configuration from AssistantHttpConfig
-        client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.TEST,
-            logStartupPolicy = false,
-        )
+        client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.TEST,
+                logStartupPolicy = false,
+            )
     }
 
     @After
@@ -54,253 +55,267 @@ class AssistantPreflightHttpTest {
     }
 
     @Test
-    fun `200 with assistant ready returns AVAILABLE`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(
-                    """
-                    {
-                        "status": "ok",
-                        "ts": "2025-01-02T12:00:00Z",
-                        "version": "1.0.0",
-                        "assistant": {
-                            "providerConfigured": true,
-                            "providerReachable": true,
-                            "state": "ready"
+    fun `200 with assistant ready returns AVAILABLE`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                        {
+                            "status": "ok",
+                            "ts": "2025-01-02T12:00:00Z",
+                            "version": "1.0.0",
+                            "assistant": {
+                                "providerConfigured": true,
+                                "providerReachable": true,
+                                "state": "ready"
+                            }
                         }
-                    }
-                    """.trimIndent(),
-                ),
-        )
+                        """.trimIndent(),
+                    ),
+            )
 
-        val result = performPreflight()
+            val result = performPreflight()
 
-        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
-        assertThat(result.isAvailable).isTrue()
-    }
+            assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+            assertThat(result.isAvailable).isTrue()
+        }
 
     @Test
-    fun `200 with assistant not ready returns TEMPORARILY_UNAVAILABLE`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(
-                    """
-                    {
-                        "status": "ok",
-                        "ts": "2025-01-02T12:00:00Z",
-                        "version": "1.0.0",
-                        "assistant": {
-                            "providerConfigured": true,
-                            "providerReachable": false,
-                            "state": "provider_unreachable"
+    fun `200 with assistant not ready returns TEMPORARILY_UNAVAILABLE`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                        {
+                            "status": "ok",
+                            "ts": "2025-01-02T12:00:00Z",
+                            "version": "1.0.0",
+                            "assistant": {
+                                "providerConfigured": true,
+                                "providerReachable": false,
+                                "state": "provider_unreachable"
+                            }
                         }
-                    }
-                    """.trimIndent(),
-                ),
-        )
+                        """.trimIndent(),
+                    ),
+            )
 
-        val result = performPreflight()
+            val result = performPreflight()
 
-        assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
-        assertThat(result.reasonCode).isEqualTo("provider_unreachable")
-    }
+            assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
+            assertThat(result.reasonCode).isEqualTo("provider_unreachable")
+        }
 
     // ==================== Auth failure handling ====================
     // Auth failures from preflight should return UNAUTHORIZED for diagnostics.
     // The ViewModel will still allow chat attempts (input enabled).
 
     @Test
-    fun `401 returns UNAUTHORIZED with unauthorized_api_key reason`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(401)
-                .setBody("""{"error": "unauthorized"}"""),
-        )
+    fun `401 returns UNAUTHORIZED with unauthorized_api_key reason`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error": "unauthorized"}"""),
+            )
 
-        val result = performPreflightChat()
+            val result = performPreflightChat()
 
-        // Auth failure from preflight should return UNAUTHORIZED for diagnostics
-        // The ViewModel maps this to Available (input enabled) but shows warning banner
-        assertThat(result.status).isEqualTo(PreflightStatus.UNAUTHORIZED)
-        assertThat(result.reasonCode).isEqualTo("unauthorized_api_key")
-    }
-
-    @Test
-    fun `403 returns UNAUTHORIZED with forbidden_access reason`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(403)
-                .setBody("""{"error": "forbidden"}"""),
-        )
-
-        val result = performPreflightChat()
-
-        // 403 Forbidden also returns UNAUTHORIZED but with different reason
-        assertThat(result.status).isEqualTo(PreflightStatus.UNAUTHORIZED)
-        assertThat(result.reasonCode).isEqualTo("forbidden_access")
-    }
+            // Auth failure from preflight should return UNAUTHORIZED for diagnostics
+            // The ViewModel maps this to Available (input enabled) but shows warning banner
+            assertThat(result.status).isEqualTo(PreflightStatus.UNAUTHORIZED)
+            assertThat(result.reasonCode).isEqualTo("unauthorized_api_key")
+        }
 
     @Test
-    fun `404 returns ENDPOINT_NOT_FOUND not TEMPORARILY_UNAVAILABLE`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(404)
-                .setBody("""{"error": "not found"}"""),
-        )
+    fun `403 returns UNAUTHORIZED with forbidden_access reason`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(403)
+                    .setBody("""{"error": "forbidden"}"""),
+            )
 
-        val result = performPreflight()
+            val result = performPreflightChat()
 
-        assertThat(result.status).isEqualTo(PreflightStatus.ENDPOINT_NOT_FOUND)
-        assertThat(result.reasonCode).isEqualTo("endpoint_not_found")
-        // 404 should NOT be retryable - it's a configuration error
-        assertThat(result.canRetry).isFalse()
-    }
-
-    @Test
-    fun `429 returns RATE_LIMITED with retry after`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(429)
-                .setHeader("Retry-After", "60")
-                .setBody("""{"error": "rate limited"}"""),
-        )
-
-        val result = performPreflight()
-
-        assertThat(result.status).isEqualTo(PreflightStatus.RATE_LIMITED)
-        assertThat(result.reasonCode).isEqualTo("http_429")
-        assertThat(result.retryAfterSeconds).isEqualTo(60)
-        assertThat(result.canRetry).isTrue()
-    }
+            // 403 Forbidden also returns UNAUTHORIZED but with different reason
+            assertThat(result.status).isEqualTo(PreflightStatus.UNAUTHORIZED)
+            assertThat(result.reasonCode).isEqualTo("forbidden_access")
+        }
 
     @Test
-    fun `500 returns TEMPORARILY_UNAVAILABLE`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(500)
-                .setBody("""{"error": "internal server error"}"""),
-        )
+    fun `404 returns ENDPOINT_NOT_FOUND not TEMPORARILY_UNAVAILABLE`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(404)
+                    .setBody("""{"error": "not found"}"""),
+            )
 
-        val result = performPreflight()
+            val result = performPreflight()
 
-        assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
-        assertThat(result.reasonCode).isEqualTo("http_500")
-        assertThat(result.canRetry).isTrue()
-    }
-
-    @Test
-    fun `502 returns TEMPORARILY_UNAVAILABLE`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(502)
-                .setBody("""{"error": "bad gateway"}"""),
-        )
-
-        val result = performPreflight()
-
-        assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
-        assertThat(result.reasonCode).isEqualTo("http_502")
-    }
+            assertThat(result.status).isEqualTo(PreflightStatus.ENDPOINT_NOT_FOUND)
+            assertThat(result.reasonCode).isEqualTo("endpoint_not_found")
+            // 404 should NOT be retryable - it's a configuration error
+            assertThat(result.canRetry).isFalse()
+        }
 
     @Test
-    fun `503 returns TEMPORARILY_UNAVAILABLE`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(503)
-                .setBody("""{"error": "service unavailable"}"""),
-        )
+    fun `429 returns RATE_LIMITED with retry after`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(429)
+                    .setHeader("Retry-After", "60")
+                    .setBody("""{"error": "rate limited"}"""),
+            )
 
-        val result = performPreflight()
+            val result = performPreflight()
 
-        assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
-        assertThat(result.reasonCode).isEqualTo("http_503")
-    }
+            assertThat(result.status).isEqualTo(PreflightStatus.RATE_LIMITED)
+            assertThat(result.reasonCode).isEqualTo("http_429")
+            assertThat(result.retryAfterSeconds).isEqualTo(60)
+            assertThat(result.canRetry).isTrue()
+        }
 
     @Test
-    fun `504 returns TEMPORARILY_UNAVAILABLE`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(504)
-                .setBody("""{"error": "gateway timeout"}"""),
-        )
+    fun `500 returns TEMPORARILY_UNAVAILABLE`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error": "internal server error"}"""),
+            )
 
-        val result = performPreflight()
+            val result = performPreflight()
 
-        assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
-        assertThat(result.reasonCode).isEqualTo("http_504")
-    }
+            assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
+            assertThat(result.reasonCode).isEqualTo("http_500")
+            assertThat(result.canRetry).isTrue()
+        }
+
+    @Test
+    fun `502 returns TEMPORARILY_UNAVAILABLE`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(502)
+                    .setBody("""{"error": "bad gateway"}"""),
+            )
+
+            val result = performPreflight()
+
+            assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
+            assertThat(result.reasonCode).isEqualTo("http_502")
+        }
+
+    @Test
+    fun `503 returns TEMPORARILY_UNAVAILABLE`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(503)
+                    .setBody("""{"error": "service unavailable"}"""),
+            )
+
+            val result = performPreflight()
+
+            assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
+            assertThat(result.reasonCode).isEqualTo("http_503")
+        }
+
+    @Test
+    fun `504 returns TEMPORARILY_UNAVAILABLE`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(504)
+                    .setBody("""{"error": "gateway timeout"}"""),
+            )
+
+            val result = performPreflight()
+
+            assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
+            assertThat(result.reasonCode).isEqualTo("http_504")
+        }
 
     // ==================== HTTP 400 handling ====================
     // HTTP 400 from preflight means the preflight request schema was malformed.
     // This should NOT block the user - actual chat may still work.
 
     @Test
-    fun `400 returns CLIENT_ERROR not TEMPORARILY_UNAVAILABLE`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(400)
-                .setBody("""{"error": "bad request", "message": "Invalid request schema"}"""),
-        )
+    fun `400 returns CLIENT_ERROR not TEMPORARILY_UNAVAILABLE`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(400)
+                    .setBody("""{"error": "bad request", "message": "Invalid request schema"}"""),
+            )
 
-        val result = performPreflightChat()
+            val result = performPreflightChat()
 
-        // HTTP 400 should return CLIENT_ERROR to allow chat attempt
-        assertThat(result.status).isEqualTo(PreflightStatus.CLIENT_ERROR)
-        assertThat(result.reasonCode).isEqualTo("preflight_schema_error")
-        // CLIENT_ERROR should allow retry (chat attempt)
-        assertThat(result.canRetry).isTrue()
-    }
-
-    @Test
-    fun `preflight uses correct path v1_assist_chat`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody("""{"content": "ok"}"""),
-        )
-
-        performPreflightChat()
-
-        val request = mockWebServer.takeRequest()
-        assertThat(request.path).isEqualTo("/v1/assist/chat")
-        assertThat(request.method).isEqualTo("POST")
-    }
+            // HTTP 400 should return CLIENT_ERROR to allow chat attempt
+            assertThat(result.status).isEqualTo(PreflightStatus.CLIENT_ERROR)
+            assertThat(result.reasonCode).isEqualTo("preflight_schema_error")
+            // CLIENT_ERROR should allow retry (chat attempt)
+            assertThat(result.canRetry).isTrue()
+        }
 
     @Test
-    fun `preflight request includes required headers`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody("""{"content": "ok"}"""),
-        )
+    fun `preflight uses correct path v1_assist_chat`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody("""{"content": "ok"}"""),
+            )
 
-        performPreflightChat()
+            performPreflightChat()
 
-        val request = mockWebServer.takeRequest()
-        assertThat(request.getHeader("X-API-Key")).isEqualTo("test-key")
-        assertThat(request.getHeader("X-Client")).isEqualTo("Scanium-Android")
-        assertThat(request.getHeader("X-Scanium-Preflight")).isEqualTo("true")
-        assertThat(request.getHeader("X-Scanium-Device-Id")).isNotNull()
-    }
+            val request = mockWebServer.takeRequest()
+            assertThat(request.path).isEqualTo("/v1/assist/chat")
+            assertThat(request.method).isEqualTo("POST")
+        }
 
     @Test
-    fun `preflight request includes valid JSON payload with empty items`() = runTest {
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody("""{"content": "ok"}"""),
-        )
+    fun `preflight request includes required headers`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody("""{"content": "ok"}"""),
+            )
 
-        performPreflightChat()
+            performPreflightChat()
 
-        val request = mockWebServer.takeRequest()
-        val body = request.body.readUtf8()
-        assertThat(body).contains("\"message\"")
-        assertThat(body).contains("\"items\":[]") // Items MUST be empty array
-        assertThat(body).contains("\"history\"")
-    }
+            val request = mockWebServer.takeRequest()
+            assertThat(request.getHeader("X-API-Key")).isEqualTo("test-key")
+            assertThat(request.getHeader("X-Client")).isEqualTo("Scanium-Android")
+            assertThat(request.getHeader("X-Scanium-Preflight")).isEqualTo("true")
+            assertThat(request.getHeader("X-Scanium-Device-Id")).isNotNull()
+        }
+
+    @Test
+    fun `preflight request includes valid JSON payload with empty items`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody("""{"content": "ok"}"""),
+            )
+
+            performPreflightChat()
+
+            val request = mockWebServer.takeRequest()
+            val body = request.body.readUtf8()
+            assertThat(body).contains("\"message\"")
+            assertThat(body).contains("\"items\":[]") // Items MUST be empty array
+            assertThat(body).contains("\"history\"")
+        }
 
     // ==================== Serialization regression test ====================
     // This test verifies that kotlinx.serialization with encodeDefaults=true
@@ -309,45 +324,49 @@ class AssistantPreflightHttpTest {
     // were omitted, causing HTTP 400 "Request validation failed".
 
     @Test
-    fun `preflight JSON serialization includes all required fields`() = runTest {
-        // Create the same Json config as AssistantPreflightManagerImpl
-        val preflightJson = Json {
-            ignoreUnknownKeys = true
-            encodeDefaults = true // This was the missing fix!
+    fun `preflight JSON serialization includes all required fields`() =
+        runTest {
+            // Create the same Json config as AssistantPreflightManagerImpl
+            val preflightJson =
+                Json {
+                    ignoreUnknownKeys = true
+                    encodeDefaults = true // This was the missing fix!
+                }
+
+            // Serialize the DTO (same structure as PreflightChatRequest)
+            val payload = TestPreflightRequest()
+            val serialized = preflightJson.encodeToString(TestPreflightRequest.serializer(), payload)
+
+            // Verify ALL required fields are present (backend Zod validation requirement)
+            assertThat(serialized).contains("\"message\":\"ping\"")
+            assertThat(serialized).contains("\"items\":[]")
+            assertThat(serialized).contains("\"history\":[]")
+
+            // Verify no extra fields that might cause issues
+            assertThat(serialized).doesNotContain("null")
         }
-
-        // Serialize the DTO (same structure as PreflightChatRequest)
-        val payload = TestPreflightRequest()
-        val serialized = preflightJson.encodeToString(TestPreflightRequest.serializer(), payload)
-
-        // Verify ALL required fields are present (backend Zod validation requirement)
-        assertThat(serialized).contains("\"message\":\"ping\"")
-        assertThat(serialized).contains("\"items\":[]")
-        assertThat(serialized).contains("\"history\":[]")
-
-        // Verify no extra fields that might cause issues
-        assertThat(serialized).doesNotContain("null")
-    }
 
     @Test
-    fun `preflight JSON without encodeDefaults omits required fields - regression test`() = runTest {
-        // This test documents the bug: without encodeDefaults=true,
-        // fields with default values are NOT serialized
-        val badJson = Json {
-            ignoreUnknownKeys = true
-            // Missing: encodeDefaults = true
+    fun `preflight JSON without encodeDefaults omits required fields - regression test`() =
+        runTest {
+            // This test documents the bug: without encodeDefaults=true,
+            // fields with default values are NOT serialized
+            val badJson =
+                Json {
+                    ignoreUnknownKeys = true
+                    // Missing: encodeDefaults = true
+                }
+
+            val payload = TestPreflightRequest()
+            val serialized = badJson.encodeToString(TestPreflightRequest.serializer(), payload)
+
+            // BUG: ALL fields are MISSING because they all have defaults
+            // This causes HTTP 400 "Request validation failed"
+            assertThat(serialized).isEqualTo("{}")
+            assertThat(serialized).doesNotContain("\"items\"")
+            assertThat(serialized).doesNotContain("\"history\"")
+            assertThat(serialized).doesNotContain("\"message\"")
         }
-
-        val payload = TestPreflightRequest()
-        val serialized = badJson.encodeToString(TestPreflightRequest.serializer(), payload)
-
-        // BUG: ALL fields are MISSING because they all have defaults
-        // This causes HTTP 400 "Request validation failed"
-        assertThat(serialized).isEqualTo("{}")
-        assertThat(serialized).doesNotContain("\"items\"")
-        assertThat(serialized).doesNotContain("\"history\"")
-        assertThat(serialized).doesNotContain("\"message\"")
-    }
 
     // ==================== Regression tests for backend reachability fix ====================
     // These tests verify that the preflight only checks backend reachability,
@@ -355,374 +374,403 @@ class AssistantPreflightHttpTest {
     // separately via featureFlags.enableAssistant in FeatureFlagRepository.
 
     @Test
-    fun `200 with status ok but no assistant section returns AVAILABLE`() = runTest {
-        // This is the key regression test for the fix.
-        // Previously, missing assistant section would cause TEMPORARILY_UNAVAILABLE.
-        // After fix, 200 with status=ok means backend is reachable = AVAILABLE.
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(
-                    """
-                    {
-                        "status": "ok",
-                        "ts": "2025-01-02T12:00:00Z",
-                        "version": "1.0.0"
-                    }
-                    """.trimIndent(),
-                ),
-        )
-
-        val result = performPreflight()
-
-        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
-        assertThat(result.isAvailable).isTrue()
-    }
-
-    @Test
-    fun `200 with status healthy returns AVAILABLE`() = runTest {
-        // Backend may report "healthy" instead of "ok"
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(
-                    """
-                    {
-                        "status": "healthy",
-                        "ts": "2025-01-02T12:00:00Z"
-                    }
-                    """.trimIndent(),
-                ),
-        )
-
-        val result = performPreflight()
-
-        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
-        assertThat(result.isAvailable).isTrue()
-    }
-
-    @Test
-    fun `200 with assistant providerConfigured false returns AVAILABLE`() = runTest {
-        // If providerConfigured is false, we don't mark unavailable -
-        // we just consider backend reachable. The enableAssistant flag controls feature access.
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(
-                    """
-                    {
-                        "status": "ok",
-                        "assistant": {
-                            "providerConfigured": false,
-                            "providerReachable": false
+    fun `200 with status ok but no assistant section returns AVAILABLE`() =
+        runTest {
+            // This is the key regression test for the fix.
+            // Previously, missing assistant section would cause TEMPORARILY_UNAVAILABLE.
+            // After fix, 200 with status=ok means backend is reachable = AVAILABLE.
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                        {
+                            "status": "ok",
+                            "ts": "2025-01-02T12:00:00Z",
+                            "version": "1.0.0"
                         }
-                    }
-                    """.trimIndent(),
-                ),
-        )
+                        """.trimIndent(),
+                    ),
+            )
 
-        val result = performPreflight()
+            val result = performPreflight()
 
-        // providerConfigured=false means we don't have explicit info that provider is down
-        // so we treat backend as available (reachable)
-        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
-    }
+            assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+            assertThat(result.isAvailable).isTrue()
+        }
 
     @Test
-    fun `200 with degraded status returns TEMPORARILY_UNAVAILABLE`() = runTest {
-        // If backend explicitly reports degraded status, respect that
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(
-                    """
-                    {
-                        "status": "degraded",
-                        "ts": "2025-01-02T12:00:00Z"
-                    }
-                    """.trimIndent(),
-                ),
-        )
+    fun `200 with status healthy returns AVAILABLE`() =
+        runTest {
+            // Backend may report "healthy" instead of "ok"
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                        {
+                            "status": "healthy",
+                            "ts": "2025-01-02T12:00:00Z"
+                        }
+                        """.trimIndent(),
+                    ),
+            )
 
-        val result = performPreflight()
+            val result = performPreflight()
 
-        assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
-        assertThat(result.reasonCode).isEqualTo("backend_degraded_degraded")
-        assertThat(result.canRetry).isTrue()
-    }
-
-    @Test
-    fun `200 with empty body returns AVAILABLE`() = runTest {
-        // Edge case: empty body should default to available (backend responded)
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(""),
-        )
-
-        val result = performPreflight()
-
-        // Empty body means we can't parse status, defaults to "ok"
-        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
-    }
+            assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+            assertThat(result.isAvailable).isTrue()
+        }
 
     @Test
-    fun `200 with malformed JSON returns AVAILABLE`() = runTest {
-        // Edge case: if JSON parsing fails, default to available (backend responded with 200)
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody("not valid json"),
-        )
+    fun `200 with assistant providerConfigured false returns AVAILABLE`() =
+        runTest {
+            // If providerConfigured is false, we don't mark unavailable -
+            // we just consider backend reachable. The enableAssistant flag controls feature access.
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                        {
+                            "status": "ok",
+                            "assistant": {
+                                "providerConfigured": false,
+                                "providerReachable": false
+                            }
+                        }
+                        """.trimIndent(),
+                    ),
+            )
 
-        val result = performPreflight()
+            val result = performPreflight()
 
-        // Can't parse, healthResponse is null, backendStatus defaults to "ok"
-        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
-    }
+            // providerConfigured=false means we don't have explicit info that provider is down
+            // so we treat backend as available (reachable)
+            assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+        }
+
+    @Test
+    fun `200 with degraded status returns TEMPORARILY_UNAVAILABLE`() =
+        runTest {
+            // If backend explicitly reports degraded status, respect that
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                        {
+                            "status": "degraded",
+                            "ts": "2025-01-02T12:00:00Z"
+                        }
+                        """.trimIndent(),
+                    ),
+            )
+
+            val result = performPreflight()
+
+            assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
+            assertThat(result.reasonCode).isEqualTo("backend_degraded_degraded")
+            assertThat(result.canRetry).isTrue()
+        }
+
+    @Test
+    fun `200 with empty body returns AVAILABLE`() =
+        runTest {
+            // Edge case: empty body should default to available (backend responded)
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(""),
+            )
+
+            val result = performPreflight()
+
+            // Empty body means we can't parse status, defaults to "ok"
+            assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+        }
+
+    @Test
+    fun `200 with malformed JSON returns AVAILABLE`() =
+        runTest {
+            // Edge case: if JSON parsing fails, default to available (backend responded with 200)
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody("not valid json"),
+            )
+
+            val result = performPreflight()
+
+            // Can't parse, healthResponse is null, backendStatus defaults to "ok"
+            assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+        }
 
     /**
      * Simulates the old preflight check logic using /health endpoint.
      * Kept for backward compatibility tests.
      */
-    private suspend fun performPreflight(): PreflightResult = withContext(Dispatchers.IO) {
-        val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
-        val endpoint = "$baseUrl/health"
-        val startTime = System.currentTimeMillis()
+    private suspend fun performPreflight(): PreflightResult =
+        withContext(Dispatchers.IO) {
+            val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
+            val endpoint = "$baseUrl/health"
+            val startTime = System.currentTimeMillis()
 
-        val request = Request.Builder()
-            .url(endpoint)
-            .get()
-            .header("X-API-Key", "test-key")
-            .header("X-Client", "Scanium-Android")
-            .build()
+            val request =
+                Request.Builder()
+                    .url(endpoint)
+                    .get()
+                    .header("X-API-Key", "test-key")
+                    .header("X-Client", "Scanium-Android")
+                    .build()
 
-        try {
-            client.newCall(request).execute().use { response ->
-                val latency = System.currentTimeMillis() - startTime
-                val body = response.body?.string()
+            try {
+                client.newCall(request).execute().use { response ->
+                    val latency = System.currentTimeMillis() - startTime
+                    val body = response.body?.string()
 
-                when {
-                    response.isSuccessful -> {
-                        val healthResponse = body?.let {
-                            runCatching {
-                                json.decodeFromString<TestHealthResponse>(it)
-                            }.getOrNull()
-                        }
+                    when {
+                        response.isSuccessful -> {
+                            val healthResponse =
+                                body?.let {
+                                    runCatching {
+                                        json.decodeFromString<TestHealthResponse>(it)
+                                    }.getOrNull()
+                                }
 
-                        val backendStatus = healthResponse?.status ?: "ok"
-                        val isBackendHealthy = backendStatus.equals("ok", ignoreCase = true) ||
-                            backendStatus.equals("healthy", ignoreCase = true)
+                            val backendStatus = healthResponse?.status ?: "ok"
+                            val isBackendHealthy =
+                                backendStatus.equals("ok", ignoreCase = true) ||
+                                    backendStatus.equals("healthy", ignoreCase = true)
 
-                        val assistantExplicitlyUnavailable = healthResponse?.assistant?.let { assistant ->
-                            assistant.providerConfigured && !assistant.providerReachable
-                        } ?: false
+                            val assistantExplicitlyUnavailable =
+                                healthResponse?.assistant?.let { assistant ->
+                                    assistant.providerConfigured && !assistant.providerReachable
+                                } ?: false
 
-                        when {
-                            assistantExplicitlyUnavailable -> {
-                                PreflightResult(
-                                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                                    latencyMs = latency,
-                                    reasonCode = healthResponse?.assistant?.state ?: "provider_unreachable",
-                                )
-                            }
-                            isBackendHealthy -> {
-                                PreflightResult(
-                                    status = PreflightStatus.AVAILABLE,
-                                    latencyMs = latency,
-                                )
-                            }
-                            else -> {
-                                PreflightResult(
-                                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                                    latencyMs = latency,
-                                    reasonCode = "backend_degraded_$backendStatus",
-                                )
-                            }
-                        }
-                    }
-                    response.code == 401 || response.code == 403 -> {
-                        PreflightResult(
-                            status = PreflightStatus.UNAUTHORIZED,
-                            latencyMs = latency,
-                            reasonCode = "http_${response.code}",
-                        )
-                    }
-                    response.code == 404 -> {
-                        PreflightResult(
-                            status = PreflightStatus.ENDPOINT_NOT_FOUND,
-                            latencyMs = latency,
-                            reasonCode = "endpoint_not_found",
-                        )
-                    }
-                    response.code == 429 -> {
-                        val retryAfter = response.header("Retry-After")?.toIntOrNull()
-                        PreflightResult(
-                            status = PreflightStatus.RATE_LIMITED,
-                            latencyMs = latency,
-                            reasonCode = "http_429",
-                            retryAfterSeconds = retryAfter,
-                        )
-                    }
-                    response.code in 500..599 -> {
-                        PreflightResult(
-                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                            latencyMs = latency,
-                            reasonCode = "http_${response.code}",
-                        )
-                    }
-                    else -> {
-                        PreflightResult(
-                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                            latencyMs = latency,
-                            reasonCode = "http_${response.code}",
-                        )
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            PreflightResult(
-                status = PreflightStatus.OFFLINE,
-                latencyMs = System.currentTimeMillis() - startTime,
-                reasonCode = "exception",
-            )
-        }
-    }
-
-    /**
-     * Simulates the new preflight check logic using /v1/assist/chat endpoint.
-     * This mirrors the actual implementation in AssistantPreflightManagerImpl.
-     */
-    private suspend fun performPreflightChat(): PreflightResult = withContext(Dispatchers.IO) {
-        val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
-        val endpoint = "$baseUrl/v1/assist/chat"
-        val startTime = System.currentTimeMillis()
-
-        // Minimal valid payload - IMPORTANT: items MUST be empty array, not objects
-        // Backend validates schema and returns 400 if items contains objects
-        val payload = """{"message":"ping","items":[],"history":[]}"""
-
-        val request = Request.Builder()
-            .url(endpoint)
-            .post(payload.toRequestBody("application/json".toMediaType()))
-            .header("X-API-Key", "test-key")
-            .header("X-Client", "Scanium-Android")
-            .header("X-Scanium-Preflight", "true")
-            .header("X-Scanium-Device-Id", "test-device-raw-id") // Raw device ID, not hashed
-            .build()
-
-        try {
-            client.newCall(request).execute().use { response ->
-                val latency = System.currentTimeMillis() - startTime
-                val body = response.body?.string()
-
-                when {
-                    response.isSuccessful -> {
-                        val chatResponse = body?.let {
-                            runCatching {
-                                json.decodeFromString<TestChatResponse>(it)
-                            }.getOrNull()
-                        }
-
-                        if (chatResponse?.assistantError != null) {
-                            val errorType = chatResponse.assistantError.type.lowercase()
                             when {
-                                errorType.contains("provider_unavailable") ||
-                                    errorType.contains("provider_unreachable") -> {
+                                assistantExplicitlyUnavailable -> {
                                     PreflightResult(
                                         status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
                                         latencyMs = latency,
-                                        reasonCode = errorType,
+                                        reasonCode = healthResponse?.assistant?.state ?: "provider_unreachable",
                                     )
                                 }
-                                else -> {
+
+                                isBackendHealthy -> {
                                     PreflightResult(
                                         status = PreflightStatus.AVAILABLE,
                                         latencyMs = latency,
                                     )
                                 }
+
+                                else -> {
+                                    PreflightResult(
+                                        status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                        latencyMs = latency,
+                                        reasonCode = "backend_degraded_$backendStatus",
+                                    )
+                                }
                             }
-                        } else {
+                        }
+
+                        response.code == 401 || response.code == 403 -> {
                             PreflightResult(
-                                status = PreflightStatus.AVAILABLE,
+                                status = PreflightStatus.UNAUTHORIZED,
                                 latencyMs = latency,
+                                reasonCode = "http_${response.code}",
+                            )
+                        }
+
+                        response.code == 404 -> {
+                            PreflightResult(
+                                status = PreflightStatus.ENDPOINT_NOT_FOUND,
+                                latencyMs = latency,
+                                reasonCode = "endpoint_not_found",
+                            )
+                        }
+
+                        response.code == 429 -> {
+                            val retryAfter = response.header("Retry-After")?.toIntOrNull()
+                            PreflightResult(
+                                status = PreflightStatus.RATE_LIMITED,
+                                latencyMs = latency,
+                                reasonCode = "http_429",
+                                retryAfterSeconds = retryAfter,
+                            )
+                        }
+
+                        response.code in 500..599 -> {
+                            PreflightResult(
+                                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                latencyMs = latency,
+                                reasonCode = "http_${response.code}",
+                            )
+                        }
+
+                        else -> {
+                            PreflightResult(
+                                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                latencyMs = latency,
+                                reasonCode = "http_${response.code}",
                             )
                         }
                     }
-                    response.code == 400 -> {
-                        // HTTP 400 = preflight request schema error
-                        // This does NOT mean assistant is unavailable - allow chat attempt
-                        PreflightResult(
-                            status = PreflightStatus.CLIENT_ERROR,
-                            latencyMs = latency,
-                            reasonCode = "preflight_schema_error",
-                        )
-                    }
-                    response.code == 401 -> {
-                        // API key invalid or missing - return UNAUTHORIZED for diagnostics
-                        // The ViewModel will still allow chat attempts
-                        PreflightResult(
-                            status = PreflightStatus.UNAUTHORIZED,
-                            latencyMs = latency,
-                            reasonCode = "unauthorized_api_key",
-                        )
-                    }
-                    response.code == 403 -> {
-                        // Forbidden - different reason for diagnostics
-                        PreflightResult(
-                            status = PreflightStatus.UNAUTHORIZED,
-                            latencyMs = latency,
-                            reasonCode = "forbidden_access",
-                        )
-                    }
-                    response.code == 404 -> {
-                        PreflightResult(
-                            status = PreflightStatus.ENDPOINT_NOT_FOUND,
-                            latencyMs = latency,
-                            reasonCode = "endpoint_not_found",
-                        )
-                    }
-                    response.code == 429 -> {
-                        val retryAfter = response.header("Retry-After")?.toIntOrNull()
-                        PreflightResult(
-                            status = PreflightStatus.RATE_LIMITED,
-                            latencyMs = latency,
-                            reasonCode = "http_429",
-                            retryAfterSeconds = retryAfter,
-                        )
-                    }
-                    response.code in 500..599 -> {
-                        PreflightResult(
-                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                            latencyMs = latency,
-                            reasonCode = "http_${response.code}",
-                        )
-                    }
-                    else -> {
-                        // Unknown error - allow chat attempt
-                        PreflightResult(
-                            status = PreflightStatus.UNKNOWN,
-                            latencyMs = latency,
-                            reasonCode = "http_${response.code}",
-                        )
+                }
+            } catch (e: Exception) {
+                PreflightResult(
+                    status = PreflightStatus.OFFLINE,
+                    latencyMs = System.currentTimeMillis() - startTime,
+                    reasonCode = "exception",
+                )
+            }
+        }
+
+    /**
+     * Simulates the new preflight check logic using /v1/assist/chat endpoint.
+     * This mirrors the actual implementation in AssistantPreflightManagerImpl.
+     */
+    private suspend fun performPreflightChat(): PreflightResult =
+        withContext(Dispatchers.IO) {
+            val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
+            val endpoint = "$baseUrl/v1/assist/chat"
+            val startTime = System.currentTimeMillis()
+
+            // Minimal valid payload - IMPORTANT: items MUST be empty array, not objects
+            // Backend validates schema and returns 400 if items contains objects
+            val payload = """{"message":"ping","items":[],"history":[]}"""
+
+            val request =
+                Request.Builder()
+                    .url(endpoint)
+                    .post(payload.toRequestBody("application/json".toMediaType()))
+                    .header("X-API-Key", "test-key")
+                    .header("X-Client", "Scanium-Android")
+                    .header("X-Scanium-Preflight", "true")
+                    .header("X-Scanium-Device-Id", "test-device-raw-id") // Raw device ID, not hashed
+                    .build()
+
+            try {
+                client.newCall(request).execute().use { response ->
+                    val latency = System.currentTimeMillis() - startTime
+                    val body = response.body?.string()
+
+                    when {
+                        response.isSuccessful -> {
+                            val chatResponse =
+                                body?.let {
+                                    runCatching {
+                                        json.decodeFromString<TestChatResponse>(it)
+                                    }.getOrNull()
+                                }
+
+                            if (chatResponse?.assistantError != null) {
+                                val errorType = chatResponse.assistantError.type.lowercase()
+                                when {
+                                    errorType.contains("provider_unavailable") ||
+                                        errorType.contains("provider_unreachable") -> {
+                                        PreflightResult(
+                                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                            latencyMs = latency,
+                                            reasonCode = errorType,
+                                        )
+                                    }
+
+                                    else -> {
+                                        PreflightResult(
+                                            status = PreflightStatus.AVAILABLE,
+                                            latencyMs = latency,
+                                        )
+                                    }
+                                }
+                            } else {
+                                PreflightResult(
+                                    status = PreflightStatus.AVAILABLE,
+                                    latencyMs = latency,
+                                )
+                            }
+                        }
+
+                        response.code == 400 -> {
+                            // HTTP 400 = preflight request schema error
+                            // This does NOT mean assistant is unavailable - allow chat attempt
+                            PreflightResult(
+                                status = PreflightStatus.CLIENT_ERROR,
+                                latencyMs = latency,
+                                reasonCode = "preflight_schema_error",
+                            )
+                        }
+
+                        response.code == 401 -> {
+                            // API key invalid or missing - return UNAUTHORIZED for diagnostics
+                            // The ViewModel will still allow chat attempts
+                            PreflightResult(
+                                status = PreflightStatus.UNAUTHORIZED,
+                                latencyMs = latency,
+                                reasonCode = "unauthorized_api_key",
+                            )
+                        }
+
+                        response.code == 403 -> {
+                            // Forbidden - different reason for diagnostics
+                            PreflightResult(
+                                status = PreflightStatus.UNAUTHORIZED,
+                                latencyMs = latency,
+                                reasonCode = "forbidden_access",
+                            )
+                        }
+
+                        response.code == 404 -> {
+                            PreflightResult(
+                                status = PreflightStatus.ENDPOINT_NOT_FOUND,
+                                latencyMs = latency,
+                                reasonCode = "endpoint_not_found",
+                            )
+                        }
+
+                        response.code == 429 -> {
+                            val retryAfter = response.header("Retry-After")?.toIntOrNull()
+                            PreflightResult(
+                                status = PreflightStatus.RATE_LIMITED,
+                                latencyMs = latency,
+                                reasonCode = "http_429",
+                                retryAfterSeconds = retryAfter,
+                            )
+                        }
+
+                        response.code in 500..599 -> {
+                            PreflightResult(
+                                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                latencyMs = latency,
+                                reasonCode = "http_${response.code}",
+                            )
+                        }
+
+                        else -> {
+                            // Unknown error - allow chat attempt
+                            PreflightResult(
+                                status = PreflightStatus.UNKNOWN,
+                                latencyMs = latency,
+                                reasonCode = "http_${response.code}",
+                            )
+                        }
                     }
                 }
+            } catch (e: java.net.SocketTimeoutException) {
+                // Timeout - return UNKNOWN to allow chat attempt
+                PreflightResult(
+                    status = PreflightStatus.UNKNOWN,
+                    latencyMs = System.currentTimeMillis() - startTime,
+                    reasonCode = "timeout",
+                )
+            } catch (e: Exception) {
+                PreflightResult(
+                    status = PreflightStatus.OFFLINE,
+                    latencyMs = System.currentTimeMillis() - startTime,
+                    reasonCode = "exception",
+                )
             }
-        } catch (e: java.net.SocketTimeoutException) {
-            // Timeout - return UNKNOWN to allow chat attempt
-            PreflightResult(
-                status = PreflightStatus.UNKNOWN,
-                latencyMs = System.currentTimeMillis() - startTime,
-                reasonCode = "timeout",
-            )
-        } catch (e: Exception) {
-            PreflightResult(
-                status = PreflightStatus.OFFLINE,
-                latencyMs = System.currentTimeMillis() - startTime,
-                reasonCode = "exception",
-            )
         }
-    }
 }
 
 /**

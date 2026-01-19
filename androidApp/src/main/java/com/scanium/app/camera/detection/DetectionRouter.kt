@@ -115,9 +115,7 @@ class DetectionRouter(
      * @param detectorType The detector to check
      * @return true if the detector can run, false if throttled
      */
-    fun canInvokeDetector(detectorType: DetectorType): Boolean {
-        return throttleHelper.canInvoke(detectorType)
-    }
+    fun canInvokeDetector(detectorType: DetectorType): Boolean = throttleHelper.canInvoke(detectorType)
 
     /**
      * Attempt to invoke object detection.
@@ -330,13 +328,12 @@ class DetectionRouter(
     fun createThrottledEvent(
         detectorType: DetectorType,
         reason: ThrottleReason = ThrottleReason.INTERVAL_NOT_MET,
-    ): DetectionEvent.Throttled {
-        return DetectionEvent.Throttled(
+    ): DetectionEvent.Throttled =
+        DetectionEvent.Throttled(
             timestampMs = System.currentTimeMillis(),
             source = detectorType,
             reason = reason,
         )
-    }
 
     /**
      * Update throttle interval for a detector.
@@ -361,9 +358,7 @@ class DetectionRouter(
     /**
      * Get the base (unadjusted) throttle interval for a detector.
      */
-    fun getBaseThrottleInterval(detectorType: DetectorType): Long {
-        return throttleHelper.getMinInterval(detectorType)
-    }
+    fun getBaseThrottleInterval(detectorType: DetectorType): Long = throttleHelper.getMinInterval(detectorType)
 
     /**
      * Records frame processing time for adaptive throttling.

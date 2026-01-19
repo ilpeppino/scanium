@@ -344,12 +344,13 @@ class OverlayTransformsTest {
 
     @Test
     fun `rotateNormalizedRect 0 degrees returns unchanged rect`() {
-        val rect = NormalizedRect(
-            left = 0.2f,
-            top = 0.3f,
-            right = 0.6f,
-            bottom = 0.7f
-        )
+        val rect =
+            NormalizedRect(
+                left = 0.2f,
+                top = 0.3f,
+                right = 0.6f,
+                bottom = 0.7f,
+            )
 
         val rotated = rotateNormalizedRect(rect, 0)
 
@@ -358,12 +359,13 @@ class OverlayTransformsTest {
 
     @Test
     fun `rotateNormalizedRect 90 degrees rotates clockwise`() {
-        val rect = NormalizedRect(
-            left = 0.1f,
-            top = 0.1f,
-            right = 0.3f,
-            bottom = 0.3f
-        )
+        val rect =
+            NormalizedRect(
+                left = 0.1f,
+                top = 0.1f,
+                right = 0.3f,
+                bottom = 0.3f,
+            )
 
         val rotated = rotateNormalizedRect(rect, 90)
 
@@ -377,12 +379,13 @@ class OverlayTransformsTest {
 
     @Test
     fun `rotateNormalizedRect 180 degrees flips both axes`() {
-        val rect = NormalizedRect(
-            left = 0.2f,
-            top = 0.3f,
-            right = 0.6f,
-            bottom = 0.7f
-        )
+        val rect =
+            NormalizedRect(
+                left = 0.2f,
+                top = 0.3f,
+                right = 0.6f,
+                bottom = 0.7f,
+            )
 
         val rotated = rotateNormalizedRect(rect, 180)
 
@@ -395,12 +398,13 @@ class OverlayTransformsTest {
 
     @Test
     fun `rotateNormalizedRect 270 degrees rotates counter-clockwise`() {
-        val rect = NormalizedRect(
-            left = 0.2f,
-            top = 0.3f,
-            right = 0.6f,
-            bottom = 0.7f
-        )
+        val rect =
+            NormalizedRect(
+                left = 0.2f,
+                top = 0.3f,
+                right = 0.6f,
+                bottom = 0.7f,
+            )
 
         val rotated = rotateNormalizedRect(rect, 270)
 
@@ -413,12 +417,13 @@ class OverlayTransformsTest {
 
     @Test
     fun `rotateNormalizedRect preserves bbox validity across rotations`() {
-        val rect = NormalizedRect(
-            left = 0.2f,
-            top = 0.3f,
-            right = 0.6f,
-            bottom = 0.7f
-        )
+        val rect =
+            NormalizedRect(
+                left = 0.2f,
+                top = 0.3f,
+                right = 0.6f,
+                bottom = 0.7f,
+            )
 
         listOf(0, 90, 180, 270).forEach { rotation ->
             val rotated = rotateNormalizedRect(rect, rotation)
@@ -436,12 +441,13 @@ class OverlayTransformsTest {
     @Test
     fun `rotateNormalizedRect center point remains centered after 90 rotation`() {
         // Centered square
-        val rect = NormalizedRect(
-            left = 0.4f,
-            top = 0.4f,
-            right = 0.6f,
-            bottom = 0.6f
-        )
+        val rect =
+            NormalizedRect(
+                left = 0.4f,
+                top = 0.4f,
+                right = 0.6f,
+                bottom = 0.6f,
+            )
 
         val rotated = rotateNormalizedRect(rect, 90)
 
@@ -458,21 +464,23 @@ class OverlayTransformsTest {
 
     @Test
     fun `mapBboxToPreview applies scale before offset`() {
-        val bboxNorm = NormalizedRect(
-            left = 0.25f,
-            top = 0.25f,
-            right = 0.75f,
-            bottom = 0.75f
-        )
-        val transform = BboxMappingTransform(
-            scale = 2.0f,
-            offsetX = 100f,
-            offsetY = 50f,
-            rotationDegrees = 0,
-            effectiveImageWidth = 1000,
-            effectiveImageHeight = 1000,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val bboxNorm =
+            NormalizedRect(
+                left = 0.25f,
+                top = 0.25f,
+                right = 0.75f,
+                bottom = 0.75f,
+            )
+        val transform =
+            BboxMappingTransform(
+                scale = 2.0f,
+                offsetX = 100f,
+                offsetY = 50f,
+                rotationDegrees = 0,
+                effectiveImageWidth = 1000,
+                effectiveImageHeight = 1000,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         val result = mapBboxToPreview(bboxNorm, transform)
 
@@ -492,14 +500,15 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Effective: 1080x1920 (swapped), Preview: 1080x1920
         // Perfect aspect match -> scale = 1.0, no crop
@@ -516,14 +525,15 @@ class OverlayTransformsTest {
         val previewWidth = 1920f
         val previewHeight = 1080f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = imageWidth,
-            imageHeight = imageHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 0,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 0,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Image aspect: 1.333, Preview aspect: 1.778
         // Image is taller -> scale by width, crop vertically
@@ -545,14 +555,15 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1080f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = imageWidth,
-            imageHeight = imageHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 0,
-            scaleType = PreviewScaleType.FIT_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 0,
+                scaleType = PreviewScaleType.FIT_CENTER,
+            )
 
         // Image is wider -> scale by width, letterbox vertically
         val expectedScale = previewWidth / imageWidth // 0.5625
@@ -577,21 +588,23 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
-        val bbox = NormalizedRect(
-            left = 0.3f,
-            top = 0.4f,
-            right = 0.7f,
-            bottom = 0.6f
-        )
+        val bbox =
+            NormalizedRect(
+                left = 0.3f,
+                top = 0.4f,
+                right = 0.7f,
+                bottom = 0.6f,
+            )
 
         val mapped = mapBboxToPreview(bbox, transform)
 
@@ -608,23 +621,25 @@ class OverlayTransformsTest {
 
     @Test
     fun `tiny bbox remains valid after transformation`() {
-        val transform = BboxMappingTransform(
-            scale = 1.0f,
-            offsetX = 0f,
-            offsetY = 0f,
-            rotationDegrees = 0,
-            effectiveImageWidth = 1000,
-            effectiveImageHeight = 1000,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            BboxMappingTransform(
+                scale = 1.0f,
+                offsetX = 0f,
+                offsetY = 0f,
+                rotationDegrees = 0,
+                effectiveImageWidth = 1000,
+                effectiveImageHeight = 1000,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // 1% of frame
-        val tinyBbox = NormalizedRect(
-            left = 0.4f,
-            top = 0.4f,
-            right = 0.41f,
-            bottom = 0.41f
-        )
+        val tinyBbox =
+            NormalizedRect(
+                left = 0.4f,
+                top = 0.4f,
+                right = 0.41f,
+                bottom = 0.41f,
+            )
 
         val mapped = mapBboxToPreview(tinyBbox, transform)
 
@@ -636,12 +651,13 @@ class OverlayTransformsTest {
 
     @Test
     fun `multiple rotations compose correctly`() {
-        val originalRect = NormalizedRect(
-            left = 0.2f,
-            top = 0.3f,
-            right = 0.6f,
-            bottom = 0.7f
-        )
+        val originalRect =
+            NormalizedRect(
+                left = 0.2f,
+                top = 0.3f,
+                right = 0.6f,
+                bottom = 0.7f,
+            )
 
         // Rotate 90° four times should return to original
         var rotated = originalRect

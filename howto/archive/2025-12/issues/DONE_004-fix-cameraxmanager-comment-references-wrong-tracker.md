@@ -8,7 +8,8 @@
 
 ***REMOVED******REMOVED*** Problem
 
-CameraXManager.kt line 192 has a KDoc comment that says "uses CandidateTracker" but the actual code uses **ObjectTracker**.
+CameraXManager.kt line 192 has a KDoc comment that says "uses CandidateTracker" but the actual code
+uses **ObjectTracker**.
 
 ***REMOVED******REMOVED*** Location
 
@@ -52,4 +53,5 @@ Comment should say "ObjectTracker" since that's what's actually used.
 
 ***REMOVED******REMOVED*** Resolution Notes
 
-- Updated the KDoc in `CameraXManager.startScanning` to reference **ObjectTracker** and align with the current tracking pipeline.
+- Updated the KDoc in `CameraXManager.startScanning` to reference **ObjectTracker** and align with
+  the current tracking pipeline.

@@ -29,8 +29,6 @@ private val localProperties by lazy(LazyThreadSafetyMode.NONE) {
     }
 }
 
-
-
 /**
  * Allow Android Studio to open either the repo root or the androidApp module directly.
  * When androidApp is opened standalone, rootProject points to /androidApp so we fall
@@ -51,7 +49,10 @@ private fun findLocalPropertiesFile() =
 /**
  * Data class to track resolved value and its source for logging.
  */
-data class ResolvedProperty(val value: String, val source: String)
+data class ResolvedProperty(
+    val value: String,
+    val source: String,
+)
 
 private fun localPropertyOrEnvWithSource(
     key: String,
@@ -73,29 +74,37 @@ private fun localPropertyOrEnv(
     key: String,
     envKey: String,
     defaultValue: String = "",
-): String {
-    return localPropertyOrEnvWithSource(key, envKey, defaultValue).value
-}
+): String = localPropertyOrEnvWithSource(key, envKey, defaultValue).value
 
 val saveClassifierCropsDebug = localPropertyOrEnv("scanium.classifier.save_crops.debug", envKey = "", defaultValue = "false").toBoolean()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
-val keystoreProperties = Properties().apply {
-    if (keystorePropertiesFile.exists()) {
-        keystorePropertiesFile.inputStream().use { load(it) }
+val keystoreProperties =
+    Properties().apply {
+        if (keystorePropertiesFile.exists()) {
+            keystorePropertiesFile.inputStream().use { load(it) }
+        }
     }
-}
 
 // Build fingerprinting: git SHA and build time
 // Compute git SHA with fallback to "nogit" for CI environments without git
-val gitSha = providers.exec {
-    commandLine("git", "rev-parse", "--short", "HEAD")
-}.standardOutput.asText.get().trim().takeIf { it.isNotBlank() } ?: "nogit"
+val gitSha =
+    providers
+        .exec {
+            commandLine("git", "rev-parse", "--short", "HEAD")
+        }.standardOutput.asText
+        .get()
+        .trim()
+        .takeIf { it.isNotBlank() } ?: "nogit"
 
 // Compute build time in ISO-8601 UTC format using date command
-val buildTimeUtc = providers.exec {
-    commandLine("date", "-u", "+%Y-%m-%dT%H:%M:%SZ")
-}.standardOutput.asText.get().trim().takeIf { it.isNotBlank() } ?: "unknown"
-
+val buildTimeUtc =
+    providers
+        .exec {
+            commandLine("date", "-u", "+%Y-%m-%dT%H:%M:%SZ")
+        }.standardOutput.asText
+        .get()
+        .trim()
+        .takeIf { it.isNotBlank() } ?: "unknown"
 
 android {
     namespace = "com.scanium.app"
@@ -198,14 +207,18 @@ android {
                 throw GradleException("keystore.properties not found at: ${keystorePropertiesFile.absolutePath}")
             }
 
-            val storeFilePath = keystoreProperties.getProperty("storeFile")
-                ?: throw GradleException("keystore.properties missing 'storeFile'")
-            val storePasswordValue = keystoreProperties.getProperty("storePassword")
-                ?: throw GradleException("keystore.properties missing 'storePassword'")
-            val keyAliasValue = keystoreProperties.getProperty("keyAlias")
-                ?: throw GradleException("keystore.properties missing 'keyAlias'")
-            val keyPasswordValue = keystoreProperties.getProperty("keyPassword")
-                ?: throw GradleException("keystore.properties missing 'keyPassword'")
+            val storeFilePath =
+                keystoreProperties.getProperty("storeFile")
+                    ?: throw GradleException("keystore.properties missing 'storeFile'")
+            val storePasswordValue =
+                keystoreProperties.getProperty("storePassword")
+                    ?: throw GradleException("keystore.properties missing 'storePassword'")
+            val keyAliasValue =
+                keystoreProperties.getProperty("keyAlias")
+                    ?: throw GradleException("keystore.properties missing 'keyAlias'")
+            val keyPasswordValue =
+                keystoreProperties.getProperty("keyPassword")
+                    ?: throw GradleException("keystore.properties missing 'keyPassword'")
 
             storeFile = rootProject.file(storeFilePath)
             if (storeFile == null || !storeFile!!.exists()) {
@@ -277,9 +290,10 @@ android {
         debug {
             // Debug builds use LAN base URL if configured, otherwise fall back to remote URL
             val debugUrl = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", "")
-            val effectiveDebugUrl = debugUrl.ifEmpty {
-                localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
-            }
+            val effectiveDebugUrl =
+                debugUrl.ifEmpty {
+                    localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+                }
             buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$effectiveDebugUrl\"")
             buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$effectiveDebugUrl/v1/classify\"")
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", saveClassifierCropsDebug.toString())
@@ -398,7 +412,7 @@ tasks.register("verifyVersionCodeProperty") {
                 |The versionCode property was not properly resolved from -P flag.
                 |Check that localPropertyOrEnv() checks project.findProperty() first.
                 |
-                """.trimMargin()
+                """.trimMargin(),
             )
         }
     }
@@ -624,11 +638,12 @@ koverReport {
 /**
  * Masks sensitive values for safe printing (shows first 8 chars only).
  */
-fun maskSecret(value: String): String = when {
-    value.isEmpty() -> "(not set)"
-    value.length <= 8 -> "***"
-    else -> "${value.take(8)}..."
-}
+fun maskSecret(value: String): String =
+    when {
+        value.isEmpty() -> "(not set)"
+        value.length <= 8 -> "***"
+        else -> "${value.take(8)}..."
+    }
 
 // Create validation task for backend configuration
 tasks.register("validateBackendConfig") {
@@ -698,7 +713,7 @@ tasks.register("validateDevDebugBackendConfig") {
                 |║  See: docs/DEV_BACKEND_CONNECTIVITY.md for detailed instructions      ║
                 |║                                                                       ║
                 |╚═══════════════════════════════════════════════════════════════════════╝
-                """.trimMargin()
+                """.trimMargin(),
             )
         }
 

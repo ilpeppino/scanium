@@ -15,77 +15,124 @@
     "indoor"
   ],
   "categories": [
-
     {
       "id": "drinkware",
       "label": "Drinkware",
       "itemCategoryName": "HOME_GOOD",
       "priority": 10,
       "priorityTier": 1,
-      "tokens": ["mug", "cup", "glass", "bottle", "tumbler", "thermos"],
-      "attributes": { "segment": "container" }
+      "tokens": [
+        "mug",
+        "cup",
+        "glass",
+        "bottle",
+        "tumbler",
+        "thermos"
+      ],
+      "attributes": {
+        "segment": "container"
+      }
     },
-
     {
       "id": "tableware",
       "label": "Tableware",
       "itemCategoryName": "HOME_GOOD",
       "priority": 9,
       "priorityTier": 1,
-      "tokens": ["plate", "bowl", "dish", "saucer"],
-      "attributes": { "segment": "utensil" }
+      "tokens": [
+        "plate",
+        "bowl",
+        "dish",
+        "saucer"
+      ],
+      "attributes": {
+        "segment": "utensil"
+      }
     },
-
     {
       "id": "cutlery",
       "label": "Cutlery",
       "itemCategoryName": "HOME_GOOD",
       "priority": 9,
       "priorityTier": 1,
-      "tokens": ["fork", "knife", "spoon", "cutlery"],
-      "attributes": { "segment": "utensil" }
+      "tokens": [
+        "fork",
+        "knife",
+        "spoon",
+        "cutlery"
+      ],
+      "attributes": {
+        "segment": "utensil"
+      }
     },
-
     {
       "id": "kitchen_appliance",
       "label": "Kitchen Appliance",
       "itemCategoryName": "HOME_GOOD",
       "priority": 8,
       "priorityTier": 1,
-      "tokens": ["kettle", "coffee maker", "toaster", "blender", "microwave"],
-      "attributes": { "segment": "appliance" }
+      "tokens": [
+        "kettle",
+        "coffee maker",
+        "toaster",
+        "blender",
+        "microwave"
+      ],
+      "attributes": {
+        "segment": "appliance"
+      }
     },
-
     {
       "id": "food_container",
       "label": "Food Container",
       "itemCategoryName": "HOME_GOOD",
       "priority": 8,
       "priorityTier": 1,
-      "tokens": ["container", "lunchbox", "storage box", "jar"],
-      "attributes": { "segment": "container" }
+      "tokens": [
+        "container",
+        "lunchbox",
+        "storage box",
+        "jar"
+      ],
+      "attributes": {
+        "segment": "container"
+      }
     },
-
     {
       "id": "cleaning_item",
       "label": "Cleaning Item",
       "itemCategoryName": "HOME_GOOD",
       "priority": 7,
       "priorityTier": 1,
-      "tokens": ["sponge", "brush", "broom", "mop", "detergent"],
-      "attributes": { "segment": "cleaning" }
+      "tokens": [
+        "sponge",
+        "brush",
+        "broom",
+        "mop",
+        "detergent"
+      ],
+      "attributes": {
+        "segment": "cleaning"
+      }
     },
-
     {
       "id": "textile",
       "label": "Household Textile",
       "itemCategoryName": "HOME_GOOD",
       "priority": 7,
       "priorityTier": 1,
-      "tokens": ["towel", "napkin", "cloth", "blanket", "sheet", "pillow"],
-      "attributes": { "segment": "textile" }
+      "tokens": [
+        "towel",
+        "napkin",
+        "cloth",
+        "blanket",
+        "sheet",
+        "pillow"
+      ],
+      "attributes": {
+        "segment": "textile"
+      }
     },
-
     {
       "id": "consumer_electronics_portable",
       "label": "Portable Electronics",
@@ -107,9 +154,10 @@
         "headset",
         "earbuds"
       ],
-      "attributes": { "segment": "electronics" }
+      "attributes": {
+        "segment": "electronics"
+      }
     },
-
     {
       "id": "consumer_electronics_stationary",
       "label": "Stationary Electronics",
@@ -125,9 +173,10 @@
         "desktop",
         "printer"
       ],
-      "attributes": { "segment": "electronics" }
+      "attributes": {
+        "segment": "electronics"
+      }
     },
-
     {
       "id": "home_electronics",
       "label": "Home Electronics",
@@ -144,57 +193,93 @@
         "controller",
         "gaming controller"
       ],
-      "attributes": { "segment": "electronics" }
+      "attributes": {
+        "segment": "electronics"
+      }
     },
-
     {
       "id": "electronics_small",
       "label": "Small Electronics",
       "itemCategoryName": "ELECTRONICS",
       "priority": 8,
       "priorityTier": 1,
-      "tokens": ["remote", "charger", "cable", "adapter", "speaker"],
-      "attributes": { "segment": "electronics" }
+      "tokens": [
+        "remote",
+        "charger",
+        "cable",
+        "adapter",
+        "speaker"
+      ],
+      "attributes": {
+        "segment": "electronics"
+      }
     },
-
     {
       "id": "decor",
       "label": "Decor",
       "itemCategoryName": "HOME_GOOD",
       "priority": 5,
       "priorityTier": 2,
-      "tokens": ["vase", "frame", "candle", "ornament", "decor"],
-      "attributes": { "segment": "decor" }
+      "tokens": [
+        "vase",
+        "frame",
+        "candle",
+        "ornament",
+        "decor"
+      ],
+      "attributes": {
+        "segment": "decor"
+      }
     },
-
     {
       "id": "plant",
       "label": "Plant",
       "itemCategoryName": "HOME_GOOD",
       "priority": 6,
       "priorityTier": 2,
-      "tokens": ["plant", "flower", "potted plant", "houseplant"],
-      "attributes": { "segment": "plant" }
+      "tokens": [
+        "plant",
+        "flower",
+        "potted plant",
+        "houseplant"
+      ],
+      "attributes": {
+        "segment": "plant"
+      }
     },
-
     {
       "id": "storage",
       "label": "Storage & Organization",
       "itemCategoryName": "HOME_GOOD",
       "priority": 6,
       "priorityTier": 2,
-      "tokens": ["box", "basket", "drawer", "organizer"],
-      "attributes": { "segment": "storage" }
+      "tokens": [
+        "box",
+        "basket",
+        "drawer",
+        "organizer"
+      ],
+      "attributes": {
+        "segment": "storage"
+      }
     },
-
     {
       "id": "furniture",
       "label": "Furniture",
       "itemCategoryName": "HOME_GOOD",
       "priority": 2,
       "priorityTier": 3,
-      "tokens": ["chair", "table", "desk", "sofa", "couch", "bed"],
-      "attributes": { "segment": "furniture" }
+      "tokens": [
+        "chair",
+        "table",
+        "desk",
+        "sofa",
+        "couch",
+        "bed"
+      ],
+      "attributes": {
+        "segment": "furniture"
+      }
     }
   ]
 }

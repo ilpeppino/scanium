@@ -22,7 +22,7 @@ object AssistantErrorDisplay {
         if (failure == null) return null
 
         return when (failure.type) {
-            AssistantBackendErrorType.AUTH_REQUIRED ->
+            AssistantBackendErrorType.AUTH_REQUIRED -> {
                 ErrorInfo(
                     title = "Sign In Required",
                     explanation =
@@ -31,8 +31,9 @@ object AssistantErrorDisplay {
                     actionHint = "Tap to sign in with Google.",
                     showRetry = false,
                 )
+            }
 
-            AssistantBackendErrorType.AUTH_INVALID ->
+            AssistantBackendErrorType.AUTH_INVALID -> {
                 ErrorInfo(
                     title = "Session Expired",
                     explanation =
@@ -41,8 +42,9 @@ object AssistantErrorDisplay {
                     actionHint = "Sign in again to continue.",
                     showRetry = false,
                 )
+            }
 
-            AssistantBackendErrorType.UNAUTHORIZED ->
+            AssistantBackendErrorType.UNAUTHORIZED -> {
                 ErrorInfo(
                     title = "Authorization Required",
                     explanation =
@@ -51,8 +53,9 @@ object AssistantErrorDisplay {
                     actionHint = "Check your account status or sign in again.",
                     showRetry = false,
                 )
+            }
 
-            AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED ->
+            AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED -> {
                 ErrorInfo(
                     title = "Assistant Not Configured",
                     explanation =
@@ -61,16 +64,18 @@ object AssistantErrorDisplay {
                     actionHint = "Contact support or use a production build.",
                     showRetry = false,
                 )
+            }
 
-            AssistantBackendErrorType.RATE_LIMITED ->
+            AssistantBackendErrorType.RATE_LIMITED -> {
                 ErrorInfo(
                     title = "Rate Limit Reached",
                     explanation = buildRateLimitExplanation(failure),
                     actionHint = "Wait a moment before sending another message.",
                     showRetry = true,
                 )
+            }
 
-            AssistantBackendErrorType.NETWORK_TIMEOUT ->
+            AssistantBackendErrorType.NETWORK_TIMEOUT -> {
                 ErrorInfo(
                     title = "Request Timed Out",
                     explanation =
@@ -79,8 +84,9 @@ object AssistantErrorDisplay {
                     actionHint = "Try again or check your connection.",
                     showRetry = true,
                 )
+            }
 
-            AssistantBackendErrorType.NETWORK_UNREACHABLE ->
+            AssistantBackendErrorType.NETWORK_UNREACHABLE -> {
                 ErrorInfo(
                     title = "Cannot Reach Server",
                     explanation =
@@ -89,8 +95,9 @@ object AssistantErrorDisplay {
                     actionHint = "Connect to the internet and retry.",
                     showRetry = true,
                 )
+            }
 
-            AssistantBackendErrorType.VISION_UNAVAILABLE ->
+            AssistantBackendErrorType.VISION_UNAVAILABLE -> {
                 ErrorInfo(
                     title = "Image Analysis Unavailable",
                     explanation =
@@ -99,8 +106,9 @@ object AssistantErrorDisplay {
                     actionHint = "Retry or continue with text questions.",
                     showRetry = true,
                 )
+            }
 
-            AssistantBackendErrorType.VALIDATION_ERROR ->
+            AssistantBackendErrorType.VALIDATION_ERROR -> {
                 ErrorInfo(
                     title = "Invalid Request",
                     explanation =
@@ -109,8 +117,9 @@ object AssistantErrorDisplay {
                     actionHint = "Try rephrasing your question or restart the app.",
                     showRetry = false,
                 )
+            }
 
-            AssistantBackendErrorType.PROVIDER_UNAVAILABLE ->
+            AssistantBackendErrorType.PROVIDER_UNAVAILABLE -> {
                 ErrorInfo(
                     title = "Assistant Temporarily Unavailable",
                     explanation =
@@ -119,6 +128,7 @@ object AssistantErrorDisplay {
                     actionHint = "Retry later or continue with local suggestions.",
                     showRetry = true,
                 )
+            }
         }
     }
 

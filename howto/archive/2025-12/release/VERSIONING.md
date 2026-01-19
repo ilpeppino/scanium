@@ -20,10 +20,10 @@ This project uses a standard `versionCode` and `versionName` approach for Androi
 
 Versions are read from `local.properties` or environment variables in `androidApp/build.gradle.kts`:
 
-| Key | Property (`local.properties`) | Env Var | Default |
-|-----|-------------------------------|---------|---------|
-| Version Code | `scanium.version.code` | `SCANIUM_VERSION_CODE` | `1` |
-| Version Name | `scanium.version.name` | `SCANIUM_VERSION_NAME` | `1.0` |
+| Key          | Property (`local.properties`) | Env Var                | Default |
+|--------------|-------------------------------|------------------------|---------|
+| Version Code | `scanium.version.code`        | `SCANIUM_VERSION_CODE` | `1`     |
+| Version Name | `scanium.version.name`        | `SCANIUM_VERSION_NAME` | `1.0`   |
 
 ***REMOVED******REMOVED*** 4. Release Bumping
 

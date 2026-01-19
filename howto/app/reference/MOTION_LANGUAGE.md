@@ -1,22 +1,24 @@
 ***REMOVED*** Scanium Motion Language
 
-This document describes the motion language foundations for Scanium's camera-first scanning experience.
+This document describes the motion language foundations for Scanium's camera-first scanning
+experience.
 
 ***REMOVED******REMOVED*** Brand Motion Rules
 
 - **Minimal & Fast**: Motion must be confidence-inspiring, not distracting
 - **No Bouncy Effects**: No spring/elastic animations
-- **Yellow Accent Only**: `***REMOVED***FFD400` is used ONLY for action accents (scan pulse/confirmation), never as dominant backgrounds
+- **Yellow Accent Only**: `***REMOVED***FFD400` is used ONLY for action accents (scan pulse/confirmation), never
+  as dominant backgrounds
 - **No Continuous Loops**: No radar sweeps, rotating loaders, or infinite scanning animations
 
 ***REMOVED******REMOVED*** Timing Constraints
 
-| Animation | Duration | Spec |
-|-----------|----------|------|
-| Scan Frame Appear | ≤100ms | Linear fade-in |
-| Lightning Pulse | 200-300ms | Single pass, no loop |
-| Price Count-Up | 1.0-1.5s | 3-4 steps, ease-out |
-| Confirmation Glow | ≤200ms | Quick settle |
+| Animation         | Duration  | Spec                 |
+|-------------------|-----------|----------------------|
+| Scan Frame Appear | ≤100ms    | Linear fade-in       |
+| Lightning Pulse   | 200-300ms | Single pass, no loop |
+| Price Count-Up    | 1.0-1.5s  | 3-4 steps, ease-out  |
+| Confirmation Glow | ≤200ms    | Quick settle         |
 
 ***REMOVED******REMOVED*** Components
 
@@ -24,16 +26,16 @@ This document describes the motion language foundations for Scanium's camera-fir
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Core Files
 
-| File | Purpose |
-|------|---------|
-| `MotionConstants.kt` | Timing and visual constants |
-| `MotionConfig.kt` | Debug toggle (BuildConfig.DEBUG only) |
-| `ScanFrameAppear.kt` | Quick fade-in rounded-rect frame |
-| `LightningScanPulse.kt` | Single yellow pulse animation |
-| `PriceCountUp.kt` | Animated price display (discrete steps) |
-| `PriceCountUpUtil.kt` | Pure Kotlin step generator (testable) |
+| File                       | Purpose                                          |
+|----------------------------|--------------------------------------------------|
+| `MotionConstants.kt`       | Timing and visual constants                      |
+| `MotionConfig.kt`          | Debug toggle (BuildConfig.DEBUG only)            |
+| `ScanFrameAppear.kt`       | Quick fade-in rounded-rect frame                 |
+| `LightningScanPulse.kt`    | Single yellow pulse animation                    |
+| `PriceCountUp.kt`          | Animated price display (discrete steps)          |
+| `PriceCountUpUtil.kt`      | Pure Kotlin step generator (testable)            |
 | `MotionEnhancedOverlay.kt` | Wrapper integrating motion with DetectionOverlay |
-| `MotionPreviews.kt` | Compose preview showcase |
+| `MotionPreviews.kt`        | Compose preview showcase                         |
 
 ***REMOVED******REMOVED******REMOVED*** Colors (defined in `ui/theme/Color.kt`)
 
@@ -61,6 +63,7 @@ val LightningYellow = Color(0xFFFFD400)     // Action accent only
 ***REMOVED******REMOVED*** Developer Toggle
 
 Motion overlays can be toggled via:
+
 - `SettingsRepository.devMotionOverlaysEnabledFlow` (persisted)
 - `MotionConfig.setMotionOverlaysEnabled()` (in-memory, synced from settings)
 
@@ -78,7 +81,7 @@ In release builds, motion overlays are always enabled.
 - **Unit Tests**: `PriceCountUpUtilTest.kt` - Tests step generator logic
 - **Compose Previews**: `MotionPreviews.kt` - Visual preview showcase
 - **Manual Verification**:
-  1. Scan frame appears quickly on detection
-  2. Pulse triggers only on item confirmation (LOCKED state)
-  3. Prices count up once then remain stable
-  4. No major FPS drop during animations
+    1. Scan frame appears quickly on detection
+    2. Pulse triggers only on item confirmation (LOCKED state)
+    3. Prices count up once then remain stable
+    4. No major FPS drop during animations

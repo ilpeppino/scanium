@@ -8,7 +8,9 @@
 
 ***REMOVED******REMOVED*** Executive Summary
 
-This audit validates data availability for all Scanium Grafana dashboards and identifies root causes for dashboard failures. The primary finding is a **Mimir ingester-to-querier data visibility issue** preventing backend metrics from being queryable despite successful ingestion.
+This audit validates data availability for all Scanium Grafana dashboards and identifies root causes
+for dashboard failures. The primary finding is a **Mimir ingester-to-querier data visibility issue**
+preventing backend metrics from being queryable despite successful ingestion.
 
 ***REMOVED******REMOVED******REMOVED*** Critical Findings
 
@@ -22,23 +24,24 @@ This audit validates data availability for all Scanium Grafana dashboards and id
 
 ***REMOVED******REMOVED*** Dashboard Status Summary
 
-| Dashboard | Signals | Initial Status | Root Cause | Priority |
-|-----------|---------|----------------|------------|----------|
-| Backend API Performance | Metrics | **FAIL_NO_DATA** | Mimir query anomaly (backend metrics) | P0 |
-| Backend Errors | Metrics | **FAIL_NO_DATA** | Mimir query anomaly (backend metrics) | P0 |
-| Backend Health | Metrics | **FAIL_NO_DATA** | Mimir query anomaly (backend metrics) | P0 |
-| Errors & Failures | Metrics | **FAIL_NO_DATA** | Mimir query anomaly (backend metrics) | P1 |
-| LGTM Stack Health | Metrics | **PARTIAL_DATA** | Pipeline metrics OK, backend missing | P1 |
-| Logs Explorer | Logs (LogQL) | **FAIL_NO_DATA** | No logs in Loki (all sources) | P1 |
-| Mobile App Health | Logs (LogQL) | **EXPECTED_NO_DATA** | No mobile traffic (expected) | P3 |
-| OpenAI Runtime | Metrics/Logs | **FAIL_NO_DATA** | Backend metrics + logs missing | P1 |
-| Ops Overview | Metrics | **FAIL_NO_DATA** | Mimir query anomaly (backend metrics) | P1 |
-| Performance & Latency | Metrics | **FAIL_NO_DATA** | Mimir query anomaly (backend metrics) | P0 |
-| Pipeline Health | Logs (LogQL) | **FAIL_NO_DATA** | No logs in Loki | P2 |
-| System Overview (RED) | Metrics | **FAIL_NO_DATA** | Mimir query anomaly (backend metrics) | P0 |
-| Traces Drilldown | Metrics/Traces | **FAIL_NO_DATA** | Mimir query anomaly (backend metrics) | P1 |
+| Dashboard               | Signals        | Initial Status       | Root Cause                            | Priority |
+|-------------------------|----------------|----------------------|---------------------------------------|----------|
+| Backend API Performance | Metrics        | **FAIL_NO_DATA**     | Mimir query anomaly (backend metrics) | P0       |
+| Backend Errors          | Metrics        | **FAIL_NO_DATA**     | Mimir query anomaly (backend metrics) | P0       |
+| Backend Health          | Metrics        | **FAIL_NO_DATA**     | Mimir query anomaly (backend metrics) | P0       |
+| Errors & Failures       | Metrics        | **FAIL_NO_DATA**     | Mimir query anomaly (backend metrics) | P1       |
+| LGTM Stack Health       | Metrics        | **PARTIAL_DATA**     | Pipeline metrics OK, backend missing  | P1       |
+| Logs Explorer           | Logs (LogQL)   | **FAIL_NO_DATA**     | No logs in Loki (all sources)         | P1       |
+| Mobile App Health       | Logs (LogQL)   | **EXPECTED_NO_DATA** | No mobile traffic (expected)          | P3       |
+| OpenAI Runtime          | Metrics/Logs   | **FAIL_NO_DATA**     | Backend metrics + logs missing        | P1       |
+| Ops Overview            | Metrics        | **FAIL_NO_DATA**     | Mimir query anomaly (backend metrics) | P1       |
+| Performance & Latency   | Metrics        | **FAIL_NO_DATA**     | Mimir query anomaly (backend metrics) | P0       |
+| Pipeline Health         | Logs (LogQL)   | **FAIL_NO_DATA**     | No logs in Loki                       | P2       |
+| System Overview (RED)   | Metrics        | **FAIL_NO_DATA**     | Mimir query anomaly (backend metrics) | P0       |
+| Traces Drilldown        | Metrics/Traces | **FAIL_NO_DATA**     | Mimir query anomaly (backend metrics) | P1       |
 
 **Legend:**
+
 - **FAIL_NO_DATA:** All queries return empty (no datasource errors)
 - **PARTIAL_DATA:** Some panels work, others return empty
 - **EXPECTED_NO_DATA:** No data expected (no traffic/source exists)
@@ -47,21 +50,21 @@ This audit validates data availability for all Scanium Grafana dashboards and id
 
 ***REMOVED******REMOVED*** Signal Dependency Mapping
 
-| Dashboard | Metrics (Mimir) | Logs (Loki) | Traces (Tempo) | External |
-|-----------|-----------------|-------------|----------------|----------|
-| Backend API Performance | ✓ (PromQL) | - | - | - |
-| Backend Errors | ✓ (PromQL) | - | - | - |
-| Backend Health | ✓ (PromQL) | - | - | - |
-| Errors & Failures | ✓ (PromQL) | - | - | - |
-| LGTM Stack Health | ✓ (PromQL) | - | - | - |
-| Logs Explorer | - | ✓ (LogQL) | - | - |
-| Mobile App Health | - | ✓ (LogQL) | - | - |
-| OpenAI Runtime | ✓ (PromQL) | ✓ (LogQL) | - | - |
-| Ops Overview | ✓ (PromQL) | - | - | - |
-| Performance & Latency | ✓ (PromQL) | - | - | - |
-| Pipeline Health | - | ✓ (LogQL) | - | - |
-| System Overview (RED) | ✓ (PromQL) | - | - | - |
-| Traces Drilldown | ✓ (PromQL) | ✓ (Tempo) | - | - |
+| Dashboard               | Metrics (Mimir) | Logs (Loki) | Traces (Tempo) | External |
+|-------------------------|-----------------|-------------|----------------|----------|
+| Backend API Performance | ✓ (PromQL)      | -           | -              | -        |
+| Backend Errors          | ✓ (PromQL)      | -           | -              | -        |
+| Backend Health          | ✓ (PromQL)      | -           | -              | -        |
+| Errors & Failures       | ✓ (PromQL)      | -           | -              | -        |
+| LGTM Stack Health       | ✓ (PromQL)      | -           | -              | -        |
+| Logs Explorer           | -               | ✓ (LogQL)   | -              | -        |
+| Mobile App Health       | -               | ✓ (LogQL)   | -              | -        |
+| OpenAI Runtime          | ✓ (PromQL)      | ✓ (LogQL)   | -              | -        |
+| Ops Overview            | ✓ (PromQL)      | -           | -              | -        |
+| Performance & Latency   | ✓ (PromQL)      | -           | -              | -        |
+| Pipeline Health         | -               | ✓ (LogQL)   | -              | -        |
+| System Overview (RED)   | ✓ (PromQL)      | -           | -              | -        |
+| Traces Drilldown        | ✓ (PromQL)      | ✓ (Tempo)   | -              | -        |
 
 ---
 
@@ -72,6 +75,7 @@ This audit validates data availability for all Scanium Grafana dashboards and id
 **File:** `/volume1/docker/scanium/repo/monitoring/docker-compose.yml`
 
 **Running Containers:**
+
 ```
 scanium-alloy          Up 29 minutes (unhealthy)
 scanium-backend        Up 4 hours (healthy)
@@ -83,11 +87,13 @@ scanium-tempo          Up 4 hours (healthy)
 ```
 
 **Networks:**
+
 - `scanium-observability` (bridge) - monitoring stack
 - `backend_scanium-network` (bridge) - backend services
 - Alloy is connected to BOTH networks (required for backend scraping)
 
 **Datasources:**
+
 - **Loki** (uid=LOKI, type=loki) - Logs
 - **Mimir** (uid=MIMIR, type=prometheus) - Metrics
 - **Tempo** (uid=TEMPO, type=tempo) - Traces
@@ -129,6 +135,7 @@ traces-drilldown.json           (15 KB, 12 PromQL queries)
 **Metric Names in Index:** 1,064 (historical + current)
 
 **Series Existence:**
+
 ```bash
 ***REMOVED*** Series API shows backend series exist (last hour)
 {
@@ -147,6 +154,7 @@ traces-drilldown.json           (15 KB, 12 PromQL queries)
 ```
 
 **Query Test (PromQL):**
+
 ```promql
 ***REMOVED*** Query: up{job="scanium-backend"}
 ***REMOVED*** Time: now (epoch 1768045189)
@@ -160,6 +168,7 @@ traces-drilldown.json           (15 KB, 12 PromQL queries)
 ```
 
 **Pipeline Metrics:** ✅ Working
+
 ```promql
 ***REMOVED*** Query: up{source="pipeline"}
 ***REMOVED*** Result: 5 series (alloy, loki, mimir, tempo, loki)
@@ -167,6 +176,7 @@ traces-drilldown.json           (15 KB, 12 PromQL queries)
 ```
 
 **Backend Application Metrics:**
+
 ```promql
 ***REMOVED*** Query: scanium_http_requests_total
 ***REMOVED*** Result: EMPTY (metric name exists in index)
@@ -176,6 +186,7 @@ traces-drilldown.json           (15 KB, 12 PromQL queries)
 ```
 
 **Backend Endpoint Verification:**
+
 ```bash
 ***REMOVED*** Backend exposes 52 metrics at :8080/metrics
 curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^***REMOVED*** HELP" | wc -l
@@ -203,6 +214,7 @@ curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^***REMOVED*** HELP" | wc 
 ```
 
 **Expected Sources:**
+
 - `source="scanium-backend"` (Docker logs via loki.source.docker)
 - `source="pipeline"` (stack logs)
 - `source="scanium-mobile"` (mobile app logs via OTLP)
@@ -218,6 +230,7 @@ curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^***REMOVED*** HELP" | wc 
 **Created:** `/Users/family/dev/scanium/scripts/monitoring/generate-dashboard-traffic.sh`
 
 **Capabilities:**
+
 - Normal traffic (200s): Health endpoint + valid API calls
 - Error traffic (4xx): Unauthorized config endpoint
 - Error traffic (5xx): Invalid payloads
@@ -225,6 +238,7 @@ curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^***REMOVED*** HELP" | wc 
 - OpenAI traffic: Assistant chat endpoint
 
 **Usage:**
+
 ```bash
 ***REMOVED*** Generate all traffic types for 90 seconds
 ./generate-dashboard-traffic.sh --normal --errors --duration 90
@@ -233,7 +247,8 @@ curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^***REMOVED*** HELP" | wc 
 ./generate-dashboard-traffic.sh --normal --duration 60
 ```
 
-**Note:** Traffic generator was NOT executed during this audit phase, as the root cause is not lack of traffic but a **Mimir ingester-to-querier visibility issue**.
+**Note:** Traffic generator was NOT executed during this audit phase, as the root cause is not lack
+of traffic but a **Mimir ingester-to-querier visibility issue**.
 
 ---
 
@@ -287,6 +302,7 @@ Mimir:     Sat Jan 10 11:39:50 UTC 2026
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Alloy Scraping Status
 
 **Alloy Metrics:**
+
 ```
 ***REMOVED*** Scrape targets discovered
 prometheus_target_scrape_pool_targets{scrape_job="prometheus.scrape.backend"} 1
@@ -304,6 +320,7 @@ prometheus_remote_storage_samples_pending{...backend...} 0
 ```
 
 **Analysis:**
+
 - ✅ Alloy is scraping backend successfully (1 target, no sync failures)
 - ✅ Alloy is writing 1,559 samples total with FRESH timestamps (7s ago)
 - ✅ Zero remote write failures or pending samples
@@ -345,6 +362,7 @@ prometheus.remote_write "backend" {
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 6. Mimir Ingester vs Querier Visibility
 
 **Mimir Configuration:**
+
 ```yaml
 limits:
   ingestion_rate: 100000
@@ -363,6 +381,7 @@ blocks_storage:
 ```
 
 **Mimir Logs:**
+
 ```
 ***REMOVED*** No errors in last 10 minutes
 ***REMOVED*** Compactor running successfully
@@ -371,7 +390,8 @@ blocks_storage:
 ```
 
 **Hypothesis:**
-Data exists in Mimir's **ingester WAL** but hasn't been **flushed to queryable blocks** yet. Block flushing interval is 2 hours, and last queryable data is from 1 hour ago, suggesting:
+Data exists in Mimir's **ingester WAL** but hasn't been **flushed to queryable blocks** yet. Block
+flushing interval is 2 hours, and last queryable data is from 1 hour ago, suggesting:
 
 1. Backend process restarted 4.5 hours ago (2026-01-10 07:02:29 UTC)
 2. Metrics were scraped successfully until 1 hour ago
@@ -381,6 +401,7 @@ Data exists in Mimir's **ingester WAL** but hasn't been **flushed to queryable b
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 7. Tenant / Org-ID Validation
 
 **Tenant Configuration:**
+
 - Mimir: Tenant = `anonymous` (confirmed in logs)
 - Alloy: No X-Scope-OrgID header configured
 - Grafana datasource: No tenant override
@@ -411,9 +432,12 @@ curl /prometheus/api/v1/label/__name__/values
 
 ***REMOVED******REMOVED******REMOVED*** Primary Issue: Mimir Ingester-to-Querier Data Gap
 
-**Root Cause:** Backend metrics are being successfully scraped by Alloy and written to Mimir's ingester, but are **not visible to the querier** due to a block flushing delay or ingester-querier synchronization issue.
+**Root Cause:** Backend metrics are being successfully scraped by Alloy and written to Mimir's
+ingester, but are **not visible to the querier** due to a block flushing delay or ingester-querier
+synchronization issue.
 
 **Evidence:**
+
 1. ✅ Alloy is scraping backend:8080/metrics every 60s successfully
 2. ✅ Alloy writes 1,559 samples with 0 failures, fresh timestamps (< 7s old)
 3. ✅ Backend exposes 52 metrics including HTTP request metrics
@@ -424,18 +448,22 @@ curl /prometheus/api/v1/label/__name__/values
 8. ❌ Application metrics (scanium_http_*) never appear in queries
 
 **Timeline:**
+
 - **1768028550** (07:02:30 UTC): Backend process started
 - **1768041589** (10:39:49 UTC): Last queryable backend metric timestamp
 - **1768045189** (11:39:49 UTC): Current time during audit
 - **Gap:** 1 hour with no queryable data
 
 **Mimir Block Flushing:**
+
 - Block flush interval: 2 hours (per config)
 - Data should flush 2 hours after ingestion
 - Data from 1 hour ago exists (was flushed)
 - Data from last hour does NOT exist in blocks yet
 
-**Hypothesis Confirmed:** Data is in Mimir's **ingester memory** but not yet **persisted to blocks** and therefore not visible to the **querier**. This explains:
+**Hypothesis Confirmed:** Data is in Mimir's **ingester memory** but not yet **persisted to blocks**
+and therefore not visible to the **querier**. This explains:
+
 - Why Alloy shows successful writes
 - Why series API shows series exist
 - Why queries return empty for recent data
@@ -446,18 +474,21 @@ curl /prometheus/api/v1/label/__name__/values
 **Root Cause:** Loki is not receiving any logs from Docker containers.
 
 **Evidence:**
+
 1. ❌ Loki label API returns empty (no labels exist)
 2. ❌ All LogQL queries return 0 lines processed
 3. ✅ Loki is healthy (healthcheck passing)
 4. ✅ Alloy has `loki.source.docker.backend` configured
 
 **Possible Causes:**
+
 - Docker socket permissions issue
 - Alloy can't read Docker logs
 - Log forwarding pipeline misconfigured
 - Containers not logging to stdout/stderr
 
 **Impact:**
+
 - Logs Explorer: FAIL_NO_DATA
 - Pipeline Health: FAIL_NO_DATA
 - Mobile App Health: EXPECTED_NO_DATA (no mobile traffic)
@@ -485,8 +516,8 @@ curl /prometheus/api/v1/label/__name__/values
    ```
 
 3. **Verify Query-Ingester Path**
-   - Check if Grafana datasource URL should point to ingester endpoint
-   - Or configure Mimir query-frontend to include ingester data
+    - Check if Grafana datasource URL should point to ingester endpoint
+    - Or configure Mimir query-frontend to include ingester data
 
 4. **Reduce Block Flush Interval** (if issue persists)
    ```yaml
@@ -544,7 +575,9 @@ curl /prometheus/api/v1/label/__name__/values
 ***REMOVED******REMOVED*** Traffic Classes & Dashboard Dependencies
 
 ***REMOVED******REMOVED******REMOVED*** Class A: Backend Normal Traffic (200s)
+
 **Dashboards Affected:**
+
 - Backend Health
 - System Overview (RED)
 - Performance & Latency
@@ -552,6 +585,7 @@ curl /prometheus/api/v1/label/__name__/values
 - Backend API Performance
 
 **Metrics Required:**
+
 ```promql
 scanium_http_requests_total{status_code="200"}
 scanium_http_request_duration_ms_bucket
@@ -559,45 +593,58 @@ up{job="scanium-backend"}
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Class B: Backend Error Traffic (4xx + 5xx)
+
 **Dashboards Affected:**
+
 - Backend Errors
 - Errors & Failures
 - Logs Explorer (if logs fixed)
 - Traces Drilldown
 
 **Metrics Required:**
+
 ```promql
 scanium_http_requests_total{status_code=~"4..|5.."}
 rate(scanium_http_requests_total{status_code=~"5.."}[5m])
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Class C: Backend Slow Traffic (Latency)
+
 **Dashboards Affected:**
+
 - Performance & Latency
 - Traces Drilldown
 
 **Metrics Required:**
+
 ```promql
 histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Class D: OpenAI Traffic
+
 **Dashboards Affected:**
+
 - OpenAI Runtime
 
 **Metrics Required:**
+
 - OpenAI-specific metrics (if instrumented)
 - Backend assist endpoint calls
 
 ***REMOVED******REMOVED******REMOVED*** Class E: Mobile Telemetry
+
 **Dashboards Affected:**
+
 - Mobile App Health
 - Pipeline Health (mobile events)
 
 **Expected Status:** EXPECTED_NO_DATA (no mobile traffic)
 
 ***REMOVED******REMOVED******REMOVED*** Class F: LGTM Stack / Pipeline Health
+
 **Dashboards Affected:**
+
 - LGTM Stack Health
 - Ops Overview
 
@@ -612,6 +659,7 @@ histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 **File:** `/Users/family/dev/scanium/scripts/monitoring/generate-dashboard-traffic.sh`
 
 **Features:**
+
 - Configurable duration (default 90s)
 - Traffic classes: normal, errors, slow, openai
 - Real-time progress display
@@ -625,6 +673,7 @@ histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 **File:** `/Users/family/dev/scanium/monitoring/grafana/DASHBOARD_DATA_AUDIT.md`
 
 **Contents:**
+
 - Dashboard status table with root causes
 - Infrastructure baseline inventory
 - Query-level test results for all datasources
@@ -639,13 +688,19 @@ histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 
 ***REMOVED******REMOVED*** Conclusion
 
-All 13 Scanium Grafana dashboards have been audited. The primary blocker is a **Mimir ingester-to-querier visibility issue** where backend metrics are successfully ingested but not queryable. This affects 10 of 13 dashboards (P0/P1). Logs Explorer and Pipeline Health are blocked by **missing log ingestion** (P1). Mobile App Health has no data as expected (P3).
+All 13 Scanium Grafana dashboards have been audited. The primary blocker is a **Mimir
+ingester-to-querier visibility issue** where backend metrics are successfully ingested but not
+queryable. This affects 10 of 13 dashboards (P0/P1). Logs Explorer and Pipeline Health are blocked
+by **missing log ingestion** (P1). Mobile App Health has no data as expected (P3).
 
 **Immediate Action Required:**
-Fix Mimir query path to include ingester data OR force block flush to make recent metrics queryable. Once resolved, dashboards requiring backend metrics will populate with existing traffic data (backend is already handling real requests).
+Fix Mimir query path to include ingester data OR force block flush to make recent metrics queryable.
+Once resolved, dashboards requiring backend metrics will populate with existing traffic data (
+backend is already handling real requests).
 
 **No Traffic Generation Needed:**
-Backend already has real traffic (84 requests to /v1/config, 21 to /v1/classify, etc.). The issue is metric **visibility**, not lack of traffic.
+Backend already has real traffic (84 requests to /v1/config, 21 to /v1/classify, etc.). The issue is
+metric **visibility**, not lack of traffic.
 
 ---
 

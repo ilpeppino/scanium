@@ -1,4 +1,6 @@
-> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current state.
+> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
+> state.
+
 ***REMOVED*** Development Scripts
 
 Quick-start scripts for Scanium backend development.
@@ -12,6 +14,7 @@ Quick-start scripts for Scanium backend development.
 ```
 
 This single command will:
+
 1. ✅ Check prerequisites (Node.js, Docker/Colima, ngrok)
 2. ✅ Start Colima (if using Colima and not running)
 3. ✅ Start PostgreSQL in Docker
@@ -32,6 +35,7 @@ This single command will:
 ```
 
 Cleanly stops:
+
 - Backend server (port 8080)
 - ngrok tunnel
 - PostgreSQL container
@@ -45,6 +49,7 @@ Optionally deletes log files.
 ***REMOVED******REMOVED******REMOVED*** `start-dev.sh`
 
 **Features:**
+
 - **Prerequisite checks**: Verifies Node.js, Docker, ngrok are installed
 - **Colima support**: Auto-starts Colima and switches Docker context
 - **Port conflict handling**: Detects and offers to kill processes on port 8080
@@ -56,6 +61,7 @@ Optionally deletes log files.
 - **Helpful output**: Shows test commands, URLs, and next steps
 
 **Output includes:**
+
 - ✅ Status of each service
 - 🌐 ngrok public URL
 - 📝 Quick test commands
@@ -63,12 +69,14 @@ Optionally deletes log files.
 - ⚠️ Warnings if RuName needs updating
 
 **Logs:**
+
 - Backend logs: `.dev-server.log`
 - ngrok logs: `.ngrok.log`
 
 ***REMOVED******REMOVED******REMOVED*** `stop-dev.sh`
 
 **Features:**
+
 - Stops backend server (finds by port)
 - Stops ngrok (finds by process name)
 - Stops PostgreSQL container
@@ -82,6 +90,7 @@ Optionally deletes log files.
 ***REMOVED******REMOVED******REMOVED*** Daily Development Workflow
 
 **Morning startup:**
+
 ```bash
 cd backend
 ./start-dev.sh
@@ -90,6 +99,7 @@ cd backend
 ```
 
 **End of day:**
+
 ```bash
 ./stop-dev.sh
 ***REMOVED*** Or just Ctrl+C in start-dev.sh terminal
@@ -118,11 +128,13 @@ Update .env automatically? (y/n)
 ```
 
 If you answer `y`, it will:
+
 - Backup `.env` to `.env.backup`
 - Update `PUBLIC_BASE_URL`
 - Restart backend server
 
 You still need to manually update:
+
 - eBay RuName in developer portal
 - Mobile app `SettingsScreen.kt`
 
@@ -133,6 +145,7 @@ You still need to manually update:
 ***REMOVED******REMOVED******REMOVED*** Script won't start
 
 **Check permissions:**
+
 ```bash
 chmod +x start-dev.sh stop-dev.sh
 ```
@@ -143,16 +156,19 @@ chmod +x start-dev.sh stop-dev.sh
 ngrok config add-authtoken YOUR_TOKEN
 ```
 
-Get token from: [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
+Get token
+from: [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
 
 ***REMOVED******REMOVED******REMOVED*** Backend fails to start
 
 Check `.dev-server.log`:
+
 ```bash
 tail -50 .dev-server.log
 ```
 
 Common issues:
+
 - Missing dependencies: `npm install`
 - Missing `.env`: `cp .env.example .env`
 - Missing Prisma client: `npm run prisma:generate`
@@ -160,11 +176,13 @@ Common issues:
 ***REMOVED******REMOVED******REMOVED*** PostgreSQL fails to start
 
 Check logs:
+
 ```bash
 docker logs scanium-postgres
 ```
 
 Restart PostgreSQL:
+
 ```bash
 docker compose restart postgres
 ```
@@ -174,6 +192,7 @@ docker compose restart postgres
 The script will detect this and offer to kill the process. If declined, it will exit.
 
 Manual cleanup:
+
 ```bash
 lsof -i :8080
 kill <PID>
@@ -182,11 +201,13 @@ kill <PID>
 ***REMOVED******REMOVED******REMOVED*** ngrok URL not detected
 
 Check `.ngrok.log`:
+
 ```bash
 cat .ngrok.log
 ```
 
 If ngrok crashed, check if authenticated:
+
 ```bash
 ngrok config check
 ```
@@ -198,22 +219,27 @@ ngrok config check
 Both scripts create log files for debugging:
 
 ***REMOVED******REMOVED******REMOVED*** `.dev-server.log`
+
 Contains backend server output (stdout + stderr)
 
 **View in real-time:**
+
 ```bash
 tail -f .dev-server.log
 ```
 
 ***REMOVED******REMOVED******REMOVED*** `.ngrok.log`
+
 Contains ngrok tunnel output
 
 **View in real-time:**
+
 ```bash
 tail -f .ngrok.log
 ```
 
 **Delete logs:**
+
 ```bash
 rm .dev-server.log .ngrok.log
 ```
@@ -227,6 +253,7 @@ Or let `stop-dev.sh` prompt you.
 ***REMOVED******REMOVED******REMOVED*** Change ngrok region
 
 Edit `start-dev.sh`, line ~200:
+
 ```bash
 ngrok http 8080 --region us --log=stdout > .ngrok.log 2>&1 &
 ```
@@ -250,16 +277,19 @@ Remove lines 44-68 in `start-dev.sh` if you're using Docker Desktop.
 ***REMOVED******REMOVED******REMOVED*** Run services individually
 
 **PostgreSQL only:**
+
 ```bash
 docker compose up -d postgres
 ```
 
 **Backend only:**
+
 ```bash
 npm run dev
 ```
 
 **ngrok only:**
+
 ```bash
 ngrok http 8080
 ```
@@ -267,11 +297,13 @@ ngrok http 8080
 ***REMOVED******REMOVED******REMOVED*** Background mode
 
 Start in background and detach:
+
 ```bash
 nohup ./start-dev.sh > start.log 2>&1 &
 ```
 
 Stop with:
+
 ```bash
 ./stop-dev.sh
 ```
@@ -281,11 +313,13 @@ Stop with:
 If you have a static ngrok domain:
 
 Edit `start-dev.sh`, replace:
+
 ```bash
 ngrok http 8080 --log=stdout > .ngrok.log 2>&1 &
 ```
 
 With:
+
 ```bash
 ngrok http 8080 --domain=your-static-domain.ngrok-free.app --log=stdout > .ngrok.log 2>&1 &
 ```

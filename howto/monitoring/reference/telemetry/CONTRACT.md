@@ -6,7 +6,9 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The telemetry contract defines a stable, platform-agnostic schema for capturing observability events across Scanium's Android and iOS applications. This contract is PII-safe by default and designed to integrate with future telemetry backends (OpenTelemetry, Sentry, custom analytics).
+The telemetry contract defines a stable, platform-agnostic schema for capturing observability events
+across Scanium's Android and iOS applications. This contract is PII-safe by default and designed to
+integrate with future telemetry backends (OpenTelemetry, Sentry, custom analytics).
 
 ***REMOVED******REMOVED*** Key Principles
 
@@ -35,19 +37,19 @@ data class TelemetryEvent(
 
 Every telemetry event **must** include these attributes:
 
-| Attribute       | Description                        | Example        |
-|-----------------|------------------------------------|----------------|
-| `platform`      | Platform identifier                | "android", "ios" |
-| `app_version`   | Semantic version                   | "1.2.3"        |
-| `build`         | Build number                       | "42"           |
-| `env`           | Environment                        | "dev", "staging", "prod" |
-| `session_id`    | Unique session identifier          | "uuid-abc-123" |
+| Attribute     | Description               | Example                  |
+|---------------|---------------------------|--------------------------|
+| `platform`    | Platform identifier       | "android", "ios"         |
+| `app_version` | Semantic version          | "1.2.3"                  |
+| `build`       | Build number              | "42"                     |
+| `env`         | Environment               | "dev", "staging", "prod" |
+| `session_id`  | Unique session identifier | "uuid-abc-123"           |
 
 ***REMOVED******REMOVED******REMOVED*** Optional Attributes
 
-| Attribute   | Description                          | Example        |
-|-------------|--------------------------------------|----------------|
-| `trace_id`  | Distributed tracing identifier       | "trace-xyz-789" |
+| Attribute  | Description                    | Example         |
+|------------|--------------------------------|-----------------|
+| `trace_id` | Distributed tracing identifier | "trace-xyz-789" |
 
 ***REMOVED******REMOVED******REMOVED*** Example Event
 
@@ -74,14 +76,14 @@ All event names follow the pattern: `<prefix>.<action>`
 
 ***REMOVED******REMOVED******REMOVED*** Prefixes
 
-| Prefix      | Usage                                  | Examples                          |
-|-------------|----------------------------------------|-----------------------------------|
-| `scan.*`    | Scan-related operations                | `scan.started`, `scan.completed`  |
-| `ml.*`      | ML/AI model operations                 | `ml.inference_started`, `ml.classification_failed` |
-| `storage.*` | Storage/persistence operations         | `storage.saved`, `storage.sync_failed` |
-| `export.*`  | Export operations (CSV, JSON, etc.)    | `export.csv_completed`, `export.failed` |
-| `ui.*`      | UI interactions                        | `ui.button_clicked`, `ui.screen_viewed` |
-| `error.*`   | Error events                           | `error.network_timeout`, `error.parse_failed` |
+| Prefix      | Usage                               | Examples                                           |
+|-------------|-------------------------------------|----------------------------------------------------|
+| `scan.*`    | Scan-related operations             | `scan.started`, `scan.completed`                   |
+| `ml.*`      | ML/AI model operations              | `ml.inference_started`, `ml.classification_failed` |
+| `storage.*` | Storage/persistence operations      | `storage.saved`, `storage.sync_failed`             |
+| `export.*`  | Export operations (CSV, JSON, etc.) | `export.csv_completed`, `export.failed`            |
+| `ui.*`      | UI interactions                     | `ui.button_clicked`, `ui.screen_viewed`            |
+| `error.*`   | Error events                        | `error.network_timeout`, `error.parse_failed`      |
 
 ***REMOVED******REMOVED******REMOVED*** Naming Rules
 
@@ -109,31 +111,40 @@ The `AttributeSanitizer` automatically redacts PII from event attributes before 
 The following attribute keys are **automatically redacted** (case-insensitive, substring match):
 
 **Personal Identifiers:**
+
 - `email`, `phone`, `address`, `full_name`, `username`, `user_id`
 
 **Authentication:**
-- `token`, `auth`, `password`, `api_key`, `secret`, `credentials`, `cookie`, `session_token`, `access_token`, `bearer`
+
+- `token`, `auth`, `password`, `api_key`, `secret`, `credentials`, `cookie`, `session_token`,
+  `access_token`, `bearer`
 
 **Location:**
+
 - `gps`, `latitude`, `lat`, `longitude`, `lon`, `location`, `coordinates`
 
 **Biometric:**
+
 - `fingerprint`, `face_id`, `biometric`
 
 **Payment:**
+
 - `credit_card`, `card_number`, `cvv`, `billing`, `payment`
 
 **Device Identifiers:**
+
 - `imei`, `device_id`, `mac_address`, `serial_number`, `uuid`
 
 **Other:**
+
 - `ssn`, `passport`, `license`, `ip_address`, `ip`
 
 ***REMOVED******REMOVED******REMOVED*** Sanitization Rules
 
 1. **PII Removal**: Attributes matching the denylist are replaced with `[REDACTED]`
 2. **Value Truncation**: String values exceeding 1024 characters are truncated with `...`
-3. **Required Validation**: Use `AttributeSanitizer.validateRequiredAttributes()` to ensure all required fields are present
+3. **Required Validation**: Use `AttributeSanitizer.validateRequiredAttributes()` to ensure all
+   required fields are present
 
 ***REMOVED******REMOVED******REMOVED*** Usage
 
@@ -217,6 +228,7 @@ This module is new as of PR ***REMOVED***1. No migration required.
 ***REMOVED******REMOVED*** API Stability
 
 This contract is **stable** as of v1.0. Breaking changes will require:
+
 1. Major version bump
 2. Deprecation period for removed fields
 3. Migration guide for consumers
@@ -225,13 +237,13 @@ This contract is **stable** as of v1.0. Breaking changes will require:
 
 The following events are emitted by the Shared Brain logic:
 
-| Event Name               | Severity | Description                                      | Key Attributes |
-|--------------------------|----------|--------------------------------------------------|----------------|
-| `scan.session_started`   | INFO     | Scan session initialized (e.g. tracker reset)    | `scan_mode` |
-| `scan.session_stopped`   | INFO     | Scan session stopped manually or by system       | `reason`, `duration_ms`, `final_frame_count` |
-| `scan.process_frame`     | SPAN     | Trace span covering candidate tracking update    | - |
-| `scan.candidate_created` | DEBUG    | New candidate tracked                            | `candidate_id`, `category`, `top_label`, `confidence` |
-| `scan.candidate_confirmed`| INFO    | Candidate confirmed as stable                    | `candidate_id`, `category`, `label` |
-| `scan.candidate_expired` | DEBUG    | Candidate expired due to inactivity              | `candidate_id`, `age_frames` |
-| `ml.inference_latency_ms`| METRIC   | Latency of ML inference (detection/classification)| `type` (object_detection/classification), `mode` |
-| `error.inference_failed` | ERROR    | ML inference failure                             | `error_type`, `mode` |
+| Event Name                 | Severity | Description                                        | Key Attributes                                        |
+|----------------------------|----------|----------------------------------------------------|-------------------------------------------------------|
+| `scan.session_started`     | INFO     | Scan session initialized (e.g. tracker reset)      | `scan_mode`                                           |
+| `scan.session_stopped`     | INFO     | Scan session stopped manually or by system         | `reason`, `duration_ms`, `final_frame_count`          |
+| `scan.process_frame`       | SPAN     | Trace span covering candidate tracking update      | -                                                     |
+| `scan.candidate_created`   | DEBUG    | New candidate tracked                              | `candidate_id`, `category`, `top_label`, `confidence` |
+| `scan.candidate_confirmed` | INFO     | Candidate confirmed as stable                      | `candidate_id`, `category`, `label`                   |
+| `scan.candidate_expired`   | DEBUG    | Candidate expired due to inactivity                | `candidate_id`, `age_frames`                          |
+| `ml.inference_latency_ms`  | METRIC   | Latency of ML inference (detection/classification) | `type` (object_detection/classification), `mode`      |
+| `error.inference_failed`   | ERROR    | ML inference failure                               | `error_type`, `mode`                                  |

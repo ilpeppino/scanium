@@ -30,6 +30,7 @@ object TestSemantics {
     const val CAMERA_SETTINGS_BUTTON = "camera_settings_button"
 
     // ========== Camera Pipeline Debug Overlay ==========
+
     /** Root container for pipeline debug overlay */
     const val CAM_PIPELINE_DEBUG = "cam_pipeline_debug"
 
@@ -52,6 +53,7 @@ object TestSemantics {
     const val CAM_ANALYSIS_FLOWING = "cam_analysis_flowing"
 
     // ========== ItemsListScreen ==========
+
     /** Root container for items list screen */
     const val ITEMS_LIST = "items_list"
 
@@ -77,6 +79,7 @@ object TestSemantics {
     const val CLEAR_ALL_BUTTON = "clear_all_button"
 
     // ========== Classification Indicators ==========
+
     /** Cloud mode indicator */
     const val CLOUD_MODE_INDICATOR = "cloud_mode_indicator"
 
@@ -87,6 +90,7 @@ object TestSemantics {
     const val RETRY_CLASSIFICATION = "retry_classification"
 
     // ========== Developer Options ==========
+
     /** Backend health status indicator */
     const val BACKEND_HEALTH_STATUS = "backend_health_status"
 
@@ -94,6 +98,7 @@ object TestSemantics {
     const val BACKEND_LATENCY = "backend_latency"
 
     // ========== Detection Overlay ==========
+
     /** Detection overlay container */
     const val DETECTION_OVERLAY = "detection_overlay"
 

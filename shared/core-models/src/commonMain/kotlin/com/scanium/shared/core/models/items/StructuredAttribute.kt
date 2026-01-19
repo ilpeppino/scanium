@@ -10,7 +10,7 @@ enum class AttributeSource {
     USER,
     DETECTED,
     DEFAULT,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -19,7 +19,8 @@ enum class AttributeSource {
 enum class StructuredAttributeConfidence {
     HIGH,
     MED,
-    LOW;
+    LOW,
+    ;
 
     companion object {
         fun fromString(value: String): StructuredAttributeConfidence {
@@ -42,7 +43,7 @@ enum class EvidenceType {
     COLOR,
     LABEL,
     LLM,
-    RULE
+    RULE,
 }
 
 /**
@@ -60,11 +61,12 @@ data class EvidenceRef(
     val imageRef: String? = null,
 ) {
     val evidenceType: EvidenceType
-        get() = try {
-            EvidenceType.valueOf(type.uppercase())
-        } catch (e: Exception) {
-            EvidenceType.RULE
-        }
+        get() =
+            try {
+                EvidenceType.valueOf(type.uppercase())
+            } catch (e: Exception) {
+                EvidenceType.RULE
+            }
 }
 
 /**
@@ -87,11 +89,12 @@ data class StructuredAttribute(
     val updatedAt: Long = 0,
 ) {
     val sourceEnum: AttributeSource
-        get() = try {
-            AttributeSource.valueOf(source.uppercase())
-        } catch (e: Exception) {
-            AttributeSource.UNKNOWN
-        }
+        get() =
+            try {
+                AttributeSource.valueOf(source.uppercase())
+            } catch (e: Exception) {
+                AttributeSource.UNKNOWN
+            }
 
     val confidenceEnum: StructuredAttributeConfidence
         get() = StructuredAttributeConfidence.fromString(confidence)
@@ -106,7 +109,10 @@ data class StructuredAttribute(
         /**
          * Create a USER-sourced attribute.
          */
-        fun fromUser(key: String, value: String): StructuredAttribute {
+        fun fromUser(
+            key: String,
+            value: String,
+        ): StructuredAttribute {
             return StructuredAttribute(
                 key = key,
                 value = value,

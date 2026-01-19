@@ -11,27 +11,29 @@ object CustomerSafeCopyPolicy {
      * Banned tokens that must NEVER appear in customer-facing copy.
      * Case-insensitive matching.
      */
-    private val BANNED_TOKENS = setOf(
-        "unknown",
-        "generic",
-        "unbranded",
-        "confidence",
-        "score",
-        "might be",
-        "possibly",
-        "cannot determine",
-    )
+    private val BANNED_TOKENS =
+        setOf(
+            "unknown",
+            "generic",
+            "unbranded",
+            "confidence",
+            "score",
+            "might be",
+            "possibly",
+            "cannot determine",
+        )
 
     /**
      * Regex patterns for confidence/percentage indicators that should be removed.
      * Examples: "58%", "confidence: 0.58", "0.95 confidence"
      */
-    private val CONFIDENCE_PATTERNS = listOf(
-        Regex("\\d+\\s*%"),  // Matches "58%" or "58 %"
-        Regex("confidence\\s*[:\\-]?\\s*\\d+\\.?\\d*", RegexOption.IGNORE_CASE),
-        Regex("\\d+\\.?\\d*\\s*confidence", RegexOption.IGNORE_CASE),
-        Regex("\\d+\\.\\d+"),  // Remove decimal percentages like "0.58"
-    )
+    private val CONFIDENCE_PATTERNS =
+        listOf(
+            Regex("\\d+\\s*%"), // Matches "58%" or "58 %"
+            Regex("confidence\\s*[:\\-]?\\s*\\d+\\.?\\d*", RegexOption.IGNORE_CASE),
+            Regex("\\d+\\.?\\d*\\s*confidence", RegexOption.IGNORE_CASE),
+            Regex("\\d+\\.\\d+"), // Remove decimal percentages like "0.58"
+        )
 
     /**
      * Check if a string contains any banned tokens (case-insensitive).
@@ -87,13 +89,14 @@ object CustomerSafeCopyPolicy {
 
         // Check for common vague patterns
         val lowerTitle = title.lowercase()
-        val vaguePatterns = setOf(
-            "item",
-            "object",
-            "thing",
-            "stuff",
-            "product",
-        )
+        val vaguePatterns =
+            setOf(
+                "item",
+                "object",
+                "thing",
+                "stuff",
+                "product",
+            )
 
         return !vaguePatterns.contains(lowerTitle)
     }
@@ -104,9 +107,7 @@ object CustomerSafeCopyPolicy {
      * @param range The pricing range to validate
      * @return true if the range is valid
      */
-    fun isValidPriceRange(range: PricingRange): Boolean {
-        return range.min >= 0 && range.max > range.min
-    }
+    fun isValidPriceRange(range: PricingRange): Boolean = range.min >= 0 && range.max > range.min
 
     /**
      * Format a price range into customer-safe string.
@@ -114,9 +115,7 @@ object CustomerSafeCopyPolicy {
      * @param range The pricing range
      * @return Formatted string like "€20–€40"
      */
-    fun formatPriceRange(range: PricingRange): String {
-        return "€${range.min}–€${range.max}"
-    }
+    fun formatPriceRange(range: PricingRange): String = "€${range.min}–€${range.max}"
 
     /**
      * Create a default pricing context line.
@@ -125,13 +124,12 @@ object CustomerSafeCopyPolicy {
      * @return Formatted context string like "Based on current market conditions"
      * @deprecated Use getPricingContextKey() instead for localized rendering
      */
-    fun formatPricingContext(contextHint: String? = null): String {
-        return if (contextHint?.isNotBlank() == true && !containsBannedToken(contextHint)) {
+    fun formatPricingContext(contextHint: String? = null): String =
+        if (contextHint?.isNotBlank() == true && !containsBannedToken(contextHint)) {
             "Based on $contextHint"
         } else {
             "Based on current market conditions"
         }
-    }
 
     /**
      * Map pricing context hint to resource key for localized rendering.
@@ -140,13 +138,12 @@ object CustomerSafeCopyPolicy {
      * @param contextHint Optional hint about market conditions
      * @return Resource key (e.g., "pricing_context_current_market")
      */
-    fun getPricingContextKey(contextHint: String? = null): String? {
-        return if (contextHint?.isNotBlank() == true && !containsBannedToken(contextHint)) {
+    fun getPricingContextKey(contextHint: String? = null): String? =
+        if (contextHint?.isNotBlank() == true && !containsBannedToken(contextHint)) {
             // For custom hints, we'd need dynamic stringResource which isn't directly supported
             // For now, use default market conditions key
             "pricing_context_current_market"
         } else {
             "pricing_context_current_market"
         }
-    }
 }

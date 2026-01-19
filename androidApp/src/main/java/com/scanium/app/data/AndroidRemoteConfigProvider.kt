@@ -101,7 +101,8 @@ class AndroidRemoteConfigProvider(
             val apiKey = apiKeyStore.getApiKey().orEmpty()
 
             val requestBuilder =
-                Request.Builder()
+                Request
+                    .Builder()
                     .url(url)
                     .addHeader("X-Scanium-Device-Hash", deviceHash)
                     .addHeader("X-Scanium-Platform", "android")
@@ -183,9 +184,7 @@ class AndroidRemoteConfigProvider(
         }
     }
 
-    override fun getExperimentVariant(id: String): String? {
-        return _configState.value.experiments[id]?.variant
-    }
+    override fun getExperimentVariant(id: String): String? = _configState.value.experiments[id]?.variant
 
     private suspend fun getOrGenerateDeviceHash(): String {
         // We use a seed UUID and hash it.

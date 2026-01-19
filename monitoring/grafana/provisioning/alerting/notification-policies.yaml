@@ -22,7 +22,7 @@ policies:
         group_interval: 1m
         repeat_interval: 1h
         continue: false
-        mute_time_intervals: []
+        mute_time_intervals: [ ]
 
       ***REMOVED*** Staging alerts -> low priority
       - receiver: scanium-low-priority

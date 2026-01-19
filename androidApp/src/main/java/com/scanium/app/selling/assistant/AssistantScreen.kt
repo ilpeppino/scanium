@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.RepeatMode
@@ -44,7 +45,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.annotation.VisibleForTesting
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -101,11 +101,11 @@ import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
+import com.scanium.app.model.SuggestedAttribute
+import com.scanium.app.selling.assistant.components.StructuredListingSection
 import com.scanium.app.selling.assistant.components.VisionConflictDialog
 import com.scanium.app.selling.assistant.components.VisionInsightsSection
-import com.scanium.app.selling.assistant.components.StructuredListingSection
 import com.scanium.app.selling.persistence.ListingDraftStore
-import com.scanium.app.model.SuggestedAttribute
 import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
 import dagger.hilt.android.EntryPointAccessors
@@ -128,13 +128,18 @@ fun AssistantScreen(
     onNavigateToSettingsGeneral: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
+    val settingsRepository =
+        remember {
+            com.scanium.app.data
+                .SettingsRepository(context)
+        }
     val assistedFactory =
         remember(context) {
-            EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                AssistantViewModelFactoryEntryPoint::class.java,
-            ).assistantViewModelFactory()
+            EntryPointAccessors
+                .fromApplication(
+                    context.applicationContext,
+                    AssistantViewModelFactoryEntryPoint::class.java,
+                ).assistantViewModelFactory()
         }
     val viewModel: AssistantViewModel =
         viewModel(
@@ -171,8 +176,10 @@ fun AssistantScreen(
     val partialTranscript by voiceController.partialTranscript.collectAsState()
     val latestAssistantTimestamp by remember(state.entries) {
         derivedStateOf {
-            state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
-                ?.message?.timestamp
+            state.entries
+                .lastOrNull { it.message.role == AssistantRole.ASSISTANT }
+                ?.message
+                ?.timestamp
         }
     }
     val lastVoiceError by voiceController.lastError.collectAsState()
@@ -213,6 +220,7 @@ fun AssistantScreen(
                         // Cancel warm-up to avoid background network activity
                         viewModel.cancelWarmUp()
                     }
+
                     Lifecycle.Event.ON_RESUME -> {
                         // Re-evaluate assistant availability when returning to screen
                         // This handles cases like network reconnection while app was backgrounded
@@ -220,7 +228,9 @@ fun AssistantScreen(
                         // Run preflight check on resume (uses cache if recent)
                         viewModel.runPreflight(forceRefresh = false)
                     }
-                    else -> { /* No action needed for other lifecycle events */ }
+
+                    else -> { // No action needed for other lifecycle events
+                    }
                 }
             }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -235,6 +245,7 @@ fun AssistantScreen(
                 is AssistantUiEvent.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+
                 is AssistantUiEvent.ShowAuthRequiredDialog -> {
                     showAuthRequiredDialog = true
                 }
@@ -279,9 +290,11 @@ fun AssistantScreen(
                     screenState.inputText = ""
                 }
             }
+
             is VoiceResult.Error -> {
                 scope.launch { snackbarHostState.showSnackbar(result.message) }
             }
+
             is VoiceResult.Cancelled -> {
                 // User cancelled, no action needed
             }
@@ -339,7 +352,7 @@ fun AssistantScreen(
                     onClick = {
                         showAuthRequiredDialog = false
                         onNavigateToSettingsGeneral()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.assistant_auth_go_to_settings))
                 }
@@ -348,7 +361,7 @@ fun AssistantScreen(
                 TextButton(onClick = { showAuthRequiredDialog = false }) {
                     Text(stringResource(R.string.assistant_auth_cancel))
                 }
-            }
+            },
         )
     }
 
@@ -414,7 +427,8 @@ fun AssistantScreen(
                             scope.launch {
                                 val draft =
                                     draftStore.getByItemId(itemId)
-                                        ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
+                                        ?: itemsViewModel.items.value
+                                            .firstOrNull { it.id == itemId }
                                             ?.let { ListingDraftBuilder.build(it) }
                                 if (draft == null) {
                                     snackbarHostState.showSnackbar("No draft to share")
@@ -425,15 +439,24 @@ fun AssistantScreen(
                                         ?: ExportProfiles.generic()
 
                                 // Localize condition
-                                val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
-                                    ItemAttributeLocalizer.localizeCondition(context, it)
-                                }
-                                val exportDraft = if (localizedCondition != null) {
-                                    val newFields = draft.fields.toMutableMap()
-                                    newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
-                                        ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
-                                    draft.copy(fields = newFields)
-                                } else draft
+                                val localizedCondition =
+                                    draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                        ItemAttributeLocalizer.localizeCondition(context, it)
+                                    }
+                                val exportDraft =
+                                    if (localizedCondition != null) {
+                                        val newFields = draft.fields.toMutableMap()
+                                        newFields[DraftFieldKey.CONDITION] =
+                                            newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                                ?: DraftField(
+                                                    value = localizedCondition,
+                                                    confidence = 1.0f,
+                                                    source = DraftProvenance.USER_EDITED,
+                                                )
+                                        draft.copy(fields = newFields)
+                                    } else {
+                                        draft
+                                    }
 
                                 val export = ListingDraftFormatter.format(exportDraft, profile)
                                 val currentItem = itemsViewModel.items.value.firstOrNull { it.id == draft.itemId }
@@ -589,8 +612,14 @@ fun AssistantScreen(
                 val isTranscribing = voiceState == VoiceState.TRANSCRIBING
                 val isActive = isListening || isTranscribing
                 when {
-                    !speechAvailable -> Unit
-                    isActive -> voiceController.stopListening()
+                    !speechAvailable -> {
+                        Unit
+                    }
+
+                    isActive -> {
+                        voiceController.stopListening()
+                    }
+
                     else -> {
                         val hasPermission =
                             ContextCompat.checkSelfPermission(
@@ -640,10 +669,11 @@ internal fun MessageBubble(
     // We rely on the parent LazyColumn's state for "newness", but here we just animate appearance
     AnimatedVisibility(
         visible = true,
-        enter = fadeIn(animationSpec = tween(300)) + 
+        enter =
+            fadeIn(animationSpec = tween(300)) +
                 expandVertically(expandFrom = Alignment.Bottom) +
                 scaleIn(initialScale = 0.9f, animationSpec = tween(300)),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         val isUser = entry.message.role == AssistantRole.USER
         val background = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
@@ -715,7 +745,7 @@ internal fun MessageBubble(
                 Spacer(modifier = Modifier.height(8.dp))
                 StructuredListingSection(
                     displayModel = displayModel,
-                    onCopyText = null
+                    onCopyText = null,
                 )
             }
 
@@ -856,10 +886,12 @@ internal fun ProgressIndicatorSection(
     ) { currentProgress ->
         when (currentProgress) {
             is AssistantRequestProgress.Idle,
-            is AssistantRequestProgress.Done -> {
+            is AssistantRequestProgress.Done,
+            -> {
                 // Empty spacer to maintain layout stability
                 Spacer(modifier = Modifier.height(0.dp))
             }
+
             is AssistantRequestProgress.Sending -> {
                 ProgressStageRow(
                     label = "Sending...",
@@ -867,6 +899,7 @@ internal fun ProgressIndicatorSection(
                     showProgressBar = true,
                 )
             }
+
             is AssistantRequestProgress.Thinking -> {
                 ProgressStageRow(
                     label = "Thinking...",
@@ -874,18 +907,21 @@ internal fun ProgressIndicatorSection(
                     showProgressBar = true,
                 )
             }
+
             is AssistantRequestProgress.ExtractingVision -> {
-                val imageText = if (currentProgress.imageCount > 1) {
-                    "Analyzing ${currentProgress.imageCount} images..."
-                } else {
-                    "Analyzing image..."
-                }
+                val imageText =
+                    if (currentProgress.imageCount > 1) {
+                        "Analyzing ${currentProgress.imageCount} images..."
+                    } else {
+                        "Analyzing image..."
+                    }
                 ProgressStageRow(
                     label = imageText,
                     showSpinner = true,
                     showProgressBar = true,
                 )
             }
+
             is AssistantRequestProgress.Drafting -> {
                 ProgressStageRow(
                     label = "Drafting answer...",
@@ -893,6 +929,7 @@ internal fun ProgressIndicatorSection(
                     showProgressBar = true,
                 )
             }
+
             is AssistantRequestProgress.Finalizing -> {
                 ProgressStageRow(
                     label = "Finalizing...",
@@ -900,6 +937,7 @@ internal fun ProgressIndicatorSection(
                     showProgressBar = true,
                 )
             }
+
             is AssistantRequestProgress.ErrorTemporary -> {
                 if (currentProgress.retryable) {
                     RetryBanner(onRetry = onRetry)
@@ -907,9 +945,11 @@ internal fun ProgressIndicatorSection(
                     ProgressErrorBanner(message = currentProgress.message)
                 }
             }
+
             is AssistantRequestProgress.ErrorAuth -> {
                 ProgressErrorBanner(message = currentProgress.message)
             }
+
             is AssistantRequestProgress.ErrorValidation -> {
                 ProgressErrorBanner(message = currentProgress.message)
             }
@@ -929,24 +969,26 @@ fun TypingIndicator(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(spaceBetween)
+        horizontalArrangement = Arrangement.spacedBy(spaceBetween),
     ) {
         val dots = listOf(0, 150, 300)
         dots.forEach { delay ->
             val offset by transition.animateFloat(
                 initialValue = 0f,
                 targetValue = -6f, // Bounce up by 6 pixels
-                animationSpec = infiniteRepeatable(
-                    animation = tween(300, delayMillis = delay, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "dot_offset"
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(300, delayMillis = delay, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                label = "dot_offset",
             )
             Box(
-                modifier = Modifier
-                    .size(dotSize)
-                    .offset { IntOffset(0, offset.toInt()) }
-                    .background(dotColor, shape = androidx.compose.foundation.shape.CircleShape)
+                modifier =
+                    Modifier
+                        .size(dotSize)
+                        .offset { IntOffset(0, offset.toInt()) }
+                        .background(dotColor, shape = androidx.compose.foundation.shape.CircleShape),
             )
         }
     }
@@ -963,9 +1005,10 @@ private fun ProgressStageRow(
     showProgressBar: Boolean,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -993,9 +1036,10 @@ private fun ProgressStageRow(
         if (showProgressBar) {
             Spacer(modifier = Modifier.height(4.dp))
             LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(2.dp),
             )
         }
     }
@@ -1007,12 +1051,14 @@ private fun ProgressStageRow(
 @Composable
 private fun ProgressErrorBanner(message: String) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-        ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+            ),
     ) {
         Text(
             text = message,
@@ -1040,7 +1086,10 @@ private fun LoadingStageIndicator(
         ) {
             if (showProgress) {
                 androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.height(16.dp).width(16.dp),
+                    modifier =
+                        Modifier
+                            .height(16.dp)
+                            .width(16.dp),
                     strokeWidth = 2.dp,
                 )
             }
@@ -1099,30 +1148,37 @@ internal fun AssistantModeIndicator(
 
     val (label, backgroundColor, contentColor) =
         when {
-            isChecking ->
+            isChecking -> {
                 Triple(
                     "Checking assistant...",
                     MaterialTheme.colorScheme.surfaceVariant,
                     MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            isOnline ->
+            }
+
+            isOnline -> {
                 Triple(
                     "Online assistant",
                     MaterialTheme.colorScheme.primaryContainer,
                     MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-            mode == AssistantMode.OFFLINE ->
+            }
+
+            mode == AssistantMode.OFFLINE -> {
                 Triple(
                     "Limited offline assistance",
                     MaterialTheme.colorScheme.errorContainer,
                     MaterialTheme.colorScheme.onErrorContainer,
                 )
-            else ->
+            }
+
+            else -> {
                 Triple(
                     "Limited offline assistance",
                     MaterialTheme.colorScheme.tertiaryContainer,
                     MaterialTheme.colorScheme.onTertiaryContainer,
                 )
+            }
         }
 
     Row(
@@ -1146,9 +1202,11 @@ internal fun AssistantModeIndicator(
                 drawCircle(
                     color =
                         if (isOnline) {
-                            androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                            androidx.compose.ui.graphics
+                                .Color(0xFF4CAF50)
                         } else {
-                            androidx.compose.ui.graphics.Color(0xFFFF9800)
+                            androidx.compose.ui.graphics
+                                .Color(0xFFFF9800)
                         },
                 )
             }
@@ -1205,8 +1263,11 @@ private fun AssistantModeBanner(
                     AssistantBackendErrorType.VALIDATION_ERROR,
                 )
             -> MaterialTheme.colorScheme.errorContainer
+
             failure != null -> MaterialTheme.colorScheme.tertiaryContainer
+
             mode == AssistantMode.OFFLINE -> MaterialTheme.colorScheme.tertiaryContainer
+
             else -> MaterialTheme.colorScheme.tertiaryContainer
         }
 
@@ -1220,6 +1281,7 @@ private fun AssistantModeBanner(
                     AssistantBackendErrorType.VALIDATION_ERROR,
                 )
             -> MaterialTheme.colorScheme.onErrorContainer
+
             else -> MaterialTheme.colorScheme.onTertiaryContainer
         }
 
@@ -1307,78 +1369,108 @@ private fun AssistantUnavailableBanner(
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val (title, detail, showRetry) = when (availability.reason) {
-        UnavailableReason.OFFLINE -> Triple(
-            "You're offline",
-            "Connect to the internet to use the AI assistant. Local suggestions are still available below.",
-            true,
-        )
-        UnavailableReason.RATE_LIMITED -> {
-            val retryText = availability.retryAfterSeconds?.let { " (wait ${it}s)" } ?: ""
-            Triple(
-                "Rate limit reached$retryText",
-                "You've sent too many requests. Local suggestions are available while you wait.",
-                true,
-            )
+    val (title, detail, showRetry) =
+        when (availability.reason) {
+            UnavailableReason.OFFLINE -> {
+                Triple(
+                    "You're offline",
+                    "Connect to the internet to use the AI assistant. Local suggestions are still available below.",
+                    true,
+                )
+            }
+
+            UnavailableReason.RATE_LIMITED -> {
+                val retryText = availability.retryAfterSeconds?.let { " (wait ${it}s)" } ?: ""
+                Triple(
+                    "Rate limit reached$retryText",
+                    "You've sent too many requests. Local suggestions are available while you wait.",
+                    true,
+                )
+            }
+
+            UnavailableReason.UNAUTHORIZED -> {
+                Triple(
+                    "Authorization required",
+                    "Check your account status or sign in again. Local suggestions are available.",
+                    false,
+                )
+            }
+
+            UnavailableReason.NOT_CONFIGURED -> {
+                Triple(
+                    "Assistant not configured",
+                    "The AI assistant is not available in this build. Local suggestions are available.",
+                    false,
+                )
+            }
+
+            UnavailableReason.ENDPOINT_NOT_FOUND -> {
+                Triple(
+                    "Endpoint not found",
+                    "Preflight endpoint not found (check base URL / tunnel route). This is a configuration error.",
+                    false,
+                )
+            }
+
+            UnavailableReason.VALIDATION_ERROR -> {
+                Triple(
+                    "Request error",
+                    "There was a problem with the request. Try rephrasing your question.",
+                    false,
+                )
+            }
+
+            UnavailableReason.BACKEND_ERROR -> {
+                Triple(
+                    "Assistant temporarily unavailable",
+                    "The AI assistant is experiencing issues. Local suggestions are available.",
+                    true,
+                )
+            }
+
+            UnavailableReason.LOADING -> {
+                Triple(
+                    "Processing...",
+                    "Please wait while we process your request.",
+                    false,
+                )
+            }
         }
-        UnavailableReason.UNAUTHORIZED -> Triple(
-            "Authorization required",
-            "Check your account status or sign in again. Local suggestions are available.",
-            false,
-        )
-        UnavailableReason.NOT_CONFIGURED -> Triple(
-            "Assistant not configured",
-            "The AI assistant is not available in this build. Local suggestions are available.",
-            false,
-        )
-        UnavailableReason.ENDPOINT_NOT_FOUND -> Triple(
-            "Endpoint not found",
-            "Preflight endpoint not found (check base URL / tunnel route). This is a configuration error.",
-            false,
-        )
-        UnavailableReason.VALIDATION_ERROR -> Triple(
-            "Request error",
-            "There was a problem with the request. Try rephrasing your question.",
-            false,
-        )
-        UnavailableReason.BACKEND_ERROR -> Triple(
-            "Assistant temporarily unavailable",
-            "The AI assistant is experiencing issues. Local suggestions are available.",
-            true,
-        )
-        UnavailableReason.LOADING -> Triple(
-            "Processing...",
-            "Please wait while we process your request.",
-            false,
-        )
-    }
 
-    val containerColor = when (availability.reason) {
-        UnavailableReason.UNAUTHORIZED,
-        UnavailableReason.NOT_CONFIGURED,
-        UnavailableReason.ENDPOINT_NOT_FOUND,
-        UnavailableReason.VALIDATION_ERROR -> MaterialTheme.colorScheme.errorContainer
-        else -> MaterialTheme.colorScheme.tertiaryContainer
-    }
+    val containerColor =
+        when (availability.reason) {
+            UnavailableReason.UNAUTHORIZED,
+            UnavailableReason.NOT_CONFIGURED,
+            UnavailableReason.ENDPOINT_NOT_FOUND,
+            UnavailableReason.VALIDATION_ERROR,
+            -> MaterialTheme.colorScheme.errorContainer
 
-    val contentColor = when (availability.reason) {
-        UnavailableReason.UNAUTHORIZED,
-        UnavailableReason.NOT_CONFIGURED,
-        UnavailableReason.ENDPOINT_NOT_FOUND,
-        UnavailableReason.VALIDATION_ERROR -> MaterialTheme.colorScheme.onErrorContainer
-        else -> MaterialTheme.colorScheme.onTertiaryContainer
-    }
+            else -> MaterialTheme.colorScheme.tertiaryContainer
+        }
+
+    val contentColor =
+        when (availability.reason) {
+            UnavailableReason.UNAUTHORIZED,
+            UnavailableReason.NOT_CONFIGURED,
+            UnavailableReason.ENDPOINT_NOT_FOUND,
+            UnavailableReason.VALIDATION_ERROR,
+            -> MaterialTheme.colorScheme.onErrorContainer
+
+            else -> MaterialTheme.colorScheme.onTertiaryContainer
+        }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
         ) {
             // Status label for debugging
             failure?.let {
@@ -1404,9 +1496,10 @@ private fun AssistantUnavailableBanner(
 
             // Action buttons
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (showRetry && availability.canRetry) {
@@ -1440,41 +1533,59 @@ private fun PreflightWarningBanner(
     warning: PreflightWarning,
     onDismiss: () -> Unit,
 ) {
-    val (title, detail) = when (warning.status) {
-        PreflightStatus.CLIENT_ERROR -> Pair(
-            "Preflight check failed",
-            "There was an issue with the health check, but you can still try sending messages. (${warning.reasonCode})",
-        )
-        PreflightStatus.UNAUTHORIZED -> Pair(
-            "API key may be invalid",
-            "Check your API key in Developer Settings. You can still try sending messages. (${warning.reasonCode})",
-        )
-        PreflightStatus.TEMPORARILY_UNAVAILABLE -> Pair(
-            "Backend may be temporarily unavailable",
-            "The server reported an issue, but you can still try sending messages. (${warning.reasonCode})",
-        )
-        PreflightStatus.RATE_LIMITED -> Pair(
-            "Rate limit warning",
-            "Preflight was rate limited, but your message may still go through. (${warning.reasonCode})",
-        )
-        else -> Pair(
-            "Connection warning",
-            "There was an issue checking connectivity. You can still try sending messages. (${warning.reasonCode})",
-        )
-    }
+    val (title, detail) =
+        when (warning.status) {
+            PreflightStatus.CLIENT_ERROR -> {
+                Pair(
+                    "Preflight check failed",
+                    "There was an issue with the health check, but you can still try sending messages. (${warning.reasonCode})",
+                )
+            }
+
+            PreflightStatus.UNAUTHORIZED -> {
+                Pair(
+                    "API key may be invalid",
+                    "Check your API key in Developer Settings. You can still try sending messages. (${warning.reasonCode})",
+                )
+            }
+
+            PreflightStatus.TEMPORARILY_UNAVAILABLE -> {
+                Pair(
+                    "Backend may be temporarily unavailable",
+                    "The server reported an issue, but you can still try sending messages. (${warning.reasonCode})",
+                )
+            }
+
+            PreflightStatus.RATE_LIMITED -> {
+                Pair(
+                    "Rate limit warning",
+                    "Preflight was rate limited, but your message may still go through. (${warning.reasonCode})",
+                )
+            }
+
+            else -> {
+                Pair(
+                    "Connection warning",
+                    "There was an issue checking connectivity. You can still try sending messages. (${warning.reasonCode})",
+                )
+            }
+        }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
-        ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -1519,11 +1630,12 @@ private fun SmartSuggestionsRow(
                 label = {
                     Text(
                         text = suggestion,
-                        color = if (enabled) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        },
+                        color =
+                            if (enabled) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            },
                     )
                 },
             )
@@ -1561,26 +1673,36 @@ private fun handleAssistantAction(
         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
     when (action.type) {
-        AssistantActionType.APPLY_DRAFT_UPDATE -> viewModel.applyDraftUpdate(action)
-        AssistantActionType.ADD_ATTRIBUTES -> viewModel.addAttributes(action)
+        AssistantActionType.APPLY_DRAFT_UPDATE -> {
+            viewModel.applyDraftUpdate(action)
+        }
+
+        AssistantActionType.ADD_ATTRIBUTES -> {
+            viewModel.addAttributes(action)
+        }
+
         AssistantActionType.COPY_TEXT -> {
             val label = action.payload["label"] ?: "Text"
             val text = action.payload["text"] ?: return
             onCopyText(label, text)
         }
+
         AssistantActionType.OPEN_POSTING_ASSIST -> {
             val itemId = action.payload["itemId"]
             val index = itemId?.let { state.itemIds.indexOf(it) }?.takeIf { it >= 0 } ?: 0
             onOpenPostingAssist(state.itemIds, index)
         }
+
         AssistantActionType.OPEN_SHARE -> {
             val itemId = action.payload["itemId"] ?: state.itemIds.firstOrNull() ?: return
             onShare(itemId)
         }
+
         AssistantActionType.OPEN_URL -> {
             val url = action.payload["url"] ?: return
             onOpenUrl(url)
         }
+
         AssistantActionType.SUGGEST_NEXT_PHOTO -> {
             val suggestion = action.payload["suggestion"] ?: return
             onSuggestNextPhoto(suggestion)
@@ -1603,8 +1725,8 @@ private fun actionLabel(action: AssistantAction): String {
     }
 }
 
-private fun actionContentDescription(action: AssistantAction): String {
-    return when (action.type) {
+private fun actionContentDescription(action: AssistantAction): String =
+    when (action.type) {
         AssistantActionType.APPLY_DRAFT_UPDATE -> {
             when {
                 action.payload.containsKey("title") -> "Apply title"
@@ -1613,17 +1735,32 @@ private fun actionContentDescription(action: AssistantAction): String {
                 else -> "Apply draft update"
             }
         }
-        AssistantActionType.ADD_ATTRIBUTES -> "Apply attributes"
+
+        AssistantActionType.ADD_ATTRIBUTES -> {
+            "Apply attributes"
+        }
+
         AssistantActionType.COPY_TEXT -> {
             val label = action.payload["label"] ?: "text"
             "Copy $label"
         }
-        AssistantActionType.OPEN_POSTING_ASSIST -> "Open posting assist"
-        AssistantActionType.OPEN_SHARE -> "Share draft"
-        AssistantActionType.OPEN_URL -> "Open link"
-        AssistantActionType.SUGGEST_NEXT_PHOTO -> "Take next photo"
+
+        AssistantActionType.OPEN_POSTING_ASSIST -> {
+            "Open posting assist"
+        }
+
+        AssistantActionType.OPEN_SHARE -> {
+            "Share draft"
+        }
+
+        AssistantActionType.OPEN_URL -> {
+            "Open link"
+        }
+
+        AssistantActionType.SUGGEST_NEXT_PHOTO -> {
+            "Take next photo"
+        }
     }
-}
 
 /**
  * Visual indicator shown when voice is actively listening or transcribing.

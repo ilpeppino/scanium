@@ -6,12 +6,17 @@
 
 ***REMOVED******REMOVED*** Overview
 
-Complete end-to-end marketplace integration that connects real on-device ML Kit scanning with a mocked eBay API for demonstration and testing purposes. Users can scan items with the camera, select multiple items, review listing drafts, and post them to a simulated eBay marketplace with realistic behavior.
+Complete end-to-end marketplace integration that connects real on-device ML Kit scanning with a
+mocked eBay API for demonstration and testing purposes. Users can scan items with the camera, select
+multiple items, review listing drafts, and post them to a simulated eBay marketplace with realistic
+behavior.
 
 ***REMOVED******REMOVED*** Features
 
 ***REMOVED******REMOVED******REMOVED*** User-Facing Features
-- ✅ **Multi-selection UI**: Long-press to enter selection mode, tap to toggle items (defaults to **Sell on eBay** action for quicker listing flows)
+
+- ✅ **Multi-selection UI**: Long-press to enter selection mode, tap to toggle items (defaults to *
+  *Sell on eBay** action for quicker listing flows)
 - ✅ **Draft review screen**: Edit listing details before posting
 - ✅ **Real-time status tracking**: Watch items transition through states (Posting → Listed/Failed)
 - ✅ **Status badges**: Color-coded indicators on items list
@@ -19,6 +24,7 @@ Complete end-to-end marketplace integration that connects real on-device ML Kit 
 - ✅ **High-quality images**: Automatic preparation for web/mobile viewing
 
 ***REMOVED******REMOVED******REMOVED*** Technical Features
+
 - ✅ **Background image processing**: All heavy work on `Dispatchers.IO`
 - ✅ **Realistic mock behavior**: Configurable delays and failure modes
 - ✅ **ViewModel communication**: Seamless status updates between screens
@@ -61,6 +67,7 @@ selling/
 Prepares high-quality images for listings with proper resolution and quality.
 
 **Features**:
+
 - Priority-based image selection: `fullImageUri` → `thumbnail` (scaled)
 - Minimum resolution enforcement: 500×500
 - Preferred resolution: 1600×1600
@@ -69,6 +76,7 @@ Prepares high-quality images for listings with proper resolution and quality.
 - Comprehensive logging: Resolution, file size, quality, source
 
 **Usage**:
+
 ```kotlin
 val preparer = ListingImagePreparer(context)
 val result = preparer.prepareListingImage(
@@ -88,6 +96,7 @@ when (result) {
 ```
 
 **Output Example**:
+
 ```
 ╔═══════════════════════════════════════════════════════════════
 ║ PREPARING LISTING IMAGE: item-abc123
@@ -109,6 +118,7 @@ when (result) {
 Realistic eBay API simulation with configurable behavior.
 
 **Configurable Parameters**:
+
 - `simulateNetworkDelay`: Enable/disable delays (default: true)
 - `minDelayMs`: Minimum delay (default: 400ms)
 - `maxDelayMs`: Maximum delay (default: 1200ms)
@@ -116,6 +126,7 @@ Realistic eBay API simulation with configurable behavior.
 - `failureRate`: Probability of failure (0.0-1.0)
 
 **Failure Modes**:
+
 - `NONE`: All requests succeed
 - `NETWORK_TIMEOUT`: Simulates network timeout errors
 - `VALIDATION_ERROR`: Simulates validation failures (empty title, etc.)
@@ -123,11 +134,13 @@ Realistic eBay API simulation with configurable behavior.
 - `RANDOM`: Random failures
 
 **Mock Data**:
+
 - Listing IDs: `EBAY-MOCK-{timestamp}-{random}` (e.g., `EBAY-MOCK-1702483920000-4567`)
 - URLs: `https://mock.ebay.local/listing/{id}`
 - Status: Always returns `ACTIVE` on success
 
 **Example**:
+
 ```kotlin
 val api = MockEbayApi(
     config = MockEbayConfig(
@@ -147,6 +160,7 @@ val listing = api.createListing(draft, image) // May throw on failure
 Singleton configuration manager with reactive updates.
 
 **Usage**:
+
 ```kotlin
 // Get current config
 val config = MockEbayConfigManager.config.value
@@ -175,6 +189,7 @@ MockEbayConfigManager.config.collect { config ->
 Orchestrates the listing creation workflow.
 
 **Workflow**:
+
 1. Convert `ScannedItem` to `ListingDraft`
 2. Prepare listing image (background thread)
 3. Call eBay API to create listing
@@ -182,12 +197,14 @@ Orchestrates the listing creation workflow.
 5. Return `ListingCreationResult`
 
 **Error Handling**:
+
 - Image preparation failures → `VALIDATION_ERROR`
 - Network errors → `NETWORK_ERROR`
 - Validation errors → `VALIDATION_ERROR`
 - Other errors → `UNKNOWN_ERROR`
 
 **Example**:
+
 ```kotlin
 val service = EbayMarketplaceService(context, mockApi)
 
@@ -209,6 +226,7 @@ when (val result = service.createListingForItem(item)) {
 Manages listing drafts and posting workflow.
 
 **State Management**:
+
 ```kotlin
 data class ListingDraftState(
     val draft: ListingDraft,
@@ -225,12 +243,14 @@ data class ListingUiState(
 ```
 
 **Key Methods**:
+
 - `updateDraftTitle(itemId, title)`: Edit draft title
 - `updateDraftPrice(itemId, priceText)`: Edit draft price
 - `updateDraftCondition(itemId, condition)`: Edit draft condition
 - `postSelectedToEbay()`: Post all drafts sequentially
 
 **Communication with ItemsViewModel**:
+
 ```kotlin
 // Before posting
 itemsViewModel.updateListingStatus(itemId, ItemListingStatus.LISTING_IN_PROGRESS)
@@ -252,6 +272,7 @@ itemsViewModel.updateListingStatus(itemId, ItemListingStatus.LISTING_FAILED)
 Added listing status tracking methods.
 
 **New Methods**:
+
 ```kotlin
 fun updateListingStatus(
     itemId: String,
@@ -266,6 +287,7 @@ fun getItem(itemId: String): ScannedItem?
 ```
 
 **Enhanced ScannedItem**:
+
 ```kotlin
 data class ScannedItem(
     // ... existing fields
@@ -288,41 +310,42 @@ enum class ItemListingStatus {
 ***REMOVED******REMOVED******REMOVED*** Complete Flow
 
 1. **Scan Items**
-   - Point camera at objects
-   - Items detected via ML Kit
-   - Items appear in list
+    - Point camera at objects
+    - Items detected via ML Kit
+    - Items appear in list
 
 2. **Select Items**
-   - Navigate to Items List screen
-   - Long-press an item → Enter selection mode
-   - Tap additional items to select
-   - Selection count shown in top bar
+    - Navigate to Items List screen
+    - Long-press an item → Enter selection mode
+    - Tap additional items to select
+    - Selection count shown in top bar
 
 3. **Review Drafts**
-   - Tap the default "Sell on eBay" action or pick another bulk action from the dropdown
-   - Navigate to Sell screen
-   - See draft cards for each selected item:
-     - Image preview
-     - Editable title (prefilled from the specific classification label, e.g., "Vintage mug" instead of generic categories)
-     - Editable price (prefilled)
-     - Condition picker (NEW/USED/REFURBISHED)
+    - Tap the default "Sell on eBay" action or pick another bulk action from the dropdown
+    - Navigate to Sell screen
+    - See draft cards for each selected item:
+        - Image preview
+        - Editable title (prefilled from the specific classification label, e.g., "Vintage mug"
+          instead of generic categories)
+        - Editable price (prefilled)
+        - Condition picker (NEW/USED/REFURBISHED)
 
 4. **Post to eBay**
-   - Tap "Post to eBay (Mock)"
-   - Button disabled during posting
-   - Watch per-item status updates:
-     - "POSTING" → Shows spinner
-     - "SUCCESS" → Shows checkmark
-     - "FAILURE" → Shows error icon
+    - Tap "Post to eBay (Mock)"
+    - Button disabled during posting
+    - Watch per-item status updates:
+        - "POSTING" → Shows spinner
+        - "SUCCESS" → Shows checkmark
+        - "FAILURE" → Shows error icon
 
 5. **View Results**
-   - Navigate back to Items List
-   - See status badges on items:
-     - 🟦 "Listed" (blue) - Active listing
-     - 🟨 "Posting..." (yellow) - In progress
-     - 🟥 "Failed" (red) - Failed to post
-   - Tap "View" button on listed items
-   - Opens mock listing URL in browser
+    - Navigate back to Items List
+    - See status badges on items:
+        - 🟦 "Listed" (blue) - Active listing
+        - 🟨 "Posting..." (yellow) - In progress
+        - 🟥 "Failed" (red) - Failed to post
+    - Tap "View" button on listed items
+    - Opens mock listing URL in browser
 
 ***REMOVED******REMOVED*** Debug Settings
 
@@ -331,24 +354,25 @@ Access debug settings to test different scenarios.
 ***REMOVED******REMOVED******REMOVED*** Configurable Options
 
 1. **Network Delay Simulation**
-   - Toggle on/off
-   - Default: On (400-1200ms random delay)
+    - Toggle on/off
+    - Default: On (400-1200ms random delay)
 
 2. **Failure Mode**
-   - NONE: All requests succeed
-   - NETWORK_TIMEOUT: Simulates timeouts
-   - VALIDATION_ERROR: Simulates validation failures
-   - IMAGE_TOO_SMALL: Simulates image quality errors
-   - RANDOM: Random failures
+    - NONE: All requests succeed
+    - NETWORK_TIMEOUT: Simulates timeouts
+    - VALIDATION_ERROR: Simulates validation failures
+    - IMAGE_TOO_SMALL: Simulates image quality errors
+    - RANDOM: Random failures
 
 3. **Failure Rate**
-   - Slider: 0% to 100%
-   - Controls probability of failure
-   - Only active when failure mode ≠ NONE
+    - Slider: 0% to 100%
+    - Controls probability of failure
+    - Only active when failure mode ≠ NONE
 
 ***REMOVED******REMOVED******REMOVED*** Testing Scenarios
 
 **Test successful posting**:
+
 ```
 Failure Mode: NONE
 Failure Rate: 0%
@@ -356,6 +380,7 @@ Result: All items post successfully
 ```
 
 **Test intermittent failures**:
+
 ```
 Failure Mode: RANDOM
 Failure Rate: 30%
@@ -363,6 +388,7 @@ Result: ~30% of items fail randomly
 ```
 
 **Test all failures**:
+
 ```
 Failure Mode: VALIDATION_ERROR
 Failure Rate: 100%
@@ -370,6 +396,7 @@ Result: All items fail with validation error
 ```
 
 **Test fast posting (no delays)**:
+
 ```
 Network Delay: OFF
 Failure Mode: NONE
@@ -432,21 +459,25 @@ ListingViewModel: ════════════════════�
 ***REMOVED******REMOVED******REMOVED*** Unit Tests
 
 **ListingImagePreparerTest.kt**:
+
 - ✅ Valid thumbnail succeeds
 - ✅ Small thumbnail scales up
 - ✅ No sources fails gracefully
 
 **MockEbayConfigManagerTest.kt**:
+
 - ✅ Initial config has defaults
 - ✅ Update methods work correctly
 - ✅ Failure rate clamped to valid range
 - ✅ Reset to defaults works
 
 **ItemListingStatusTest.kt**:
+
 - ✅ All statuses have display names
 - ✅ Enum values correct
 
 **ItemsViewModelListingStatusTest.kt**:
+
 - ✅ Update status changes item
 - ✅ Only affects target item
 - ✅ Get methods work correctly
@@ -454,6 +485,7 @@ ListingViewModel: ════════════════════�
 ***REMOVED******REMOVED******REMOVED*** Manual Testing
 
 **Checklist**:
+
 - [ ] Scan 3+ items
 - [ ] Long-press to select
 - [ ] Tap to multi-select
@@ -470,12 +502,14 @@ ListingViewModel: ════════════════════�
 ***REMOVED******REMOVED*** Future Enhancements
 
 ***REMOVED******REMOVED******REMOVED*** Short-term
+
 - [ ] Add retry mechanism for failed listings
 - [ ] Support batch editing (set same price for all)
 - [ ] Add listing preview before posting
 - [ ] Persist listing status across app restarts
 
 ***REMOVED******REMOVED******REMOVED*** Medium-term
+
 - [ ] Real eBay API integration
 - [ ] OAuth authentication
 - [ ] Real listing ID parsing
@@ -485,6 +519,7 @@ ListingViewModel: ════════════════════�
 - [ ] Return policy configuration
 
 ***REMOVED******REMOVED******REMOVED*** Long-term
+
 - [ ] Analytics dashboard
 - [ ] Price recommendations from eBay sold listings
 - [ ] Automated title generation (ML-based)
@@ -497,9 +532,9 @@ ListingViewModel: ════════════════════�
 To replace the mock with real eBay API:
 
 1. **Create EbayOAuthManager**:
-   - Implement OAuth 2.0 flow
-   - Store tokens securely
-   - Handle token refresh
+    - Implement OAuth 2.0 flow
+    - Store tokens securely
+    - Handle token refresh
 
 2. **Implement RealEbayApi**:
    ```kotlin
@@ -526,10 +561,10 @@ To replace the mock with real eBay API:
    ```
 
 4. **Handle real listing lifecycle**:
-   - Track actual listing status changes
-   - Handle draft/scheduled/active states
-   - Implement listing updates and deletions
-   - Add error recovery
+    - Track actual listing status changes
+    - Handle draft/scheduled/active states
+    - Implement listing updates and deletions
+    - Add error recovery
 
 ***REMOVED******REMOVED*** License
 

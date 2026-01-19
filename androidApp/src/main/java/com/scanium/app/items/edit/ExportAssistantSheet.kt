@@ -23,13 +23,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,7 +45,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -65,11 +63,9 @@ import com.scanium.app.R
 import com.scanium.app.assistant.tts.TtsManager
 import com.scanium.app.assistant.tts.buildSpeakableText
 import com.scanium.app.data.SettingsRepository
-import com.scanium.app.model.AppLanguage
 import com.scanium.shared.core.models.assistant.ConfidenceTier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 /**
  * Export Assistant bottom sheet for generating marketplace-ready listings.
@@ -165,11 +161,12 @@ internal fun ExportAssistantContent(
     val context = LocalContext.current
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 32.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Header
@@ -192,7 +189,8 @@ internal fun ExportAssistantContent(
                 }
 
                 is ExportAssistantState.Loading,
-                is ExportAssistantState.Generating -> {
+                is ExportAssistantState.Generating,
+                -> {
                     ExportLoadingContent()
                 }
 
@@ -203,13 +201,14 @@ internal fun ExportAssistantContent(
                     val bulletSymbol = stringResource(R.string.common_bullet)
 
                     // Build speakable text for TTS
-                    val speakableText = remember(currentState) {
-                        buildSpeakableText(
-                            title = currentState.title,
-                            description = currentState.description,
-                            bullets = currentState.bullets,
-                        )
-                    }
+                    val speakableText =
+                        remember(currentState) {
+                            buildSpeakableText(
+                                title = currentState.title,
+                                description = currentState.description,
+                                bullets = currentState.bullets,
+                            )
+                        }
 
                     ExportSuccessContent(
                         state = currentState,
@@ -284,9 +283,7 @@ private fun ExportAssistantHeader() {
 }
 
 @Composable
-private fun ExportIdleContent(
-    onGenerate: () -> Unit,
-) {
+private fun ExportIdleContent(onGenerate: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -316,9 +313,10 @@ private fun ExportIdleContent(
 @Composable
 private fun ExportLoadingContent() {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 32.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -385,16 +383,18 @@ private fun ExportSuccessContent(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = if (isSpeaking) {
-                            stringResource(R.string.common_stop_speaking)
-                        } else {
-                            stringResource(R.string.common_read_aloud)
-                        },
-                        tint = if (isSpeaking) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+                        contentDescription =
+                            if (isSpeaking) {
+                                stringResource(R.string.common_stop_speaking)
+                            } else {
+                                stringResource(R.string.common_read_aloud)
+                            },
+                        tint =
+                            if (isSpeaking) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                 }
             }
@@ -526,14 +526,16 @@ internal fun ExportContentCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -560,13 +562,17 @@ internal fun ExportContentCard(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(
-                        max = if (maxLines == Int.MAX_VALUE) 300.dp
-                        else (maxLines * 20).dp.coerceAtMost(200.dp)
-                    )
-                    .verticalScroll(scrollState)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(
+                            max =
+                                if (maxLines == Int.MAX_VALUE) {
+                                    300.dp
+                                } else {
+                                    (maxLines * 20).dp.coerceAtMost(200.dp)
+                                },
+                        ).verticalScroll(scrollState),
             ) {
                 Text(
                     text = content,
@@ -584,14 +590,16 @@ internal fun ExportBulletsCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -639,20 +647,22 @@ internal fun ExportBulletsCard(
 
 @Composable
 private fun ConfidenceTierChip(tier: ConfidenceTier) {
-    val (text, color) = when (tier) {
-        ConfidenceTier.HIGH -> stringResource(R.string.export_assistant_confidence_high) to MaterialTheme.colorScheme.primary
-        ConfidenceTier.MED -> stringResource(R.string.export_assistant_confidence_medium) to MaterialTheme.colorScheme.tertiary
-        ConfidenceTier.LOW -> stringResource(R.string.export_assistant_confidence_low) to MaterialTheme.colorScheme.error
-    }
+    val (text, color) =
+        when (tier) {
+            ConfidenceTier.HIGH -> stringResource(R.string.export_assistant_confidence_high) to MaterialTheme.colorScheme.primary
+            ConfidenceTier.MED -> stringResource(R.string.export_assistant_confidence_medium) to MaterialTheme.colorScheme.tertiary
+            ConfidenceTier.LOW -> stringResource(R.string.export_assistant_confidence_low) to MaterialTheme.colorScheme.error
+        }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box(
-            modifier = Modifier
-                .size(8.dp)
-                .padding(1.dp),
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .padding(1.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.Check,
@@ -677,9 +687,10 @@ private fun ExportErrorContent(
     onDismiss: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -726,21 +737,21 @@ private fun ExportErrorContent(
 // ==================== Price Insights Card (Phase 3/5) ====================
 
 @Composable
-private fun PriceInsightsCard(
-    pricingInsights: com.scanium.shared.core.models.assistant.PricingInsights,
-) {
+private fun PriceInsightsCard(pricingInsights: com.scanium.shared.core.models.assistant.PricingInsights) {
     val context = LocalContext.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Header
@@ -764,12 +775,13 @@ private fun PriceInsightsCard(
                         )
 
                         // Result count and confidence
-                        val confidenceText = when (pricingInsights.confidence) {
-                            com.scanium.shared.core.models.assistant.PricingConfidence.HIGH -> " (high confidence)"
-                            com.scanium.shared.core.models.assistant.PricingConfidence.MED -> ""
-                            com.scanium.shared.core.models.assistant.PricingConfidence.LOW -> " (low confidence)"
-                            null -> ""
-                        }
+                        val confidenceText =
+                            when (pricingInsights.confidence) {
+                                com.scanium.shared.core.models.assistant.PricingConfidence.HIGH -> " (high confidence)"
+                                com.scanium.shared.core.models.assistant.PricingConfidence.MED -> ""
+                                com.scanium.shared.core.models.assistant.PricingConfidence.LOW -> " (low confidence)"
+                                null -> ""
+                            }
                         Text(
                             text = "Based on ${pricingInsights.results.size} listing${if (pricingInsights.results.size != 1) "s" else ""}$confidenceText",
                             style = MaterialTheme.typography.bodySmall,
@@ -788,12 +800,12 @@ private fun PriceInsightsCard(
 
                             pricingInsights.results.take(5).forEach { result ->
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            openUrl(context, result.url)
-                                        }
-                                        .padding(vertical = 4.dp),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                openUrl(context, result.url)
+                                            }.padding(vertical = 4.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
@@ -806,8 +818,9 @@ private fun PriceInsightsCard(
                                             color = MaterialTheme.colorScheme.primary,
                                         )
                                         // Show marketplace name from marketplacesUsed
-                                        val marketplace = pricingInsights.marketplacesUsed
-                                            .firstOrNull { it.id == result.sourceMarketplaceId }
+                                        val marketplace =
+                                            pricingInsights.marketplacesUsed
+                                                .firstOrNull { it.id == result.sourceMarketplaceId }
                                         Text(
                                             text = marketplace?.name ?: result.sourceMarketplaceId,
                                             style = MaterialTheme.typography.labelSmall,
@@ -826,6 +839,7 @@ private fun PriceInsightsCard(
                         }
                     }
                 }
+
                 "DISABLED" -> {
                     Text(
                         text = "Price insights are disabled",
@@ -833,6 +847,7 @@ private fun PriceInsightsCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+
                 "NOT_SUPPORTED" -> {
                     Text(
                         text = "Price insights not available for ${pricingInsights.countryCode}",
@@ -840,6 +855,7 @@ private fun PriceInsightsCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+
                 "NO_RESULTS" -> {
                     Text(
                         text = "No comparable listings found",
@@ -847,6 +863,7 @@ private fun PriceInsightsCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+
                 "TIMEOUT" -> {
                     Text(
                         text = "Request timed out",
@@ -854,6 +871,7 @@ private fun PriceInsightsCard(
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
+
                 "ERROR" -> {
                     Text(
                         text = "Couldn't fetch prices right now",
@@ -861,6 +879,7 @@ private fun PriceInsightsCard(
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
+
                 else -> {
                     Text(
                         text = "Loading price insights...",
@@ -877,8 +896,8 @@ private fun PriceInsightsCard(
  * Get currency symbol for common currencies.
  * Falls back to currency code if symbol is unknown.
  */
-private fun getCurrencySymbol(currencyCode: String): String {
-    return when (currencyCode.uppercase()) {
+private fun getCurrencySymbol(currencyCode: String): String =
+    when (currencyCode.uppercase()) {
         "EUR" -> "€"
         "USD" -> "$"
         "GBP" -> "£"
@@ -887,12 +906,14 @@ private fun getCurrencySymbol(currencyCode: String): String {
         "CNY" -> "¥"
         else -> "$currencyCode "
     }
-}
 
 /**
  * Open URL in external browser.
  */
-private fun openUrl(context: Context, url: String) {
+private fun openUrl(
+    context: Context,
+    url: String,
+) {
     try {
         val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
         context.startActivity(intent)
@@ -903,13 +924,20 @@ private fun openUrl(context: Context, url: String) {
 
 // ==================== Clipboard Helpers ====================
 
-private fun copyToClipboard(context: Context, label: String, text: String) {
+private fun copyToClipboard(
+    context: Context,
+    label: String,
+    text: String,
+) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val clip = ClipData.newPlainText(label, text)
     clipboard.setPrimaryClip(clip)
 }
 
-private fun copyAllToClipboard(context: Context, state: ExportAssistantState.Success) {
+private fun copyAllToClipboard(
+    context: Context,
+    state: ExportAssistantState.Success,
+) {
     val sb = StringBuilder()
 
     state.title?.let {

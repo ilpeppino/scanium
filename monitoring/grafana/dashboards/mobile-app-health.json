@@ -2,7 +2,12 @@
   "uid": "scanium-mobile-app-health",
   "title": "Scanium - Mobile App Health",
   "description": "Mobile app functional correctness and usage telemetry (Option C: HTTPS → Backend → Loki)",
-  "tags": ["scanium", "mobile", "health", "app"],
+  "tags": [
+    "scanium",
+    "mobile",
+    "health",
+    "app"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 2,
@@ -18,11 +23,26 @@
         "label": "Platform",
         "type": "custom",
         "query": "android,ios",
-        "current": { "text": "All", "value": "$__all" },
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "android", "value": "android", "selected": false },
-          { "text": "ios", "value": "ios", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "android",
+            "value": "android",
+            "selected": false
+          },
+          {
+            "text": "ios",
+            "value": "ios",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -32,12 +52,31 @@
         "label": "Build Type",
         "type": "custom",
         "query": "dev,beta,prod",
-        "current": { "text": "All", "value": "$__all" },
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "dev", "value": "dev", "selected": false },
-          { "text": "beta", "value": "beta", "selected": false },
-          { "text": "prod", "value": "prod", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "dev",
+            "value": "dev",
+            "selected": false
+          },
+          {
+            "text": "beta",
+            "value": "beta",
+            "selected": false
+          },
+          {
+            "text": "prod",
+            "value": "prod",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -46,12 +85,18 @@
         "name": "app_version",
         "label": "App Version",
         "type": "query",
-        "datasource": { "type": "loki", "uid": "LOKI" },
+        "datasource": {
+          "type": "loki",
+          "uid": "LOKI"
+        },
         "query": "label_values({source=\"scanium-mobile\"}, app_version)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       }
     ]
   },
@@ -60,7 +105,12 @@
       "id": 1,
       "title": "Mobile Telemetry Overview",
       "type": "text",
-      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
       "options": {
         "mode": "markdown",
         "content": "**Mobile telemetry is active.** Events flow: Mobile App → HTTPS (`/v1/telemetry/mobile`) → Backend (structured JSON logs) → Alloy → Loki.\n\n**Event catalog**: `app_launch`, `scan_started`, `scan_completed`, `assist_clicked`, `share_started`, `error_shown`, `crash_marker`.\n\nSee [MOBILE_TELEMETRY_SCHEMA.md](../../../docs/telemetry/MOBILE_TELEMETRY_SCHEMA.md) for details."
@@ -70,8 +120,16 @@
       "id": 11,
       "title": "Telemetry Status",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 3, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -128,8 +186,16 @@
       "id": 2,
       "title": "Event Rate by Type",
       "type": "timeseries",
-      "gridPos": { "x": 6, "y": 3, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -139,7 +205,12 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "fillOpacity": 10, "drawStyle": "line", "lineWidth": 2, "spanNulls": true },
+          "custom": {
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "spanNulls": true
+          },
           "unit": "reqps"
         }
       }
@@ -148,8 +219,16 @@
       "id": 3,
       "title": "Platform Distribution",
       "type": "piechart",
-      "gridPos": { "x": 18, "y": 3, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 18,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -162,8 +241,16 @@
       "id": 4,
       "title": "Version Adoption",
       "type": "piechart",
-      "gridPos": { "x": 0, "y": 7, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -176,8 +263,16 @@
       "id": 5,
       "title": "Scan Funnel (Started → Completed)",
       "type": "timeseries",
-      "gridPos": { "x": 6, "y": 11, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 6,
+        "y": 11,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -192,7 +287,10 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "fillOpacity": 15, "drawStyle": "bars" }
+          "custom": {
+            "fillOpacity": 15,
+            "drawStyle": "bars"
+          }
         }
       }
     },
@@ -200,8 +298,16 @@
       "id": 6,
       "title": "Scan Success Rate (Completed / Started)",
       "type": "stat",
-      "gridPos": { "x": 12, "y": 11, "w": 6, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 12,
+        "y": 11,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -217,9 +323,18 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 0.5 },
-              { "color": "green", "value": 0.8 }
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 0.8
+              }
             ]
           }
         }
@@ -233,8 +348,16 @@
       "id": 7,
       "title": "AI Assistant Usage",
       "type": "stat",
-      "gridPos": { "x": 18, "y": 11, "w": 6, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 18,
+        "y": 11,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -257,8 +380,16 @@
       "id": 8,
       "title": "Error Rate",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 19, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 19,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -273,7 +404,12 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "fillOpacity": 10, "drawStyle": "line", "lineWidth": 2, "spanNulls": true },
+          "custom": {
+            "fillOpacity": 10,
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "spanNulls": true
+          },
           "unit": "short",
           "color": {
             "mode": "palette-classic"
@@ -281,9 +417,18 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "Crashes" },
+            "matcher": {
+              "id": "byName",
+              "options": "Crashes"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
             ]
           }
         ]
@@ -293,8 +438,16 @@
       "id": 9,
       "title": "Session Activity",
       "type": "stat",
-      "gridPos": { "x": 12, "y": 19, "w": 6, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 12,
+        "y": 19,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -321,8 +474,16 @@
       "id": 10,
       "title": "Recent Events (Log View)",
       "type": "logs",
-      "gridPos": { "x": 18, "y": 19, "w": 6, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 18,
+        "y": 19,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",

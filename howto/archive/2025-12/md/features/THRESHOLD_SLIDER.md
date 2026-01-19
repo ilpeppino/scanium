@@ -2,7 +2,9 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The **Vertical Threshold Slider** is a UI control on the Camera screen that allows real-time adjustment of the similarity threshold used in the item aggregation pipeline. This feature serves both as a **debugging tool** for developers and as a potential **advanced feature** for users.
+The **Vertical Threshold Slider** is a UI control on the Camera screen that allows real-time
+adjustment of the similarity threshold used in the item aggregation pipeline. This feature serves
+both as a **debugging tool** for developers and as a potential **advanced feature** for users.
 
 ***REMOVED******REMOVED*** Visual Design
 
@@ -62,12 +64,14 @@ The slider controls the **similarity threshold** in the aggregation system:
 ***REMOVED******REMOVED******REMOVED*** Effect on Detection
 
 **Higher threshold (↑):**
+
 - Stricter similarity matching
 - Fewer items detected/aggregated
 - More confident matches only
 - Less duplicate merging
 
 **Lower threshold (↓):**
+
 - Looser similarity matching
 - More items detected/aggregated
 - Accept less confident matches
@@ -114,11 +118,13 @@ Changes to the slider take effect **immediately**:
 Custom Compose component that renders the vertical slider UI.
 
 **Props**:
+
 - `value: Float` - Current threshold (0-1)
 - `onValueChange: (Float) -> Unit` - Callback when slider changes
 - `modifier: Modifier` - Positioning and styling
 
 **Features**:
+
 - Absolute position-based gesture handling (not delta-based)
 - Direct touch-to-value mapping using `awaitEachGesture` API
 - Smooth animations (150ms transitions)
@@ -132,12 +138,14 @@ Custom Compose component that renders the vertical slider UI.
 **Location**: `app/src/main/java/com/scanium/app/items/ItemsViewModel.kt`
 
 **New Properties**:
+
 ```kotlin
 private val _similarityThreshold = MutableStateFlow(0.55f)
 val similarityThreshold: StateFlow<Float>
 ```
 
 **New Methods**:
+
 ```kotlin
 fun updateSimilarityThreshold(threshold: Float)
 fun getCurrentSimilarityThreshold(): Float
@@ -148,17 +156,20 @@ fun getCurrentSimilarityThreshold(): Float
 **Location**: `app/src/main/java/com/scanium/app/aggregation/ItemAggregator.kt`
 
 **New Properties**:
+
 ```kotlin
 private var dynamicThreshold: Float? = null
 ```
 
 **New Methods**:
+
 ```kotlin
 fun updateSimilarityThreshold(threshold: Float?)
 fun getCurrentSimilarityThreshold(): Float
 ```
 
 **Updated Logic**:
+
 - `processDetection()` now uses `getCurrentSimilarityThreshold()` instead of hardcoded config value
 - Logs include current threshold for debugging
 
@@ -167,6 +178,7 @@ fun getCurrentSimilarityThreshold(): Float
 **Location**: `app/src/main/java/com/scanium/app/camera/CameraScreen.kt`
 
 **Integration**:
+
 ```kotlin
 val currentThreshold by itemsViewModel.similarityThreshold.collectAsState()
 VerticalThresholdSlider(
@@ -187,6 +199,7 @@ VerticalThresholdSlider(
 **Problem**: Same object appearing multiple times when panning camera
 
 **Solution**: Increase threshold
+
 - Drag slider upward
 - Try 70-80% (0.7-0.8)
 - Stricter matching reduces false merges
@@ -196,6 +209,7 @@ VerticalThresholdSlider(
 **Problem**: Objects not being detected/aggregated during scanning
 
 **Solution**: Decrease threshold
+
 - Drag slider downward
 - Try 30-40% (0.3-0.4)
 - Looser matching increases detections
@@ -205,6 +219,7 @@ VerticalThresholdSlider(
 **Problem**: Understanding why items merge or stay separate
 
 **Solution**: Experiment with threshold
+
 - Start at 50%
 - Move slider while scanning
 - Check logs for similarity scores vs threshold
@@ -273,12 +288,14 @@ A `ThresholdPreferences` utility is provided for DataStore-based persistence:
 ***REMOVED******REMOVED******REMOVED*** Log Output
 
 When threshold changes:
+
 ```
 ItemsViewModel: Similarity threshold updated to: 0.65
 ItemAggregator: Similarity threshold updated to: 0.65
 ```
 
 When processing detections:
+
 ```
 ItemAggregator: >>> processDetection: id=det_1, category=FASHION,
                     confidence=0.8, threshold=0.65
@@ -287,6 +304,7 @@ ItemAggregator:     ✓ MERGE: detection det_2 → aggregated agg_123
 ```
 
 Or:
+
 ```
 ItemAggregator:     ✗ CREATE NEW: similarity too low (0.58 < 0.65)
 ItemAggregator:     Similarity breakdown:
@@ -365,28 +383,28 @@ ItemAggregator:       - Final weighted score: 0.58
 ***REMOVED******REMOVED******REMOVED*** Potential Improvements
 
 1. **Toggle Visibility**
-   - Show/hide slider based on debug mode or settings
-   - Gesture to reveal (e.g., swipe from left edge)
+    - Show/hide slider based on debug mode or settings
+    - Gesture to reveal (e.g., swipe from left edge)
 
 2. **Preset Buttons**
-   - Quick buttons for: STRICT (80%), BALANCED (55%), LOOSE (30%)
-   - Snap to preset values
+    - Quick buttons for: STRICT (80%), BALANCED (55%), LOOSE (30%)
+    - Snap to preset values
 
 3. **Haptic Feedback**
-   - Vibrate when reaching 0% or 100%
-   - Subtle feedback during drag
+    - Vibrate when reaching 0% or 100%
+    - Subtle feedback during drag
 
 4. **Visual Indicators**
-   - Show recommended range (40-70%)
-   - Color-code zones (red=too low, green=optimal, orange=too high)
+    - Show recommended range (40-70%)
+    - Color-code zones (red=too low, green=optimal, orange=too high)
 
 5. **Session Statistics**
-   - Track detection/merge rates at different thresholds
-   - Suggest optimal threshold based on scene
+    - Track detection/merge rates at different thresholds
+    - Suggest optimal threshold based on scene
 
 6. **Multiple Thresholds**
-   - Separate sliders for different factors (category, label, spatial)
-   - Advanced mode with full control
+    - Separate sliders for different factors (category, label, spatial)
+    - Advanced mode with full control
 
 ***REMOVED******REMOVED*** Accessibility
 
@@ -408,11 +426,13 @@ ItemAggregator:       - Final weighted score: 0.58
 ***REMOVED******REMOVED******REMOVED*** Slider Not Appearing
 
 **Causes**:
+
 - Build error
 - Missing import in CameraScreen
 - ViewModel not properly instantiated
 
 **Solutions**:
+
 - Check Logcat for errors
 - Verify `VerticalThresholdSlider` is imported
 - Ensure `itemsViewModel` is available in CameraScreen scope
@@ -420,10 +440,12 @@ ItemAggregator:       - Final weighted score: 0.58
 ***REMOVED******REMOVED******REMOVED*** Slider Not Responding
 
 **Causes**:
+
 - Gesture conflicts with camera preview
 - ViewModel method not wired correctly
 
 **Solutions**:
+
 - Verify `onValueChange` callback is connected
 - Check that slider is above preview in Z-order
 - Review pointer input handling in slider code
@@ -431,10 +453,12 @@ ItemAggregator:       - Final weighted score: 0.58
 ***REMOVED******REMOVED******REMOVED*** Threshold Not Affecting Detections
 
 **Causes**:
+
 - ItemAggregator not using dynamic threshold
 - ViewModel not calling aggregator update method
 
 **Solutions**:
+
 - Check `ItemAggregator.getCurrentSimilarityThreshold()` in logs
 - Verify `updateSimilarityThreshold()` chain is complete
 - Ensure `processDetection()` uses `getCurrentSimilarityThreshold()`
@@ -442,9 +466,11 @@ ItemAggregator:       - Final weighted score: 0.58
 ***REMOVED******REMOVED******REMOVED*** Values Reset After App Restart
 
 **Causes**:
+
 - Persistence not implemented (current state)
 
 **Solutions**:
+
 - This is expected behavior without persistence
 - Follow "Adding Persistence" section to enable DataStore
 - Or accept default value on app start (by design for debugging)
@@ -470,12 +496,15 @@ ItemAggregator:       - Final weighted score: 0.58
 
 ***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***1: Slider Using Delta-Based Dragging
 
-**Problem**: The slider was using `detectVerticalDragGestures` which only provides drag deltas, not absolute positions. This resulted in:
+**Problem**: The slider was using `detectVerticalDragGestures` which only provides drag deltas, not
+absolute positions. This resulted in:
+
 - Tiny incremental changes (0.55 → 0.5510147)
 - Inability to reach 0% or 100%
 - Inconsistent response to fast drags
 
 **Solution**: Rewrote gesture handling to use `awaitEachGesture` with absolute position mapping:
+
 ```kotlin
 // OLD (broken)
 val delta = -dragAmount / sliderHeight
@@ -490,9 +519,11 @@ val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
 
 ***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***2: Labels Not Fully Visible
 
-**Problem**: Labels were stacked vertically above/below slider, taking excessive vertical space and sometimes getting clipped.
+**Problem**: Labels were stacked vertically above/below slider, taking excessive vertical space and
+sometimes getting clipped.
 
 **Solution**: Redesigned layout:
+
 - Changed from `Column` to `Row` layout
 - Rotated text labels 90° to run parallel to slider
 - Made labels side-by-side with slider instead of stacked
@@ -501,9 +532,11 @@ val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
 
 ***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***3: Slider Position on Left Side
 
-**Problem**: Left side placement conflicted with system gestures and felt awkward for right-handed users.
+**Problem**: Left side placement conflicted with system gestures and felt awkward for right-handed
+users.
 
 **Solution**: Moved slider to right side:
+
 - Changed alignment from `Alignment.CenterStart` to `Alignment.CenterEnd`
 - Changed padding from `start = 16.dp` to `end = 16.dp`
 
@@ -511,9 +544,11 @@ val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
 
 ***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***4: Threshold Not Propagating to Aggregator
 
-**Problem**: ItemAggregator's `dynamicThreshold` was never initialized, so it used config default regardless of slider changes.
+**Problem**: ItemAggregator's `dynamicThreshold` was never initialized, so it used config default
+regardless of slider changes.
 
 **Solution**: Added explicit initialization in `ItemsViewModel.init`:
+
 ```kotlin
 init {
     val initialThreshold = AggregationPresets.REALTIME.similarityThreshold

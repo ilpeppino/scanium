@@ -4,13 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.util.Log
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.objects.ObjectDetection
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.detector.DetectionMapping
 import com.scanium.app.ml.detector.ObjectDetectionEngine
-import com.scanium.app.items.ScannedItem
-import com.scanium.app.perf.PerformanceMonitor
-import kotlinx.coroutines.tasks.await
 
 /**
  * Wrapper class containing both ScannedItems (for list) and DetectionResults (for overlay).
@@ -94,7 +90,10 @@ class ObjectDetectorClient {
             val isRotated = image.rotationDegrees == 90 || image.rotationDegrees == 270
             val uprightWidth = if (isRotated) image.height else image.width
             val uprightHeight = if (isRotated) image.width else image.height
-            Log.d(TAG, "Normalization dims: rotated=$isRotated, upright=${uprightWidth}x$uprightHeight (raw=${image.width}x${image.height})")
+            Log.d(
+                TAG,
+                "Normalization dims: rotated=$isRotated, upright=${uprightWidth}x$uprightHeight (raw=${image.width}x${image.height})",
+            )
 
             detectedObjects.forEach { obj ->
                 // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
@@ -134,9 +133,7 @@ class ObjectDetectorClient {
      * Checks if ML Kit object detection model is downloaded.
      * This should be called before first detection to ensure the model is ready.
      */
-    suspend fun ensureModelDownloaded(): Boolean {
-        return engine.ensureModelDownloaded()
-    }
+    suspend fun ensureModelDownloaded(): Boolean = engine.ensureModelDownloaded()
 
     /**
      * Processes an image and extracts raw detection information for tracking.
@@ -256,9 +253,8 @@ class ObjectDetectorClient {
      * This is used by the tracking pipeline to create final items from
      * candidates that have met the confirmation threshold.
      */
-    fun candidateToScannedItem(candidate: com.scanium.app.tracking.ObjectCandidate): ScannedItem {
-        return DetectionMapping.candidateToScannedItem(candidate)
-    }
+    fun candidateToScannedItem(candidate: com.scanium.app.tracking.ObjectCandidate): ScannedItem =
+        DetectionMapping.candidateToScannedItem(candidate)
 
     /**
      * Cleanup resources when done.

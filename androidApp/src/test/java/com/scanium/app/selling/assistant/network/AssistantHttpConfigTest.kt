@@ -8,7 +8,6 @@ import org.junit.Test
  * use the unified timeout policy.
  */
 class AssistantHttpConfigTest {
-
     // ==================== Default Configuration Tests ====================
 
     @Test
@@ -110,10 +109,11 @@ class AssistantHttpConfigTest {
 
     @Test
     fun `custom config can override individual values`() {
-        val custom = AssistantHttpConfig(
-            connectTimeoutSeconds = 20L,
-            readTimeoutSeconds = 120L,
-        )
+        val custom =
+            AssistantHttpConfig(
+                connectTimeoutSeconds = 20L,
+                readTimeoutSeconds = 120L,
+            )
 
         assertThat(custom.connectTimeoutSeconds).isEqualTo(20L)
         assertThat(custom.readTimeoutSeconds).isEqualTo(120L)

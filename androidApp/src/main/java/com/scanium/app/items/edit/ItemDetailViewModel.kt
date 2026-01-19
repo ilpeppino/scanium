@@ -13,7 +13,6 @@ import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.items.summary.AttributeSummaryGenerator
 import com.scanium.app.ml.VisionInsightsPrefiller
 import com.scanium.shared.core.models.items.EnrichmentLayerStatus
-import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemPhoto
 import com.scanium.shared.core.models.items.LayerState
 import com.scanium.shared.core.models.items.PhotoType
@@ -35,14 +34,18 @@ import java.util.UUID
 enum class EnrichmentUiStatus {
     /** No enrichment running */
     IDLE,
+
     /** Enrichment in progress */
     RUNNING,
+
     /** Enrichment completed with new attributes */
     UPDATED,
+
     /** Enrichment completed but no new information found */
     NO_CHANGE,
+
     /** Enrichment failed (retryable) */
-    ERROR
+    ERROR,
 }
 
 /**
@@ -85,7 +88,7 @@ data class DetectedAttribute(
 enum class AttributeSourceType {
     USER,
     DETECTED,
-    DEFAULT
+    DEFAULT,
 }
 
 /**
@@ -100,9 +103,9 @@ class ItemDetailViewModel(
     private val visionPrefiller: VisionInsightsPrefiller,
     private val enrichmentRepository: EnrichmentRepository,
 ) : ViewModel() {
-
     companion object {
         private const val TAG = "ItemDetailViewModel"
+
         // Re-enrich if last enrichment was more than 5 minutes ago
         private const val ENRICHMENT_STALE_MS = 5 * 60 * 1000L
     }
@@ -136,11 +139,12 @@ class ItemDetailViewModel(
         val detectedAttrs = buildDetectedAttributes(item)
 
         // Build suggestions if user has edited
-        val suggestions = if (item.summaryTextUserEdited) {
-            buildSuggestions(item, currentState.summaryTextDraft)
-        } else {
-            emptyList()
-        }
+        val suggestions =
+            if (item.summaryTextUserEdited) {
+                buildSuggestions(item, currentState.summaryTextDraft)
+            } else {
+                emptyList()
+            }
 
         // Determine enrichment UI status from layer status
         val enrichmentUiStatus = mapEnrichmentStatus(item.enrichmentStatus)
@@ -148,12 +152,13 @@ class ItemDetailViewModel(
         _uiState.update { state ->
             state.copy(
                 item = item,
-                summaryTextDraft = if (!state.hasUnsavedChanges) {
-                    item.attributesSummaryText?.takeIf { it.isNotBlank() }
-                        ?: generateSummaryText(item)
-                } else {
-                    state.summaryTextDraft
-                },
+                summaryTextDraft =
+                    if (!state.hasUnsavedChanges) {
+                        item.attributesSummaryText?.takeIf { it.isNotBlank() }
+                            ?: generateSummaryText(item)
+                    } else {
+                        state.summaryTextDraft
+                    },
                 detectedAttributes = detectedAttrs,
                 suggestions = suggestions,
                 enrichmentStatus = enrichmentUiStatus,
@@ -166,38 +171,43 @@ class ItemDetailViewModel(
         val result = mutableMapOf<String, DetectedAttribute>()
 
         // Map attribute keys to display names
-        val displayNames = mapOf(
-            "brand" to "Brand",
-            "color" to "Color",
-            "secondaryColor" to "Secondary Color",
-            "itemType" to "Product Type",
-            "model" to "Model",
-            "material" to "Material",
-            "size" to "Size",
-            "ocrText" to "Text Detected",
-            "labelHints" to "Labels",
-        )
+        val displayNames =
+            mapOf(
+                "brand" to "Brand",
+                "color" to "Color",
+                "secondaryColor" to "Secondary Color",
+                "itemType" to "Product Type",
+                "model" to "Model",
+                "material" to "Material",
+                "size" to "Size",
+                "ocrText" to "Text Detected",
+                "labelHints" to "Labels",
+            )
 
         // Add attributes from the item
         for ((key, attr) in item.attributes) {
             if (attr.value.isBlank()) continue
             val displayName = displayNames[key] ?: key.replaceFirstChar { it.uppercase() }
             val source = attr.source ?: ""
-            val sourceType = when {
-                source.contains("user", ignoreCase = true) -> AttributeSourceType.USER
-                source.contains("vision", ignoreCase = true) ||
-                    source.contains("enrichment", ignoreCase = true) ||
-                    source.contains("ocr", ignoreCase = true) -> AttributeSourceType.DETECTED
-                else -> AttributeSourceType.DEFAULT
-            }
-            result[key] = DetectedAttribute(
-                key = key,
-                displayName = displayName,
-                value = attr.value,
-                confidence = attr.confidence,
-                source = sourceType,
-                evidenceType = extractEvidenceType(source),
-            )
+            val sourceType =
+                when {
+                    source.contains("user", ignoreCase = true) -> AttributeSourceType.USER
+
+                    source.contains("vision", ignoreCase = true) ||
+                        source.contains("enrichment", ignoreCase = true) ||
+                        source.contains("ocr", ignoreCase = true) -> AttributeSourceType.DETECTED
+
+                    else -> AttributeSourceType.DEFAULT
+                }
+            result[key] =
+                DetectedAttribute(
+                    key = key,
+                    displayName = displayName,
+                    value = attr.value,
+                    confidence = attr.confidence,
+                    source = sourceType,
+                    evidenceType = extractEvidenceType(source),
+                )
         }
 
         // Add vision attributes that might not be in the main attributes map
@@ -206,70 +216,76 @@ class ItemDetailViewModel(
             // Logos
             visionAttrs.logos.firstOrNull()?.let { logo ->
                 if (!result.containsKey("brand") || result["brand"]?.value.isNullOrBlank()) {
-                    result["brand"] = DetectedAttribute(
-                        key = "brand",
-                        displayName = "Brand",
-                        value = logo.name,
-                        confidence = logo.score,
-                        source = AttributeSourceType.DETECTED,
-                        evidenceType = "LOGO",
-                    )
+                    result["brand"] =
+                        DetectedAttribute(
+                            key = "brand",
+                            displayName = "Brand",
+                            value = logo.name,
+                            confidence = logo.score,
+                            source = AttributeSourceType.DETECTED,
+                            evidenceType = "LOGO",
+                        )
                 }
             }
 
             // OCR text snippet
             visionAttrs.ocrText?.takeIf { it.isNotBlank() }?.let { text ->
-                val snippet = text.lineSequence()
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() }
-                    .take(3)
-                    .joinToString(" | ")
-                    .take(100)
+                val snippet =
+                    text
+                        .lineSequence()
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .take(3)
+                        .joinToString(" | ")
+                        .take(100)
                 if (snippet.isNotBlank() && !result.containsKey("ocrText")) {
-                    result["ocrText"] = DetectedAttribute(
-                        key = "ocrText",
-                        displayName = "Text Detected",
-                        value = snippet,
-                        confidence = 0.8f,
-                        source = AttributeSourceType.DETECTED,
-                        evidenceType = "OCR",
-                    )
+                    result["ocrText"] =
+                        DetectedAttribute(
+                            key = "ocrText",
+                            displayName = "Text Detected",
+                            value = snippet,
+                            confidence = 0.8f,
+                            source = AttributeSourceType.DETECTED,
+                            evidenceType = "OCR",
+                        )
                 }
             }
 
             // Colors
             visionAttrs.colors.firstOrNull()?.let { color ->
                 if (!result.containsKey("color") || result["color"]?.value.isNullOrBlank()) {
-                    result["color"] = DetectedAttribute(
-                        key = "color",
-                        displayName = "Color",
-                        value = color.name,
-                        confidence = color.score,
-                        source = AttributeSourceType.DETECTED,
-                        evidenceType = "COLOR",
-                    )
+                    result["color"] =
+                        DetectedAttribute(
+                            key = "color",
+                            displayName = "Color",
+                            value = color.name,
+                            confidence = color.score,
+                            source = AttributeSourceType.DETECTED,
+                            evidenceType = "COLOR",
+                        )
                 }
             }
 
             // Item type from labels
             val itemType = visionAttrs.itemType ?: visionAttrs.labels.firstOrNull()?.name
             if (!itemType.isNullOrBlank() && !result.containsKey("itemType")) {
-                result["itemType"] = DetectedAttribute(
-                    key = "itemType",
-                    displayName = "Product Type",
-                    value = itemType,
-                    confidence = 0.7f,
-                    source = AttributeSourceType.DETECTED,
-                    evidenceType = "LABEL",
-                )
+                result["itemType"] =
+                    DetectedAttribute(
+                        key = "itemType",
+                        displayName = "Product Type",
+                        value = itemType,
+                        confidence = 0.7f,
+                        source = AttributeSourceType.DETECTED,
+                        evidenceType = "LABEL",
+                    )
             }
         }
 
         return result
     }
 
-    private fun extractEvidenceType(source: String): String? {
-        return when {
+    private fun extractEvidenceType(source: String): String? =
+        when {
             source.contains("ocr", ignoreCase = true) -> "OCR"
             source.contains("logo", ignoreCase = true) -> "LOGO"
             source.contains("color", ignoreCase = true) -> "COLOR"
@@ -277,9 +293,11 @@ class ItemDetailViewModel(
             source.contains("llm", ignoreCase = true) -> "AI"
             else -> null
         }
-    }
 
-    private fun buildSuggestions(item: ScannedItem, currentSummaryText: String): List<SuggestedAttribute> {
+    private fun buildSuggestions(
+        item: ScannedItem,
+        currentSummaryText: String,
+    ): List<SuggestedAttribute> {
         val suggestions = mutableListOf<SuggestedAttribute>()
         val summaryLower = currentSummaryText.lowercase()
 
@@ -287,19 +305,21 @@ class ItemDetailViewModel(
         for ((key, attr) in item.detectedAttributes) {
             if (attr.value.isBlank()) continue
 
-            val displayName = when (key) {
-                "brand" -> "Brand"
-                "color" -> "Color"
-                "model" -> "Model"
-                "material" -> "Material"
-                "size" -> "Size"
-                "itemType" -> "Type"
-                else -> continue
-            }
+            val displayName =
+                when (key) {
+                    "brand" -> "Brand"
+                    "color" -> "Color"
+                    "model" -> "Model"
+                    "material" -> "Material"
+                    "size" -> "Size"
+                    "itemType" -> "Type"
+                    else -> continue
+                }
 
             // Check if the value is missing from the summary
-            val isInSummary = summaryLower.contains("$displayName:".lowercase()) &&
-                summaryLower.contains(attr.value.lowercase())
+            val isInSummary =
+                summaryLower.contains("$displayName:".lowercase()) &&
+                    summaryLower.contains(attr.value.lowercase())
             val isMissing = summaryLower.contains("$displayName: (missing)".lowercase())
 
             if (isMissing || !isInSummary) {
@@ -308,7 +328,7 @@ class ItemDetailViewModel(
                         key = key,
                         displayName = displayName,
                         value = attr.value,
-                    )
+                    ),
                 )
             }
         }
@@ -316,11 +336,17 @@ class ItemDetailViewModel(
         return suggestions
     }
 
-    private fun mapEnrichmentStatus(status: EnrichmentLayerStatus): EnrichmentUiStatus {
-        return when {
-            status.isEnriching -> EnrichmentUiStatus.RUNNING
+    private fun mapEnrichmentStatus(status: EnrichmentLayerStatus): EnrichmentUiStatus =
+        when {
+            status.isEnriching -> {
+                EnrichmentUiStatus.RUNNING
+            }
+
             status.layerC == LayerState.FAILED ||
-                status.layerB == LayerState.FAILED -> EnrichmentUiStatus.ERROR
+                status.layerB == LayerState.FAILED -> {
+                EnrichmentUiStatus.ERROR
+            }
+
             status.isComplete -> {
                 // Check if we have any meaningful results
                 val item = _uiState.value.item
@@ -330,18 +356,19 @@ class ItemDetailViewModel(
                     EnrichmentUiStatus.NO_CHANGE
                 }
             }
-            else -> EnrichmentUiStatus.IDLE
-        }
-    }
 
-    private fun generateSummaryText(item: ScannedItem): String {
-        return AttributeSummaryGenerator.generateSummaryText(
+            else -> {
+                EnrichmentUiStatus.IDLE
+            }
+        }
+
+    private fun generateSummaryText(item: ScannedItem): String =
+        AttributeSummaryGenerator.generateSummaryText(
             attributes = item.attributes,
             category = item.category,
             condition = item.condition,
             includeEmptyFields = true,
         )
-    }
 
     /**
      * Update the summary text draft (local edit).
@@ -371,13 +398,18 @@ class ItemDetailViewModel(
 
         // Parse and save individual attributes
         val parsed = AttributeSummaryGenerator.parseSummaryText(state.summaryTextDraft)
-        val newAttributes = AttributeSummaryGenerator.toAttributeMap(
-            parsed,
-            state.item?.attributes ?: emptyMap(),
-        )
+        val newAttributes =
+            AttributeSummaryGenerator.toAttributeMap(
+                parsed,
+                state.item?.attributes ?: emptyMap(),
+            )
 
         for ((key, attr) in newAttributes) {
-            if (state.item?.attributes?.get(key)?.value != attr.value) {
+            if (state.item
+                    ?.attributes
+                    ?.get(key)
+                    ?.value != attr.value
+            ) {
                 stateManager.updateItemAttribute(itemId, key, attr)
             }
         }
@@ -423,18 +455,22 @@ class ItemDetailViewModel(
         val imageUri = item.fullImageUri
         if (imageUri == null) {
             Log.w(TAG, "No image URI available for enrichment")
-            _uiState.update { it.copy(
-                enrichmentStatus = EnrichmentUiStatus.ERROR,
-                lastErrorMessage = "No image available",
-            ) }
+            _uiState.update {
+                it.copy(
+                    enrichmentStatus = EnrichmentUiStatus.ERROR,
+                    lastErrorMessage = "No image available",
+                )
+            }
             return
         }
 
         // Update status to running
-        _uiState.update { it.copy(
-            enrichmentStatus = EnrichmentUiStatus.RUNNING,
-            lastErrorMessage = null,
-        ) }
+        _uiState.update {
+            it.copy(
+                enrichmentStatus = EnrichmentUiStatus.RUNNING,
+                lastErrorMessage = null,
+            )
+        }
 
         // Update enrichment layer status
         stateManager.updateEnrichmentStatus(itemId) { status ->
@@ -479,7 +515,10 @@ class ItemDetailViewModel(
     /**
      * Add a photo to the current item.
      */
-    fun addPhoto(context: Context, photoUri: Uri) {
+    fun addPhoto(
+        context: Context,
+        photoUri: Uri,
+    ) {
         val itemId = currentItemId ?: return
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -496,17 +535,18 @@ class ItemDetailViewModel(
                 val savedUri = photoFile.absolutePath
 
                 // Create ItemPhoto
-                val photo = ItemPhoto(
-                    id = UUID.randomUUID().toString(),
-                    uri = savedUri,
-                    bytes = null,
-                    mimeType = "image/jpeg",
-                    width = bitmap.width,
-                    height = bitmap.height,
-                    capturedAt = Clock.System.now().toEpochMilliseconds(),
-                    photoHash = null,
-                    photoType = PhotoType.CLOSEUP,
-                )
+                val photo =
+                    ItemPhoto(
+                        id = UUID.randomUUID().toString(),
+                        uri = savedUri,
+                        bytes = null,
+                        mimeType = "image/jpeg",
+                        width = bitmap.width,
+                        height = bitmap.height,
+                        capturedAt = Clock.System.now().toEpochMilliseconds(),
+                        photoHash = null,
+                        photoType = PhotoType.CLOSEUP,
+                    )
 
                 // Add to item
                 withContext(Dispatchers.Main) {
@@ -525,12 +565,18 @@ class ItemDetailViewModel(
         }
     }
 
-    private fun triggerEnrichmentForPhoto(context: Context, photoUri: Uri, itemId: String) {
+    private fun triggerEnrichmentForPhoto(
+        context: Context,
+        photoUri: Uri,
+        itemId: String,
+    ) {
         // Update status to running
-        _uiState.update { it.copy(
-            enrichmentStatus = EnrichmentUiStatus.RUNNING,
-            lastErrorMessage = null,
-        ) }
+        _uiState.update {
+            it.copy(
+                enrichmentStatus = EnrichmentUiStatus.RUNNING,
+                lastErrorMessage = null,
+            )
+        }
 
         // Update enrichment layer status
         stateManager.updateEnrichmentStatus(itemId) { status ->
@@ -550,8 +596,11 @@ class ItemDetailViewModel(
         )
     }
 
-    private fun loadBitmapFromUri(context: Context, uri: Uri): Bitmap? {
-        return try {
+    private fun loadBitmapFromUri(
+        context: Context,
+        uri: Uri,
+    ): Bitmap? =
+        try {
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 BitmapFactory.decodeStream(stream)
             }
@@ -559,9 +608,12 @@ class ItemDetailViewModel(
             Log.e(TAG, "Failed to load bitmap from URI", e)
             null
         }
-    }
 
-    private fun savePhotoToInternalStorage(context: Context, bitmap: Bitmap, itemId: String): File {
+    private fun savePhotoToInternalStorage(
+        context: Context,
+        bitmap: Bitmap,
+        itemId: String,
+    ): File {
         val photosDir = File(context.filesDir, "item_photos/$itemId")
         photosDir.mkdirs()
 
@@ -587,11 +639,13 @@ class ItemDetailViewModel(
                     ignoreCase = true,
                 )
             }
+
             existingPattern.containsMatchIn(summaryText) -> {
                 existingPattern.replace(summaryText) {
                     "${suggestion.displayName}: ${suggestion.value}"
                 }
             }
+
             else -> {
                 // Append at the end before Notes
                 val notesIndex = summaryText.indexOf("Notes:", ignoreCase = true)

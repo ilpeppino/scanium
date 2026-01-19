@@ -40,40 +40,30 @@ object AppModule {
     @Provides
     @Singleton
     @ApplicationScope
-    fun provideApplicationScope(): CoroutineScope {
-        return CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    }
+    fun provideApplicationScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     @Provides
     @Singleton
     fun provideSecureApiKeyStore(
         @ApplicationContext context: Context,
-    ): SecureApiKeyStore {
-        return SecureApiKeyStore(context)
-    }
+    ): SecureApiKeyStore = SecureApiKeyStore(context)
 
     @Provides
     @Singleton
     fun provideConnectivityObserver(
         @ApplicationContext context: Context,
-    ): ConnectivityObserver {
-        return ConnectivityObserver(context)
-    }
+    ): ConnectivityObserver = ConnectivityObserver(context)
 
     @Provides
     @Singleton
-    fun provideConnectivityStatusProvider(connectivityObserver: ConnectivityObserver): ConnectivityStatusProvider {
-        return connectivityObserver
-    }
+    fun provideConnectivityStatusProvider(connectivityObserver: ConnectivityObserver): ConnectivityStatusProvider = connectivityObserver
 
     @Provides
     @Singleton
     fun provideConfigProvider(
         @ApplicationContext context: Context,
         @ApplicationScope scope: CoroutineScope,
-    ): ConfigProvider {
-        return AndroidRemoteConfigProvider(context, scope)
-    }
+    ): ConfigProvider = AndroidRemoteConfigProvider(context, scope)
 
     /**
      * Provides Telemetry facade from the Application instance.
@@ -81,27 +71,24 @@ object AppModule {
      */
     @Provides
     @Singleton
-    fun provideTelemetry(application: Application): Telemetry? {
-        return (application as? ScaniumApplication)?.telemetry
-    }
+    fun provideTelemetry(application: Application): Telemetry? = (application as? ScaniumApplication)?.telemetry
 
     /**
      * Provides CrashPort from the Application instance.
      */
     @Provides
     @Singleton
-    fun provideCrashPort(application: Application): CrashPort {
-        return (application as? ScaniumApplication)?.crashPort
+    fun provideCrashPort(application: Application): CrashPort =
+        (application as? ScaniumApplication)?.crashPort
             ?: com.scanium.telemetry.ports.NoOpCrashPort
-    }
 
     /**
      * Provides DiagnosticsPort from the Application instance.
      */
     @Provides
     @Singleton
-    fun provideDiagnosticsPort(application: Application): DiagnosticsPort {
-        return (application as? ScaniumApplication)?.diagnosticsPort
+    fun provideDiagnosticsPort(application: Application): DiagnosticsPort =
+        (application as? ScaniumApplication)?.diagnosticsPort
             ?: object : DiagnosticsPort {
                 override fun appendBreadcrumb(event: TelemetryEvent) {}
 
@@ -111,5 +98,4 @@ object AppModule {
 
                 override fun breadcrumbCount(): Int = 0
             }
-    }
 }

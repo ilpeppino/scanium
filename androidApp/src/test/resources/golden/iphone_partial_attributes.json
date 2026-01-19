@@ -17,6 +17,9 @@
   "expected": {
     "maxScore": 50,
     "isReadyForListing": false,
-    "requiredMissing": ["model", "condition"]
+    "requiredMissing": [
+      "model",
+      "condition"
+    ]
   }
 }

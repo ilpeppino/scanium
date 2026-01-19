@@ -1,5 +1,6 @@
 package com.scanium.app.telemetry
 
+import com.scanium.app.telemetry.TraceContext.clearActiveSpan
 import com.scanium.telemetry.ports.SpanContext
 
 /**
@@ -55,9 +56,7 @@ object TraceContext {
      *
      * @return The active span, or null if no span is active
      */
-    fun getActiveSpan(): SpanContext? {
-        return activeSpan.get()
-    }
+    fun getActiveSpan(): SpanContext? = activeSpan.get()
 
     /**
      * Clears the active span for the current thread.

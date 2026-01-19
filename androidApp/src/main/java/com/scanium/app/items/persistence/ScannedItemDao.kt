@@ -5,7 +5,10 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Upsert
 
-data class ItemHashPair(val itemId: String, val snapshotHash: String)
+data class ItemHashPair(
+    val itemId: String,
+    val snapshotHash: String,
+)
 
 @Dao
 interface ScannedItemDao {
@@ -64,7 +67,10 @@ interface ScannedItemDao {
      * Maps localId -> serverId
      */
     @Query("UPDATE scanned_items SET serverId = :serverId WHERE id = :localId")
-    suspend fun updateServerId(localId: String, serverId: String)
+    suspend fun updateServerId(
+        localId: String,
+        serverId: String,
+    )
 
     /**
      * Update sync state after successful sync
@@ -99,7 +105,10 @@ interface ScannedItemDao {
         WHERE id = :itemId
         """,
     )
-    suspend fun markDeleted(itemId: String, deletedAt: Long)
+    suspend fun markDeleted(
+        itemId: String,
+        deletedAt: Long,
+    )
 
     /**
      * Mark all items as needing sync

@@ -9,7 +9,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.data.MarketplaceRepository
-import com.scanium.app.ui.settings.SettingsGeneralScreen
 import com.scanium.app.ui.settings.SettingsViewModel
 import com.scanium.app.ui.theme.ScaniumTheme
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -81,16 +80,18 @@ class SettingsSignInRegressionTest {
 
         // Create test auth launcher and repository
         testAuthLauncher = TestAuthLauncher()
-        val authApi = GoogleAuthApi(
-            okHttpClient = okhttp3.OkHttpClient(),
-            baseUrl = mockWebServer.url("/").toString()
-        )
-        testAuthRepository = AuthRepository(
-            context = InstrumentationRegistry.getInstrumentation().targetContext,
-            apiKeyStore = apiKeyStore,
-            authApi = authApi,
-            authLauncher = testAuthLauncher
-        )
+        val authApi =
+            GoogleAuthApi(
+                okHttpClient = okhttp3.OkHttpClient(),
+                baseUrl = mockWebServer.url("/").toString(),
+            )
+        testAuthRepository =
+            AuthRepository(
+                context = InstrumentationRegistry.getInstrumentation().targetContext,
+                apiKeyStore = apiKeyStore,
+                authApi = authApi,
+                authLauncher = testAuthLauncher,
+            )
 
         // Create ViewModel with test repository
         // Note: In real implementation, we'd inject this via Hilt
@@ -109,100 +110,109 @@ class SettingsSignInRegressionTest {
      * This test MUST FAIL if the button click does nothing.
      */
     @Test
-    fun signInButton_whenTapped_invokesAuthLauncher() = runTest {
-        // Configure test launcher to succeed
-        testAuthLauncher.shouldSucceed = true
-        testAuthLauncher.fakeToken = "fake_google_id_token"
+    fun signInButton_whenTapped_invokesAuthLauncher() =
+        runTest {
+            // Configure test launcher to succeed
+            testAuthLauncher.shouldSucceed = true
+            testAuthLauncher.fakeToken = "fake_google_id_token"
 
-        // Mock backend response
-        mockWebServer.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody("""
-                    {
-                        "accessToken": "fake_access_token",
-                        "expiresIn": 3600,
-                        "user": {
-                            "id": "user123",
-                            "email": "test@example.com",
-                            "displayName": "Test User"
+            // Mock backend response
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                        {
+                            "accessToken": "fake_access_token",
+                            "expiresIn": 3600,
+                            "user": {
+                                "id": "user123",
+                                "email": "test@example.com",
+                                "displayName": "Test User"
+                            }
                         }
-                    }
-                """.trimIndent())
-        )
+                        """.trimIndent(),
+                    ),
+            )
 
-        // Set up the screen
-        composeTestRule.setContent {
-            ScaniumTheme {
-                // Note: This test needs to be completed once we have
-                // proper DI setup for testing ViewModels
-                // For now, this demonstrates the approach
+            // Set up the screen
+            composeTestRule.setContent {
+                ScaniumTheme {
+                    // Note: This test needs to be completed once we have
+                    // proper DI setup for testing ViewModels
+                    // For now, this demonstrates the approach
+                }
+            }
+
+            // Verify sign-in button is visible
+            composeTestRule.onNodeWithText("Continue with Google").assertIsDisplayed()
+
+            // Tap the button
+            composeTestRule.onNodeWithText("Continue with Google").performClick()
+
+            // Wait for the auth launcher to be invoked
+            composeTestRule.waitUntil(timeoutMillis = 2000) {
+                testAuthLauncher.wasInvoked
+            }
+
+            // CRITICAL ASSERTION: This MUST be true, otherwise the bug is NOT fixed
+            assert(testAuthLauncher.wasInvoked) {
+                "❌ BUG NOT FIXED: AuthLauncher was never invoked when sign-in button was tapped!"
             }
         }
-
-        // Verify sign-in button is visible
-        composeTestRule.onNodeWithText("Continue with Google").assertIsDisplayed()
-
-        // Tap the button
-        composeTestRule.onNodeWithText("Continue with Google").performClick()
-
-        // Wait for the auth launcher to be invoked
-        composeTestRule.waitUntil(timeoutMillis = 2000) {
-            testAuthLauncher.wasInvoked
-        }
-
-        // CRITICAL ASSERTION: This MUST be true, otherwise the bug is NOT fixed
-        assert(testAuthLauncher.wasInvoked) {
-            "❌ BUG NOT FIXED: AuthLauncher was never invoked when sign-in button was tapped!"
-        }
-    }
 
     /**
      * Test: Sign-in shows loading state
      */
     @Test
-    fun signInFlow_showsSigningInState() = runTest {
-        testAuthLauncher.shouldSucceed = true
-        testAuthLauncher.delayMs = 500 // Delay to observe loading state
+    fun signInFlow_showsSigningInState() =
+        runTest {
+            testAuthLauncher.shouldSucceed = true
+            testAuthLauncher.delayMs = 500 // Delay to observe loading state
 
-        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("""
-            {"accessToken": "token", "expiresIn": 3600, "user": {"id": "1", "email": "test@example.com"}}
-        """.trimIndent()))
+            mockWebServer.enqueue(
+                MockResponse().setResponseCode(200).setBody(
+                    """
+                    {"accessToken": "token", "expiresIn": 3600, "user": {"id": "1", "email": "test@example.com"}}
+                    """.trimIndent(),
+                ),
+            )
 
-        // TODO: Complete once ViewModel DI is set up for tests
+            // TODO: Complete once ViewModel DI is set up for tests
 
-        // Tap sign-in
-        composeTestRule.onNodeWithText("Continue with Google").performClick()
+            // Tap sign-in
+            composeTestRule.onNodeWithText("Continue with Google").performClick()
 
-        // Verify "Signing in..." is shown
-        composeTestRule.onNodeWithText("Signing in…").assertIsDisplayed()
-    }
+            // Verify "Signing in..." is shown
+            composeTestRule.onNodeWithText("Signing in…").assertIsDisplayed()
+        }
 
     /**
      * Test: Sign-in failure shows error (NOT silent)
      */
     @Test
-    fun signInFlow_onFailure_showsErrorNotSilent() = runTest {
-        testAuthLauncher.shouldSucceed = false
-        testAuthLauncher.errorMessage = "User cancelled"
+    fun signInFlow_onFailure_showsErrorNotSilent() =
+        runTest {
+            testAuthLauncher.shouldSucceed = false
+            testAuthLauncher.errorMessage = "User cancelled"
 
-        // TODO: Complete once ViewModel DI is set up
+            // TODO: Complete once ViewModel DI is set up
 
-        // Tap sign-in
-        composeTestRule.onNodeWithText("Continue with Google").performClick()
+            // Tap sign-in
+            composeTestRule.onNodeWithText("Continue with Google").performClick()
 
-        // Wait for invocation
-        composeTestRule.waitUntil(timeoutMillis = 2000) {
-            testAuthLauncher.wasInvoked
+            // Wait for invocation
+            composeTestRule.waitUntil(timeoutMillis = 2000) {
+                testAuthLauncher.wasInvoked
+            }
+
+            // CRITICAL: Error must be visible (NOT silent)
+            composeTestRule.waitUntil(timeoutMillis = 3000) {
+                // Check for error snackbar/toast
+                composeTestRule.onAllNodesWithText("Sign-in failed:", substring = true)
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
         }
-
-        // CRITICAL: Error must be visible (NOT silent)
-        composeTestRule.waitUntil(timeoutMillis = 3000) {
-            // Check for error snackbar/toast
-            composeTestRule.onAllNodesWithText("Sign-in failed:", substring = true)
-                .fetchSemanticsNodes().isNotEmpty()
-        }
-    }
 
     /**
      * Test AuthLauncher that simulates Google Sign-In.

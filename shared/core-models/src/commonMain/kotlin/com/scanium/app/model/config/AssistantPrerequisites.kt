@@ -76,26 +76,32 @@ sealed class ConnectionTestResult {
          * Debug string for display in UI, e.g., "GET /health -> 401"
          */
         val debugDetail: String
-            get() = buildString {
-                append(method)
-                append(" ")
-                append(endpoint ?: "/unknown")
-                httpStatus?.let { append(" -> $it") }
-            }
+            get() =
+                buildString {
+                    append(method)
+                    append(" ")
+                    append(endpoint ?: "/unknown")
+                    httpStatus?.let { append(" -> $it") }
+                }
     }
 }
 
 enum class ConnectionTestErrorType {
     /** Network error - DNS failure, connection refused, SSL error */
     NETWORK_UNREACHABLE,
+
     /** HTTP 5xx response */
     SERVER_ERROR,
+
     /** HTTP 401/403 response */
     UNAUTHORIZED,
+
     /** HTTP 404 response */
     NOT_FOUND,
+
     /** Socket/connection timeout */
     TIMEOUT,
+
     /** Backend URL or API key not configured */
     NOT_CONFIGURED,
 }

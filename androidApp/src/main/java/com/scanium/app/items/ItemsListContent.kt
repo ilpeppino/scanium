@@ -9,16 +9,40 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,11 +56,12 @@ import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.ftue.tourTarget
-import com.scanium.app.ui.shimmerEffect
 import com.scanium.app.items.components.AttributeChipsRow
 import com.scanium.app.model.toImageBitmap
+import com.scanium.app.ui.shimmerEffect
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 /**
  * Content area for the items list, rendering either empty state or the LazyColumn.
@@ -60,9 +85,10 @@ internal fun ItemsListContent(
     modifier: Modifier = Modifier,
 ) {
     // Map items to formatted display models using CustomerSafeCopyFormatter
-    val displayItems = remember(items) {
-        ItemListViewMapper.mapToListDisplayBatch(items, dropIfWeak = false)
-    }
+    val displayItems =
+        remember(items) {
+            ItemListViewMapper.mapToListDisplayBatch(items, dropIfWeak = false)
+        }
 
     Box(modifier = modifier.fillMaxSize()) {
         when {
@@ -70,6 +96,7 @@ internal fun ItemsListContent(
                 // Empty state
                 EmptyItemsContent()
             }
+
             else -> {
                 // Items list with header and CTA
                 LazyColumn(
@@ -125,8 +152,7 @@ internal fun ItemsListContent(
                                                 stiffness = 300f,
                                                 dampingRatio = 0.8f,
                                             ),
-                                    )
-                                    .then(
+                                    ).then(
                                         if (tourViewModel != null && isFirstItem) {
                                             Modifier.tourTarget("items_first_item", tourViewModel)
                                         } else {
@@ -228,21 +254,30 @@ internal fun ItemRow(
     val displayTitle = displayItem?.title ?: item.displayLabel
 
     // Build price line from structured pricing (localized) or fall back to legacy strings
-    val priceText = when {
-        displayItem?.pricing != null -> {
-            stringResource(R.string.pricing_range_value, displayItem.pricing.min, displayItem.pricing.max)
+    val priceText =
+        when {
+            displayItem?.pricing != null -> {
+                stringResource(R.string.pricing_range_value, displayItem.pricing.min, displayItem.pricing.max)
+            }
+
+            displayItem?.priceLine != null -> {
+                displayItem.priceLine
+            }
+
+            // Legacy fallback
+            else -> {
+                item.formattedUserPrice ?: item.formattedPriceRange
+            }
         }
-        displayItem?.priceLine != null -> displayItem.priceLine  // Legacy fallback
-        else -> item.formattedUserPrice ?: item.formattedPriceRange
-    }
 
     // Get pricing context for localized rendering
-    val pricingContextString = displayItem?.pricing?.contextKey?.let { contextKey ->
-        when (contextKey) {
-            "pricing_context_current_market" -> stringResource(R.string.pricing_context_current_market)
-            else -> null  // Unknown context key, skip rendering
-        }
-    } ?: displayItem?.priceContext  // Legacy fallback
+    val pricingContextString =
+        displayItem?.pricing?.contextKey?.let { contextKey ->
+            when (contextKey) {
+                "pricing_context_current_market" -> stringResource(R.string.pricing_context_current_market)
+                else -> null // Unknown context key, skip rendering
+            }
+        } ?: displayItem?.priceContext // Legacy fallback
 
     val contentDescription =
         buildString {
@@ -261,8 +296,14 @@ internal fun ItemRow(
                     append(confidenceLabel)
                 }
                 when (item.classificationStatus) {
-                    "PENDING" -> append(". $classificationInProgress")
-                    "FAILED" -> append(". $classificationFailed")
+                    "PENDING" -> {
+                        append(". $classificationInProgress")
+                    }
+
+                    "FAILED" -> {
+                        append(". $classificationFailed")
+                    }
+
                     else -> {}
                 }
             }
@@ -282,8 +323,7 @@ internal fun ItemRow(
                 .fillMaxWidth()
                 .semantics(mergeDescendants = true) {
                     this.contentDescription = contentDescription
-                }
-                .pointerInput(Unit) {
+                }.pointerInput(Unit) {
                     detectTapGestures(
                         onPress = { offset ->
                             val press = PressInteraction.Press(offset)
@@ -331,8 +371,7 @@ internal fun ItemRow(
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant,
                                 shape = MaterialTheme.shapes.small,
-                            )
-                            .clip(MaterialTheme.shapes.small),
+                            ).clip(MaterialTheme.shapes.small),
                     contentScale = ContentScale.Fit,
                 )
             } ?: run {
@@ -344,8 +383,7 @@ internal fun ItemRow(
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant,
                                 shape = MaterialTheme.shapes.small,
-                            )
-                            .shimmerEffect(),
+                            ).shimmerEffect(),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(stringResource(R.string.common_question_mark), style = MaterialTheme.typography.headlineMedium)
@@ -387,11 +425,12 @@ internal fun ItemRow(
                             Text(
                                 text = priceText,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = if (item.userPriceCents != null) {
-                                    MaterialTheme.colorScheme.tertiary
-                                } else {
-                                    MaterialTheme.colorScheme.primary
-                                },
+                                color =
+                                    if (item.userPriceCents != null) {
+                                        MaterialTheme.colorScheme.tertiary
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
                             )
                             // Show condition badge if set
                             item.condition?.let { condition ->
@@ -462,8 +501,9 @@ internal fun ItemRow(
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
-                            text = item.classificationErrorMessage
-                                ?: stringResource(R.string.items_classification_failed),
+                            text =
+                                item.classificationErrorMessage
+                                    ?: stringResource(R.string.items_classification_failed),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             maxLines = 1,
@@ -512,9 +552,9 @@ internal fun ItemRow(
                                 },
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                                 modifier =
-                                Modifier
-                                    .sizeIn(minHeight = 48.dp)
-                                    .semantics { this.contentDescription = viewListingLabel },
+                                    Modifier
+                                        .sizeIn(minHeight = 48.dp)
+                                        .semantics { this.contentDescription = viewListingLabel },
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
@@ -598,25 +638,33 @@ internal fun ConfidenceBadge(confidenceLevel: ConfidenceLevel) {
 internal fun ListingStatusBadge(status: ItemListingStatus) {
     val (backgroundColor, textColor, text) =
         when (status) {
-            ItemListingStatus.LISTED_ACTIVE ->
+            ItemListingStatus.LISTED_ACTIVE -> {
                 Triple(
                     MaterialTheme.colorScheme.primaryContainer,
                     MaterialTheme.colorScheme.onPrimaryContainer,
                     status.displayName,
                 )
-            ItemListingStatus.LISTING_IN_PROGRESS ->
+            }
+
+            ItemListingStatus.LISTING_IN_PROGRESS -> {
                 Triple(
                     MaterialTheme.colorScheme.secondaryContainer,
                     MaterialTheme.colorScheme.onSecondaryContainer,
                     status.displayName,
                 )
-            ItemListingStatus.LISTING_FAILED ->
+            }
+
+            ItemListingStatus.LISTING_FAILED -> {
                 Triple(
                     MaterialTheme.colorScheme.errorContainer,
                     MaterialTheme.colorScheme.onErrorContainer,
                     status.displayName,
                 )
-            ItemListingStatus.NOT_LISTED -> return // Don't show badge for not listed
+            }
+
+            ItemListingStatus.NOT_LISTED -> {
+                return
+            } // Don't show badge for not listed
         }
 
     Surface(
@@ -639,26 +687,38 @@ internal fun ListingStatusBadge(status: ItemListingStatus) {
 internal fun ClassificationStatusBadge(status: String) {
     val (backgroundColor, textColor, text) =
         when (status) {
-            "PENDING" ->
+            "PENDING" -> {
                 Triple(
                     MaterialTheme.colorScheme.secondaryContainer,
                     MaterialTheme.colorScheme.onSecondaryContainer,
                     stringResource(R.string.items_status_classifying),
                 )
-            "SUCCESS" ->
+            }
+
+            "SUCCESS" -> {
                 Triple(
                     MaterialTheme.colorScheme.primaryContainer,
                     MaterialTheme.colorScheme.onPrimaryContainer,
                     stringResource(R.string.items_status_cloud),
                 )
-            "FAILED" ->
+            }
+
+            "FAILED" -> {
                 Triple(
                     MaterialTheme.colorScheme.errorContainer,
                     MaterialTheme.colorScheme.onErrorContainer,
                     stringResource(R.string.items_status_failed),
                 )
-            "NOT_STARTED" -> return // Don't show badge for not started
-            else -> return // Unknown status
+            }
+
+            "NOT_STARTED" -> {
+                return
+            }
+
+            // Don't show badge for not started
+            else -> {
+                return
+            } // Unknown status
         }
 
     Surface(
@@ -681,14 +741,21 @@ internal fun ClassificationStatusBadge(status: String) {
 internal fun ConditionBadge(condition: ItemCondition) {
     val (backgroundColor, textColor) =
         when (condition) {
-            ItemCondition.NEW ->
+            ItemCondition.NEW -> {
                 MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-            ItemCondition.AS_GOOD_AS_NEW ->
+            }
+
+            ItemCondition.AS_GOOD_AS_NEW -> {
                 MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-            ItemCondition.USED ->
+            }
+
+            ItemCondition.USED -> {
                 MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-            ItemCondition.REFURBISHED ->
+            }
+
+            ItemCondition.REFURBISHED -> {
                 MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+            }
         }
 
     Surface(
@@ -708,28 +775,37 @@ internal fun ConditionBadge(condition: ItemCondition) {
  * Enrichment status badge showing enriching/enriched state.
  */
 @Composable
-internal fun EnrichmentStatusBadge(
-    status: com.scanium.shared.core.models.items.EnrichmentLayerStatus,
-) {
+internal fun EnrichmentStatusBadge(status: com.scanium.shared.core.models.items.EnrichmentLayerStatus) {
     val (backgroundColor, textColor, text) =
         when {
-            status.isEnriching -> Triple(
-                MaterialTheme.colorScheme.primaryContainer,
-                MaterialTheme.colorScheme.onPrimaryContainer,
-                stringResource(R.string.items_status_enriching),
-            )
-            status.isComplete && status.hasAnyResults -> Triple(
-                MaterialTheme.colorScheme.tertiaryContainer,
-                MaterialTheme.colorScheme.onTertiaryContainer,
-                stringResource(R.string.items_status_enriched),
-            )
+            status.isEnriching -> {
+                Triple(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                    stringResource(R.string.items_status_enriching),
+                )
+            }
+
+            status.isComplete && status.hasAnyResults -> {
+                Triple(
+                    MaterialTheme.colorScheme.tertiaryContainer,
+                    MaterialTheme.colorScheme.onTertiaryContainer,
+                    stringResource(R.string.items_status_enriched),
+                )
+            }
+
             status.layerA == com.scanium.shared.core.models.items.LayerState.FAILED &&
-                status.layerB == com.scanium.shared.core.models.items.LayerState.FAILED -> Triple(
-                MaterialTheme.colorScheme.errorContainer,
-                MaterialTheme.colorScheme.onErrorContainer,
-                stringResource(R.string.items_status_failed),
-            )
-            else -> return // Don't show badge for pending state
+                status.layerB == com.scanium.shared.core.models.items.LayerState.FAILED -> {
+                Triple(
+                    MaterialTheme.colorScheme.errorContainer,
+                    MaterialTheme.colorScheme.onErrorContainer,
+                    stringResource(R.string.items_status_failed),
+                )
+            }
+
+            else -> {
+                return
+            } // Don't show badge for pending state
         }
 
     Surface(

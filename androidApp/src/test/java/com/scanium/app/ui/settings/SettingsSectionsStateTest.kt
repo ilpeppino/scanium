@@ -20,7 +20,6 @@ import org.junit.Test
  * These tests verify the deterministic state mapping logic.
  */
 class SettingsSectionsStateTest {
-
     /**
      * Creates a default test input with all values set to sensible defaults.
      * Test methods can override specific values as needed.
@@ -111,11 +110,12 @@ class SettingsSectionsStateTest {
 
     @Test
     fun `developer section visible when allowDeveloperMode true and isDebugBuild true`() {
-        val inputs = createTestInputs(
-            allowDeveloperMode = true,
-            isDebugBuild = true,
-            isDeveloperModeEnabled = false,
-        )
+        val inputs =
+            createTestInputs(
+                allowDeveloperMode = true,
+                isDebugBuild = true,
+                isDeveloperModeEnabled = false,
+            )
         val result = buildSettingsSectionsState(inputs)
 
         assertEquals(true, result.home.showDeveloperCategory)
@@ -124,11 +124,12 @@ class SettingsSectionsStateTest {
 
     @Test
     fun `developer section visible when allowDeveloperMode true and isDeveloperModeEnabled true`() {
-        val inputs = createTestInputs(
-            allowDeveloperMode = true,
-            isDebugBuild = false,
-            isDeveloperModeEnabled = true,
-        )
+        val inputs =
+            createTestInputs(
+                allowDeveloperMode = true,
+                isDebugBuild = false,
+                isDeveloperModeEnabled = true,
+            )
         val result = buildSettingsSectionsState(inputs)
 
         assertEquals(true, result.home.showDeveloperCategory)
@@ -137,11 +138,12 @@ class SettingsSectionsStateTest {
 
     @Test
     fun `developer section hidden when allowDeveloperMode false even in debug build`() {
-        val inputs = createTestInputs(
-            allowDeveloperMode = false,
-            isDebugBuild = true,
-            isDeveloperModeEnabled = true,
-        )
+        val inputs =
+            createTestInputs(
+                allowDeveloperMode = false,
+                isDebugBuild = true,
+                isDeveloperModeEnabled = true,
+            )
         val result = buildSettingsSectionsState(inputs)
 
         assertEquals(false, result.home.showDeveloperCategory)
@@ -150,11 +152,12 @@ class SettingsSectionsStateTest {
 
     @Test
     fun `developer section hidden when allowDeveloperMode true but neither debug nor devMode enabled`() {
-        val inputs = createTestInputs(
-            allowDeveloperMode = true,
-            isDebugBuild = false,
-            isDeveloperModeEnabled = false,
-        )
+        val inputs =
+            createTestInputs(
+                allowDeveloperMode = true,
+                isDebugBuild = false,
+                isDeveloperModeEnabled = false,
+            )
         val result = buildSettingsSectionsState(inputs)
 
         assertEquals(false, result.home.showDeveloperCategory)
@@ -189,11 +192,12 @@ class SettingsSectionsStateTest {
 
     @Test
     fun `assistant section personalization values pass through correctly`() {
-        val inputs = createTestInputs(
-            assistantTone = AssistantTone.FRIENDLY,
-            assistantUnits = AssistantUnits.IMPERIAL,
-            assistantVerbosity = AssistantVerbosity.DETAILED,
-        )
+        val inputs =
+            createTestInputs(
+                assistantTone = AssistantTone.FRIENDLY,
+                assistantUnits = AssistantUnits.IMPERIAL,
+                assistantVerbosity = AssistantVerbosity.DETAILED,
+            )
         val result = buildSettingsSectionsState(inputs)
 
         assertEquals(AssistantTone.FRIENDLY, result.assistant.tone)
@@ -222,10 +226,11 @@ class SettingsSectionsStateTest {
 
     @Test
     fun `general section language and region pass through correctly`() {
-        val inputs = createTestInputs(
-            primaryLanguage = "de",
-            primaryRegionCountry = "DE",
-        )
+        val inputs =
+            createTestInputs(
+                primaryLanguage = "de",
+                primaryRegionCountry = "DE",
+            )
         val result = buildSettingsSectionsState(inputs)
 
         assertEquals("de", result.general.primaryLanguage)
@@ -294,10 +299,11 @@ class SettingsSectionsStateTest {
 
     @Test
     fun `storage section autoSave and directory state reflects input`() {
-        val inputs = createTestInputs(
-            autoSaveEnabled = true,
-            saveDirectoryUri = "content://com.android.externalstorage/tree/primary",
-        )
+        val inputs =
+            createTestInputs(
+                autoSaveEnabled = true,
+                saveDirectoryUri = "content://com.android.externalstorage/tree/primary",
+            )
         val result = buildSettingsSectionsState(inputs)
 
         assertEquals(true, result.storage.autoSaveEnabled)
@@ -325,15 +331,16 @@ class SettingsSectionsStateTest {
 
     @Test
     fun `buildSettingsSectionsState is deterministic with same inputs`() {
-        val inputs = createTestInputs(
-            themeMode = ThemeMode.DARK,
-            primaryLanguage = "nl",
-            primaryRegionCountry = "NL",
-            allowAssistant = true,
-            assistantTone = AssistantTone.FRIENDLY,
-            allowDeveloperMode = true,
-            isDebugBuild = true,
-        )
+        val inputs =
+            createTestInputs(
+                themeMode = ThemeMode.DARK,
+                primaryLanguage = "nl",
+                primaryRegionCountry = "NL",
+                allowAssistant = true,
+                assistantTone = AssistantTone.FRIENDLY,
+                allowDeveloperMode = true,
+                isDebugBuild = true,
+            )
 
         val result1 = buildSettingsSectionsState(inputs)
         val result2 = buildSettingsSectionsState(inputs)

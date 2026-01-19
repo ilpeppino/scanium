@@ -7,8 +7,6 @@ import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.model.AssistantResponse
 import com.scanium.app.network.DeviceIdProvider
 import com.scanium.app.network.security.RequestSigner
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -114,13 +112,13 @@ internal class AssistantApi(
         endpoint: String,
         payloadJson: String,
         correlationId: String,
-    ): Request {
-        return Request.Builder()
+    ): Request =
+        Request
+            .Builder()
             .url(endpoint)
             .post(payloadJson.toRequestBody("application/json".toMediaType()))
             .apply { addCommonHeaders(this, payloadJson, correlationId) }
             .build()
-    }
 
     private fun buildMultipartRequest(
         endpoint: String,
@@ -129,7 +127,8 @@ internal class AssistantApi(
         correlationId: String,
     ): Request {
         val multipartBuilder =
-            MultipartBody.Builder()
+            MultipartBody
+                .Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("payload", payloadJson)
 
@@ -159,7 +158,8 @@ internal class AssistantApi(
         )
         Log.d("AssistantRepo", "Sending multipart request with ${imageAttachments.size} images")
 
-        return Request.Builder()
+        return Request
+            .Builder()
             .url(endpoint)
             .post(multipartBody)
             .apply { addCommonHeaders(this, payloadJson, correlationId) }
@@ -193,7 +193,10 @@ internal class AssistantApi(
         }
 
         // Phase B: Add session token for authenticated requests
-        val authToken = com.scanium.app.config.SecureApiKeyStore(context).getAuthToken()
+        val authToken =
+            com.scanium.app.config
+                .SecureApiKeyStore(context)
+                .getAuthToken()
         if (authToken != null) {
             Log.d("ScaniumAuth", "AssistantApi: Adding Authorization header")
             builder.header("Authorization", "Bearer $authToken")

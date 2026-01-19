@@ -20,9 +20,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -95,10 +95,11 @@ fun PostingAssistScreen(
     val context = LocalContext.current
     val assistedFactory =
         remember(context) {
-            EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                PostingAssistViewModelFactoryEntryPoint::class.java,
-            ).postingAssistViewModelFactory()
+            EntryPointAccessors
+                .fromApplication(
+                    context.applicationContext,
+                    PostingAssistViewModelFactoryEntryPoint::class.java,
+                ).postingAssistViewModelFactory()
         }
     val viewModel: PostingAssistViewModel =
         viewModel(
@@ -162,15 +163,24 @@ fun PostingAssistScreen(
                                 moreExpanded = false
                                 if (draft != null) {
                                     // Localize condition
-                                    val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
-                                        ItemAttributeLocalizer.localizeCondition(context, it)
-                                    }
-                                    val exportDraft = if (localizedCondition != null) {
-                                        val newFields = draft.fields.toMutableMap()
-                                        newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
-                                            ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
-                                        draft.copy(fields = newFields)
-                                    } else draft
+                                    val localizedCondition =
+                                        draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                            ItemAttributeLocalizer.localizeCondition(context, it)
+                                        }
+                                    val exportDraft =
+                                        if (localizedCondition != null) {
+                                            val newFields = draft.fields.toMutableMap()
+                                            newFields[DraftFieldKey.CONDITION] =
+                                                newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                                    ?: DraftField(
+                                                        value = localizedCondition,
+                                                        confidence = 1.0f,
+                                                        source = DraftProvenance.USER_EDITED,
+                                                    )
+                                            draft.copy(fields = newFields)
+                                        } else {
+                                            draft
+                                        }
 
                                     val export = ListingDraftFormatter.format(exportDraft, profile)
                                     ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
@@ -209,15 +219,19 @@ fun PostingAssistScreen(
                 onCopyAll = {
                     if (draft != null) {
                         // Localize condition
-                        val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
-                            ItemAttributeLocalizer.localizeCondition(context, it)
-                        }
-                        val exportDraft = if (localizedCondition != null) {
-                            val newFields = draft.fields.toMutableMap()
-                            newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
-                                ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
-                            draft.copy(fields = newFields)
-                        } else draft
+                        val localizedCondition =
+                            draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                ItemAttributeLocalizer.localizeCondition(context, it)
+                            }
+                        val exportDraft =
+                            if (localizedCondition != null) {
+                                val newFields = draft.fields.toMutableMap()
+                                newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                    ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                                draft.copy(fields = newFields)
+                            } else {
+                                draft
+                            }
 
                         val export = ListingDraftFormatter.format(exportDraft, profile)
                         ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
@@ -234,15 +248,19 @@ fun PostingAssistScreen(
                         val currentItem = items.firstOrNull { it.id == draft.itemId }
 
                         // Localize condition
-                        val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
-                            ItemAttributeLocalizer.localizeCondition(context, it)
-                        }
-                        val exportDraft = if (localizedCondition != null) {
-                            val newFields = draft.fields.toMutableMap()
-                            newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
-                                ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
-                            draft.copy(fields = newFields)
-                        } else draft
+                        val localizedCondition =
+                            draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                ItemAttributeLocalizer.localizeCondition(context, it)
+                            }
+                        val exportDraft =
+                            if (localizedCondition != null) {
+                                val newFields = draft.fields.toMutableMap()
+                                newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                    ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                                draft.copy(fields = newFields)
+                            } else {
+                                draft
+                            }
 
                         val export = ListingDraftFormatter.format(exportDraft, profile)
                         val shareImages =
@@ -606,10 +624,13 @@ private fun openTarget(
     val uri = Uri.parse(target.value.ifBlank { "https://www.google.com" })
     val intent =
         when (target.type) {
-            com.scanium.app.selling.posting.PostingTargetType.URL, com.scanium.app.selling.posting.PostingTargetType.DEEPLINK ->
+            com.scanium.app.selling.posting.PostingTargetType.URL, com.scanium.app.selling.posting.PostingTargetType.DEEPLINK -> {
                 Intent(Intent.ACTION_VIEW, uri)
-            com.scanium.app.selling.posting.PostingTargetType.APP ->
+            }
+
+            com.scanium.app.selling.posting.PostingTargetType.APP -> {
                 context.packageManager.getLaunchIntentForPackage(target.value)
+            }
         }
     val resolved =
         intent?.takeIf { it.resolveActivity(context.packageManager) != null }

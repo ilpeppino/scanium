@@ -29,21 +29,15 @@ object DatabaseModule {
     @Singleton
     fun provideScannedItemDatabase(
         @ApplicationContext context: Context,
-    ): ScannedItemDatabase {
-        return ScannedItemDatabase.getInstance(context)
-    }
+    ): ScannedItemDatabase = ScannedItemDatabase.getInstance(context)
 
     @Provides
     @Singleton
-    fun provideScannedItemDao(database: ScannedItemDatabase): ScannedItemDao {
-        return database.scannedItemDao()
-    }
+    fun provideScannedItemDao(database: ScannedItemDatabase): ScannedItemDao = database.scannedItemDao()
 
     @Provides
     @Singleton
-    fun provideListingDraftDao(database: ScannedItemDatabase): ListingDraftDao {
-        return database.listingDraftDao()
-    }
+    fun provideListingDraftDao(database: ScannedItemDatabase): ListingDraftDao = database.listingDraftDao()
 
     /**
      * Phase E: ItemSyncManager for multi-device sync.
@@ -56,34 +50,24 @@ object DatabaseModule {
         dao: ScannedItemDao,
         itemsApi: ItemsApi,
         authRepository: AuthRepository,
-    ): ItemSyncManager {
-        return ItemSyncManager(context, dao, itemsApi, authRepository)
-    }
+    ): ItemSyncManager = ItemSyncManager(context, dao, itemsApi, authRepository)
 
     @Provides
     @Singleton
-    fun provideScannedItemSyncer(syncManager: ItemSyncManager): ScannedItemSyncer {
-        return syncManager
-    }
+    fun provideScannedItemSyncer(syncManager: ItemSyncManager): ScannedItemSyncer = syncManager
 
     @Provides
     @Singleton
     fun provideScannedItemRepository(
         dao: ScannedItemDao,
         syncer: ScannedItemSyncer,
-    ): ScannedItemRepository {
-        return ScannedItemRepository(dao, syncer)
-    }
+    ): ScannedItemRepository = ScannedItemRepository(dao, syncer)
 
     @Provides
     @Singleton
-    fun provideScannedItemStore(repository: ScannedItemRepository): ScannedItemStore {
-        return repository
-    }
+    fun provideScannedItemStore(repository: ScannedItemRepository): ScannedItemStore = repository
 
     @Provides
     @Singleton
-    fun provideListingDraftRepository(dao: ListingDraftDao): ListingDraftRepository {
-        return ListingDraftRepository(dao)
-    }
+    fun provideListingDraftRepository(dao: ListingDraftDao): ListingDraftRepository = ListingDraftRepository(dao)
 }

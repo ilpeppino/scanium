@@ -54,10 +54,11 @@ fun ScaniumApp() {
 
     // TourViewModel uses assisted injection because it depends on ItemsViewModel
     val tourViewModelFactory =
-        EntryPointAccessors.fromApplication(
-            context,
-            TourViewModelFactoryEntryPoint::class.java,
-        ).tourViewModelFactory()
+        EntryPointAccessors
+            .fromApplication(
+                context,
+                TourViewModelFactoryEntryPoint::class.java,
+            ).tourViewModelFactory()
 
     val tourViewModel: TourViewModel =
         viewModel(
@@ -69,8 +70,9 @@ fun ScaniumApp() {
     val draftStore: ListingDraftRepository = hiltEntryPoint<DraftStoreEntryPoint>(context).draftStore()
 
     // ExportAssistantViewModel factory for Phase 4: Export Assistant
-    val exportAssistantViewModelFactory = hiltEntryPoint<ExportAssistantViewModelFactoryEntryPoint>(context)
-        .exportAssistantViewModelFactory()
+    val exportAssistantViewModelFactory =
+        hiltEntryPoint<ExportAssistantViewModelFactoryEntryPoint>(context)
+            .exportAssistantViewModelFactory()
 
     // Sound manager needs SettingsRepository for the enabled flow
     val settingsRepository: SettingsRepository = hiltEntryPoint<SettingsRepositoryEntryPoint>(context).settingsRepository()
@@ -113,9 +115,8 @@ fun ScaniumApp() {
  * Helper function to access Hilt entry points.
  */
 @Composable
-private inline fun <reified T : Any> hiltEntryPoint(context: android.content.Context): T {
-    return EntryPointAccessors.fromApplication(context, T::class.java)
-}
+private inline fun <reified T : Any> hiltEntryPoint(context: android.content.Context): T =
+    EntryPointAccessors.fromApplication(context, T::class.java)
 
 // Backward compatibility alias
 @Deprecated("Use ScaniumApp instead", ReplaceWith("ScaniumApp()"))

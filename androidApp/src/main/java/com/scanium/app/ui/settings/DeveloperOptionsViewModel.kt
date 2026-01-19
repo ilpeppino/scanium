@@ -27,13 +27,11 @@ import com.scanium.app.diagnostics.DiagnosticsRepository
 import com.scanium.app.diagnostics.DiagnosticsState
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.model.config.AssistantPrerequisiteState
-import com.scanium.app.model.config.ConnectionTestResult
 import com.scanium.app.model.config.FeatureFlagRepository
-import com.scanium.app.platform.ConnectivityStatus
-import com.scanium.app.platform.ConnectivityStatusProvider
 import com.scanium.app.monitoring.DevHealthMonitorScheduler
 import com.scanium.app.monitoring.DevHealthMonitorStateStore
-import com.scanium.app.monitoring.MonitorHealthStatus
+import com.scanium.app.platform.ConnectivityStatus
+import com.scanium.app.platform.ConnectivityStatusProvider
 import com.scanium.app.selling.assistant.AssistantPreflightManager
 import com.scanium.app.selling.assistant.PreflightResult
 import com.scanium.app.selling.assistant.PreflightStatus
@@ -84,8 +82,9 @@ class DeveloperOptionsViewModel
         private val _assistantDiagnosticsRefreshing = MutableStateFlow(false)
 
         // Preflight diagnostics
-        val preflightState: StateFlow<PreflightResult> = preflightManager.currentResult
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreflightResult(PreflightStatus.UNKNOWN, 0))
+        val preflightState: StateFlow<PreflightResult> =
+            preflightManager.currentResult
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreflightResult(PreflightStatus.UNKNOWN, 0))
 
         // Developer settings
         val isDeveloperMode: StateFlow<Boolean> =
@@ -190,7 +189,8 @@ class DeveloperOptionsViewModel
                 )
 
         val healthMonitorWorkState: StateFlow<DevHealthMonitorScheduler.WorkState> =
-            healthMonitorScheduler.getWorkInfoFlow()
+            healthMonitorScheduler
+                .getWorkInfoFlow()
                 .stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(5000),
@@ -339,7 +339,6 @@ class DeveloperOptionsViewModel
                 )
         }
 
-
         /**
          * Toggle auto-refresh.
          */
@@ -378,10 +377,11 @@ class DeveloperOptionsViewModel
             val context = getApplication<Application>()
             val clipboardManager =
                 context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText(
-                context.getString(R.string.settings_dev_clipboard_label),
-                summary,
-            )
+            val clip =
+                ClipData.newPlainText(
+                    context.getString(R.string.settings_dev_clipboard_label),
+                    summary,
+                )
             clipboardManager.setPrimaryClip(clip)
             _copyResult.value = context.getString(R.string.settings_dev_clipboard_copied)
 
@@ -430,7 +430,9 @@ class DeveloperOptionsViewModel
         fun resetBaseUrlOverride() {
             viewModelScope.launch {
                 val context = getApplication<Application>()
-                val devOverride = com.scanium.app.config.DevConfigOverride(context)
+                val devOverride =
+                    com.scanium.app.config
+                        .DevConfigOverride(context)
                 devOverride.clearBaseUrlOverride()
                 // Refresh diagnostics to update the displayed URL
                 diagnosticsRepository.refreshAll()
@@ -484,7 +486,8 @@ class DeveloperOptionsViewModel
             viewModelScope.launch {
                 settingsRepository.setDevCorrelationDebugEnabled(enabled)
                 // Enable/disable the correlation debug system
-                com.scanium.app.camera.geom.CorrelationDebug.setEnabled(enabled)
+                com.scanium.app.camera.geom.CorrelationDebug
+                    .setEnabled(enabled)
             }
         }
 
@@ -550,18 +553,19 @@ class DeveloperOptionsViewModel
          * Copy build information to clipboard for debugging.
          */
         fun copyBuildInfoToClipboard() {
-            val fingerprint = buildString {
-                appendLine("Scanium Build Info")
-                appendLine("===================")
-                appendLine("Version Name: ${BuildConfig.VERSION_NAME}")
-                appendLine("Version Code: ${BuildConfig.VERSION_CODE}")
-                appendLine("Flavor: ${BuildConfig.FLAVOR}")
-                appendLine("Build Type: ${BuildConfig.BUILD_TYPE}")
-                appendLine("Git SHA: ${BuildConfig.GIT_SHA}")
-                appendLine("Build Time: ${BuildConfig.BUILD_TIME_UTC}")
-                appendLine()
-                appendLine("Fingerprint: ${BuildConfig.FLAVOR} ${BuildConfig.GIT_SHA} ${BuildConfig.BUILD_TIME_UTC}")
-            }
+            val fingerprint =
+                buildString {
+                    appendLine("Scanium Build Info")
+                    appendLine("===================")
+                    appendLine("Version Name: ${BuildConfig.VERSION_NAME}")
+                    appendLine("Version Code: ${BuildConfig.VERSION_CODE}")
+                    appendLine("Flavor: ${BuildConfig.FLAVOR}")
+                    appendLine("Build Type: ${BuildConfig.BUILD_TYPE}")
+                    appendLine("Git SHA: ${BuildConfig.GIT_SHA}")
+                    appendLine("Build Time: ${BuildConfig.BUILD_TIME_UTC}")
+                    appendLine()
+                    appendLine("Fingerprint: ${BuildConfig.FLAVOR} ${BuildConfig.GIT_SHA} ${BuildConfig.BUILD_TIME_UTC}")
+                }
 
             val context = getApplication<Application>()
             val clipboardManager =
@@ -588,14 +592,16 @@ class DeveloperOptionsViewModel
         ) {
             if (!FeatureFlags.isDevBuild) return
 
-            _ftueDebugState.value = FtueDebugState(
-                currentScreen = screen,
-                currentStep = step,
-                lastAnchorRect = anchorRect?.let {
-                    "x=%.0f, y=%.0f, w=%.0f, h=%.0f".format(it.left, it.top, it.width, it.height)
-                } ?: "Not captured",
-                overlayRendered = overlayRendered,
-            )
+            _ftueDebugState.value =
+                FtueDebugState(
+                    currentScreen = screen,
+                    currentStep = step,
+                    lastAnchorRect =
+                        anchorRect?.let {
+                            "x=%.0f, y=%.0f, w=%.0f, h=%.0f".format(it.left, it.top, it.width, it.height)
+                        } ?: "Not captured",
+                    overlayRendered = overlayRendered,
+                )
         }
 
         fun triggerCrashTest(throwCrash: Boolean = false) {
@@ -752,7 +758,8 @@ class DeveloperOptionsViewModel
             }
 
             val notification =
-                NotificationCompat.Builder(context, channelId)
+                NotificationCompat
+                    .Builder(context, channelId)
                     .setSmallIcon(android.R.drawable.stat_notify_error)
                     .setContentTitle(context.getString(R.string.settings_dev_monitoring_notification_title))
                     .setContentText(context.getString(R.string.settings_dev_monitoring_notification_text))

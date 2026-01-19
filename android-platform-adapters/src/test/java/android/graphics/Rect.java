@@ -13,8 +13,9 @@ public class Rect {
         this.bottom = bottom;
     }
 
-    public Rect() {}
-    
+    public Rect() {
+    }
+
     @Override
     public String toString() {
         return "Rect(" + left + ", " + top + ", " + right + ", " + bottom + ")";

@@ -1,4 +1,5 @@
 ***REMOVED*** Runtime Inventory - Mobile Telemetry Implementation
+
 **Date:** 2026-01-12
 **Commit:** 929c56b6063fe731e3e94dd94c8f7455290db752
 **Purpose:** Document NAS container/network state before implementing mobile telemetry
@@ -40,25 +41,30 @@ bf9936db109f   pihole_net                      macvlan   local
 ***REMOVED******REMOVED*** Network Topology
 
 ***REMOVED******REMOVED******REMOVED*** scanium-backend
+
 - **Networks:** backend_scanium-network, compose_scanium_net
 - **backend_scanium-network:** 172.23.0.4/16 (Gateway: 172.23.0.1)
 - **compose_scanium_net:** 172.21.0.4/16 (Gateway: 172.21.0.1)
 
 ***REMOVED******REMOVED******REMOVED*** scanium-alloy
+
 - **Networks:** backend_scanium-network, scanium-observability
 - **backend_scanium-network:** 172.23.0.2/16 (Gateway: 172.23.0.1)
 - **scanium-observability:** 172.25.0.5/16 (Gateway: 172.25.0.1)
 - **Status:** Bridge container between backend and monitoring stacks
 
 ***REMOVED******REMOVED******REMOVED*** scanium-loki
+
 - **Networks:** scanium-observability
 - **scanium-observability:** 172.25.0.3/16 (Gateway: 172.25.0.1)
 
 ***REMOVED******REMOVED******REMOVED*** scanium-mimir
+
 - **Networks:** scanium-observability
 - **scanium-observability:** 172.25.0.4/16 (Gateway: 172.25.0.1)
 
 ***REMOVED******REMOVED******REMOVED*** scanium-grafana
+
 - **Networks:** backend_scanium-network, scanium-observability
 - **backend_scanium-network:** 172.23.0.5/16 (Gateway: 172.23.0.1)
 - **scanium-observability:** 172.25.0.6/16 (Gateway: 172.25.0.1)
@@ -67,20 +73,20 @@ bf9936db109f   pihole_net                      macvlan   local
 ***REMOVED******REMOVED*** Key Observations
 
 1. **Network Segmentation:**
-   - Backend stack: `backend_scanium-network` (172.23.0.0/16)
-   - Monitoring stack: `scanium-observability` (172.25.0.0/16)
-   - Bridge containers: alloy (172.23.0.2, 172.25.0.5), grafana (172.23.0.5, 172.25.0.6)
+    - Backend stack: `backend_scanium-network` (172.23.0.0/16)
+    - Monitoring stack: `scanium-observability` (172.25.0.0/16)
+    - Bridge containers: alloy (172.23.0.2, 172.25.0.5), grafana (172.23.0.5, 172.25.0.6)
 
 2. **Mobile Telemetry Path:**
-   - Backend exposes /v1/mobile/events endpoint
-   - Backend emits structured logs via Pino OTLP transport
-   - Alloy scrapes backend (can reach 172.23.0.4)
-   - Alloy forwards to Loki (172.25.0.3) and Mimir (172.25.0.4)
-   - Grafana queries Loki/Mimir for dashboard
+    - Backend exposes /v1/mobile/events endpoint
+    - Backend emits structured logs via Pino OTLP transport
+    - Alloy scrapes backend (can reach 172.23.0.4)
+    - Alloy forwards to Loki (172.25.0.3) and Mimir (172.25.0.4)
+    - Grafana queries Loki/Mimir for dashboard
 
 3. **Alloy Health Issue:**
-   - Alloy is unhealthy - may affect log/metric collection
-   - Should investigate /alloy/api/v0/component/* endpoints
+    - Alloy is unhealthy - may affect log/metric collection
+    - Should investigate /alloy/api/v0/component/* endpoints
 
 4. **Docker Binary Location:**
-   - NAS: `/usr/local/bin/docker` (not in default PATH for SSH)
+    - NAS: `/usr/local/bin/docker` (not in default PATH for SSH)

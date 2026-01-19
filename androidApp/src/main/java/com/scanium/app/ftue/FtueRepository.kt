@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.map
  * Repository for managing First-Time User Experience (FTUE) state persistence.
  * Uses DataStore Preferences to track tour completion and debug settings.
  */
-class FtueRepository(private val context: Context) {
+class FtueRepository(
+    private val context: Context,
+) {
     companion object {
         private val FTUE_COMPLETED_KEY = booleanPreferencesKey("ftue_completed")
         private val FTUE_FORCE_ENABLED_KEY = booleanPreferencesKey("ftue_force_enabled")

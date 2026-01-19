@@ -107,15 +107,14 @@ class ScannedItemRepository(
         operation: String,
         fallback: T,
         block: suspend () -> T,
-    ): T {
-        return try {
+    ): T =
+        try {
             block()
         } catch (e: SQLException) {
             Log.e(TAG, "Persistence failed during $operation", e)
             _errors.emit(PersistenceError(operation, e))
             fallback
         }
-    }
 }
 
 data class PersistenceError(

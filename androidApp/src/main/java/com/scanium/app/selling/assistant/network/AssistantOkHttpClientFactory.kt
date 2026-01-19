@@ -56,13 +56,16 @@ object AssistantOkHttpClientFactory {
             startupPolicyLogged = true
         }
 
-        return OkHttpClient.Builder()
+        return OkHttpClient
+            .Builder()
             .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
             .readTimeout(config.readTimeoutSeconds, TimeUnit.SECONDS)
             .writeTimeout(config.writeTimeoutSeconds, TimeUnit.SECONDS)
             .callTimeout(config.callTimeoutSeconds, TimeUnit.SECONDS)
-            .addInterceptor(com.scanium.app.telemetry.TraceContextInterceptor())
-            .apply {
+            .addInterceptor(
+                com.scanium.app.telemetry
+                    .TraceContextInterceptor(),
+            ).apply {
                 // Add retry interceptor if retries are enabled
                 if (config.retryCount > 0) {
                     addInterceptor(AssistantRetryInterceptor(maxRetries = config.retryCount))
@@ -70,8 +73,7 @@ object AssistantOkHttpClientFactory {
 
                 // Add any additional interceptors
                 additionalInterceptors.forEach { addInterceptor(it) }
-            }
-            .build()
+            }.build()
     }
 
     /**
@@ -85,8 +87,9 @@ object AssistantOkHttpClientFactory {
     fun derive(
         baseClient: OkHttpClient,
         config: AssistantHttpConfig,
-    ): OkHttpClient {
-        return baseClient.newBuilder()
+    ): OkHttpClient =
+        baseClient
+            .newBuilder()
             .connectTimeout(config.connectTimeoutSeconds, TimeUnit.SECONDS)
             .readTimeout(config.readTimeoutSeconds, TimeUnit.SECONDS)
             .writeTimeout(config.writeTimeoutSeconds, TimeUnit.SECONDS)
@@ -94,21 +97,22 @@ object AssistantOkHttpClientFactory {
             .apply {
                 // Note: We don't add retry interceptor here since base client may have it
                 // The derive() method is for timeout adjustments only
-            }
-            .build()
-    }
+            }.build()
 
     /**
      * Logs the timeout policy at startup. Called once during app initialization.
      */
     private fun logPolicy(config: AssistantHttpConfig) {
-        val policyInfo = buildString {
-            appendLine("Assistant HTTP Policy Initialized:")
-            appendLine("  Version: ${BuildConfig.VERSION_NAME}")
-            appendLine("  Timeouts: ${config.toLogString()}")
-            appendLine("  Retry: ${if (config.retryCount > 0) "${config.retryCount}x on transient errors (502/503/504, timeout, network)" else "disabled"}")
-            appendLine("  Non-retryable: 400/401/403/404/429")
-        }
+        val policyInfo =
+            buildString {
+                appendLine("Assistant HTTP Policy Initialized:")
+                appendLine("  Version: ${BuildConfig.VERSION_NAME}")
+                appendLine("  Timeouts: ${config.toLogString()}")
+                appendLine(
+                    "  Retry: ${if (config.retryCount > 0) "${config.retryCount}x on transient errors (502/503/504, timeout, network)" else "disabled"}",
+                )
+                appendLine("  Non-retryable: 400/401/403/404/429")
+            }
         Log.i(TAG, policyInfo)
     }
 
@@ -119,18 +123,22 @@ object AssistantOkHttpClientFactory {
      * @param configName Name/label for this configuration (e.g., "chat", "preflight")
      * @param config The configuration being used
      */
-    fun logConfigurationUsage(configName: String, config: AssistantHttpConfig) {
+    fun logConfigurationUsage(
+        configName: String,
+        config: AssistantHttpConfig,
+    ) {
         Log.d(TAG, "AssistantHttp[$configName]: ${config.toLogString()}")
     }
 
     /**
      * Returns information about all predefined configurations for diagnostics.
      */
-    fun getDiagnosticInfo(): Map<String, String> = mapOf(
-        "default" to AssistantHttpConfig.DEFAULT.toLogString(),
-        "preflight" to AssistantHttpConfig.PREFLIGHT.toLogString(),
-        "warmup" to AssistantHttpConfig.WARMUP.toLogString(),
-        "vision" to AssistantHttpConfig.VISION.toLogString(),
-        "test" to AssistantHttpConfig.TEST.toLogString(),
-    )
+    fun getDiagnosticInfo(): Map<String, String> =
+        mapOf(
+            "default" to AssistantHttpConfig.DEFAULT.toLogString(),
+            "preflight" to AssistantHttpConfig.PREFLIGHT.toLogString(),
+            "warmup" to AssistantHttpConfig.WARMUP.toLogString(),
+            "vision" to AssistantHttpConfig.VISION.toLogString(),
+            "test" to AssistantHttpConfig.TEST.toLogString(),
+        )
 }

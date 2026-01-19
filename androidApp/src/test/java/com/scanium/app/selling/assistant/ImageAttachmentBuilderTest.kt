@@ -14,14 +14,14 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ImageAttachmentBuilderTest {
-
     @Test
     fun `buildAttachments returns empty when toggle is OFF`() {
         val draft = createDraftWithPhotos("item-1", 2)
-        val result = ImageAttachmentBuilder.buildAttachments(
-            itemDrafts = mapOf("item-1" to draft),
-            allowImages = false,
-        )
+        val result =
+            ImageAttachmentBuilder.buildAttachments(
+                itemDrafts = mapOf("item-1" to draft),
+                allowImages = false,
+            )
 
         assertThat(result.attachments).isEmpty()
         assertThat(result.totalBytes).isEqualTo(0L)
@@ -31,10 +31,11 @@ class ImageAttachmentBuilderTest {
     @Test
     fun `buildAttachments returns empty when toggle is ON but no photos`() {
         val draft = createDraftWithPhotos("item-1", 0)
-        val result = ImageAttachmentBuilder.buildAttachments(
-            itemDrafts = mapOf("item-1" to draft),
-            allowImages = true,
-        )
+        val result =
+            ImageAttachmentBuilder.buildAttachments(
+                itemDrafts = mapOf("item-1" to draft),
+                allowImages = true,
+            )
 
         assertThat(result.attachments).isEmpty()
         assertThat(result.totalBytes).isEqualTo(0L)
@@ -43,10 +44,11 @@ class ImageAttachmentBuilderTest {
 
     @Test
     fun `buildAttachments returns empty when toggle is ON but drafts is empty`() {
-        val result = ImageAttachmentBuilder.buildAttachments(
-            itemDrafts = emptyMap(),
-            allowImages = true,
-        )
+        val result =
+            ImageAttachmentBuilder.buildAttachments(
+                itemDrafts = emptyMap(),
+                allowImages = true,
+            )
 
         assertThat(result.attachments).isEmpty()
         assertThat(result.totalBytes).isEqualTo(0L)
@@ -56,10 +58,11 @@ class ImageAttachmentBuilderTest {
     @Test
     fun `buildAttachments builds attachments when toggle is ON and photos exist`() {
         val draft = createDraftWithPhotos("item-1", 2)
-        val result = ImageAttachmentBuilder.buildAttachments(
-            itemDrafts = mapOf("item-1" to draft),
-            allowImages = true,
-        )
+        val result =
+            ImageAttachmentBuilder.buildAttachments(
+                itemDrafts = mapOf("item-1" to draft),
+                allowImages = true,
+            )
 
         assertThat(result.attachments).hasSize(2)
         assertThat(result.totalBytes).isGreaterThan(0L)
@@ -77,10 +80,11 @@ class ImageAttachmentBuilderTest {
     fun `buildAttachments limits to MAX_IMAGES_PER_ITEM`() {
         // Create draft with 5 photos, but only first 3 should be used
         val draft = createDraftWithPhotos("item-1", 5)
-        val result = ImageAttachmentBuilder.buildAttachments(
-            itemDrafts = mapOf("item-1" to draft),
-            allowImages = true,
-        )
+        val result =
+            ImageAttachmentBuilder.buildAttachments(
+                itemDrafts = mapOf("item-1" to draft),
+                allowImages = true,
+            )
 
         assertThat(result.attachments).hasSize(ImageAttachmentBuilder.MAX_IMAGES_PER_ITEM)
         assertThat(result.itemImageCounts).containsEntry("item-1", 3)
@@ -90,10 +94,11 @@ class ImageAttachmentBuilderTest {
     fun `buildAttachments handles multiple items`() {
         val draft1 = createDraftWithPhotos("item-1", 2)
         val draft2 = createDraftWithPhotos("item-2", 1)
-        val result = ImageAttachmentBuilder.buildAttachments(
-            itemDrafts = mapOf("item-1" to draft1, "item-2" to draft2),
-            allowImages = true,
-        )
+        val result =
+            ImageAttachmentBuilder.buildAttachments(
+                itemDrafts = mapOf("item-1" to draft1, "item-2" to draft2),
+                allowImages = true,
+            )
 
         assertThat(result.attachments).hasSize(3)
         assertThat(result.itemImageCounts).containsEntry("item-1", 2)
@@ -110,10 +115,11 @@ class ImageAttachmentBuilderTest {
     fun `buildAttachments passes through images under size limit`() {
         val smallBytes = createTestImageBytes(100) // 100 bytes, well under 2MB
         val draft = createDraftWithCustomPhotos("item-1", listOf(smallBytes))
-        val result = ImageAttachmentBuilder.buildAttachments(
-            itemDrafts = mapOf("item-1" to draft),
-            allowImages = true,
-        )
+        val result =
+            ImageAttachmentBuilder.buildAttachments(
+                itemDrafts = mapOf("item-1" to draft),
+                allowImages = true,
+            )
 
         assertThat(result.attachments).hasSize(1)
         assertThat(result.recompressedCount).isEqualTo(0)
@@ -124,10 +130,11 @@ class ImageAttachmentBuilderTest {
     fun `AttachmentResult tracks skipped count`() {
         // CacheKey references are not supported yet, so they should be skipped
         val draft = createDraftWithCacheKeyPhoto("item-1")
-        val result = ImageAttachmentBuilder.buildAttachments(
-            itemDrafts = mapOf("item-1" to draft),
-            allowImages = true,
-        )
+        val result =
+            ImageAttachmentBuilder.buildAttachments(
+                itemDrafts = mapOf("item-1" to draft),
+                allowImages = true,
+            )
 
         assertThat(result.attachments).isEmpty()
         assertThat(result.skippedCount).isEqualTo(1)
@@ -135,52 +142,68 @@ class ImageAttachmentBuilderTest {
 
     // Helper methods
 
-    private fun createDraftWithPhotos(itemId: String, photoCount: Int): ListingDraft {
-        val photos = (0 until photoCount).map { index ->
-            DraftPhotoRef(
-                image = ImageRef.Bytes(
-                    bytes = createTestImageBytes(1024 + index), // 1KB+ each
-                    mimeType = "image/jpeg",
-                    width = 100,
-                    height = 100,
-                ),
-                source = DraftProvenance.DETECTED,
-            )
-        }
+    private fun createDraftWithPhotos(
+        itemId: String,
+        photoCount: Int,
+    ): ListingDraft {
+        val photos =
+            (0 until photoCount).map { index ->
+                DraftPhotoRef(
+                    image =
+                        ImageRef.Bytes(
+                            // 1KB+ each
+                            bytes = createTestImageBytes(1024 + index),
+                            mimeType = "image/jpeg",
+                            width = 100,
+                            height = 100,
+                        ),
+                    source = DraftProvenance.DETECTED,
+                )
+            }
         return createTestDraft(itemId, photos)
     }
 
-    private fun createDraftWithCustomPhotos(itemId: String, bytesList: List<ByteArray>): ListingDraft {
-        val photos = bytesList.map { bytes ->
-            DraftPhotoRef(
-                image = ImageRef.Bytes(
-                    bytes = bytes,
-                    mimeType = "image/jpeg",
-                    width = 100,
-                    height = 100,
-                ),
-                source = DraftProvenance.DETECTED,
-            )
-        }
+    private fun createDraftWithCustomPhotos(
+        itemId: String,
+        bytesList: List<ByteArray>,
+    ): ListingDraft {
+        val photos =
+            bytesList.map { bytes ->
+                DraftPhotoRef(
+                    image =
+                        ImageRef.Bytes(
+                            bytes = bytes,
+                            mimeType = "image/jpeg",
+                            width = 100,
+                            height = 100,
+                        ),
+                    source = DraftProvenance.DETECTED,
+                )
+            }
         return createTestDraft(itemId, photos)
     }
 
     private fun createDraftWithCacheKeyPhoto(itemId: String): ListingDraft {
-        val photos = listOf(
-            DraftPhotoRef(
-                image = ImageRef.CacheKey(
-                    key = "cache-key-123",
-                    mimeType = "image/jpeg",
-                    width = 100,
-                    height = 100,
+        val photos =
+            listOf(
+                DraftPhotoRef(
+                    image =
+                        ImageRef.CacheKey(
+                            key = "cache-key-123",
+                            mimeType = "image/jpeg",
+                            width = 100,
+                            height = 100,
+                        ),
+                    source = DraftProvenance.DETECTED,
                 ),
-                source = DraftProvenance.DETECTED,
-            ),
-        )
+            )
         return createTestDraft(itemId, photos)
     }
 
-    private fun createTestDraft(itemId: String, photos: List<DraftPhotoRef>): ListingDraft {
+    private fun createTestDraft(
+        itemId: String,
+        photos: List<DraftPhotoRef>,
+    ): ListingDraft {
         return ListingDraft(
             id = "draft-$itemId",
             itemId = itemId,
@@ -199,17 +222,27 @@ class ImageAttachmentBuilderTest {
     private fun createTestImageBytes(size: Int): ByteArray {
         // Create a minimal valid JPEG header followed by padding
         // This is a very minimal JPEG that some decoders may accept
-        val header = byteArrayOf(
-            0xFF.toByte(), 0xD8.toByte(), // SOI marker
-            0xFF.toByte(), 0xE0.toByte(), // APP0 marker
-            0x00, 0x10, // Length: 16
-            'J'.code.toByte(), 'F'.code.toByte(), 'I'.code.toByte(), 'F'.code.toByte(), 0x00, // "JFIF\0"
-            0x01, 0x01, // Version 1.1
-            0x00, // Aspect ratio units
-            0x00, 0x01, // X density
-            0x00, 0x01, // Y density
-            0x00, 0x00, // Thumbnail size
-        )
+        val header =
+            byteArrayOf(
+                // SOI marker
+                0xFF.toByte(), 0xD8.toByte(),
+                // APP0 marker
+                0xFF.toByte(), 0xE0.toByte(),
+                // Length: 16
+                0x00, 0x10,
+                // "JFIF\0"
+                'J'.code.toByte(), 'F'.code.toByte(), 'I'.code.toByte(), 'F'.code.toByte(), 0x00,
+                // Version 1.1
+                0x01, 0x01,
+                // Aspect ratio units
+                0x00,
+                // X density
+                0x00, 0x01,
+                // Y density
+                0x00, 0x01,
+                // Thumbnail size
+                0x00, 0x00,
+            )
         // For test purposes, just use raw bytes
         return ByteArray(size) { it.toByte() }
     }

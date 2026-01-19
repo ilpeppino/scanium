@@ -130,7 +130,8 @@ class NetworkTypeCollector(
     private fun registerNetworkCallback() {
         try {
             val networkRequest =
-                NetworkRequest.Builder()
+                NetworkRequest
+                    .Builder()
                     .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                     .build()
 

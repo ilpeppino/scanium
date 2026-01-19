@@ -18,11 +18,12 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `same input yields same output - deterministic`() {
-        val snapshot = createSnapshot(
-            category = "electronics",
-            brand = "Sony",
-            photosCount = 2,
-        )
+        val snapshot =
+            createSnapshot(
+                category = "electronics",
+                brand = "Sony",
+                photosCount = 2,
+            )
 
         val result1 = engine.generateSuggestions(snapshot)
         val result2 = engine.generateSuggestions(snapshot)
@@ -36,10 +37,11 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `missing brand generates brand prompt`() {
-        val snapshot = createSnapshot(
-            category = "electronics",
-            brand = null,
-        )
+        val snapshot =
+            createSnapshot(
+                category = "electronics",
+                brand = null,
+            )
 
         val result = engine.generateSuggestions(snapshot)
 
@@ -50,10 +52,11 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `missing color generates color prompt`() {
-        val snapshot = createSnapshot(
-            category = "home",
-            color = null,
-        )
+        val snapshot =
+            createSnapshot(
+                category = "home",
+                color = null,
+            )
 
         val result = engine.generateSuggestions(snapshot)
 
@@ -62,10 +65,11 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `missing size for fashion generates size prompt`() {
-        val snapshot = createSnapshot(
-            category = "fashion",
-            size = null,
-        )
+        val snapshot =
+            createSnapshot(
+                category = "fashion",
+                size = null,
+            )
 
         val result = engine.generateSuggestions(snapshot)
 
@@ -76,10 +80,11 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `few photos generates photos prompt`() {
-        val snapshot = createSnapshot(
-            category = "electronics",
-            photosCount = 1,
-        )
+        val snapshot =
+            createSnapshot(
+                category = "electronics",
+                photosCount = 1,
+            )
 
         val result = engine.generateSuggestions(snapshot)
 
@@ -90,9 +95,11 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `short title generates title prompt`() {
-        val snapshot = createSnapshot(
-            title = "Lamp", // Only 4 chars
-        )
+        val snapshot =
+            createSnapshot(
+                // Only 4 chars
+                title = "Lamp",
+            )
 
         val result = engine.generateSuggestions(snapshot)
 
@@ -101,9 +108,10 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `empty description generates description prompt`() {
-        val snapshot = createSnapshot(
-            description = null,
-        )
+        val snapshot =
+            createSnapshot(
+                description = null,
+            )
 
         val result = engine.generateSuggestions(snapshot)
 
@@ -211,7 +219,15 @@ class LocalSuggestionEngineTest {
         val snapshot = createSnapshot(category = "electronics", photosCount = 1)
         val result = engine.generateSuggestions(snapshot)
 
-        assertThat(result.suggestedPhotos.any { it.contains("model", ignoreCase = true) || it.contains("label", ignoreCase = true) }).isTrue()
+        assertThat(
+            result.suggestedPhotos.any {
+                it.contains("model", ignoreCase = true) ||
+                    it.contains(
+                        "label",
+                        ignoreCase = true,
+                    )
+            },
+        ).isTrue()
     }
 
     @Test
@@ -219,7 +235,15 @@ class LocalSuggestionEngineTest {
         val snapshot = createSnapshot(category = "shoes", photosCount = 1)
         val result = engine.generateSuggestions(snapshot)
 
-        assertThat(result.suggestedPhotos.any { it.contains("label", ignoreCase = true) || it.contains("brand", ignoreCase = true) }).isTrue()
+        assertThat(
+            result.suggestedPhotos.any {
+                it.contains("label", ignoreCase = true) ||
+                    it.contains(
+                        "brand",
+                        ignoreCase = true,
+                    )
+            },
+        ).isTrue()
     }
 
     @Test
@@ -237,10 +261,11 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `missing brand adds brand question`() {
-        val snapshot = createSnapshot(
-            category = "electronics",
-            brand = null,
-        )
+        val snapshot =
+            createSnapshot(
+                category = "electronics",
+                brand = null,
+            )
         val result = engine.generateSuggestions(snapshot)
 
         assertThat(result.suggestedQuestions.any { it.contains("brand", ignoreCase = true) }).isTrue()
@@ -251,17 +276,20 @@ class LocalSuggestionEngineTest {
         val snapshot = createSnapshot(category = "electronics")
         val result = engine.generateSuggestions(snapshot)
 
-        assertThat(result.suggestedQuestions.any {
-            it.contains("power", ignoreCase = true) || it.contains("storage", ignoreCase = true)
-        }).isTrue()
+        assertThat(
+            result.suggestedQuestions.any {
+                it.contains("power", ignoreCase = true) || it.contains("storage", ignoreCase = true)
+            },
+        ).isTrue()
     }
 
     @Test
     fun `fashion category asks about size when missing`() {
-        val snapshot = createSnapshot(
-            category = "clothing",
-            size = null,
-        )
+        val snapshot =
+            createSnapshot(
+                category = "clothing",
+                size = null,
+            )
         val result = engine.generateSuggestions(snapshot)
 
         assertThat(result.suggestedQuestions.any { it.contains("size", ignoreCase = true) }).isTrue()
@@ -269,14 +297,15 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `questions are limited to max 5`() {
-        val snapshot = createSnapshot(
-            category = "electronics",
-            brand = null,
-            color = null,
-            title = "X",
-            description = null,
-            priceEstimate = null,
-        )
+        val snapshot =
+            createSnapshot(
+                category = "electronics",
+                brand = null,
+                color = null,
+                title = "X",
+                description = null,
+                priceEstimate = null,
+            )
         val result = engine.generateSuggestions(snapshot)
 
         assertThat(result.suggestedQuestions.size).isAtMost(5)
@@ -288,11 +317,12 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `known attributes appear in bullets`() {
-        val snapshot = createSnapshot(
-            brand = "Sony",
-            color = "Black",
-            condition = "Like New",
-        )
+        val snapshot =
+            createSnapshot(
+                brand = "Sony",
+                color = "Black",
+                condition = "Like New",
+            )
         val result = engine.generateSuggestions(snapshot)
 
         assertThat(result.suggestedBullets).contains("Brand: Sony")
@@ -324,10 +354,11 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `no title suggestion when current title is good`() {
-        val snapshot = createSnapshot(
-            title = "Sony PlayStation 5 Console - Like New - With Controller",
-            brand = "Sony",
-        )
+        val snapshot =
+            createSnapshot(
+                title = "Sony PlayStation 5 Console - Like New - With Controller",
+                brand = "Sony",
+            )
         val result = engine.generateSuggestions(snapshot)
 
         assertThat(result.suggestedTitle).isNull()
@@ -335,12 +366,13 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `title suggestion when current title is short`() {
-        val snapshot = createSnapshot(
-            title = "PS5",
-            brand = "Sony",
-            category = "gaming console",
-            color = "White",
-        )
+        val snapshot =
+            createSnapshot(
+                title = "PS5",
+                brand = "Sony",
+                category = "gaming console",
+                color = "White",
+            )
         val result = engine.generateSuggestions(snapshot)
 
         assertThat(result.suggestedTitle).isNotNull()
@@ -349,13 +381,14 @@ class LocalSuggestionEngineTest {
 
     @Test
     fun `title suggestion includes key attributes`() {
-        val snapshot = createSnapshot(
-            title = "Shoes",
-            brand = "Nike",
-            category = "shoes",
-            size = "10",
-            color = "Red",
-        )
+        val snapshot =
+            createSnapshot(
+                title = "Shoes",
+                brand = "Nike",
+                category = "shoes",
+                size = "10",
+                color = "Red",
+            )
         val result = engine.generateSuggestions(snapshot)
 
         assertThat(result.suggestedTitle).isNotNull()
@@ -451,13 +484,14 @@ class LocalSuggestionEngineTest {
         photosCount: Int = 3,
         attributes: List<ItemAttributeSnapshot>? = null,
     ): ItemContextSnapshot {
-        val attrs = attributes ?: buildList {
-            brand?.let { add(ItemAttributeSnapshot(key = "brand", value = it)) }
-            color?.let { add(ItemAttributeSnapshot(key = "color", value = it)) }
-            size?.let { add(ItemAttributeSnapshot(key = "size", value = it)) }
-            condition?.let { add(ItemAttributeSnapshot(key = "condition", value = it)) }
-            model?.let { add(ItemAttributeSnapshot(key = "model", value = it)) }
-        }
+        val attrs =
+            attributes ?: buildList {
+                brand?.let { add(ItemAttributeSnapshot(key = "brand", value = it)) }
+                color?.let { add(ItemAttributeSnapshot(key = "color", value = it)) }
+                size?.let { add(ItemAttributeSnapshot(key = "size", value = it)) }
+                condition?.let { add(ItemAttributeSnapshot(key = "condition", value = it)) }
+                model?.let { add(ItemAttributeSnapshot(key = "model", value = it)) }
+            }
 
         return ItemContextSnapshot(
             itemId = itemId,

@@ -5,7 +5,6 @@ import android.util.Size
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.waitForIdle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.ItemCategory

@@ -1,23 +1,26 @@
 ***REMOVED*** Timeout Policy & Progress States Verification Guide
 
-This guide explains the unified timeout policy and progressive UI states implemented to prevent "assistant temporarily unavailable" errors and improve stability UX.
+This guide explains the unified timeout policy and progressive UI states implemented to prevent "
+assistant temporarily unavailable" errors and improve stability UX.
 
 ***REMOVED******REMOVED*** What Changed
 
 ***REMOVED******REMOVED******REMOVED*** 1. Unified Timeout Policy (AssistantHttpConfig.kt)
 
-**Problem:** Different OkHttpClient instances had inconsistent timeouts, causing premature "unavailable" errors.
+**Problem:** Different OkHttpClient instances had inconsistent timeouts, causing premature "
+unavailable" errors.
 
 **Solution:** Created a centralized timeout policy with different profiles:
 
-| Profile | Connect | Read | Write | Call | Retry | Use Case |
-|---------|---------|------|-------|------|-------|----------|
-| **DEFAULT** | 15s | 60s | 30s | 75s | 1 | AI chat/export (aligned with backend ASSIST_PROVIDER_TIMEOUT_MS=30s) |
-| **VISION** | 10s | 30s | 30s | 40s | 1 | Vision extraction (aligned with backend VISION_TIMEOUT_MS=10s) |
-| **PREFLIGHT** | 5s | 8s | 5s | 10s | 0 | Quick health checks |
-| **WARMUP** | 5s | 10s | 5s | 15s | 0 | Moderate warmup calls |
+| Profile       | Connect | Read | Write | Call | Retry | Use Case                                                             |
+|---------------|---------|------|-------|------|-------|----------------------------------------------------------------------|
+| **DEFAULT**   | 15s     | 60s  | 30s   | 75s  | 1     | AI chat/export (aligned with backend ASSIST_PROVIDER_TIMEOUT_MS=30s) |
+| **VISION**    | 10s     | 30s  | 30s   | 40s  | 1     | Vision extraction (aligned with backend VISION_TIMEOUT_MS=10s)       |
+| **PREFLIGHT** | 5s      | 8s   | 5s    | 10s  | 0     | Quick health checks                                                  |
+| **WARMUP**    | 5s      | 10s  | 5s    | 15s  | 0     | Moderate warmup calls                                                |
 
 **Key Principles:**
+
 - Client timeout > Backend timeout + buffer (prevents false "unavailable")
 - Backend ASSIST_PROVIDER_TIMEOUT_MS = 30s → Client read = 60s
 - Backend VISION_TIMEOUT_MS = 10s → Client read = 30s
@@ -33,12 +36,14 @@ IDLE → ENRICHING → READY / FAILED
 ```
 
 **States:**
+
 - `Idle`: No enrichment in progress
 - `Enriching`: "Extracting info from photo…" (shows timestamp for timeout detection)
 - `Ready`: Enrichment completed successfully (no message - UI updates)
 - `Failed`: "Couldn't extract details from the photo" (specific error, retryable flag)
 
 **Helper Methods:**
+
 - `getStatusMessage()`: Returns user-friendly progress/error message
 - `itemIdOrNull()`: Gets associated item ID
 - `transitionTo()`: Validates state transitions
@@ -52,6 +57,7 @@ IDLE → GENERATING → SUCCESS / ERROR
 ```
 
 **New Helper Methods:**
+
 - `getStatusMessage()`: Returns "Drafting description…" during generation
 - `isLongRunning()`: Returns true after 10 seconds (for "Still working…" indicator)
 
@@ -60,6 +66,7 @@ IDLE → GENERATING → SUCCESS / ERROR
 Updated clients to use centralized policy:
 
 **Before:**
+
 ```kotlin
 private val client = OkHttpClient.Builder()
     .connectTimeout(10, TimeUnit.SECONDS)  // Hardcoded
@@ -68,6 +75,7 @@ private val client = OkHttpClient.Builder()
 ```
 
 **After:**
+
 ```kotlin
 private val client = AssistantOkHttpClientFactory.create(
     config = AssistantHttpConfig.VISION,  // Centralized policy
@@ -76,6 +84,7 @@ private val client = AssistantOkHttpClientFactory.create(
 ```
 
 **Updated Clients:**
+
 - `VisionInsightsRepository` → Uses `AssistantHttpConfig.VISION`
 - `EnrichmentRepository` → Uses `AssistantHttpConfig.VISION`
 - `AssistantRepository` → Uses `AssistantHttpConfig.DEFAULT`
@@ -98,6 +107,7 @@ cd /Users/family/dev/scanium
 ```
 
 **Tests verify:**
+
 - ✅ State machine transitions work correctly
 - ✅ Status messages are accurate ("Extracting info…", "Drafting description…")
 - ✅ Timestamp recording works
@@ -113,16 +123,17 @@ cd /Users/family/dev/scanium
 1. Open the Scanium app
 2. **Capture a photo** of an item with visible text/logos (e.g., Nike shoe)
 3. **Watch for progress:**
-   - Should see: "Extracting info from photo…"
-   - Should NOT see: "Vision temporarily unavailable"
-   - After ~2-5 seconds: Attributes appear (Brand: Nike, etc.)
+    - Should see: "Extracting info from photo…"
+    - Should NOT see: "Vision temporarily unavailable"
+    - After ~2-5 seconds: Attributes appear (Brand: Nike, etc.)
 4. **Verify logs:**
    ```bash
    adb logcat -s VisionInsightsRepo:I | grep -E "(Extracting|success)"
    ```
-   - Should see successful extraction with no timeout errors
+    - Should see successful extraction with no timeout errors
 
 **Success Criteria:**
+
 - ✅ Progress message shown during extraction
 - ✅ Attributes appear after completion
 - ✅ No premature "unavailable" errors
@@ -135,19 +146,20 @@ cd /Users/family/dev/scanium
 2. Tap **Edit** → Fill in structured fields (Brand, Color, Size, etc.)
 3. Tap **AI** button (AutoAwesome icon)
 4. **Watch for progress:**
-   - Should see: "Drafting description…"
-   - Should NOT see: "Assistant temporarily unavailable" (unless truly unavailable)
-   - After ~3-10 seconds: Description appears
+    - Should see: "Drafting description…"
+    - Should NOT see: "Assistant temporarily unavailable" (unless truly unavailable)
+    - After ~3-10 seconds: Description appears
 5. **For long operations (>10s):**
-   - Should see: "Still working…" indicator
-   - User can still type in other fields (non-blocking)
+    - Should see: "Still working…" indicator
+    - User can still type in other fields (non-blocking)
 6. **Verify logs:**
    ```bash
    adb logcat -s ScaniumAssist:I | grep -E "(Drafting|reply)"
    ```
-   - Should see successful generation with correlationId
+    - Should see successful generation with correlationId
 
 **Success Criteria:**
+
 - ✅ Progress message shown during generation
 - ✅ "Still working…" appears after 10 seconds
 - ✅ UI doesn't block typing during generation
@@ -177,14 +189,15 @@ grep -E "(ASSIST_PROVIDER_TIMEOUT_MS|VISION_TIMEOUT_MS)" backend/.env.example
 1. Open Settings → Assistant
 2. Toggle "Enable AI Assistant" switch
 3. **Watch for preflight check:**
-   - Should complete within 2-5 seconds
-   - Should NOT hang for 10+ seconds
+    - Should complete within 2-5 seconds
+    - Should NOT hang for 10+ seconds
 4. **Verify logs:**
    ```bash
    adb logcat -s AssistantPreflight:I | grep -E "(healthy|preflight)"
    ```
 
 **Success Criteria:**
+
 - ✅ Preflight completes quickly (< 5 seconds)
 - ✅ UI remains responsive during check
 
@@ -195,16 +208,19 @@ grep -E "(ASSIST_PROVIDER_TIMEOUT_MS|VISION_TIMEOUT_MS)" backend/.env.example
 ***REMOVED******REMOVED******REMOVED*** Issue: "Extracting info from photo…" hangs forever
 
 **Debug:**
+
 ```bash
 adb logcat -s VisionInsightsRepo:I | grep -E "(timeout|error)"
 ```
 
 **Possible causes:**
+
 - Backend Vision service is down
 - Network connectivity issue
 - Backend taking > 30 seconds (exceeds timeout)
 
 **Fix:**
+
 - Check backend logs: `ssh nas "docker logs --tail 100 scanium-backend-prod | grep vision"`
 - Verify network: `adb shell ping scanium.gtemp1.com`
 - Increase client timeout if backend legitimately takes longer
@@ -212,16 +228,19 @@ adb logcat -s VisionInsightsRepo:I | grep -E "(timeout|error)"
 ***REMOVED******REMOVED******REMOVED*** Issue: "Drafting description…" shows "unavailable" after 5 seconds
 
 **Debug:**
+
 ```bash
 adb logcat -s ScaniumAssist:I | grep -E "(timeout|VALIDATION)"
 ```
 
 **Possible causes:**
+
 - Client timeout < backend timeout (shouldn't happen with new policy)
 - Backend validation error (check backend logs)
 - Network issue during multipart upload
 
 **Fix:**
+
 - Verify client timeout: AssistantHttpConfig.DEFAULT.readTimeoutSeconds should be 60
 - Check backend: `ssh nas "docker logs --tail 100 scanium-backend-prod | grep ASSIST"`
 - Test with curl (see docs/assistant/CURL_VERIFICATION_EXAMPLE.md)
@@ -231,6 +250,7 @@ adb logcat -s ScaniumAssist:I | grep -E "(timeout|VALIDATION)"
 **Cause:** Robolectric not initialized properly
 
 **Fix:**
+
 ```bash
 ***REMOVED*** Clean and rebuild
 ./gradlew clean
@@ -241,13 +261,14 @@ adb logcat -s ScaniumAssist:I | grep -E "(timeout|VALIDATION)"
 
 ***REMOVED******REMOVED*** Backend Alignment Matrix
 
-| Operation | Backend Timeout | Client Read Timeout | Buffer | Aligned? |
-|-----------|----------------|---------------------|--------|----------|
-| Vision Extraction | 10s (VISION_TIMEOUT_MS) | 30s | 20s | ✅ |
-| AI Assistant | 30s (ASSIST_PROVIDER_TIMEOUT_MS) | 60s | 30s | ✅ |
-| Preflight | N/A (fast) | 8s | N/A | ✅ |
+| Operation         | Backend Timeout                  | Client Read Timeout | Buffer | Aligned? |
+|-------------------|----------------------------------|---------------------|--------|----------|
+| Vision Extraction | 10s (VISION_TIMEOUT_MS)          | 30s                 | 20s    | ✅        |
+| AI Assistant      | 30s (ASSIST_PROVIDER_TIMEOUT_MS) | 60s                 | 30s    | ✅        |
+| Preflight         | N/A (fast)                       | 8s                  | N/A    | ✅        |
 
 **Verification Command:**
+
 ```bash
 cd /Users/family/dev/scanium
 ./gradlew :androidApp:testDevDebugUnitTest --tests "*AssistantTimeoutPolicyTest.client timeout is greater than backend timeout*"
@@ -312,18 +333,26 @@ adb logcat | grep -i "temporarily unavailable"
 ***REMOVED******REMOVED*** Files Changed
 
 **Timeout Policy:**
-- `androidApp/src/main/java/com/scanium/app/selling/assistant/network/AssistantHttpConfig.kt` (added VISION config)
-- `androidApp/src/main/java/com/scanium/app/selling/assistant/network/AssistantOkHttpClientFactory.kt` (added VISION to diagnostics)
+
+- `androidApp/src/main/java/com/scanium/app/selling/assistant/network/AssistantHttpConfig.kt` (added
+  VISION config)
+-
+`androidApp/src/main/java/com/scanium/app/selling/assistant/network/AssistantOkHttpClientFactory.kt` (
+added VISION to diagnostics)
 
 **Applied to Clients:**
+
 - `androidApp/src/main/java/com/scanium/app/ml/VisionInsightsRepository.kt` (uses VISION config)
 - `androidApp/src/main/java/com/scanium/app/enrichment/EnrichmentRepository.kt` (uses VISION config)
 
 **State Machines:**
+
 - `androidApp/src/main/java/com/scanium/app/ml/VisionEnrichmentState.kt` (new)
-- `androidApp/src/main/java/com/scanium/app/items/edit/ExportAssistantViewModel.kt` (added helper methods)
+- `androidApp/src/main/java/com/scanium/app/items/edit/ExportAssistantViewModel.kt` (added helper
+  methods)
 
 **Tests:**
+
 - `androidApp/src/test/java/com/scanium/app/ml/VisionEnrichmentStateTest.kt` (new)
 - `androidApp/src/test/java/com/scanium/app/items/edit/ExportAssistantStateTest.kt` (new)
 - `androidApp/src/test/java/com/scanium/app/selling/assistant/AssistantTimeoutPolicyTest.kt` (new)
@@ -340,20 +369,21 @@ After verification:
    ```
 
 2. **Adjust timeouts** if needed based on real-world data:
-   - If backend consistently takes > 25s for vision: increase VISION_TIMEOUT_MS
-   - If backend consistently takes > 55s for AI: increase ASSIST_PROVIDER_TIMEOUT_MS
-   - Always ensure client timeout > backend timeout + 10s buffer
+    - If backend consistently takes > 25s for vision: increase VISION_TIMEOUT_MS
+    - If backend consistently takes > 55s for AI: increase ASSIST_PROVIDER_TIMEOUT_MS
+    - Always ensure client timeout > backend timeout + 10s buffer
 
 3. **UI enhancements** (future):
-   - Add cancel button for long-running operations
-   - Show estimated time remaining based on historical data
-   - Implement retry with exponential backoff for transient errors
+    - Add cancel button for long-running operations
+    - Show estimated time remaining based on historical data
+    - Implement retry with exponential backoff for transient errors
 
 ---
 
 ***REMOVED******REMOVED*** Contact
 
 For issues or questions about timeout policy:
+
 - Check this guide first
 - Review test suite: `*AssistantTimeoutPolicyTest`, `*VisionEnrichmentStateTest`
 - Check backend logs for actual timeout duration

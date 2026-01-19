@@ -3,25 +3,26 @@
 **Tunnel ID**: `REDACTED_CLOUDFLARE_TUNNEL_ID`
 
 ***REMOVED******REMOVED*** Configured Hostnames
-| Hostname | Service | Container | Port |
-|----------|---------|-----------|------|
+
+| Hostname             | Service     | Container         | Port |
+|----------------------|-------------|-------------------|------|
 | `scanium.gtemp1.com` | Backend API | `scanium-backend` | 8080 |
-| `grafana.gtemp1.com` | Grafana | `scanium-grafana` | 3000 |
-| `otlp.gtemp1.com` | Alloy OTLP | `scanium-alloy` | 4318 |
+| `grafana.gtemp1.com` | Grafana     | `scanium-grafana` | 3000 |
+| `otlp.gtemp1.com`    | Alloy OTLP  | `scanium-alloy`   | 4318 |
 
 ---
 
 ***REMOVED******REMOVED*** Step 1: Add Grafana Hostname to Cloudflare Tunnel
 
 1. **Go to Cloudflare Zero Trust Dashboard**:
-   - Login to https://one.dash.cloudflare.com/
-   - Navigate to **Networks** → **Tunnels**
-   - Find tunnel ID: `REDACTED_CLOUDFLARE_TUNNEL_ID`
-   - Click **Configure**
+    - Login to https://one.dash.cloudflare.com/
+    - Navigate to **Networks** → **Tunnels**
+    - Find tunnel ID: `REDACTED_CLOUDFLARE_TUNNEL_ID`
+    - Click **Configure**
 
 2. **Add Public Hostname**:
-   - Go to **Public Hostnames** tab
-   - Click **Add a public hostname**
+    - Go to **Public Hostnames** tab
+    - Click **Add a public hostname**
 
 3. **Configure the hostname**:
    ```
@@ -37,9 +38,9 @@
    ```
 
 5. **Additional settings** (optional but recommended):
-   - **TLS** → Verify TLS: OFF (Grafana uses HTTP internally)
-   - **HTTP Host Header**: (leave empty)
-   - **HTTP Settings** → Disable Chunked Encoding: OFF
+    - **TLS** → Verify TLS: OFF (Grafana uses HTTP internally)
+    - **HTTP Host Header**: (leave empty)
+    - **HTTP Settings** → Disable Chunked Encoding: OFF
 
 6. **Save the hostname**
 
@@ -52,6 +53,7 @@ The DNS record should be automatically created by Cloudflare Tunnel.
 Verify at: https://dash.cloudflare.com/
 
 Look for:
+
 ```
 Type: CNAME
 Name: grafana
@@ -103,9 +105,9 @@ The OTLP tunnel enables mobile apps to send telemetry data to the Grafana Alloy 
 ***REMOVED******REMOVED******REMOVED*** Step 1: Add OTLP Hostname
 
 1. **Go to Cloudflare Zero Trust Dashboard**:
-   - Navigate to **Networks** → **Tunnels**
-   - Find tunnel ID: `REDACTED_CLOUDFLARE_TUNNEL_ID`
-   - Click **Configure**
+    - Navigate to **Networks** → **Tunnels**
+    - Find tunnel ID: `REDACTED_CLOUDFLARE_TUNNEL_ID`
+    - Click **Configure**
 
 2. **Add Public Hostname**:
    ```
@@ -121,7 +123,7 @@ The OTLP tunnel enables mobile apps to send telemetry data to the Grafana Alloy 
    ```
 
 4. **Additional settings**:
-   - **TLS** → Verify TLS: OFF (Alloy uses HTTP internally)
+    - **TLS** → Verify TLS: OFF (Alloy uses HTTP internally)
 
 5. **Save the hostname**
 
@@ -143,6 +145,7 @@ Expected: `200` (empty logs accepted)
 The Android app defaults to `https://otlp.gtemp1.com` for OTLP telemetry.
 
 For local development with direct NAS access, override in `local.properties`:
+
 ```properties
 scanium.otlp.endpoint=http://192.168.x.x:4318
 scanium.otlp.enabled=true
@@ -155,13 +158,16 @@ See: `androidApp/build.gradle.kts` for configuration options.
 ***REMOVED******REMOVED*** Current Network Configuration
 
 ***REMOVED******REMOVED******REMOVED*** Grafana Container Networks:
+
 - `scanium-observability` (internal): For Loki, Tempo, Mimir access
 - `backend_scanium-network` (shared): For cloudflared access
 
 ***REMOVED******REMOVED******REMOVED*** Cloudflared Container Network:
+
 - `backend_scanium-network` (shared): Can reach both backend and grafana
 
 ***REMOVED******REMOVED******REMOVED*** Container Names for Ingress Rules:
+
 - Backend API: `scanium-backend` (port 8080)
 - Grafana: `scanium-grafana` (port 3000)
 
@@ -169,11 +175,11 @@ See: `androidApp/build.gradle.kts` for configuration options.
 
 ***REMOVED******REMOVED*** Tunnel Configuration Summary
 
-| Hostname | Service | Container | Port |
-|----------|---------|-----------|------|
+| Hostname             | Service     | Container         | Port |
+|----------------------|-------------|-------------------|------|
 | `scanium.gtemp1.com` | Backend API | `scanium-backend` | 8080 |
-| `grafana.gtemp1.com` | Grafana | `scanium-grafana` | 3000 |
-| `otlp.gtemp1.com` | Alloy OTLP | `scanium-alloy` | 4318 |
+| `grafana.gtemp1.com` | Grafana     | `scanium-grafana` | 3000 |
+| `otlp.gtemp1.com`    | Alloy OTLP  | `scanium-alloy`   | 4318 |
 
 ---
 
@@ -184,6 +190,7 @@ See: `androidApp/build.gradle.kts` for configuration options.
 **Problem**: Cloudflared can't reach Grafana container
 
 **Solutions**:
+
 1. Verify Grafana is running:
    ```bash
    ssh nas "/usr/local/bin/docker ps | grep grafana"
@@ -206,6 +213,7 @@ See: `androidApp/build.gradle.kts` for configuration options.
 **Problem**: DNS record not created
 
 **Solution**:
+
 1. Check Cloudflare DNS dashboard
 2. Manually create CNAME if needed:
    ```
@@ -222,6 +230,7 @@ See: `androidApp/build.gradle.kts` for configuration options.
 **Solution**: Grafana is already configured with `GF_SERVER_ROOT_URL=https://grafana.gtemp1.com`
 
 If issues persist:
+
 1. Check Grafana logs:
    ```bash
    ssh nas "/usr/local/bin/docker logs scanium-grafana | tail -50"
@@ -237,6 +246,7 @@ If issues persist:
 ***REMOVED******REMOVED*** Security Considerations
 
 ***REMOVED******REMOVED******REMOVED*** Current Setup:
+
 - ✅ Grafana behind Cloudflare (DDoS protection)
 - ✅ HTTPS enforced by Cloudflare
 - ⚠️ **Anonymous access enabled** (Admin role)
@@ -245,6 +255,7 @@ If issues persist:
 ***REMOVED******REMOVED******REMOVED*** For Production:
 
 **Option 1: Enable Authentication**
+
 ```yaml
 ***REMOVED*** In monitoring/docker-compose.yml
 environment:
@@ -256,6 +267,7 @@ environment:
 ```
 
 **Option 2: Add Cloudflare Access (Recommended)**
+
 1. Go to Cloudflare Zero Trust → Access → Applications
 2. Create Self-hosted application
 3. Add `grafana.gtemp1.com`
@@ -271,11 +283,13 @@ This adds authentication before reaching Grafana.
 Changes deployed on: 2026-01-11
 
 **Modified files**:
+
 - `monitoring/docker-compose.yml`:
-  - Added `backend_scanium-network` to Grafana container
-  - Updated `GF_SERVER_ROOT_URL` to `https://grafana.gtemp1.com`
+    - Added `backend_scanium-network` to Grafana container
+    - Updated `GF_SERVER_ROOT_URL` to `https://grafana.gtemp1.com`
 
 **Restart command**:
+
 ```bash
 ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-compose up -d grafana"
 ```
@@ -285,11 +299,13 @@ ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-com
 ***REMOVED******REMOVED*** Quick Reference
 
 **Access URLs**:
+
 - Backend API: https://scanium.gtemp1.com
 - Grafana: https://grafana.gtemp1.com
 - OTLP Telemetry: https://otlp.gtemp1.com
 
 **Container logs**:
+
 ```bash
 ***REMOVED*** Grafana logs
 ssh nas "/usr/local/bin/docker logs -f scanium-grafana"
@@ -299,6 +315,7 @@ ssh nas "/usr/local/bin/docker logs -f scanium-cloudflared"
 ```
 
 **Restart services**:
+
 ```bash
 ***REMOVED*** Restart Grafana
 ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-compose restart grafana"

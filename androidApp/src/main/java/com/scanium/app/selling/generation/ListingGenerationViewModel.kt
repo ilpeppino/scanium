@@ -93,24 +93,27 @@ class ListingGenerationViewModel
             viewModelScope.launch {
                 try {
                     val result = callAssistant(item)
-                    _state.value = ListingGenerationState.Success(
-                        listing = result,
-                        itemId = item.id,
-                    )
+                    _state.value =
+                        ListingGenerationState.Success(
+                            listing = result,
+                            itemId = item.id,
+                        )
                 } catch (e: AssistantBackendException) {
                     Log.e(TAG, "Assistant backend error", e)
-                    _state.value = ListingGenerationState.Error(
-                        message = e.failure.message ?: "Failed to generate listing",
-                        retryable = e.failure.retryable,
-                        itemId = item.id,
-                    )
+                    _state.value =
+                        ListingGenerationState.Error(
+                            message = e.failure.message ?: "Failed to generate listing",
+                            retryable = e.failure.retryable,
+                            itemId = item.id,
+                        )
                 } catch (e: Exception) {
                     Log.e(TAG, "Unexpected error generating listing", e)
-                    _state.value = ListingGenerationState.Error(
-                        message = "Unexpected error: ${e.message}",
-                        retryable = true,
-                        itemId = item.id,
-                    )
+                    _state.value =
+                        ListingGenerationState.Error(
+                            message = "Unexpected error: ${e.message}",
+                            retryable = true,
+                            itemId = item.id,
+                        )
                 }
             }
         }
@@ -132,30 +135,33 @@ class ListingGenerationViewModel
 
         private suspend fun callAssistant(item: ScannedItem): GeneratedListing {
             val itemContext = buildItemContext(item)
-            val exportProfile = exportProfileRepository.getProfile(ExportProfileId.GENERIC)
-                ?: ExportProfiles.generic()
+            val exportProfile =
+                exportProfileRepository.getProfile(ExportProfileId.GENERIC)
+                    ?: ExportProfiles.generic()
 
             val correlationId = UUID.randomUUID().toString()
 
-            val response = assistantRepository.send(
-                items = listOf(itemContext),
-                history = emptyList(),
-                userMessage = GENERATION_PROMPT,
-                exportProfile = exportProfile,
-                correlationId = correlationId,
-            )
+            val response =
+                assistantRepository.send(
+                    items = listOf(itemContext),
+                    history = emptyList(),
+                    userMessage = GENERATION_PROMPT,
+                    exportProfile = exportProfile,
+                    correlationId = correlationId,
+                )
 
             return parseResponse(response, item)
         }
 
         private fun buildItemContext(item: ScannedItem): ItemContextSnapshot {
-            val attributes = item.attributes.map { (key, attr) ->
-                ItemAttributeSnapshot(
-                    key = key,
-                    value = attr.value,
-                    confidence = attr.confidence,
-                )
-            }
+            val attributes =
+                item.attributes.map { (key, attr) ->
+                    ItemAttributeSnapshot(
+                        key = key,
+                        value = attr.value,
+                        confidence = attr.confidence,
+                    )
+                }
 
             return ItemContextSnapshot(
                 itemId = item.id,
@@ -251,30 +257,39 @@ class ListingGenerationViewModel
 
         private fun parseTitle(content: String): String? {
             // Try to parse "TITLE: ..." format
-            val titleMatch = Regex("TITLE:\\s*(.+?)(?:\\n|DESCRIPTION:|$)", RegexOption.IGNORE_CASE)
-                .find(content)
-            return titleMatch?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+            val titleMatch =
+                Regex("TITLE:\\s*(.+?)(?:\\n|DESCRIPTION:|$)", RegexOption.IGNORE_CASE)
+                    .find(content)
+            return titleMatch
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
         }
 
         private fun parseDescription(content: String): String? {
             // Try to parse "DESCRIPTION: ..." format
-            val descMatch = Regex(
-                pattern = "DESCRIPTION:\\s*(.+)",
-                options = setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
-            ).find(content)
-            return descMatch?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+            val descMatch =
+                Regex(
+                    pattern = "DESCRIPTION:\\s*(.+)",
+                    options = setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+                ).find(content)
+            return descMatch
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
         }
 
-        private fun mapConfidence(tier: com.scanium.app.model.ConfidenceTier): ConfidenceTier {
-            return when (tier) {
+        private fun mapConfidence(tier: com.scanium.app.model.ConfidenceTier): ConfidenceTier =
+            when (tier) {
                 com.scanium.app.model.ConfidenceTier.HIGH -> ConfidenceTier.HIGH
                 com.scanium.app.model.ConfidenceTier.MED -> ConfidenceTier.MED
                 com.scanium.app.model.ConfidenceTier.LOW -> ConfidenceTier.LOW
             }
-        }
 
-        private fun formatAttributeLabel(key: String): String {
-            return when (key) {
+        private fun formatAttributeLabel(key: String): String =
+            when (key) {
                 "brand" -> "brand"
                 "model" -> "model number"
                 "color" -> "color"
@@ -282,5 +297,4 @@ class ListingGenerationViewModel
                 "material" -> "material"
                 else -> key
             }
-        }
     }

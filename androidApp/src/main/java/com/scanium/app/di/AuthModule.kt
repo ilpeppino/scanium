@@ -14,8 +14,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import javax.inject.Singleton
 import javax.inject.Qualifier
+import javax.inject.Singleton
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -35,20 +35,17 @@ object AuthModule {
     @Provides
     @Singleton
     @AuthApiHttpClient
-    fun provideAuthApiHttpClient(): OkHttpClient {
-        return AssistantOkHttpClientFactory.create(
+    fun provideAuthApiHttpClient(): OkHttpClient =
+        AssistantOkHttpClientFactory.create(
             config = AssistantHttpConfig.DEFAULT,
             additionalInterceptors = emptyList(),
         )
-    }
 
     @Provides
     @Singleton
     fun provideGoogleAuthApi(
         @AuthApiHttpClient httpClient: OkHttpClient,
-    ): GoogleAuthApi {
-        return GoogleAuthApi(httpClient)
-    }
+    ): GoogleAuthApi = GoogleAuthApi(httpClient)
 
     @Provides
     @Singleton
@@ -56,9 +53,7 @@ object AuthModule {
         @ApplicationContext context: Context,
         apiKeyStore: SecureApiKeyStore,
         authApi: GoogleAuthApi,
-    ): AuthRepository {
-        return AuthRepository(context, apiKeyStore, authApi)
-    }
+    ): AuthRepository = AuthRepository(context, apiKeyStore, authApi)
 
     /**
      * Phase C: Auth token interceptor with silent session renewal.
@@ -69,12 +64,11 @@ object AuthModule {
     fun provideAuthTokenInterceptor(
         apiKeyStore: SecureApiKeyStore,
         authRepository: AuthRepository,
-    ): AuthTokenInterceptor {
-        return AuthTokenInterceptor(
+    ): AuthTokenInterceptor =
+        AuthTokenInterceptor(
             tokenProvider = { apiKeyStore.getAuthToken() },
             authRepository = authRepository,
         )
-    }
 
     /**
      * Phase C: HTTP client for business API calls (assistant, etc.).
@@ -83,14 +77,11 @@ object AuthModule {
     @Provides
     @Singleton
     @AuthHttpClient
-    fun provideAuthHttpClient(
-        authTokenInterceptor: AuthTokenInterceptor,
-    ): OkHttpClient {
-        return AssistantOkHttpClientFactory.create(
+    fun provideAuthHttpClient(authTokenInterceptor: AuthTokenInterceptor): OkHttpClient =
+        AssistantOkHttpClientFactory.create(
             config = AssistantHttpConfig.DEFAULT,
             additionalInterceptors = listOf(authTokenInterceptor),
         )
-    }
 
     /**
      * Phase E: ItemsApi for multi-device sync.
@@ -100,7 +91,5 @@ object AuthModule {
     @Singleton
     fun provideItemsApi(
         @AuthHttpClient httpClient: OkHttpClient,
-    ): ItemsApi {
-        return ItemsApi(httpClient)
-    }
+    ): ItemsApi = ItemsApi(httpClient)
 }

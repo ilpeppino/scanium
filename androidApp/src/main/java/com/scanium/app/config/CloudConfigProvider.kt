@@ -25,11 +25,12 @@ class AndroidCloudConfigProvider(
 
     override fun current(): CloudClassifierConfig {
         // In debug builds, check for explicit developer override
-        val baseUrl = if (BuildConfig.DEBUG) {
-            devConfigOverride.getEffectiveBaseUrl()
-        } else {
-            BuildConfig.SCANIUM_API_BASE_URL.orEmpty()
-        }
+        val baseUrl =
+            if (BuildConfig.DEBUG) {
+                devConfigOverride.getEffectiveBaseUrl()
+            } else {
+                BuildConfig.SCANIUM_API_BASE_URL.orEmpty()
+            }
 
         val apiKey = SecureApiKeyStore(context).getApiKey()
 

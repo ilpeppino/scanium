@@ -28,7 +28,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
-import com.scanium.app.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -41,6 +40,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.scanium.app.BuildConfig
+import com.scanium.app.R
 import com.scanium.app.data.SettingsRepository
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -416,8 +416,8 @@ private fun calculateCutoutRect(
     bounds: Rect,
     spotlightShape: SpotlightShape,
     paddingPx: Float,
-): Rect {
-    return when (spotlightShape) {
+): Rect =
+    when (spotlightShape) {
         SpotlightShape.CIRCLE -> {
             val radius = max(bounds.width, bounds.height) / 2 + paddingPx
             Rect(
@@ -427,6 +427,7 @@ private fun calculateCutoutRect(
                 bottom = bounds.center.y + radius,
             )
         }
+
         SpotlightShape.ROUNDED_RECT -> {
             Rect(
                 left = bounds.left - paddingPx,
@@ -436,4 +437,3 @@ private fun calculateCutoutRect(
             )
         }
     }
-}

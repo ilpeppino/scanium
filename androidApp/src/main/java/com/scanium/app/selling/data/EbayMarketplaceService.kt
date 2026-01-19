@@ -16,9 +16,14 @@ import com.scanium.app.selling.util.ListingImagePreparer
  * Result of a listing creation operation.
  */
 sealed class ListingCreationResult {
-    data class Success(val listing: Listing) : ListingCreationResult()
+    data class Success(
+        val listing: Listing,
+    ) : ListingCreationResult()
 
-    data class Error(val error: ListingError, val message: String? = null) : ListingCreationResult()
+    data class Error(
+        val error: ListingError,
+        val message: String? = null,
+    ) : ListingCreationResult()
 }
 
 /**
@@ -45,9 +50,7 @@ class EbayMarketplaceService(
      * Creates listings for multiple drafts.
      * Processes each draft independently, so partial failures are allowed.
      */
-    suspend fun createListingsForItems(drafts: List<ListingDraft>): List<ListingCreationResult> {
-        return drafts.map { createListingForDraft(it) }
-    }
+    suspend fun createListingsForItems(drafts: List<ListingDraft>): List<ListingCreationResult> = drafts.map { createListingForDraft(it) }
 
     /**
      * Creates a single eBay listing from a prepared draft.
@@ -86,6 +89,7 @@ class EbayMarketplaceService(
                         uri = imageResult.uri.toString(),
                     )
                 }
+
                 is ListingImagePreparer.PrepareResult.Failure -> {
                     Log.e(TAG, "Image preparation failed: ${imageResult.reason}")
                     return ListingCreationResult.Error(

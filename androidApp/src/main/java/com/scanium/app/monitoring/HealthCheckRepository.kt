@@ -28,18 +28,25 @@ class HealthCheckRepository {
         /**
          * Endpoints to check with their pass conditions.
          */
-        private val ENDPOINTS = listOf(
-            EndpointSpec("/health", HttpMethod.GET, requiresAuth = false, allowedCodes = setOf(200)),
-            EndpointSpec("/v1/config", HttpMethod.GET, requiresAuth = true, allowedCodes = setOf(200), unauthAllowedCodes = setOf(200, 401)),
-            EndpointSpec(
-                "/v1/assist/warmup",
-                HttpMethod.POST,
-                requiresAuth = true,
-                allowedCodes = setOf(200),
-                unauthAllowedCodes = setOf(200, 401, 403),
-                bodyBytes = ByteArray(0),
-            ),
-        )
+        private val ENDPOINTS =
+            listOf(
+                EndpointSpec("/health", HttpMethod.GET, requiresAuth = false, allowedCodes = setOf(200)),
+                EndpointSpec(
+                    "/v1/config",
+                    HttpMethod.GET,
+                    requiresAuth = true,
+                    allowedCodes = setOf(200),
+                    unauthAllowedCodes = setOf(200, 401),
+                ),
+                EndpointSpec(
+                    "/v1/assist/warmup",
+                    HttpMethod.POST,
+                    requiresAuth = true,
+                    allowedCodes = setOf(200),
+                    unauthAllowedCodes = setOf(200, 401, 403),
+                    bodyBytes = ByteArray(0),
+                ),
+            )
     }
 
     private enum class HttpMethod {
@@ -56,11 +63,13 @@ class HealthCheckRepository {
         val bodyBytes: ByteArray? = null,
     )
 
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .build()
+    private val httpClient =
+        OkHttpClient
+            .Builder()
+            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
 
     /**
      * Performs health checks on all configured endpoints.
@@ -68,37 +77,41 @@ class HealthCheckRepository {
      * @param config Health monitor configuration (base URL, API key, etc.)
      * @return HealthCheckResult with overall status and individual endpoint results
      */
-    suspend fun performHealthCheck(config: HealthMonitorConfig): HealthCheckResult = withContext(Dispatchers.IO) {
-        val startTime = System.currentTimeMillis()
-        val hasApiKey = !config.apiKey.isNullOrBlank()
+    suspend fun performHealthCheck(config: HealthMonitorConfig): HealthCheckResult =
+        withContext(Dispatchers.IO) {
+            val startTime = System.currentTimeMillis()
+            val hasApiKey = !config.apiKey.isNullOrBlank()
 
-        Log.d(TAG, "Starting health check for ${config.baseUrl} (hasApiKey=$hasApiKey)")
+            Log.d(TAG, "Starting health check for ${config.baseUrl} (hasApiKey=$hasApiKey)")
 
-        // Check all endpoints in parallel
-        val results = ENDPOINTS.map { spec ->
-            async {
-                checkEndpoint(config.baseUrl, spec, config.apiKey, config.authToken)
-            }
-        }.awaitAll()
+            // Check all endpoints in parallel
+            val results =
+                ENDPOINTS
+                    .map { spec ->
+                        async {
+                            checkEndpoint(config.baseUrl, spec, config.apiKey, config.authToken)
+                        }
+                    }.awaitAll()
 
-        val failures = results.filter { !it.passed }
-        val status = if (failures.isEmpty()) MonitorHealthStatus.OK else MonitorHealthStatus.FAIL
+            val failures = results.filter { !it.passed }
+            val status = if (failures.isEmpty()) MonitorHealthStatus.OK else MonitorHealthStatus.FAIL
 
-        val summary = if (failures.isEmpty()) {
-            "All ${results.size} endpoints healthy"
-        } else {
-            "${failures.size}/${results.size} endpoints failed"
+            val summary =
+                if (failures.isEmpty()) {
+                    "All ${results.size} endpoints healthy"
+                } else {
+                    "${failures.size}/${results.size} endpoints failed"
+                }
+
+            Log.d(TAG, "Health check complete: $status ($summary)")
+
+            HealthCheckResult(
+                status = status,
+                checkedAt = startTime,
+                detailsSummary = summary,
+                failures = failures,
+            )
         }
-
-        Log.d(TAG, "Health check complete: $status ($summary)")
-
-        HealthCheckResult(
-            status = status,
-            checkedAt = startTime,
-            detailsSummary = summary,
-            failures = failures,
-        )
-    }
 
     /**
      * Check a single endpoint.
@@ -114,8 +127,10 @@ class HealthCheckRepository {
         val hasAuthToken = !authToken.isNullOrBlank()
         val allowedCodes = if (hasKey || hasAuthToken) spec.allowedCodes else spec.unauthAllowedCodes
 
-        val requestBuilder = Request.Builder()
-            .url(url)
+        val requestBuilder =
+            Request
+                .Builder()
+                .url(url)
 
         when (spec.method) {
             HttpMethod.GET -> requestBuilder.get()
@@ -149,12 +164,13 @@ class HealthCheckRepository {
                 failureReason = failureReason,
             )
         } catch (e: IOException) {
-            val reason = when {
-                e.message?.contains("timeout", ignoreCase = true) == true -> "timeout"
-                e.message?.contains("Unable to resolve host", ignoreCase = true) == true -> "unreachable"
-                e.message?.contains("Connection refused", ignoreCase = true) == true -> "connection refused"
-                else -> "network error"
-            }
+            val reason =
+                when {
+                    e.message?.contains("timeout", ignoreCase = true) == true -> "timeout"
+                    e.message?.contains("Unable to resolve host", ignoreCase = true) == true -> "unreachable"
+                    e.message?.contains("Connection refused", ignoreCase = true) == true -> "connection refused"
+                    else -> "network error"
+                }
 
             Log.w(TAG, "${spec.path}: $reason (${e.message})")
 
@@ -170,18 +186,22 @@ class HealthCheckRepository {
     /**
      * Format a human-readable failure reason (no secrets).
      */
-    private fun formatFailureReason(path: String, code: Int): String {
+    private fun formatFailureReason(
+        path: String,
+        code: Int,
+    ): String {
         val endpoint = path.removePrefix("/").replace("/", " ")
-        val codeDesc = when (code) {
-            401 -> "unauthorized"
-            403 -> "forbidden"
-            404 -> "not found"
-            500 -> "server error"
-            502 -> "bad gateway"
-            503 -> "service unavailable"
-            504 -> "gateway timeout"
-            else -> "HTTP $code"
-        }
+        val codeDesc =
+            when (code) {
+                401 -> "unauthorized"
+                403 -> "forbidden"
+                404 -> "not found"
+                500 -> "server error"
+                502 -> "bad gateway"
+                503 -> "service unavailable"
+                504 -> "gateway timeout"
+                else -> "HTTP $code"
+            }
         return "$endpoint $codeDesc ($code)"
     }
 }

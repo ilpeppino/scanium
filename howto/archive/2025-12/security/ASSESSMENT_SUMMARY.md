@@ -9,11 +9,13 @@
 
 ***REMOVED******REMOVED*** Executive Summary
 
-Completed comprehensive security assessment of Scanium Android application following **OWASP Mobile Top 10 (Final 2024)**, **OWASP MASVS**, and **NIST SP 800-163r1** standards.
+Completed comprehensive security assessment of Scanium Android application following **OWASP Mobile
+Top 10 (Final 2024)**, **OWASP MASVS**, and **NIST SP 800-163r1** standards.
 
 ***REMOVED******REMOVED******REMOVED*** Overall Risk Level: MEDIUM-HIGH → MEDIUM (after quick wins)
 
 **Findings:**
+
 - **18 security issues** identified across all severity levels
 - **5 CRITICAL** issues found (4 fixed via quick wins, 1 documented)
 - **4 HIGH** priority issues documented
@@ -21,6 +23,7 @@ Completed comprehensive security assessment of Scanium Android application follo
 - **3 LOW** priority issues documented
 
 **Immediate Actions Taken:**
+
 - ✅ **4 critical fixes** implemented and committed to `claude/security-assessment-EeZYH`
 - ✅ **Comprehensive assessment** documented in `docs/security/SECURITY_RISK_ASSESSMENT.md`
 - ✅ **18 GitHub issue templates** created in `docs/security/ISSUES_TO_CREATE.md`
@@ -31,6 +34,7 @@ Completed comprehensive security assessment of Scanium Android application follo
 ***REMOVED******REMOVED*** 1. Assessment Scope & Methodology
 
 ***REMOVED******REMOVED******REMOVED*** Standards Applied
+
 - **OWASP Mobile Top 10 (Final 2024)** - M1 through M10 assessed
 - **OWASP MASVS (latest)** - 7 control categories mapped
 - **NIST SP 800-163r1** - Vetting checklist created
@@ -39,18 +43,21 @@ Completed comprehensive security assessment of Scanium Android application follo
 ***REMOVED******REMOVED******REMOVED*** Assessment Activities
 
 **1. Baseline Inventory:**
+
 - AndroidManifest analysis (entry points, permissions, components)
 - Build configuration review (Gradle files, ProGuard rules)
 - Data flow mapping (camera → ML Kit → storage → future eBay API)
 - Network code path analysis (mocked eBay API)
 
 **2. Automated Scans:**
+
 - Secrets scanning: **0 findings** ✅
 - Keystore file search: **0 files found** ✅
 - Log statement count: **304 statements** identified
 - Dependency analysis: Attempted (network blocked)
 
 **3. Manual Code Review:**
+
 - AndroidManifest.xml (37 lines)
 - app/build.gradle.kts (133 lines)
 - proguard-rules.pro (16 lines)
@@ -58,6 +65,7 @@ Completed comprehensive security assessment of Scanium Android application follo
 - CameraXManager.kt, ItemsViewModel.kt (partial)
 
 **4. Static Analysis:**
+
 - Lint: Attempted (network blocked)
 - Unit tests: Attempted (network blocked)
 - Manual OWASP Mobile Top 10 mapping
@@ -68,17 +76,18 @@ Completed comprehensive security assessment of Scanium Android application follo
 
 ***REMOVED******REMOVED******REMOVED*** Issues Identified
 
-| ID | Title | Severity | Status | OWASP |
-|----|-------|----------|--------|-------|
-| SEC-013 | Code obfuscation disabled | CRITICAL | ✅ FIXED | M7 |
-| SEC-008 | No Network Security Config | CRITICAL | ✅ FIXED | M5 |
-| SEC-016 | Unrestricted backup enabled | CRITICAL | ✅ FIXED | M8, M9 |
-| SEC-017 | Debug logging in production (304 statements) | CRITICAL | ✅ FIXED | M8 |
-| SEC-015 | No signing config verification | HIGH | 📋 DOCUMENTED | M7 |
+| ID      | Title                                        | Severity | Status        | OWASP  |
+|---------|----------------------------------------------|----------|---------------|--------|
+| SEC-013 | Code obfuscation disabled                    | CRITICAL | ✅ FIXED       | M7     |
+| SEC-008 | No Network Security Config                   | CRITICAL | ✅ FIXED       | M5     |
+| SEC-016 | Unrestricted backup enabled                  | CRITICAL | ✅ FIXED       | M8, M9 |
+| SEC-017 | Debug logging in production (304 statements) | CRITICAL | ✅ FIXED       | M8     |
+| SEC-015 | No signing config verification               | HIGH     | 📋 DOCUMENTED | M7     |
 
 ***REMOVED******REMOVED******REMOVED*** Quick Wins Implemented
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Fix 1: Network Security Config (SEC-008)
+
 **File:** `app/src/main/res/xml/network_security_config.xml` (NEW)
 
 ```xml
@@ -97,6 +106,7 @@ Completed comprehensive security assessment of Scanium Android application follo
 ```
 
 **Impact:**
+
 - ✅ HTTPS enforced on **all API levels** (including API 24-27, 47% of devices)
 - ✅ Blocks MITM attacks on cleartext traffic
 - ✅ Localhost allowed for debug testing
@@ -104,6 +114,7 @@ Completed comprehensive security assessment of Scanium Android application follo
 ---
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Fix 2: Disable Unrestricted Backup (SEC-016)
+
 **File:** `app/src/main/AndroidManifest.xml`
 
 ```xml
@@ -116,6 +127,7 @@ android:networkSecurityConfig="@xml/network_security_config"
 ```
 
 **Impact:**
+
 - ✅ Prevents `adb backup` extraction of app data
 - ✅ Blocks cloud backup of sensitive images/listings
 - ✅ Appropriate for v1.0 (no persistent user accounts)
@@ -123,6 +135,7 @@ android:networkSecurityConfig="@xml/network_security_config"
 ---
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Fix 3: Enable R8 Code Obfuscation (SEC-013)
+
 **File:** `app/build.gradle.kts`
 
 ```kotlin
@@ -137,6 +150,7 @@ buildTypes {
 ```
 
 **Impact:**
+
 - ✅ Class names obfuscated (ItemsViewModel → a, b, c)
 - ✅ APK size reduced ~30-40%
 - ✅ Reverse engineering significantly harder
@@ -145,6 +159,7 @@ buildTypes {
 ---
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Fix 4: Strip Debug Logging (SEC-017)
+
 **File:** `app/proguard-rules.pro`
 
 ```proguard
@@ -159,6 +174,7 @@ buildTypes {
 ```
 
 **Impact:**
+
 - ✅ All 304 log statements stripped from release APK
 - ✅ No PII leakage via logcat (listing titles, URLs, item IDs)
 - ✅ Debug builds still log normally
@@ -170,44 +186,44 @@ buildTypes {
 
 ***REMOVED******REMOVED******REMOVED*** High Priority (P1) - Fix Before Production
 
-| ID | Title | Effort | OWASP |
-|----|-------|--------|-------|
-| SEC-002 | No dependency lock file / SBOM | Medium | M2 |
-| SEC-003 | No automated CVE scanning | Medium | M2 |
-| SEC-014 | No root/tamper detection | Large | M7 |
-| SEC-005 | Barcode URL validation missing | Small | M4 |
-| SEC-006 | OCR text sanitization missing | Small | M4 |
-| SEC-007 | Listing field validation insufficient | Small | M4 |
-| SEC-018 | No image encryption | Medium | M9 |
+| ID      | Title                                 | Effort | OWASP |
+|---------|---------------------------------------|--------|-------|
+| SEC-002 | No dependency lock file / SBOM        | Medium | M2    |
+| SEC-003 | No automated CVE scanning             | Medium | M2    |
+| SEC-014 | No root/tamper detection              | Large  | M7    |
+| SEC-005 | Barcode URL validation missing        | Small  | M4    |
+| SEC-006 | OCR text sanitization missing         | Small  | M4    |
+| SEC-007 | Listing field validation insufficient | Small  | M4    |
+| SEC-018 | No image encryption                   | Medium | M9    |
 
 ***REMOVED******REMOVED******REMOVED*** Medium Priority (P2) - Technical Debt
 
-| ID | Title | Effort | OWASP |
-|----|-------|--------|-------|
-| SEC-010 | No FLAG_SECURE on sensitive screens | Small | M6 |
-| SEC-011 | Camera image cleanup not verified | Small | M6 |
-| SEC-019 | No image cleanup policy | Small | M9 |
-| SEC-009 | Certificate pinning guidance needed | Small | M5 |
-| SEC-004 | No OAuth/auth implementation guidance | Small | M3 |
-| SEC-020 | Cryptography implementation guidance | Small | M10 |
-| SEC-012 | No privacy policy | Medium | M6 |
+| ID      | Title                                 | Effort | OWASP |
+|---------|---------------------------------------|--------|-------|
+| SEC-010 | No FLAG_SECURE on sensitive screens   | Small  | M6    |
+| SEC-011 | Camera image cleanup not verified     | Small  | M6    |
+| SEC-019 | No image cleanup policy               | Small  | M9    |
+| SEC-009 | Certificate pinning guidance needed   | Small  | M5    |
+| SEC-004 | No OAuth/auth implementation guidance | Small  | M3    |
+| SEC-020 | Cryptography implementation guidance  | Small  | M10   |
+| SEC-012 | No privacy policy                     | Medium | M6    |
 
 ---
 
 ***REMOVED******REMOVED*** 4. OWASP Mobile Top 10 (2024) Compliance
 
-| Category | Status | Findings | Notes |
-|----------|--------|----------|-------|
-| M1: Improper Credential Usage | ✅ PASS | 0 secrets found | Future: API key storage guidance needed |
-| M2: Inadequate Supply Chain | ⚠️ PARTIAL | No SBOM, no CVE scan | SEC-002, SEC-003 |
-| M3: Insecure Auth/Authz | ⏸️ N/A | No auth implemented | Future: OAuth guidance needed (SEC-004) |
-| M4: Insufficient Input Validation | ⚠️ PARTIAL | Barcode/OCR gaps | SEC-005, SEC-006, SEC-007 |
-| M5: Insecure Communication | ✅ FIXED | Network config missing | **FIXED** (SEC-008) |
-| M6: Inadequate Privacy Controls | ⚠️ PARTIAL | No screenshot protection | SEC-010, SEC-011, SEC-012 |
-| M7: Insufficient Binary Protections | ✅ FIXED | No obfuscation, logging | **FIXED** (SEC-013, SEC-017), SEC-014, SEC-015 remaining |
-| M8: Security Misconfiguration | ✅ FIXED | Backup enabled, logging | **FIXED** (SEC-016, SEC-017) |
-| M9: Insecure Data Storage | ✅ FIXED | Backup exposure | **FIXED** (SEC-016), SEC-018, SEC-019 remaining |
-| M10: Insufficient Cryptography | ✅ PASS | No insecure crypto | Future: Use Jetpack Security (SEC-020) |
+| Category                            | Status     | Findings                 | Notes                                                    |
+|-------------------------------------|------------|--------------------------|----------------------------------------------------------|
+| M1: Improper Credential Usage       | ✅ PASS     | 0 secrets found          | Future: API key storage guidance needed                  |
+| M2: Inadequate Supply Chain         | ⚠️ PARTIAL | No SBOM, no CVE scan     | SEC-002, SEC-003                                         |
+| M3: Insecure Auth/Authz             | ⏸️ N/A     | No auth implemented      | Future: OAuth guidance needed (SEC-004)                  |
+| M4: Insufficient Input Validation   | ⚠️ PARTIAL | Barcode/OCR gaps         | SEC-005, SEC-006, SEC-007                                |
+| M5: Insecure Communication          | ✅ FIXED    | Network config missing   | **FIXED** (SEC-008)                                      |
+| M6: Inadequate Privacy Controls     | ⚠️ PARTIAL | No screenshot protection | SEC-010, SEC-011, SEC-012                                |
+| M7: Insufficient Binary Protections | ✅ FIXED    | No obfuscation, logging  | **FIXED** (SEC-013, SEC-017), SEC-014, SEC-015 remaining |
+| M8: Security Misconfiguration       | ✅ FIXED    | Backup enabled, logging  | **FIXED** (SEC-016, SEC-017)                             |
+| M9: Insecure Data Storage           | ✅ FIXED    | Backup exposure          | **FIXED** (SEC-016), SEC-018, SEC-019 remaining          |
+| M10: Insufficient Cryptography      | ✅ PASS     | No insecure crypto       | Future: Use Jetpack Security (SEC-020)                   |
 
 **Overall Compliance:** 6/10 categories passing, 4 categories with gaps
 
@@ -215,46 +231,48 @@ buildTypes {
 
 ***REMOVED******REMOVED*** 5. MASVS Control Mapping
 
-| Control Area | Status | Notes |
-|--------------|--------|-------|
-| MASVS-STORAGE | ✅ FIXED (partial) | Backup fixed, encryption pending |
-| MASVS-CRYPTO | ✅ PASS | No insecure crypto |
-| MASVS-AUTH | ⏸️ N/A | Not implemented |
-| MASVS-NETWORK | ✅ FIXED | Network security config added |
-| MASVS-PLATFORM | ✅ PASS (partial) | Input validation gaps |
-| MASVS-CODE | ✅ FIXED (partial) | Obfuscation/logging fixed, CVE scan pending |
+| Control Area     | Status            | Notes                                       |
+|------------------|-------------------|---------------------------------------------|
+| MASVS-STORAGE    | ✅ FIXED (partial) | Backup fixed, encryption pending            |
+| MASVS-CRYPTO     | ✅ PASS            | No insecure crypto                          |
+| MASVS-AUTH       | ⏸️ N/A            | Not implemented                             |
+| MASVS-NETWORK    | ✅ FIXED           | Network security config added               |
+| MASVS-PLATFORM   | ✅ PASS (partial)  | Input validation gaps                       |
+| MASVS-CODE       | ✅ FIXED (partial) | Obfuscation/logging fixed, CVE scan pending |
 | MASVS-RESILIENCE | ✅ FIXED (partial) | Obfuscation fixed, tamper detection pending |
-| MASVS-PRIVACY | ⚠️ PARTIAL | Screenshot protection pending |
+| MASVS-PRIVACY    | ⚠️ PARTIAL        | Screenshot protection pending               |
 
 ---
 
 ***REMOVED******REMOVED*** 6. Delivered Artifacts
 
 ***REMOVED******REMOVED******REMOVED*** Documentation
+
 1. ✅ **`docs/security/SECURITY_RISK_ASSESSMENT.md`**
-   - 80+ pages comprehensive assessment
-   - OWASP Mobile Top 10 mapping (M1-M10)
-   - MASVS control mapping
-   - NIST SP 800-163r1 vetting checklist
-   - Attack scenarios for each finding
-   - Fix plans with code samples
-   - Acceptance criteria and tests
-   - Prioritized backlog (18 issues)
+    - 80+ pages comprehensive assessment
+    - OWASP Mobile Top 10 mapping (M1-M10)
+    - MASVS control mapping
+    - NIST SP 800-163r1 vetting checklist
+    - Attack scenarios for each finding
+    - Fix plans with code samples
+    - Acceptance criteria and tests
+    - Prioritized backlog (18 issues)
 
 2. ✅ **`docs/security/ISSUES_TO_CREATE.md`**
-   - GitHub issue templates for all 18 findings
-   - Ready-to-use `gh` CLI commands
-   - Full issue bodies with OWASP mapping
-   - Evidence, attack scenarios, fix plans
-   - Acceptance criteria and test cases
+    - GitHub issue templates for all 18 findings
+    - Ready-to-use `gh` CLI commands
+    - Full issue bodies with OWASP mapping
+    - Evidence, attack scenarios, fix plans
+    - Acceptance criteria and test cases
 
 3. ✅ **`docs/security/ASSESSMENT_SUMMARY.md`** (this file)
-   - Executive summary
-   - Quick wins implemented
-   - Remaining backlog
-   - Compliance status
+    - Executive summary
+    - Quick wins implemented
+    - Remaining backlog
+    - Compliance status
 
 ***REMOVED******REMOVED******REMOVED*** Evidence Files (`docs/security/evidence/`)
+
 1. ✅ `secrets_scan.txt` - 0 findings (clean)
 2. ✅ `keystore_files.txt` - 0 files found
 3. ✅ `dependencies.txt` - Partial (network error)
@@ -262,30 +280,32 @@ buildTypes {
 5. ✅ `tests.txt` - Partial (network error)
 
 ***REMOVED******REMOVED******REMOVED*** Code Changes (Branch: `claude/security-assessment-EeZYH`)
+
 1. ✅ **`app/src/main/res/xml/network_security_config.xml`** (NEW)
-   - HTTPS enforcement
-   - Debug localhost exception
+    - HTTPS enforcement
+    - Debug localhost exception
 
 2. ✅ **`app/src/main/AndroidManifest.xml`** (MODIFIED)
-   - `android:allowBackup="false"`
-   - `android:networkSecurityConfig="@xml/network_security_config"`
+    - `android:allowBackup="false"`
+    - `android:networkSecurityConfig="@xml/network_security_config"`
 
 3. ✅ **`app/build.gradle.kts`** (MODIFIED)
-   - `isMinifyEnabled = true`
-   - `isShrinkResources = true`
-   - `isDebuggable = false`
+    - `isMinifyEnabled = true`
+    - `isShrinkResources = true`
+    - `isDebuggable = false`
 
 4. ✅ **`app/proguard-rules.pro`** (MODIFIED)
-   - Comprehensive obfuscation rules
-   - Log stripping (304 statements)
-   - Serialization preservation
-   - Crash report support (line numbers)
+    - Comprehensive obfuscation rules
+    - Log stripping (304 statements)
+    - Serialization preservation
+    - Crash report support (line numbers)
 
 ---
 
 ***REMOVED******REMOVED*** 7. Risk Reduction Summary
 
 ***REMOVED******REMOVED******REMOVED*** Before Assessment
+
 - **Risk Level:** MEDIUM-HIGH
 - Cleartext HTTP allowed on 47% of devices (API 24-27)
 - Full app data extractable via `adb backup`
@@ -294,6 +314,7 @@ buildTypes {
 - No security documentation or issue tracking
 
 ***REMOVED******REMOVED******REMOVED*** After Quick Wins
+
 - **Risk Level:** MEDIUM
 - ✅ HTTPS enforced on 100% of devices
 - ✅ Backup completely disabled
@@ -303,6 +324,7 @@ buildTypes {
 - ✅ OWASP/MASVS compliance mapped
 
 ***REMOVED******REMOVED******REMOVED*** Risk Reduction
+
 - **4 out of 5 CRITICAL issues** resolved (80%)
 - **Attack surface** significantly reduced
 - **Reverse engineering** difficulty increased 10x+
@@ -314,18 +336,21 @@ buildTypes {
 ***REMOVED******REMOVED*** 8. GitHub Issues Status
 
 ***REMOVED******REMOVED******REMOVED*** Issues Created
+
 **Method:** `gh` CLI commands provided in `docs/security/ISSUES_TO_CREATE.md`
 
 **Status:** ⏸️ **Not created yet** (gh CLI not available in assessment environment)
 
 **Action Required:**
+
 1. Install `gh` CLI: `brew install gh` (macOS) or `apt install gh` (Linux)
 2. Authenticate: `gh auth login`
 3. Run commands from `docs/security/ISSUES_TO_CREATE.md`
-   - **OR** -
+    - **OR** -
 4. Manually create issues via GitHub web interface using provided templates
 
 **Issue Count:**
+
 - 5 CRITICAL (P0)
 - 4 HIGH (P1)
 - 6 MEDIUM (P1-P2)
@@ -333,6 +358,7 @@ buildTypes {
 - **Total: 18 issues**
 
 **Labels to Use:**
+
 - `severity:critical`, `severity:high`, `severity:medium`, `severity:low`
 - `area:build-release`, `area:network`, `area:storage`, `area:logging`, etc.
 - `priority:p0`, `priority:p1`, `priority:p2`
@@ -342,6 +368,7 @@ buildTypes {
 ***REMOVED******REMOVED*** 9. Recommended Implementation Timeline
 
 ***REMOVED******REMOVED******REMOVED*** Week 1 (P0 - Already DONE ✅)
+
 - ✅ SEC-013: Enable R8 obfuscation
 - ✅ SEC-008: Add Network Security Config
 - ✅ SEC-016: Restrict backup
@@ -351,6 +378,7 @@ buildTypes {
 **Estimated Time:** 6 hours (5 hours already completed)
 
 ***REMOVED******REMOVED******REMOVED*** Week 2 (P1 - High Priority)
+
 - SEC-002: Add dependency lock file (4 hours)
 - SEC-003: Setup CVE scanning in CI (4 hours)
 - SEC-005: Barcode URL validation (2 hours)
@@ -360,6 +388,7 @@ buildTypes {
 **Estimated Time:** 14 hours
 
 ***REMOVED******REMOVED******REMOVED*** Week 3 (P1 - Medium Priority)
+
 - SEC-018: Image encryption (8 hours)
 - SEC-010: FLAG_SECURE (2 hours)
 - SEC-011/SEC-019: Image cleanup (4 hours)
@@ -368,6 +397,7 @@ buildTypes {
 **Estimated Time:** 20 hours
 
 ***REMOVED******REMOVED******REMOVED*** Week 4 (P2 - Low Priority)
+
 - SEC-009, SEC-004, SEC-020: Security guidance docs (4 hours)
 - SEC-012: Privacy policy draft (8 hours)
 
@@ -440,29 +470,29 @@ jarsigner -verify -verbose -certs app-release.apk
 The following items could not be fully verified due to environment constraints:
 
 1. **Gradle Dependency Tree** (network error during gradle sync)
-   - Full transitive dependency analysis pending
-   - CVE scanning pending
-   - Retry when network available: `./gradlew :app:dependencies`
+    - Full transitive dependency analysis pending
+    - CVE scanning pending
+    - Retry when network available: `./gradlew :app:dependencies`
 
 2. **Lint Security Warnings** (network error)
-   - Android Lint security category checks pending
-   - Retry: `./gradlew lint && cat app/build/reports/lint-results.html`
+    - Android Lint security category checks pending
+    - Retry: `./gradlew lint && cat app/build/reports/lint-results.html`
 
 3. **Unit Test Execution** (network error)
-   - 175+ tests not run during assessment
-   - Verify quick wins don't break tests: `./gradlew test`
+    - 175+ tests not run during assessment
+    - Verify quick wins don't break tests: `./gradlew test`
 
 4. **Release APK Build** (network error)
-   - Obfuscation not verified in actual APK
-   - Verify after network available: `./gradlew assembleRelease`
+    - Obfuscation not verified in actual APK
+    - Verify after network available: `./gradlew assembleRelease`
 
 5. **Signing Configuration** (not visible in build files)
-   - May be in `local.properties` or `gradle.properties` (not in VCS)
-   - Verify release signing: `jarsigner -verify app-release.apk`
+    - May be in `local.properties` or `gradle.properties` (not in VCS)
+    - Verify release signing: `jarsigner -verify app-release.apk`
 
 6. **Image Storage/Cleanup**
-   - Runtime behavior not tested
-   - Verify on device: `adb shell ls /data/data/com.scanium.app/`
+    - Runtime behavior not tested
+    - Verify on device: `adb shell ls /data/data/com.scanium.app/`
 
 ---
 
@@ -537,17 +567,20 @@ git log --oneline -1
 ***REMOVED******REMOVED*** 14. References & Resources
 
 ***REMOVED******REMOVED******REMOVED*** Standards
+
 - **OWASP Mobile Top 10 (Final 2024):** https://owasp.org/www-project-mobile-top-10/
 - **OWASP MASVS (v2.0+):** https://mas.owasp.org/MASVS/
 - **NIST SP 800-163r1:** https://csrc.nist.gov/pubs/sp/800/163/r1/final
 
 ***REMOVED******REMOVED******REMOVED*** Android Security
+
 - **Network Security Config:** https://developer.android.com/privacy-and-security/security-config
 - **TLS/SSL Guide:** https://developer.android.com/privacy-and-security/security-ssl
 - **App Security Best Practices:** https://developer.android.com/privacy-and-security
 - **Jetpack Security:** https://developer.android.com/jetpack/androidx/releases/security-crypto
 
 ***REMOVED******REMOVED******REMOVED*** Tools
+
 - **Android Lint:** Built into Android Studio
 - **MobSF:** https://github.com/MobSF/Mobile-Security-Framework-MobSF
 - **OWASP Dependency-Check:** https://owasp.org/www-project-dependency-check/
@@ -555,6 +588,7 @@ git log --oneline -1
 - **RootBeer:** https://github.com/scottyab/rootbeer
 
 ***REMOVED******REMOVED******REMOVED*** Scanium Documentation
+
 - `CLAUDE.md` - Architecture guidance
 - `README.md` - Feature overview
 - `md/architecture/ARCHITECTURE.md` - System design
@@ -567,56 +601,56 @@ git log --oneline -1
 ***REMOVED******REMOVED******REMOVED*** Deliverables Completed ✅
 
 1. ✅ **Comprehensive Security Assessment** (80+ pages)
-   - OWASP Mobile Top 10 mapping
-   - MASVS control mapping
-   - NIST SP 800-163r1 vetting checklist
-   - 18 security issues identified and documented
+    - OWASP Mobile Top 10 mapping
+    - MASVS control mapping
+    - NIST SP 800-163r1 vetting checklist
+    - 18 security issues identified and documented
 
 2. ✅ **Quick Wins Implemented** (4 critical fixes)
-   - Network Security Config (HTTPS enforcement)
-   - Backup disabled (data protection)
-   - R8 obfuscation enabled (reverse engineering protection)
-   - Debug logging stripped (PII protection)
+    - Network Security Config (HTTPS enforcement)
+    - Backup disabled (data protection)
+    - R8 obfuscation enabled (reverse engineering protection)
+    - Debug logging stripped (PII protection)
 
 3. ✅ **GitHub Issue Templates** (18 issues ready to create)
-   - Detailed issue bodies with evidence
-   - Attack scenarios and fix plans
-   - Acceptance criteria and test cases
-   - OWASP/MASVS mapping
+    - Detailed issue bodies with evidence
+    - Attack scenarios and fix plans
+    - Acceptance criteria and test cases
+    - OWASP/MASVS mapping
 
 4. ✅ **Automated Evidence** (5 evidence files)
-   - Secrets scan (0 findings)
-   - Keystore scan (0 files)
-   - Log count (304 statements)
-   - Dependency/lint/test reports (partial - network blocked)
+    - Secrets scan (0 findings)
+    - Keystore scan (0 files)
+    - Log count (304 statements)
+    - Dependency/lint/test reports (partial - network blocked)
 
 5. ✅ **Code Committed & Pushed**
-   - Branch: `claude/security-assessment-EeZYH`
-   - Commit: e1d8aed
-   - Status: Ready for review and merge
+    - Branch: `claude/security-assessment-EeZYH`
+    - Commit: e1d8aed
+    - Status: Ready for review and merge
 
 ***REMOVED******REMOVED******REMOVED*** Outstanding Actions 📋
 
 1. **Create GitHub Issues**
-   - Run commands from `docs/security/ISSUES_TO_CREATE.md`
-   - Or manually create via web interface
-   - Estimated time: 1 hour
+    - Run commands from `docs/security/ISSUES_TO_CREATE.md`
+    - Or manually create via web interface
+    - Estimated time: 1 hour
 
 2. **Verify Quick Wins (when network available)**
-   - Build release APK: `./gradlew assembleRelease`
-   - Verify obfuscation: `apkanalyzer dex packages app-release.apk`
-   - Run tests: `./gradlew test`
-   - Estimated time: 30 minutes
+    - Build release APK: `./gradlew assembleRelease`
+    - Verify obfuscation: `apkanalyzer dex packages app-release.apk`
+    - Run tests: `./gradlew test`
+    - Estimated time: 30 minutes
 
 3. **Complete Remaining P1 Issues** (14 issues)
-   - Follow implementation timeline (Section 9)
-   - Estimated time: ~46 hours (5-6 dev days)
+    - Follow implementation timeline (Section 9)
+    - Estimated time: ~46 hours (5-6 dev days)
 
 4. **Sign Release APK** (SEC-015)
-   - Generate release keystore
-   - Configure signing in build.gradle
-   - Document backup/recovery
-   - Estimated time: 1 hour
+    - Generate release keystore
+    - Configure signing in build.gradle
+    - Document backup/recovery
+    - Estimated time: 1 hour
 
 ***REMOVED******REMOVED******REMOVED*** Success Metrics ✅
 
@@ -632,45 +666,51 @@ git log --oneline -1
 ***REMOVED******REMOVED******REMOVED*** Recommendations for Next Steps
 
 1. **Immediate (Today):**
-   - Review SECURITY_RISK_ASSESSMENT.md
-   - Create GitHub issues from ISSUES_TO_CREATE.md
-   - Merge quick wins branch to main
+    - Review SECURITY_RISK_ASSESSMENT.md
+    - Create GitHub issues from ISSUES_TO_CREATE.md
+    - Merge quick wins branch to main
 
 2. **This Week (P0):**
-   - Verify/configure release signing (SEC-015)
-   - Build and test release APK
-   - Run full test suite
+    - Verify/configure release signing (SEC-015)
+    - Build and test release APK
+    - Run full test suite
 
 3. **Next 2 Weeks (P1):**
-   - Implement dependency lock + CVE scanning (SEC-002, SEC-003)
-   - Add input validation (SEC-005, SEC-006, SEC-007)
-   - Implement image encryption (SEC-018)
+    - Implement dependency lock + CVE scanning (SEC-002, SEC-003)
+    - Add input validation (SEC-005, SEC-006, SEC-007)
+    - Implement image encryption (SEC-018)
 
 4. **Before Production Release:**
-   - Complete all P0 and P1 issues
-   - Run MobSF or similar automated security scanner
-   - Perform manual penetration testing
-   - Create privacy policy (SEC-012)
+    - Complete all P0 and P1 issues
+    - Run MobSF or similar automated security scanner
+    - Perform manual penetration testing
+    - Create privacy policy (SEC-012)
 
 ---
 
 ***REMOVED******REMOVED*** 16. Conclusion
 
-The Scanium Android app has undergone a comprehensive security assessment following industry standards (OWASP, MASVS, NIST). **Four critical security vulnerabilities have been identified and fixed**, significantly reducing the attack surface and improving the app's security posture.
+The Scanium Android app has undergone a comprehensive security assessment following industry
+standards (OWASP, MASVS, NIST). **Four critical security vulnerabilities have been identified and
+fixed**, significantly reducing the attack surface and improving the app's security posture.
 
 **Key Achievements:**
+
 - 80% of critical issues resolved immediately
 - Release builds now hardened against common attacks
 - Security debt documented and prioritized
 - Clear roadmap for remaining fixes
 
 **Current State:**
+
 - ✅ HTTPS enforced (no cleartext traffic)
 - ✅ Data backup blocked (no adb extraction)
 - ✅ Code obfuscated (reverse engineering protection)
 - ✅ Debug logs stripped (no PII leakage)
 
-The app is now in a **much stronger security position** for continued development and eventual production release. The remaining 14 issues are well-documented with clear fix plans and can be addressed systematically following the provided timeline.
+The app is now in a **much stronger security position** for continued development and eventual
+production release. The remaining 14 issues are well-documented with clear fix plans and can be
+addressed systematically following the provided timeline.
 
 **Assessment Status: COMPLETE ✅**
 

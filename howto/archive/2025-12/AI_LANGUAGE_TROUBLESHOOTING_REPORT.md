@@ -2,24 +2,29 @@
 
 ***REMOVED******REMOVED*** Executive Summary
 
-The AI assistant language propagation system on the Scanium app is **correctly implemented** end-to-end. Language settings from the user's General Language preference are properly:
+The AI assistant language propagation system on the Scanium app is **correctly implemented**
+end-to-end. Language settings from the user's General Language preference are properly:
+
 1. Read from unified settings (DataStore)
 2. Combined with other assistant preferences in SettingsRepository
 3. Sent to the backend in the assistant request
 4. Received and processed by the backend
 5. Used to build localized prompts with language enforcement instructions
 
-However, after investigation on the `refactoring` branch, temporary logging was added to help debug any runtime issues. This report documents the complete flow and how to verify correct behavior.
+However, after investigation on the `refactoring` branch, temporary logging was added to help debug
+any runtime issues. This report documents the complete flow and how to verify correct behavior.
 
 ---
 
 ***REMOVED******REMOVED*** Reproduction Steps
 
 ***REMOVED******REMOVED******REMOVED*** Prerequisites
+
 - Android emulator or device with Scanium dev debug build installed
 - Access to backend server (https://scanium.gtemp1.com)
 
 ***REMOVED******REMOVED******REMOVED*** Steps to Reproduce
+
 1. Launch Scanium app
 2. Navigate to Settings → General → Language
 3. Change language from English to Italian (or any non-English language)
@@ -29,9 +34,11 @@ However, after investigation on the `refactoring` branch, temporary logging was 
 7. Verify: AI response should be in Italian (matching the selected language)
 
 ***REMOVED******REMOVED******REMOVED*** Expected Behavior
+
 - AI output language matches the selected language in Settings
 
 ***REMOVED******REMOVED******REMOVED*** Issue (Before Fix)
+
 - AI would respond in English regardless of selected language
 
 ---
@@ -43,11 +50,13 @@ However, after investigation on the `refactoring` branch, temporary logging was 
 **File:** `androidApp/src/main/java/com/scanium/app/data/SettingsKeys.kt`
 
 Language is stored under the unified settings key:
+
 ```kotlin
 SettingsKeys.Unified.PRIMARY_LANGUAGE_KEY = "primary_language"
 ```
 
 Stored value format: BCP-47 language tags (lowercase)
+
 - Examples: "en", "it", "de", "fr", "nl", "es", "pt_BR"
 
 ---
@@ -55,10 +64,12 @@ Stored value format: BCP-47 language tags (lowercase)
 ***REMOVED******REMOVED******REMOVED*** 2. ANDROID: Language Reading & Override
 
 **Files:**
+
 - `androidApp/src/main/java/com/scanium/app/data/UnifiedSettings.kt:108-110`
 - `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt:153-160`
 
 **Flow:**
+
 ```
 DataStore["primary_language"]
   ↓ (e.g., "it")
@@ -70,6 +81,7 @@ SettingsRepository.assistantPrefsFlow (COMBINES with base prefs)
 ```
 
 **Key Implementation (SettingsRepository):**
+
 ```kotlin
 val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
     assistantSettings.assistantPrefsFlow,        // tone, region, units, verbosity
@@ -79,23 +91,27 @@ val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
 }
 ```
 
-This ensures all code reading `settingsRepository.assistantPrefsFlow` automatically gets the correct language.
+This ensures all code reading `settingsRepository.assistantPrefsFlow` automatically gets the correct
+language.
 
 ---
 
 ***REMOVED******REMOVED******REMOVED*** 3. ANDROID: Request Construction
 
 **Files:**
+
 - `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantViewModel.kt:603`
 - `androidApp/src/main/java/com/scanium/app/items/edit/ExportAssistantViewModel.kt:266`
 
 Both view models read from the correct flow:
+
 ```kotlin
 val prefs = settingsRepository.assistantPrefsFlow.first()
 // prefs.language = "it" (or selected language)
 ```
 
 Then pass to assistant repository:
+
 ```kotlin
 assistantRepository.send(
     ...
@@ -111,6 +127,7 @@ assistantRepository.send(
 **File:** `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt`
 
 **Request Structure:**
+
 ```json
 {
   "items": [...],
@@ -137,6 +154,7 @@ Language value: lowercase BCP-47 tag ("it", "en", etc.)
 **File:** `backend/src/modules/assistant/routes.ts`
 
 **Schema (lines 98-119):**
+
 ```typescript
 const assistantPrefsSchema = z.object({
   language: z.string().optional(),  // ← Accepts string
@@ -153,6 +171,7 @@ Request validated successfully. Language field received as-is (e.g., "it").
 ***REMOVED******REMOVED******REMOVED*** 6. BACKEND: Prompt Building with Localization
 
 **Files:**
+
 - `backend/src/modules/assistant/claude-provider.ts:66-73`
 - `backend/src/modules/assistant/prompts/listing-generation.ts:62-122`
 - `backend/src/modules/assistant/prompts/prompt-localization.ts:899-911`
@@ -172,9 +191,9 @@ Request validated successfully. Language field received as-is (e.g., "it").
      return LOCALIZED_CONTENT[normalized] ?? LOCALIZED_CONTENT.EN;
    }
    ```
-   - Converts "it" → "IT"
-   - Looks up `LOCALIZED_CONTENT["IT"]`
-   - Falls back to English if language not found
+    - Converts "it" → "IT"
+    - Looks up `LOCALIZED_CONTENT["IT"]`
+    - Falls back to English if language not found
 
 3. **Prompt Building (listing-generation.ts:62-122)**
    ```typescript
@@ -195,21 +214,25 @@ Request validated successfully. Language field received as-is (e.g., "it").
 Every prompt includes a **critical language enforcement instruction** at the top. Examples:
 
 **English (prompt-localization.ts:116-117):**
+
 ```
 CRITICAL: You MUST reply ENTIRELY in English. Do not use any other language anywhere in your response. All text (title, description, warnings, labels, etc.) must be in English only.
 ```
 
 **Italian (line 336-337):**
+
 ```
 CRITICO: Tu DEVI RISPONDERE COMPLETAMENTE in italiano. Non usare un'altra lingua ovunque nella tua risposta. Tutto il testo (titolo, descrizione, avvisi, etichette, ecc.) deve essere esclusivamente in italiano.
 ```
 
 **German (line 446-447):**
+
 ```
 KRITISCH: Du MUSST VOLLSTÄNDIG auf Deutsch antworten. Verwende keine andere Sprache in deiner Antwort. Aller Text (Titel, Beschreibung, Warnungen, Labels, usw.) muss ausschließlich auf Deutsch sein.
 ```
 
 All 7 supported languages have complete translations:
+
 - EN (English)
 - NL (Dutch)
 - DE (German)
@@ -223,6 +246,7 @@ All 7 supported languages have complete translations:
 ***REMOVED******REMOVED******REMOVED*** 8. BACKEND: Full Example Prompt Chain
 
 For Italian request:
+
 ```
 INPUT: { assistantPrefs: { language: "it" }, message: "Describe this item", ... }
   ↓
@@ -256,7 +280,8 @@ RESPONSE: Generated in Italian (enforced by system prompt)
 1. ✅ **Single Source of Truth**: User sets language once in Settings → General → Language
 2. ✅ **Unified Settings**: Not stored separately for assistant; uses app's primary language
 3. ✅ **SettingsRepository Override**: Combines base prefs with unified language at repository layer
-4. ✅ **Consistent Propagation**: All code reading `settingsRepository.assistantPrefsFlow` gets correct language
+4. ✅ **Consistent Propagation**: All code reading `settingsRepository.assistantPrefsFlow` gets
+   correct language
 5. ✅ **Serialization**: Language included in request JSON as `assistantPrefs.language`
 6. ✅ **Backend Schema**: Accepts optional language field
 7. ✅ **Localization**: Complete prompt templates for 7 languages
@@ -269,24 +294,26 @@ RESPONSE: Generated in Italian (enforced by system prompt)
 ***REMOVED******REMOVED*** Technical Details: File References
 
 ***REMOVED******REMOVED******REMOVED*** Android (Language Propagation)
-| File | Lines | Purpose |
-|------|-------|---------|
-| `androidApp/src/main/java/com/scanium/app/data/SettingsKeys.kt` | - | PRIMARY_LANGUAGE_KEY storage key |
-| `androidApp/src/main/java/com/scanium/app/data/UnifiedSettings.kt` | 108-110 | effectiveAiOutputLanguageFlow source |
-| `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt` | 153-160 | Override assistantPrefsFlow with unified language |
-| `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantViewModel.kt` | 603 | Read prefs and send request |
-| `androidApp/src/main/java/com/scanium/app/items/edit/ExportAssistantViewModel.kt` | 266 | Read prefs for export |
-| `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt` | 132-152 | Build request payload |
+
+| File                                                                                | Lines   | Purpose                                           |
+|-------------------------------------------------------------------------------------|---------|---------------------------------------------------|
+| `androidApp/src/main/java/com/scanium/app/data/SettingsKeys.kt`                     | -       | PRIMARY_LANGUAGE_KEY storage key                  |
+| `androidApp/src/main/java/com/scanium/app/data/UnifiedSettings.kt`                  | 108-110 | effectiveAiOutputLanguageFlow source              |
+| `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt`               | 153-160 | Override assistantPrefsFlow with unified language |
+| `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantViewModel.kt`  | 603     | Read prefs and send request                       |
+| `androidApp/src/main/java/com/scanium/app/items/edit/ExportAssistantViewModel.kt`   | 266     | Read prefs for export                             |
+| `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt` | 132-152 | Build request payload                             |
 
 ***REMOVED******REMOVED******REMOVED*** Backend (Language Usage)
-| File | Lines | Purpose |
-|------|-------|---------|
-| `backend/src/modules/assistant/routes.ts` | 98-119 | Request schema with assistantPrefs |
-| `backend/src/modules/assistant/routes.ts` | 629 | Validate request |
-| `backend/src/modules/assistant/claude-provider.ts` | 66-73 | Extract language and build prompts |
-| `backend/src/modules/assistant/prompts/listing-generation.ts` | 62-122 | buildListingSystemPrompt with localization |
-| `backend/src/modules/assistant/prompts/listing-generation.ts` | 194-359 | buildListingUserPrompt with localization |
-| `backend/src/modules/assistant/prompts/prompt-localization.ts` | 115-880 | Complete translations (7 languages) |
+
+| File                                                           | Lines   | Purpose                                     |
+|----------------------------------------------------------------|---------|---------------------------------------------|
+| `backend/src/modules/assistant/routes.ts`                      | 98-119  | Request schema with assistantPrefs          |
+| `backend/src/modules/assistant/routes.ts`                      | 629     | Validate request                            |
+| `backend/src/modules/assistant/claude-provider.ts`             | 66-73   | Extract language and build prompts          |
+| `backend/src/modules/assistant/prompts/listing-generation.ts`  | 62-122  | buildListingSystemPrompt with localization  |
+| `backend/src/modules/assistant/prompts/listing-generation.ts`  | 194-359 | buildListingUserPrompt with localization    |
+| `backend/src/modules/assistant/prompts/prompt-localization.ts` | 115-880 | Complete translations (7 languages)         |
 | `backend/src/modules/assistant/prompts/prompt-localization.ts` | 899-911 | getLocalizedContent with case normalization |
 
 ---
@@ -294,16 +321,20 @@ RESPONSE: Generated in Italian (enforced by system prompt)
 ***REMOVED******REMOVED*** How to Verify This Works
 
 ***REMOVED******REMOVED******REMOVED*** Manual Verification
+
 1. Set language to Italian in Settings
 2. Check logs for "language='it'" in assistant requests
 3. Verify response is in Italian
 
 ***REMOVED******REMOVED******REMOVED*** Automated Verification (Tests Added)
+
 - Android unit test: Language override in SettingsRepository combines correctly
 - Backend unit test: Language from request produces localized prompts
 
 ***REMOVED******REMOVED******REMOVED*** Debug Logging
+
 If issues arise, enable logging (temporarily added, then removed):
+
 - Android: `TEMP_AI_LANG_DEBUG` in AssistantViewModel
 - Backend: `TEMP_AI_LANG_DEBUG` in routes.ts and claude-provider.ts
 
@@ -312,10 +343,12 @@ If issues arise, enable logging (temporarily added, then removed):
 ***REMOVED******REMOVED*** Testing & Validation
 
 ***REMOVED******REMOVED******REMOVED*** Test Results
+
 - ✅ `./gradlew test` - BUILD SUCCESSFUL (691 tasks)
 - ✅ `./gradlew :androidApp:assembleDevDebug` - BUILD SUCCESSFUL
 
 ***REMOVED******REMOVED******REMOVED*** Code Quality
+
 - No breaking changes
 - Minimal, focused implementation
 - Uses existing Flow/combine infrastructure
@@ -355,9 +388,9 @@ UI displays Italian response
 ***REMOVED******REMOVED*** Commits
 
 - **b024dcd**: `refactor(ai): fix language at SettingsRepository layer`
-  - Moves language override from ViewModels to SettingsRepository
-  - Ensures all consumers automatically get unified language
-  - No behavioral changes, just proper layering
+    - Moves language override from ViewModels to SettingsRepository
+    - Ensures all consumers automatically get unified language
+    - No behavioral changes, just proper layering
 
 ---
 
@@ -372,7 +405,8 @@ UI displays Italian response
 
 ***REMOVED******REMOVED*** Conclusion
 
-The AI assistant language propagation is **fully implemented and working correctly** on the refactoring branch. The system properly:
+The AI assistant language propagation is **fully implemented and working correctly** on the
+refactoring branch. The system properly:
 
 1. Reads language from user settings
 2. Propagates it through the request pipeline
@@ -380,4 +414,5 @@ The AI assistant language propagation is **fully implemented and working correct
 4. Uses it to build localized prompts with language enforcement
 5. Ensures Claude generates responses in the selected language
 
-All tests pass, build succeeds, and the implementation follows best practices for data flow management in a Kotlin/TypeScript codebase.
+All tests pass, build succeeds, and the implementation follows best practices for data flow
+management in a Kotlin/TypeScript codebase.

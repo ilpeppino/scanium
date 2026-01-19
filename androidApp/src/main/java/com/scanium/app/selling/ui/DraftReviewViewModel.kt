@@ -107,7 +107,8 @@ class DraftReviewViewModel
                 val fields = draft.fields.toMutableMap()
                 fields[com.scanium.app.listing.DraftFieldKey.CONDITION] = draft.fields[com.scanium.app.listing.DraftFieldKey.CONDITION]
                     ?.copy(value = value, source = DraftProvenance.USER_EDITED)
-                    ?: com.scanium.app.listing.DraftField(value = value, confidence = 1f, source = DraftProvenance.USER_EDITED)
+                    ?: com.scanium.app.listing
+                        .DraftField(value = value, confidence = 1f, source = DraftProvenance.USER_EDITED)
                 draft.copy(fields = fields)
             }
         }
@@ -256,13 +257,10 @@ class DraftReviewViewModel
                 assistedFactory: Factory,
                 itemIds: List<String>,
                 itemsViewModel: ItemsViewModel,
-            ): ViewModelProvider.Factory {
-                return object : ViewModelProvider.Factory {
+            ): ViewModelProvider.Factory =
+                object : ViewModelProvider.Factory {
                     @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        return assistedFactory.create(itemIds, itemsViewModel) as T
-                    }
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T = assistedFactory.create(itemIds, itemsViewModel) as T
                 }
-            }
         }
     }

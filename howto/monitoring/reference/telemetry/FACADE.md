@@ -7,7 +7,10 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The telemetry facade provides a clean, dependency-injection-friendly API for emitting telemetry from shared business logic. It abstracts backend implementations behind port interfaces, allowing platform-specific code to plug in OpenTelemetry, Sentry, or custom analytics without changing shared code.
+The telemetry facade provides a clean, dependency-injection-friendly API for emitting telemetry from
+shared business logic. It abstracts backend implementations behind port interfaces, allowing
+platform-specific code to plug in OpenTelemetry, Sentry, or custom analytics without changing shared
+code.
 
 ***REMOVED******REMOVED*** Architecture
 
@@ -48,6 +51,7 @@ Ports define contracts for telemetry backends:
 ***REMOVED******REMOVED******REMOVED*** 2. Telemetry Facade
 
 The main API used by shared code. Responsibilities:
+
 - Merges user attributes with default attributes (platform, version, etc.)
 - Sanitizes all attributes using `AttributeSanitizer` from telemetry-contract
 - Enforces required attribute presence (fail-fast)
@@ -56,6 +60,7 @@ The main API used by shared code. Responsibilities:
 ***REMOVED******REMOVED******REMOVED*** 3. Default Attributes Provider
 
 Platform-specific code implements `DefaultAttributesProvider` to supply:
+
 - `platform`: "android" or "ios"
 - `app_version`: Semantic version
 - `build`: Build number
@@ -65,6 +70,7 @@ Platform-specific code implements `DefaultAttributesProvider` to supply:
 ***REMOVED******REMOVED******REMOVED*** 4. NoOp Implementations
 
 Provided for testing and scenarios where telemetry is disabled:
+
 - `NoOpLogPort`
 - `NoOpMetricPort`
 - `NoOpTracePort`
@@ -223,7 +229,8 @@ telemetry.info("user.login", mapOf(
 
 ***REMOVED******REMOVED******REMOVED*** Required Attributes Enforcement
 
-The facade validates that required attributes are present. If missing, it throws `IllegalStateException`:
+The facade validates that required attributes are present. If missing, it throws
+`IllegalStateException`:
 
 ```kotlin
 // BAD: DefaultAttributesProvider missing required fields
@@ -314,7 +321,8 @@ class MyServiceTest {
 
 ***REMOVED******REMOVED*** Best Practices
 
-1. **Dependency Injection**: Inject `Telemetry` into shared code classes rather than accessing a global instance
+1. **Dependency Injection**: Inject `Telemetry` into shared code classes rather than accessing a
+   global instance
 2. **Minimal Attributes**: Only include attributes that add value for debugging/analysis
 3. **Avoid PII**: Never intentionally include PII; sanitizer is a safety net
 4. **Use Naming Conventions**: Follow the event naming patterns from `TelemetryEventNaming`
@@ -337,6 +345,7 @@ This module is new as of PR ***REMOVED***2. No migration required.
 ***REMOVED******REMOVED*** API Stability
 
 This facade is **stable** as of v1.0. Breaking changes will require:
+
 1. Major version bump
 2. Deprecation period for removed methods
 3. Migration guide for consumers

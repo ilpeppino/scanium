@@ -2,7 +2,9 @@
 
 ***REMOVED******REMOVED*** Problem Statement
 
-After returning to CameraScreen from Items List (or other screens), the ImageAnalysis callback does NOT receive frames even though the debug overlay shows:
+After returning to CameraScreen from Items List (or other screens), the ImageAnalysis callback does
+NOT receive frames even though the debug overlay shows:
+
 - CameraBound: true
 - PreviewDetection: true
 - AnalysisRunning: true
@@ -20,7 +22,8 @@ When returning to CameraScreen from another screen:
 
 1. Composition starts
 2. `DisposableEffect(lifecycleOwner)` adds observer, `ON_RESUME` is delivered immediately
-3. `LaunchedEffect(modelDownloadState, cameraState, isCameraBinding, lifecycleResumeCount)` is scheduled
+3. `LaunchedEffect(modelDownloadState, cameraState, isCameraBinding, lifecycleResumeCount)` is
+   scheduled
 4. `CameraPreview` is composed, creating a NEW `PreviewView`
 5. `LaunchedEffect(previewView, ...)` is scheduled
 
@@ -31,7 +34,8 @@ When returning to CameraScreen from another screen:
 - THEN `LaunchedEffect(previewView, ...)` runs and calls `startCamera()`
 - `startCamera()` creates a **NEW** `imageAnalysis` instance without any analyzer!
 
-The analyzer was set on a stale `ImageAnalysis` instance that was replaced by the camera binding process.
+The analyzer was set on a stale `ImageAnalysis` instance that was replaced by the camera binding
+process.
 
 ***REMOVED******REMOVED*** Solution
 
@@ -59,10 +63,12 @@ pendingPreviewDetectionCallback?.let { callback ->
 ***REMOVED******REMOVED******REMOVED*** 2. Truthful Diagnostic States
 
 Changed from single `isAnalysisRunning` to two states:
+
 - `analysisAttached`: We called `setAnalyzer()` on ImageAnalysis
 - `analysisFlowing`: We have received at least 1 frame in current session
 
 This makes the debug overlay show the real state:
+
 - `AnalysisAttached: true` + `AnalysisFlowing: false` = Analyzer set but no frames (STALL)
 - `AnalysisAttached: true` + `AnalysisFlowing: true` = Working correctly
 
@@ -112,32 +118,32 @@ This ensures stale callbacks from previous sessions are ignored.
 ***REMOVED******REMOVED*** Files Changed
 
 - `CameraXManager.kt`
-  - Added `pendingPreviewDetectionCallback` for deferred analyzer application
-  - Added `hasReceivedFirstFrame` tracking
-  - Added `startNoFramesWatchdog()` and `rebindAnalysisPipeline()`
-  - Modified `startPreviewDetection()` to handle race condition
-  - Added session validation to analyzer callbacks
+    - Added `pendingPreviewDetectionCallback` for deferred analyzer application
+    - Added `hasReceivedFirstFrame` tracking
+    - Added `startNoFramesWatchdog()` and `rebindAnalysisPipeline()`
+    - Modified `startPreviewDetection()` to handle race condition
+    - Added session validation to analyzer callbacks
 
 - `CameraSessionController.kt`
-  - Added `StallReason` enum
-  - Added `analysisAttached` and `analysisFlowing` diagnostics
-  - Added `recoveryAttempts` tracking
+    - Added `StallReason` enum
+    - Added `analysisAttached` and `analysisFlowing` diagnostics
+    - Added `recoveryAttempts` tracking
 
 - `CameraPipelineDebugOverlay.kt`
-  - Updated to show new diagnostic states
-  - Added StallReason display
+    - Updated to show new diagnostic states
+    - Added StallReason display
 
 ***REMOVED******REMOVED*** Debug Overlay States
 
 The debug overlay now shows:
 
-| State | Meaning |
-|-------|---------|
-| `Status: OK` | Pipeline working correctly |
+| State                        | Meaning                                    |
+|------------------------------|--------------------------------------------|
+| `Status: OK`                 | Pipeline working correctly                 |
 | `Status: WAITING FOR FRAMES` | Analyzer attached, waiting for first frame |
-| `Status: STALL_NO_FRAMES` | Detected stall, watchdog triggered |
-| `Status: RECOVERING` | Watchdog attempting recovery |
-| `Status: STALL_FAILED` | Recovery failed after max attempts |
+| `Status: STALL_NO_FRAMES`    | Detected stall, watchdog triggered         |
+| `Status: RECOVERING`         | Watchdog attempting recovery               |
+| `Status: STALL_FAILED`       | Recovery failed after max attempts         |
 
 ***REMOVED******REMOVED*** Validation
 

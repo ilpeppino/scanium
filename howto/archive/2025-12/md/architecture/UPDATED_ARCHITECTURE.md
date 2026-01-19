@@ -1,12 +1,15 @@
 ***REMOVED*** Scanium — High-Level Architecture
 
-This architecture is designed for **consumer use first**, while remaining **fully extensible** for future **B2B use cases** such as inventory scanning, product cataloging, and enterprise integrations.
+This architecture is designed for **consumer use first**, while remaining **fully extensible** for
+future **B2B use cases** such as inventory scanning, product cataloging, and enterprise
+integrations.
 
 ---
 
 ***REMOVED******REMOVED*** 1. Architecture Overview
 
-Scanium consists of **four main layers**, each responsible for a distinct part of the scanning and intelligence pipeline:
+Scanium consists of **four main layers**, each responsible for a distinct part of the scanning and
+intelligence pipeline:
 
 1. **UI Layer**
 2. **Scanning Engine**
@@ -46,17 +49,20 @@ The presentation layer responsible for all user interactions:
 Responsible for real-time visual processing, tracking, and classification orchestration.
 
 ***REMOVED******REMOVED******REMOVED*** A. Object Detection & Tracking
+
 - **CameraX** for real-time frames.
 - **ML Kit Object Detection & Tracking**
     - Produces bounding boxes, tracking IDs.
     - Lightweight, fast, on-device.
 
 ***REMOVED******REMOVED******REMOVED*** B. Item Aggregation
+
 - Converts per-frame detections into **stable, unique items**.
 - Deduplicates objects during camera movement.
 - Emits “confirmed” items to Classification Orchestrator.
 
 ***REMOVED******REMOVED******REMOVED*** C. Classification Orchestrator
+
 Central controller for classification logic.
 
 - Receives confirmed items.
@@ -71,6 +77,7 @@ Central controller for classification logic.
 - Outputs semantic labels → Domain Intelligence Layer.
 
 ***REMOVED******REMOVED******REMOVED*** D. Attribute Extractors
+
 Modular extraction tools:
 
 - **OCR** (brand text, model identifiers)
@@ -90,6 +97,7 @@ Modular extraction tools:
 This layer makes the app adaptable to different consumer/business scenarios.
 
 ***REMOVED******REMOVED******REMOVED*** A. Domain Packs
+
 Configurable intelligence bundles defining:
 
 - Category taxonomy
@@ -99,16 +107,19 @@ Configurable intelligence bundles defining:
 - Mapping to internal `ItemCategory` enum
 
 Example Domain Packs:
+
 - `HomeResalePack` (consumer)
 - `OfficeInventoryPack` (business)
 - `WarehousePack` (enterprise SKU workflows)
 
 ***REMOVED******REMOVED******REMOVED*** B. Category Engine
+
 - Takes classification result + Domain Pack rules.
 - Performs coarse-to-fine category selection.
 - Maps semantic category → app-level `ItemCategory`.
 
 ***REMOVED******REMOVED******REMOVED*** C. Attribute Engine
+
 For each classified item:
 
 1. Reads attribute list from Domain Pack.
@@ -120,6 +131,7 @@ For each classified item:
 3. Produces a structured `ItemDetails` object.
 
 ***REMOVED******REMOVED******REMOVED*** D. Pricing Engine (consumer-first)
+
 - Uses:
     - `ItemCategory`
     - extracted attributes (such as brand)
@@ -135,11 +147,13 @@ For each classified item:
 Handles external interactions depending on user type.
 
 ***REMOVED******REMOVED******REMOVED*** A. Consumer Integrations
+
 - **Marketplace APIs**
     - eBay: category mapping & price lookups.
     - Future: Facebook Marketplace, Vinted, etc.
 
 ***REMOVED******REMOVED******REMOVED*** B. Business Integrations
+
 - Inventory/ERP systems
 - SKU databases
 - Custom domain packs fetched from backend
@@ -148,22 +162,26 @@ Handles external interactions depending on user type.
 ---
 
 ***REMOVED******REMOVED*** 3. Architectural Principles
+
 - Device-first intelligence: works offline, fast, privacy-friendly.
 - Cloud-optional enhancements: Businesses or advanced users can enable richer interpretation.
-- Config-driven categories & attributes: Domain Packs allow Scanium to adapt to consumer and enterprise use.
-- Modular, pluggable classifiers & extractors: Future models can be swapped without rewriting the app.
+- Config-driven categories & attributes: Domain Packs allow Scanium to adapt to consumer and
+  enterprise use.
+- Modular, pluggable classifiers & extractors: Future models can be swapped without rewriting the
+  app.
 - One classification per item: Aggregation ensures smooth performance even in cluttered scenes.
 - Separation of concerns
-  - Dection ≠ Classification
-  - Classification ≠ Attributes
-  - Attributes ≠ Pricing
-  - Domain Packs decide behavior, not hard-coded logic.
+    - Dection ≠ Classification
+    - Classification ≠ Attributes
+    - Attributes ≠ Pricing
+    - Domain Packs decide behavior, not hard-coded logic.
 
 ---
 
 ***REMOVED******REMOVED*** 4. Summary
 
 This architecture enables Scanium to:
+
 - Work today as a consumer resale assistant.
 - Scale into a powerful business inventory intelligence tool.
 - Support new categories, domains, and attribute types without rewriting code.

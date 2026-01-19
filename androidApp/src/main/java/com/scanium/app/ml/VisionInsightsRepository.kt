@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.logging.CorrelationIds
-import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.network.security.RequestSigner
 import com.scanium.app.selling.assistant.network.AssistantHttpConfig
 import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
@@ -118,37 +117,41 @@ class VisionInsightsRepository(
         private const val MAX_IMAGE_DIMENSION = 1024 // Resize large images
     }
 
-    private val client: OkHttpClient = run {
-        val baseClient = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.VISION,
-            logStartupPolicy = false,
-        )
+    private val client: OkHttpClient =
+        run {
+            val baseClient =
+                AssistantOkHttpClientFactory.create(
+                    config = AssistantHttpConfig.VISION,
+                    logStartupPolicy = false,
+                )
 
-        // Add certificate pinning if configured
-        val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
-        val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
-        if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
-            val host = runCatching { URI(baseUrl).host }.getOrNull()
-            if (!host.isNullOrBlank()) {
-                baseClient.newBuilder()
-                    .certificatePinner(
-                        CertificatePinner.Builder()
-                            .add(host, certificatePin)
-                            .build()
-                    )
-                    .build()
+            // Add certificate pinning if configured
+            val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
+            val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
+            if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
+                val host = runCatching { URI(baseUrl).host }.getOrNull()
+                if (!host.isNullOrBlank()) {
+                    baseClient
+                        .newBuilder()
+                        .certificatePinner(
+                            CertificatePinner
+                                .Builder()
+                                .add(host, certificatePin)
+                                .build(),
+                        ).build()
+                } else {
+                    baseClient
+                }
             } else {
                 baseClient
             }
-        } else {
-            baseClient
         }
-    }
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
 
     /**
      * Extract vision insights from a bitmap image.
@@ -160,238 +163,254 @@ class VisionInsightsRepository(
     suspend fun extractInsights(
         bitmap: Bitmap,
         itemId: String? = null,
-    ): Result<VisionInsightsResult> = withContext(Dispatchers.IO) {
-        val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
-        val baseUrl = baseUrlRaw.takeIf { it.isNotBlank() }
-            ?: run {
-                Log.e(TAG, "SCAN_ENRICH: SCANIUM_API_BASE_URL is not configured")
-                return@withContext Result.failure(
-                    VisionInsightsException(
-                        errorCode = "CONFIG_ERROR",
-                        userMessage = "Vision service not configured.",
-                        retryable = false,
-                    )
+    ): Result<VisionInsightsResult> =
+        withContext(Dispatchers.IO) {
+            val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
+            val baseUrl =
+                baseUrlRaw.takeIf { it.isNotBlank() }
+                    ?: run {
+                        Log.e(TAG, "SCAN_ENRICH: SCANIUM_API_BASE_URL is not configured")
+                        return@withContext Result.failure(
+                            VisionInsightsException(
+                                errorCode = "CONFIG_ERROR",
+                                userMessage = "Vision service not configured.",
+                                retryable = false,
+                            ),
+                        )
+                    }
+
+            val apiKeyRaw = apiKeyProvider()
+            val apiKey =
+                apiKeyRaw?.takeIf { it.isNotBlank() }
+                    ?: run {
+                        Log.e(TAG, "SCAN_ENRICH: API key is missing")
+                        return@withContext Result.failure(
+                            VisionInsightsException(
+                                errorCode = "CONFIG_ERROR",
+                                userMessage = "API key is missing.",
+                                retryable = false,
+                            ),
+                        )
+                    }
+
+            val endpoint = "${baseUrl.trimEnd('/')}/v1/vision/insights"
+            val correlationId = CorrelationIds.currentClassificationSessionId()
+
+            try {
+                // Prepare image - resize if needed and compress to JPEG
+                val processedBitmap = resizeIfNeeded(bitmap)
+                val imageBytes = processedBitmap.toJpegBytes()
+
+                // Build multipart request
+                val requestBodyBuilder =
+                    MultipartBody
+                        .Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart(
+                            name = "image",
+                            filename = "scan.jpg",
+                            body = imageBytes.toRequestBody("image/jpeg".toMediaType()),
+                        )
+
+                if (itemId != null) {
+                    requestBodyBuilder.addFormDataPart("itemId", itemId)
+                }
+
+                val requestBody = requestBodyBuilder.build()
+
+                val httpRequestBuilder =
+                    Request
+                        .Builder()
+                        .url(endpoint)
+                        .post(requestBody)
+                        .header("X-API-Key", apiKey)
+                        .header("X-Scanium-Correlation-Id", correlationId)
+                        .header("X-Client", "Scanium-Android")
+                        .header("X-App-Version", BuildConfig.VERSION_NAME)
+
+                // Add HMAC signature for replay protection
+                RequestSigner.addSignatureHeaders(
+                    builder = httpRequestBuilder,
+                    apiKey = apiKey,
+                    params = itemId?.let { mapOf("itemId" to it) } ?: emptyMap(),
+                    binaryContentSize = imageBytes.size.toLong(),
                 )
-            }
 
-        val apiKeyRaw = apiKeyProvider()
-        val apiKey = apiKeyRaw?.takeIf { it.isNotBlank() }
-            ?: run {
-                Log.e(TAG, "SCAN_ENRICH: API key is missing")
-                return@withContext Result.failure(
-                    VisionInsightsException(
-                        errorCode = "CONFIG_ERROR",
-                        userMessage = "API key is missing.",
-                        retryable = false,
-                    )
-                )
-            }
+                // Add device ID for rate limiting (hashed)
+                val deviceId = getDeviceId()
+                if (deviceId.isNotBlank()) {
+                    httpRequestBuilder.header("X-Scanium-Device-Id", hashDeviceId(deviceId))
+                }
 
-        val endpoint = "${baseUrl.trimEnd('/')}/v1/vision/insights"
-        val correlationId = CorrelationIds.currentClassificationSessionId()
+                val httpRequest = httpRequestBuilder.build()
+                val startTime = System.currentTimeMillis()
 
-        try {
-            // Prepare image - resize if needed and compress to JPEG
-            val processedBitmap = resizeIfNeeded(bitmap)
-            val imageBytes = processedBitmap.toJpegBytes()
+                client.newCall(httpRequest).execute().use { response ->
+                    val responseBody = response.body?.string()
+                    val latencyMs = System.currentTimeMillis() - startTime
 
-            // Build multipart request
-            val requestBodyBuilder = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart(
-                    name = "image",
-                    filename = "scan.jpg",
-                    body = imageBytes.toRequestBody("image/jpeg".toMediaType()),
-                )
-
-            if (itemId != null) {
-                requestBodyBuilder.addFormDataPart("itemId", itemId)
-            }
-
-            val requestBody = requestBodyBuilder.build()
-
-            val httpRequestBuilder = Request.Builder()
-                .url(endpoint)
-                .post(requestBody)
-                .header("X-API-Key", apiKey)
-                .header("X-Scanium-Correlation-Id", correlationId)
-                .header("X-Client", "Scanium-Android")
-                .header("X-App-Version", BuildConfig.VERSION_NAME)
-
-            // Add HMAC signature for replay protection
-            RequestSigner.addSignatureHeaders(
-                builder = httpRequestBuilder,
-                apiKey = apiKey,
-                params = itemId?.let { mapOf("itemId" to it) } ?: emptyMap(),
-                binaryContentSize = imageBytes.size.toLong(),
-            )
-
-            // Add device ID for rate limiting (hashed)
-            val deviceId = getDeviceId()
-            if (deviceId.isNotBlank()) {
-                httpRequestBuilder.header("X-Scanium-Device-Id", hashDeviceId(deviceId))
-            }
-
-            val httpRequest = httpRequestBuilder.build()
-            val startTime = System.currentTimeMillis()
-
-            client.newCall(httpRequest).execute().use { response ->
-                val responseBody = response.body?.string()
-                val latencyMs = System.currentTimeMillis() - startTime
-
-                when {
-                    response.isSuccessful -> {
-                        if (responseBody == null) {
-                            return@use Result.failure(
-                                VisionInsightsException(
-                                    errorCode = "EMPTY_RESPONSE",
-                                    userMessage = "No response received.",
-                                    retryable = true,
+                    when {
+                        response.isSuccessful -> {
+                            if (responseBody == null) {
+                                return@use Result.failure(
+                                    VisionInsightsException(
+                                        errorCode = "EMPTY_RESPONSE",
+                                        userMessage = "No response received.",
+                                        retryable = true,
+                                    ),
                                 )
+                            }
+
+                            val apiResponse = json.decodeFromString<VisionInsightsResponse>(responseBody)
+
+                            if (!apiResponse.success) {
+                                Log.e(TAG, "SCAN_ENRICH: API returned success=false: ${apiResponse.error?.code}")
+                                return@use Result.failure(
+                                    VisionInsightsException(
+                                        errorCode = apiResponse.error?.code ?: "EXTRACTION_FAILED",
+                                        userMessage = apiResponse.error?.message ?: "Extraction failed.",
+                                        retryable = false,
+                                    ),
+                                )
+                            }
+
+                            Log.d(
+                                TAG,
+                                "SCAN_ENRICH: Response - brand=${apiResponse.logoHints.firstOrNull()?.name}, itemType=${apiResponse.itemType}, colors=${apiResponse.dominantColors.map {
+                                    it.name
+                                }}",
                             )
+
+                            val result = parseResponse(apiResponse)
+                            Result.success(result)
                         }
 
-                        val apiResponse = json.decodeFromString<VisionInsightsResponse>(responseBody)
-
-                        if (!apiResponse.success) {
-                            Log.e(TAG, "SCAN_ENRICH: API returned success=false: ${apiResponse.error?.code}")
-                            return@use Result.failure(
+                        response.code == 401 -> {
+                            Log.e(TAG, "SCAN_ENRICH: 401 UNAUTHORIZED - API key rejected")
+                            Result.failure(
                                 VisionInsightsException(
-                                    errorCode = apiResponse.error?.code ?: "EXTRACTION_FAILED",
-                                    userMessage = apiResponse.error?.message ?: "Extraction failed.",
+                                    errorCode = "UNAUTHORIZED",
+                                    userMessage = "Authentication failed.",
                                     retryable = false,
-                                )
+                                ),
                             )
                         }
 
-                        Log.d(TAG, "SCAN_ENRICH: Response - brand=${apiResponse.logoHints.firstOrNull()?.name}, itemType=${apiResponse.itemType}, colors=${apiResponse.dominantColors.map { it.name }}")
-
-                        val result = parseResponse(apiResponse)
-                        Result.success(result)
-                    }
-
-                    response.code == 401 -> {
-                        Log.e(TAG, "SCAN_ENRICH: 401 UNAUTHORIZED - API key rejected")
-                        Result.failure(
-                            VisionInsightsException(
-                                errorCode = "UNAUTHORIZED",
-                                userMessage = "Authentication failed.",
-                                retryable = false,
+                        response.code == 429 -> {
+                            Log.w(TAG, "SCAN_ENRICH: Rate limited (429)")
+                            Result.failure(
+                                VisionInsightsException(
+                                    errorCode = "RATE_LIMITED",
+                                    userMessage = "Too many requests. Please wait.",
+                                    retryable = true,
+                                ),
                             )
-                        )
-                    }
+                        }
 
-                    response.code == 429 -> {
-                        Log.w(TAG, "SCAN_ENRICH: Rate limited (429)")
-                        Result.failure(
-                            VisionInsightsException(
-                                errorCode = "RATE_LIMITED",
-                                userMessage = "Too many requests. Please wait.",
-                                retryable = true,
+                        response.code == 413 -> {
+                            Log.e(TAG, "SCAN_ENRICH: Image too large (413)")
+                            Result.failure(
+                                VisionInsightsException(
+                                    errorCode = "IMAGE_TOO_LARGE",
+                                    userMessage = "Image is too large.",
+                                    retryable = false,
+                                ),
                             )
-                        )
-                    }
+                        }
 
-                    response.code == 413 -> {
-                        Log.e(TAG, "SCAN_ENRICH: Image too large (413)")
-                        Result.failure(
-                            VisionInsightsException(
-                                errorCode = "IMAGE_TOO_LARGE",
-                                userMessage = "Image is too large.",
-                                retryable = false,
+                        response.code == 503 -> {
+                            Log.w(TAG, "SCAN_ENRICH: Service unavailable (503)")
+                            Result.failure(
+                                VisionInsightsException(
+                                    errorCode = "SERVICE_UNAVAILABLE",
+                                    userMessage = "Vision service temporarily unavailable.",
+                                    retryable = true,
+                                ),
                             )
-                        )
-                    }
+                        }
 
-                    response.code == 503 -> {
-                        Log.w(TAG, "SCAN_ENRICH: Service unavailable (503)")
-                        Result.failure(
-                            VisionInsightsException(
-                                errorCode = "SERVICE_UNAVAILABLE",
-                                userMessage = "Vision service temporarily unavailable.",
-                                retryable = true,
+                        else -> {
+                            Log.e(TAG, "SCAN_ENRICH: Unexpected HTTP ${response.code}")
+                            Result.failure(
+                                VisionInsightsException(
+                                    errorCode = "UNKNOWN_ERROR",
+                                    userMessage = "Something went wrong.",
+                                    retryable = true,
+                                ),
                             )
-                        )
-                    }
-
-                    else -> {
-                        Log.e(TAG, "SCAN_ENRICH: Unexpected HTTP ${response.code}")
-                        Result.failure(
-                            VisionInsightsException(
-                                errorCode = "UNKNOWN_ERROR",
-                                userMessage = "Something went wrong.",
-                                retryable = true,
-                            )
-                        )
+                        }
                     }
                 }
+            } catch (e: SocketTimeoutException) {
+                Log.e(TAG, "SCAN_ENRICH: Request timed out", e)
+                Result.failure(
+                    VisionInsightsException(
+                        errorCode = "TIMEOUT",
+                        userMessage = "Request timed out.",
+                        retryable = true,
+                    ),
+                )
+            } catch (e: UnknownHostException) {
+                Log.e(TAG, "SCAN_ENRICH: Offline - cannot resolve host", e)
+                Result.failure(
+                    VisionInsightsException(
+                        errorCode = "OFFLINE",
+                        userMessage = "No network connection.",
+                        retryable = true,
+                    ),
+                )
+            } catch (e: IOException) {
+                Log.e(TAG, "SCAN_ENRICH: Network error", e)
+                Result.failure(
+                    VisionInsightsException(
+                        errorCode = "NETWORK_ERROR",
+                        userMessage = "Network error. Please try again.",
+                        retryable = true,
+                    ),
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "SCAN_ENRICH: Unexpected error: ${e.javaClass.simpleName}", e)
+                Result.failure(
+                    VisionInsightsException(
+                        errorCode = "UNKNOWN_ERROR",
+                        userMessage = "Something went wrong.",
+                        retryable = false,
+                    ),
+                )
             }
-        } catch (e: SocketTimeoutException) {
-            Log.e(TAG, "SCAN_ENRICH: Request timed out", e)
-            Result.failure(
-                VisionInsightsException(
-                    errorCode = "TIMEOUT",
-                    userMessage = "Request timed out.",
-                    retryable = true,
-                )
-            )
-        } catch (e: UnknownHostException) {
-            Log.e(TAG, "SCAN_ENRICH: Offline - cannot resolve host", e)
-            Result.failure(
-                VisionInsightsException(
-                    errorCode = "OFFLINE",
-                    userMessage = "No network connection.",
-                    retryable = true,
-                )
-            )
-        } catch (e: IOException) {
-            Log.e(TAG, "SCAN_ENRICH: Network error", e)
-            Result.failure(
-                VisionInsightsException(
-                    errorCode = "NETWORK_ERROR",
-                    userMessage = "Network error. Please try again.",
-                    retryable = true,
-                )
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "SCAN_ENRICH: Unexpected error: ${e.javaClass.simpleName}", e)
-            Result.failure(
-                VisionInsightsException(
-                    errorCode = "UNKNOWN_ERROR",
-                    userMessage = "Something went wrong.",
-                    retryable = false,
-                )
-            )
         }
-    }
 
     private fun parseResponse(response: VisionInsightsResponse): VisionInsightsResult {
         // Convert to VisionAttributes
-        val visionAttributes = VisionAttributes(
-            colors = response.dominantColors.map { color ->
-                VisionColor(
-                    name = color.name,
-                    hex = color.hex,
-                    score = color.pct / 100f, // Convert percentage to 0-1 score
-                )
-            },
-            ocrText = response.ocrSnippets.joinToString("\n").takeIf { it.isNotBlank() },
-            logos = response.logoHints.map { logo ->
-                VisionLogo(
-                    name = logo.name,
-                    score = logo.confidence,
-                )
-            },
-            labels = response.labelHints.map { label ->
-                VisionLabel(
-                    name = label,
-                    score = 1.0f, // Labels from insights don't have scores
-                )
-            },
-            brandCandidates = response.logoHints.map { it.name },
-            modelCandidates = emptyList(), // Model detection not yet available
-            itemType = response.itemType,
-        )
+        val visionAttributes =
+            VisionAttributes(
+                colors =
+                    response.dominantColors.map { color ->
+                        VisionColor(
+                            name = color.name,
+                            hex = color.hex,
+                            score = color.pct / 100f, // Convert percentage to 0-1 score
+                        )
+                    },
+                ocrText = response.ocrSnippets.joinToString("\n").takeIf { it.isNotBlank() },
+                logos =
+                    response.logoHints.map { logo ->
+                        VisionLogo(
+                            name = logo.name,
+                            score = logo.confidence,
+                        )
+                    },
+                labels =
+                    response.labelHints.map { label ->
+                        VisionLabel(
+                            name = label,
+                            score = 1.0f, // Labels from insights don't have scores
+                        )
+                    },
+                brandCandidates = response.logoHints.map { it.name },
+                modelCandidates = emptyList(), // Model detection not yet available
+                itemType = response.itemType,
+            )
 
         return VisionInsightsResult(
             visionAttributes = visionAttributes,
@@ -421,13 +440,12 @@ class VisionInsightsRepository(
         return stream.toByteArray()
     }
 
-    private fun hashDeviceId(deviceId: String): String {
-        return try {
+    private fun hashDeviceId(deviceId: String): String =
+        try {
             val digest = MessageDigest.getInstance("SHA-256")
             val hash = digest.digest(deviceId.toByteArray())
             hash.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
             deviceId
         }
-    }
 }

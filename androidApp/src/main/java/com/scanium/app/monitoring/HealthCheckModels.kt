@@ -45,13 +45,14 @@ data class HealthCheckResult(
      * Empty string if no failures.
      */
     val failureSignature: String
-        get() = failures
-            .filter { !it.passed }
-            .sortedBy { it.endpoint }
-            .joinToString(",") { result ->
-                val code = result.httpCode?.toString() ?: "timeout"
-                "${code}_${result.endpoint.removePrefix("/").replace("/", "_")}"
-            }
+        get() =
+            failures
+                .filter { !it.passed }
+                .sortedBy { it.endpoint }
+                .joinToString(",") { result ->
+                    val code = result.httpCode?.toString() ?: "timeout"
+                    "${code}_${result.endpoint.removePrefix("/").replace("/", "_")}"
+                }
 }
 
 /**

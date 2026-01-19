@@ -113,13 +113,15 @@ private data class ImageFields(
     val height: Int,
 )
 
-private fun ImageRef?.toImageFields(): ImageFields? {
-    return when (this) {
+private fun ImageRef?.toImageFields(): ImageFields? =
+    when (this) {
         is ImageRef.Bytes -> ImageFields(bytes = bytes, mimeType = mimeType, width = width, height = height)
-        is ImageRef.CacheKey -> null // CacheKey cannot be persisted directly, would need resolution first
+
+        is ImageRef.CacheKey -> null
+
+        // CacheKey cannot be persisted directly, would need resolution first
         null -> null
     }
-}
 
 private fun imageRefFrom(
     bytes: ByteArray?,

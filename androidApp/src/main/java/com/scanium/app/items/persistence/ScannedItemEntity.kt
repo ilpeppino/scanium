@@ -8,8 +8,8 @@ import com.scanium.app.items.ItemListingStatus
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.ml.ItemCategory
-import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.EnrichmentLayerStatus
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemPhoto
 import com.scanium.shared.core.models.items.LayerState
 import com.scanium.shared.core.models.items.PhotoType
@@ -253,9 +253,12 @@ private data class ImageFields(
     val height: Int,
 )
 
-private fun ImageRef?.toImageFields(): ImageFields? {
-    return when (this) {
-        is ImageRef.Bytes -> ImageFields(bytes = bytes, mimeType = mimeType, width = width, height = height)
+private fun ImageRef?.toImageFields(): ImageFields? =
+    when (this) {
+        is ImageRef.Bytes -> {
+            ImageFields(bytes = bytes, mimeType = mimeType, width = width, height = height)
+        }
+
         is ImageRef.CacheKey -> {
             // CRITICAL FIX: Resolve CacheKey from ThumbnailCache before persisting
             // This prevents photo placeholders after app process death (e.g., returning from share intents)
@@ -264,9 +267,11 @@ private fun ImageRef?.toImageFields(): ImageFields? {
                 ImageFields(bytes = it.bytes, mimeType = it.mimeType, width = it.width, height = it.height)
             }
         }
-        null -> null
+
+        null -> {
+            null
+        }
     }
-}
 
 private fun imageRefFrom(
     bytes: ByteArray?,
@@ -290,13 +295,14 @@ private fun serializeAttributes(attributes: Map<String, ItemAttribute>): String?
     return try {
         val json = JSONObject()
         for ((key, attr) in attributes) {
-            val attrJson = JSONObject().apply {
-                put("value", attr.value)
-                put("confidence", attr.confidence.toDouble())
-                if (attr.source != null) {
-                    put("source", attr.source)
+            val attrJson =
+                JSONObject().apply {
+                    put("value", attr.value)
+                    put("confidence", attr.confidence.toDouble())
+                    if (attr.source != null) {
+                        put("source", attr.source)
+                    }
                 }
-            }
             json.put(key, attrJson)
         }
         json.toString()
@@ -317,11 +323,12 @@ private fun deserializeAttributes(json: String?): Map<String, ItemAttribute> {
         while (keys.hasNext()) {
             val key = keys.next()
             val attrJson = jsonObject.getJSONObject(key)
-            val attr = ItemAttribute(
-                value = attrJson.getString("value"),
-                confidence = attrJson.optDouble("confidence", 0.0).toFloat(),
-                source = attrJson.optString("source").takeIf { it.isNotBlank() },
-            )
+            val attr =
+                ItemAttribute(
+                    value = attrJson.getString("value"),
+                    confidence = attrJson.optDouble("confidence", 0.0).toFloat(),
+                    source = attrJson.optString("source").takeIf { it.isNotBlank() },
+                )
             result[key] = attr
         }
         result
@@ -481,16 +488,17 @@ private fun serializeAdditionalPhotos(photos: List<ItemPhoto>): String? {
     return try {
         val jsonArray = JSONArray()
         for (photo in photos) {
-            val photoJson = JSONObject().apply {
-                put("id", photo.id)
-                photo.uri?.let { put("uri", it) }
-                put("mimeType", photo.mimeType)
-                put("width", photo.width)
-                put("height", photo.height)
-                put("capturedAt", photo.capturedAt)
-                photo.photoHash?.let { put("photoHash", it) }
-                put("photoType", photo.photoType.name)
-            }
+            val photoJson =
+                JSONObject().apply {
+                    put("id", photo.id)
+                    photo.uri?.let { put("uri", it) }
+                    put("mimeType", photo.mimeType)
+                    put("width", photo.width)
+                    put("height", photo.height)
+                    put("capturedAt", photo.capturedAt)
+                    photo.photoHash?.let { put("photoHash", it) }
+                    put("photoType", photo.photoType.name)
+                }
             jsonArray.put(photoJson)
         }
         jsonArray.toString()
@@ -509,21 +517,23 @@ private fun deserializeAdditionalPhotos(json: String?): List<ItemPhoto> {
         val jsonArray = JSONArray(json)
         for (i in 0 until jsonArray.length()) {
             val photoJson = jsonArray.getJSONObject(i)
-            val photoType = runCatching {
-                PhotoType.valueOf(photoJson.optString("photoType", "PRIMARY"))
-            }.getOrElse { PhotoType.PRIMARY }
+            val photoType =
+                runCatching {
+                    PhotoType.valueOf(photoJson.optString("photoType", "PRIMARY"))
+                }.getOrElse { PhotoType.PRIMARY }
 
-            val photo = ItemPhoto(
-                id = photoJson.getString("id"),
-                uri = photoJson.optString("uri").takeIf { it.isNotBlank() },
-                bytes = null, // Bytes are not persisted to JSON
-                mimeType = photoJson.optString("mimeType", "image/jpeg"),
-                width = photoJson.optInt("width", 0),
-                height = photoJson.optInt("height", 0),
-                capturedAt = photoJson.optLong("capturedAt", 0L),
-                photoHash = photoJson.optString("photoHash").takeIf { it.isNotBlank() },
-                photoType = photoType,
-            )
+            val photo =
+                ItemPhoto(
+                    id = photoJson.getString("id"),
+                    uri = photoJson.optString("uri").takeIf { it.isNotBlank() },
+                    bytes = null, // Bytes are not persisted to JSON
+                    mimeType = photoJson.optString("mimeType", "image/jpeg"),
+                    width = photoJson.optInt("width", 0),
+                    height = photoJson.optInt("height", 0),
+                    capturedAt = photoJson.optLong("capturedAt", 0L),
+                    photoHash = photoJson.optString("photoHash").takeIf { it.isNotBlank() },
+                    photoType = photoType,
+                )
             result.add(photo)
         }
         result
@@ -546,12 +556,13 @@ private fun serializeEnrichmentStatus(status: EnrichmentLayerStatus): String? {
         return null
     }
     return try {
-        JSONObject().apply {
-            put("layerA", status.layerA.name)
-            put("layerB", status.layerB.name)
-            put("layerC", status.layerC.name)
-            put("lastUpdated", status.lastUpdated)
-        }.toString()
+        JSONObject()
+            .apply {
+                put("layerA", status.layerA.name)
+                put("layerB", status.layerB.name)
+                put("layerC", status.layerC.name)
+                put("lastUpdated", status.lastUpdated)
+            }.toString()
     } catch (e: Exception) {
         null
     }
@@ -564,15 +575,18 @@ private fun deserializeEnrichmentStatus(json: String?): EnrichmentLayerStatus {
     if (json.isNullOrBlank()) return EnrichmentLayerStatus()
     return try {
         val obj = JSONObject(json)
-        val layerA = runCatching {
-            LayerState.valueOf(obj.optString("layerA", "PENDING"))
-        }.getOrElse { LayerState.PENDING }
-        val layerB = runCatching {
-            LayerState.valueOf(obj.optString("layerB", "PENDING"))
-        }.getOrElse { LayerState.PENDING }
-        val layerC = runCatching {
-            LayerState.valueOf(obj.optString("layerC", "PENDING"))
-        }.getOrElse { LayerState.PENDING }
+        val layerA =
+            runCatching {
+                LayerState.valueOf(obj.optString("layerA", "PENDING"))
+            }.getOrElse { LayerState.PENDING }
+        val layerB =
+            runCatching {
+                LayerState.valueOf(obj.optString("layerB", "PENDING"))
+            }.getOrElse { LayerState.PENDING }
+        val layerC =
+            runCatching {
+                LayerState.valueOf(obj.optString("layerC", "PENDING"))
+            }.getOrElse { LayerState.PENDING }
         val lastUpdated = obj.optLong("lastUpdated", 0L)
 
         EnrichmentLayerStatus(

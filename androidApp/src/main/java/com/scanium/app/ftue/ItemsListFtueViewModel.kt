@@ -37,15 +37,17 @@ import kotlinx.coroutines.launch
  * - SHARE_GOAL_SHOWN: Share/export goal hint displayed
  * - COMPLETED: All hints shown or user completed major action
  */
-class ItemsListFtueViewModel(private val ftueRepository: FtueRepository) : ViewModel() {
+class ItemsListFtueViewModel(
+    private val ftueRepository: FtueRepository,
+) : ViewModel() {
     companion object {
         private const val TAG = "ItemsListFtueViewModel"
 
         // Timing constants (in milliseconds)
-        private const val INITIAL_DELAY_MS = 500L        // Delay before showing first hint
+        private const val INITIAL_DELAY_MS = 500L // Delay before showing first hint
         private const val STEP_DISPLAY_DURATION_MS = 2500L // How long to show each hint
         private const val NUDGE_ANIMATION_DURATION_MS = 800L // Swipe nudge animation
-        private const val STEP_TRANSITION_DELAY_MS = 300L  // Delay between steps
+        private const val STEP_TRANSITION_DELAY_MS = 300L // Delay between steps
     }
 
     enum class ItemsListFtueStep {
@@ -94,7 +96,10 @@ class ItemsListFtueViewModel(private val ftueRepository: FtueRepository) : ViewM
      * @param shouldStartFtue: True if FTUE should start (check based on completion status)
      * @param itemCount: Number of items in list (skip if 0)
      */
-    fun initialize(shouldStartFtue: Boolean, itemCount: Int = 0) {
+    fun initialize(
+        shouldStartFtue: Boolean,
+        itemCount: Int = 0,
+    ) {
         viewModelScope.launch {
             if (com.scanium.app.config.FeatureFlags.isDevBuild) {
                 Log.d(TAG, "initialize: shouldStartFtue=$shouldStartFtue, itemCount=$itemCount")
@@ -169,7 +174,8 @@ class ItemsListFtueViewModel(private val ftueRepository: FtueRepository) : ViewM
      */
     fun onShareMenuOpened() {
         viewModelScope.launch {
-            if (_currentStep.value in setOf(
+            if (_currentStep.value in
+                setOf(
                     ItemsListFtueStep.SHARE_GOAL_SHOWN,
                     ItemsListFtueStep.WAITING_SHARE_GOAL,
                 )

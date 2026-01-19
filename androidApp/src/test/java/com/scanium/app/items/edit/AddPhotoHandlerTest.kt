@@ -11,7 +11,6 @@ import org.junit.Test
  * These unit tests verify the state machine and interface contracts.
  */
 class AddPhotoHandlerTest {
-
     @Test
     fun `AddPhotoState Idle is initial state`() {
         val state: AddPhotoState = AddPhotoState.Idle
@@ -66,13 +65,16 @@ class AddPhotoHandlerTest {
     fun `AddPhotoTrigger interface has required methods`() {
         // This test verifies the interface contract exists
         // Actual implementation is tested via instrumentation tests
-        val mockTrigger = object : AddPhotoTrigger {
-            var lastTriggeredItemId: String? = null
-            override fun triggerAddPhoto(itemId: String) {
-                lastTriggeredItemId = itemId
+        val mockTrigger =
+            object : AddPhotoTrigger {
+                var lastTriggeredItemId: String? = null
+
+                override fun triggerAddPhoto(itemId: String) {
+                    lastTriggeredItemId = itemId
+                }
+
+                override val currentState: AddPhotoState = AddPhotoState.Idle
             }
-            override val currentState: AddPhotoState = AddPhotoState.Idle
-        }
 
         mockTrigger.triggerAddPhoto("test-item")
         assertThat(mockTrigger.lastTriggeredItemId).isEqualTo("test-item")

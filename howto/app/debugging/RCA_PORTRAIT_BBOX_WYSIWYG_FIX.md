@@ -7,13 +7,16 @@
 
 ***REMOVED******REMOVED*** Summary
 
-In portrait mode, bounding boxes appeared offset from detected objects (typically bottom-left), and objects outside the visible preview were being detected, violating the WYSIWYG (What You See Is What You Get) principle.
+In portrait mode, bounding boxes appeared offset from detected objects (typically bottom-left), and
+objects outside the visible preview were being detected, violating the WYSIWYG (What You See Is What
+You Get) principle.
 
 ***REMOVED******REMOVED*** Symptoms
 
 1. **Bbox offset**: Detected boxes had correct shape but wrong position (offset bottom-left)
 2. **WYSIWYG violation**: Objects not visible in camera preview were being detected
-3. **Aggregation corruption**: Items from different photo captures were incorrectly merged, causing items to "disappear" and be replaced
+3. **Aggregation corruption**: Items from different photo captures were incorrectly merged, causing
+   items to "disappear" and be replaced
 
 ***REMOVED******REMOVED*** Root Cause Analysis
 
@@ -21,7 +24,8 @@ In portrait mode, bounding boxes appeared offset from detected objects (typicall
 
 **Location:** `androidApp/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
 
-**Problem:** ML Kit returns bounding boxes in the ROTATED coordinate space, but `InputImage.width` and `InputImage.height` return the ORIGINAL buffer dimensions (before rotation).
+**Problem:** ML Kit returns bounding boxes in the ROTATED coordinate space, but `InputImage.width`
+and `InputImage.height` return the ORIGINAL buffer dimensions (before rotation).
 
 ```kotlin
 // BROKEN (v1.1.0):
@@ -31,11 +35,13 @@ val uprightHeight = image.height // 1080 (sensor height)
 ```
 
 For a 1440x1080 sensor with 90° rotation (portrait):
+
 - `InputImage.width` = 1440 (original buffer width)
 - `InputImage.height` = 1080 (original buffer height)
 - ML Kit bbox coordinates are in 1080x1440 space (rotated)
 
 When normalizing bbox coordinates using wrong dimensions:
+
 - Object at center (540, 720 in 1080x1440 space)
 - Normalized as: X = 540/1440 = 0.375, Y = 720/1080 = 0.667
 - Should be: X = 540/1080 = 0.5, Y = 720/1440 = 0.5
@@ -46,7 +52,8 @@ This caused a ~32% Y-coordinate offset.
 
 **Location:** `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt`
 
-**Problem:** Preview was configured with 4:3 aspect ratio, but ImageAnalysis targeted 1280x720 (16:9).
+**Problem:** Preview was configured with 4:3 aspect ratio, but ImageAnalysis targeted 1280x720 (16:
+9).
 
 ```kotlin
 // BROKEN:
@@ -60,14 +67,18 @@ imageAnalysis = ImageAnalysis.Builder()
 ```
 
 This caused ImageAnalysis to capture a wider field of view than Preview displayed, resulting in:
+
 - Objects outside visible preview being detected
 - Coordinate mismatch between what user sees and what ML Kit analyzes
 
 ***REMOVED******REMOVED******REMOVED*** Issue 3: Aggregation Merging Unrelated Items
 
-**Location:** `shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ItemAggregator.kt`
+**Location:**
+`shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ItemAggregator.kt`
 
-**Problem:** After fixing bbox coordinates, all objects photographed at screen center had similar normalized positions (~0.5, 0.5). The aggregation used center distance as part of similarity calculation, causing different objects from different captures to incorrectly match and merge.
+**Problem:** After fixing bbox coordinates, all objects photographed at screen center had similar
+normalized positions (~0.5, 0.5). The aggregation used center distance as part of similarity
+calculation, causing different objects from different captures to incorrectly match and merge.
 
 ***REMOVED******REMOVED*** Fix Implementation
 
@@ -111,12 +122,12 @@ private fun calculateSimilarity(detection: ScannedItem, item: AggregatedItem): F
 
 ***REMOVED******REMOVED*** Files Changed
 
-| File | Change |
-|------|--------|
-| `androidApp/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt` | Swap dimensions for 90°/270° rotation |
-| `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt` | Match Preview & ImageAnalysis aspect ratios |
+| File                                                                                     | Change                                               |
+|------------------------------------------------------------------------------------------|------------------------------------------------------|
+| `androidApp/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`                    | Swap dimensions for 90°/270° rotation                |
+| `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt`                      | Match Preview & ImageAnalysis aspect ratios          |
 | `shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ItemAggregator.kt` | Add timestamp guard to prevent cross-capture merging |
-| `androidApp/src/main/java/com/scanium/app/camera/OverlayTransforms.kt` | Minor comment updates |
+| `androidApp/src/main/java/com/scanium/app/camera/OverlayTransforms.kt`                   | Minor comment updates                                |
 
 ***REMOVED******REMOVED*** Coordinate Flow (Corrected)
 
@@ -138,15 +149,20 @@ Preview coordinates (screen pixels)
 
 ***REMOVED******REMOVED*** Key Learnings
 
-1. **InputImage dimensions are PRE-rotation**: Always swap width/height for 90°/270° rotation when normalizing ML Kit bboxes.
+1. **InputImage dimensions are PRE-rotation**: Always swap width/height for 90°/270° rotation when
+   normalizing ML Kit bboxes.
 
-2. **WYSIWYG requires matched aspect ratios**: Preview and ImageAnalysis MUST use the same aspect ratio, or objects outside visible area will be detected.
+2. **WYSIWYG requires matched aspect ratios**: Preview and ImageAnalysis MUST use the same aspect
+   ratio, or objects outside visible area will be detected.
 
-3. **Position-based aggregation fails for centered captures**: When users consistently photograph objects at screen center, position similarity causes false matches. Use timestamp or sourcePhotoId to distinguish captures.
+3. **Position-based aggregation fails for centered captures**: When users consistently photograph
+   objects at screen center, position similarity causes false matches. Use timestamp or
+   sourcePhotoId to distinguish captures.
 
 ***REMOVED******REMOVED*** Regression Tests
 
 Added tests in `PortraitTransformRegressionTest.kt`:
+
 - `portrait 90deg - top-left bbox does NOT appear at bottom-left`
 - `portrait 90deg - realistic device dimensions produce correct mapping`
 

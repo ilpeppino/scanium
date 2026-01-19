@@ -5,6 +5,7 @@ import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
+import com.scanium.app.camera.geom.GeometryMapper.uprightToSensor
 import com.scanium.shared.core.models.model.NormalizedRect
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -145,9 +146,13 @@ object GeometryMapper {
         uprightWidth: Int,
         uprightHeight: Int,
         rotationDegrees: Int,
-    ): Rect {
-        return when (rotationDegrees) {
-            0 -> uprightBbox // No rotation needed
+    ): Rect =
+        when (rotationDegrees) {
+            0 -> {
+                uprightBbox
+            }
+
+            // No rotation needed
 
             90 -> {
                 // Sensor is landscape, upright is portrait
@@ -190,7 +195,6 @@ object GeometryMapper {
                 uprightBbox
             }
         }
-    }
 
     /**
      * Converts a sensor bbox to upright space.
@@ -201,9 +205,11 @@ object GeometryMapper {
         sensorWidth: Int,
         sensorHeight: Int,
         rotationDegrees: Int,
-    ): Rect {
-        return when (rotationDegrees) {
-            0 -> sensorBbox
+    ): Rect =
+        when (rotationDegrees) {
+            0 -> {
+                sensorBbox
+            }
 
             90 -> {
                 // Rotate 90° clockwise: sensor→upright
@@ -242,7 +248,6 @@ object GeometryMapper {
                 sensorBbox
             }
         }
-    }
 
     // =========================================================================
     // Bitmap Crop Operations
@@ -432,9 +437,7 @@ object GeometryMapper {
     /**
      * Calculates the aspect ratio (width / height) of a rect.
      */
-    fun aspectRatio(rect: Rect): Float {
-        return if (rect.height() > 0) rect.width().toFloat() / rect.height() else 0f
-    }
+    fun aspectRatio(rect: Rect): Float = if (rect.height() > 0) rect.width().toFloat() / rect.height() else 0f
 
     /**
      * Validates that two aspect ratios are within tolerance.
@@ -469,8 +472,8 @@ object GeometryMapper {
         val bitmapWidth: Int,
         val bitmapHeight: Int,
     ) {
-        fun toLogString(): String {
-            return buildString {
+        fun toLogString(): String =
+            buildString {
                 append("[CORR] ")
                 append("rot=$rotationDegrees, ")
                 append("upright=${uprightWidth}x$uprightHeight, ")
@@ -479,7 +482,6 @@ object GeometryMapper {
                 append("cropAR=${"%.3f".format(cropAspectRatio)}, ")
                 append("match=$aspectRatioMatch")
             }
-        }
     }
 
     /**

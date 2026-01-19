@@ -305,10 +305,13 @@ data class AssistantResponse(
 enum class AttributeSource {
     /** Value was manually entered or edited by the user - use as authoritative */
     USER,
+
     /** Value was detected by ML/vision system */
     DETECTED,
+
     /** Default/system value */
     DEFAULT,
+
     /** Unknown source */
     UNKNOWN,
 }

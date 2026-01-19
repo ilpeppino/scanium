@@ -4,7 +4,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.assertExists
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -57,21 +56,24 @@ class VisionEnrichmentGoldenTest {
         val cacheFile = File(context.cacheDir, "kleenex-small-box.jpg").apply { writeBytes(imageBytes) }
         val imageUri = Uri.fromFile(cacheFile)
 
-        val visionAttributes = VisionAttributes(
-            colors = listOf(
-                VisionColor(name = "Blue", hex = "***REMOVED***1E40AF", score = 0.7f),
-                VisionColor(name = "White", hex = "***REMOVED***FFFFFF", score = 0.3f),
-            ),
-            ocrText = "Kleenex tissue box",
-            logos = listOf(VisionLogo(name = "Kleenex", score = 0.92f)),
-            labels = listOf(
-                VisionLabel(name = "tissue box", score = 0.9f),
-                VisionLabel(name = "paper", score = 0.7f),
-            ),
-            brandCandidates = listOf("Kleenex"),
-            modelCandidates = emptyList(),
-            itemType = "Tissue Box",
-        )
+        val visionAttributes =
+            VisionAttributes(
+                colors =
+                    listOf(
+                        VisionColor(name = "Blue", hex = "***REMOVED***1E40AF", score = 0.7f),
+                        VisionColor(name = "White", hex = "***REMOVED***FFFFFF", score = 0.3f),
+                    ),
+                ocrText = "Kleenex tissue box",
+                logos = listOf(VisionLogo(name = "Kleenex", score = 0.92f)),
+                labels =
+                    listOf(
+                        VisionLabel(name = "tissue box", score = 0.9f),
+                        VisionLabel(name = "paper", score = 0.7f),
+                    ),
+                brandCandidates = listOf("Kleenex"),
+                modelCandidates = emptyList(),
+                itemType = "Tissue Box",
+            )
 
         val manager =
             ItemsStateManager(

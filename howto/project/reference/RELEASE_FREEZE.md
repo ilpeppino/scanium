@@ -9,12 +9,12 @@ The `main` branch is now **FROZEN** for the v1.3.1 production release.
 
 ***REMOVED******REMOVED*** Release Commit
 
-| Property | Value |
-|----------|-------|
-| Tag | `v1.3.1` |
-| Commit | `e457c4a` |
-| Branch | `main` |
-| Build | 13 |
+| Property | Value     |
+|----------|-----------|
+| Tag      | `v1.3.1`  |
+| Commit   | `e457c4a` |
+| Branch   | `main`    |
+| Build    | 13        |
 
 ***REMOVED******REMOVED*** Artifact Location
 
@@ -48,11 +48,13 @@ ls -la androidApp/build/outputs/bundle/prodRelease/androidApp-prod-release.aab
 ***REMOVED******REMOVED*** Rollback Procedure
 
 ***REMOVED******REMOVED******REMOVED*** Halt Current Rollout
+
 1. Go to Google Play Console > Release > Production
 2. Click "Halt rollout"
 3. Confirm halt
 
 ***REMOVED******REMOVED******REMOVED*** Promote Previous Version
+
 1. Go to Release history
 2. Find previous stable release (v1.3.0 or earlier)
 3. Create new release with that artifact
@@ -89,18 +91,19 @@ gh pr create --title "Hotfix v1.3.2: [description]" --body "..."
 
 ***REMOVED******REMOVED*** Branch Policy (Post-Freeze)
 
-| Branch | Purpose | Direct Push |
-|--------|---------|-------------|
-| `main` | Production releases only | **NO** |
-| `ebay` | eBay integration experiments | Yes |
-| `hotfix/*` | Critical fixes only | Via PR |
-| `feature/*` | New development | Via PR |
+| Branch      | Purpose                      | Direct Push |
+|-------------|------------------------------|-------------|
+| `main`      | Production releases only     | **NO**      |
+| `ebay`      | eBay integration experiments | Yes         |
+| `hotfix/*`  | Critical fixes only          | Via PR      |
+| `feature/*` | New development              | Via PR      |
 
 ***REMOVED******REMOVED*** Recommended Repository Guardrails
 
 Configure in GitHub Settings > Branches > Branch protection rules:
 
 ***REMOVED******REMOVED******REMOVED*** For `main` branch:
+
 - [x] Require pull request before merging
 - [x] Require approvals (1+)
 - [x] Require status checks to pass (tests)

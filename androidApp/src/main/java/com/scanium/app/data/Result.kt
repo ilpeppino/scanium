@@ -12,43 +12,44 @@ sealed class Result<out T> {
     /**
      * Represents a successful operation with data.
      */
-    data class Success<T>(val data: T) : Result<T>()
+    data class Success<T>(
+        val data: T,
+    ) : Result<T>()
 
     /**
      * Represents a failed operation with an error.
      */
-    data class Failure(val error: AppError) : Result<Nothing>()
+    data class Failure(
+        val error: AppError,
+    ) : Result<Nothing>()
 
     /**
      * Maps the success value using the provided transformation function.
      * Failures are passed through unchanged.
      */
-    inline fun <R> map(transform: (T) -> R): Result<R> {
-        return when (this) {
+    inline fun <R> map(transform: (T) -> R): Result<R> =
+        when (this) {
             is Success -> Success(transform(data))
             is Failure -> this
         }
-    }
 
     /**
      * Returns the data if successful, or null if failed.
      */
-    fun getOrNull(): T? {
-        return when (this) {
+    fun getOrNull(): T? =
+        when (this) {
             is Success -> data
             is Failure -> null
         }
-    }
 
     /**
      * Returns the data if successful, or the provided default value if failed.
      */
-    fun getOrDefault(default: @UnsafeVariance T): T {
-        return when (this) {
+    fun getOrDefault(default: @UnsafeVariance T): T =
+        when (this) {
             is Success -> data
             is Failure -> default
         }
-    }
 
     /**
      * Returns true if this is a Success result.
@@ -74,12 +75,11 @@ sealed class Result<out T> {
         /**
          * Wraps a suspending operation in a try-catch and returns a Result.
          */
-        suspend fun <T> catching(block: suspend () -> T): Result<T> {
-            return try {
+        suspend fun <T> catching(block: suspend () -> T): Result<T> =
+            try {
                 Success(block())
             } catch (e: Exception) {
                 Failure(AppError.fromException(e))
             }
-        }
     }
 }

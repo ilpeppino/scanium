@@ -14,70 +14,76 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class EnrichmentRepositoryHttpTest {
+    @Test
+    fun `submitEnrichment fails without API key`() =
+        runBlocking {
+            // Create repository without API key
+            val repository =
+                EnrichmentRepository(
+                    apiKeyProvider = { null },
+                    getDeviceId = { "test-device" },
+                )
+
+            val bitmap = createTestBitmap()
+
+            // Act
+            val result = repository.submitEnrichment(bitmap, "item-001")
+
+            // Assert
+            assertThat(result.isFailure).isTrue()
+            val exception = result.exceptionOrNull() as EnrichmentException
+            assertThat(exception.errorCode).isEqualTo("CONFIG_ERROR")
+            assertThat(exception.userMessage).contains("API key")
+            assertThat(exception.retryable).isFalse()
+        }
 
     @Test
-    fun `submitEnrichment fails without API key`() = runBlocking {
-        // Create repository without API key
-        val repository = EnrichmentRepository(
-            apiKeyProvider = { null },
-            getDeviceId = { "test-device" },
-        )
+    fun `submitEnrichment fails with empty API key`() =
+        runBlocking {
+            val repository =
+                EnrichmentRepository(
+                    apiKeyProvider = { "" },
+                    getDeviceId = { "test-device" },
+                )
 
-        val bitmap = createTestBitmap()
+            val bitmap = createTestBitmap()
 
-        // Act
-        val result = repository.submitEnrichment(bitmap, "item-001")
+            // Act
+            val result = repository.submitEnrichment(bitmap, "item-001")
 
-        // Assert
-        assertThat(result.isFailure).isTrue()
-        val exception = result.exceptionOrNull() as EnrichmentException
-        assertThat(exception.errorCode).isEqualTo("CONFIG_ERROR")
-        assertThat(exception.userMessage).contains("API key")
-        assertThat(exception.retryable).isFalse()
-    }
-
-    @Test
-    fun `submitEnrichment fails with empty API key`() = runBlocking {
-        val repository = EnrichmentRepository(
-            apiKeyProvider = { "" },
-            getDeviceId = { "test-device" },
-        )
-
-        val bitmap = createTestBitmap()
-
-        // Act
-        val result = repository.submitEnrichment(bitmap, "item-001")
-
-        // Assert
-        assertThat(result.isFailure).isTrue()
-        val exception = result.exceptionOrNull() as EnrichmentException
-        assertThat(exception.errorCode).isEqualTo("CONFIG_ERROR")
-    }
+            // Assert
+            assertThat(result.isFailure).isTrue()
+            val exception = result.exceptionOrNull() as EnrichmentException
+            assertThat(exception.errorCode).isEqualTo("CONFIG_ERROR")
+        }
 
     @Test
-    fun `getStatus fails without API key`() = runBlocking {
-        val repository = EnrichmentRepository(
-            apiKeyProvider = { null },
-            getDeviceId = { "test-device" },
-        )
+    fun `getStatus fails without API key`() =
+        runBlocking {
+            val repository =
+                EnrichmentRepository(
+                    apiKeyProvider = { null },
+                    getDeviceId = { "test-device" },
+                )
 
-        // Act
-        val result = repository.getStatus("550e8400-e29b-41d4-a716-446655440000")
+            // Act
+            val result = repository.getStatus("550e8400-e29b-41d4-a716-446655440000")
 
-        // Assert
-        assertThat(result.isFailure).isTrue()
-        val exception = result.exceptionOrNull() as EnrichmentException
-        assertThat(exception.errorCode).isEqualTo("CONFIG_ERROR")
-        assertThat(exception.userMessage).contains("API key")
-    }
+            // Assert
+            assertThat(result.isFailure).isTrue()
+            val exception = result.exceptionOrNull() as EnrichmentException
+            assertThat(exception.errorCode).isEqualTo("CONFIG_ERROR")
+            assertThat(exception.userMessage).contains("API key")
+        }
 
     @Test
     fun `EnrichmentException properties`() {
-        val exception = EnrichmentException(
-            errorCode = "TEST_ERROR",
-            userMessage = "Test error message",
-            retryable = true,
-        )
+        val exception =
+            EnrichmentException(
+                errorCode = "TEST_ERROR",
+                userMessage = "Test error message",
+                retryable = true,
+            )
 
         assertThat(exception.errorCode).isEqualTo("TEST_ERROR")
         assertThat(exception.userMessage).isEqualTo("Test error message")
@@ -87,10 +93,11 @@ class EnrichmentRepositoryHttpTest {
 
     @Test
     fun `EnrichmentException non-retryable by default`() {
-        val exception = EnrichmentException(
-            errorCode = "TEST",
-            userMessage = "Test",
-        )
+        val exception =
+            EnrichmentException(
+                errorCode = "TEST",
+                userMessage = "Test",
+            )
 
         assertThat(exception.retryable).isFalse()
     }

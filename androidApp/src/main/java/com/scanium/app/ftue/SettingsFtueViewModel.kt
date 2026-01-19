@@ -31,13 +31,15 @@ import kotlinx.coroutines.launch
  * - REPLAY_HINT_SHOWN: Replay hint displayed
  * - COMPLETED: Both hints shown
  */
-class SettingsFtueViewModel(private val ftueRepository: FtueRepository) : ViewModel() {
+class SettingsFtueViewModel(
+    private val ftueRepository: FtueRepository,
+) : ViewModel() {
     companion object {
         private const val TAG = "SettingsFtueViewModel"
 
         // Timing constants (in milliseconds)
         private const val INITIAL_DELAY_MS = 500L
-        private const val STEP_DISPLAY_DURATION_MS = 2000L  // Shorter for minimal settings
+        private const val STEP_DISPLAY_DURATION_MS = 2000L // Shorter for minimal settings
         private const val STEP_TRANSITION_DELAY_MS = 300L
     }
 

@@ -9,12 +9,18 @@ import android.os.SystemClock
 import android.os.Trace
 import android.util.Log
 import android.util.Size
-import androidx.camera.core.*
+import androidx.camera.core.AspectRatio
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraUnavailableException
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -32,17 +38,26 @@ import com.scanium.app.ml.BarcodeDetectorClient
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.DocumentTextRecognitionClient
 import com.scanium.app.ml.ObjectDetectorClient
-import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.tracking.ObjectTracker
 import com.scanium.app.tracking.TrackerConfig
 import com.scanium.core.models.scanning.ScanGuidanceState
 import com.scanium.core.models.scanning.ScanRoi
 import com.scanium.core.tracking.ScanGuidanceManager
 import com.scanium.telemetry.facade.Telemetry
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -270,7 +285,10 @@ class CameraXManager(
 
         // TEMP_CAM_BUG_DEBUG: Log session start
         if (TEMP_CAM_BUG_DEBUG) {
-            Log.i(TAG, "TEMP_CAM_BUG_DEBUG CAMERA_LIFECYCLE: event=START_SESSION, timestamp=${System.currentTimeMillis()}, sessionId=${sessionController.getCurrentSessionId()}")
+            Log.i(
+                TAG,
+                "TEMP_CAM_BUG_DEBUG CAMERA_LIFECYCLE: event=START_SESSION, timestamp=${System.currentTimeMillis()}, sessionId=${sessionController.getCurrentSessionId()}",
+            )
         }
 
         // Cancel watchdog from previous session
@@ -307,7 +325,10 @@ class CameraXManager(
 
         // TEMP_CAM_BUG_DEBUG: Log session stop
         if (TEMP_CAM_BUG_DEBUG) {
-            Log.i(TAG, "TEMP_CAM_BUG_DEBUG CAMERA_LIFECYCLE: event=STOP_SESSION, timestamp=${System.currentTimeMillis()}, sessionId=${sessionController.getCurrentSessionId()}")
+            Log.i(
+                TAG,
+                "TEMP_CAM_BUG_DEBUG CAMERA_LIFECYCLE: event=STOP_SESSION, timestamp=${System.currentTimeMillis()}, sessionId=${sessionController.getCurrentSessionId()}",
+            )
         }
 
         // Cancel watchdog
@@ -474,7 +495,8 @@ class CameraXManager(
             // to ensure what user sees matches what ML Kit analyzes.
             // Using 4:3 aspect ratio for both (common camera sensor ratio).
             preview =
-                Preview.Builder()
+                Preview
+                    .Builder()
                     .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                     .setTargetRotation(displayRotation)
                     .build()
@@ -486,7 +508,8 @@ class CameraXManager(
             // Previous 1280x720 (16:9) caused WYSIWYG mismatch - objects outside
             // visible preview were detected, breaking user trust.
             imageAnalysis =
-                ImageAnalysis.Builder()
+                ImageAnalysis
+                    .Builder()
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setTargetRotation(displayRotation)
@@ -500,7 +523,8 @@ class CameraXManager(
             Log.d(TAG, "ImageCapture configured for resolution: $captureResolution (rotation=$displayRotation)")
 
             val requestedSelector =
-                CameraSelector.Builder()
+                CameraSelector
+                    .Builder()
                     .requireLensFacing(lensFacing)
                     .build()
             val fallbackLensFacing =
@@ -510,13 +534,17 @@ class CameraXManager(
                     CameraSelector.LENS_FACING_BACK
                 }
             val fallbackSelector =
-                CameraSelector.Builder()
+                CameraSelector
+                    .Builder()
                     .requireLensFacing(fallbackLensFacing)
                     .build()
 
             val selectorToUse =
                 when {
-                    provider.hasCamera(requestedSelector) -> requestedSelector
+                    provider.hasCamera(requestedSelector) -> {
+                        requestedSelector
+                    }
+
                     provider.hasCamera(fallbackSelector) -> {
                         Log.w(TAG, "Requested lens $lensFacing not available. Falling back to $fallbackLensFacing")
                         fallbackSelector
@@ -562,12 +590,12 @@ class CameraXManager(
                 if (previewResolution != null) {
                     previewStreamWidth = previewResolution.width
                     previewStreamHeight = previewResolution.height
-                    Log.i(TAG, "[CONFIG] Using Preview stream resolution: ${previewStreamWidth}x${previewStreamHeight}")
+                    Log.i(TAG, "[CONFIG] Using Preview stream resolution: ${previewStreamWidth}x$previewStreamHeight")
                 } else if (analysisResolution != null) {
                     // Fallback to ImageAnalysis resolution if Preview resolution unavailable
                     previewStreamWidth = analysisResolution.width
                     previewStreamHeight = analysisResolution.height
-                    Log.w(TAG, "[CONFIG] Preview resolution NULL, using ImageAnalysis: ${previewStreamWidth}x${previewStreamHeight}")
+                    Log.w(TAG, "[CONFIG] Preview resolution NULL, using ImageAnalysis: ${previewStreamWidth}x$previewStreamHeight")
                 } else {
                     Log.e(TAG, "[CONFIG] Both Preview and ImageAnalysis resolutions are NULL!")
                 }
@@ -578,7 +606,7 @@ class CameraXManager(
                     Log.i(
                         TAG,
                         "[CONFIG] Camera bound: PreviewView=${previewView.width}x${previewView.height}, " +
-                            "PreviewStream=${previewStreamWidth}x${previewStreamHeight}, " +
+                            "PreviewStream=${previewStreamWidth}x$previewStreamHeight, " +
                             "ImageAnalysis=${analysisRes?.width}x${analysisRes?.height}, " +
                             "rotation=$displayRotation",
                     )
@@ -920,9 +948,11 @@ class CameraXManager(
                                 if (adaptiveStats.isThrottling) {
                                     Log.i(
                                         TAG,
-                                        "[LOW_POWER] Adaptive throttling active: multiplier=${"%.2f".format(
-                                            adaptiveStats.adaptiveMultiplier,
-                                        )}, avgLatency=${adaptiveStats.rollingAverageMs}ms",
+                                        "[LOW_POWER] Adaptive throttling active: multiplier=${
+                                            "%.2f".format(
+                                                adaptiveStats.adaptiveMultiplier,
+                                            )
+                                        }, avgLatency=${adaptiveStats.rollingAverageMs}ms",
                                     )
                                 }
                             }
@@ -942,7 +972,6 @@ class CameraXManager(
             }
         }
     }
-
 
     /**
      * Stops continuous scanning mode.
@@ -1116,12 +1145,13 @@ class CameraXManager(
                     // The overlay must match what PreviewView is displaying, which uses the Preview stream.
                     // ImageAnalysis may have a different resolution/aspect ratio than Preview.
                     val usePreviewDims = previewStreamWidth > 0 && previewStreamHeight > 0
-                    val frameSize = if (usePreviewDims) {
-                        Size(previewStreamWidth, previewStreamHeight)
-                    } else {
-                        // Fallback to ImageAnalysis if Preview resolution not yet available
-                        Size(imageProxy.width, imageProxy.height)
-                    }
+                    val frameSize =
+                        if (usePreviewDims) {
+                            Size(previewStreamWidth, previewStreamHeight)
+                        } else {
+                            // Fallback to ImageAnalysis if Preview resolution not yet available
+                            Size(imageProxy.width, imageProxy.height)
+                        }
                     withContext(Dispatchers.Main) {
                         onFrameSize(frameSize)
                         onRotation(rotationDegrees)
@@ -1132,7 +1162,7 @@ class CameraXManager(
                         Log.d(
                             "CameraFrameDims",
                             "[PORTRAIT] Reporting frameSize=${frameSize.width}x${frameSize.height} " +
-                                "(usePreview=$usePreviewDims, PreviewStream=${previewStreamWidth}x${previewStreamHeight}, " +
+                                "(usePreview=$usePreviewDims, PreviewStream=${previewStreamWidth}x$previewStreamHeight, " +
                                 "ImageProxy=${imageProxy.width}x${imageProxy.height}), rotation=$rotationDegrees",
                         )
                     }
@@ -1229,7 +1259,10 @@ class CameraXManager(
                 }
 
                 // STALL DETECTED: Analyzer attached but no frames
-                Log.w(CAM_FRAME_TAG, "WATCHDOG: STALL_NO_FRAMES detected! cameraBound=${diagnostics.isCameraBound}, analysisAttached=${diagnostics.isAnalysisAttached}, analysisFlowing=${diagnostics.isAnalysisFlowing}")
+                Log.w(
+                    CAM_FRAME_TAG,
+                    "WATCHDOG: STALL_NO_FRAMES detected! cameraBound=${diagnostics.isCameraBound}, analysisAttached=${diagnostics.isAnalysisAttached}, analysisFlowing=${diagnostics.isAnalysisFlowing}",
+                )
                 sessionController.updateStallReason(StallReason.NO_FRAMES)
 
                 // Attempt recovery
@@ -1337,9 +1370,7 @@ class CameraXManager(
     /**
      * Get the current scan ROI for external use.
      */
-    fun getCurrentScanRoi(): ScanRoi {
-        return scanGuidanceManager.getCurrentRoi()
-    }
+    fun getCurrentScanRoi(): ScanRoi = scanGuidanceManager.getCurrentRoi()
 
     /**
      * Updates target rotation for capture and analysis when the display orientation changes.
@@ -1360,15 +1391,20 @@ class CameraXManager(
         rotation: Int,
     ): ImageCapture {
         val builder =
-            ImageCapture.Builder()
+            ImageCapture
+                .Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                 .setTargetRotation(rotation)
 
         // Configure target resolution based on setting
         val targetSize =
             when (resolution) {
-                CaptureResolution.LOW -> android.util.Size(1280, 720) // HD
-                CaptureResolution.NORMAL -> android.util.Size(1920, 1080) // Full HD
+                CaptureResolution.LOW -> android.util.Size(1280, 720)
+
+                // HD
+                CaptureResolution.NORMAL -> android.util.Size(1920, 1080)
+
+                // Full HD
                 CaptureResolution.HIGH -> android.util.Size(3840, 2160) // 4K
             }
 
@@ -1383,7 +1419,8 @@ class CameraXManager(
                 targetSize,
                 ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
             )
-        return ResolutionSelector.Builder()
+        return ResolutionSelector
+            .Builder()
             .setResolutionStrategy(strategy)
             .build()
     }
@@ -1411,7 +1448,7 @@ class CameraXManager(
                 val photoFile =
                     File(
                         context.cacheDir,
-                        "SCANIUM_${timestamp}_${uniqueSuffix}.jpg",
+                        "SCANIUM_${timestamp}_$uniqueSuffix.jpg",
                     )
 
                 val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
@@ -1439,12 +1476,18 @@ class CameraXManager(
 
                 // TEMP_CAM_BUG_DEBUG: Log file save for resume corruption investigation
                 if (TEMP_CAM_BUG_DEBUG) {
-                    val contentHash = try {
-                        val buf = ByteArray(16)
-                        photoFile.inputStream().use { it.read(buf) }
-                        buf.contentHashCode()
-                    } catch (e: Exception) { 0 }
-                    Log.i(TAG, "TEMP_CAM_BUG_DEBUG CAPTURE_SAVED: path=${photoFile.absolutePath}, filename=${photoFile.name}, size=${photoFile.length()}, hash=$contentHash, mtime=${photoFile.lastModified()}, sessionId=${sessionController.getCurrentSessionId()}")
+                    val contentHash =
+                        try {
+                            val buf = ByteArray(16)
+                            photoFile.inputStream().use { it.read(buf) }
+                            buf.contentHashCode()
+                        } catch (e: Exception) {
+                            0
+                        }
+                    Log.i(
+                        TAG,
+                        "TEMP_CAM_BUG_DEBUG CAPTURE_SAVED: path=${photoFile.absolutePath}, filename=${photoFile.name}, size=${photoFile.length()}, hash=$contentHash, mtime=${photoFile.lastModified()}, sessionId=${sessionController.getCurrentSessionId()}",
+                    )
                 }
 
                 savedUri
@@ -1518,7 +1561,10 @@ class CameraXManager(
                 )
 
                 // Step 5: Generate unique sourcePhotoId for this capture
-                val sourcePhotoId = java.util.UUID.randomUUID().toString()
+                val sourcePhotoId =
+                    java.util.UUID
+                        .randomUUID()
+                        .toString()
 
                 // Step 6: Update items with fullImageUri and sourcePhotoId
                 val itemsWithPhoto =
@@ -1547,7 +1593,10 @@ class CameraXManager(
      */
     sealed class DocumentScanResult {
         /** Scan completed successfully with a document item */
-        data class Success(val item: ScannedItem, val imageUri: Uri) : DocumentScanResult()
+        data class Success(
+            val item: ScannedItem,
+            val imageUri: Uri,
+        ) : DocumentScanResult()
 
         /** No text was detected in the document */
         data object NoTextDetected : DocumentScanResult()
@@ -1556,7 +1605,10 @@ class CameraXManager(
         data object Cancelled : DocumentScanResult()
 
         /** An error occurred during scanning */
-        data class Error(val message: String, val exception: Exception? = null) : DocumentScanResult()
+        data class Error(
+            val message: String,
+            val exception: Exception? = null,
+        ) : DocumentScanResult()
     }
 
     /**
@@ -1765,8 +1817,8 @@ class CameraXManager(
 /**
  * Suspending function to await ProcessCameraProvider.
  */
-private suspend fun awaitCameraProvider(context: Context): ProcessCameraProvider {
-    return suspendCancellableCoroutine { continuation ->
+private suspend fun awaitCameraProvider(context: Context): ProcessCameraProvider =
+    suspendCancellableCoroutine { continuation ->
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
             try {
@@ -1776,4 +1828,3 @@ private suspend fun awaitCameraProvider(context: Context): ProcessCameraProvider
             }
         }, ContextCompat.getMainExecutor(context))
     }
-}

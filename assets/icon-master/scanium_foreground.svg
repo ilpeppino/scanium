@@ -1,79 +1,85 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="lensBluePurple" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:***REMOVED***1eff00;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:***REMOVED***00ff88;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:***REMOVED***a000ff;stop-opacity:1" />
-    </linearGradient>
-    <radialGradient id="lensGradient1" cx="40%" cy="40%" r="60%">
-      <stop offset="0%" style="stop-color:***REMOVED***ff1493;stop-opacity:0.8" />
-      <stop offset="100%" style="stop-color:***REMOVED***a000ff;stop-opacity:1" />
-    </radialGradient>
-    <radialGradient id="lensGradient2" cx="35%" cy="35%" r="50%">
-      <stop offset="0%" style="stop-color:***REMOVED***00ff88;stop-opacity:0.6" />
-      <stop offset="100%" style="stop-color:***REMOVED***1eff00;stop-opacity:0.3" />
-    </radialGradient>
-    <linearGradient id="sBlueCurve" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:***REMOVED***0066ff;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:***REMOVED***00ccff;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="chromeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:***REMOVED***e8e8e8;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:***REMOVED***ffffff;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:***REMOVED***b0b0b0;stop-opacity:1" />
-    </linearGradient>
-  </defs>
+    <defs>
+        <linearGradient id="lensBluePurple" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:***REMOVED***1eff00;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:***REMOVED***00ff88;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:***REMOVED***a000ff;stop-opacity:1" />
+        </linearGradient>
+        <radialGradient id="lensGradient1" cx="40%" cy="40%" r="60%">
+            <stop offset="0%" style="stop-color:***REMOVED***ff1493;stop-opacity:0.8" />
+            <stop offset="100%" style="stop-color:***REMOVED***a000ff;stop-opacity:1" />
+        </radialGradient>
+        <radialGradient id="lensGradient2" cx="35%" cy="35%" r="50%">
+            <stop offset="0%" style="stop-color:***REMOVED***00ff88;stop-opacity:0.6" />
+            <stop offset="100%" style="stop-color:***REMOVED***1eff00;stop-opacity:0.3" />
+        </radialGradient>
+        <linearGradient id="sBlueCurve" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:***REMOVED***0066ff;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:***REMOVED***00ccff;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="chromeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:***REMOVED***e8e8e8;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:***REMOVED***ffffff;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:***REMOVED***b0b0b0;stop-opacity:1" />
+        </linearGradient>
+    </defs>
 
-  <!-- Safe zone indicator (comment: remove for production, 66% = ~341px from each edge at 1024px) -->
-  <!-- Actual mark starts here, centered with safe-zone padding -->
+    <!-- Safe zone indicator (comment: remove for production, 66% = ~341px from each edge at 1024px) -->
+    <!-- Actual mark starts here, centered with safe-zone padding -->
 
-  <!-- Upper Lens (Safe zone padded: centered vertically in upper half) -->
-  <g id="upper-lens">
-    <!-- Lens body circle -->
-    <circle cx="400" cy="310" r="170" fill="url(***REMOVED***lensGradient1)" />
-    <circle cx="400" cy="310" r="160" fill="url(***REMOVED***lensGradient2)" opacity="0.6" />
+    <!-- Upper Lens (Safe zone padded: centered vertically in upper half) -->
+    <g id="upper-lens">
+        <!-- Lens body circle -->
+        <circle cx="400" cy="310" r="170" fill="url(***REMOVED***lensGradient1)" />
+        <circle cx="400" cy="310" r="160" fill="url(***REMOVED***lensGradient2)" opacity="0.6" />
 
-    <!-- Outer chrome ring -->
-    <circle cx="400" cy="310" r="180" fill="none" stroke="url(***REMOVED***chromeGradient)" stroke-width="22" />
-    <circle cx="400" cy="310" r="175" fill="none" stroke="url(***REMOVED***chromeGradient)" stroke-width="8" opacity="0.5" />
+        <!-- Outer chrome ring -->
+        <circle cx="400" cy="310" r="180" fill="none" stroke="url(***REMOVED***chromeGradient)"
+            stroke-width="22" />
+        <circle cx="400" cy="310" r="175" fill="none" stroke="url(***REMOVED***chromeGradient)" stroke-width="8"
+            opacity="0.5" />
 
-    <!-- Inner black rings -->
-    <circle cx="400" cy="310" r="150" fill="none" stroke="***REMOVED***1a1a1a" stroke-width="14" />
-    <circle cx="400" cy="310" r="136" fill="none" stroke="***REMOVED***000000" stroke-width="7" />
-    <circle cx="400" cy="310" r="122" fill="none" stroke="***REMOVED***1a1a1a" stroke-width="4" />
+        <!-- Inner black rings -->
+        <circle cx="400" cy="310" r="150" fill="none" stroke="***REMOVED***1a1a1a" stroke-width="14" />
+        <circle cx="400" cy="310" r="136" fill="none" stroke="***REMOVED***000000" stroke-width="7" />
+        <circle cx="400" cy="310" r="122" fill="none" stroke="***REMOVED***1a1a1a" stroke-width="4" />
 
-    <!-- Highlight spots -->
-    <circle cx="365" cy="275" r="20" fill="***REMOVED***ffffff" opacity="0.9" />
-    <circle cx="360" cy="270" r="11" fill="***REMOVED***ffffff" opacity="0.6" />
-    <circle cx="418" cy="295" r="15" fill="***REMOVED***ff1493" opacity="0.7" />
-  </g>
+        <!-- Highlight spots -->
+        <circle cx="365" cy="275" r="20" fill="***REMOVED***ffffff" opacity="0.9" />
+        <circle cx="360" cy="270" r="11" fill="***REMOVED***ffffff" opacity="0.6" />
+        <circle cx="418" cy="295" r="15" fill="***REMOVED***ff1493" opacity="0.7" />
+    </g>
 
-  <!-- Blue Curved S (Safe zone aware, flowing between lenses) -->
-  <g id="blue-s">
-    <path d="M 520 250 Q 570 210 620 225 Q 670 240 680 300 Q 690 360 645 385 Q 600 410 550 375"
-          fill="none" stroke="url(***REMOVED***sBlueCurve)" stroke-width="80" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M 500 650 Q 550 710 600 695 Q 650 680 660 620 Q 670 560 625 535 Q 580 510 530 545"
-          fill="none" stroke="url(***REMOVED***sBlueCurve)" stroke-width="80" stroke-linecap="round" stroke-linejoin="round" />
-  </g>
+    <!-- Blue Curved S (Safe zone aware, flowing between lenses) -->
+    <g id="blue-s">
+        <path d="M 520 250 Q 570 210 620 225 Q 670 240 680 300 Q 690 360 645 385 Q 600 410 550 375"
+            fill="none" stroke="url(***REMOVED***sBlueCurve)" stroke-width="80" stroke-linecap="round"
+            stroke-linejoin="round" />
+        <path d="M 500 650 Q 550 710 600 695 Q 650 680 660 620 Q 670 560 625 535 Q 580 510 530 545"
+            fill="none" stroke="url(***REMOVED***sBlueCurve)" stroke-width="80" stroke-linecap="round"
+            stroke-linejoin="round" />
+    </g>
 
-  <!-- Lower Lens (Safe zone padded: centered vertically in lower half) -->
-  <g id="lower-lens">
-    <!-- Lens body circle -->
-    <circle cx="400" cy="690" r="170" fill="url(***REMOVED***lensGradient1)" />
-    <circle cx="400" cy="690" r="160" fill="url(***REMOVED***lensGradient2)" opacity="0.6" />
+    <!-- Lower Lens (Safe zone padded: centered vertically in lower half) -->
+    <g id="lower-lens">
+        <!-- Lens body circle -->
+        <circle cx="400" cy="690" r="170" fill="url(***REMOVED***lensGradient1)" />
+        <circle cx="400" cy="690" r="160" fill="url(***REMOVED***lensGradient2)" opacity="0.6" />
 
-    <!-- Outer chrome ring -->
-    <circle cx="400" cy="690" r="180" fill="none" stroke="url(***REMOVED***chromeGradient)" stroke-width="22" />
-    <circle cx="400" cy="690" r="175" fill="none" stroke="url(***REMOVED***chromeGradient)" stroke-width="8" opacity="0.5" />
+        <!-- Outer chrome ring -->
+        <circle cx="400" cy="690" r="180" fill="none" stroke="url(***REMOVED***chromeGradient)"
+            stroke-width="22" />
+        <circle cx="400" cy="690" r="175" fill="none" stroke="url(***REMOVED***chromeGradient)" stroke-width="8"
+            opacity="0.5" />
 
-    <!-- Inner black rings -->
-    <circle cx="400" cy="690" r="150" fill="none" stroke="***REMOVED***1a1a1a" stroke-width="14" />
-    <circle cx="400" cy="690" r="136" fill="none" stroke="***REMOVED***000000" stroke-width="7" />
-    <circle cx="400" cy="690" r="122" fill="none" stroke="***REMOVED***1a1a1a" stroke-width="4" />
+        <!-- Inner black rings -->
+        <circle cx="400" cy="690" r="150" fill="none" stroke="***REMOVED***1a1a1a" stroke-width="14" />
+        <circle cx="400" cy="690" r="136" fill="none" stroke="***REMOVED***000000" stroke-width="7" />
+        <circle cx="400" cy="690" r="122" fill="none" stroke="***REMOVED***1a1a1a" stroke-width="4" />
 
-    <!-- Highlight spots -->
-    <circle cx="365" cy="725" r="20" fill="***REMOVED***ffffff" opacity="0.9" />
-    <circle cx="360" cy="730" r="11" fill="***REMOVED***ffffff" opacity="0.6" />
-    <circle cx="418" cy="705" r="15" fill="***REMOVED***ff1493" opacity="0.7" />
-  </g>
+        <!-- Highlight spots -->
+        <circle cx="365" cy="725" r="20" fill="***REMOVED***ffffff" opacity="0.9" />
+        <circle cx="360" cy="730" r="11" fill="***REMOVED***ffffff" opacity="0.6" />
+        <circle cx="418" cy="705" r="15" fill="***REMOVED***ff1493" opacity="0.7" />
+    </g>
 </svg>

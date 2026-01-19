@@ -16,8 +16,9 @@ internal const val SETTINGS_DATASTORE_TAG = "SettingsDataStore"
  */
 internal val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "settings_preferences",
-    corruptionHandler = ReplaceFileCorruptionHandler { exception ->
-        Log.e(SETTINGS_DATASTORE_TAG, "DataStore corrupted, resetting to defaults", exception)
-        emptyPreferences()
-    },
+    corruptionHandler =
+        ReplaceFileCorruptionHandler { exception ->
+            Log.e(SETTINGS_DATASTORE_TAG, "DataStore corrupted, resetting to defaults", exception)
+            emptyPreferences()
+        },
 )

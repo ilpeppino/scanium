@@ -3,7 +3,6 @@ package com.scanium.app.selling.assistant.local
 import com.scanium.app.model.ItemContextSnapshot
 
 internal object SuggestionRules {
-
     fun suggestedQuestions(
         snapshot: ItemContextSnapshot,
         category: ItemCategory,
@@ -24,6 +23,7 @@ internal object SuggestionRules {
                 questions.add("What is the storage capacity or key specs?")
                 questions.add("Is the original charger included?")
             }
+
             ItemCategory.FASHION -> {
                 if (!attributes.containsKey("size")) {
                     questions.add("What size is this item?")
@@ -31,30 +31,36 @@ internal object SuggestionRules {
                 questions.add("What is the fabric material?")
                 questions.add("Are there any signs of wear?")
             }
+
             ItemCategory.HOME_FURNITURE -> {
                 questions.add("What are the dimensions (H x W x D)?")
                 questions.add("Is assembly required?")
                 questions.add("Are pickup or shipping available?")
             }
+
             ItemCategory.TOYS_GAMES -> {
                 questions.add("Is this item complete with all pieces?")
                 questions.add("What age range is it suitable for?")
                 questions.add("Does it require batteries?")
             }
+
             ItemCategory.SPORTS_OUTDOOR -> {
                 if (!attributes.containsKey("size")) {
                     questions.add("What size is this?")
                 }
                 questions.add("Any damage from use?")
             }
+
             ItemCategory.BOOKS_MEDIA -> {
                 questions.add("Is this a first edition?")
                 questions.add("What is the condition of the binding?")
             }
+
             ItemCategory.KITCHEN -> {
                 questions.add("Does it include all accessories?")
                 questions.add("Any chips, cracks, or stains?")
             }
+
             ItemCategory.GENERAL -> {
                 questions.add("What details should be added?")
                 questions.add("Any defects to mention?")
@@ -97,6 +103,7 @@ internal object SuggestionRules {
                 bullets.add("Functionality: [confirm power-on and tests]")
                 bullets.add("Included: [list charger, cables, manuals]")
             }
+
             ItemCategory.FASHION -> {
                 if (!attributes.containsKey("size")) {
                     bullets.add("Size: [include measurements]")
@@ -106,6 +113,7 @@ internal object SuggestionRules {
                 }
                 bullets.add("Fit: [true to size / runs small / runs large]")
             }
+
             ItemCategory.HOME_FURNITURE -> {
                 bullets.add("Dimensions: [H x W x D in cm/inches]")
                 if (!attributes.containsKey("material")) {
@@ -113,15 +121,18 @@ internal object SuggestionRules {
                 }
                 bullets.add("Assembly: [required / pre-assembled]")
             }
+
             ItemCategory.TOYS_GAMES -> {
                 bullets.add("Completeness: [all pieces included / missing pieces]")
                 bullets.add("Age range: [suitable for X+ years]")
                 bullets.add("Box: [original box included / no box]")
             }
+
             ItemCategory.KITCHEN -> {
                 bullets.add("Accessories: [what's included]")
                 bullets.add("Condition: [any chips, cracks, or stains]")
             }
+
             else -> {
                 if (!attributes.containsKey("condition")) {
                     bullets.add("Condition: [describe honestly]")
@@ -160,6 +171,7 @@ internal object SuggestionRules {
                 sections.add("INCLUDED:")
                 sections.add("- [List all accessories]")
             }
+
             ItemCategory.FASHION -> {
                 sections.add("")
                 sections.add("DETAILS:")
@@ -174,6 +186,7 @@ internal object SuggestionRules {
                 sections.add("FIT NOTES:")
                 sections.add("- [True to size / Runs small / Runs large]")
             }
+
             ItemCategory.HOME_FURNITURE -> {
                 sections.add("")
                 sections.add("DIMENSIONS:")
@@ -192,6 +205,7 @@ internal object SuggestionRules {
                 sections.add("PICKUP/SHIPPING:")
                 sections.add("- [Pickup only / Can ship / Both available]")
             }
+
             ItemCategory.TOYS_GAMES -> {
                 sections.add("")
                 sections.add("DETAILS:")
@@ -203,6 +217,7 @@ internal object SuggestionRules {
                 sections.add("- [Like new / Good / Fair]")
                 sections.add("- Box: [Original box / No box]")
             }
+
             else -> {
                 sections.add("")
                 sections.add("DETAILS:")
@@ -225,90 +240,112 @@ internal object SuggestionRules {
         return sections.joinToString("\n")
     }
 
-    fun defectsChecklist(category: ItemCategory): List<String> {
-        return when (category) {
-            ItemCategory.ELECTRONICS -> listOf(
-                "Scratches on screen or body",
-                "Battery health/runtime issues",
-                "Charging port condition",
-                "Button functionality",
-                "Camera lens scratches",
-                "Speaker/microphone issues",
-                "Screen burn-in or dead pixels",
-                "Dents or cracks",
-            )
-            ItemCategory.FASHION -> listOf(
-                "Stains or discoloration",
-                "Tears or holes",
-                "Missing buttons or zippers",
-                "Pilling or fabric wear",
-                "Stretched or misshapen areas",
-                "Fading",
-                "Odors",
-                "Heel or sole wear (shoes)",
-            )
-            ItemCategory.HOME_FURNITURE -> listOf(
-                "Scratches or scuffs",
-                "Chips or cracks",
-                "Stains or water marks",
-                "Wobbly or unstable",
-                "Missing hardware",
-                "Fading or discoloration",
-                "Odors",
-                "Structural damage",
-            )
-            ItemCategory.KITCHEN -> listOf(
-                "Chips or cracks",
-                "Stains that won't clean",
-                "Rust or corrosion",
-                "Missing parts or accessories",
-                "Scratches on non-stick surfaces",
-                "Odors",
-                "Lid damage",
-                "Handle issues",
-            )
-            ItemCategory.TOYS_GAMES -> listOf(
-                "Missing pieces",
-                "Worn or peeling stickers",
-                "Broken or cracked parts",
-                "Battery compartment corrosion",
-                "Faded colors",
-                "Box damage",
-                "Markings or writing",
-                "Loose joints or parts",
-            )
-            ItemCategory.SPORTS_OUTDOOR -> listOf(
-                "Tears or rips",
-                "Worn grip or handle",
-                "Rust or corrosion",
-                "Fading from sun",
-                "Structural cracks",
-                "Missing accessories",
-                "Strap or buckle damage",
-                "Sole or tread wear",
-            )
-            ItemCategory.BOOKS_MEDIA -> listOf(
-                "Cover wear or damage",
-                "Spine condition",
-                "Page yellowing",
-                "Writing or highlighting",
-                "Water damage",
-                "Torn pages",
-                "Missing dust jacket",
-                "Disc scratches (for media)",
-            )
-            ItemCategory.GENERAL -> listOf(
-                "Scratches or scuffs",
-                "Dents or dings",
-                "Discoloration or fading",
-                "Odors",
-                "Missing parts",
-                "Functional issues",
-                "Cracks or chips",
-                "General wear",
-            )
+    fun defectsChecklist(category: ItemCategory): List<String> =
+        when (category) {
+            ItemCategory.ELECTRONICS -> {
+                listOf(
+                    "Scratches on screen or body",
+                    "Battery health/runtime issues",
+                    "Charging port condition",
+                    "Button functionality",
+                    "Camera lens scratches",
+                    "Speaker/microphone issues",
+                    "Screen burn-in or dead pixels",
+                    "Dents or cracks",
+                )
+            }
+
+            ItemCategory.FASHION -> {
+                listOf(
+                    "Stains or discoloration",
+                    "Tears or holes",
+                    "Missing buttons or zippers",
+                    "Pilling or fabric wear",
+                    "Stretched or misshapen areas",
+                    "Fading",
+                    "Odors",
+                    "Heel or sole wear (shoes)",
+                )
+            }
+
+            ItemCategory.HOME_FURNITURE -> {
+                listOf(
+                    "Scratches or scuffs",
+                    "Chips or cracks",
+                    "Stains or water marks",
+                    "Wobbly or unstable",
+                    "Missing hardware",
+                    "Fading or discoloration",
+                    "Odors",
+                    "Structural damage",
+                )
+            }
+
+            ItemCategory.KITCHEN -> {
+                listOf(
+                    "Chips or cracks",
+                    "Stains that won't clean",
+                    "Rust or corrosion",
+                    "Missing parts or accessories",
+                    "Scratches on non-stick surfaces",
+                    "Odors",
+                    "Lid damage",
+                    "Handle issues",
+                )
+            }
+
+            ItemCategory.TOYS_GAMES -> {
+                listOf(
+                    "Missing pieces",
+                    "Worn or peeling stickers",
+                    "Broken or cracked parts",
+                    "Battery compartment corrosion",
+                    "Faded colors",
+                    "Box damage",
+                    "Markings or writing",
+                    "Loose joints or parts",
+                )
+            }
+
+            ItemCategory.SPORTS_OUTDOOR -> {
+                listOf(
+                    "Tears or rips",
+                    "Worn grip or handle",
+                    "Rust or corrosion",
+                    "Fading from sun",
+                    "Structural cracks",
+                    "Missing accessories",
+                    "Strap or buckle damage",
+                    "Sole or tread wear",
+                )
+            }
+
+            ItemCategory.BOOKS_MEDIA -> {
+                listOf(
+                    "Cover wear or damage",
+                    "Spine condition",
+                    "Page yellowing",
+                    "Writing or highlighting",
+                    "Water damage",
+                    "Torn pages",
+                    "Missing dust jacket",
+                    "Disc scratches (for media)",
+                )
+            }
+
+            ItemCategory.GENERAL -> {
+                listOf(
+                    "Scratches or scuffs",
+                    "Dents or dings",
+                    "Discoloration or fading",
+                    "Odors",
+                    "Missing parts",
+                    "Functional issues",
+                    "Cracks or chips",
+                    "General wear",
+                )
+            }
         }
-    }
 
     fun missingInfoPrompts(
         snapshot: ItemContextSnapshot,
@@ -429,6 +466,7 @@ internal object SuggestionRules {
                     )
                 }
             }
+
             ItemCategory.HOME_FURNITURE -> {
                 if (!attributes.containsKey("dimensions")) {
                     prompts.add(
@@ -449,79 +487,108 @@ internal object SuggestionRules {
                     )
                 }
             }
-            else -> { /* No additional prompts */ }
+
+            else -> { // No additional prompts
+            }
         }
 
         return prompts.take(6)
     }
 
-    fun photoSuggestions(category: ItemCategory, currentCount: Int): List<String> {
-        val suggestions = when (category) {
-            ItemCategory.ELECTRONICS -> listOf(
-                "Screen powered on (to show it works)",
-                "All ports and buttons",
-                "Model/serial number label",
-                "Back and sides",
-                "Included accessories laid out",
-                "Close-up of any scratches or wear",
-            )
-            ItemCategory.FASHION -> listOf(
-                "Full item front view",
-                "Back view",
-                "Size/care label close-up",
-                "Brand label or tag",
-                "Close-up of fabric texture",
-                "Any wear areas (hems, soles, elbows)",
-                "Item laid flat with measurements",
-            )
-            ItemCategory.HOME_FURNITURE -> listOf(
-                "Full item showing all sides",
-                "Close-up of material/texture",
-                "Any brand labels or markings",
-                "Close-up of any wear or damage",
-                "Hardware or assembly points",
-                "Item in context (optional - shows scale)",
-            )
-            ItemCategory.TOYS_GAMES -> listOf(
-                "Full set laid out",
-                "Close-up of brand/age marking",
-                "Box condition (if included)",
-                "Battery compartment",
-                "Any wear or damage",
-                "Key features or accessories",
-            )
-            ItemCategory.KITCHEN -> listOf(
-                "Full item from multiple angles",
-                "Brand and model label",
-                "Interior/cooking surface",
-                "Lid and handles",
-                "Any included accessories",
-                "Close-up of any wear or marks",
-            )
-            ItemCategory.SPORTS_OUTDOOR -> listOf(
-                "Full item front and back",
-                "Size label or marking",
-                "Brand label",
-                "Any wear areas (grip, soles, straps)",
-                "Included accessories",
-                "Close-up of any damage",
-            )
-            ItemCategory.BOOKS_MEDIA -> listOf(
-                "Front cover",
-                "Back cover",
-                "Spine",
-                "Any damage or wear",
-                "Copyright page (for edition)",
-                "Disc condition (for media)",
-            )
-            ItemCategory.GENERAL -> listOf(
-                "Full item from front",
-                "Full item from back",
-                "Any labels or markings",
-                "Close-up of details",
-                "Any wear or damage",
-            )
-        }
+    fun photoSuggestions(
+        category: ItemCategory,
+        currentCount: Int,
+    ): List<String> {
+        val suggestions =
+            when (category) {
+                ItemCategory.ELECTRONICS -> {
+                    listOf(
+                        "Screen powered on (to show it works)",
+                        "All ports and buttons",
+                        "Model/serial number label",
+                        "Back and sides",
+                        "Included accessories laid out",
+                        "Close-up of any scratches or wear",
+                    )
+                }
+
+                ItemCategory.FASHION -> {
+                    listOf(
+                        "Full item front view",
+                        "Back view",
+                        "Size/care label close-up",
+                        "Brand label or tag",
+                        "Close-up of fabric texture",
+                        "Any wear areas (hems, soles, elbows)",
+                        "Item laid flat with measurements",
+                    )
+                }
+
+                ItemCategory.HOME_FURNITURE -> {
+                    listOf(
+                        "Full item showing all sides",
+                        "Close-up of material/texture",
+                        "Any brand labels or markings",
+                        "Close-up of any wear or damage",
+                        "Hardware or assembly points",
+                        "Item in context (optional - shows scale)",
+                    )
+                }
+
+                ItemCategory.TOYS_GAMES -> {
+                    listOf(
+                        "Full set laid out",
+                        "Close-up of brand/age marking",
+                        "Box condition (if included)",
+                        "Battery compartment",
+                        "Any wear or damage",
+                        "Key features or accessories",
+                    )
+                }
+
+                ItemCategory.KITCHEN -> {
+                    listOf(
+                        "Full item from multiple angles",
+                        "Brand and model label",
+                        "Interior/cooking surface",
+                        "Lid and handles",
+                        "Any included accessories",
+                        "Close-up of any wear or marks",
+                    )
+                }
+
+                ItemCategory.SPORTS_OUTDOOR -> {
+                    listOf(
+                        "Full item front and back",
+                        "Size label or marking",
+                        "Brand label",
+                        "Any wear areas (grip, soles, straps)",
+                        "Included accessories",
+                        "Close-up of any damage",
+                    )
+                }
+
+                ItemCategory.BOOKS_MEDIA -> {
+                    listOf(
+                        "Front cover",
+                        "Back cover",
+                        "Spine",
+                        "Any damage or wear",
+                        "Copyright page (for edition)",
+                        "Disc condition (for media)",
+                    )
+                }
+
+                ItemCategory.GENERAL -> {
+                    listOf(
+                        "Full item from front",
+                        "Full item from back",
+                        "Any labels or markings",
+                        "Close-up of details",
+                        "Any wear or damage",
+                    )
+                }
+            }
 
         return when (SuggestionScorers.photoSuggestionTier(currentCount)) {
             PhotoSuggestionTier.ESSENTIAL -> suggestions.take(4)
@@ -550,14 +617,17 @@ internal object SuggestionRules {
                 attributes["size"]?.let { parts.add("Size $it") }
                 attributes["color"]?.let { parts.add(it) }
             }
+
             ItemCategory.ELECTRONICS -> {
                 attributes["storage"]?.let { parts.add(it) }
                 attributes["color"]?.let { parts.add(it) }
             }
+
             ItemCategory.HOME_FURNITURE -> {
                 attributes["color"]?.let { parts.add(it) }
                 attributes["material"]?.let { parts.add(it) }
             }
+
             else -> {
                 attributes["color"]?.let { parts.add(it) }
             }

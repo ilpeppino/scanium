@@ -25,9 +25,7 @@ object WorkManagerModule {
     @Singleton
     fun provideWorkManager(
         @ApplicationContext context: Context,
-    ): WorkManager {
-        return WorkManager.getInstance(context)
-    }
+    ): WorkManager = WorkManager.getInstance(context)
 
     /**
      * Initialize periodic sync worker
@@ -35,17 +33,15 @@ object WorkManagerModule {
      */
     @Provides
     @Singleton
-    fun providePeriodicSyncInitializer(
-        workManager: WorkManager,
-    ): PeriodicSyncInitializer {
-        return PeriodicSyncInitializer(workManager)
-    }
+    fun providePeriodicSyncInitializer(workManager: WorkManager): PeriodicSyncInitializer = PeriodicSyncInitializer(workManager)
 }
 
 /**
  * Initializes periodic sync on app startup
  */
-class PeriodicSyncInitializer(private val workManager: WorkManager) {
+class PeriodicSyncInitializer(
+    private val workManager: WorkManager,
+) {
     /**
      * Set up periodic sync worker
      * Call this from Application.onCreate()
@@ -55,14 +51,13 @@ class PeriodicSyncInitializer(private val workManager: WorkManager) {
             PeriodicWorkRequestBuilder<ItemSyncWorker>(
                 repeatInterval = 15,
                 repeatIntervalTimeUnit = TimeUnit.MINUTES,
-            )
-                .setConstraints(
-                    Constraints
-                        .Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
-                        .setRequiresBatteryNotLow(true)
-                        .build(),
-                ).build()
+            ).setConstraints(
+                Constraints
+                    .Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiresBatteryNotLow(true)
+                    .build(),
+            ).build()
 
         workManager.enqueueUniquePeriodicWork(
             ItemSyncWorker.WORK_NAME,

@@ -13,21 +13,25 @@ The codebase contains TWO completely separate object tracking implementations:
 1. **CandidateTracker** (ml/ package) - Uses `DetectionCandidate`, frame-count based
 2. **ObjectTracker** (tracking/ package) - Uses `ObjectCandidate`, frame-based (ACTIVE)
 
-Only **ObjectTracker** is actually used in CameraXManager. CandidateTracker is legacy dead code that should be removed.
+Only **ObjectTracker** is actually used in CameraXManager. CandidateTracker is legacy dead code that
+should be removed.
 
 ***REMOVED******REMOVED*** Evidence
 
 **Dead Code Files:**
+
 - `/app/src/main/java/com/scanium/app/ml/CandidateTracker.kt` ❌ NOT USED
 - `/app/src/main/java/com/scanium/app/ml/DetectionCandidate.kt` ❌ NOT USED
 - `/app/src/test/java/com/scanium/app/ml/CandidateTrackerTest.kt` ❌ TESTS DEAD CODE
 
 **Active Code Files:**
+
 - `/app/src/main/java/com/scanium/app/tracking/ObjectTracker.kt` ✅ USED
 - `/app/src/main/java/com/scanium/app/tracking/ObjectCandidate.kt` ✅ USED
 - `/app/src/test/java/com/scanium/app/tracking/ObjectTrackerTest.kt` ✅ VALID TESTS
 
 **Proof:**
+
 - CameraXManager.kt line 20 imports only `ObjectTracker`
 - CameraXManager.kt line 55 instantiates only `objectTracker`
 - Grep search shows `CandidateTracker` has ZERO references in main code
@@ -56,7 +60,8 @@ grep -r "CandidateTracker" app/src/main/java
 - [x] Delete `/app/src/main/java/com/scanium/app/ml/DetectionCandidate.kt`
 - [x] Delete `/app/src/test/java/com/scanium/app/ml/CandidateTrackerTest.kt`
 - [x] Delete `/app/src/test/java/com/scanium/app/ml/DetectionCandidateTest.kt`
-- [ ] Verify all tests still pass after deletion *(blocked: local environment missing Android SDK/JDK 17)*
+- [ ] Verify all tests still pass after deletion *(blocked: local environment missing Android
+  SDK/JDK 17)*
 - [x] Update any comments/docs that reference CandidateTracker to use ObjectTracker
 
 ***REMOVED******REMOVED*** Suggested Approach
@@ -69,15 +74,17 @@ grep -r "CandidateTracker" app/src/main/java
 
 ***REMOVED******REMOVED*** Resolution Notes
 
-- Removed the legacy CandidateTracker/DetectionCandidate implementations and their unit tests so ObjectTracker is the single tracking pipeline.
-- Updated CameraXManager KDoc plus architecture/testing/improvements docs to reference ObjectTracker and current TrackerConfig values.
+- Removed the legacy CandidateTracker/DetectionCandidate implementations and their unit tests so
+  ObjectTracker is the single tracking pipeline.
+- Updated CameraXManager KDoc plus architecture/testing/improvements docs to reference ObjectTracker
+  and current TrackerConfig values.
 - Marked related documentation and review summaries as completed for this cleanup.
 
 ***REMOVED******REMOVED*** Verification
 
 - Commands attempted (failures due to missing SDK/Java 17 toolchain in container):
-  - `./gradlew test`
-  - `./gradlew assembleDebug`
+    - `./gradlew test`
+    - `./gradlew assembleDebug`
 - Manual check: `rg "CandidateTracker"` now only references historical issue records.
 
 ***REMOVED******REMOVED*** Related Issues

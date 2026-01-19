@@ -52,9 +52,9 @@ data class AssistantHttpConfig(
         // Vision/Enrichment defaults - aligned with backend VISION_TIMEOUT_MS=10000
         // Client timeout must be > backend timeout to avoid false "unavailable" errors
         const val VISION_CONNECT_TIMEOUT_SECONDS = 10L
-        const val VISION_READ_TIMEOUT_SECONDS = 30L  // Backend: 10s + buffer
+        const val VISION_READ_TIMEOUT_SECONDS = 30L // Backend: 10s + buffer
         const val VISION_WRITE_TIMEOUT_SECONDS = 30L // For multipart photo uploads
-        const val VISION_CALL_TIMEOUT_SECONDS = 40L  // Overall budget
+        const val VISION_CALL_TIMEOUT_SECONDS = 40L // Overall budget
         const val VISION_RETRY_COUNT = 1 // Retry once on transient errors
 
         /**
@@ -67,61 +67,66 @@ data class AssistantHttpConfig(
          * Tight timeout configuration for preflight health checks.
          * These should be fast and non-blocking.
          */
-        val PREFLIGHT = AssistantHttpConfig(
-            connectTimeoutSeconds = PREFLIGHT_CONNECT_TIMEOUT_SECONDS,
-            readTimeoutSeconds = PREFLIGHT_READ_TIMEOUT_SECONDS,
-            writeTimeoutSeconds = PREFLIGHT_WRITE_TIMEOUT_SECONDS,
-            callTimeoutSeconds = PREFLIGHT_CALL_TIMEOUT_SECONDS,
-            retryCount = PREFLIGHT_RETRY_COUNT,
-        )
+        val PREFLIGHT =
+            AssistantHttpConfig(
+                connectTimeoutSeconds = PREFLIGHT_CONNECT_TIMEOUT_SECONDS,
+                readTimeoutSeconds = PREFLIGHT_READ_TIMEOUT_SECONDS,
+                writeTimeoutSeconds = PREFLIGHT_WRITE_TIMEOUT_SECONDS,
+                callTimeoutSeconds = PREFLIGHT_CALL_TIMEOUT_SECONDS,
+                retryCount = PREFLIGHT_RETRY_COUNT,
+            )
 
         /**
          * Moderate timeout configuration for warmup requests.
          * Not time-critical, but shouldn't hang indefinitely.
          */
-        val WARMUP = AssistantHttpConfig(
-            connectTimeoutSeconds = WARMUP_CONNECT_TIMEOUT_SECONDS,
-            readTimeoutSeconds = WARMUP_READ_TIMEOUT_SECONDS,
-            writeTimeoutSeconds = WARMUP_WRITE_TIMEOUT_SECONDS,
-            callTimeoutSeconds = WARMUP_CALL_TIMEOUT_SECONDS,
-            retryCount = WARMUP_RETRY_COUNT,
-        )
+        val WARMUP =
+            AssistantHttpConfig(
+                connectTimeoutSeconds = WARMUP_CONNECT_TIMEOUT_SECONDS,
+                readTimeoutSeconds = WARMUP_READ_TIMEOUT_SECONDS,
+                writeTimeoutSeconds = WARMUP_WRITE_TIMEOUT_SECONDS,
+                callTimeoutSeconds = WARMUP_CALL_TIMEOUT_SECONDS,
+                retryCount = WARMUP_RETRY_COUNT,
+            )
 
         /**
          * Configuration for vision insights and enrichment operations.
          * Aligned with backend VISION_TIMEOUT_MS=10000.
          * Client timeout > backend timeout to avoid false "unavailable" errors.
          */
-        val VISION = AssistantHttpConfig(
-            connectTimeoutSeconds = VISION_CONNECT_TIMEOUT_SECONDS,
-            readTimeoutSeconds = VISION_READ_TIMEOUT_SECONDS,
-            writeTimeoutSeconds = VISION_WRITE_TIMEOUT_SECONDS,
-            callTimeoutSeconds = VISION_CALL_TIMEOUT_SECONDS,
-            retryCount = VISION_RETRY_COUNT,
-        )
+        val VISION =
+            AssistantHttpConfig(
+                connectTimeoutSeconds = VISION_CONNECT_TIMEOUT_SECONDS,
+                readTimeoutSeconds = VISION_READ_TIMEOUT_SECONDS,
+                writeTimeoutSeconds = VISION_WRITE_TIMEOUT_SECONDS,
+                callTimeoutSeconds = VISION_CALL_TIMEOUT_SECONDS,
+                retryCount = VISION_RETRY_COUNT,
+            )
 
         /**
          * Configuration optimized for test environments with MockWebServer.
          * Short timeouts to fail fast on test issues.
          */
-        val TEST = AssistantHttpConfig(
-            connectTimeoutSeconds = 5L,
-            readTimeoutSeconds = 5L,
-            writeTimeoutSeconds = 5L,
-            callTimeoutSeconds = 10L,
-            retryCount = 0, // Tests should control retry behavior explicitly
-        )
+        val TEST =
+            AssistantHttpConfig(
+                connectTimeoutSeconds = 5L,
+                readTimeoutSeconds = 5L,
+                writeTimeoutSeconds = 5L,
+                callTimeoutSeconds = 10L,
+                retryCount = 0, // Tests should control retry behavior explicitly
+            )
     }
 
     /**
      * Returns a human-readable summary for logging.
      */
-    fun toLogString(): String = buildString {
-        append("AssistantHttpConfig(")
-        append("connect=${connectTimeoutSeconds}s, ")
-        append("read=${readTimeoutSeconds}s, ")
-        append("write=${writeTimeoutSeconds}s, ")
-        append("call=${callTimeoutSeconds}s, ")
-        append("retries=$retryCount)")
-    }
+    fun toLogString(): String =
+        buildString {
+            append("AssistantHttpConfig(")
+            append("connect=${connectTimeoutSeconds}s, ")
+            append("read=${readTimeoutSeconds}s, ")
+            append("write=${writeTimeoutSeconds}s, ")
+            append("call=${callTimeoutSeconds}s, ")
+            append("retries=$retryCount)")
+        }
 }

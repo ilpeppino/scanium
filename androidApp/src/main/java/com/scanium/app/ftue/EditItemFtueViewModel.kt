@@ -34,7 +34,9 @@ import kotlinx.coroutines.launch
  * - AI_HINT_SHOWN: AI hint displayed
  * - COMPLETED: All hints shown
  */
-class EditItemFtueViewModel(private val ftueRepository: FtueRepository) : ViewModel() {
+class EditItemFtueViewModel(
+    private val ftueRepository: FtueRepository,
+) : ViewModel() {
     companion object {
         private const val TAG = "EditItemFtueViewModel"
 
@@ -80,7 +82,10 @@ class EditItemFtueViewModel(private val ftueRepository: FtueRepository) : ViewMo
      * @param shouldStartFtue: True if FTUE should start
      * @param isDevBuild: True if running dev flavor (AI hint included)
      */
-    fun initialize(shouldStartFtue: Boolean, isDevBuild: Boolean = false) {
+    fun initialize(
+        shouldStartFtue: Boolean,
+        isDevBuild: Boolean = false,
+    ) {
         viewModelScope.launch {
             if (com.scanium.app.config.FeatureFlags.isDevBuild) {
                 Log.d(TAG, "initialize: shouldStartFtue=$shouldStartFtue, isDevBuild=$isDevBuild")

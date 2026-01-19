@@ -16,20 +16,25 @@ sealed class FollowOrCustom<T> {
     /**
      * Follow the primary setting (no override).
      */
-    data class FollowPrimary<T>(val unit: Unit = Unit) : FollowOrCustom<T>()
+    data class FollowPrimary<T>(
+        val unit: Unit = Unit,
+    ) : FollowOrCustom<T>()
 
     /**
      * Use a custom value (override the primary setting).
      */
-    data class Custom<T>(val value: T) : FollowOrCustom<T>()
+    data class Custom<T>(
+        val value: T,
+    ) : FollowOrCustom<T>()
 
     /**
      * Get the effective value, resolving FollowPrimary to the provided primary value.
      */
-    fun resolve(primaryValue: T): T = when (this) {
-        is FollowPrimary -> primaryValue
-        is Custom -> value
-    }
+    fun resolve(primaryValue: T): T =
+        when (this) {
+            is FollowPrimary -> primaryValue
+            is Custom -> value
+        }
 
     companion object {
         /**
@@ -51,17 +56,20 @@ sealed class AiLanguageChoice {
     /**
      * Use a specific language tag for AI output.
      */
-    data class LanguageTag(val tag: String) : AiLanguageChoice()
+    data class LanguageTag(
+        val tag: String,
+    ) : AiLanguageChoice()
 
     /**
      * Auto-detect language from speech input (fallback to primary for output).
      */
     data object AutoDetect : AiLanguageChoice()
 
-    fun toLanguageTag(fallback: String): String = when (this) {
-        is LanguageTag -> tag
-        is AutoDetect -> fallback
-    }
+    fun toLanguageTag(fallback: String): String =
+        when (this) {
+            is LanguageTag -> tag
+            is AutoDetect -> fallback
+        }
 }
 
 /**
@@ -81,7 +89,9 @@ sealed class TtsLanguageChoice {
     /**
      * Use a custom language tag for TTS.
      */
-    data class Custom(val languageTag: String) : TtsLanguageChoice()
+    data class Custom(
+        val languageTag: String,
+    ) : TtsLanguageChoice()
 }
 
 /**
@@ -92,15 +102,12 @@ data class UnifiedSettingsState(
     // Primary settings (source of truth)
     val primaryRegionCountry: String, // ISO 2-letter country code ("NL", "DE", etc.)
     val primaryLanguage: String, // Language tag ("en", "nl", "it", "fr", "de", "pt-BR")
-
     // Override wrappers (follow primary or customize)
     val appLanguageSetting: FollowOrCustom<String>, // Language tag
     val aiLanguageSetting: FollowOrCustom<AiLanguageChoice>,
     val marketplaceCountrySetting: FollowOrCustom<String>, // Country code
-
     // TTS alignment
     val ttsLanguageSetting: TtsLanguageChoice,
-
     // Optional: Last detected spoken language for AutoDetect fallback
     val lastDetectedSpokenLanguage: String? = null,
 )

@@ -2,13 +2,15 @@
 
 ***REMOVED******REMOVED*** Issue Summary
 
-**Problem**: Live scanning sometimes produces NO detection/status (e.g., phone/toy while camera is steady), while "take picture" on the same scene works and correctly adds/classifies items.
+**Problem**: Live scanning sometimes produces NO detection/status (e.g., phone/toy while camera is
+steady), while "take picture" on the same scene works and correctly adds/classifies items.
 
 **Status**: Root cause IDENTIFIED - Motion-based throttling too aggressive
 
 ***REMOVED******REMOVED*** Phase 0: Reproduction
 
 ***REMOVED******REMOVED******REMOVED*** Exact Repro Steps
+
 1. **Device**: Any Android device with camera (tested on typical setup)
 2. **Lighting**: Normal indoor lighting
 3. **Distance**: 30-60cm from object
@@ -17,6 +19,7 @@
 6. **Cloud/On-device**: Both affected (issue is pre-detection)
 
 ***REMOVED******REMOVED******REMOVED*** Reproduction Scenario
+
 1. Open camera screen
 2. Long-press shutter to start continuous scanning
 3. Point camera at a stationary object (phone, toy, etc.)
@@ -27,11 +30,12 @@
 8. Observe: Picture immediately detects and classifies the object
 
 ***REMOVED******REMOVED******REMOVED*** Expected vs Actual
-| Scenario | Expected | Actual |
-|----------|----------|--------|
+
+| Scenario                 | Expected               | Actual                      |
+|--------------------------|------------------------|-----------------------------|
 | Steady camera, live scan | Detection within 500ms | No detection for 2+ seconds |
-| Steady camera, picture | Detection immediately | Works correctly |
-| Moving camera, live scan | Detection within 500ms | Works (motion > 0.1) |
+| Steady camera, picture   | Detection immediately  | Works correctly             |
+| Moving camera, live scan | Detection within 500ms | Works (motion > 0.1)        |
 
 ***REMOVED******REMOVED*** Phase 1: Pipeline Mapping
 
@@ -57,6 +61,7 @@ CameraScreen → captureSingleFrame() → ImageAnalysis.setAnalyzer()
 ```
 
 **Key characteristics**:
+
 - Runs on NEXT available frame (no waiting)
 - No motion detection
 - No throttling
@@ -106,6 +111,7 @@ CameraScreen → startScanning() → ImageAnalysis.setAnalyzer()
 ```
 
 **Key characteristics**:
+
 - Motion-based throttling determines interval
 - **CRITICAL BUG**: When camera is steady (motion ≤ 0.1), interval is 2000ms!
 - Uses tracking pipeline with candidate confirmation
@@ -113,18 +119,18 @@ CameraScreen → startScanning() → ImageAnalysis.setAnalyzer()
 
 ***REMOVED******REMOVED******REMOVED*** Diff Table
 
-| Aspect | Picture Capture | Live Scanning | Issue? |
-|--------|-----------------|---------------|--------|
-| **Input resolution** | 1280x720 | 1280x720 | No |
-| **Rotation handling** | Same (`imageInfo.rotationDegrees`) | Same | No |
-| **Crop strategy** | `calculateVisibleViewport()` | Same | No |
-| **Model threshold** | CONFIDENCE_THRESHOLD=0.3f | Same | No |
-| **Frame selection** | First available | Motion-gated | **YES!** |
-| **Throttle interval** | None | 400-2000ms | **YES!** |
-| **Motion gating** | No | Yes (0.1-0.5 thresholds) | **YES!** |
-| **Backpressure** | KEEP_ONLY_LATEST | KEEP_ONLY_LATEST | No |
-| **Detector mode** | SINGLE_IMAGE_MODE | SINGLE_IMAGE_MODE | No |
-| **Tracking** | No (direct) | Yes (ObjectTracker) | Minor |
+| Aspect                | Picture Capture                    | Live Scanning            | Issue?   |
+|-----------------------|------------------------------------|--------------------------|----------|
+| **Input resolution**  | 1280x720                           | 1280x720                 | No       |
+| **Rotation handling** | Same (`imageInfo.rotationDegrees`) | Same                     | No       |
+| **Crop strategy**     | `calculateVisibleViewport()`       | Same                     | No       |
+| **Model threshold**   | CONFIDENCE_THRESHOLD=0.3f          | Same                     | No       |
+| **Frame selection**   | First available                    | Motion-gated             | **YES!** |
+| **Throttle interval** | None                               | 400-2000ms               | **YES!** |
+| **Motion gating**     | No                                 | Yes (0.1-0.5 thresholds) | **YES!** |
+| **Backpressure**      | KEEP_ONLY_LATEST                   | KEEP_ONLY_LATEST         | No       |
+| **Detector mode**     | SINGLE_IMAGE_MODE                  | SINGLE_IMAGE_MODE        | No       |
+| **Tracking**          | No (direct)                        | Yes (ObjectTracker)      | Minor    |
 
 ***REMOVED******REMOVED*** Phase 2: Root Cause Analysis
 
@@ -143,22 +149,23 @@ private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
 **Why this is the bug**:
 
 1. When the camera is steady (user holding phone still to scan an object):
-   - Luma difference between frames is minimal
-   - `motionScore` drops to ≤ 0.1
-   - Analysis interval becomes **2000ms (2 seconds!)**
+    - Luma difference between frames is minimal
+    - `motionScore` drops to ≤ 0.1
+    - Analysis interval becomes **2000ms (2 seconds!)**
 
 2. With 2-second intervals:
-   - User has to wait 2 seconds for first detection
-   - If user moves slightly during that time, motion might spike briefly
-   - The experience feels like "detection is not working"
+    - User has to wait 2 seconds for first detection
+    - If user moves slightly during that time, motion might spike briefly
+    - The experience feels like "detection is not working"
 
 3. Picture capture has NO throttling:
-   - Runs immediately on next frame
-   - That's why it "works" and live scanning "doesn't"
+    - Runs immediately on next frame
+    - That's why it "works" and live scanning "doesn't"
 
 ***REMOVED******REMOVED******REMOVED*** Evidence in Code
 
 From `CameraXManager.kt:480-481`:
+
 ```kotlin
 // Only process if enough time has passed AND we're not already processing
 if (currentTime - lastAnalysisTime >= analysisIntervalMs && !isProcessing) {
@@ -168,16 +175,16 @@ When `analysisIntervalMs = 2000`, frames are dropped for 2 seconds!
 
 ***REMOVED******REMOVED******REMOVED*** Hypothesis Verification
 
-| Hypothesis | Status | Evidence |
-|------------|--------|----------|
-| H1: Analyzer not attached | ❌ DISPROVED | Logs show frames arriving |
-| H2: Over-throttling | ✅ **CONFIRMED** | 2000ms interval when steady |
-| H3: Resolution mismatch | ❌ DISPROVED | Same 1280x720 |
-| H4: Rotation mismatch | ❌ DISPROVED | Same handling |
-| H5: Crop mismatch | ❌ DISPROVED | Same `calculateVisibleViewport()` |
-| H6: Confidence threshold | ❌ DISPROVED | Same 0.3f threshold |
-| H7: Backpressure drops | ❌ N/A | Using KEEP_ONLY_LATEST correctly |
-| H8: Status UI issue | ❌ DISPROVED | Detection itself not running |
+| Hypothesis                | Status          | Evidence                          |
+|---------------------------|-----------------|-----------------------------------|
+| H1: Analyzer not attached | ❌ DISPROVED     | Logs show frames arriving         |
+| H2: Over-throttling       | ✅ **CONFIRMED** | 2000ms interval when steady       |
+| H3: Resolution mismatch   | ❌ DISPROVED     | Same 1280x720                     |
+| H4: Rotation mismatch     | ❌ DISPROVED     | Same handling                     |
+| H5: Crop mismatch         | ❌ DISPROVED     | Same `calculateVisibleViewport()` |
+| H6: Confidence threshold  | ❌ DISPROVED     | Same 0.3f threshold               |
+| H7: Backpressure drops    | ❌ N/A           | Using KEEP_ONLY_LATEST correctly  |
+| H8: Status UI issue       | ❌ DISPROVED     | Detection itself not running      |
 
 ***REMOVED******REMOVED*** Phase 3: Diagnostics Added
 
@@ -203,6 +210,7 @@ private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
 ```
 
 **Rationale**:
+
 - 600ms = ~1.7 detections/second for steady scenes (reasonable)
 - Still provides battery savings vs running at max rate
 - User experience: detection within 600ms instead of 2000ms
@@ -210,72 +218,75 @@ private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
 
 ***REMOVED******REMOVED******REMOVED*** Alternative Considered: Time-since-last-detection boost
 
-Could temporarily boost detection rate after no detections for N seconds, but this adds complexity. The simple interval reduction is sufficient.
+Could temporarily boost detection rate after no detections for N seconds, but this adds complexity.
+The simple interval reduction is sufficient.
 
 ***REMOVED******REMOVED*** Phase 5: Validation
 
 ***REMOVED******REMOVED******REMOVED*** Manual Test Matrix
 
-| Scenario | Before Fix | After Fix | Status |
-|----------|------------|-----------|--------|
-| Steady camera + phone | 2+ second delay | <600ms | ✅ |
-| Steady camera + toy | 2+ second delay | <600ms | ✅ |
-| Low light | Slow | Faster | ✅ |
-| Cluttered background | Variable | Consistent | ✅ |
-| Different distances | Variable | Consistent | ✅ |
+| Scenario              | Before Fix      | After Fix  | Status |
+|-----------------------|-----------------|------------|--------|
+| Steady camera + phone | 2+ second delay | <600ms     | ✅      |
+| Steady camera + toy   | 2+ second delay | <600ms     | ✅      |
+| Low light             | Slow            | Faster     | ✅      |
+| Cluttered background  | Variable        | Consistent | ✅      |
+| Different distances   | Variable        | Consistent | ✅      |
 
 ***REMOVED******REMOVED******REMOVED*** Performance Validation
 
-| Metric | Before | After | Acceptable? |
-|--------|--------|-------|-------------|
-| Steady-state FPS | ~0.5 | ~1.7 | ✅ Yes |
-| CPU usage | Low | Slightly higher | ✅ Acceptable |
-| Battery impact | Minimal | Slight increase | ✅ Acceptable |
-| Classification spam | N/A | Rate limited | ✅ OK |
+| Metric              | Before  | After           | Acceptable?  |
+|---------------------|---------|-----------------|--------------|
+| Steady-state FPS    | ~0.5    | ~1.7            | ✅ Yes        |
+| CPU usage           | Low     | Slightly higher | ✅ Acceptable |
+| Battery impact      | Minimal | Slight increase | ✅ Acceptable |
+| Classification spam | N/A     | Rate limited    | ✅ OK         |
 
 ***REMOVED******REMOVED*** Deliverables Checklist
 
 - [x] docs/SCAN_VS_PICTURE_ASSESSMENT.md (this file)
 - [x] Diagnostic instrumentation (debug-only)
-  - `ScanPipelineDiagnostics.kt` - Structured logging for pipeline stages
-  - Developer setting: `devScanningDiagnosticsEnabledFlow`
-  - Integration in CameraXManager with `ScanPipeline` log tag
+    - `ScanPipelineDiagnostics.kt` - Structured logging for pipeline stages
+    - Developer setting: `devScanningDiagnosticsEnabledFlow`
+    - Integration in CameraXManager with `ScanPipeline` log tag
 - [x] Minimal fix to motion throttling
-  - Changed `CameraXManager.analysisIntervalMsForMotion`:
-    - Steady (motion ≤ 0.1): 2000ms → 600ms
-    - Low motion (motion ≤ 0.5): 800ms → 500ms
-    - High motion: 400ms (unchanged)
+    - Changed `CameraXManager.analysisIntervalMsForMotion`:
+        - Steady (motion ≤ 0.1): 2000ms → 600ms
+        - Low motion (motion ≤ 0.5): 800ms → 500ms
+        - High motion: 400ms (unchanged)
 - [x] Unit test for throttle logic
-  - `MotionThrottleTest.kt` - Regression tests for interval values
+    - `MotionThrottleTest.kt` - Regression tests for interval values
 - [x] Build and test validation (PR ***REMOVED***319 merged)
 
 ***REMOVED******REMOVED*** Code Changes Summary
 
 ***REMOVED******REMOVED******REMOVED*** Files Modified
+
 1. `CameraXManager.kt`
-   - Fixed `analysisIntervalMsForMotion()` intervals
-   - Added `ScanPipelineDiagnostics` integration
-   - Added `setScanningDiagnosticsEnabled()` method
-   - Added `scanMetricsState` StateFlow for optional overlay
+    - Fixed `analysisIntervalMsForMotion()` intervals
+    - Added `ScanPipelineDiagnostics` integration
+    - Added `setScanningDiagnosticsEnabled()` method
+    - Added `scanMetricsState` StateFlow for optional overlay
 
 2. `SettingsRepository.kt`
-   - Added `devScanningDiagnosticsEnabledFlow` setting
+    - Added `devScanningDiagnosticsEnabledFlow` setting
 
 3. `DeveloperOptionsViewModel.kt`
-   - Added `scanningDiagnosticsEnabled` StateFlow
-   - Added `setScanningDiagnosticsEnabled()` method
+    - Added `scanningDiagnosticsEnabled` StateFlow
+    - Added `setScanningDiagnosticsEnabled()` method
 
 4. `CameraScreen.kt`
-   - Added diagnostics setting integration
+    - Added diagnostics setting integration
 
 ***REMOVED******REMOVED******REMOVED*** Files Created
+
 1. `ScanPipelineDiagnostics.kt`
-   - Structured logging with `ScanPipeline` tag
-   - Metrics collection (fps, inference rate, dropped frames, etc.)
-   - Session start/stop with summary logging
-   - `ScanMetrics` for optional overlay display
+    - Structured logging with `ScanPipeline` tag
+    - Metrics collection (fps, inference rate, dropped frames, etc.)
+    - Session start/stop with summary logging
+    - `ScanMetrics` for optional overlay display
 
 2. `MotionThrottleTest.kt`
-   - Regression tests for motion throttle intervals
-   - Ensures max interval ≤ 600ms for responsiveness
-   - Ensures min interval ≥ 400ms for battery efficiency
+    - Regression tests for motion throttle intervals
+    - Ensures max interval ≤ 600ms for responsiveness
+    - Ensures min interval ≥ 400ms for battery efficiency

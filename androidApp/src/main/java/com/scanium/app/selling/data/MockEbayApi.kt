@@ -60,16 +60,22 @@ class MockEbayApi(
                     MockFailureMode.NETWORK_TIMEOUT -> {
                         IllegalStateException("Mock network timeout")
                     }
+
                     MockFailureMode.VALIDATION_ERROR -> {
                         IllegalArgumentException("Mock validation error: Title cannot be empty")
                     }
+
                     MockFailureMode.IMAGE_TOO_SMALL -> {
                         IllegalArgumentException("Mock validation error: Image resolution too small (min 500x500)")
                     }
+
                     MockFailureMode.RANDOM -> {
                         IllegalStateException("Random mock failure")
                     }
-                    MockFailureMode.NONE -> error("Should not reach here")
+
+                    MockFailureMode.NONE -> {
+                        error("Should not reach here")
+                    }
                 }
             }
         }
@@ -133,11 +139,13 @@ class MockEbayApi(
             draft.title.isBlank() -> {
                 throw IllegalArgumentException("Title cannot be empty")
             }
+
             draft.title.length > MAX_TITLE_LENGTH -> {
                 throw IllegalArgumentException(
                     "Title exceeds maximum length ($MAX_TITLE_LENGTH characters): ${draft.title.length}",
                 )
             }
+
             !draft.title.matches(Regex("^[\\w\\s.,!?'\"()-]+$")) -> {
                 throw IllegalArgumentException(
                     "Title contains invalid characters (alphanumeric and basic punctuation only)",
@@ -167,6 +175,7 @@ class MockEbayApi(
                     "Price too low (minimum: $MIN_PRICE): $priceValue",
                 )
             }
+
             priceValue > MAX_PRICE -> {
                 throw IllegalArgumentException(
                     "Price too high (maximum: $MAX_PRICE): $priceValue",

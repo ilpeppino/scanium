@@ -33,7 +33,7 @@ object CustomerSafeCopyFormatter {
         // Check if title is product-type level
         if (!CustomerSafeCopyPolicy.isProductTypeLevel(sanitizedTitle)) {
             return if (dropIfWeak) {
-                null  // Drop this item: cannot make title product-type level
+                null // Drop this item: cannot make title product-type level
             } else {
                 // Return default copy with a generic but safe title
                 CustomerSafeCopy(
@@ -49,10 +49,11 @@ object CustomerSafeCopyFormatter {
         val pricing = formatPricingStructured(input.pricingRange, input.pricingContextHint)
 
         // Generate highlights and tags based on mode
-        val (highlights, tags) = when (mode) {
-            CopyDisplayMode.ASSISTANT -> generateHighlightsAndTags(input)
-            else -> Pair(emptyList(), emptyList())
-        }
+        val (highlights, tags) =
+            when (mode) {
+                CopyDisplayMode.ASSISTANT -> generateHighlightsAndTags(input)
+                else -> Pair(emptyList(), emptyList())
+            }
 
         return CustomerSafeCopy(
             title = sanitizedTitle,
@@ -77,11 +78,12 @@ object CustomerSafeCopyFormatter {
 
         // Fallback: try to build from material and color
         if (!input.material.isNullOrBlank() || !input.color.isNullOrBlank()) {
-            val parts = listOfNotNull(
-                input.color?.takeIf { it.isNotBlank() },
-                input.material?.takeIf { it.isNotBlank() },
-                "item",
-            )
+            val parts =
+                listOfNotNull(
+                    input.color?.takeIf { it.isNotBlank() },
+                    input.material?.takeIf { it.isNotBlank() },
+                    "item",
+                )
             return parts.joinToString(" ")
         }
 
@@ -212,19 +214,20 @@ object CustomerSafeCopyFormatter {
     private fun inferCategoryTag(itemType: String): String {
         val lower = itemType.lowercase()
 
-        val category = when {
-            lower.contains("shoe") || lower.contains("boot") || lower.contains("sneaker") -> "Footwear"
-            lower.contains("dress") || lower.contains("shirt") || lower.contains("pant") || lower.contains("jacket") -> "Apparel"
-            lower.contains("bag") || lower.contains("purse") || lower.contains("wallet") -> "Accessories"
-            lower.contains("watch") || lower.contains("jewelry") -> "Jewelry"
-            lower.contains("phone") || lower.contains("laptop") || lower.contains("tablet") -> "Electronics"
-            lower.contains("book") || lower.contains("magazine") -> "Media"
-            lower.contains("furniture") || lower.contains("chair") || lower.contains("table") -> "Furniture"
-            lower.contains("kitchen") || lower.contains("cookware") -> "Kitchen"
-            lower.contains("sport") || lower.contains("equipment") -> "Sports"
-            lower.contains("toy") || lower.contains("game") -> "Toys"
-            else -> ""
-        }
+        val category =
+            when {
+                lower.contains("shoe") || lower.contains("boot") || lower.contains("sneaker") -> "Footwear"
+                lower.contains("dress") || lower.contains("shirt") || lower.contains("pant") || lower.contains("jacket") -> "Apparel"
+                lower.contains("bag") || lower.contains("purse") || lower.contains("wallet") -> "Accessories"
+                lower.contains("watch") || lower.contains("jewelry") -> "Jewelry"
+                lower.contains("phone") || lower.contains("laptop") || lower.contains("tablet") -> "Electronics"
+                lower.contains("book") || lower.contains("magazine") -> "Media"
+                lower.contains("furniture") || lower.contains("chair") || lower.contains("table") -> "Furniture"
+                lower.contains("kitchen") || lower.contains("cookware") -> "Kitchen"
+                lower.contains("sport") || lower.contains("equipment") -> "Sports"
+                lower.contains("toy") || lower.contains("game") -> "Toys"
+                else -> ""
+            }
 
         return if (category.isNotEmpty()) {
             CustomerSafeCopyPolicy.sanitize(category)
@@ -245,7 +248,5 @@ object CustomerSafeCopyFormatter {
         items: List<ItemInput>,
         mode: CopyDisplayMode = CopyDisplayMode.ITEM_CARD,
         dropIfWeak: Boolean = false,
-    ): List<CustomerSafeCopy> {
-        return items.mapNotNull { format(it, mode, dropIfWeak) }
-    }
+    ): List<CustomerSafeCopy> = items.mapNotNull { format(it, mode, dropIfWeak) }
 }

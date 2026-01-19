@@ -1,21 +1,20 @@
 package com.scanium.app.selling.assistant
 
-import com.scanium.app.copy.CustomerSafeCopyPolicy
-import org.junit.Test
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class AssistantDisplayModelMapperTest {
-
     @Test
     fun parseHeuristic_withTitleAndPrice_returnsModel() {
-        val text = """
+        val text =
+            """
             Title: Designer Handbag
             Price: €150
             Condition: Like New
-        """.trimIndent()
+            """.trimIndent()
 
         val result = AssistantDisplayModelMapper.parse(text)
 
@@ -29,7 +28,8 @@ class AssistantDisplayModelMapperTest {
 
     @Test
     fun parseHeuristic_withBulletHighlights_extractsBullets() {
-        val text = """
+        val text =
+            """
             Title: Running Shoes
             Price: €75
 
@@ -37,7 +37,7 @@ class AssistantDisplayModelMapperTest {
             - Lightweight
             • Breathable mesh
             * Cushioned sole
-        """.trimIndent()
+            """.trimIndent()
 
         val result = AssistantDisplayModelMapper.parse(text)
 
@@ -46,17 +46,18 @@ class AssistantDisplayModelMapperTest {
             assertEquals("Running Shoes", title)
             assertEquals(
                 listOf("Excellent grip", "Lightweight", "Breathable mesh", "Cushioned sole"),
-                highlights
+                highlights,
             )
         }
     }
 
     @Test
     fun parseHeuristic_withTags_parsesTags() {
-        val text = """
+        val text =
+            """
             Title: Vintage Watch
             Tags: Luxury, Swiss Made, Collectible
-        """.trimIndent()
+            """.trimIndent()
 
         val result = AssistantDisplayModelMapper.parse(text)
 
@@ -69,10 +70,11 @@ class AssistantDisplayModelMapperTest {
 
     @Test
     fun parseHeuristic_withBoldTitle_recognizesBoldFormat() {
-        val text = """
+        val text =
+            """
             **Silk Scarf**
             Price: €40
-        """.trimIndent()
+            """.trimIndent()
 
         val result = AssistantDisplayModelMapper.parse(text)
 
@@ -85,10 +87,11 @@ class AssistantDisplayModelMapperTest {
 
     @Test
     fun parseHeuristic_withDescription_extractsDescription() {
-        val text = """
+        val text =
+            """
             Title: Ceramic Vase
             Description: Beautiful hand-painted ceramic vase from Portugal
-        """.trimIndent()
+            """.trimIndent()
 
         val result = AssistantDisplayModelMapper.parse(text)
 
@@ -115,13 +118,14 @@ class AssistantDisplayModelMapperTest {
 
     @Test
     fun sanitize_removesBannedTokens() {
-        val model = AssistantDisplayModel(
-            title = "Item unknown in condition",
-            priceSuggestion = "Confidence: 95% - €50",
-            condition = "might be generic",
-            highlights = listOf("High quality item", "unknown material"),
-            tags = listOf("collectible", "possibly vintage")
-        )
+        val model =
+            AssistantDisplayModel(
+                title = "Item unknown in condition",
+                priceSuggestion = "Confidence: 95% - €50",
+                condition = "might be generic",
+                highlights = listOf("High quality item", "unknown material"),
+                tags = listOf("collectible", "possibly vintage"),
+            )
 
         val sanitized = AssistantDisplayModelMapper.sanitize(model)
 
@@ -134,11 +138,12 @@ class AssistantDisplayModelMapperTest {
 
     @Test
     fun sanitize_removesEmptyHighlightsAndTags() {
-        val model = AssistantDisplayModel(
-            title = "Test Item",
-            highlights = listOf("   ", "   unknown   ", "Valid highlight"),
-            tags = listOf("generic", "   ", "valid-tag")
-        )
+        val model =
+            AssistantDisplayModel(
+                title = "Test Item",
+                highlights = listOf("   ", "   unknown   ", "Valid highlight"),
+                tags = listOf("generic", "   ", "valid-tag"),
+            )
 
         val sanitized = AssistantDisplayModelMapper.sanitize(model)
 
@@ -151,12 +156,13 @@ class AssistantDisplayModelMapperTest {
 
     @Test
     fun parse_then_sanitize_producesCleanModel() {
-        val text = """
+        val text =
+            """
             Title: Vintage Item unknown
             Price: confidence 95% - €50
             - Generic design
             - Possibly authentic
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = AssistantDisplayModelMapper.parse(text)
         assertNotNull(parsed)

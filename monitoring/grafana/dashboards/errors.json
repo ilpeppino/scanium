@@ -2,7 +2,11 @@
   "uid": "scanium-errors",
   "title": "Scanium - Errors & Failures",
   "description": "Detailed error analysis and drilldowns",
-  "tags": ["scanium", "errors", "failures"],
+  "tags": [
+    "scanium",
+    "errors",
+    "failures"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
@@ -18,11 +22,26 @@
         "label": "Platform",
         "type": "custom",
         "query": "android,ios",
-        "current": { "text": "All", "value": "$__all" },
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "android", "value": "android", "selected": false },
-          { "text": "ios", "value": "ios", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "android",
+            "value": "android",
+            "selected": false
+          },
+          {
+            "text": "ios",
+            "value": "ios",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -32,12 +51,31 @@
         "label": "Environment",
         "type": "custom",
         "query": "dev,stage,prod",
-        "current": { "text": "All", "value": "$__all" },
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "dev", "value": "dev", "selected": false },
-          { "text": "stage", "value": "stage", "selected": false },
-          { "text": "prod", "value": "prod", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "dev",
+            "value": "dev",
+            "selected": false
+          },
+          {
+            "text": "stage",
+            "value": "stage",
+            "selected": false
+          },
+          {
+            "text": "prod",
+            "value": "prod",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -46,12 +84,18 @@
         "name": "app_version",
         "label": "App Version",
         "type": "query",
-        "datasource": { "type": "loki", "uid": "LOKI" },
+        "datasource": {
+          "type": "loki",
+          "uid": "LOKI"
+        },
         "query": "label_values({source=\"scanium-mobile\"}, app_version)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       }
     ]
   },
@@ -60,8 +104,16 @@
       "id": 1,
       "title": "Overall Error Rate",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -71,8 +123,14 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "fixed", "fixedColor": "red" },
-          "custom": { "fillOpacity": 20, "drawStyle": "line" }
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "custom": {
+            "fillOpacity": 20,
+            "drawStyle": "line"
+          }
         }
       }
     },
@@ -80,8 +138,16 @@
       "id": 2,
       "title": "Errors by App Version",
       "type": "barchart",
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -94,8 +160,16 @@
       "id": 3,
       "title": "Top Error Types (Trend)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -108,8 +182,16 @@
       "id": 4,
       "title": "Recent Error Events (Click to Drilldown)",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 12 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 12
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",

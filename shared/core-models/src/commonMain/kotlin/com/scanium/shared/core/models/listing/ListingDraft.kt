@@ -74,8 +74,10 @@ enum class DraftFieldKey(val wireValue: String) {
     BRAND("brand"),
     MODEL("model"),
     COLOR("color"),
+
     /** Sellable item type noun (e.g., "Lip Balm", "T-Shirt", "Tissue Box") */
     ITEM_TYPE("itemType"),
+
     /** OCR detected text from the product (filtered snippets) */
     DETECTED_TEXT("detectedText"),
     ;
@@ -248,8 +250,9 @@ object ListingDraftBuilder {
             )
 
         // BRAND: prefer vision-detected brand, fallback to labelText
-        val brand = item.visionAttributes.primaryBrand
-            ?: item.labelText?.takeIf { it.isNotBlank() }
+        val brand =
+            item.visionAttributes.primaryBrand
+                ?: item.labelText?.takeIf { it.isNotBlank() }
         brand?.let {
             fields[DraftFieldKey.BRAND] =
                 DraftField(
@@ -273,9 +276,10 @@ object ListingDraftBuilder {
 
         // ITEM_TYPE: sellable item type noun (e.g., "Lip Balm", "T-Shirt")
         // Priority: visionAttributes.itemType > attributes["itemType"] > first label
-        val itemType = item.visionAttributes.itemType?.takeIf { it.isNotBlank() }
-            ?: item.attributes["itemType"]?.value?.takeIf { it.isNotBlank() }
-            ?: item.visionAttributes.labels.firstOrNull()?.name?.takeIf { it.isNotBlank() }
+        val itemType =
+            item.visionAttributes.itemType?.takeIf { it.isNotBlank() }
+                ?: item.attributes["itemType"]?.value?.takeIf { it.isNotBlank() }
+                ?: item.visionAttributes.labels.firstOrNull()?.name?.takeIf { it.isNotBlank() }
         itemType?.let {
             val confidence = item.visionAttributes.labels.maxOfOrNull { label -> label.score } ?: 0.7f
             fields[DraftFieldKey.ITEM_TYPE] =
@@ -287,16 +291,18 @@ object ListingDraftBuilder {
         }
 
         // DETECTED_TEXT: OCR text from product (filtered, first meaningful snippet)
-        val ocrText = item.visionAttributes.ocrText?.takeIf { it.isNotBlank() }
-            ?: item.attributes["ocrText"]?.value?.takeIf { it.isNotBlank() }
+        val ocrText =
+            item.visionAttributes.ocrText?.takeIf { it.isNotBlank() }
+                ?: item.attributes["ocrText"]?.value?.takeIf { it.isNotBlank() }
         ocrText?.let { text ->
             // Take first 200 chars, filtering out very short lines
-            val filtered = text.lineSequence()
-                .map { it.trim() }
-                .filter { it.length >= 3 }
-                .take(5)
-                .joinToString(" | ")
-                .take(200)
+            val filtered =
+                text.lineSequence()
+                    .map { it.trim() }
+                    .filter { it.length >= 3 }
+                    .take(5)
+                    .joinToString(" | ")
+                    .take(200)
             if (filtered.isNotBlank()) {
                 fields[DraftFieldKey.DETECTED_TEXT] =
                     DraftField(

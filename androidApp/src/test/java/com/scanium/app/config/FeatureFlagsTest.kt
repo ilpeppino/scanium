@@ -11,7 +11,6 @@ import org.junit.Test
  * The actual values tested depend on the build variant (dev/beta/prod).
  */
 class FeatureFlagsTest {
-
     @Test
     fun `allowDeveloperMode matches FEATURE_DEV_MODE BuildConfig`() {
         assertThat(FeatureFlags.allowDeveloperMode).isEqualTo(BuildConfig.FEATURE_DEV_MODE)

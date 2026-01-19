@@ -1,7 +1,15 @@
 package com.scanium.app.telemetry
 
 import android.util.Log
-import com.scanium.app.telemetry.otlp.*
+import com.scanium.app.telemetry.otlp.AnyValue
+import com.scanium.app.telemetry.otlp.ExportTraceServiceRequest
+import com.scanium.app.telemetry.otlp.InstrumentationScope
+import com.scanium.app.telemetry.otlp.KeyValue
+import com.scanium.app.telemetry.otlp.OtlpHttpExporter
+import com.scanium.app.telemetry.otlp.ResourceSpans
+import com.scanium.app.telemetry.otlp.ScopeSpans
+import com.scanium.app.telemetry.otlp.Span
+import com.scanium.app.telemetry.otlp.SpanStatus
 import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.ports.SpanContext
 import com.scanium.telemetry.ports.TracePort
@@ -136,6 +144,7 @@ class AndroidTracePortOtlp(
                         buffer.removeFirstOrNull()
                         Log.w(tag, "Span queue full (${telemetryConfig.maxQueueSize}), dropped oldest span")
                     }
+
                     TelemetryConfig.DropPolicy.DROP_NEWEST -> {
                         Log.w(tag, "Span queue full (${telemetryConfig.maxQueueSize}), dropping newest span: ${span.name}")
                         return // Don't add the new span
@@ -300,12 +309,14 @@ class AndroidTracePortOtlp(
         override fun setAttribute(
             key: String,
             value: String,
-        ) {}
+        ) {
+        }
 
         override fun recordError(
             error: String,
             attributes: Map<String, String>,
-        ) {}
+        ) {
+        }
 
         override fun getTraceId(): String = ""
 

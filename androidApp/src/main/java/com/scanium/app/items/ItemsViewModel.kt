@@ -5,17 +5,15 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.AggregationStats
+import com.scanium.app.camera.CameraXManager
 import com.scanium.app.camera.OverlayTrack
 import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.items.classification.ItemClassificationCoordinator
-import com.scanium.app.items.export.toExportPayload
 import com.scanium.app.items.listing.ListingStatusManager
 import com.scanium.app.items.overlay.OverlayTrackManager
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.items.state.ItemsStateManager
-import com.scanium.app.camera.CameraXManager
 import com.scanium.app.ml.CropBasedEnricher
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.VisionInsightsPrefiller
@@ -30,18 +28,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Named
-import kotlin.jvm.JvmSuppressWildcards
 
 /**
  * ViewModel for managing detected items across the app.
@@ -203,14 +197,21 @@ class ItemsViewModel
         /**
          * Adds items and immediately triggers vision insights extraction for items with high-res images.
          */
-        fun addItemsWithVisionPrefill(context: Context, newItems: List<ScannedItem>) {
+        fun addItemsWithVisionPrefill(
+            context: Context,
+            newItems: List<ScannedItem>,
+        ) {
             facade.addItemsWithVisionPrefill(context, newItems)
         }
 
         /**
          * Triggers vision insights extraction for a specific item.
          */
-        fun extractVisionInsights(context: Context, itemId: String, imageUri: Uri?) {
+        fun extractVisionInsights(
+            context: Context,
+            itemId: String,
+            imageUri: Uri?,
+        ) {
             facade.extractVisionInsights(context, itemId, imageUri)
         }
 
@@ -305,9 +306,7 @@ class ItemsViewModel
         /**
          * Create an in-memory export payload for selected items.
          */
-        fun createExportPayload(selectedIds: List<String>): ExportPayload? {
-            return facade.createExportPayload(selectedIds)
-        }
+        fun createExportPayload(selectedIds: List<String>): ExportPayload? = facade.createExportPayload(selectedIds)
 
         // ==================== Classification Operations (Delegated to Facade) ====================
 
@@ -335,9 +334,7 @@ class ItemsViewModel
         /**
          * Gets the listing status for a specific item.
          */
-        fun getListingStatus(itemId: String): ItemListingStatus? {
-            return facade.getListingStatus(itemId)
-        }
+        fun getListingStatus(itemId: String): ItemListingStatus? = facade.getListingStatus(itemId)
 
         // ==================== Item Edit Operations (Delegated to Facade) ====================
 
@@ -422,12 +419,13 @@ class ItemsViewModel
             viewModelScope.launch(workerDispatcher) {
                 try {
                     // Load the photo
-                    val bitmap = android.graphics.BitmapFactory.decodeStream(
-                        context.contentResolver.openInputStream(photoUri)
-                    ) ?: run {
-                        Log.e(TAG, "Failed to load photo from URI for item $itemId")
-                        return@launch
-                    }
+                    val bitmap =
+                        android.graphics.BitmapFactory.decodeStream(
+                            context.contentResolver.openInputStream(photoUri),
+                        ) ?: run {
+                            Log.e(TAG, "Failed to load photo from URI for item $itemId")
+                            return@launch
+                        }
 
                     // Save to internal storage
                     val photosDir = java.io.File(context.filesDir, "item_photos/$itemId")
@@ -439,17 +437,24 @@ class ItemsViewModel
                     val savedUri = photoFile.absolutePath
 
                     // Create ItemPhoto
-                    val photo = com.scanium.shared.core.models.items.ItemPhoto(
-                        id = java.util.UUID.randomUUID().toString(),
-                        uri = savedUri,
-                        bytes = null,
-                        mimeType = "image/jpeg",
-                        width = bitmap.width,
-                        height = bitmap.height,
-                        capturedAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
-                        photoHash = null,
-                        photoType = com.scanium.shared.core.models.items.PhotoType.CLOSEUP,
-                    )
+                    val photo =
+                        com.scanium.shared.core.models.items.ItemPhoto(
+                            id =
+                                java.util.UUID
+                                    .randomUUID()
+                                    .toString(),
+                            uri = savedUri,
+                            bytes = null,
+                            mimeType = "image/jpeg",
+                            width = bitmap.width,
+                            height = bitmap.height,
+                            capturedAt =
+                                kotlinx.datetime.Clock.System
+                                    .now()
+                                    .toEpochMilliseconds(),
+                            photoHash = null,
+                            photoType = com.scanium.shared.core.models.items.PhotoType.CLOSEUP,
+                        )
 
                     // Add to item
                     facade.addPhotoToItem(itemId, photo)
@@ -482,7 +487,7 @@ class ItemsViewModel
             context: Context,
             itemId: String,
             photoIds: Set<String>,
-            onComplete: () -> Unit = {}
+            onComplete: () -> Unit = {},
         ) {
             if (photoIds.isEmpty()) {
                 onComplete()
@@ -565,9 +570,7 @@ class ItemsViewModel
         /**
          * Get the current effective similarity threshold.
          */
-        fun getCurrentSimilarityThreshold(): Float {
-            return facade.getCurrentSimilarityThreshold()
-        }
+        fun getCurrentSimilarityThreshold(): Float = facade.getCurrentSimilarityThreshold()
 
         // ==================== Aggregation Statistics (Delegated to Facade) ====================
 
@@ -616,7 +619,8 @@ class ItemsViewModel
 
         private fun updateQrUrl(event: DetectionEvent.BarcodeDetected) {
             val url =
-                event.items.asSequence()
+                event.items
+                    .asSequence()
                     .mapNotNull { it.barcodeValue }
                     .mapNotNull(::parseUrl)
                     .lastOrNull()

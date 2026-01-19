@@ -27,25 +27,34 @@ class AssistantRetryInterceptor(
     private val maxRetries: Int = 1,
     private val retryDelayMs: Long = 500L,
 ) : Interceptor {
-
     companion object {
         private const val TAG = "AssistantRetry"
 
         // HTTP status codes that are transient and worth retrying
-        private val RETRYABLE_STATUS_CODES = setOf(
-            502, // Bad Gateway
-            503, // Service Unavailable
-            504, // Gateway Timeout
-        )
+        private val RETRYABLE_STATUS_CODES =
+            setOf(
+                // Bad Gateway
+                502,
+                // Service Unavailable
+                503,
+                // Gateway Timeout
+                504,
+            )
 
         // HTTP status codes that should NOT be retried
-        private val NON_RETRYABLE_STATUS_CODES = setOf(
-            400, // Bad Request
-            401, // Unauthorized
-            403, // Forbidden
-            404, // Not Found
-            429, // Rate Limited (respect rate limits, don't hammer)
-        )
+        private val NON_RETRYABLE_STATUS_CODES =
+            setOf(
+                // Bad Request
+                400,
+                // Unauthorized
+                401,
+                // Forbidden
+                403,
+                // Not Found
+                404,
+                // Rate Limited (respect rate limits, don't hammer)
+                429,
+            )
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -137,12 +146,18 @@ class AssistantRetryInterceptor(
         return when {
             // Connection issues - likely transient
             message.contains("connection refused") -> true
+
             message.contains("connection reset") -> true
+
             message.contains("broken pipe") -> true
+
             message.contains("unexpected end of stream") -> true
+
             message.contains("failed to connect") -> true
+
             // DNS issues might resolve on retry
             e is java.net.UnknownHostException -> true
+
             // Default to retryable for unknown IOExceptions
             else -> true
         }

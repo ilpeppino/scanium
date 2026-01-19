@@ -44,7 +44,8 @@ class AndroidFeatureFlagRepository(
     private val apiKeyStore: SecureApiKeyStore,
 ) : FeatureFlagRepository {
     private val healthCheckClient =
-        OkHttpClient.Builder()
+        OkHttpClient
+            .Builder()
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .build()
@@ -123,22 +124,24 @@ class AndroidFeatureFlagRepository(
                     AssistantPrerequisite(
                         id = "subscription",
                         displayName = "Pro or Developer subscription",
-                        description = when {
-                            isFlavorAllowed -> "Enabled for this app version"
-                            isDeveloperOverride -> "Bypassed (Developer Mode)"
-                            else -> "Assistant requires a Pro or Developer subscription"
-                        },
+                        description =
+                            when {
+                                isFlavorAllowed -> "Enabled for this app version"
+                                isDeveloperOverride -> "Bypassed (Developer Mode)"
+                                else -> "Assistant requires a Pro or Developer subscription"
+                            },
                         satisfied = bypassSubAndRemote || entitlement.canUseAssistant,
                         category = PrerequisiteCategory.SUBSCRIPTION,
                     ),
                     AssistantPrerequisite(
                         id = "remote_flag",
                         displayName = "Feature enabled by server",
-                        description = when {
-                            isFlavorAllowed -> "Enabled for this app version"
-                            isDeveloperOverride -> "Bypassed (Developer Mode)"
-                            else -> "Assistant feature must be enabled on the server"
-                        },
+                        description =
+                            when {
+                                isFlavorAllowed -> "Enabled for this app version"
+                                isDeveloperOverride -> "Bypassed (Developer Mode)"
+                                else -> "Assistant feature must be enabled on the server"
+                            },
                         satisfied = bypassSubAndRemote || config.featureFlags.enableAssistant,
                         category = PrerequisiteCategory.REMOTE_CONFIG,
                     ),
@@ -219,7 +222,8 @@ class AndroidFeatureFlagRepository(
             try {
                 Log.d("ScaniumAuth", "FeatureFlags: Adding X-API-Key header to health check")
                 val request =
-                    Request.Builder()
+                    Request
+                        .Builder()
                         .url(healthEndpoint)
                         .get()
                         .header("X-API-Key", apiKey)
@@ -229,11 +233,14 @@ class AndroidFeatureFlagRepository(
 
                 healthCheckClient.newCall(request).execute().use { response ->
                     when {
-                        response.isSuccessful -> ConnectionTestResult.Success(
-                            httpStatus = response.code,
-                            endpoint = endpoint,
-                        )
-                        response.code == 401 || response.code == 403 ->
+                        response.isSuccessful -> {
+                            ConnectionTestResult.Success(
+                                httpStatus = response.code,
+                                endpoint = endpoint,
+                            )
+                        }
+
+                        response.code == 401 || response.code == 403 -> {
                             ConnectionTestResult.Failure(
                                 errorType = ConnectionTestErrorType.UNAUTHORIZED,
                                 message = "Invalid API key or unauthorized access",
@@ -241,7 +248,9 @@ class AndroidFeatureFlagRepository(
                                 endpoint = endpoint,
                                 method = method,
                             )
-                        response.code == 404 ->
+                        }
+
+                        response.code == 404 -> {
                             ConnectionTestResult.Failure(
                                 errorType = ConnectionTestErrorType.NOT_FOUND,
                                 message = "Endpoint not found (wrong base URL or route)",
@@ -249,7 +258,9 @@ class AndroidFeatureFlagRepository(
                                 endpoint = endpoint,
                                 method = method,
                             )
-                        response.code in 500..599 ->
+                        }
+
+                        response.code in 500..599 -> {
                             ConnectionTestResult.Failure(
                                 errorType = ConnectionTestErrorType.SERVER_ERROR,
                                 message = "Server error (${response.code})",
@@ -257,7 +268,9 @@ class AndroidFeatureFlagRepository(
                                 endpoint = endpoint,
                                 method = method,
                             )
-                        else ->
+                        }
+
+                        else -> {
                             ConnectionTestResult.Failure(
                                 errorType = ConnectionTestErrorType.SERVER_ERROR,
                                 message = "Unexpected response: ${response.code}",
@@ -265,6 +278,7 @@ class AndroidFeatureFlagRepository(
                                 endpoint = endpoint,
                                 method = method,
                             )
+                        }
                     }
                 }
             } catch (e: SocketTimeoutException) {

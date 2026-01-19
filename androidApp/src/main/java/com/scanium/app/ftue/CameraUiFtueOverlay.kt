@@ -7,8 +7,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -28,7 +26,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -36,7 +33,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -175,7 +171,10 @@ private fun DrawScope.drawDimBackgroundWithSpotlight(
     val path =
         Path().apply {
             // Add full canvas rect
-            addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+            addRect(
+                androidx.compose.ui.geometry
+                    .Rect(0f, 0f, size.width, size.height),
+            )
             // Subtract spotlight circle
             addOval(
                 androidx.compose.ui.geometry.Rect(
@@ -193,7 +192,9 @@ private fun DrawScope.drawDimBackgroundWithSpotlight(
         color = spotlightColor.copy(alpha = 0.6f),
         radius = pulsedRadius,
         center = spotlightCenter,
-        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f),
+        style =
+            androidx.compose.ui.graphics.drawscope
+                .Stroke(width = 3f),
     )
 
     // DEV-only: Draw magenta debug border around exact anchor rect
@@ -202,7 +203,9 @@ private fun DrawScope.drawDimBackgroundWithSpotlight(
             color = Color.Magenta,
             topLeft = spotlightRect.topLeft,
             size = spotlightRect.size,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f),
+            style =
+                androidx.compose.ui.graphics.drawscope
+                    .Stroke(width = 2f),
         )
     }
 }

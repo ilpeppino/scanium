@@ -1,8 +1,27 @@
 package com.scanium.app.selling.ui
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.scanium.app.selling.data.MockEbayConfigManager
@@ -122,12 +141,11 @@ fun DebugSettingsDialog(onDismiss: () -> Unit) {
     )
 }
 
-private fun getFailureModeDescription(mode: MockFailureMode): String {
-    return when (mode) {
+private fun getFailureModeDescription(mode: MockFailureMode): String =
+    when (mode) {
         MockFailureMode.NONE -> "All requests succeed"
         MockFailureMode.NETWORK_TIMEOUT -> "Simulates network timeout errors"
         MockFailureMode.VALIDATION_ERROR -> "Simulates validation errors"
         MockFailureMode.IMAGE_TOO_SMALL -> "Simulates image quality errors"
         MockFailureMode.RANDOM -> "Random failures"
     }
-}

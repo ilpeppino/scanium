@@ -20,22 +20,30 @@ import java.util.regex.Pattern
  */
 @RunWith(RobolectricTestRunner::class)
 class CustomerSafeCopyFormatterTest {
-
     // ====== Banned Tokens Tests ======
 
     @Test
     fun test_bannedTokens_areNeverPresent_inOutputs() {
         // Test each banned token individually
-        val bannedTokens = listOf(
-            "unknown", "generic", "unbranded", "confidence", "score",
-            "might be", "possibly", "cannot determine",
-        )
+        val bannedTokens =
+            listOf(
+                "unknown",
+                "generic",
+                "unbranded",
+                "confidence",
+                "score",
+                "might be",
+                "possibly",
+                "cannot determine",
+            )
 
         bannedTokens.forEach { token ->
-            val input = ItemInput(
-                id = "test",
-                itemType = token,  // Try to inject banned token as itemType
-            )
+            val input =
+                ItemInput(
+                    id = "test",
+                    // Try to inject banned token as itemType
+                    itemType = token,
+                )
             val output = CustomerSafeCopyFormatter.format(input, dropIfWeak = true)
 
             // Token should either be sanitized away or item dropped
@@ -54,10 +62,11 @@ class CustomerSafeCopyFormatterTest {
     @Test
     fun test_bannedTokens_removedFromMixedContent() {
         // Test that banned tokens are removed from mixed content
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather handbag with unknown details",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather handbag with unknown details",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).isEqualTo("leather handbag with details")
@@ -67,10 +76,11 @@ class CustomerSafeCopyFormatterTest {
     @Test
     fun test_caseInsensitivityOfBannedTokens() {
         // Test that banned token checks are case-insensitive
-        val input = ItemInput(
-            id = "test",
-            itemType = "UNKNOWN item",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "UNKNOWN item",
+            )
         val output = CustomerSafeCopyFormatter.format(input, dropIfWeak = true)
 
         // Should be dropped because "unknown" is banned (case-insensitive)
@@ -81,18 +91,20 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_noPercentOrConfidenceNumbers() {
-        val testCases = listOf(
-            "leather bag (58% match)",
-            "jacket confidence: 0.92",
-            "shoes 95% confidence",
-            "handbag 0.85",
-        )
+        val testCases =
+            listOf(
+                "leather bag (58% match)",
+                "jacket confidence: 0.92",
+                "shoes 95% confidence",
+                "handbag 0.85",
+            )
 
         testCases.forEach { text ->
-            val input = ItemInput(
-                id = "test",
-                itemType = text,
-            )
+            val input =
+                ItemInput(
+                    id = "test",
+                    itemType = text,
+                )
             val output = CustomerSafeCopyFormatter.format(input)!!
 
             assertThat(output.title).doesNotContain("%")
@@ -103,10 +115,11 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_percentSignsRemoved() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "backpack 78%",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "backpack 78%",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).doesNotContain("%")
@@ -115,10 +128,11 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_decimalNumbersRemoved() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "hiking boot 0.92",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "hiking boot 0.92",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).doesNotContain("0.92")
@@ -128,18 +142,20 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_title_isNonEmpty_andNotVague() {
-        val goodTitles = listOf(
-            "leather hiking boots",
-            "wool sweater",
-            "ceramic vase",
-            "stainless steel watch",
-        )
+        val goodTitles =
+            listOf(
+                "leather hiking boots",
+                "wool sweater",
+                "ceramic vase",
+                "stainless steel watch",
+            )
 
         goodTitles.forEach { title ->
-            val input = ItemInput(
-                id = "test",
-                itemType = title,
-            )
+            val input =
+                ItemInput(
+                    id = "test",
+                    itemType = title,
+                )
             val output = CustomerSafeCopyFormatter.format(input)!!
 
             assertThat(output.title).isNotEmpty()
@@ -149,13 +165,15 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_vagueTitle_dropsItemWhenDropIfWeakTrue() {
-        val vagueInputs = listOf(
-            ItemInput(id = "test1", itemType = "Item"),
-            ItemInput(id = "test2", itemType = "Object"),
-            ItemInput(id = "test3", itemType = "Thing"),
-            ItemInput(id = "test4", itemType = "Unknown"),
-            ItemInput(id = "test5"),  // No type, no attributes
-        )
+        val vagueInputs =
+            listOf(
+                ItemInput(id = "test1", itemType = "Item"),
+                ItemInput(id = "test2", itemType = "Object"),
+                ItemInput(id = "test3", itemType = "Thing"),
+                ItemInput(id = "test4", itemType = "Unknown"),
+                // No type, no attributes
+                ItemInput(id = "test5"),
+            )
 
         vagueInputs.forEach { input ->
             val output = CustomerSafeCopyFormatter.format(input, dropIfWeak = true)
@@ -165,7 +183,7 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_vagueTitle_fallbackWhenDropIfWeakFalse() {
-        val input = ItemInput(id = "test")  // No identifying attributes
+        val input = ItemInput(id = "test") // No identifying attributes
         val output = CustomerSafeCopyFormatter.format(input, dropIfWeak = false)!!
 
         assertThat(output.title).isNotEmpty()
@@ -174,11 +192,12 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_title_constructedFromMaterial_andColor() {
-        val input = ItemInput(
-            id = "test",
-            material = "leather",
-            color = "brown",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                material = "leather",
+                color = "brown",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).contains("leather")
@@ -187,12 +206,13 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_title_preferItemTypeOverOtherHints() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "hiking boots",
-            material = "rubber",
-            color = "red",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "hiking boots",
+                material = "rubber",
+                color = "red",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).isEqualTo("hiking boots")
@@ -200,11 +220,12 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_title_fallsBackToMaterialAndColor() {
-        val input = ItemInput(
-            id = "test",
-            material = "ceramic",
-            color = "blue",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                material = "ceramic",
+                color = "blue",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).contains("ceramic")
@@ -215,11 +236,12 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_pricing_format_includesTypicalResaleValue() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather jacket",
-            pricingRange = PricingRange(min = 50, max = 150),
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather jacket",
+                pricingRange = PricingRange(min = 50, max = 150),
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         // Verify structured pricing (UI layer renders localized strings)
@@ -231,12 +253,13 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_pricing_format_includesBasedOnLine() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather jacket",
-            pricingRange = PricingRange(min = 50, max = 150),
-            pricingContextHint = "excellent condition",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather jacket",
+                pricingRange = PricingRange(min = 50, max = 150),
+                pricingContextHint = "excellent condition",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         // Verify structured pricing has context key (UI layer renders localized "Based on..." string)
@@ -246,11 +269,12 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_pricing_defaultContext_whenNoHint() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "backpack",
-            pricingRange = PricingRange(min = 20, max = 60),
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "backpack",
+                pricingRange = PricingRange(min = 20, max = 60),
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         // Verify structured pricing has default context key (UI renders "Based on current market conditions")
@@ -260,10 +284,11 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_pricing_nullWhenNoRange() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "hiking boots",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "hiking boots",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.priceLine).isNull()
@@ -272,11 +297,13 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_pricing_nullWhenInvalidRange() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "jacket",
-            pricingRange = PricingRange(min = 100, max = 50),  // Invalid: min > max
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "jacket",
+                // Invalid: min > max
+                pricingRange = PricingRange(min = 100, max = 50),
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.priceLine).isNull()
@@ -285,11 +312,12 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_pricing_usesEuroSymbolAndEnDash() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "shoes",
-            pricingRange = PricingRange(min = 30, max = 80),
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "shoes",
+                pricingRange = PricingRange(min = 30, max = 80),
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         // Verify structured pricing has EUR currency (UI renders € symbol and en-dash)
@@ -303,12 +331,17 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_dropIfWeak_dropsItemsWhenTitleCannotBeMadeProductType() {
-        val weakInputs = listOf(
-            ItemInput(id = "1"),  // No attributes
-            ItemInput(id = "2", itemType = ""),  // Empty itemType
-            ItemInput(id = "3", itemType = "Unknown"),  // Vague
-            ItemInput(id = "4", itemType = "Item"),  // Vague
-        )
+        val weakInputs =
+            listOf(
+                // No attributes
+                ItemInput(id = "1"),
+                // Empty itemType
+                ItemInput(id = "2", itemType = ""),
+                // Vague
+                ItemInput(id = "3", itemType = "Unknown"),
+                // Vague
+                ItemInput(id = "4", itemType = "Item"),
+            )
 
         weakInputs.forEach { input ->
             val output = CustomerSafeCopyFormatter.format(input, dropIfWeak = true)
@@ -327,10 +360,11 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_dropIfWeak_keepsStrongItems() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather handbag",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather handbag",
+            )
         val output = CustomerSafeCopyFormatter.format(input, dropIfWeak = true)
 
         assertThat(output).isNotNull()
@@ -341,17 +375,19 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_itemListMode_noHighlightsOrTags() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather boots",
-            color = "brown",
-            material = "leather",
-            inferredBrand = "Nike",
-        )
-        val output = CustomerSafeCopyFormatter.format(
-            input,
-            mode = CopyDisplayMode.ITEM_LIST,
-        )!!
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather boots",
+                color = "brown",
+                material = "leather",
+                inferredBrand = "Nike",
+            )
+        val output =
+            CustomerSafeCopyFormatter.format(
+                input,
+                mode = CopyDisplayMode.ITEM_LIST,
+            )!!
 
         assertThat(output.highlights).isEmpty()
         assertThat(output.tags).isEmpty()
@@ -359,17 +395,19 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_itemCardMode_noHighlightsOrTags() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather boots",
-            color = "brown",
-            material = "leather",
-            inferredBrand = "Nike",
-        )
-        val output = CustomerSafeCopyFormatter.format(
-            input,
-            mode = CopyDisplayMode.ITEM_CARD,
-        )!!
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather boots",
+                color = "brown",
+                material = "leather",
+                inferredBrand = "Nike",
+            )
+        val output =
+            CustomerSafeCopyFormatter.format(
+                input,
+                mode = CopyDisplayMode.ITEM_CARD,
+            )!!
 
         assertThat(output.highlights).isEmpty()
         assertThat(output.tags).isEmpty()
@@ -377,17 +415,19 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_assistantMode_includesHighlightsAndTags() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather boots",
-            color = "brown",
-            material = "leather",
-            inferredBrand = "Nike",
-        )
-        val output = CustomerSafeCopyFormatter.format(
-            input,
-            mode = CopyDisplayMode.ASSISTANT,
-        )!!
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather boots",
+                color = "brown",
+                material = "leather",
+                inferredBrand = "Nike",
+            )
+        val output =
+            CustomerSafeCopyFormatter.format(
+                input,
+                mode = CopyDisplayMode.ASSISTANT,
+            )!!
 
         assertThat(output.highlights).isNotEmpty()
         assertThat(output.tags).isNotEmpty()
@@ -395,49 +435,55 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_assistantMode_highlightsContainAttributes() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "hiking boot",
-            color = "brown",
-            material = "rubber",
-            imageHint = "laced design",
-        )
-        val output = CustomerSafeCopyFormatter.format(
-            input,
-            mode = CopyDisplayMode.ASSISTANT,
-        )!!
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "hiking boot",
+                color = "brown",
+                material = "rubber",
+                imageHint = "laced design",
+            )
+        val output =
+            CustomerSafeCopyFormatter.format(
+                input,
+                mode = CopyDisplayMode.ASSISTANT,
+            )!!
 
         assertThat(output.highlights).containsAtLeast("Color: brown", "Material: rubber", "Details: laced design")
     }
 
     @Test
     fun test_assistantMode_tagsContainBrandAndCategory() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "hiking boots",
-            inferredBrand = "Salomon",
-        )
-        val output = CustomerSafeCopyFormatter.format(
-            input,
-            mode = CopyDisplayMode.ASSISTANT,
-        )!!
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "hiking boots",
+                inferredBrand = "Salomon",
+            )
+        val output =
+            CustomerSafeCopyFormatter.format(
+                input,
+                mode = CopyDisplayMode.ASSISTANT,
+            )!!
 
         assertThat(output.tags).contains("Salomon")
-        assertThat(output.tags).contains("Footwear")  // Inferred from "boots"
+        assertThat(output.tags).contains("Footwear") // Inferred from "boots"
     }
 
     @Test
     fun test_assistantMode_sanitizesHighlightsAndTags() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "jacket",
-            color = "red 95%",
-            material = "leather unknown",
-        )
-        val output = CustomerSafeCopyFormatter.format(
-            input,
-            mode = CopyDisplayMode.ASSISTANT,
-        )!!
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "jacket",
+                color = "red 95%",
+                material = "leather unknown",
+            )
+        val output =
+            CustomerSafeCopyFormatter.format(
+                input,
+                mode = CopyDisplayMode.ASSISTANT,
+            )!!
 
         output.highlights.forEach { highlight ->
             assertThat(highlight).doesNotContain("%")
@@ -449,11 +495,12 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_formatBatch_formatsMultipleItems() {
-        val inputs = listOf(
-            ItemInput(id = "1", itemType = "hiking boots"),
-            ItemInput(id = "2", itemType = "leather jacket"),
-            ItemInput(id = "3", itemType = "wool sweater"),
-        )
+        val inputs =
+            listOf(
+                ItemInput(id = "1", itemType = "hiking boots"),
+                ItemInput(id = "2", itemType = "leather jacket"),
+                ItemInput(id = "3", itemType = "wool sweater"),
+            )
         val outputs = CustomerSafeCopyFormatter.formatBatch(inputs)
 
         assertThat(outputs).hasSize(3)
@@ -464,11 +511,15 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_formatBatch_dropsWeakItemsWhenRequested() {
-        val inputs = listOf(
-            ItemInput(id = "1", itemType = "hiking boots"),  // Strong
-            ItemInput(id = "2"),  // Weak
-            ItemInput(id = "3", itemType = "leather jacket"),  // Strong
-        )
+        val inputs =
+            listOf(
+                // Strong
+                ItemInput(id = "1", itemType = "hiking boots"),
+                // Weak
+                ItemInput(id = "2"),
+                // Strong
+                ItemInput(id = "3", itemType = "leather jacket"),
+            )
         val outputs = CustomerSafeCopyFormatter.formatBatch(inputs, dropIfWeak = true)
 
         assertThat(outputs).hasSize(2)
@@ -480,12 +531,13 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_emptyStringsAreIgnored() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather jacket",
-            color = "",
-            material = "",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather jacket",
+                color = "",
+                material = "",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).isEqualTo("leather jacket")
@@ -493,11 +545,12 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_whitespaceOnlyStringsAreTreatedAsEmpty() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather jacket",
-            color = "   ",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather jacket",
+                color = "   ",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).isEqualTo("leather jacket")
@@ -505,10 +558,11 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_multipleSpacesAreNormalized() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "leather   jacket",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "leather   jacket",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).isEqualTo("leather jacket")
@@ -516,12 +570,13 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_noBannedTokensInPricingContext() {
-        val input = ItemInput(
-            id = "test",
-            itemType = "jacket",
-            pricingRange = PricingRange(min = 50, max = 100),
-            pricingContextHint = "excellent condition cannot determine exact age",
-        )
+        val input =
+            ItemInput(
+                id = "test",
+                itemType = "jacket",
+                pricingRange = PricingRange(min = 50, max = 100),
+                pricingContextHint = "excellent condition cannot determine exact age",
+            )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         // Verify structured pricing exists (banned tokens in hint cause fallback to default context key)
@@ -532,20 +587,22 @@ class CustomerSafeCopyFormatterTest {
 
     @Test
     fun test_completeFlowWithAllAttributes() {
-        val input = ItemInput(
-            id = "item-001",
-            itemType = "leather hiking boots",
-            material = "leather",
-            color = "brown",
-            inferredBrand = "Salomon",
-            imageHint = "lace-up design",
-            pricingRange = PricingRange(min = 60, max = 150),
-            pricingContextHint = "excellent condition",
-        )
-        val output = CustomerSafeCopyFormatter.format(
-            input,
-            mode = CopyDisplayMode.ASSISTANT,
-        )!!
+        val input =
+            ItemInput(
+                id = "item-001",
+                itemType = "leather hiking boots",
+                material = "leather",
+                color = "brown",
+                inferredBrand = "Salomon",
+                imageHint = "lace-up design",
+                pricingRange = PricingRange(min = 60, max = 150),
+                pricingContextHint = "excellent condition",
+            )
+        val output =
+            CustomerSafeCopyFormatter.format(
+                input,
+                mode = CopyDisplayMode.ASSISTANT,
+            )!!
 
         // Verify all fields
         assertThat(output.title).isEqualTo("leather hiking boots")

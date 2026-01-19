@@ -1,7 +1,5 @@
 package com.scanium.app.telemetry
 
-import com.scanium.app.ScaniumApplication
-import com.scanium.telemetry.TelemetrySeverity
 import com.scanium.telemetry.facade.Telemetry
 
 /**
@@ -48,13 +46,14 @@ object MobileEvents {
      */
     fun appStarted(
         telemetry: Telemetry,
-        launchType: String = "cold_start"
+        launchType: String = "cold_start",
     ) {
         telemetry.info(
             name = "app.started",
-            userAttributes = mapOf(
-                "launch_type" to launchType
-            )
+            userAttributes =
+                mapOf(
+                    "launch_type" to launchType,
+                ),
         )
     }
 
@@ -64,13 +63,14 @@ object MobileEvents {
      */
     fun scanStarted(
         telemetry: Telemetry,
-        scanSource: String = "camera"
+        scanSource: String = "camera",
     ) {
         telemetry.info(
             name = "scan.started",
-            userAttributes = mapOf(
-                "scan_source" to scanSource
-            )
+            userAttributes =
+                mapOf(
+                    "scan_source" to scanSource,
+                ),
         )
     }
 
@@ -82,15 +82,16 @@ object MobileEvents {
         telemetry: Telemetry,
         itemType: String = "unknown",
         hasBarcode: Boolean = false,
-        hasNutrition: Boolean = false
+        hasNutrition: Boolean = false,
     ) {
         telemetry.info(
             name = "scan.created_item",
-            userAttributes = mapOf(
-                "item_type" to itemType,
-                "has_barcode" to hasBarcode.toString(),
-                "has_nutrition" to hasNutrition.toString()
-            )
+            userAttributes =
+                mapOf(
+                    "item_type" to itemType,
+                    "has_barcode" to hasBarcode.toString(),
+                    "has_nutrition" to hasNutrition.toString(),
+                ),
         )
     }
 
@@ -101,17 +102,18 @@ object MobileEvents {
     fun scanConfirmed(
         telemetry: Telemetry,
         itemCount: Int,
-        durationMs: Long? = null
+        durationMs: Long? = null,
     ) {
-        val attrs = mutableMapOf<String, String>(
-            "items_detected" to itemCount.toString()
-        )
+        val attrs =
+            mutableMapOf<String, String>(
+                "items_detected" to itemCount.toString(),
+            )
         if (durationMs != null) {
             attrs["scan_duration_ms"] = durationMs.toString()
         }
         telemetry.info(
             name = "scan.confirmed",
-            userAttributes = attrs
+            userAttributes = attrs,
         )
     }
 
@@ -121,13 +123,14 @@ object MobileEvents {
      */
     fun shareOpened(
         telemetry: Telemetry,
-        context: String = "scan_result"
+        context: String = "scan_result",
     ) {
         telemetry.info(
             name = "share.opened",
-            userAttributes = mapOf(
-                "context" to context
-            )
+            userAttributes =
+                mapOf(
+                    "context" to context,
+                ),
         )
     }
 
@@ -138,14 +141,15 @@ object MobileEvents {
     fun shareExportZip(
         telemetry: Telemetry,
         itemCount: Int,
-        includeImages: Boolean = true
+        includeImages: Boolean = true,
     ) {
         telemetry.info(
             name = "share.export_zip",
-            userAttributes = mapOf(
-                "item_count" to itemCount.toString(),
-                "include_images" to includeImages.toString()
-            )
+            userAttributes =
+                mapOf(
+                    "item_count" to itemCount.toString(),
+                    "include_images" to includeImages.toString(),
+                ),
         )
     }
 
@@ -157,15 +161,16 @@ object MobileEvents {
         telemetry: Telemetry,
         context: String = "scan_result",
         aiEnabled: Boolean = true,
-        sendPictures: Boolean = false
+        sendPictures: Boolean = false,
     ) {
         telemetry.info(
             name = "ai.generate_clicked",
-            userAttributes = mapOf(
-                "context" to context,
-                "ai_enabled" to aiEnabled.toString(),
-                "send_pictures_to_ai" to sendPictures.toString()
-            )
+            userAttributes =
+                mapOf(
+                    "context" to context,
+                    "ai_enabled" to aiEnabled.toString(),
+                    "send_pictures_to_ai" to sendPictures.toString(),
+                ),
         )
     }
 
@@ -178,13 +183,14 @@ object MobileEvents {
         errorCode: String,
         errorCategory: String = "unknown",
         isRecoverable: Boolean = true,
-        throwable: Throwable? = null
+        throwable: Throwable? = null,
     ) {
-        val attrs = mutableMapOf(
-            "error_code" to errorCode,
-            "error_category" to errorCategory,
-            "is_recoverable" to isRecoverable.toString()
-        )
+        val attrs =
+            mutableMapOf(
+                "error_code" to errorCode,
+                "error_category" to errorCategory,
+                "is_recoverable" to isRecoverable.toString(),
+            )
         if (throwable != null) {
             attrs["exception_type"] = throwable::class.simpleName ?: "Unknown"
             // DO NOT include throwable.message (may contain PII)
@@ -192,7 +198,7 @@ object MobileEvents {
 
         telemetry.error(
             name = "error.exception",
-            userAttributes = attrs
+            userAttributes = attrs,
         )
     }
 
@@ -202,13 +208,14 @@ object MobileEvents {
      */
     fun scanCancelled(
         telemetry: Telemetry,
-        reason: String = "user_cancelled"
+        reason: String = "user_cancelled",
     ) {
         telemetry.info(
             name = "scan.cancelled",
-            userAttributes = mapOf(
-                "reason" to reason
-            )
+            userAttributes =
+                mapOf(
+                    "reason" to reason,
+                ),
         )
     }
 
@@ -220,15 +227,16 @@ object MobileEvents {
         telemetry: Telemetry,
         mode: String = "on_device",
         durationMs: Long,
-        success: Boolean = true
+        success: Boolean = true,
     ) {
         telemetry.info(
             name = "ml.classification_completed",
-            userAttributes = mapOf(
-                "classification_mode" to mode,
-                "duration_ms" to durationMs.toString(),
-                "success" to success.toString()
-            )
+            userAttributes =
+                mapOf(
+                    "classification_mode" to mode,
+                    "duration_ms" to durationMs.toString(),
+                    "success" to success.toString(),
+                ),
         )
     }
 }

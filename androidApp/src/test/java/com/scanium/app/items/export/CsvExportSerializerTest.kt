@@ -80,11 +80,12 @@ class CsvExportSerializerTest {
     @Test
     fun serialize_withMultipleImages_includesSemicolonSeparatedList() {
         // Given: item with multiple images
-        val imageRefs = listOf(
-            com.scanium.shared.core.models.model.ImageRef.CacheKey("image1.jpg", "image/jpeg", 100, 100),
-            com.scanium.shared.core.models.model.ImageRef.CacheKey("image2.jpg", "image/jpeg", 100, 100),
-            com.scanium.shared.core.models.model.ImageRef.CacheKey("image3.jpg", "image/jpeg", 100, 100),
-        )
+        val imageRefs =
+            listOf(
+                com.scanium.shared.core.models.model.ImageRef.CacheKey("image1.jpg", "image/jpeg", 100, 100),
+                com.scanium.shared.core.models.model.ImageRef.CacheKey("image2.jpg", "image/jpeg", 100, 100),
+                com.scanium.shared.core.models.model.ImageRef.CacheKey("image3.jpg", "image/jpeg", 100, 100),
+            )
 
         val item =
             ExportItem(
@@ -134,7 +135,8 @@ class CsvExportSerializerTest {
                 category = "Test",
                 attributes = emptyMap(),
                 imageRef = imageRef,
-                imageRefs = emptyList(), // Empty imageRefs, should fallback to imageRef
+                // Empty imageRefs, should fallback to imageRef
+                imageRefs = emptyList(),
             )
         val payload = ExportPayload(items = listOf(item), createdAt = Instant.DISTANT_PAST)
 

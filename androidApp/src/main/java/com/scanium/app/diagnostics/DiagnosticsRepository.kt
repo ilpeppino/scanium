@@ -117,8 +117,9 @@ data class AppConfigSnapshot(
         get() = baseUrlSource != BaseUrlSource.BUILD_CONFIG
 
     val hasBaseUrlWarning: Boolean
-        get() = baseUrlSource == BaseUrlSource.DEV_OVERRIDE_STALE ||
-            (isBaseUrlOverridden && baseUrl != buildConfigBaseUrl)
+        get() =
+            baseUrlSource == BaseUrlSource.DEV_OVERRIDE_STALE ||
+                (isBaseUrlOverridden && baseUrl != buildConfigBaseUrl)
 }
 
 /**
@@ -144,7 +145,8 @@ class DiagnosticsRepository(
     val state: StateFlow<DiagnosticsState> = _state.asStateFlow()
 
     private val httpClient =
-        OkHttpClient.Builder()
+        OkHttpClient
+            .Builder()
             .connectTimeout(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
@@ -197,7 +199,8 @@ class DiagnosticsRepository(
                 val result =
                     withTimeoutOrNull(HEALTH_CHECK_TIMEOUT_MS) {
                         val request =
-                            Request.Builder()
+                            Request
+                                .Builder()
                                 .url(healthUrl)
                                 .get()
                                 .build()
@@ -206,34 +209,41 @@ class DiagnosticsRepository(
                             val latency = System.currentTimeMillis() - startTime
 
                             when {
-                                response.isSuccessful ->
+                                response.isSuccessful -> {
                                     HealthCheckResult(
                                         name = "Backend",
                                         status = HealthStatus.HEALTHY,
                                         detail = "OK (${response.code})",
                                         latencyMs = latency,
                                     )
-                                response.code in 401..403 ->
+                                }
+
+                                response.code in 401..403 -> {
                                     HealthCheckResult(
                                         name = "Backend",
                                         status = HealthStatus.DEGRADED,
                                         detail = "Reachable (Auth required: ${response.code})",
                                         latencyMs = latency,
                                     )
-                                response.code in 500..599 ->
+                                }
+
+                                response.code in 500..599 -> {
                                     HealthCheckResult(
                                         name = "Backend",
                                         status = HealthStatus.DOWN,
                                         detail = "Server error (${response.code})",
                                         latencyMs = latency,
                                     )
-                                else ->
+                                }
+
+                                else -> {
                                     HealthCheckResult(
                                         name = "Backend",
                                         status = HealthStatus.DEGRADED,
                                         detail = "Unexpected response (${response.code})",
                                         latencyMs = latency,
                                     )
+                                }
                             }
                         }
                     }
@@ -292,8 +302,8 @@ class DiagnosticsRepository(
     /**
      * Check critical permissions.
      */
-    fun checkPermissions(): List<PermissionStatus> {
-        return listOf(
+    fun checkPermissions(): List<PermissionStatus> =
+        listOf(
             PermissionStatus(
                 name = "Camera",
                 isGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED,
@@ -301,11 +311,14 @@ class DiagnosticsRepository(
             ),
             PermissionStatus(
                 name = "Microphone",
-                isGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED,
+                isGranted =
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.RECORD_AUDIO,
+                    ) == PackageManager.PERMISSION_GRANTED,
                 permissionKey = Manifest.permission.RECORD_AUDIO,
             ),
         )
-    }
 
     /**
      * Check platform capabilities.
@@ -387,15 +400,25 @@ class DiagnosticsRepository(
 
         // Determine base URL source
         val devOverride = configProvider.devOverride()
-        val baseUrlSource = when {
-            !BuildConfig.DEBUG -> BaseUrlSource.BUILD_CONFIG
-            devOverride == null -> BaseUrlSource.BUILD_CONFIG
-            !devOverride.isBaseUrlOverridden() -> BaseUrlSource.BUILD_CONFIG
-            else -> {
-                // Check if override is stale (could expand this logic)
-                BaseUrlSource.DEV_OVERRIDE
+        val baseUrlSource =
+            when {
+                !BuildConfig.DEBUG -> {
+                    BaseUrlSource.BUILD_CONFIG
+                }
+
+                devOverride == null -> {
+                    BaseUrlSource.BUILD_CONFIG
+                }
+
+                !devOverride.isBaseUrlOverridden() -> {
+                    BaseUrlSource.BUILD_CONFIG
+                }
+
+                else -> {
+                    // Check if override is stale (could expand this logic)
+                    BaseUrlSource.DEV_OVERRIDE
+                }
             }
-        }
 
         return AppConfigSnapshot(
             versionName = BuildConfig.VERSION_NAME,

@@ -39,7 +39,8 @@ class ObjectDetectionEngine {
     // ML Kit object detector configured for single image mode (more accurate)
     private val singleImageDetector: ObjectDetector by lazy {
         val options =
-            ObjectDetectorOptions.Builder()
+            ObjectDetectorOptions
+                .Builder()
                 .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE) // Better for tap capture
                 .enableMultipleObjects() // Detect multiple objects per frame
                 .enableClassification() // Enable labels for category mapping
@@ -56,7 +57,8 @@ class ObjectDetectionEngine {
     // ML Kit object detector for streaming (scanning mode)
     private val streamDetector: ObjectDetector by lazy {
         val options =
-            ObjectDetectorOptions.Builder()
+            ObjectDetectorOptions
+                .Builder()
                 .setDetectorMode(ObjectDetectorOptions.STREAM_MODE) // Optimized for video frames
                 .enableMultipleObjects() // Detect multiple objects per frame
                 .enableClassification() // Enable labels for category mapping
@@ -178,14 +180,16 @@ class ObjectDetectionEngine {
 
             // Force initialization of both detectors to trigger model download
             val streamOptions =
-                ObjectDetectorOptions.Builder()
+                ObjectDetectorOptions
+                    .Builder()
                     .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
                     .enableMultipleObjects()
                     .enableClassification()
                     .build()
 
             val singleOptions =
-                ObjectDetectorOptions.Builder()
+                ObjectDetectorOptions
+                    .Builder()
                     .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
                     .enableMultipleObjects()
                     .enableClassification()

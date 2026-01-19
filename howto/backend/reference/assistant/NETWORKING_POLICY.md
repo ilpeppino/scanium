@@ -1,10 +1,13 @@
 ***REMOVED*** Assistant Networking Policy
 
-This document describes the unified HTTP timeout and retry policy for all assistant-related network requests in the Scanium Android app.
+This document describes the unified HTTP timeout and retry policy for all assistant-related network
+requests in the Scanium Android app.
 
 ***REMOVED******REMOVED*** Overview
 
-All assistant HTTP clients use a centralized configuration (`AssistantHttpConfig`) and factory (`AssistantOkHttpClientFactory`) to ensure consistent behavior across:
+All assistant HTTP clients use a centralized configuration (`AssistantHttpConfig`) and factory (
+`AssistantOkHttpClientFactory`) to ensure consistent behavior across:
+
 - Chat requests (text and multipart with images)
 - Preflight health checks
 - Warmup requests
@@ -15,49 +18,49 @@ All assistant HTTP clients use a centralized configuration (`AssistantHttpConfig
 
 Used for actual assistant chat interactions:
 
-| Timeout | Value | Rationale |
-|---------|-------|-----------|
-| Connect | 15s | Accommodates mobile network variability |
-| Read | 60s | LLM responses can take time, especially with vision |
-| Write | 30s | Multipart uploads with images need time |
-| Call | 75s | Overall request budget (connect + read + processing overhead) |
-| Retries | 1 | One retry on transient errors |
+| Timeout | Value | Rationale                                                     |
+|---------|-------|---------------------------------------------------------------|
+| Connect | 15s   | Accommodates mobile network variability                       |
+| Read    | 60s   | LLM responses can take time, especially with vision           |
+| Write   | 30s   | Multipart uploads with images need time                       |
+| Call    | 75s   | Overall request budget (connect + read + processing overhead) |
+| Retries | 1     | One retry on transient errors                                 |
 
 ***REMOVED******REMOVED******REMOVED*** Preflight Health Checks
 
 Used for quick backend availability checks:
 
-| Timeout | Value | Rationale |
-|---------|-------|-----------|
-| Connect | 3s | Fast fail for unavailable backends |
-| Read | 3s | Health checks should respond quickly |
-| Write | 3s | Minimal payload |
-| Call | 5s | Total budget for health check |
-| Retries | 0 | No retries - just report current status |
+| Timeout | Value | Rationale                               |
+|---------|-------|-----------------------------------------|
+| Connect | 3s    | Fast fail for unavailable backends      |
+| Read    | 3s    | Health checks should respond quickly    |
+| Write   | 3s    | Minimal payload                         |
+| Call    | 5s    | Total budget for health check           |
+| Retries | 0     | No retries - just report current status |
 
 ***REMOVED******REMOVED******REMOVED*** Warmup Requests
 
 Used for priming connections and caches:
 
-| Timeout | Value | Rationale |
-|---------|-------|-----------|
-| Connect | 5s | Moderate tolerance |
-| Read | 10s | Not time-critical |
-| Write | 5s | Empty or minimal payload |
-| Call | 15s | Generous for background operation |
-| Retries | 0 | No retries - warmup is best-effort |
+| Timeout | Value | Rationale                          |
+|---------|-------|------------------------------------|
+| Connect | 5s    | Moderate tolerance                 |
+| Read    | 10s   | Not time-critical                  |
+| Write   | 5s    | Empty or minimal payload           |
+| Call    | 15s   | Generous for background operation  |
+| Retries | 0     | No retries - warmup is best-effort |
 
 ***REMOVED******REMOVED******REMOVED*** Test Configuration
 
 Used in unit tests with MockWebServer:
 
-| Timeout | Value | Rationale |
-|---------|-------|-----------|
-| Connect | 5s | Fast enough for tests |
-| Read | 5s | Fail fast on test issues |
-| Write | 5s | Consistent |
-| Call | 10s | Overall test timeout |
-| Retries | 0 | Tests should control retry behavior explicitly |
+| Timeout | Value | Rationale                                      |
+|---------|-------|------------------------------------------------|
+| Connect | 5s    | Fast enough for tests                          |
+| Read    | 5s    | Fail fast on test issues                       |
+| Write   | 5s    | Consistent                                     |
+| Call    | 10s   | Overall test timeout                           |
+| Retries | 0     | Tests should control retry behavior explicitly |
 
 ***REMOVED******REMOVED*** Retry Policy
 
@@ -86,15 +89,15 @@ A 500ms delay is applied between retry attempts to avoid overwhelming the server
 
 ***REMOVED******REMOVED*** Error Mapping to User Messages
 
-| Error Type | HTTP Code(s) | User Message |
-|------------|--------------|--------------|
-| NETWORK_TIMEOUT | Socket timeout | "Assistant request timed out" |
-| NETWORK_UNREACHABLE | UnknownHost, ConnectException | "Unable to reach assistant server" |
-| UNAUTHORIZED | 401, 403 | "Not authorized to use assistant" |
-| RATE_LIMITED | 429 | "Assistant rate limit exceeded" |
-| VALIDATION_ERROR | 400 | "Message could not be processed" |
-| PROVIDER_UNAVAILABLE | 503 | "Assistant provider unavailable" |
-| PROVIDER_NOT_CONFIGURED | - | "Assistant backend not configured" |
+| Error Type              | HTTP Code(s)                  | User Message                       |
+|-------------------------|-------------------------------|------------------------------------|
+| NETWORK_TIMEOUT         | Socket timeout                | "Assistant request timed out"      |
+| NETWORK_UNREACHABLE     | UnknownHost, ConnectException | "Unable to reach assistant server" |
+| UNAUTHORIZED            | 401, 403                      | "Not authorized to use assistant"  |
+| RATE_LIMITED            | 429                           | "Assistant rate limit exceeded"    |
+| VALIDATION_ERROR        | 400                           | "Message could not be processed"   |
+| PROVIDER_UNAVAILABLE    | 503                           | "Assistant provider unavailable"   |
+| PROVIDER_NOT_CONFIGURED | -                             | "Assistant backend not configured" |
 
 ***REMOVED******REMOVED*** Logging
 
@@ -113,12 +116,14 @@ AssistantHttp: Assistant HTTP Policy Initialized:
 ***REMOVED******REMOVED******REMOVED*** Per-Request Logging
 
 Each client type logs its configuration at DEBUG level:
+
 - `AssistantHttp[chat]: AssistantHttpConfig(...)`
 - `AssistantHttp[preflight]: AssistantHttpConfig(...)`
 
 ***REMOVED******REMOVED******REMOVED*** Retry Logging
 
 Retry attempts are logged at DEBUG level:
+
 ```
 AssistantRetry: Transient error 503 on attempt 1/2, will retry in 500ms
 AssistantRetry: Request succeeded on attempt 2/2
@@ -150,23 +155,25 @@ adb logcat -s AssistantHttp:* AssistantRetry:*
 
 ***REMOVED******REMOVED*** Implementation Files
 
-| File | Purpose |
-|------|---------|
-| `AssistantHttpConfig.kt` | Timeout configuration data class |
+| File                              | Purpose                                |
+|-----------------------------------|----------------------------------------|
+| `AssistantHttpConfig.kt`          | Timeout configuration data class       |
 | `AssistantOkHttpClientFactory.kt` | Client factory with standardized setup |
-| `AssistantRetryInterceptor.kt` | Retry logic for transient errors |
-| `AssistantRepository.kt` | Chat request handling |
-| `AssistantPreflight.kt` | Health check handling |
+| `AssistantRetryInterceptor.kt`    | Retry logic for transient errors       |
+| `AssistantRepository.kt`          | Chat request handling                  |
+| `AssistantPreflight.kt`           | Health check handling                  |
 
 ***REMOVED******REMOVED*** Test Coverage
 
 Unit tests verify:
+
 - All predefined configurations have correct values
 - Retry interceptor handles all error types correctly
 - Factory creates clients with proper timeouts
 - Tests use consistent TEST configuration
 
 Test files:
+
 - `AssistantHttpConfigTest.kt`
 - `AssistantRetryInterceptorTest.kt`
 - `AssistantOkHttpClientFactoryTest.kt`

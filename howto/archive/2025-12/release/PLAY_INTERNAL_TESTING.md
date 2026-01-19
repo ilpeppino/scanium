@@ -1,6 +1,7 @@
 ***REMOVED*** Google Play Internal Testing Guide
 
-This guide describes how to prepare and deploy Scanium to the Google Play Store for internal testing.
+This guide describes how to prepare and deploy Scanium to the Google Play Store for internal
+testing.
 
 ***REMOVED******REMOVED*** 1. Prerequisites
 
@@ -22,6 +23,7 @@ scanium.key.password=your_key_password
 **WARNING:** Never commit your keystore file or passwords to the repository.
 
 For CI/CD, use environment variables:
+
 - `SCANIUM_KEYSTORE_FILE`
 - `SCANIUM_KEYSTORE_PASSWORD`
 - `SCANIUM_KEY_ALIAS`
@@ -30,20 +32,25 @@ For CI/CD, use environment variables:
 ***REMOVED******REMOVED*** 3. Build Commands
 
 ***REMOVED******REMOVED******REMOVED*** Run Tests First
+
 ```bash
 ./gradlew test
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Debug Build (for local testing)
+
 ```bash
 ./gradlew assembleDebug
 ```
+
 Output: `androidApp/build/outputs/apk/debug/androidApp-debug.apk`
 
 ***REMOVED******REMOVED******REMOVED*** Release Bundle (for Play Store)
+
 ```bash
 ./gradlew bundleRelease
 ```
+
 Output: `androidApp/build/outputs/bundle/release/androidApp-release.aab`
 
 ***REMOVED******REMOVED*** 4. Versioning
@@ -52,6 +59,7 @@ Before building, ensure the version code and name are bumped if necessary.
 See [VERSIONING.md](VERSIONING.md) for the strategy.
 
 You can set versions via environment variables for CI:
+
 - `SCANIUM_VERSION_CODE`
 - `SCANIUM_VERSION_NAME`
 
@@ -76,6 +84,7 @@ You can set versions via environment variables for CI:
 After installing from the Play Store, verify the following:
 
 ***REMOVED******REMOVED******REMOVED*** Core Functionality
+
 - [ ] **Scan Mode:** Continuous scanning works smoothly
 - [ ] **Object Detection:** Items are detected and aggregated
 - [ ] **Cloud Classification:** If enabled, enhanced labels appear after stabilization
@@ -83,6 +92,7 @@ After installing from the Play Store, verify the following:
 - [ ] **Copy/Share:** Posting Assist works and copies data to clipboard
 
 ***REMOVED******REMOVED******REMOVED*** Assistant & Voice (PR6+)
+
 - [ ] **Assistant Toggle:** Can enable/disable in Settings → Features
 - [ ] **Assistant Chat:** Can send messages and receive responses
 - [ ] **Assistant Images Toggle:** Can enable/disable image sending
@@ -94,6 +104,7 @@ After installing from the Play Store, verify the following:
 - [ ] **No Background Mic:** Verify mic doesn't record when app backgrounded
 
 ***REMOVED******REMOVED******REMOVED*** Privacy & Data
+
 - [ ] **Privacy Policy:** Accessible via Settings → Legal
 - [ ] **Terms of Service:** Accessible via Settings → Legal
 - [ ] **Data Usage:** Accessible via Settings → Privacy & Data
@@ -102,6 +113,7 @@ After installing from the Play Store, verify the following:
 - [ ] **Crash Reporting:** Opt-in toggle works (default OFF)
 
 ***REMOVED******REMOVED******REMOVED*** Network Failure Handling
+
 - [ ] **Airplane Mode + Cloud:** Shows clear error, falls back gracefully
 - [ ] **Airplane Mode + Assistant:** Shows clear error message
 - [ ] **API Timeout:** Shows retry option, no infinite spinner
@@ -109,23 +121,26 @@ After installing from the Play Store, verify the following:
 ***REMOVED******REMOVED*** 8. Assistant + Voice Specific Tests
 
 ***REMOVED******REMOVED******REMOVED*** Toggle Behavior
-| Test | Expected Result | Pass |
-|------|-----------------|------|
-| Assistant OFF, send message | Should not work or show upsell | [ ] |
-| Assistant ON, Images OFF, send message | Message sent, no images in request | [ ] |
-| Assistant ON, Images ON, send message | Message sent with thumbnails | [ ] |
-| Voice Mode OFF | Mic button not visible | [ ] |
-| Voice Mode ON | Mic button visible in assistant input | [ ] |
+
+| Test                                   | Expected Result                       | Pass |
+|----------------------------------------|---------------------------------------|------|
+| Assistant OFF, send message            | Should not work or show upsell        | [ ]  |
+| Assistant ON, Images OFF, send message | Message sent, no images in request    | [ ]  |
+| Assistant ON, Images ON, send message  | Message sent with thumbnails          | [ ]  |
+| Voice Mode OFF                         | Mic button not visible                | [ ]  |
+| Voice Mode ON                          | Mic button visible in assistant input | [ ]  |
 
 ***REMOVED******REMOVED******REMOVED*** Microphone Indicator
-| Test | Expected Result | Pass |
-|------|-----------------|------|
-| Tap mic button | Indicator shows "Listening..." | [ ] |
-| Speak, wait for result | Indicator shows "Transcribing..." then disappears | [ ] |
-| Tap stop during listening | Recording stops immediately | [ ] |
-| Background app during listening | Recording stops, no crash | [ ] |
+
+| Test                            | Expected Result                                   | Pass |
+|---------------------------------|---------------------------------------------------|------|
+| Tap mic button                  | Indicator shows "Listening..."                    | [ ]  |
+| Speak, wait for result          | Indicator shows "Transcribing..." then disappears | [ ]  |
+| Tap stop during listening       | Recording stops immediately                       | [ ]  |
+| Background app during listening | Recording stops, no crash                         | [ ]  |
 
 ***REMOVED******REMOVED******REMOVED*** No Background Mic
+
 1. Enable Voice Mode
 2. Open Assistant screen
 3. Start listening (tap mic)
@@ -135,11 +150,12 @@ After installing from the Play Store, verify the following:
 7. **Expected:** State is IDLE, not LISTENING
 
 ***REMOVED******REMOVED******REMOVED*** TTS Playback
-| Test | Expected Result | Pass |
-|------|-----------------|------|
-| Speak Answers OFF, receive response | No audio playback | [ ] |
-| Speak Answers ON, receive response | Response spoken aloud | [ ] |
-| Tap stop during speaking | Audio stops immediately | [ ] |
+
+| Test                                | Expected Result         | Pass |
+|-------------------------------------|-------------------------|------|
+| Speak Answers OFF, receive response | No audio playback       | [ ]  |
+| Speak Answers ON, receive response  | Response spoken aloud   | [ ]  |
+| Tap stop during speaking            | Audio stops immediately | [ ]  |
 
 ***REMOVED******REMOVED*** 9. Logcat Filters for Verification
 

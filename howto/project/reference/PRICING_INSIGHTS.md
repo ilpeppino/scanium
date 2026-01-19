@@ -2,7 +2,8 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The Pricing Insights feature uses OpenAI's chat completion API to search the web for comparable marketplace listings and compute price ranges for items.
+The Pricing Insights feature uses OpenAI's chat completion API to search the web for comparable
+marketplace listings and compute price ranges for items.
 
 ***REMOVED******REMOVED*** How It Works
 
@@ -148,7 +149,10 @@ PRICING_CATALOG_PATH=config/marketplaces/marketplaces.eu.json
 - Temperature: 0.2 (lowered for factual extraction)
 - Max Tokens: 2000
 - Response Format: JSON object
-- **Note**: As of Phase 3, OpenAI's standard API doesn't have built-in web browsing. The service is designed to support web_search when OpenAI makes it available in the API (currently only in ChatGPT). The code includes placeholders for `tools: [{ type: 'web_search' }]` for future integration.
+- **Note**: As of Phase 3, OpenAI's standard API doesn't have built-in web browsing. The service is
+  designed to support web_search when OpenAI makes it available in the API (currently only in
+  ChatGPT). The code includes placeholders for `tools: [{ type: 'web_search' }]` for future
+  integration.
 
 ***REMOVED******REMOVED*** Security
 

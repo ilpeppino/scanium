@@ -4,11 +4,14 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import com.scanium.app.auth.AuthRepository
-import com.scanium.app.items.network.*
+import com.scanium.app.items.ScannedItem
+import com.scanium.app.items.network.CreateItemRequest
+import com.scanium.app.items.network.ItemDto
+import com.scanium.app.items.network.ItemsApi
+import com.scanium.app.items.network.UpdateItemRequest
 import com.scanium.app.items.persistence.ScannedItemDao
 import com.scanium.app.items.persistence.ScannedItemEntity
 import com.scanium.app.items.persistence.ScannedItemSyncer
-import com.scanium.app.items.ScannedItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,8 +30,14 @@ sealed class SyncResult {
     ) : SyncResult()
 
     object NotAuthenticated : SyncResult()
-    data class NetworkError(val error: Throwable) : SyncResult()
-    data class ServerError(val error: Throwable) : SyncResult()
+
+    data class NetworkError(
+        val error: Throwable,
+    ) : SyncResult()
+
+    data class ServerError(
+        val error: Throwable,
+    ) : SyncResult()
 }
 
 /**
@@ -106,9 +115,13 @@ class ItemSyncManager
                 } catch (e: Exception) {
                     Log.e(TAG, "Sync failed", e)
                     when {
-                        e.message?.contains("network", ignoreCase = true) == true ->
+                        e.message?.contains("network", ignoreCase = true) == true -> {
                             SyncResult.NetworkError(e)
-                        else -> SyncResult.ServerError(e)
+                        }
+
+                        else -> {
+                            SyncResult.ServerError(e)
+                        }
                     }
                 }
             }
@@ -128,11 +141,13 @@ class ItemSyncManager
                             val result = createItemOnServer(item)
                             if (result) successes.add(item.id) else errors.add(item.id to "Create failed")
                         }
+
                         item.deletedAt != null && item.serverId != null -> {
                             // DELETE: Tombstone
                             val result = deleteItemOnServer(item.serverId)
                             if (result) successes.add(item.id) else errors.add(item.id to "Delete failed")
                         }
+
                         item.serverId != null -> {
                             // UPDATE: Existing item modified
                             val result = updateItemOnServer(item)
@@ -357,11 +372,13 @@ class ItemSyncManager
                             itemDao.upsertAll(listOf(entity))
                             Log.d(TAG, "Inserted new item from server: ${serverItem.id}")
                         }
+
                         localItem.needsSync == 1 -> {
                             // Conflict: local has pending changes AND server has changes
                             conflicts++
                             resolveConflict(localItem, serverItem)
                         }
+
                         else -> {
                             // No local changes - apply server update
                             val entity = serverItem.toEntity(localId = localItem.id)
@@ -396,6 +413,7 @@ class ItemSyncManager
                     Log.d(TAG, "Conflict resolved: Client wins (${local.id})")
                     // Local item already marked needsSync=1, will push on next sync
                 }
+
                 else -> {
                     // Server wins: Overwrite local with server version
                     Log.d(TAG, "Conflict resolved: Server wins (${local.id})")
@@ -423,8 +441,8 @@ class ItemSyncManager
         /**
          * Convert ItemDto to ScannedItemEntity
          */
-        private fun ItemDto.toEntity(localId: String? = null): ScannedItemEntity {
-            return ScannedItemEntity(
+        private fun ItemDto.toEntity(localId: String? = null): ScannedItemEntity =
+            ScannedItemEntity(
                 id = localId ?: id, // Use localId if provided (for existing items)
                 category = category ?: "UNKNOWN",
                 priceLow = priceEstimateLow ?: 0.0,
@@ -482,11 +500,11 @@ class ItemSyncManager
                 needsSync = 0, // Server version is always synced
                 lastSyncedAt = System.currentTimeMillis(),
                 syncVersion = syncVersion,
-                clientUpdatedAt = clientUpdatedAt?.let { Instant.parse(it).toEpochMilli() }
-                    ?: Instant.parse(updatedAt).toEpochMilli(),
+                clientUpdatedAt =
+                    clientUpdatedAt?.let { Instant.parse(it).toEpochMilli() }
+                        ?: Instant.parse(updatedAt).toEpochMilli(),
                 deletedAt = deletedAt?.let { Instant.parse(it).toEpochMilli() },
             )
-        }
     }
 
 /**

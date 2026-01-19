@@ -57,22 +57,28 @@ sealed class VisionEnrichmentState {
     /**
      * Returns the item ID associated with this state, or null if idle.
      */
-    fun itemIdOrNull(): String? = when (this) {
-        is Idle -> null
-        is Enriching -> itemId
-        is Ready -> itemId
-        is Failed -> itemId
-    }
+    fun itemIdOrNull(): String? =
+        when (this) {
+            is Idle -> null
+            is Enriching -> itemId
+            is Ready -> itemId
+            is Failed -> itemId
+        }
 
     /**
      * Returns a user-friendly status message for this state.
      */
-    fun getStatusMessage(): String? = when (this) {
-        is Idle -> null
-        is Enriching -> "Extracting info from photo…"
-        is Ready -> null // Don't show a message when ready
-        is Failed -> error
-    }
+    fun getStatusMessage(): String? =
+        when (this) {
+            is Idle -> null
+
+            is Enriching -> "Extracting info from photo…"
+
+            is Ready -> null
+
+            // Don't show a message when ready
+            is Failed -> error
+        }
 }
 
 /**
@@ -81,12 +87,25 @@ sealed class VisionEnrichmentState {
  */
 fun VisionEnrichmentState.transitionTo(newState: VisionEnrichmentState): VisionEnrichmentState {
     // Validate state transitions
-    val isValid = when (this) {
-        is VisionEnrichmentState.Idle -> newState is VisionEnrichmentState.Enriching
-        is VisionEnrichmentState.Enriching -> newState is VisionEnrichmentState.Ready || newState is VisionEnrichmentState.Failed || newState is VisionEnrichmentState.Idle
-        is VisionEnrichmentState.Ready -> newState is VisionEnrichmentState.Idle || newState is VisionEnrichmentState.Enriching
-        is VisionEnrichmentState.Failed -> newState is VisionEnrichmentState.Idle || newState is VisionEnrichmentState.Enriching
-    }
+    val isValid =
+        when (this) {
+            is VisionEnrichmentState.Idle -> {
+                newState is VisionEnrichmentState.Enriching
+            }
+
+            is VisionEnrichmentState.Enriching -> {
+                newState is VisionEnrichmentState.Ready || newState is VisionEnrichmentState.Failed ||
+                    newState is VisionEnrichmentState.Idle
+            }
+
+            is VisionEnrichmentState.Ready -> {
+                newState is VisionEnrichmentState.Idle || newState is VisionEnrichmentState.Enriching
+            }
+
+            is VisionEnrichmentState.Failed -> {
+                newState is VisionEnrichmentState.Idle || newState is VisionEnrichmentState.Enriching
+            }
+        }
 
     if (!isValid) {
         android.util.Log.w("VisionEnrichmentState", "Invalid transition from $this to $newState")

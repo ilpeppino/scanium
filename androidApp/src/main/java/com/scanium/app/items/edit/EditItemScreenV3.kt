@@ -39,12 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import com.scanium.app.ftue.EditItemFtueOverlay
-import com.scanium.app.ftue.EditItemFtueViewModel
-import com.scanium.app.ftue.EditHintType
-import com.scanium.app.ftue.FtueRepository
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -52,6 +48,10 @@ import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.ftue.EditHintType
+import com.scanium.app.ftue.EditItemFtueOverlay
+import com.scanium.app.ftue.EditItemFtueViewModel
+import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
@@ -115,11 +115,12 @@ fun EditItemScreenV3(
             if (editFtueCurrentStep != com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.IDLE &&
                 editFtueCurrentStep != com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.COMPLETED
             ) {
-                android.widget.Toast.makeText(
-                    toastContext,
-                    "FTUE EditItem step=${editFtueCurrentStep.name}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                android.widget.Toast
+                    .makeText(
+                        toastContext,
+                        "FTUE EditItem step=${editFtueCurrentStep.name}",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
             }
         }
     }
@@ -127,12 +128,13 @@ fun EditItemScreenV3(
     var firstFieldRect by remember { mutableStateOf<Rect?>(null) }
     var conditionPriceFieldRect by remember { mutableStateOf<Rect?>(null) }
 
-    val editState = rememberItemEditState(
-        item = item,
-        itemId = itemId,
-        itemsViewModel = itemsViewModel,
-        exportAssistantViewModelFactory = exportAssistantViewModelFactory,
-    )
+    val editState =
+        rememberItemEditState(
+            item = item,
+            itemId = itemId,
+            itemsViewModel = itemsViewModel,
+            exportAssistantViewModelFactory = exportAssistantViewModelFactory,
+        )
 
     // Observe Export Assistant state and extract pricing insights (Phase 2)
     if (editState.exportAssistantViewModel != null) {
@@ -167,7 +169,14 @@ fun EditItemScreenV3(
     }
 
     // Track field edits for FTUE progression
-    LaunchedEffect(editState.brandField, editState.productTypeField, editState.modelField, editState.colorField, editState.sizeField, editState.materialField) {
+    LaunchedEffect(
+        editState.brandField,
+        editState.productTypeField,
+        editState.modelField,
+        editState.colorField,
+        editState.sizeField,
+        editState.materialField,
+    ) {
         if (editFtueCurrentStep == com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.DETAILS_HINT_SHOWN) {
             editItemFtueViewModel.onFieldEdited()
         }
@@ -197,9 +206,10 @@ fun EditItemScreenV3(
             },
         ) { padding ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(stringResource(R.string.edit_item_not_found), style = MaterialTheme.typography.bodyLarge)
@@ -228,10 +238,11 @@ fun EditItemScreenV3(
                 shadowElevation = 8.dp,
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     // Cancel button
@@ -272,18 +283,26 @@ fun EditItemScreenV3(
                             }
                         },
                         enabled = true, // Always clickable to show inlay when disabled
-                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (aiAssistantEnabled) {
-                                MaterialTheme.colorScheme.primary
+                        colors =
+                            androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                                contentColor =
+                                    if (aiAssistantEnabled) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    },
+                            ),
+                        modifier =
+                            if (tourViewModel != null) {
+                                Modifier
+                                    .weight(1f)
+                                    .tourTarget("edit_ai_button", tourViewModel)
+                                    .testTag("editItem_aiButton")
                             } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                Modifier
+                                    .weight(1f)
+                                    .testTag("editItem_aiButton")
                             },
-                        ),
-                        modifier = if (tourViewModel != null) {
-                            Modifier.weight(1f).tourTarget("edit_ai_button", tourViewModel).testTag("editItem_aiButton")
-                        } else {
-                            Modifier.weight(1f).testTag("editItem_aiButton")
-                        }
                     ) {
                         Icon(
                             Icons.Default.AutoAwesome,
@@ -316,11 +335,14 @@ fun EditItemScreenV3(
                             }
                             onBack()
                         },
-                        modifier = if (tourViewModel != null) {
-                            Modifier.weight(1f).tourTarget("edit_save_button", tourViewModel)
-                        } else {
-                            Modifier.weight(1f)
-                        }
+                        modifier =
+                            if (tourViewModel != null) {
+                                Modifier
+                                    .weight(1f)
+                                    .tourTarget("edit_save_button", tourViewModel)
+                            } else {
+                                Modifier.weight(1f)
+                            },
                     ) {
                         Text(stringResource(R.string.common_save))
                     }
@@ -336,31 +358,33 @@ fun EditItemScreenV3(
             tourViewModel = tourViewModel,
             onFirstFieldBoundsChanged = { bounds -> firstFieldRect = bounds },
             onConditionPriceBoundsChanged = { bounds -> conditionPriceFieldRect = bounds },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .windowInsetsPadding(WindowInsets.ime)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .windowInsetsPadding(WindowInsets.ime)
+                    .padding(horizontal = 16.dp),
         )
     }
 
     // Photo Gallery Dialog
     if (editState.showPhotoGallery) {
         // Build list of gallery photo refs
-        val galleryPhotos = remember(currentItem) {
-            buildList {
-                // Add primary thumbnail first
-                (currentItem.thumbnailRef ?: currentItem.thumbnail)?.let { imageRef ->
-                    add(GalleryPhotoRef.FromImageRef(imageRef))
-                }
-                // Add additional photos
-                currentItem.additionalPhotos.forEach { photo ->
-                    photo.uri?.let { path ->
-                        add(GalleryPhotoRef.FromFilePath(path))
+        val galleryPhotos =
+            remember(currentItem) {
+                buildList {
+                    // Add primary thumbnail first
+                    (currentItem.thumbnailRef ?: currentItem.thumbnail)?.let { imageRef ->
+                        add(GalleryPhotoRef.FromImageRef(imageRef))
+                    }
+                    // Add additional photos
+                    currentItem.additionalPhotos.forEach { photo ->
+                        photo.uri?.let { path ->
+                            add(GalleryPhotoRef.FromFilePath(path))
+                        }
                     }
                 }
             }
-        }
 
         if (galleryPhotos.isNotEmpty()) {
             PhotoGalleryDialog(
@@ -380,8 +404,8 @@ fun EditItemScreenV3(
                 Text(
                     stringResource(
                         R.string.edit_item_delete_photos_message,
-                        editState.selectedPhotoIds.size
-                    )
+                        editState.selectedPhotoIds.size,
+                    ),
                 )
             },
             confirmButton = {
@@ -397,7 +421,7 @@ fun EditItemScreenV3(
                                 editState.isDeletingPhotos = false
                                 editState.isSelectionMode = false
                                 editState.selectedPhotoIds = setOf()
-                            }
+                            },
                         )
                     },
                     enabled = !editState.isDeletingPhotos,
@@ -419,7 +443,11 @@ fun EditItemScreenV3(
     // Export Assistant Bottom Sheet
     if (editState.showExportAssistantSheet && editState.exportAssistantViewModel != null) {
         val settingsRepository = remember { SettingsRepository(context) }
-        val ttsManager = remember { com.scanium.app.assistant.tts.TtsManager(context, settingsRepository) }
+        val ttsManager =
+            remember {
+                com.scanium.app.assistant.tts
+                    .TtsManager(context, settingsRepository)
+            }
         ExportAssistantSheet(
             viewModel = editState.exportAssistantViewModel,
             settingsRepository = settingsRepository,
@@ -456,7 +484,7 @@ fun EditItemScreenV3(
             text = {
                 Text(
                     stringResource(R.string.assistant_disabled_message),
-                    modifier = Modifier.testTag("aiDisabled_inlay")
+                    modifier = Modifier.testTag("aiDisabled_inlay"),
                 )
             },
             confirmButton = {
@@ -465,14 +493,14 @@ fun EditItemScreenV3(
                         editState.showAiDisabledInlay = false
                         onNavigateToSettings()
                     },
-                    modifier = Modifier.testTag("aiDisabled_openSettings")
+                    modifier = Modifier.testTag("aiDisabled_openSettings"),
                 ) {
                     Text(stringResource(R.string.assistant_disabled_open_settings))
                 }
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { editState.showAiDisabledInlay = false }
+                    onClick = { editState.showAiDisabledInlay = false },
                 ) {
                     Text(stringResource(R.string.common_cancel))
                 }
@@ -516,7 +544,6 @@ fun EditItemScreenV3(
         )
     }
 }
-
 
 /**
  * Save field values to item attributes with USER source.

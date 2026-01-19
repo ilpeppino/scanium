@@ -18,7 +18,7 @@ services:
     ***REMOVED*** - Do NOT pass --loglevel/--transport-loglevel as flags.
     ***REMOVED*** - Your image already has entrypoint ["cloudflared","--no-autoupdate"] (as seen in docker inspect).
     ***REMOVED*** - We only provide the subcommand + token.
-    command: ["tunnel","--config","/etc/cloudflared/config.yml","run","--token","${CLOUDFLARED_TOKEN}"]
+    command: [ "tunnel","--config","/etc/cloudflared/config.yml","run","--token","${CLOUDFLARED_TOKEN}" ]
 
     ***REMOVED*** Use absolute path to config.yml
     volumes:

@@ -1,7 +1,6 @@
 package com.scanium.app.camera
 
 import android.graphics.Bitmap
-import android.graphics.Color as AndroidColor
 import android.util.Size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,6 +20,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.math.sqrt
+import android.graphics.Color as AndroidColor
 
 /**
  * Golden/Snapshot tests for DetectionOverlay to lock down rendering behavior.
@@ -75,20 +75,22 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenSingleEyeDetection_thenRendersSubtleBox() {
         // Arrange - Create a centered detection in EYE state
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(
-                left = 0.3f,
-                top = 0.3f,
-                right = 0.7f,
-                bottom = 0.6f
-            ),
-            label = "Item",
-            priceText = "",
-            confidence = 0.85f,
-            isReady = false,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.EYE
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm =
+                    NormalizedRect(
+                        left = 0.3f,
+                        top = 0.3f,
+                        right = 0.7f,
+                        bottom = 0.6f,
+                    ),
+                label = "Item",
+                priceText = "",
+                confidence = 0.85f,
+                isReady = false,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.EYE,
+            )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(listOf(detection))
@@ -114,20 +116,22 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenSingleSelectedDetection_thenRendersAccentBox() {
         // Arrange - Create a centered detection in SELECTED state
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(
-                left = 0.25f,
-                top = 0.25f,
-                right = 0.75f,
-                bottom = 0.65f
-            ),
-            label = "Shoes",
-            priceText = "€20-50",
-            confidence = 0.90f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.SELECTED
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm =
+                    NormalizedRect(
+                        left = 0.25f,
+                        top = 0.25f,
+                        right = 0.75f,
+                        bottom = 0.65f,
+                    ),
+                label = "Shoes",
+                priceText = "€20-50",
+                confidence = 0.90f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.SELECTED,
+            )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(listOf(detection))
@@ -157,20 +161,22 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenSingleReadyDetection_thenRendersGreenBox() {
         // Arrange - Create a centered detection in READY state
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(
-                left = 0.2f,
-                top = 0.3f,
-                right = 0.8f,
-                bottom = 0.7f
-            ),
-            label = "T-Shirt",
-            priceText = "€15-30",
-            confidence = 0.92f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.READY
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm =
+                    NormalizedRect(
+                        left = 0.2f,
+                        top = 0.3f,
+                        right = 0.8f,
+                        bottom = 0.7f,
+                    ),
+                label = "T-Shirt",
+                priceText = "€15-30",
+                confidence = 0.92f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.READY,
+            )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(listOf(detection))
@@ -200,20 +206,22 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenSingleLockedDetection_thenRendersBrightGreenThickBox() {
         // Arrange - Create a centered detection in LOCKED state
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(
-                left = 0.25f,
-                top = 0.35f,
-                right = 0.75f,
-                bottom = 0.65f
-            ),
-            label = "Sneakers",
-            priceText = "€80-120",
-            confidence = 0.95f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.LOCKED
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm =
+                    NormalizedRect(
+                        left = 0.25f,
+                        top = 0.35f,
+                        right = 0.75f,
+                        bottom = 0.65f,
+                    ),
+                label = "Sneakers",
+                priceText = "€80-120",
+                confidence = 0.95f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.LOCKED,
+            )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(listOf(detection))
@@ -243,44 +251,45 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenMultipleDetectionsWithDifferentStates_thenAllRenderCorrectly() {
         // Arrange - Create multiple detections with different states
-        val detections = listOf(
-            OverlayTrack(
-                bboxNorm = NormalizedRect(0.1f, 0.1f, 0.4f, 0.3f),
-                label = "Item 1",
-                priceText = "",
-                confidence = 0.7f,
-                isReady = false,
-                priceEstimationStatus = PriceEstimationStatus.Idle,
-                boxStyle = OverlayBoxStyle.EYE
-            ),
-            OverlayTrack(
-                bboxNorm = NormalizedRect(0.5f, 0.15f, 0.85f, 0.35f),
-                label = "Item 2",
-                priceText = "€10-20",
-                confidence = 0.85f,
-                isReady = true,
-                priceEstimationStatus = PriceEstimationStatus.Idle,
-                boxStyle = OverlayBoxStyle.SELECTED
-            ),
-            OverlayTrack(
-                bboxNorm = NormalizedRect(0.15f, 0.45f, 0.5f, 0.7f),
-                label = "Item 3",
-                priceText = "€30-60",
-                confidence = 0.90f,
-                isReady = true,
-                priceEstimationStatus = PriceEstimationStatus.Idle,
-                boxStyle = OverlayBoxStyle.READY
-            ),
-            OverlayTrack(
-                bboxNorm = NormalizedRect(0.55f, 0.5f, 0.9f, 0.8f),
-                label = "Item 4",
-                priceText = "€50-100",
-                confidence = 0.95f,
-                isReady = true,
-                priceEstimationStatus = PriceEstimationStatus.Idle,
-                boxStyle = OverlayBoxStyle.LOCKED
+        val detections =
+            listOf(
+                OverlayTrack(
+                    bboxNorm = NormalizedRect(0.1f, 0.1f, 0.4f, 0.3f),
+                    label = "Item 1",
+                    priceText = "",
+                    confidence = 0.7f,
+                    isReady = false,
+                    priceEstimationStatus = PriceEstimationStatus.Idle,
+                    boxStyle = OverlayBoxStyle.EYE,
+                ),
+                OverlayTrack(
+                    bboxNorm = NormalizedRect(0.5f, 0.15f, 0.85f, 0.35f),
+                    label = "Item 2",
+                    priceText = "€10-20",
+                    confidence = 0.85f,
+                    isReady = true,
+                    priceEstimationStatus = PriceEstimationStatus.Idle,
+                    boxStyle = OverlayBoxStyle.SELECTED,
+                ),
+                OverlayTrack(
+                    bboxNorm = NormalizedRect(0.15f, 0.45f, 0.5f, 0.7f),
+                    label = "Item 3",
+                    priceText = "€30-60",
+                    confidence = 0.90f,
+                    isReady = true,
+                    priceEstimationStatus = PriceEstimationStatus.Idle,
+                    boxStyle = OverlayBoxStyle.READY,
+                ),
+                OverlayTrack(
+                    bboxNorm = NormalizedRect(0.55f, 0.5f, 0.9f, 0.8f),
+                    label = "Item 4",
+                    priceText = "€50-100",
+                    confidence = 0.95f,
+                    isReady = true,
+                    priceEstimationStatus = PriceEstimationStatus.Idle,
+                    boxStyle = OverlayBoxStyle.LOCKED,
+                ),
             )
-        )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(detections)
@@ -310,26 +319,29 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenRotation90_thenCoordinatesMappedCorrectly() {
         // Arrange - Create detection in upright coordinates (portrait display)
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(
-                left = 0.3f,
-                top = 0.4f,
-                right = 0.7f,
-                bottom = 0.6f
-            ),
-            label = "Portrait Item",
-            priceText = "€25",
-            confidence = 0.88f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.SELECTED
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm =
+                    NormalizedRect(
+                        left = 0.3f,
+                        top = 0.4f,
+                        right = 0.7f,
+                        bottom = 0.6f,
+                    ),
+                label = "Portrait Item",
+                priceText = "€25",
+                confidence = 0.88f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.SELECTED,
+            )
 
         // Act - Render with 90-degree rotation (portrait mode)
-        val bitmap = renderAndCapture(
-            detections = listOf(detection),
-            rotationDegrees = 90
-        )
+        val bitmap =
+            renderAndCapture(
+                detections = listOf(detection),
+                rotationDegrees = 90,
+            )
 
         // Assert - Verify box is rendered in correct position
         val hasOutline = verifyBoxOutline(bitmap, detection, TEST_WIDTH, TEST_HEIGHT)
@@ -355,26 +367,29 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenRotation270_thenCoordinatesMappedCorrectly() {
         // Arrange - Create detection
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(
-                left = 0.25f,
-                top = 0.3f,
-                right = 0.75f,
-                bottom = 0.7f
-            ),
-            label = "Rotated Item",
-            priceText = "€40",
-            confidence = 0.91f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.READY
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm =
+                    NormalizedRect(
+                        left = 0.25f,
+                        top = 0.3f,
+                        right = 0.75f,
+                        bottom = 0.7f,
+                    ),
+                label = "Rotated Item",
+                priceText = "€40",
+                confidence = 0.91f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.READY,
+            )
 
         // Act - Render with 270-degree rotation
-        val bitmap = renderAndCapture(
-            detections = listOf(detection),
-            rotationDegrees = 270
-        )
+        val bitmap =
+            renderAndCapture(
+                detections = listOf(detection),
+                rotationDegrees = 270,
+            )
 
         // Assert - Verify box is rendered
         val hasOutline = verifyBoxOutline(bitmap, detection, TEST_WIDTH, TEST_HEIGHT)
@@ -392,20 +407,23 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenDetectionAtTop_thenLabelPositionedBelow() {
         // Arrange - Create detection near top edge (no space for label above)
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(
-                left = 0.3f,
-                top = 0.02f, // Very close to top
-                right = 0.7f,
-                bottom = 0.15f
-            ),
-            label = "Top Item",
-            priceText = "€15-25",
-            confidence = 0.87f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.SELECTED
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm =
+                    NormalizedRect(
+                        left = 0.3f,
+                        // Very close to top
+                        top = 0.02f,
+                        right = 0.7f,
+                        bottom = 0.15f,
+                    ),
+                label = "Top Item",
+                priceText = "€15-25",
+                confidence = 0.87f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.SELECTED,
+            )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(listOf(detection))
@@ -416,13 +434,15 @@ class DetectionOverlayGoldenTest {
 
         // Check that label appears below the box (more non-background pixels in lower region)
         val boxBottomY = (detection.bboxNorm.bottom * TEST_HEIGHT).toInt()
-        val labelRegionBrightness = calculateRegionBrightness(
-            bitmap,
-            x = (detection.bboxNorm.left * TEST_WIDTH).toInt(),
-            y = boxBottomY,
-            width = ((detection.bboxNorm.right - detection.bboxNorm.left) * TEST_WIDTH).toInt(),
-            height = 40 // Label height estimate
-        )
+        val labelRegionBrightness =
+            calculateRegionBrightness(
+                bitmap,
+                x = (detection.bboxNorm.left * TEST_WIDTH).toInt(),
+                y = boxBottomY,
+                width = ((detection.bboxNorm.right - detection.bboxNorm.left) * TEST_WIDTH).toInt(),
+                // Label height estimate
+                height = 40,
+            )
         assertThat(labelRegionBrightness).isGreaterThan(30f) // Label background present
     }
 
@@ -436,20 +456,23 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenDetectionInCenter_thenLabelPositionedAbove() {
         // Arrange - Create detection in center (plenty of space above)
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(
-                left = 0.3f,
-                top = 0.5f, // Center
-                right = 0.7f,
-                bottom = 0.7f
-            ),
-            label = "Center Item",
-            priceText = "€35-70",
-            confidence = 0.93f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.READY
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm =
+                    NormalizedRect(
+                        left = 0.3f,
+                        // Center
+                        top = 0.5f,
+                        right = 0.7f,
+                        bottom = 0.7f,
+                    ),
+                label = "Center Item",
+                priceText = "€35-70",
+                confidence = 0.93f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.READY,
+            )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(listOf(detection))
@@ -460,13 +483,16 @@ class DetectionOverlayGoldenTest {
 
         // Check that label appears above the box
         val boxTopY = (detection.bboxNorm.top * TEST_HEIGHT).toInt()
-        val labelRegionBrightness = calculateRegionBrightness(
-            bitmap,
-            x = (detection.bboxNorm.left * TEST_WIDTH).toInt(),
-            y = maxOf(0, boxTopY - 40), // Region above box
-            width = ((detection.bboxNorm.right - detection.bboxNorm.left) * TEST_WIDTH).toInt(),
-            height = 40 // Label height estimate
-        )
+        val labelRegionBrightness =
+            calculateRegionBrightness(
+                bitmap,
+                x = (detection.bboxNorm.left * TEST_WIDTH).toInt(),
+                // Region above box
+                y = maxOf(0, boxTopY - 40),
+                width = ((detection.bboxNorm.right - detection.bboxNorm.left) * TEST_WIDTH).toInt(),
+                // Label height estimate
+                height = 40,
+            )
         assertThat(labelRegionBrightness).isGreaterThan(30f) // Label background present
     }
 
@@ -481,26 +507,27 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenOverlappingDetections_thenBothRenderCleanly() {
         // Arrange - Create two overlapping detections
-        val detections = listOf(
-            OverlayTrack(
-                bboxNorm = NormalizedRect(0.2f, 0.3f, 0.6f, 0.6f),
-                label = "Background",
-                priceText = "€20",
-                confidence = 0.8f,
-                isReady = true,
-                priceEstimationStatus = PriceEstimationStatus.Idle,
-                boxStyle = OverlayBoxStyle.EYE
-            ),
-            OverlayTrack(
-                bboxNorm = NormalizedRect(0.4f, 0.4f, 0.8f, 0.7f),
-                label = "Foreground",
-                priceText = "€50",
-                confidence = 0.9f,
-                isReady = true,
-                priceEstimationStatus = PriceEstimationStatus.Idle,
-                boxStyle = OverlayBoxStyle.SELECTED
+        val detections =
+            listOf(
+                OverlayTrack(
+                    bboxNorm = NormalizedRect(0.2f, 0.3f, 0.6f, 0.6f),
+                    label = "Background",
+                    priceText = "€20",
+                    confidence = 0.8f,
+                    isReady = true,
+                    priceEstimationStatus = PriceEstimationStatus.Idle,
+                    boxStyle = OverlayBoxStyle.EYE,
+                ),
+                OverlayTrack(
+                    bboxNorm = NormalizedRect(0.4f, 0.4f, 0.8f, 0.7f),
+                    label = "Foreground",
+                    priceText = "€50",
+                    confidence = 0.9f,
+                    isReady = true,
+                    priceEstimationStatus = PriceEstimationStatus.Idle,
+                    boxStyle = OverlayBoxStyle.SELECTED,
+                ),
             )
-        )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(detections)
@@ -522,15 +549,16 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenPriceEstimating_thenLabelRendersProperly() {
         // Arrange - Create detection with estimating status
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(0.25f, 0.3f, 0.75f, 0.6f),
-            label = "Estimating",
-            priceText = "Estimating…",
-            confidence = 0.88f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Estimating,
-            boxStyle = OverlayBoxStyle.SELECTED
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm = NormalizedRect(0.25f, 0.3f, 0.75f, 0.6f),
+                label = "Estimating",
+                priceText = "Estimating…",
+                confidence = 0.88f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Estimating,
+                boxStyle = OverlayBoxStyle.SELECTED,
+            )
 
         // Act - Render and capture (animation will be at initial state)
         val bitmap = renderAndCapture(listOf(detection))
@@ -555,28 +583,29 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenDetectionAtEdge_thenRendersWithoutClipping() {
         // Arrange - Create detections at various edges
-        val detections = listOf(
-            // Top-left corner
-            OverlayTrack(
-                bboxNorm = NormalizedRect(0.0f, 0.0f, 0.3f, 0.2f),
-                label = "Top-Left",
-                priceText = "",
-                confidence = 0.8f,
-                isReady = false,
-                priceEstimationStatus = PriceEstimationStatus.Idle,
-                boxStyle = OverlayBoxStyle.EYE
-            ),
-            // Bottom-right corner
-            OverlayTrack(
-                bboxNorm = NormalizedRect(0.7f, 0.8f, 1.0f, 1.0f),
-                label = "Bottom-Right",
-                priceText = "",
-                confidence = 0.85f,
-                isReady = true,
-                priceEstimationStatus = PriceEstimationStatus.Idle,
-                boxStyle = OverlayBoxStyle.SELECTED
+        val detections =
+            listOf(
+                // Top-left corner
+                OverlayTrack(
+                    bboxNorm = NormalizedRect(0.0f, 0.0f, 0.3f, 0.2f),
+                    label = "Top-Left",
+                    priceText = "",
+                    confidence = 0.8f,
+                    isReady = false,
+                    priceEstimationStatus = PriceEstimationStatus.Idle,
+                    boxStyle = OverlayBoxStyle.EYE,
+                ),
+                // Bottom-right corner
+                OverlayTrack(
+                    bboxNorm = NormalizedRect(0.7f, 0.8f, 1.0f, 1.0f),
+                    label = "Bottom-Right",
+                    priceText = "",
+                    confidence = 0.85f,
+                    isReady = true,
+                    priceEstimationStatus = PriceEstimationStatus.Idle,
+                    boxStyle = OverlayBoxStyle.SELECTED,
+                ),
             )
-        )
 
         // Act - Render and capture
         val bitmap = renderAndCapture(detections)
@@ -599,21 +628,23 @@ class DetectionOverlayGoldenTest {
     @Test
     fun whenFillCenterScaleType_thenCoordinatesMappedWithCropping() {
         // Arrange - Create centered detection
-        val detection = OverlayTrack(
-            bboxNorm = NormalizedRect(0.4f, 0.4f, 0.6f, 0.6f),
-            label = "Centered",
-            priceText = "€30",
-            confidence = 0.9f,
-            isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Idle,
-            boxStyle = OverlayBoxStyle.READY
-        )
+        val detection =
+            OverlayTrack(
+                bboxNorm = NormalizedRect(0.4f, 0.4f, 0.6f, 0.6f),
+                label = "Centered",
+                priceText = "€30",
+                confidence = 0.9f,
+                isReady = true,
+                priceEstimationStatus = PriceEstimationStatus.Idle,
+                boxStyle = OverlayBoxStyle.READY,
+            )
 
         // Act - Render with FILL_CENTER (default)
-        val bitmap = renderAndCapture(
-            detections = listOf(detection),
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val bitmap =
+            renderAndCapture(
+                detections = listOf(detection),
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Assert - Verify box is centered
         val hasOutline = verifyBoxOutline(bitmap, detection, TEST_WIDTH, TEST_HEIGHT)
@@ -638,25 +669,28 @@ class DetectionOverlayGoldenTest {
     private fun renderAndCapture(
         detections: List<OverlayTrack>,
         rotationDegrees: Int = 90,
-        scaleType: PreviewScaleType = PreviewScaleType.FILL_CENTER
+        scaleType: PreviewScaleType = PreviewScaleType.FILL_CENTER,
     ): Bitmap {
         composeTestRule.setContent {
             Box(
-                modifier = Modifier
-                    .size(TEST_WIDTH.dp, TEST_HEIGHT.dp)
-                    .background(Color.Black) // Black background for contrast
+                modifier =
+                    Modifier
+                        .size(TEST_WIDTH.dp, TEST_HEIGHT.dp)
+                        // Black background for contrast
+                        .background(Color.Black),
             ) {
                 DetectionOverlay(
                     detections = detections,
-                    imageSize = if (rotationDegrees == 90 || rotationDegrees == 270) {
-                        // Portrait: effective dimensions are swapped
-                        SENSOR_SIZE
-                    } else {
-                        SENSOR_SIZE
-                    },
+                    imageSize =
+                        if (rotationDegrees == 90 || rotationDegrees == 270) {
+                            // Portrait: effective dimensions are swapped
+                            SENSOR_SIZE
+                        } else {
+                            SENSOR_SIZE
+                        },
                     previewSize = Size(TEST_WIDTH, TEST_HEIGHT),
                     rotationDegrees = rotationDegrees,
-                    showGeometryDebug = false
+                    showGeometryDebug = false,
                 )
             }
         }
@@ -677,7 +711,7 @@ class DetectionOverlayGoldenTest {
         bitmap: Bitmap,
         detection: OverlayTrack,
         canvasWidth: Int,
-        canvasHeight: Int
+        canvasHeight: Int,
     ): Boolean {
         // Calculate expected box position in pixels
         val left = (detection.bboxNorm.left * canvasWidth).toInt()
@@ -753,7 +787,10 @@ class DetectionOverlayGoldenTest {
      * Scans the entire bitmap looking for pixels that match the target color
      * within a tolerance (to account for anti-aliasing).
      */
-    private fun verifyColorPresence(bitmap: Bitmap, targetColor: Int): Boolean {
+    private fun verifyColorPresence(
+        bitmap: Bitmap,
+        targetColor: Int,
+    ): Boolean {
         var matchingPixels = 0
         val totalPixels = bitmap.width * bitmap.height
         val sampleRate = 5 // Sample every 5th pixel for performance
@@ -784,7 +821,7 @@ class DetectionOverlayGoldenTest {
         bitmap: Bitmap,
         detection: OverlayTrack,
         canvasWidth: Int,
-        canvasHeight: Int
+        canvasHeight: Int,
     ): Boolean {
         // Calculate expected label region (above or below box)
         val boxTopY = (detection.bboxNorm.top * canvasHeight).toInt()
@@ -841,7 +878,7 @@ class DetectionOverlayGoldenTest {
         bitmap: Bitmap,
         detection: OverlayTrack,
         canvasWidth: Int,
-        canvasHeight: Int
+        canvasHeight: Int,
     ): Int {
         // Sample the left edge vertically to measure stroke width
         val leftX = (detection.bboxNorm.left * canvasWidth).toInt()
@@ -895,7 +932,7 @@ class DetectionOverlayGoldenTest {
         x: Int,
         y: Int,
         width: Int,
-        height: Int
+        height: Int,
     ): Float {
         var totalBrightness = 0f
         var sampleCount = 0
@@ -943,7 +980,11 @@ class DetectionOverlayGoldenTest {
     /**
      * Checks if two colors match within a tolerance.
      */
-    private fun colorsMatch(color1: Int, color2: Int, tolerance: Int): Boolean {
+    private fun colorsMatch(
+        color1: Int,
+        color2: Int,
+        tolerance: Int,
+    ): Boolean {
         val r1 = AndroidColor.red(color1)
         val g1 = AndroidColor.green(color1)
         val b1 = AndroidColor.blue(color1)
@@ -952,11 +993,14 @@ class DetectionOverlayGoldenTest {
         val g2 = AndroidColor.green(color2)
         val b2 = AndroidColor.blue(color2)
 
-        val distance = sqrt(
-            ((r1 - r2) * (r1 - r2) +
-                (g1 - g2) * (g1 - g2) +
-                (b1 - b2) * (b1 - b2)).toDouble()
-        )
+        val distance =
+            sqrt(
+                (
+                    (r1 - r2) * (r1 - r2) +
+                        (g1 - g2) * (g1 - g2) +
+                        (b1 - b2) * (b1 - b2)
+                ).toDouble(),
+            )
 
         return distance <= tolerance
     }

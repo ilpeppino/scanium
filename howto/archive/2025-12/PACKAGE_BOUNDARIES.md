@@ -1,17 +1,21 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
+
 ***REMOVED*** Package Boundaries and Module Organization
 
 **Status:** Phase 3 - Modularity Without Build Blockers
 **Last Updated:** 2025-12-18
-**Goal:** Define clear package boundaries within existing modules to prepare for future Gradle module extraction
+**Goal:** Define clear package boundaries within existing modules to prepare for future Gradle
+module extraction
 
 ---
 
 ***REMOVED******REMOVED*** Current State: Single Module with Package Structure
 
-All code currently lives in `:androidApp` module. We organize by **package boundaries** to enforce dependency rules without the overhead of multiple Gradle modules yet.
+All code currently lives in `:androidApp` module. We organize by **package boundaries** to enforce
+dependency rules without the overhead of multiple Gradle modules yet.
 
 **Strategy:** Use package naming conventions to simulate module boundaries:
+
 - `com.scanium.app.*` - Presentation layer (UI, ViewModels)
 - `com.scanium.platform.*` - Platform-specific scanning (CameraX, ML Kit)
 - `com.scanium.domain.*` - Core domain logic (NO Android imports)
@@ -49,6 +53,7 @@ com.scanium.app/
 
 **Dependencies:** ✅ All layers (use-cases, repositories, platform)
 **Rules:**
+
 - ❌ NO business logic in Composables
 - ❌ NO direct repository/data source calls (use use-cases)
 - ✅ Only observe StateFlow/State from ViewModels
@@ -75,12 +80,14 @@ com.scanium.platform/
 ```
 
 **Dependencies:**
+
 - ✅ `com.scanium.domain.*` (for interfaces and models)
 - ✅ Android SDK (CameraX, ML Kit)
 - ❌ NO UI layer dependencies
 - ❌ NO direct data layer calls
 
 **Rules:**
+
 - ✅ Implement domain interfaces (ObjectDetector, etc.)
 - ✅ Convert platform types to domain models at boundary
 - ❌ NO business logic (tracking, aggregation) here
@@ -114,6 +121,7 @@ com.scanium.domain/
 ```
 
 **Dependencies:**
+
 - ✅ Kotlin stdlib only
 - ✅ `shared:core-models`, `shared:core-tracking` (KMP modules)
 - ❌ NO Android SDK imports
@@ -121,6 +129,7 @@ com.scanium.domain/
 - ❌ NO UI framework dependencies
 
 **Rules:**
+
 - ✅ Pure Kotlin code (KMP-ready)
 - ✅ Testable without Android framework
 - ✅ Define interfaces for data/platform integration
@@ -150,6 +159,7 @@ com.scanium.integrations/
 ```
 
 **Dependencies:**
+
 - ✅ `com.scanium.domain.*` (implement interfaces)
 - ✅ OkHttp, Ktor, Retrofit (network)
 - ✅ Kotlinx Serialization (JSON parsing)
@@ -157,6 +167,7 @@ com.scanium.integrations/
 - ❌ NO platform layer dependencies
 
 **Rules:**
+
 - ✅ Implement domain repository interfaces
 - ✅ Handle network errors, retries, caching
 - ✅ Map external API models to domain models
@@ -177,12 +188,14 @@ com.scanium.config/
 ```
 
 **Dependencies:**
+
 - ✅ BuildConfig (Android)
 - ✅ `com.scanium.domain.*` (for config models)
 - ❌ NO business logic
 - ❌ NO UI dependencies
 
 **Rules:**
+
 - ✅ Read from BuildConfig, local.properties, environment
 - ✅ Provide immutable config objects
 - ❌ NO hardcoded secrets (use injection)
@@ -202,12 +215,14 @@ com.scanium.observability/
 ```
 
 **Dependencies:**
+
 - ✅ `com.scanium.domain.*` (for event models)
 - ✅ Android Log, Firebase Analytics (platform)
 - ❌ NO business logic
 - ❌ NO data layer dependencies
 
 **Rules:**
+
 - ✅ Log domain events, not implementation details
 - ✅ Structured logging (JSON or key-value)
 - ❌ NO PII in logs
@@ -217,15 +232,15 @@ com.scanium.observability/
 
 ***REMOVED******REMOVED*** Dependency Rules Matrix
 
-| From Layer | Can Depend On | Cannot Depend On |
-|------------|---------------|------------------|
-| **Presentation (app.*)** | All layers | Nothing (top layer) |
-| **Platform (platform.*)** | domain.*, config.*, observability.* | app.*, data.*, integrations.* |
-| **Domain (domain.*)** | shared:*, Kotlin stdlib only | app.*, platform.*, data.*, integrations.*, Android SDK |
-| **Data (data.*)** | domain.*, config.*, observability.* | app.*, platform.* |
-| **Integrations (integrations.*)** | domain.*, config.*, observability.* | app.*, platform.*, data.* |
-| **Config (config.*)** | Kotlin stdlib, BuildConfig | All other layers |
-| **Observability (observability.*)** | domain.* (event models) | All other layers |
+| From Layer                          | Can Depend On                       | Cannot Depend On                                       |
+|-------------------------------------|-------------------------------------|--------------------------------------------------------|
+| **Presentation (app.*)**            | All layers                          | Nothing (top layer)                                    |
+| **Platform (platform.*)**           | domain.*, config.*, observability.* | app.*, data.*, integrations.*                          |
+| **Domain (domain.*)**               | shared:*, Kotlin stdlib only        | app.*, platform.*, data.*, integrations.*, Android SDK |
+| **Data (data.*)**                   | domain.*, config.*, observability.* | app.*, platform.*                                      |
+| **Integrations (integrations.*)**   | domain.*, config.*, observability.* | app.*, platform.*, data.*                              |
+| **Config (config.*)**               | Kotlin stdlib, BuildConfig          | All other layers                                       |
+| **Observability (observability.*)** | domain.* (event models)             | All other layers                                       |
 
 **Key Principle:** Dependencies flow **downward** (top → bottom in table).
 
@@ -242,6 +257,7 @@ com.scanium.observability/
 5. Verify: `./gradlew assembleDebug` works
 
 **Validation:**
+
 ```bash
 ***REMOVED*** Check no Android imports in domain package
 ./gradlew checkPortableModules  ***REMOVED*** (adapt to check domain/ package)
@@ -269,12 +285,14 @@ Once package boundaries are stable and tested:
 ```
 
 **Benefits of delaying Gradle module extraction:**
+
 - ✅ Faster iteration (no multi-module build overhead)
 - ✅ Easier refactoring (move files, not modules)
 - ✅ No premature optimization
 - ✅ Validate boundaries before committing to modules
 
 **When to extract:**
+
 - Domain layer is stable (no Android imports)
 - Interfaces proven with multiple implementations
 - Code organization benefits outweigh build complexity
@@ -286,17 +304,20 @@ Once package boundaries are stable and tested:
 ***REMOVED******REMOVED******REMOVED*** 1. Code Review Checklist
 
 **For changes to `com.scanium.domain.*`:**
+
 - [ ] No Android SDK imports (`android.*`, `androidx.*`)
 - [ ] No platform types (Bitmap, Context, etc.)
 - [ ] Only depends on Kotlin stdlib or shared KMP modules
 - [ ] Has unit tests (no Robolectric needed)
 
 **For changes to `com.scanium.platform.*`:**
+
 - [ ] Implements domain interfaces (if applicable)
 - [ ] Converts platform types at boundary (Bitmap → ImageRef)
 - [ ] No business logic (delegates to use-cases)
 
 **For changes to `com.scanium.app.*`:**
+
 - [ ] No direct repository calls (uses use-cases)
 - [ ] No business logic in Composables
 - [ ] StateFlow/State observation only
@@ -379,17 +400,20 @@ fun provideItemClassifier(): ItemClassifier = CloudClassifier()
 ***REMOVED******REMOVED*** Current Package Migration Status
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Already Organized Well:
+
 - `app/camera/` - Presentation (camera screen)
 - `app/items/` - Presentation (items list)
 - `app/selling/` - Presentation (selling flow)
 - `app/ml/` - Platform scanning (mostly)
 
 ***REMOVED******REMOVED******REMOVED*** 📦 Needs Package Refactoring:
+
 - `app/ml/` → `platform/mlkit/` (ML Kit clients)
 - `app/data/` → `data/repository/` (if repository implementations)
 - `app/model/` → `domain/model/` (if domain models)
 
 ***REMOVED******REMOVED******REMOVED*** 🆕 Needs Creation:
+
 - `domain/usecase/` - New (extract from ViewModels)
 - `domain/repository/` - New (interfaces)
 - `integrations/vision/` - New (CloudClassifier)

@@ -1,7 +1,9 @@
 package com.scanium.app.camera
 
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.Assert.*
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -19,15 +21,17 @@ import java.util.Locale
  * even when multiple captures occur in rapid succession (same millisecond).
  */
 class CameraXManagerFilenameTest {
-
     /**
      * Simulate the fixed filename generation logic.
      * This matches the implementation in captureHighResImage().
      */
-    private fun generateCaptureFilename(currentTimeMs: Long, uuid: String = ""): String {
+    private fun generateCaptureFilename(
+        currentTimeMs: Long,
+        uuid: String = "",
+    ): String {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(currentTimeMs)
         val uniqueSuffix = "${currentTimeMs}_${uuid.take(8)}"
-        return "SCANIUM_${timestamp}_${uniqueSuffix}.jpg"
+        return "SCANIUM_${timestamp}_$uniqueSuffix.jpg"
     }
 
     /**
@@ -51,7 +55,7 @@ class CameraXManagerFilenameTest {
         assertEquals(
             "Filename collision detected! Expected 1000 unique filenames but got ${filenames.size}",
             1000,
-            filenames.size
+            filenames.size,
         )
     }
 
@@ -68,7 +72,7 @@ class CameraXManagerFilenameTest {
         // In old code: all would generate "SCANIUM_20260115_120000.jpg"
         // In new code: all should be unique due to millisecond + UUID
         repeat(10) { index ->
-            val timeMs = baseTimeMs + index  // Different milliseconds
+            val timeMs = baseTimeMs + index // Different milliseconds
             val uuid = java.util.UUID.randomUUID().toString()
             val filename = generateCaptureFilename(timeMs, uuid)
             filenames.add(filename)
@@ -77,7 +81,7 @@ class CameraXManagerFilenameTest {
         assertEquals(
             "Same-second captures not unique. Expected 10 but got ${filenames.size}",
             10,
-            filenames.size
+            filenames.size,
         )
     }
 
@@ -97,7 +101,7 @@ class CameraXManagerFilenameTest {
         assertNotEquals(
             "Different UUIDs should produce different filenames",
             filename1,
-            filename2
+            filename2,
         )
     }
 
@@ -115,7 +119,7 @@ class CameraXManagerFilenameTest {
         val pattern = Regex("^SCANIUM_\\d{8}_\\d{6}_\\d+_[0-9a-f]{8}\\.jpg$")
         assertTrue(
             "Filename does not match expected pattern: $filename",
-            pattern.matches(filename)
+            pattern.matches(filename),
         )
     }
 
@@ -137,7 +141,7 @@ class CameraXManagerFilenameTest {
             // Verify millisecond is part of the filename
             assertTrue(
                 "Filename should contain millisecond timestamp",
-                filename.contains("${timeMs}")
+                filename.contains("$timeMs"),
             )
         }
 
@@ -146,7 +150,7 @@ class CameraXManagerFilenameTest {
         assertEquals(
             "Expected all 5 filenames to be unique (different milliseconds)",
             5,
-            uniqueFilenames.size
+            uniqueFilenames.size,
         )
     }
 }

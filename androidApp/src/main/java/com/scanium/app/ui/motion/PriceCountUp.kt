@@ -267,7 +267,12 @@ private fun parsePriceRange(text: String): Triple<Int, Int, String>? {
     val currencySymbol = currencyMatch?.value ?: "€"
 
     // Find all numbers
-    val numbers = Regex(numberPattern).findAll(text).map { it.value.toIntOrNull() }.filterNotNull().toList()
+    val numbers =
+        Regex(numberPattern)
+            .findAll(text)
+            .map { it.value.toIntOrNull() }
+            .filterNotNull()
+            .toList()
 
     return when {
         numbers.size >= 2 -> Triple(numbers[0], numbers[1], currencySymbol)

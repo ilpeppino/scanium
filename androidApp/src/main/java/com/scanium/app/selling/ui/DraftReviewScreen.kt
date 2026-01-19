@@ -90,10 +90,11 @@ fun DraftReviewScreen(
     val context = LocalContext.current
     val assistedFactory =
         remember(context) {
-            EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                DraftReviewViewModelFactoryEntryPoint::class.java,
-            ).draftReviewViewModelFactory()
+            EntryPointAccessors
+                .fromApplication(
+                    context.applicationContext,
+                    DraftReviewViewModelFactoryEntryPoint::class.java,
+                ).draftReviewViewModelFactory()
         }
     val viewModel: DraftReviewViewModel =
         viewModel(
@@ -164,15 +165,24 @@ fun DraftReviewScreen(
                                             ?: ExportProfiles.generic()
 
                                     // Localize condition for export
-                                    val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
-                                        ItemAttributeLocalizer.localizeCondition(context, it)
-                                    }
-                                    val exportDraft = if (localizedCondition != null) {
-                                        val newFields = draft.fields.toMutableMap()
-                                        newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
-                                            ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
-                                        draft.copy(fields = newFields)
-                                    } else draft
+                                    val localizedCondition =
+                                        draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                            ItemAttributeLocalizer.localizeCondition(context, it)
+                                        }
+                                    val exportDraft =
+                                        if (localizedCondition != null) {
+                                            val newFields = draft.fields.toMutableMap()
+                                            newFields[DraftFieldKey.CONDITION] =
+                                                newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                                    ?: DraftField(
+                                                        value = localizedCondition,
+                                                        confidence = 1.0f,
+                                                        source = DraftProvenance.USER_EDITED,
+                                                    )
+                                            draft.copy(fields = newFields)
+                                        } else {
+                                            draft
+                                        }
 
                                     val export = ListingDraftFormatter.format(exportDraft, selectedProfile)
                                     ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
@@ -202,15 +212,19 @@ fun DraftReviewScreen(
                                 ?: ExportProfiles.generic()
 
                         // Localize condition for export
-                        val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
-                            ItemAttributeLocalizer.localizeCondition(context, it)
-                        }
-                        val exportDraft = if (localizedCondition != null) {
-                            val newFields = draft.fields.toMutableMap()
-                            newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
-                                ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
-                            draft.copy(fields = newFields)
-                        } else draft
+                        val localizedCondition =
+                            draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                ItemAttributeLocalizer.localizeCondition(context, it)
+                            }
+                        val exportDraft =
+                            if (localizedCondition != null) {
+                                val newFields = draft.fields.toMutableMap()
+                                newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                    ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                                draft.copy(fields = newFields)
+                            } else {
+                                draft
+                            }
 
                         val export = ListingDraftFormatter.format(exportDraft, selectedProfile)
                         val shareImages =
@@ -322,7 +336,10 @@ fun DraftReviewScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = draft.title.value.orEmpty().ifBlank { "Untitled" },
+                            text =
+                                draft.title.value
+                                    .orEmpty()
+                                    .ifBlank { "Untitled" },
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -423,7 +440,11 @@ fun DraftReviewScreen(
 
 @Composable
 private fun DraftPhotoRow(draft: ListingDraft) {
-    val photo = draft.photos.firstOrNull()?.image?.toImageBitmap()
+    val photo =
+        draft.photos
+            .firstOrNull()
+            ?.image
+            ?.toImageBitmap()
     photo?.let {
         Image(
             bitmap = it,

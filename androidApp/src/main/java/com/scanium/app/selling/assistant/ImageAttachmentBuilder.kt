@@ -95,6 +95,7 @@ object ImageAttachmentBuilder {
                             recompressedCount++
                         }
                     }
+
                     is ProcessResult.Skipped -> {
                         skippedCount++
                         ScaniumLog.w(TAG, "Skipped image $index for item=$itemId: ${result.reason}")
@@ -128,19 +129,20 @@ object ImageAttachmentBuilder {
             val wasRecompressed: Boolean,
         ) : ProcessResult()
 
-        data class Skipped(val reason: String) : ProcessResult()
+        data class Skipped(
+            val reason: String,
+        ) : ProcessResult()
     }
 
     private fun processImageRef(
         itemId: String,
         index: Int,
         imageRef: ImageRef,
-    ): ProcessResult {
-        return when (imageRef) {
+    ): ProcessResult =
+        when (imageRef) {
             is ImageRef.Bytes -> processBytes(itemId, index, imageRef)
             is ImageRef.CacheKey -> ProcessResult.Skipped("CacheKey references not yet supported")
         }
-    }
 
     private fun processBytes(
         itemId: String,
@@ -149,7 +151,7 @@ object ImageAttachmentBuilder {
     ): ProcessResult {
         val originalBytes = imageRef.bytes
         val mimeType = imageRef.mimeType
-        val filename = "image_${index}.${mimeTypeToExtension(mimeType)}"
+        val filename = "image_$index.${mimeTypeToExtension(mimeType)}"
 
         ScaniumLog.d(
             TAG,
@@ -160,12 +162,13 @@ object ImageAttachmentBuilder {
         // If already under size limit, use as-is
         if (originalBytes.size <= MAX_IMAGE_SIZE_BYTES) {
             return ProcessResult.Success(
-                attachment = ItemImageAttachment(
-                    itemId = itemId,
-                    imageBytes = originalBytes,
-                    mimeType = mimeType,
-                    filename = filename,
-                ),
+                attachment =
+                    ItemImageAttachment(
+                        itemId = itemId,
+                        imageBytes = originalBytes,
+                        mimeType = mimeType,
+                        filename = filename,
+                    ),
                 wasRecompressed = false,
             )
         }
@@ -184,12 +187,13 @@ object ImageAttachmentBuilder {
                     "Recompression successful: ${originalBytes.size} -> ${recompressedBytes.size}",
                 )
                 ProcessResult.Success(
-                    attachment = ItemImageAttachment(
-                        itemId = itemId,
-                        imageBytes = recompressedBytes,
-                        mimeType = "image/jpeg", // Always JPEG after recompression
-                        filename = "image_${index}.jpg",
-                    ),
+                    attachment =
+                        ItemImageAttachment(
+                            itemId = itemId,
+                            imageBytes = recompressedBytes,
+                            mimeType = "image/jpeg", // Always JPEG after recompression
+                            filename = "image_$index.jpg",
+                        ),
                     wasRecompressed = true,
                 )
             } else {
@@ -209,11 +213,13 @@ object ImageAttachmentBuilder {
      */
     private fun recompressImage(originalBytes: ByteArray): ByteArray? {
         // Decode the bitmap
-        val options = BitmapFactory.Options().apply {
-            inPreferredConfig = Bitmap.Config.ARGB_8888
-        }
-        val bitmap = BitmapFactory.decodeByteArray(originalBytes, 0, originalBytes.size, options)
-            ?: return null
+        val options =
+            BitmapFactory.Options().apply {
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+        val bitmap =
+            BitmapFactory.decodeByteArray(originalBytes, 0, originalBytes.size, options)
+                ?: return null
 
         try {
             var quality = INITIAL_JPEG_QUALITY
@@ -238,11 +244,10 @@ object ImageAttachmentBuilder {
         return null // Could not compress enough
     }
 
-    private fun mimeTypeToExtension(mimeType: String): String {
-        return when (mimeType) {
+    private fun mimeTypeToExtension(mimeType: String): String =
+        when (mimeType) {
             "image/jpeg" -> "jpg"
             "image/png" -> "png"
             else -> "jpg"
         }
-    }
 }

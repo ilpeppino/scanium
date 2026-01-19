@@ -20,7 +20,6 @@ import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
 import com.scanium.app.selling.assistant.local.LocalSuggestionEngine
 import com.scanium.app.selling.persistence.ListingDraftStore
-import com.scanium.shared.core.models.items.ItemAttribute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -65,10 +64,11 @@ class VisionInsightsTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        itemsViewModel = createTestItemsViewModel(
-            workerDispatcher = testDispatcher,
-            mainDispatcher = testDispatcher,
-        )
+        itemsViewModel =
+            createTestItemsViewModel(
+                workerDispatcher = testDispatcher,
+                mainDispatcher = testDispatcher,
+            )
         settingsRepository = SettingsRepository(ApplicationProvider.getApplicationContext())
         connectivityStatusProvider = FakeConnectivityProvider()
         localAssistantHelper = LocalAssistantHelper()
@@ -87,155 +87,177 @@ class VisionInsightsTest {
     }
 
     @Test
-    fun `suggestedAttributes are included in AssistantChatEntry after response`() = runTest {
-        val suggestedAttrs = listOf(
-            SuggestedAttribute(
-                key = "brand",
-                value = "Nike",
-                confidence = ConfidenceTier.HIGH,
-                source = "logo",
-            ),
-            SuggestedAttribute(
-                key = "color",
-                value = "blue",
-                confidence = ConfidenceTier.MED,
-                source = "color",
-            ),
-        )
+    fun `suggestedAttributes are included in AssistantChatEntry after response`() =
+        runTest {
+            val suggestedAttrs =
+                listOf(
+                    SuggestedAttribute(
+                        key = "brand",
+                        value = "Nike",
+                        confidence = ConfidenceTier.HIGH,
+                        source = "logo",
+                    ),
+                    SuggestedAttribute(
+                        key = "color",
+                        value = "blue",
+                        confidence = ConfidenceTier.MED,
+                        source = "color",
+                    ),
+                )
 
-        val repository = ConfigurableAssistantRepository(
-            response = AssistantResponse(
-                reply = "Found brand and color info",
-                suggestedAttributes = suggestedAttrs,
-            )
-        )
+            val repository =
+                ConfigurableAssistantRepository(
+                    response =
+                        AssistantResponse(
+                            reply = "Found brand and color info",
+                            suggestedAttributes = suggestedAttrs,
+                        ),
+                )
 
-        val viewModel = createViewModel(repository)
-        viewModel.sendMessage("What brand is this?")
-        advanceUntilIdle()
+            val viewModel = createViewModel(repository)
+            viewModel.sendMessage("What brand is this?")
+            advanceUntilIdle()
 
-        val lastEntry = viewModel.uiState.value.entries.last()
-        assertThat(lastEntry.suggestedAttributes).hasSize(2)
-        assertThat(lastEntry.suggestedAttributes[0].key).isEqualTo("brand")
-        assertThat(lastEntry.suggestedAttributes[0].value).isEqualTo("Nike")
-        assertThat(lastEntry.suggestedAttributes[1].key).isEqualTo("color")
-        assertThat(lastEntry.suggestedAttributes[1].value).isEqualTo("blue")
-    }
-
-    @Test
-    fun `empty suggestedAttributes results in empty list not crash`() = runTest {
-        val repository = ConfigurableAssistantRepository(
-            response = AssistantResponse(
-                reply = "No vision data available",
-                suggestedAttributes = emptyList(),
-            )
-        )
-
-        val viewModel = createViewModel(repository)
-        viewModel.sendMessage("Hello")
-        advanceUntilIdle()
-
-        val lastEntry = viewModel.uiState.value.entries.last()
-        assertThat(lastEntry.suggestedAttributes).isEmpty()
-    }
+            val lastEntry = viewModel.uiState.value.entries.last()
+            assertThat(lastEntry.suggestedAttributes).hasSize(2)
+            assertThat(lastEntry.suggestedAttributes[0].key).isEqualTo("brand")
+            assertThat(lastEntry.suggestedAttributes[0].value).isEqualTo("Nike")
+            assertThat(lastEntry.suggestedAttributes[1].key).isEqualTo("color")
+            assertThat(lastEntry.suggestedAttributes[1].value).isEqualTo("blue")
+        }
 
     @Test
-    fun `getAlternativeKey maps color to secondaryColor`() = runTest {
-        val viewModel = createViewModel()
+    fun `empty suggestedAttributes results in empty list not crash`() =
+        runTest {
+            val repository =
+                ConfigurableAssistantRepository(
+                    response =
+                        AssistantResponse(
+                            reply = "No vision data available",
+                            suggestedAttributes = emptyList(),
+                        ),
+                )
 
-        assertThat(viewModel.getAlternativeKey("color")).isEqualTo("secondaryColor")
-    }
+            val viewModel = createViewModel(repository)
+            viewModel.sendMessage("Hello")
+            advanceUntilIdle()
+
+            val lastEntry = viewModel.uiState.value.entries.last()
+            assertThat(lastEntry.suggestedAttributes).isEmpty()
+        }
 
     @Test
-    fun `getAlternativeKey maps brand to brand2`() = runTest {
-        val viewModel = createViewModel()
+    fun `getAlternativeKey maps color to secondaryColor`() =
+        runTest {
+            val viewModel = createViewModel()
 
-        assertThat(viewModel.getAlternativeKey("brand")).isEqualTo("brand2")
-    }
-
-    @Test
-    fun `getAlternativeKey maps model to model2`() = runTest {
-        val viewModel = createViewModel()
-
-        assertThat(viewModel.getAlternativeKey("model")).isEqualTo("model2")
-    }
+            assertThat(viewModel.getAlternativeKey("color")).isEqualTo("secondaryColor")
+        }
 
     @Test
-    fun `getAlternativeKey appends 2 for unknown keys`() = runTest {
-        val viewModel = createViewModel()
+    fun `getAlternativeKey maps brand to brand2`() =
+        runTest {
+            val viewModel = createViewModel()
 
-        assertThat(viewModel.getAlternativeKey("size")).isEqualTo("size2")
-        assertThat(viewModel.getAlternativeKey("material")).isEqualTo("material2")
-    }
+            assertThat(viewModel.getAlternativeKey("brand")).isEqualTo("brand2")
+        }
+
+    @Test
+    fun `getAlternativeKey maps model to model2`() =
+        runTest {
+            val viewModel = createViewModel()
+
+            assertThat(viewModel.getAlternativeKey("model")).isEqualTo("model2")
+        }
+
+    @Test
+    fun `getAlternativeKey appends 2 for unknown keys`() =
+        runTest {
+            val viewModel = createViewModel()
+
+            assertThat(viewModel.getAlternativeKey("size")).isEqualTo("size2")
+            assertThat(viewModel.getAlternativeKey("material")).isEqualTo("material2")
+        }
 
     @Test
     fun `AssistantChatEntry defaults to empty suggestedAttributes`() {
-        val entry = AssistantChatEntry(
-            message = com.scanium.app.model.AssistantMessage(
-                role = com.scanium.app.model.AssistantRole.ASSISTANT,
-                content = "Test",
-                timestamp = System.currentTimeMillis(),
-            ),
-        )
+        val entry =
+            AssistantChatEntry(
+                message =
+                    com.scanium.app.model.AssistantMessage(
+                        role = com.scanium.app.model.AssistantRole.ASSISTANT,
+                        content = "Test",
+                        timestamp = System.currentTimeMillis(),
+                    ),
+            )
 
         assertThat(entry.suggestedAttributes).isEmpty()
     }
 
     @Test
-    fun `response with all confidence tiers is handled correctly`() = runTest {
-        val suggestedAttrs = listOf(
-            SuggestedAttribute("attr1", "val1", ConfidenceTier.HIGH, "test"),
-            SuggestedAttribute("attr2", "val2", ConfidenceTier.MED, "test"),
-            SuggestedAttribute("attr3", "val3", ConfidenceTier.LOW, "test"),
-        )
+    fun `response with all confidence tiers is handled correctly`() =
+        runTest {
+            val suggestedAttrs =
+                listOf(
+                    SuggestedAttribute("attr1", "val1", ConfidenceTier.HIGH, "test"),
+                    SuggestedAttribute("attr2", "val2", ConfidenceTier.MED, "test"),
+                    SuggestedAttribute("attr3", "val3", ConfidenceTier.LOW, "test"),
+                )
 
-        val repository = ConfigurableAssistantRepository(
-            response = AssistantResponse(
-                reply = "Found attributes",
-                suggestedAttributes = suggestedAttrs,
-            )
-        )
+            val repository =
+                ConfigurableAssistantRepository(
+                    response =
+                        AssistantResponse(
+                            reply = "Found attributes",
+                            suggestedAttributes = suggestedAttrs,
+                        ),
+                )
 
-        val viewModel = createViewModel(repository)
-        viewModel.sendMessage("Analyze this")
-        advanceUntilIdle()
+            val viewModel = createViewModel(repository)
+            viewModel.sendMessage("Analyze this")
+            advanceUntilIdle()
 
-        val lastEntry = viewModel.uiState.value.entries.last()
-        assertThat(lastEntry.suggestedAttributes).hasSize(3)
-        assertThat(lastEntry.suggestedAttributes[0].confidence).isEqualTo(ConfidenceTier.HIGH)
-        assertThat(lastEntry.suggestedAttributes[1].confidence).isEqualTo(ConfidenceTier.MED)
-        assertThat(lastEntry.suggestedAttributes[2].confidence).isEqualTo(ConfidenceTier.LOW)
-    }
+            val lastEntry = viewModel.uiState.value.entries.last()
+            assertThat(lastEntry.suggestedAttributes).hasSize(3)
+            assertThat(lastEntry.suggestedAttributes[0].confidence).isEqualTo(ConfidenceTier.HIGH)
+            assertThat(lastEntry.suggestedAttributes[1].confidence).isEqualTo(ConfidenceTier.MED)
+            assertThat(lastEntry.suggestedAttributes[2].confidence).isEqualTo(ConfidenceTier.LOW)
+        }
 
     @Test
-    fun `response with various sources is handled correctly`() = runTest {
-        val suggestedAttrs = listOf(
-            SuggestedAttribute("brand", "Nike", ConfidenceTier.HIGH, "logo"),
-            SuggestedAttribute("color", "red", ConfidenceTier.HIGH, "color"),
-            SuggestedAttribute("model", "Air Max", ConfidenceTier.MED, "ocr"),
-            SuggestedAttribute("category", "shoes", ConfidenceTier.HIGH, "label"),
-        )
+    fun `response with various sources is handled correctly`() =
+        runTest {
+            val suggestedAttrs =
+                listOf(
+                    SuggestedAttribute("brand", "Nike", ConfidenceTier.HIGH, "logo"),
+                    SuggestedAttribute("color", "red", ConfidenceTier.HIGH, "color"),
+                    SuggestedAttribute("model", "Air Max", ConfidenceTier.MED, "ocr"),
+                    SuggestedAttribute("category", "shoes", ConfidenceTier.HIGH, "label"),
+                )
 
-        val repository = ConfigurableAssistantRepository(
-            response = AssistantResponse(
-                reply = "Found multiple attributes",
-                suggestedAttributes = suggestedAttrs,
+            val repository =
+                ConfigurableAssistantRepository(
+                    response =
+                        AssistantResponse(
+                            reply = "Found multiple attributes",
+                            suggestedAttributes = suggestedAttrs,
+                        ),
+                )
+
+            val viewModel = createViewModel(repository)
+            viewModel.sendMessage("What is this?")
+            advanceUntilIdle()
+
+            val lastEntry = viewModel.uiState.value.entries.last()
+            assertThat(lastEntry.suggestedAttributes.map { it.source }).containsExactly(
+                "logo",
+                "color",
+                "ocr",
+                "label",
             )
-        )
+        }
 
-        val viewModel = createViewModel(repository)
-        viewModel.sendMessage("What is this?")
-        advanceUntilIdle()
-
-        val lastEntry = viewModel.uiState.value.entries.last()
-        assertThat(lastEntry.suggestedAttributes.map { it.source }).containsExactly(
-            "logo", "color", "ocr", "label"
-        )
-    }
-
-    private fun createViewModel(
-        repository: AssistantRepository = ConfigurableAssistantRepository(),
-    ): AssistantViewModel {
+    private fun createViewModel(repository: AssistantRepository = ConfigurableAssistantRepository()): AssistantViewModel {
         return AssistantViewModel(
             itemIds = listOf("item-1"),
             itemsViewModel = itemsViewModel,
@@ -272,17 +294,27 @@ class VisionInsightsTest {
 
     private class FakeDraftStore : ListingDraftStore {
         private val drafts = mutableMapOf<String, ListingDraft>()
+
         override suspend fun getAll(): List<ListingDraft> = drafts.values.toList()
+
         override suspend fun getByItemId(itemId: String): ListingDraft? = drafts[itemId]
-        override suspend fun upsert(draft: ListingDraft) { drafts[draft.itemId] = draft }
-        override suspend fun deleteById(id: String) { drafts.remove(id) }
+
+        override suspend fun upsert(draft: ListingDraft) {
+            drafts[draft.itemId] = draft
+        }
+
+        override suspend fun deleteById(id: String) {
+            drafts.remove(id)
+        }
     }
 
     private class FakeExportProfileRepo : ExportProfileRepository {
         override suspend fun getProfiles(): List<ExportProfileDefinition> = listOf(ExportProfiles.generic())
+
         override suspend fun getProfile(id: ExportProfileId): ExportProfileDefinition? {
             return ExportProfiles.generic().takeIf { it.id == id }
         }
+
         override suspend fun getDefaultProfileId(): ExportProfileId = ExportProfiles.generic().id
     }
 
@@ -292,12 +324,13 @@ class VisionInsightsTest {
     }
 
     private class FakePreflightManager : AssistantPreflightManager {
-        private val _currentResult = MutableStateFlow(
-            PreflightResult(
-                status = PreflightStatus.AVAILABLE,
-                latencyMs = 10,
-            ),
-        )
+        private val _currentResult =
+            MutableStateFlow(
+                PreflightResult(
+                    status = PreflightStatus.AVAILABLE,
+                    latencyMs = 10,
+                ),
+            )
         override val currentResult: StateFlow<PreflightResult> = _currentResult
         override val lastStatusFlow: Flow<PreflightResult?> = flowOf(_currentResult.value)
 
@@ -306,7 +339,9 @@ class VisionInsightsTest {
         }
 
         override suspend fun warmUp(): Boolean = true
+
         override fun cancelWarmUp() {}
+
         override suspend fun clearCache() {}
     }
 }

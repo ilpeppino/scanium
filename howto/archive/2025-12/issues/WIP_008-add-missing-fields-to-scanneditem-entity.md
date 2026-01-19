@@ -6,11 +6,14 @@
 
 ***REMOVED******REMOVED*** Problem
 
-`ScannedItemEntity` (database model) is **missing 4 fields** that exist in `ScannedItem` (domain model). If the database layer is ever activated (currently unused per Issue ***REMOVED***002), eBay integration data will be lost.
+`ScannedItemEntity` (database model) is **missing 4 fields** that exist in `ScannedItem` (domain
+model). If the database layer is ever activated (currently unused per Issue ***REMOVED***002), eBay integration
+data will be lost.
 
 ***REMOVED******REMOVED*** Schema Comparison
 
 ***REMOVED******REMOVED******REMOVED*** ScannedItem (Domain Model) - 13 properties
+
 Located: `/app/src/main/java/com/scanium/app/items/ScannedItem.kt`
 
 ```kotlin
@@ -32,6 +35,7 @@ data class ScannedItem(
 ```
 
 ***REMOVED******REMOVED******REMOVED*** ScannedItemEntity (Database Model) - 9 properties
+
 Located: `/app/src/main/java/com/scanium/app/data/ScannedItemEntity.kt`
 
 ```kotlin
@@ -53,6 +57,7 @@ data class ScannedItemEntity(
 ***REMOVED******REMOVED*** Impact
 
 **If database is activated (see Issue ***REMOVED***002):**
+
 - eBay listing status lost on app restart
 - Listing IDs and URLs not persisted
 - High-quality image URIs lost (only thumbnails saved)
@@ -60,6 +65,7 @@ data class ScannedItemEntity(
 - Users lose critical marketplace integration data
 
 **Current state:**
+
 - No immediate impact since database is unused
 - But schema drift will cause bugs if database is later activated
 
@@ -68,9 +74,11 @@ data class ScannedItemEntity(
 This issue depends on Issue ***REMOVED***002 resolution:
 
 ***REMOVED******REMOVED******REMOVED*** If Database is Deleted (Issue ***REMOVED***002 Option A):
+
 - This issue becomes moot - close as "won't fix"
 
 ***REMOVED******REMOVED******REMOVED*** If Database is Activated (Issue ***REMOVED***002 Option B):
+
 - MUST fix this schema drift before activation
 - Follow acceptance criteria below
 

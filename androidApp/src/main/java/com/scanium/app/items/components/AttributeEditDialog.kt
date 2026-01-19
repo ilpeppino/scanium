@@ -1,7 +1,6 @@
 package com.scanium.app.items.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,40 +73,52 @@ fun AttributeEditDialog(
     var editedValue by remember { mutableStateOf(attribute.value) }
 
     // Generate suggestions based on attribute key
-    val suggestions = remember(attributeKey, visionAttributes) {
-        when (attributeKey) {
-            "brand" -> {
-                val candidates = mutableListOf<String>()
-                // Add brand candidates from OCR analysis
-                candidates.addAll(visionAttributes.brandCandidates)
-                // Add logo names as they often indicate brand
-                candidates.addAll(visionAttributes.logos.map { it.name })
-                candidates.distinct().take(5)
+    val suggestions =
+        remember(attributeKey, visionAttributes) {
+            when (attributeKey) {
+                "brand" -> {
+                    val candidates = mutableListOf<String>()
+                    // Add brand candidates from OCR analysis
+                    candidates.addAll(visionAttributes.brandCandidates)
+                    // Add logo names as they often indicate brand
+                    candidates.addAll(visionAttributes.logos.map { it.name })
+                    candidates.distinct().take(5)
+                }
+
+                "model" -> {
+                    // Model candidates typically come from OCR
+                    visionAttributes.modelCandidates.take(5)
+                }
+
+                "color", "secondaryColor" -> {
+                    // Color suggestions from detected colors
+                    visionAttributes.colors
+                        .map { it.name }
+                        .distinct()
+                        .take(5)
+                }
+
+                "itemType" -> {
+                    buildList {
+                        visionAttributes.itemType?.let { add(it) }
+                        addAll(visionAttributes.labels.map { it.name })
+                    }.distinct().take(5)
+                }
+
+                else -> {
+                    emptyList()
+                }
             }
-            "model" -> {
-                // Model candidates typically come from OCR
-                visionAttributes.modelCandidates.take(5)
-            }
-            "color", "secondaryColor" -> {
-                // Color suggestions from detected colors
-                visionAttributes.colors.map { it.name }.distinct().take(5)
-            }
-            "itemType" -> {
-                buildList {
-                    visionAttributes.itemType?.let { add(it) }
-                    addAll(visionAttributes.labels.map { it.name })
-                }.distinct().take(5)
-            }
-            else -> emptyList()
         }
-    }
 
-    val attributeLabel = getAttributeLabelResource(attributeKey)?.let { stringResource(it) }
-        ?: attributeKey.replaceFirstChar { it.uppercase() }
+    val attributeLabel =
+        getAttributeLabelResource(attributeKey)?.let { stringResource(it) }
+            ?: attributeKey.replaceFirstChar { it.uppercase() }
 
-    val displayDetectedValue = detectedValue?.let {
-        AttributeDisplayFormatter.formatForDisplay(context, attributeKey, it)
-    }
+    val displayDetectedValue =
+        detectedValue?.let {
+            AttributeDisplayFormatter.formatForDisplay(context, attributeKey, it)
+        }
     val displayAttributeValue = AttributeDisplayFormatter.formatForDisplay(context, attributeKey, attribute.value)
 
     AlertDialog(
@@ -117,9 +128,10 @@ fun AttributeEditDialog(
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // Current confidence indicator
@@ -165,21 +177,24 @@ fun AttributeEditDialog(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             suggestions.forEach { suggestion ->
-                                val displaySuggestion = AttributeDisplayFormatter.formatForDisplay(
-                                    context,
-                                    attributeKey,
-                                    suggestion,
-                                )
+                                val displaySuggestion =
+                                    AttributeDisplayFormatter.formatForDisplay(
+                                        context,
+                                        attributeKey,
+                                        suggestion,
+                                    )
                                 SuggestionChip(
                                     onClick = { editedValue = suggestion },
                                     label = { Text(displaySuggestion) },
-                                    colors = SuggestionChipDefaults.suggestionChipColors(
-                                        containerColor = if (editedValue == suggestion) {
-                                            MaterialTheme.colorScheme.primaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.surfaceVariant
-                                        },
-                                    ),
+                                    colors =
+                                        SuggestionChipDefaults.suggestionChipColors(
+                                            containerColor =
+                                                if (editedValue == suggestion) {
+                                                    MaterialTheme.colorScheme.primaryContainer
+                                                } else {
+                                                    MaterialTheme.colorScheme.surfaceVariant
+                                                },
+                                        ),
                                 )
                             }
                         }
@@ -212,11 +227,12 @@ fun AttributeEditDialog(
             TextButton(
                 onClick = {
                     // Create updated attribute with HIGH confidence (user verified)
-                    val updatedAttribute = ItemAttribute(
-                        value = editedValue.trim(),
-                        confidence = 1.0f, // User verification = maximum confidence
-                        source = "user", // Mark as user-verified
-                    )
+                    val updatedAttribute =
+                        ItemAttribute(
+                            value = editedValue.trim(),
+                            confidence = 1.0f, // User verification = maximum confidence
+                            source = "user", // Mark as user-verified
+                        )
                     onConfirm(updatedAttribute)
                 },
                 enabled = editedValue.isNotBlank(),
@@ -238,39 +254,49 @@ private fun CurrentConfidenceRow(
     displayValue: String,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                shape = MaterialTheme.shapes.small,
-            )
-            .padding(12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = MaterialTheme.shapes.small,
+                ).padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Confidence icon
-        val (icon, backgroundColor, iconTint) = when (attribute.confidenceTier) {
-            AttributeConfidenceTier.HIGH -> Triple(
-                Icons.Default.Check,
-                MaterialTheme.colorScheme.primaryContainer,
-                MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-            AttributeConfidenceTier.MEDIUM -> Triple(
-                Icons.Default.QuestionMark,
-                MaterialTheme.colorScheme.tertiaryContainer,
-                MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-            AttributeConfidenceTier.LOW -> Triple(
-                Icons.Default.QuestionMark,
-                MaterialTheme.colorScheme.surfaceVariant,
-                MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        val (icon, backgroundColor, iconTint) =
+            when (attribute.confidenceTier) {
+                AttributeConfidenceTier.HIGH -> {
+                    Triple(
+                        Icons.Default.Check,
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+
+                AttributeConfidenceTier.MEDIUM -> {
+                    Triple(
+                        Icons.Default.QuestionMark,
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                }
+
+                AttributeConfidenceTier.LOW -> {
+                    Triple(
+                        Icons.Default.QuestionMark,
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
         Box(
-            modifier = Modifier
-                .size(24.dp)
-                .background(backgroundColor, shape = MaterialTheme.shapes.extraSmall),
+            modifier =
+                Modifier
+                    .size(24.dp)
+                    .background(backgroundColor, shape = MaterialTheme.shapes.extraSmall),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -281,8 +307,9 @@ private fun CurrentConfidenceRow(
             )
         }
 
-        val confidenceTierDesc = getConfidenceTierDescriptionResource(attribute.confidenceTier)?.let { stringResource(it) }
-            ?: attribute.confidenceTier.description
+        val confidenceTierDesc =
+            getConfidenceTierDescriptionResource(attribute.confidenceTier)?.let { stringResource(it) }
+                ?: attribute.confidenceTier.description
 
         Column {
             Text(
@@ -292,11 +319,12 @@ private fun CurrentConfidenceRow(
             Text(
                 text = confidenceTierDesc,
                 style = MaterialTheme.typography.bodySmall,
-                color = when (attribute.confidenceTier) {
-                    AttributeConfidenceTier.HIGH -> MaterialTheme.colorScheme.primary
-                    AttributeConfidenceTier.MEDIUM -> MaterialTheme.colorScheme.tertiary
-                    AttributeConfidenceTier.LOW -> MaterialTheme.colorScheme.outline
-                },
+                color =
+                    when (attribute.confidenceTier) {
+                        AttributeConfidenceTier.HIGH -> MaterialTheme.colorScheme.primary
+                        AttributeConfidenceTier.MEDIUM -> MaterialTheme.colorScheme.tertiary
+                        AttributeConfidenceTier.LOW -> MaterialTheme.colorScheme.outline
+                    },
             )
         }
     }
@@ -306,8 +334,8 @@ private fun CurrentConfidenceRow(
  * Map attribute key to string resource ID.
  * Returns null if no mapping exists (will fall back to formatted key).
  */
-private fun getAttributeLabelResource(key: String): Int? {
-    return when (key) {
+private fun getAttributeLabelResource(key: String): Int? =
+    when (key) {
         "brand" -> R.string.items_attribute_brand
         "itemType" -> R.string.items_attribute_item_type
         "model" -> R.string.items_attribute_model
@@ -318,15 +346,13 @@ private fun getAttributeLabelResource(key: String): Int? {
         "ocrText" -> R.string.items_attribute_ocr_text
         else -> null
     }
-}
 
 /**
  * Map confidence tier to localized description string resource.
  */
-private fun getConfidenceTierDescriptionResource(tier: AttributeConfidenceTier): Int? {
-    return when (tier) {
+private fun getConfidenceTierDescriptionResource(tier: AttributeConfidenceTier): Int? =
+    when (tier) {
         AttributeConfidenceTier.HIGH -> R.string.confidence_tier_high_desc
         AttributeConfidenceTier.MEDIUM -> R.string.confidence_tier_medium_desc
         AttributeConfidenceTier.LOW -> R.string.confidence_tier_low_desc
     }
-}

@@ -17,6 +17,4 @@ class AssistantScreenState {
 }
 
 @Composable
-fun rememberAssistantScreenState(): AssistantScreenState {
-    return remember { AssistantScreenState() }
-}
+fun rememberAssistantScreenState(): AssistantScreenState = remember { AssistantScreenState() }

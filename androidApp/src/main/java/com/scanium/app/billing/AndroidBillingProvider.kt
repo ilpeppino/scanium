@@ -30,9 +30,11 @@ class AndroidBillingProvider(
     private val context: Context,
     private val repository: BillingRepository,
     private val scope: CoroutineScope,
-) : BillingProvider, PurchasesUpdatedListener {
+) : BillingProvider,
+    PurchasesUpdatedListener {
     private val billingClient =
-        BillingClient.newBuilder(context)
+        BillingClient
+            .newBuilder(context)
             .setListener(this)
             .enablePendingPurchases()
             .build()
@@ -56,10 +58,12 @@ class AndroidBillingProvider(
                     } else {
                         ScaniumLog.e(
                             TAG,
-                            "Billing connection failed: ${ScaniumLog.sanitizeBillingMessage(
-                                billingResult.responseCode,
-                                billingResult.debugMessage,
-                            )}",
+                            "Billing connection failed: ${
+                                ScaniumLog.sanitizeBillingMessage(
+                                    billingResult.responseCode,
+                                    billingResult.debugMessage,
+                                )
+                            }",
                         )
                     }
                 }
@@ -115,7 +119,8 @@ class AndroidBillingProvider(
 
     private suspend fun queryPurchases(productType: String): List<Purchase> {
         val params =
-            QueryPurchasesParams.newBuilder()
+            QueryPurchasesParams
+                .newBuilder()
                 .setProductType(productType)
                 .build()
 
@@ -139,7 +144,8 @@ class AndroidBillingProvider(
 
         val productList =
             productIds.map { id ->
-                QueryProductDetailsParams.Product.newBuilder()
+                QueryProductDetailsParams.Product
+                    .newBuilder()
                     .setProductId(id)
                     .setProductType(
                         if (id in BillingSkus.SUBSCRIPTIONS) {
@@ -147,12 +153,12 @@ class AndroidBillingProvider(
                         } else {
                             BillingClient.ProductType.INAPP
                         },
-                    )
-                    .build()
+                    ).build()
             }
 
         val params =
-            QueryProductDetailsParams.newBuilder()
+            QueryProductDetailsParams
+                .newBuilder()
                 .setProductList(productList)
                 .build()
 
@@ -161,7 +167,12 @@ class AndroidBillingProvider(
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     val mapped =
                         detailsList.map { detail ->
-                            val offer = detail.subscriptionOfferDetails?.firstOrNull()?.pricingPhases?.pricingPhaseList?.firstOrNull()
+                            val offer =
+                                detail.subscriptionOfferDetails
+                                    ?.firstOrNull()
+                                    ?.pricingPhases
+                                    ?.pricingPhaseList
+                                    ?.firstOrNull()
                             val oneTime = detail.oneTimePurchaseOfferDetails
 
                             val price = offer?.formattedPrice ?: oneTime?.formattedPrice ?: "Unknown"
@@ -200,17 +211,18 @@ class AndroidBillingProvider(
         val offerToken = productDetails.subscriptionOfferDetails?.firstOrNull()?.offerToken
 
         val productParams =
-            BillingFlowParams.ProductDetailsParams.newBuilder()
+            BillingFlowParams.ProductDetailsParams
+                .newBuilder()
                 .setProductDetails(productDetails)
                 .apply {
                     if (offerToken != null) {
                         setOfferToken(offerToken)
                     }
-                }
-                .build()
+                }.build()
 
         val flowParams =
-            BillingFlowParams.newBuilder()
+            BillingFlowParams
+                .newBuilder()
                 .setProductDetailsParamsList(listOf(productParams))
                 .build()
 
@@ -226,7 +238,8 @@ class AndroidBillingProvider(
     private suspend fun getInternalProductDetails(productIds: List<String>): List<ProductDetails> {
         val productList =
             productIds.map { id ->
-                QueryProductDetailsParams.Product.newBuilder()
+                QueryProductDetailsParams.Product
+                    .newBuilder()
                     .setProductId(id)
                     .setProductType(
                         if (id in BillingSkus.SUBSCRIPTIONS) {
@@ -234,12 +247,12 @@ class AndroidBillingProvider(
                         } else {
                             BillingClient.ProductType.INAPP
                         },
-                    )
-                    .build()
+                    ).build()
             }
 
         val params =
-            QueryProductDetailsParams.newBuilder()
+            QueryProductDetailsParams
+                .newBuilder()
                 .setProductList(productList)
                 .build()
 
@@ -282,7 +295,8 @@ class AndroidBillingProvider(
             if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
                 if (!purchase.isAcknowledged) {
                     val ackParams =
-                        AcknowledgePurchaseParams.newBuilder()
+                        AcknowledgePurchaseParams
+                            .newBuilder()
                             .setPurchaseToken(purchase.purchaseToken)
                             .build()
 
@@ -298,10 +312,12 @@ class AndroidBillingProvider(
                     if (ackResult.responseCode != BillingClient.BillingResponseCode.OK) {
                         ScaniumLog.e(
                             TAG,
-                            "Failed to acknowledge purchase: ${ScaniumLog.sanitizeBillingMessage(
-                                ackResult.responseCode,
-                                ackResult.debugMessage,
-                            )}",
+                            "Failed to acknowledge purchase: ${
+                                ScaniumLog.sanitizeBillingMessage(
+                                    ackResult.responseCode,
+                                    ackResult.debugMessage,
+                                )
+                            }",
                         )
                     }
                 }

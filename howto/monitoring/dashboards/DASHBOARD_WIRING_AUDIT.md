@@ -1,6 +1,7 @@
 ***REMOVED*** Dashboard Wiring Audit
 
 ***REMOVED******REMOVED*** Dashboard inventory
+
 - monitoring/grafana/dashboards/backend-api-performance.json
 - monitoring/grafana/dashboards/backend-errors.json
 - monitoring/grafana/dashboards/backend-health.json
@@ -16,12 +17,18 @@
 - monitoring/grafana/dashboards/traces-drilldown.json
 
 ***REMOVED******REMOVED*** Datasource UID mapping
+
 - MIMIR: prometheus
 - LOKI: loki
 - TEMPO: tempo
 
 ***REMOVED******REMOVED*** Fixes applied
-- monitoring/grafana/dashboards/backend-errors.json: updated TraceQL drilldown query and Explore link to use `status = error` and regex match for `resource.service.name`.
-- monitoring/grafana/dashboards/pipeline-health.json: changed Tempo trace filter to use regex match on `resource.service.name`.
-- monitoring/grafana/dashboards/scan-performance.json: changed Tempo trace filter to use regex match on `span.http.method`.
-- monitoring/grafana/dashboards/traces-drilldown.json: updated TraceQL error filter to use `status = error`.
+
+- monitoring/grafana/dashboards/backend-errors.json: updated TraceQL drilldown query and Explore
+  link to use `status = error` and regex match for `resource.service.name`.
+- monitoring/grafana/dashboards/pipeline-health.json: changed Tempo trace filter to use regex match
+  on `resource.service.name`.
+- monitoring/grafana/dashboards/scan-performance.json: changed Tempo trace filter to use regex match
+  on `span.http.method`.
+- monitoring/grafana/dashboards/traces-drilldown.json: updated TraceQL error filter to use
+  `status = error`.

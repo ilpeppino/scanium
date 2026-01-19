@@ -146,6 +146,7 @@ fun calculateTransformWithRotation(
             offsetX = (previewWidth - effectiveWidth * scale) / 2f
             offsetY = (previewHeight - effectiveHeight * scale) / 2f
         }
+
         PreviewScaleType.FIT_CENTER -> {
             // Letterbox: scale to FIT within preview (smaller scale), add padding
             scale =
@@ -226,9 +227,12 @@ fun mapBboxToPreview(
 fun rotateNormalizedRect(
     rect: NormalizedRect,
     rotationDegrees: Int,
-): NormalizedRect {
-    return when (rotationDegrees) {
-        0 -> rect
+): NormalizedRect =
+    when (rotationDegrees) {
+        0 -> {
+            rect
+        }
+
         90 -> {
             // Rotate 90° clockwise: (x, y) -> (y, 1-x)
             // left->top, top->(1-right), right->bottom, bottom->(1-left)
@@ -239,6 +243,7 @@ fun rotateNormalizedRect(
                 bottom = 1f - rect.left,
             )
         }
+
         180 -> {
             // Rotate 180°: (x, y) -> (1-x, 1-y)
             NormalizedRect(
@@ -248,6 +253,7 @@ fun rotateNormalizedRect(
                 bottom = 1f - rect.top,
             )
         }
+
         270 -> {
             // Rotate 270° clockwise (90° counter-clockwise): (x, y) -> (1-y, x)
             NormalizedRect(
@@ -257,12 +263,12 @@ fun rotateNormalizedRect(
                 bottom = rect.right,
             )
         }
+
         else -> {
             Log.w(TAG, "Unexpected rotation degrees: $rotationDegrees, using 0")
             rect
         }
     }
-}
 
 /**
  * Transforms a bounding box from image coordinates to preview coordinates.

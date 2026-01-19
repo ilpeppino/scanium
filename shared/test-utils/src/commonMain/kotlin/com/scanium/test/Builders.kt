@@ -5,12 +5,12 @@ import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.image.ImageRefBytes
 import com.scanium.core.models.items.ScannedItem
 import com.scanium.core.models.ml.ItemCategory
-import com.scanium.core.models.ml.RawDetection
 import com.scanium.core.models.ml.LabelWithConfidence
+import com.scanium.core.models.ml.RawDetection
 import com.scanium.core.models.pricing.Money
 import com.scanium.core.models.pricing.PriceRange
-import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.core.tracking.DetectionInfo
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 
 /**
  * Test builders for creating test data in a portable, KMP-compatible way.
@@ -18,8 +18,9 @@ import com.scanium.core.tracking.DetectionInfo
  * These builders replace Android-specific helpers (RectF, Bitmap) with pure Kotlin types.
  */
 
-// Multiplatform-compatible time function for tests (monotonically increasing)
 private var testTimeCounter = 1000000000000L
+
+// Multiplatform-compatible time function for tests (monotonically increasing)
 
 private fun currentTimeMillis(): Long = testTimeCounter++
 
@@ -40,7 +41,7 @@ fun testNormalizedRect(
     left: Float,
     top: Float,
     right: Float,
-    bottom: Float
+    bottom: Float,
 ): NormalizedRect {
     return NormalizedRect(left, top, right, bottom)
 }
@@ -60,7 +61,7 @@ fun testCenteredRect(size: Float = 0.2f): NormalizedRect {
         left = center - halfSize,
         top = center - halfSize,
         right = center + halfSize,
-        bottom = center + halfSize
+        bottom = center + halfSize,
     )
 }
 
@@ -84,7 +85,7 @@ fun testDetectionInfo(
     category: ItemCategory = ItemCategory.FASHION,
     labelText: String = "Test Item",
     thumbnail: ImageRef? = null,
-    normalizedBoxArea: Float? = null
+    normalizedBoxArea: Float? = null,
 ): DetectionInfo {
     return DetectionInfo(
         trackingId = trackingId,
@@ -94,7 +95,7 @@ fun testDetectionInfo(
         labelText = labelText,
         thumbnail = thumbnail,
         normalizedBoxArea = normalizedBoxArea ?: boundingBox.area,
-        boundingBoxNorm = boundingBox
+        boundingBoxNorm = boundingBox,
     )
 }
 
@@ -122,12 +123,13 @@ fun testScannedItem(
     mergeCount: Int = 1,
     sourceDetectionIds: Set<String> = setOf(id),
     estimatedPriceRange: PriceRange? = null,
-    priceEstimationStatus: PriceEstimationStatus? = null
+    priceEstimationStatus: PriceEstimationStatus? = null,
 ): ScannedItem {
-    val resolvedRange = estimatedPriceRange ?: PriceRange(
-        low = Money(priceRange.first),
-        high = Money(priceRange.second)
-    )
+    val resolvedRange =
+        estimatedPriceRange ?: PriceRange(
+            low = Money(priceRange.first),
+            high = Money(priceRange.second),
+        )
     val resolvedStatus = priceEstimationStatus ?: PriceEstimationStatus.Ready(resolvedRange)
 
     return ScannedItem(
@@ -143,7 +145,7 @@ fun testScannedItem(
         timestampMs = timestampMs,
         mergeCount = mergeCount,
         averageConfidence = confidence,
-        sourceDetectionIds = sourceDetectionIds.toMutableSet()
+        sourceDetectionIds = sourceDetectionIds.toMutableSet(),
     )
 }
 
@@ -161,14 +163,15 @@ fun testScannedItem(
 fun testRawDetection(
     trackingId: String = "raw_track_${randomId()}",
     boundingBox: NormalizedRect = testCenteredRect(),
-    labels: List<Pair<ItemCategory, Float>> = listOf(ItemCategory.FASHION to 0.8f)
+    labels: List<Pair<ItemCategory, Float>> = listOf(ItemCategory.FASHION to 0.8f),
 ): RawDetection {
     return RawDetection(
         trackingId = trackingId,
         bboxNorm = boundingBox,
-        labels = labels.map { (category, confidence) ->
-            LabelWithConfidence(category.name, confidence)
-        }
+        labels =
+            labels.map { (category, confidence) ->
+                LabelWithConfidence(category.name, confidence)
+            },
     )
 }
 
@@ -183,7 +186,7 @@ fun testRawDetection(
 fun testImageRef(
     width: Int = 800,
     height: Int = 600,
-    mimeType: String = "image/jpeg"
+    mimeType: String = "image/jpeg",
 ): ImageRefBytes {
     // Create minimal valid JPEG header for testing
     val dummyBytes = ByteArray(100) { it.toByte() }
@@ -191,7 +194,7 @@ fun testImageRef(
         bytes = dummyBytes,
         width = width,
         height = height,
-        mimeType = mimeType
+        mimeType = mimeType,
     )
 }
 
@@ -205,7 +208,7 @@ fun testImageRef(
  */
 fun testDetectionGrid(
     count: Int,
-    startCategory: ItemCategory = ItemCategory.FASHION
+    startCategory: ItemCategory = ItemCategory.FASHION,
 ): List<DetectionInfo> {
     val detections = mutableListOf<DetectionInfo>()
     val gridSize = kotlin.math.sqrt(count.toDouble()).toInt()
@@ -222,11 +225,11 @@ fun testDetectionGrid(
 
         detections.add(
             testDetectionInfo(
-                trackingId = "grid_${i}",
+                trackingId = "grid_$i",
                 boundingBox = testNormalizedRect(left, top, right, bottom),
                 category = startCategory,
-                labelText = "Item $i"
-            )
+                labelText = "Item $i",
+            ),
         )
     }
 
@@ -235,4 +238,5 @@ fun testDetectionGrid(
 
 // Internal helper for generating unique IDs
 private var idCounter = 0
+
 private fun randomId(): String = "${currentTimeMillis()}_${idCounter++}"

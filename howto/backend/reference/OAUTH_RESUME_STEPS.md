@@ -3,6 +3,7 @@
 ***REMOVED******REMOVED*** ✅ What's Been Done
 
 ***REMOVED******REMOVED******REMOVED*** 1. Auth Bug Fix (COMPLETED)
+
 - ✅ Fixed silent sign-in failure (commit 5c0c022)
 - ✅ Added Activity context requirement
 - ✅ Added UI loading states and error messages
@@ -10,6 +11,7 @@
 - ✅ Merged to main and synced with NAS
 
 ***REMOVED******REMOVED******REMOVED*** 2. OAuth Documentation (COMPLETED)
+
 - ✅ Created comprehensive setup guide: `howto/GOOGLE_OAUTH_SETUP.md`
 - ✅ Created automated setup script: `setup-google-oauth.sh`
 - ✅ Committed and pushed (commit 9b7690a)
@@ -20,11 +22,13 @@
 ***REMOVED******REMOVED*** 📊 Current Status
 
 **What works:**
+
 - ✅ Tap "Sign in to Google" triggers the flow (no longer silent)
 - ✅ Shows "Signing in..." loading state
 - ✅ Shows error message: "Sign-in failed: no credentials available"
 
 **What's needed:**
+
 - ⏳ Google OAuth Client ID configuration
 
 **Current error:** `"no credentials available"`
@@ -37,20 +41,23 @@
 ***REMOVED******REMOVED******REMOVED*** Step 1: Create OAuth Credentials (15 minutes)
 
 **Open Google Cloud Console:**
+
 ```
 https://console.cloud.google.com/apis/credentials
 ```
 
 **Actions:**
+
 1. Select your Google Cloud project
 2. Click "CREATE CREDENTIALS" → "OAuth client ID"
 3. Configure OAuth consent screen if prompted:
-   - User Type: External
-   - App name: Scanium
-   - Add your email as test user
+    - User Type: External
+    - App name: Scanium
+    - Add your email as test user
 4. Create **TWO** OAuth clients:
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** a) Web OAuth Client (MOST IMPORTANT - you need this one!)
+
 - Application type: **Web application**
 - Name: `Scanium Backend`
 - Authorized redirect URIs: (leave empty)
@@ -58,6 +65,7 @@ https://console.cloud.google.com/apis/credentials
 - **📋 COPY THE CLIENT ID** (format: `123456789-abc.apps.googleusercontent.com`)
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** b) Android OAuth Client
+
 - Application type: **Android**
 - Name: `Scanium Android Dev`
 - Package name: `com.scanium.app.dev`
@@ -79,6 +87,7 @@ cd /Users/family/dev/scanium
 ```
 
 This will automatically:
+
 - Update Android app code
 - Update backend .env on NAS
 - Restart backend API
@@ -114,23 +123,27 @@ adb install androidApp/build/outputs/apk/dev/debug/androidApp-dev-debug.apk
 ***REMOVED******REMOVED*** 📁 Key Files
 
 **Documentation:**
+
 - `howto/GOOGLE_OAUTH_SETUP.md` - Full setup guide
 - `OAUTH_RESUME_STEPS.md` - This file
 
 **Code files that need OAuth Client ID:**
+
 - `androidApp/src/main/java/com/scanium/app/auth/CredentialManagerAuthLauncher.kt`
-  - Line 63: Replace `YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com`
-  - With: Your Web OAuth Client ID
+    - Line 63: Replace `YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com`
+    - With: Your Web OAuth Client ID
 
 **Backend config:**
+
 - On NAS: `/volume1/docker/scanium/repo/backend/.env`
-  - Add: `GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com`
+    - Add: `GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com`
 
 ---
 
 ***REMOVED******REMOVED*** 🔍 Verification Checklist
 
 Before testing:
+
 - [ ] Web OAuth Client ID created in Google Cloud Console
 - [ ] Android OAuth Client ID created with correct package + SHA-1
 - [ ] Your Google account added as test user in OAuth consent screen
@@ -144,18 +157,22 @@ Before testing:
 ***REMOVED******REMOVED*** 🐛 Troubleshooting
 
 ***REMOVED******REMOVED******REMOVED*** Still seeing "no credentials available"
+
 1. **Wait 5-10 minutes** - Google needs time to propagate credentials
 2. Verify package name: `com.scanium.app.dev` (check build.gradle.kts)
 3. Verify SHA-1 matches in Google Cloud Console
 4. Check Android logs: `adb logcat -s CredentialManagerAuthLauncher`
 
 ***REMOVED******REMOVED******REMOVED*** "Invalid client" error
+
 1. Verify `GOOGLE_SERVER_CLIENT_ID` matches Web OAuth Client ID
 2. Check backend .env has `GOOGLE_OAUTH_CLIENT_ID`
 3. Restart backend: `ssh nas "cd /volume1/docker/scanium && docker-compose restart api"`
 
 ***REMOVED******REMOVED******REMOVED*** Backend not receiving token
-1. Check backend logs: `ssh nas "cd /volume1/docker/scanium && docker-compose logs -f api | grep -i auth"`
+
+1. Check backend logs:
+   `ssh nas "cd /volume1/docker/scanium && docker-compose logs -f api | grep -i auth"`
 2. Verify backend can reach `https://oauth2.googleapis.com/tokeninfo`
 
 ---
@@ -163,10 +180,12 @@ Before testing:
 ***REMOVED******REMOVED*** 📞 Quick Reference
 
 **Your Android App Info:**
+
 - Dev Package: `com.scanium.app.dev`
 - SHA-1: `03:C5:1E:2F:FA:EA:B6:F9:AA:F9:C6:25:D4:14:08:14:57:C1:FC:A2`
 
 **Useful Commands:**
+
 ```bash
 ***REMOVED*** View setup guide
 open howto/GOOGLE_OAUTH_SETUP.md
@@ -189,6 +208,7 @@ ssh nas "cd /volume1/docker/scanium && docker-compose logs -f api"
 ***REMOVED******REMOVED*** ✅ When You're Done
 
 After successful sign-in:
+
 1. You should see your Google profile in Settings → General
 2. "Sign Out" button should be visible
 3. Backend should have stored session token
@@ -201,6 +221,7 @@ After successful sign-in:
 ***REMOVED******REMOVED*** 🔒 Security Note
 
 Your OAuth credentials are sensitive:
+
 - Never commit Client IDs or secrets to public repos
 - The automated script updates local files only
 - Backend `.env` file is in `.gitignore`

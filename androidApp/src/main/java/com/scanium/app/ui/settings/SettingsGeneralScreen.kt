@@ -8,16 +8,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -33,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,24 +40,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.ThemeMode
-import com.scanium.app.model.user.UserEdition
-import com.scanium.app.ftue.SettingsFtueViewModel
-import com.scanium.app.ftue.SettingsFtueOverlay
-import com.scanium.app.ftue.SettingsHintType
 import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.ftue.SettingsFtueOverlay
+import com.scanium.app.ftue.SettingsFtueViewModel
+import com.scanium.app.ftue.SettingsHintType
+import com.scanium.app.model.user.UserEdition
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,11 +92,12 @@ fun SettingsGeneralScreen(
             if (settingsFtueCurrentStep != com.scanium.app.ftue.SettingsFtueViewModel.SettingsFtueStep.IDLE &&
                 settingsFtueCurrentStep != com.scanium.app.ftue.SettingsFtueViewModel.SettingsFtueStep.COMPLETED
             ) {
-                android.widget.Toast.makeText(
-                    context,
-                    "FTUE Settings step=${settingsFtueCurrentStep.name}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                android.widget.Toast
+                    .makeText(
+                        context,
+                        "FTUE Settings step=${settingsFtueCurrentStep.name}",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
             }
         }
     }
@@ -146,6 +146,7 @@ fun SettingsGeneralScreen(
             UserEdition.FREE -> {
                 { Button(onClick = onUpgradeClick) { Text(stringResource(R.string.settings_upgrade_cta)) } }
             }
+
             UserEdition.PRO -> {
                 {
                     TextButton(onClick = {}, enabled = false) {
@@ -153,7 +154,10 @@ fun SettingsGeneralScreen(
                     }
                 }
             }
-            UserEdition.DEVELOPER -> null
+
+            UserEdition.DEVELOPER -> {
+                null
+            }
         }
 
     // Theme options using SettingOption
@@ -179,8 +183,8 @@ fun SettingsGeneralScreen(
 
     // Helper to get language display name
     @Composable
-    fun getLanguageDisplayName(languageTag: String): String {
-        return when (languageTag.lowercase()) {
+    fun getLanguageDisplayName(languageTag: String): String =
+        when (languageTag.lowercase()) {
             "en" -> stringResource(R.string.settings_language_en)
             "nl" -> stringResource(R.string.settings_language_nl)
             "de" -> stringResource(R.string.settings_language_de)
@@ -190,26 +194,27 @@ fun SettingsGeneralScreen(
             "pt-br" -> stringResource(R.string.settings_language_pt_br)
             else -> languageTag
         }
-    }
 
     // Primary region/country options
-    val primaryCountryOptions = countries.map { country ->
-        SettingOption(
-            value = country.code,
-            label = "${country.getFlagEmoji()} ${country.getDisplayName(primaryLanguage)}",
-        )
-    }
+    val primaryCountryOptions =
+        countries.map { country ->
+            SettingOption(
+                value = country.code,
+                label = "${country.getFlagEmoji()} ${country.getDisplayName(primaryLanguage)}",
+            )
+        }
 
     // Language options
-    val languageOptions = listOf(
-        SettingOption(value = "en", label = stringResource(R.string.settings_language_en)),
-        SettingOption(value = "nl", label = stringResource(R.string.settings_language_nl)),
-        SettingOption(value = "de", label = stringResource(R.string.settings_language_de)),
-        SettingOption(value = "fr", label = stringResource(R.string.settings_language_fr)),
-        SettingOption(value = "es", label = stringResource(R.string.settings_language_es)),
-        SettingOption(value = "it", label = stringResource(R.string.settings_language_it)),
-        SettingOption(value = "pt-BR", label = stringResource(R.string.settings_language_pt_br)),
-    )
+    val languageOptions =
+        listOf(
+            SettingOption(value = "en", label = stringResource(R.string.settings_language_en)),
+            SettingOption(value = "nl", label = stringResource(R.string.settings_language_nl)),
+            SettingOption(value = "de", label = stringResource(R.string.settings_language_de)),
+            SettingOption(value = "fr", label = stringResource(R.string.settings_language_fr)),
+            SettingOption(value = "es", label = stringResource(R.string.settings_language_es)),
+            SettingOption(value = "it", label = stringResource(R.string.settings_language_it)),
+            SettingOption(value = "pt-BR", label = stringResource(R.string.settings_language_pt_br)),
+        )
 
     // Phase D: Account deletion dialog state
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -264,15 +269,16 @@ fun SettingsGeneralScreen(
             if (currentUserInfo != null) {
                 // Calculate session expiry display (recompute when user changes)
                 val expiresAt = remember(currentUserInfo) { viewModel.getAccessTokenExpiresAt() }
-                val expiryText = expiresAt?.let { timestamp ->
-                    val now = System.currentTimeMillis()
-                    val daysRemaining = ((timestamp - now) / (1000 * 60 * 60 * 24)).toInt()
-                    when {
-                        daysRemaining > 1 -> stringResource(R.string.settings_session_expires_in_days, daysRemaining)
-                        daysRemaining == 1 -> stringResource(R.string.settings_session_expires_in_day)
-                        else -> stringResource(R.string.settings_session_expires_soon)
+                val expiryText =
+                    expiresAt?.let { timestamp ->
+                        val now = System.currentTimeMillis()
+                        val daysRemaining = ((timestamp - now) / (1000 * 60 * 60 * 24)).toInt()
+                        when {
+                            daysRemaining > 1 -> stringResource(R.string.settings_session_expires_in_days, daysRemaining)
+                            daysRemaining == 1 -> stringResource(R.string.settings_session_expires_in_day)
+                            else -> stringResource(R.string.settings_session_expires_soon)
+                        }
                     }
-                }
 
                 ListItem(
                     headlineContent = {
@@ -308,7 +314,7 @@ fun SettingsGeneralScreen(
                                 Text(stringResource(R.string.settings_refresh_session))
                             }
                         }
-                    }
+                    },
                 )
 
                 // Phase D: Delete account button
@@ -316,18 +322,19 @@ fun SettingsGeneralScreen(
                     headlineContent = {
                         TextButton(
                             onClick = { showDeleteConfirmDialog = true },
-                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                            colors =
+                                androidx.compose.material3.ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
                         ) {
                             Icon(
                                 Icons.Filled.DeleteForever,
                                 contentDescription = null,
-                                modifier = Modifier.padding(end = 8.dp)
+                                modifier = Modifier.padding(end = 8.dp),
                             )
                             Text(stringResource(R.string.settings_delete_account))
                         }
-                    }
+                    },
                 )
             } else {
                 // Sign-in state management
@@ -345,7 +352,7 @@ fun SettingsGeneralScreen(
                                 stringResource(R.string.settings_signing_in)
                             } else {
                                 stringResource(R.string.settings_sign_in_google)
-                            }
+                            },
                         )
                     },
                     supportingContent = {
@@ -354,25 +361,26 @@ fun SettingsGeneralScreen(
                                 stringResource(R.string.settings_signing_in_desc)
                             } else {
                                 stringResource(R.string.settings_sign_in_google_desc)
-                            }
+                            },
                         )
                     },
                     leadingContent = {
                         Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
                     },
-                    modifier = Modifier.clickable(enabled = !isSigningIn && activity != null) {
-                        activity?.let { act ->
-                            isSigningIn = true
-                            coroutineScope.launch {
-                                val result = viewModel.signInWithGoogle(act)
-                                isSigningIn = false
-                                if (result.isFailure) {
-                                    val errorMessage = result.exceptionOrNull()?.message ?: errorUnknown
-                                    snackbarHostState.showSnackbar(errorTemplate.format(errorMessage))
+                    modifier =
+                        Modifier.clickable(enabled = !isSigningIn && activity != null) {
+                            activity?.let { act ->
+                                isSigningIn = true
+                                coroutineScope.launch {
+                                    val result = viewModel.signInWithGoogle(act)
+                                    isSigningIn = false
+                                    if (result.isFailure) {
+                                        val errorMessage = result.exceptionOrNull()?.message ?: errorUnknown
+                                        snackbarHostState.showSnackbar(errorTemplate.format(errorMessage))
+                                    }
                                 }
                             }
-                        }
-                    }
+                        },
                 )
             }
 
@@ -387,17 +395,19 @@ fun SettingsGeneralScreen(
                 currentValue = primaryLanguage,
                 options = languageOptions,
                 onValueSelected = viewModel::setPrimaryLanguage,
-                modifier = Modifier.onGloballyPositioned { coordinates ->
-                    languageOptionRect = coordinates.boundsInWindow()
-                },
+                modifier =
+                    Modifier.onGloballyPositioned { coordinates ->
+                        languageOptionRect = coordinates.boundsInWindow()
+                    },
             )
 
             // 2) Marketplace country - Drives marketplace selection only
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_primary_country_label),
-                subtitle = countries.find { it.code == primaryRegionCountry }?.let {
-                    "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage)}"
-                } ?: primaryRegionCountry,
+                subtitle =
+                    countries.find { it.code == primaryRegionCountry }?.let {
+                        "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage)}"
+                    } ?: primaryRegionCountry,
                 icon = Icons.Filled.Language,
                 currentValue = primaryRegionCountry,
                 options = primaryCountryOptions,
@@ -433,9 +443,10 @@ fun SettingsGeneralScreen(
                 subtitle = stringResource(R.string.settings_replay_guide_subtitle),
                 icon = Icons.Filled.Info,
                 onClick = viewModel::resetFtueTour,
-                modifier = Modifier.onGloballyPositioned { coordinates ->
-                    replayOptionRect = coordinates.boundsInWindow()
-                },
+                modifier =
+                    Modifier.onGloballyPositioned { coordinates ->
+                        replayOptionRect = coordinates.boundsInWindow()
+                    },
             )
         }
 
@@ -450,7 +461,7 @@ fun SettingsGeneralScreen(
                     Icon(
                         Icons.Filled.DeleteForever,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.error,
                     )
                 },
                 title = {
@@ -471,14 +482,15 @@ fun SettingsGeneralScreen(
                                 } else {
                                     val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
                                     snackbarHostState.showSnackbar(
-                                        errorMessageTemplate.format(errorMessage)
+                                        errorMessageTemplate.format(errorMessage),
                                     )
                                 }
                             }
                         },
-                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
+                        colors =
+                            androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                            ),
                     ) {
                         Text(stringResource(R.string.settings_delete_account_confirm))
                     }
@@ -487,7 +499,7 @@ fun SettingsGeneralScreen(
                     TextButton(onClick = { showDeleteConfirmDialog = false }) {
                         Text(stringResource(R.string.settings_delete_account_cancel))
                     }
-                }
+                },
             )
         }
 

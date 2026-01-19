@@ -2,11 +2,40 @@ package com.scanium.app.ui.settings.developer
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SettingsEthernet
+import androidx.compose.material.icons.filled.SignalCellularAlt
+import androidx.compose.material.icons.filled.SignalWifiOff
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.VpnKey
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -19,7 +48,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
-import com.scanium.app.diagnostics.*
+import com.scanium.app.diagnostics.AppConfigSnapshot
+import com.scanium.app.diagnostics.CapabilityStatus
+import com.scanium.app.diagnostics.HealthStatus
+import com.scanium.app.diagnostics.NetworkStatus
+import com.scanium.app.diagnostics.NetworkTransport
+import com.scanium.app.diagnostics.PermissionStatus
 
 @Composable
 fun SystemHealthSection(
@@ -151,11 +185,12 @@ fun SystemHealthSection(
                 state.diagnosticsState.appConfig?.let { config ->
                     AppConfigSection(
                         config = config,
-                        onResetBaseUrl = if (config.isBaseUrlOverridden) {
-                            onResetBaseUrl
-                        } else {
-                            null
-                        },
+                        onResetBaseUrl =
+                            if (config.isBaseUrlOverridden) {
+                                onResetBaseUrl
+                            } else {
+                                null
+                            },
                     )
                 }
             }
@@ -260,11 +295,11 @@ private fun NetworkStatusRow(networkStatus: NetworkStatus) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                Text(
-                    text = stringResource(R.string.settings_dev_system_health_network_label),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                )
+                    Text(
+                        text = stringResource(R.string.settings_dev_system_health_network_label),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                    )
                     StatusIndicator(
                         status = if (networkStatus.isConnected) HealthStatus.HEALTHY else HealthStatus.DOWN,
                     )
@@ -498,21 +533,23 @@ private fun ConfigRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = when {
-                isWarning -> MaterialTheme.colorScheme.error
-                isSecondary -> MaterialTheme.colorScheme.outline
-                else -> MaterialTheme.colorScheme.onSurfaceVariant
-            },
+            color =
+                when {
+                    isWarning -> MaterialTheme.colorScheme.error
+                    isSecondary -> MaterialTheme.colorScheme.outline
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
             fontFamily = FontFamily.Monospace,
-            color = when {
-                isWarning -> MaterialTheme.colorScheme.error
-                isSecondary -> MaterialTheme.colorScheme.outline
-                else -> MaterialTheme.colorScheme.onSurface
-            },
+            color =
+                when {
+                    isWarning -> MaterialTheme.colorScheme.error
+                    isSecondary -> MaterialTheme.colorScheme.outline
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
         )
     }
 }
@@ -522,9 +559,15 @@ private fun StatusIndicator(status: HealthStatus) {
     val color by animateColorAsState(
         targetValue =
             when (status) {
-                HealthStatus.HEALTHY -> Color(0xFF4CAF50) // Green
-                HealthStatus.DEGRADED -> Color(0xFFFF9800) // Orange
-                HealthStatus.DOWN -> Color(0xFFF44336) // Red
+                HealthStatus.HEALTHY -> Color(0xFF4CAF50)
+
+                // Green
+                HealthStatus.DEGRADED -> Color(0xFFFF9800)
+
+                // Orange
+                HealthStatus.DOWN -> Color(0xFFF44336)
+
+                // Red
                 HealthStatus.UNKNOWN -> Color(0xFF9E9E9E) // Gray
             },
         label = "status_color",

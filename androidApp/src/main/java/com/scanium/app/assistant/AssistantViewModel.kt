@@ -141,44 +141,52 @@ class AssistantViewModel(
 
             val result = assistantRepository.sendMessage(request)
 
-            result.onSuccess { response ->
-                val assistantMsg =
-                    AssistantMessage(
-                        role = AssistantRole.ASSISTANT,
-                        content = response.text,
-                        timestamp = System.currentTimeMillis(),
-                    )
+            result
+                .onSuccess { response ->
+                    val assistantMsg =
+                        AssistantMessage(
+                            role = AssistantRole.ASSISTANT,
+                            content = response.text,
+                            timestamp = System.currentTimeMillis(),
+                        )
 
-                _uiState.update {
-                    it.copy(
-                        messages = it.messages + assistantMsg,
-                        isLoading = false,
-                        pendingActions = response.actions,
-                    )
-                }
-            }.onFailure { error ->
-                // Use user-friendly message from AssistantException if available
-                val errorMessage =
-                    when (error) {
-                        is AssistantException -> error.userMessage
-                        else -> error.message ?: "Failed to get response"
+                    _uiState.update {
+                        it.copy(
+                            messages = it.messages + assistantMsg,
+                            isLoading = false,
+                            pendingActions = response.actions,
+                        )
                     }
+                }.onFailure { error ->
+                    // Use user-friendly message from AssistantException if available
+                    val errorMessage =
+                        when (error) {
+                            is AssistantException -> error.userMessage
+                            else -> error.message ?: "Failed to get response"
+                        }
 
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = errorMessage,
-                    )
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = errorMessage,
+                        )
+                    }
                 }
-            }
         }
     }
 
     fun handleAction(action: AssistantAction) {
         when (action.type) {
-            AssistantActionType.APPLY_DRAFT_UPDATE -> applyDraftUpdate(action)
-            AssistantActionType.COPY_TEXT -> { /* Handled by UI clipboard */ }
-            AssistantActionType.OPEN_POSTING_ASSIST -> { /* Navigation event */ }
+            AssistantActionType.APPLY_DRAFT_UPDATE -> {
+                applyDraftUpdate(action)
+            }
+
+            AssistantActionType.COPY_TEXT -> { // Handled by UI clipboard
+            }
+
+            AssistantActionType.OPEN_POSTING_ASSIST -> { // Navigation event
+            }
+
             else -> {}
         }
     }
@@ -211,80 +219,98 @@ class AssistantViewModel(
 
 private fun ScannedItem.toContextSnapshot(): ItemContextSnapshot {
     // Build attributes list from all available sources
-    val extractedAttributes = buildList {
-        // 1. Add user-edited attributes (highest priority)
-        this@toContextSnapshot.attributes.forEach { (key, attr) ->
-            add(ItemAttributeSnapshot(
-                key = key,
-                value = attr.value,
-                confidence = attr.confidence,
-            ))
-        }
+    val extractedAttributes =
+        buildList {
+            // 1. Add user-edited attributes (highest priority)
+            this@toContextSnapshot.attributes.forEach { (key, attr) ->
+                add(
+                    ItemAttributeSnapshot(
+                        key = key,
+                        value = attr.value,
+                        confidence = attr.confidence,
+                    ),
+                )
+            }
 
-        // 2. Add vision attributes if not already present from user edits
-        val existingKeys = this@toContextSnapshot.attributes.keys.map { it.lowercase() }.toSet()
+            // 2. Add vision attributes if not already present from user edits
+            val existingKeys =
+                this@toContextSnapshot
+                    .attributes.keys
+                    .map { it.lowercase() }
+                    .toSet()
 
-        // Brand from vision
-        this@toContextSnapshot.visionAttributes.primaryBrand?.let { brand ->
-            if ("brand" !in existingKeys) {
-                add(ItemAttributeSnapshot(
-                    key = "brand",
-                    value = brand,
-                    confidence = this@toContextSnapshot.visionAttributes.logos.maxOfOrNull { it.score },
-                ))
+            // Brand from vision
+            this@toContextSnapshot.visionAttributes.primaryBrand?.let { brand ->
+                if ("brand" !in existingKeys) {
+                    add(
+                        ItemAttributeSnapshot(
+                            key = "brand",
+                            value = brand,
+                            confidence = this@toContextSnapshot.visionAttributes.logos.maxOfOrNull { it.score },
+                        ),
+                    )
+                }
+            }
+
+            // Colors from vision (include all unique colors)
+            val visionColors = this@toContextSnapshot.visionAttributes.colors
+            if (visionColors.isNotEmpty() && "color" !in existingKeys && "colors" !in existingKeys) {
+                // Join all color names for the assistant context
+                val colorNames = visionColors.map { it.name }.distinct().joinToString(", ")
+                val avgConfidence = visionColors.mapNotNull { it.score }.average().toFloat()
+                add(
+                    ItemAttributeSnapshot(
+                        key = "colors",
+                        value = colorNames,
+                        confidence = if (avgConfidence.isNaN()) null else avgConfidence,
+                    ),
+                )
+            }
+
+            // OCR text (condensed for assistant context)
+            this@toContextSnapshot.visionAttributes.ocrText?.takeIf { it.isNotBlank() }?.let { ocr ->
+                if ("recognizedText" !in existingKeys && "ocr" !in existingKeys) {
+                    // Limit OCR text to first 200 chars for assistant context
+                    val condensedOcr = if (ocr.length > 200) ocr.take(200) + "..." else ocr
+                    add(
+                        ItemAttributeSnapshot(
+                            key = "recognizedText",
+                            value = condensedOcr,
+                            confidence = 0.8f, // OCR is generally reliable
+                        ),
+                    )
+                }
+            }
+
+            // Add recognized text from item itself if present
+            this@toContextSnapshot.recognizedText?.takeIf { it.isNotBlank() }?.let { text ->
+                if ("recognizedText" !in existingKeys && "ocr" !in existingKeys &&
+                    this@toContextSnapshot.visionAttributes.ocrText.isNullOrBlank()
+                ) {
+                    val condensed = if (text.length > 200) text.take(200) + "..." else text
+                    add(
+                        ItemAttributeSnapshot(
+                            key = "recognizedText",
+                            value = condensed,
+                            confidence = 0.8f,
+                        ),
+                    )
+                }
+            }
+
+            // Condition if set
+            this@toContextSnapshot.condition?.let { condition ->
+                if ("condition" !in existingKeys) {
+                    add(
+                        ItemAttributeSnapshot(
+                            key = "condition",
+                            value = condition.displayName,
+                            confidence = null,
+                        ),
+                    )
+                }
             }
         }
-
-        // Colors from vision (include all unique colors)
-        val visionColors = this@toContextSnapshot.visionAttributes.colors
-        if (visionColors.isNotEmpty() && "color" !in existingKeys && "colors" !in existingKeys) {
-            // Join all color names for the assistant context
-            val colorNames = visionColors.map { it.name }.distinct().joinToString(", ")
-            val avgConfidence = visionColors.mapNotNull { it.score }.average().toFloat()
-            add(ItemAttributeSnapshot(
-                key = "colors",
-                value = colorNames,
-                confidence = if (avgConfidence.isNaN()) null else avgConfidence,
-            ))
-        }
-
-        // OCR text (condensed for assistant context)
-        this@toContextSnapshot.visionAttributes.ocrText?.takeIf { it.isNotBlank() }?.let { ocr ->
-            if ("recognizedText" !in existingKeys && "ocr" !in existingKeys) {
-                // Limit OCR text to first 200 chars for assistant context
-                val condensedOcr = if (ocr.length > 200) ocr.take(200) + "..." else ocr
-                add(ItemAttributeSnapshot(
-                    key = "recognizedText",
-                    value = condensedOcr,
-                    confidence = 0.8f, // OCR is generally reliable
-                ))
-            }
-        }
-
-        // Add recognized text from item itself if present
-        this@toContextSnapshot.recognizedText?.takeIf { it.isNotBlank() }?.let { text ->
-            if ("recognizedText" !in existingKeys && "ocr" !in existingKeys &&
-                this@toContextSnapshot.visionAttributes.ocrText.isNullOrBlank()) {
-                val condensed = if (text.length > 200) text.take(200) + "..." else text
-                add(ItemAttributeSnapshot(
-                    key = "recognizedText",
-                    value = condensed,
-                    confidence = 0.8f,
-                ))
-            }
-        }
-
-        // Condition if set
-        this@toContextSnapshot.condition?.let { condition ->
-            if ("condition" !in existingKeys) {
-                add(ItemAttributeSnapshot(
-                    key = "condition",
-                    value = condition.displayName,
-                    confidence = null,
-                ))
-            }
-        }
-    }
 
     return ItemContextSnapshot(
         itemId = this.id,

@@ -72,14 +72,16 @@ fun LocalSuggestionsCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
         ) {
             // Header
             Row(
@@ -135,9 +137,10 @@ fun LocalSuggestionsCard(
                     onToggle = { expandedSection = if (expandedSection == "title") null else "title" },
                 ) {
                     Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                        ),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ),
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(
@@ -186,18 +189,20 @@ fun LocalSuggestionsCard(
                     onToggle = { expandedSection = if (expandedSection == "description") null else "description" },
                 ) {
                     Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                        ),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ),
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(
                                 text = suggestions.suggestedDescriptionTemplate,
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(120.dp)
-                                    .verticalScroll(rememberScrollState()),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(120.dp)
+                                        .verticalScroll(rememberScrollState()),
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -241,9 +246,10 @@ fun LocalSuggestionsCard(
                     onToggle = { expandedSection = if (expandedSection == "defects") null else "defects" },
                 ) {
                     Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                        ),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ),
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             suggestions.suggestedDefectsChecklist.forEachIndexed { index, defect ->
@@ -258,8 +264,9 @@ fun LocalSuggestionsCard(
                             Spacer(modifier = Modifier.height(8.dp))
                             TextButton(
                                 onClick = {
-                                    val checklistText = suggestions.suggestedDefectsChecklist
-                                        .joinToString("\n") { "☐ $it" }
+                                    val checklistText =
+                                        suggestions.suggestedDefectsChecklist
+                                            .joinToString("\n") { "☐ $it" }
                                     onCopyText("Checklist", checklistText)
                                 },
                                 modifier = Modifier.semantics { contentDescription = "Copy defects checklist" },
@@ -403,14 +410,16 @@ private fun SuggestionSection(
 @Composable
 private fun MissingInfoItem(prompt: MissingInfoPrompt) {
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(

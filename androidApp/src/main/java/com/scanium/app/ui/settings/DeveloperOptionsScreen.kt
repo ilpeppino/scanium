@@ -5,15 +5,73 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Compare
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.CropFree
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.ScreenLockPortrait
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -128,10 +186,11 @@ fun DeveloperOptionsScreen(
 
             // System Health Section
             SystemHealthSection(
-                state = SystemHealthSectionState(
-                    diagnosticsState = diagnosticsState,
-                    autoRefreshEnabled = autoRefreshEnabled,
-                ),
+                state =
+                    SystemHealthSectionState(
+                        diagnosticsState = diagnosticsState,
+                        autoRefreshEnabled = autoRefreshEnabled,
+                    ),
                 onRefresh = { viewModel.refreshDiagnostics() },
                 onCopyDiagnostics = { viewModel.copyDiagnosticsToClipboard() },
                 onAutoRefreshChange = { viewModel.setAutoRefreshEnabled(it) },
@@ -159,12 +218,13 @@ fun DeveloperOptionsScreen(
 
             // Background Health Monitor Section
             HealthMonitorSection(
-                state = HealthMonitorSectionState(
-                    monitorState = healthMonitorState,
-                    monitorConfig = healthMonitorConfig,
-                    workState = healthMonitorWorkState,
-                    effectiveBaseUrl = viewModel.getHealthMonitorEffectiveBaseUrl(),
-                ),
+                state =
+                    HealthMonitorSectionState(
+                        monitorState = healthMonitorState,
+                        monitorConfig = healthMonitorConfig,
+                        workState = healthMonitorWorkState,
+                        effectiveBaseUrl = viewModel.getHealthMonitorEffectiveBaseUrl(),
+                    ),
                 onEnabledChange = { viewModel.setHealthMonitorEnabled(it) },
                 onNotifyRecoveryChange = { viewModel.setHealthMonitorNotifyOnRecovery(it) },
                 onBaseUrlChange = { viewModel.setHealthMonitorBaseUrl(it) },
@@ -511,9 +571,10 @@ fun DeveloperOptionsScreen(
 @Composable
 private fun DevModeAlwaysOnRow() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -551,9 +612,10 @@ private fun OverlayAccuracySliderRow(
     var sliderValue by remember(currentStep) { mutableStateOf(currentStep.toFloat()) }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         // Header row with icon and title
         Row(
@@ -611,11 +673,12 @@ private fun OverlayAccuracySliderRow(
                 Text(
                     text = tier.name,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    color =
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 )
             }
@@ -637,14 +700,16 @@ private fun DiagnosticsDescriptionCard() {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(
@@ -681,32 +746,37 @@ private fun DiagnosticsDescriptionCard() {
 @Composable
 private fun NotificationPermissionSection() {
     val context = LocalContext.current
-    val notificationPermissionState = rememberPermissionState(
-        Manifest.permission.POST_NOTIFICATIONS
-    )
+    val notificationPermissionState =
+        rememberPermissionState(
+            Manifest.permission.POST_NOTIFICATIONS,
+        )
 
     // Check if notifications are enabled at system level
-    val areNotificationsEnabled = remember {
-        NotificationManagerCompat.from(context).areNotificationsEnabled()
-    }
+    val areNotificationsEnabled =
+        remember {
+            NotificationManagerCompat.from(context).areNotificationsEnabled()
+        }
 
     val hasPermission = notificationPermissionState.status.isGranted
     val shouldShowRationale = notificationPermissionState.status.shouldShowRationale
 
     Surface(
-        color = when {
-            hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-            else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
-        },
+        color =
+            when {
+                hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+            },
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -719,10 +789,11 @@ private fun NotificationPermissionSection() {
                         else -> Icons.Default.NotificationsOff
                     },
                     contentDescription = null,
-                    tint = when {
-                        hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primary
-                        else -> MaterialTheme.colorScheme.error
-                    },
+                    tint =
+                        when {
+                            hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.error
+                        },
                     modifier = Modifier.size(24.dp),
                 )
                 Column(modifier = Modifier.weight(1f)) {
@@ -736,22 +807,32 @@ private fun NotificationPermissionSection() {
                     Text(
                         text =
                             when {
-                                hasPermission && areNotificationsEnabled ->
+                                hasPermission && areNotificationsEnabled -> {
                                     stringResource(R.string.settings_developer_options_notification_permission_granted)
-                                !hasPermission && shouldShowRationale ->
+                                }
+
+                                !hasPermission && shouldShowRationale -> {
                                     stringResource(R.string.settings_developer_options_notification_permission_needed)
-                                !hasPermission ->
+                                }
+
+                                !hasPermission -> {
                                     stringResource(R.string.settings_developer_options_notification_permission_needed)
-                                !areNotificationsEnabled ->
+                                }
+
+                                !areNotificationsEnabled -> {
                                     stringResource(R.string.settings_developer_options_notification_permission_disabled)
-                                else ->
+                                }
+
+                                else -> {
                                     stringResource(R.string.settings_developer_options_notification_permission_unknown)
+                                }
                             },
                         style = MaterialTheme.typography.bodySmall,
-                        color = when {
-                            hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.error
-                        },
+                        color =
+                            when {
+                                hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.error
+                            },
                     )
                 }
             }
@@ -783,15 +864,16 @@ private fun NotificationPermissionSection() {
                     if (!hasPermission || !areNotificationsEnabled) {
                         OutlinedButton(
                             onClick = {
-                                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                val intent =
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                        }
+                                    } else {
+                                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                            data = Uri.parse("package:${context.packageName}")
+                                        }
                                     }
-                                } else {
-                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                        data = Uri.parse("package:${context.packageName}")
-                                    }
-                                }
                                 context.startActivity(intent)
                             },
                             modifier = if (!hasPermission) Modifier else Modifier.weight(1f),
@@ -821,9 +903,10 @@ private fun SettingReadOnlyRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

@@ -24,9 +24,10 @@ class CameraPermissionContentTest {
 
     @Test
     fun permissionDeniedShowsGrantButton() {
-        val permissionState = FakePermissionState(
-            status = PermissionStatus.Denied(shouldShowRationale = true),
-        )
+        val permissionState =
+            FakePermissionState(
+                status = PermissionStatus.Denied(shouldShowRationale = true),
+            )
 
         composeTestRule.setContent {
             ScaniumTheme {
@@ -48,9 +49,10 @@ class CameraPermissionContentTest {
 
     @Test
     fun permissionPermanentlyDeniedShowsSettingsAction() {
-        val permissionState = FakePermissionState(
-            status = PermissionStatus.Denied(shouldShowRationale = false),
-        )
+        val permissionState =
+            FakePermissionState(
+                status = PermissionStatus.Denied(shouldShowRationale = false),
+            )
 
         composeTestRule.setContent {
             ScaniumTheme {

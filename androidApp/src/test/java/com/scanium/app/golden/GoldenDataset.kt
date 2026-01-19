@@ -1,6 +1,5 @@
 package com.scanium.app.golden
 
-import java.io.File
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -8,9 +7,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.floatOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.File
 
 data class ExpectedRule(
     val presence: Boolean? = null,
@@ -129,7 +128,10 @@ object GoldenDatasetLoader {
         return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")
     }
 
-    private fun parseExpected(file: File, fallbackSubtype: String): ExpectedSubtype {
+    private fun parseExpected(
+        file: File,
+        fallbackSubtype: String,
+    ): ExpectedSubtype {
         val element = json.parseToJsonElement(file.readText()).jsonObject
         val subtypeId =
             element.stringValue("subtype")
@@ -173,20 +175,19 @@ object GoldenDatasetLoader {
             val oneOf = ruleObj.stringList("oneOf") + ruleObj.stringList("one_of")
             val containsAny = ruleObj.stringList("containsAny") + ruleObj.stringList("contains_any")
             val notes = ruleObj.stringValue("notes")
-            key to ExpectedRule(
-                presence = presence,
-                oneOf = oneOf,
-                containsAny = containsAny,
-                notes = notes,
-            )
+            key to
+                ExpectedRule(
+                    presence = presence,
+                    oneOf = oneOf,
+                    containsAny = containsAny,
+                    notes = notes,
+                )
         }.toMap()
     }
 
-    private fun JsonObject.stringValue(key: String): String? =
-        (this[key] as? JsonPrimitive)?.stringOrNull()
+    private fun JsonObject.stringValue(key: String): String? = (this[key] as? JsonPrimitive)?.stringOrNull()
 
-    private fun JsonObject.floatValue(key: String): Float? =
-        (this[key] as? JsonPrimitive)?.floatOrNull
+    private fun JsonObject.floatValue(key: String): Float? = (this[key] as? JsonPrimitive)?.floatOrNull
 
     private fun JsonObject.stringList(key: String): List<String> =
         (this[key] as? JsonArray)?.mapNotNull { it.jsonPrimitive.stringOrNull() }.orEmpty()

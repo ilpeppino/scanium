@@ -8,10 +8,14 @@
 
 ***REMOVED******REMOVED*** Summary
 
-Implemented automatic diagnostics bundle attachment to Sentry crash reports. On every captured exception, a compact JSON bundle containing recent telemetry events and application context is attached to the Sentry event.
+Implemented automatic diagnostics bundle attachment to Sentry crash reports. On every captured
+exception, a compact JSON bundle containing recent telemetry events and application context is
+attached to the Sentry event.
 
 ***REMOVED******REMOVED******REMOVED*** Key Features
-1. **Automatic Breadcrumb Collection** - Telemetry events automatically recorded to DiagnosticsBuffer
+
+1. **Automatic Breadcrumb Collection** - Telemetry events automatically recorded to
+   DiagnosticsBuffer
 2. **Crash-Time Attachment** - Diagnostics bundle attached to every Sentry exception
 3. **Size Limit Enforcement** - 128KB max bundle size (Sentry limit compliance)
 4. **No UI Yet** - Foundation for future "Send Report" feature
@@ -26,11 +30,13 @@ Implemented automatic diagnostics bundle attachment to Sentry crash reports. On 
 **File:** `shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/facade/Telemetry.kt`
 
 **Changes:**
+
 - Added `diagnosticsPort: DiagnosticsPort?` parameter
 - Automatically appends ALL events (INFO, WARN, ERROR) as breadcrumbs
 - Breadcrumbs collected for crash-time context
 
 **Code:**
+
 ```kotlin
 class Telemetry(
     // ... existing params
@@ -50,6 +56,7 @@ class Telemetry(
 ```
 
 **Why ALL events?**
+
 - INFO events provide valuable context (e.g., "scan.started", "user.navigated")
 - DEBUG events filtered by TelemetryConfig.minSeverity before reaching this point
 - DiagnosticsBuffer enforces its own size limits (200 events, 128KB)
@@ -61,12 +68,14 @@ class Telemetry(
 **File:** `androidApp/src/main/java/com/scanium/app/crash/AndroidCrashPortAdapter.kt`
 
 **Changes:**
+
 - Added `diagnosticsPort: DiagnosticsPort?` constructor parameter
 - Builds diagnostics bundle on every `captureException()` call
 - Enforces 128KB size limit (Sentry attachment limit)
 - Attaches as `diagnostics.json` (or `diagnostics-capped.json` if oversized)
 
 **Code:**
+
 ```kotlin
 class AndroidCrashPortAdapter(
     private val diagnosticsPort: DiagnosticsPort? = null
@@ -103,6 +112,7 @@ class AndroidCrashPortAdapter(
 ```
 
 **Size Limit Strategy:**
+
 - **DiagnosticsBuffer:** Already enforces 128KB max during event collection
 - **Attachment:** Additional check at attachment time (defense-in-depth)
 - **If oversized:** Truncate bytes (not ideal, but prevents Sentry rejection)
@@ -115,11 +125,13 @@ class AndroidCrashPortAdapter(
 **File:** `androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt`
 
 **Changes:**
+
 - Creates `DefaultDiagnosticsPort` with context provider
 - Passes to both `AndroidCrashPortAdapter` and `Telemetry` facade
 - Exposes as public property for Developer Settings
 
 **Code:**
+
 ```kotlin
 class ScaniumApplication : Application() {
     lateinit var diagnosticsPort: DiagnosticsPort
@@ -156,6 +168,7 @@ class ScaniumApplication : Application() {
 ```
 
 **Context Provider:**
+
 - Captures current app state at bundle generation time
 - Session ID refreshes automatically via CorrelationIds
 - All context fields already sanitized (no PII)
@@ -167,12 +180,14 @@ class ScaniumApplication : Application() {
 **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt`
 
 **Changes:**
+
 - Added `triggerDiagnosticsTest()` function
 - Emits test telemetry events to populate buffer
 - Captures test exception with diagnostics bundle
 - Logs breadcrumb count for verification
 
 **Code:**
+
 ```kotlin
 fun triggerDiagnosticsTest() {
     val scaniumApp = application as? ScaniumApplication
@@ -198,9 +213,11 @@ fun triggerDiagnosticsTest() {
 **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsScreen.kt`
 
 **Changes:**
+
 - Added "Test Diagnostics Bundle" button in Developer section
 
 **UI Location:**
+
 ```
 Settings > Developer > Test Diagnostics Bundle
 ```
@@ -212,11 +229,13 @@ Settings > Developer > Test Diagnostics Bundle
 **File:** `shared/telemetry/build.gradle.kts`
 
 **Changes:**
+
 - Added `api(project(":shared:diagnostics"))` dependency
 - Uses `api` instead of `implementation` to export DiagnosticsPort types
 - Makes DiagnosticsPort transitively available to androidApp
 
 **Before:**
+
 ```kotlin
 dependencies {
     api(project(":shared:telemetry-contract"))
@@ -225,6 +244,7 @@ dependencies {
 ```
 
 **After:**
+
 ```kotlin
 dependencies {
     api(project(":shared:telemetry-contract"))
@@ -278,6 +298,7 @@ The diagnostics bundle is a UTF-8 encoded JSON file with the following structure
 ```
 
 **Key Points:**
+
 - **generatedAt:** ISO 8601 timestamp when bundle was created (crash time)
 - **context:** Application state snapshot
 - **events:** Recent telemetry events (already sanitized by Telemetry facade)
@@ -291,6 +312,7 @@ The diagnostics bundle is a UTF-8 encoded JSON file with the following structure
 ***REMOVED******REMOVED******REMOVED*** Two-Layer Protection
 
 **Layer 1: DiagnosticsBuffer (Collection Time)**
+
 ```kotlin
 class DiagnosticsBuffer(
     maxEvents: Int = 200,
@@ -306,6 +328,7 @@ class DiagnosticsBuffer(
 ```
 
 **Layer 2: AndroidCrashPortAdapter (Attachment Time)**
+
 ```kotlin
 override fun captureException(...) {
     val bundleBytes = diagnosticsPort.buildDiagnosticsBundle()
@@ -320,7 +343,8 @@ override fun captureException(...) {
 
 ***REMOVED******REMOVED******REMOVED*** Why 128KB?
 
-- **Sentry Limit:** Sentry has a 20MB total event size limit, but recommends keeping attachments small
+- **Sentry Limit:** Sentry has a 20MB total event size limit, but recommends keeping attachments
+  small
 - **Mobile Bandwidth:** Minimize cellular data usage on crash
 - **JSON Size:** 200 events @ ~500-700 bytes each ≈ 100-140KB (fits comfortably)
 - **Truncation Rare:** Buffer already enforces limit, attachment check is safety net
@@ -334,60 +358,60 @@ override fun captureException(...) {
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Test 1: Verify Diagnostics Bundle Attachment
 
 1. **Enable Developer Mode:**
-   - Open Settings
-   - Enable "Developer Mode" toggle
-   - Ensure "Share Diagnostic Information" is ENABLED
+    - Open Settings
+    - Enable "Developer Mode" toggle
+    - Ensure "Share Diagnostic Information" is ENABLED
 
 2. **Trigger Test:**
-   - Tap "Test Diagnostics Bundle" button
-   - Check logcat for confirmation:
-     ```
-     I/DiagnosticsTest: DiagnosticsBuffer has 4 events before capture
-     I/DiagnosticsTest: Captured exception with diagnostics bundle (4 events). Check Sentry for attachment.
-     D/AndroidCrashPortAdapter: Attached diagnostics bundle (2048 bytes, 4 events)
-     ```
+    - Tap "Test Diagnostics Bundle" button
+    - Check logcat for confirmation:
+      ```
+      I/DiagnosticsTest: DiagnosticsBuffer has 4 events before capture
+      I/DiagnosticsTest: Captured exception with diagnostics bundle (4 events). Check Sentry for attachment.
+      D/AndroidCrashPortAdapter: Attached diagnostics bundle (2048 bytes, 4 events)
+      ```
 
 3. **Verify in Sentry:**
-   - Go to Sentry dashboard
-   - Find event: "🔬 Diagnostics bundle test"
-   - Check "Attachments" tab
-   - Should see `diagnostics.json` attachment
-   - Download and verify JSON structure
+    - Go to Sentry dashboard
+    - Find event: "🔬 Diagnostics bundle test"
+    - Check "Attachments" tab
+    - Should see `diagnostics.json` attachment
+    - Download and verify JSON structure
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Test 2: Verify Bundle Size Capping
 
 1. **Populate Buffer:**
-   - Use app heavily to generate many telemetry events
-   - Monitor logcat for DiagnosticsBuffer eviction logs
+    - Use app heavily to generate many telemetry events
+    - Monitor logcat for DiagnosticsBuffer eviction logs
 
 2. **Trigger Crash:**
-   - Tap "Test Diagnostics Bundle"
-   - Check logcat:
-     ```
-     D/AndroidCrashPortAdapter: Attached diagnostics bundle (128000 bytes, 200 events)
-     ```
+    - Tap "Test Diagnostics Bundle"
+    - Check logcat:
+      ```
+      D/AndroidCrashPortAdapter: Attached diagnostics bundle (128000 bytes, 200 events)
+      ```
 
 3. **Verify in Sentry:**
-   - Attachment should be exactly 128KB or less
-   - If capped, filename will be `diagnostics-capped.json`
+    - Attachment should be exactly 128KB or less
+    - If capped, filename will be `diagnostics-capped.json`
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Test 3: Verify Automatic Collection During Normal Use
 
 1. **Use App Normally:**
-   - Start scan
-   - Classify items
-   - Navigate between screens
+    - Start scan
+    - Classify items
+    - Navigate between screens
 
 2. **Check Buffer:**
-   - Add log statement or use debugger:
-     ```kotlin
-     Log.d("Diagnostics", "Buffer has ${diagnosticsPort.breadcrumbCount()} events")
-     ```
+    - Add log statement or use debugger:
+      ```kotlin
+      Log.d("Diagnostics", "Buffer has ${diagnosticsPort.breadcrumbCount()} events")
+      ```
 
 3. **Verify Events:**
-   - Should see telemetry events accumulating
-   - Buffer should cap at 200 events
-   - Oldest events evicted when full
+    - Should see telemetry events accumulating
+    - Buffer should cap at 200 events
+    - Oldest events evicted when full
 
 ---
 
@@ -396,17 +420,20 @@ override fun captureException(...) {
 When viewing a crash in Sentry, you should see:
 
 ***REMOVED******REMOVED******REMOVED*** Breadcrumbs Tab
+
 - Sentry's built-in breadcrumbs (from `crashPort.addBreadcrumb()`)
 - Only WARN and ERROR events (as before)
 
 ***REMOVED******REMOVED******REMOVED*** Attachments Tab (NEW!)
+
 - **diagnostics.json** - Full diagnostics bundle
-  - Click to download
-  - Contains ALL events (INFO, WARN, ERROR)
-  - Includes application context
-  - Timestamp shows when bundle was generated
+    - Click to download
+    - Contains ALL events (INFO, WARN, ERROR)
+    - Includes application context
+    - Timestamp shows when bundle was generated
 
 ***REMOVED******REMOVED******REMOVED*** Extras Tab
+
 - Custom attributes passed to `captureException()`
 - `diagnostics_test: "true"`
 - `breadcrumb_count: "4"`
@@ -416,12 +443,14 @@ When viewing a crash in Sentry, you should see:
 ***REMOVED******REMOVED*** Files Changed
 
 ***REMOVED******REMOVED******REMOVED*** New Dependencies
+
 ```
 shared/telemetry/build.gradle.kts
   + api(project(":shared:diagnostics"))
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Modified Files
+
 ```
 shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/facade/Telemetry.kt
   + diagnosticsPort parameter
@@ -449,9 +478,12 @@ androidApp/src/main/java/com/scanium/app/ui/settings/SettingsScreen.kt
 ***REMOVED******REMOVED*** Build Status
 
 ✅ **Telemetry Code:** Compiles successfully
-- All modified files (Telemetry.kt, AndroidCrashPortAdapter.kt, ScaniumApplication.kt, SettingsViewModel.kt) compile without errors
+
+- All modified files (Telemetry.kt, AndroidCrashPortAdapter.kt, ScaniumApplication.kt,
+  SettingsViewModel.kt) compile without errors
 
 ⚠️ **Pre-Existing Errors:** Unrelated compilation errors in:
+
 - `androidApp/src/main/java/com/scanium/app/items/ItemsViewModel.kt`
 - `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantViewModel.kt`
 - `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantScreen.kt`
@@ -516,53 +548,58 @@ These errors exist on main branch and are NOT introduced by this PR.
 ***REMOVED******REMOVED*** Future Enhancements
 
 ***REMOVED******REMOVED******REMOVED*** Short Term
+
 1. **User-Initiated "Send Report"**
-   - Add UI button to manually send diagnostics
-   - Build bundle from current buffer state
-   - No crash required
+    - Add UI button to manually send diagnostics
+    - Build bundle from current buffer state
+    - No crash required
 
 2. **Bundle Compression**
-   - Use gzip compression for attachment
-   - Reduce bandwidth usage
-   - May fit more events in 128KB limit
+    - Use gzip compression for attachment
+    - Reduce bandwidth usage
+    - May fit more events in 128KB limit
 
 3. **Smarter Size Capping**
-   - Instead of byte truncation, remove oldest events
-   - Ensure valid JSON even when capped
-   - Add `"capped": true` flag in bundle
+    - Instead of byte truncation, remove oldest events
+    - Ensure valid JSON even when capped
+    - Add `"capped": true` flag in bundle
 
 ***REMOVED******REMOVED******REMOVED*** Long Term
+
 4. **Attachment Opt-Out**
-   - Respect user privacy settings
-   - Attach only if user consents
-   - Same consent as crash reporting
+    - Respect user privacy settings
+    - Attach only if user consents
+    - Same consent as crash reporting
 
 5. **Multiple Attachment Types**
-   - `diagnostics.json` - Recent events
-   - `device-info.json` - Device specs, memory, battery
-   - `network-log.json` - Recent network requests
+    - `diagnostics.json` - Recent events
+    - `device-info.json` - Device specs, memory, battery
+    - `network-log.json` - Recent network requests
 
 6. **Attachment Analytics**
-   - Track attachment size distribution
-   - Monitor how often capping occurs
-   - Optimize maxEvents based on real usage
+    - Track attachment size distribution
+    - Monitor how often capping occurs
+    - Optimize maxEvents based on real usage
 
 ---
 
 ***REMOVED******REMOVED*** Security & Privacy
 
 ***REMOVED******REMOVED******REMOVED*** PII Protection
+
 - **Events already sanitized:** Telemetry facade runs AttributeSanitizer before emitting
 - **Context provider:** Only includes non-PII fields (version, build, env, session_id)
 - **No user data:** No user names, emails, locations, or personal info
 - **No images:** Diagnostics bundle is text-only (JSON)
 
 ***REMOVED******REMOVED******REMOVED*** User Consent
+
 - **Inherits crash reporting consent:** Uses same `shareDiagnosticsFlow` setting
 - **Sentry beforeSend callback:** Filters events if user opts out
 - **Future enhancement:** Add explicit "Attach diagnostics" toggle
 
 ***REMOVED******REMOVED******REMOVED*** Data Retention
+
 - **In-memory only:** DiagnosticsBuffer lives in RAM, cleared on app restart
 - **No local storage:** Bundles not persisted to disk
 - **Sentry retention:** Follows Sentry project settings (typically 90 days)
@@ -592,6 +629,7 @@ These errors exist on main branch and are NOT introduced by this PR.
 
 - **PR ***REMOVED***4:** Android Sentry Integration (CrashPort foundation)
 - **PR ***REMOVED***5:** Android OTLP Export (Telemetry facade)
-- **shared/diagnostics:** Pre-existing module (DiagnosticsPort, DiagnosticsBuffer, DiagnosticsBundleBuilder)
+- **shared/diagnostics:** Pre-existing module (DiagnosticsPort, DiagnosticsBuffer,
+  DiagnosticsBundleBuilder)
 - **Sentry Attachments:** https://docs.sentry.io/platforms/android/enriching-events/attachments/
 - **Sentry Size Limits:** https://docs.sentry.io/product/accounts/quotas/

@@ -2,7 +2,11 @@
   "uid": "scanium-backend-health",
   "title": "Scanium - Backend Health",
   "description": "Backend RED health summary based on backend metrics and logs",
-  "tags": ["scanium", "backend", "health"],
+  "tags": [
+    "scanium",
+    "backend",
+    "health"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
@@ -17,23 +21,35 @@
         "name": "service",
         "label": "Service",
         "type": "query",
-        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "MIMIR"
+        },
         "query": "label_values(scanium_http_requests_total, service_name)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       },
       {
         "name": "env",
         "label": "Environment",
         "type": "query",
-        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "MIMIR"
+        },
         "query": "label_values(scanium_http_requests_total, env)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       }
     ]
   },
@@ -42,15 +58,28 @@
       "id": 1,
       "title": "Backend RED",
       "type": "row",
-      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
       "collapsed": false
     },
     {
       "id": 2,
       "title": "Request Rate (req/s)",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 1, "w": 8, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -64,13 +93,20 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null }
+              {
+                "color": "blue",
+                "value": null
+              }
             ]
           }
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "graphMode": "area"
       }
@@ -79,8 +115,16 @@
       "id": 3,
       "title": "Error Rate (%)",
       "type": "stat",
-      "gridPos": { "x": 8, "y": 1, "w": 8, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -94,15 +138,28 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "red", "value": 5 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
             ]
           }
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "graphMode": "area"
       }
@@ -111,8 +168,16 @@
       "id": 4,
       "title": "p95 Latency (ms)",
       "type": "stat",
-      "gridPos": { "x": 16, "y": 1, "w": 8, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -126,15 +191,28 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 200 },
-              { "color": "red", "value": 500 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 200
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
             ]
           }
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "graphMode": "area"
       }
@@ -143,8 +221,16 @@
       "id": 5,
       "title": "Requests by Route (Top 5)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -163,8 +249,16 @@
       "id": 6,
       "title": "4xx vs 5xx (req/s)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 7 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -188,8 +282,16 @@
       "id": 7,
       "title": "Recent Backend Errors",
       "type": "logs",
-      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 7 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 12,
+        "h": 7
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",

@@ -156,8 +156,8 @@ class DocumentTextRecognitionClient {
     private fun cropThumbnail(
         source: Bitmap,
         boundingBox: Rect,
-    ): Bitmap? {
-        return try {
+    ): Bitmap? =
+        try {
             // Ensure bounding box is within bitmap bounds
             val left = boundingBox.left.coerceIn(0, source.width - 1)
             val top = boundingBox.top.coerceIn(0, source.height - 1)
@@ -185,7 +185,6 @@ class DocumentTextRecognitionClient {
             Log.w(TAG, "Failed to crop thumbnail", e)
             null
         }
-    }
 
     /**
      * Calculates normalized bounding box area (0.0 to 1.0).

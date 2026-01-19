@@ -7,59 +7,59 @@
 
     <!-- Upper Lens -->
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:pathData="M 400,310 m -180,0 a 180,180 0 1,0 360,0 a 180,180 0 1,0 -360,0"
         android:strokeWidth="20"
-        android:strokeLineCap="round"
-        android:pathData="M 400,310 m -180,0 a 180,180 0 1,0 360,0 a 180,180 0 1,0 -360,0" />
+        android:strokeColor="***REMOVED***000000"
+        android:strokeLineCap="round" />
 
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:pathData="M 400,310 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0"
         android:strokeWidth="12"
-        android:pathData="M 400,310 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0" />
+        android:strokeColor="***REMOVED***000000" />
 
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:pathData="M 400,310 m -130,0 a 130,130 0 1,0 260,0 a 130,130 0 1,0 -260,0"
         android:strokeWidth="8"
-        android:pathData="M 400,310 m -130,0 a 130,130 0 1,0 260,0 a 130,130 0 1,0 -260,0" />
+        android:strokeColor="***REMOVED***000000" />
 
     <path
-        android:pathData="M 290,310 a 110,110 0 1,0 220,0 a 110,110 0 1,0 -220,0"
-        android:fillColor="***REMOVED***000000" />
+        android:fillColor="***REMOVED***000000"
+        android:pathData="M 290,310 a 110,110 0 1,0 220,0 a 110,110 0 1,0 -220,0" />
 
     <!-- Lower Lens -->
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:pathData="M 400,690 m -180,0 a 180,180 0 1,0 360,0 a 180,180 0 1,0 -360,0"
         android:strokeWidth="20"
-        android:strokeLineCap="round"
-        android:pathData="M 400,690 m -180,0 a 180,180 0 1,0 360,0 a 180,180 0 1,0 -360,0" />
+        android:strokeColor="***REMOVED***000000"
+        android:strokeLineCap="round" />
 
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:pathData="M 400,690 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0"
         android:strokeWidth="12"
-        android:pathData="M 400,690 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0" />
+        android:strokeColor="***REMOVED***000000" />
 
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:pathData="M 400,690 m -130,0 a 130,130 0 1,0 260,0 a 130,130 0 1,0 -260,0"
         android:strokeWidth="8"
-        android:pathData="M 400,690 m -130,0 a 130,130 0 1,0 260,0 a 130,130 0 1,0 -260,0" />
+        android:strokeColor="***REMOVED***000000" />
 
     <path
-        android:pathData="M 290,690 a 110,110 0 1,0 220,0 a 110,110 0 1,0 -220,0"
-        android:fillColor="***REMOVED***000000" />
+        android:fillColor="***REMOVED***000000"
+        android:pathData="M 290,690 a 110,110 0 1,0 220,0 a 110,110 0 1,0 -220,0" />
 
     <!-- Curved S - Upper Part -->
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:pathData="M 520,250 Q 570,210 620,225 Q 670,240 680,300 Q 690,360 645,385 Q 600,410 550,375"
         android:strokeWidth="80"
+        android:strokeColor="***REMOVED***000000"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M 520,250 Q 570,210 620,225 Q 670,240 680,300 Q 690,360 645,385 Q 600,410 550,375" />
+        android:strokeLineJoin="round" />
 
     <!-- Curved S - Lower Part -->
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:pathData="M 500,650 Q 550,710 600,695 Q 650,680 660,620 Q 670,560 625,535 Q 580,510 530,545"
         android:strokeWidth="80"
+        android:strokeColor="***REMOVED***000000"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M 500,650 Q 550,710 600,695 Q 650,680 660,620 Q 670,560 625,535 Q 580,510 530,545" />
+        android:strokeLineJoin="round" />
 </vector>

@@ -73,8 +73,9 @@ internal class AssistantSettings(
 
     val assistantCountryCodeFlow: Flow<String> =
         dataStore.data.map { preferences ->
-            val raw = preferences[SettingsKeys.Assistant.ASSISTANT_REGION_KEY]
-                ?: SettingsLocaleHelpers.detectCountryCodeFromLocale()
+            val raw =
+                preferences[SettingsKeys.Assistant.ASSISTANT_REGION_KEY]
+                    ?: SettingsLocaleHelpers.detectCountryCodeFromLocale()
             SettingsLocaleHelpers.normalizeCountryCode(raw)
         }
 

@@ -1,12 +1,16 @@
 ***REMOVED*** eBay Domain Pack Generator
 
-This directory contains Python scripts for generating eBay-derived candidate domain packs for Scanium.
+This directory contains Python scripts for generating eBay-derived candidate domain packs for
+Scanium.
 
 ***REMOVED******REMOVED*** Overview
 
-The eBay domain pack generator produces **candidate** domain packs from eBay UK (EBAY_GB) taxonomy and listing data. All outputs are **read-only** - they do NOT modify Scanium's localization files or existing domain pack configurations.
+The eBay domain pack generator produces **candidate** domain packs from eBay UK (EBAY_GB) taxonomy
+and listing data. All outputs are **read-only** - they do NOT modify Scanium's localization files or
+existing domain pack configurations.
 
-**Key Principle:** This is a data generation tool, not a deployment tool. All outputs must be manually reviewed and curated before integration into the app.
+**Key Principle:** This is a data generation tool, not a deployment tool. All outputs must be
+manually reviewed and curated before integration into the app.
 
 ***REMOVED******REMOVED*** Prerequisites
 
@@ -27,6 +31,7 @@ Get these from https://developer.ebay.com/
 ***REMOVED******REMOVED*** Scripts
 
 ***REMOVED******REMOVED******REMOVED*** 1. `extract_subtypes.py`
+
 Extracts Scanium subtypes from `home_resale_domain_pack.json`.
 
 **Input:** `core-domainpack/src/main/res/raw/home_resale_domain_pack.json`
@@ -37,6 +42,7 @@ python3 scripts/ebay/extract_subtypes.py
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 2. `fetch_taxonomy.py`
+
 Fetches eBay UK category tree structure.
 
 **Input:** eBay Taxonomy API (or mock data if credentials not configured)
@@ -49,6 +55,7 @@ python3 scripts/ebay/fetch_taxonomy.py
 **Note:** Uses mock data by default. With eBay credentials, will fetch real data.
 
 ***REMOVED******REMOVED******REMOVED*** 3. `flatten_taxonomy.py`
+
 Flattens hierarchical eBay category tree into flat list with full paths.
 
 **Input:** `scripts/output/ebay/uk/ebay_category_tree.json`
@@ -59,13 +66,16 @@ python3 scripts/ebay/flatten_taxonomy.py
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 4. `map_to_scanium.py`
+
 Maps eBay categories to Scanium subtypes using rule-based token matching + synonyms.
 
 **Inputs:**
+
 - `scripts/output/ebay/uk/ebay_flat_categories.json`
 - `scripts/output/ebay/scanium_subtypes_all.json`
 
 **Outputs:**
+
 - `scripts/output/ebay/uk/mapping_suggestions.json` (mapped categories with confidence)
 - `scripts/output/ebay/uk/unmapped_categories.json` (categories not mapped)
 
@@ -74,6 +84,7 @@ python3 scripts/ebay/map_to_scanium.py
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 5. `generate_strings_pack.py`
+
 Generates English-only strings catalog for mapped eBay categories.
 
 **Inputs:** `scripts/output/ebay/uk/mapping_suggestions.json`
@@ -83,13 +94,16 @@ Generates English-only strings catalog for mapped eBay categories.
 python3 scripts/ebay/generate_strings_pack.py
 ```
 
-**Important:** This is a **candidate pack only**. It is NOT wired into the app and localization files remain untouched.
+**Important:** This is a **candidate pack only**. It is NOT wired into the app and localization
+files remain untouched.
 
 ***REMOVED******REMOVED******REMOVED*** 6. `fetch_brand_candidates.py`
+
 Generates brand candidate lists from eBay listing data (or mock data).
 
 **Input:** `scripts/output/ebay/uk/mapping_suggestions.json`
 **Outputs:**
+
 - `scripts/output/ebay/uk/brand_candidates_by_subtype.json` (brands ranked by frequency)
 - `scripts/output/ebay/uk/brand_frequency_report.md` (human-readable frequency report)
 
@@ -120,27 +134,30 @@ Or run the one-liner:
 
 All outputs are written to `scripts/output/ebay/uk/`:
 
-| File | Purpose | Format |
-|------|---------|--------|
-| `scanium_subtypes_all.json` | All Scanium subtypes | JSON |
-| `ebay_category_tree.json` | eBay category hierarchy | JSON |
-| `ebay_flat_categories.json` | Flattened eBay categories | JSON |
-| `mapping_suggestions.json` | eBay → Scanium mappings | JSON |
-| `unmapped_categories.json` | Unmapped eBay categories | JSON |
-| `strings_keys_catalog.ebay_uk.en.json` | Candidate EN strings | JSON |
-| `brand_candidates_by_subtype.json` | Brands by subtype | JSON |
-| `brand_frequency_report.md` | Brand frequency analysis | Markdown |
+| File                                   | Purpose                   | Format   |
+|----------------------------------------|---------------------------|----------|
+| `scanium_subtypes_all.json`            | All Scanium subtypes      | JSON     |
+| `ebay_category_tree.json`              | eBay category hierarchy   | JSON     |
+| `ebay_flat_categories.json`            | Flattened eBay categories | JSON     |
+| `mapping_suggestions.json`             | eBay → Scanium mappings   | JSON     |
+| `unmapped_categories.json`             | Unmapped eBay categories  | JSON     |
+| `strings_keys_catalog.ebay_uk.en.json` | Candidate EN strings      | JSON     |
+| `brand_candidates_by_subtype.json`     | Brands by subtype         | JSON     |
+| `brand_frequency_report.md`            | Brand frequency analysis  | Markdown |
 
 ***REMOVED******REMOVED*** Localization Guardrails
 
-All outputs are protected by `scripts/checks/verify_no_localization_changes.sh`. This script verifies:
+All outputs are protected by `scripts/checks/verify_no_localization_changes.sh`. This script
+verifies:
 
 ✅ **Allowed modifications:**
+
 - `scripts/ebay/**` (this directory)
 - `scripts/output/ebay/**` (output files)
 - `scripts/checks/**` (guardrail scripts)
 
 ❌ **Forbidden modifications:**
+
 - `core-domainpack/at_home_inventory/*.json` (localized domain packs)
 - `androidApp/src/main/res/values-*/strings.xml` (Android localization)
 
@@ -169,6 +186,7 @@ Currently, the scripts use mock data for demonstration. To integrate real eBay A
 4. **Caching:** Consider caching API responses to avoid rate limits
 
 See eBay developer docs:
+
 - https://developer.ebay.com/api-docs/static/categories-api.html
 - https://developer.ebay.com/api-docs/static/browse-api.html
 
@@ -186,6 +204,7 @@ A: Adjust synonym mappings in `map_to_scanium.py` if needed.
 ***REMOVED******REMOVED*** Files Not Modified
 
 ✅ The following files are **NEVER** modified by this tool:
+
 - Android localization files
 - Domain pack localization catalogs
 - Existing brand catalogs

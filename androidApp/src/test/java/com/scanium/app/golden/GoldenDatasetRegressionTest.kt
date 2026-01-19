@@ -1,7 +1,7 @@
 package com.scanium.app.golden
 
-import com.scanium.app.ml.classification.VisionAttributesResponse
 import com.google.common.truth.Truth.assertThat
+import com.scanium.app.ml.classification.VisionAttributesResponse
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
@@ -58,6 +58,7 @@ class GoldenDatasetRegressionTest {
                         )
                         assertThat(outcome.message).isEmpty()
                     }
+
                     is GoldenClassificationOutcome.Success -> {
                         val predicted = predictedSubtype(outcome.result)
                         val predictedKey = predicted?.let { normalizeKey(it) }
@@ -99,6 +100,7 @@ class GoldenDatasetRegressionTest {
                         )
                         assertThat(outcome.message).isEmpty()
                     }
+
                     is GoldenClassificationOutcome.Success -> {
                         val predicted = predictedSubtype(outcome.result)
                         val predictedKey = predicted?.let { normalizeKey(it) }
@@ -161,6 +163,7 @@ class GoldenDatasetRegressionTest {
                         )
                         assertThat(outcome.message).isEmpty()
                     }
+
                     is GoldenClassificationOutcome.Success -> {
                         val attributeValues = buildAttributeValues(outcome.result)
                         val missing = mutableListOf<String>()
@@ -220,7 +223,10 @@ class GoldenDatasetRegressionTest {
     private fun buildAttributeValues(result: GoldenClassificationResult): Map<String, List<String>> {
         val values = mutableMapOf<String, MutableList<String>>()
 
-        fun add(key: String, value: String?) {
+        fun add(
+            key: String,
+            value: String?,
+        ) {
             if (value.isNullOrBlank()) return
             values.getOrPut(normalizeKey(key)) { mutableListOf() }.add(value)
         }
@@ -237,7 +243,11 @@ class GoldenDatasetRegressionTest {
         vision: VisionAttributesResponse?,
     ) {
         if (vision == null) return
-        fun add(key: String, value: String?) {
+
+        fun add(
+            key: String,
+            value: String?,
+        ) {
             if (value.isNullOrBlank()) return
             values.getOrPut(normalizeKey(key)) { mutableListOf() }.add(value)
         }

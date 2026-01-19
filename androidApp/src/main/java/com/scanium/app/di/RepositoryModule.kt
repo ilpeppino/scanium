@@ -8,9 +8,9 @@ import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ml.VisionInsightsRepository
-import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.model.billing.BillingProvider
 import com.scanium.app.model.config.ConfigProvider
 import com.scanium.app.model.config.FeatureFlagRepository
@@ -34,50 +34,38 @@ object RepositoryModule {
     @Singleton
     fun provideSettingsRepository(
         @ApplicationContext context: Context,
-    ): SettingsRepository {
-        return SettingsRepository(context)
-    }
+    ): SettingsRepository = SettingsRepository(context)
 
     @Provides
     @Singleton
     fun provideMarketplaceRepository(
         @ApplicationContext context: Context,
-    ): MarketplaceRepository {
-        return MarketplaceRepository(context)
-    }
+    ): MarketplaceRepository = MarketplaceRepository(context)
 
     @Provides
     @Singleton
     fun provideBillingRepository(
         @ApplicationContext context: Context,
-    ): BillingRepository {
-        return BillingRepository(context)
-    }
+    ): BillingRepository = BillingRepository(context)
 
     @Provides
     @Singleton
     fun provideFtueRepository(
         @ApplicationContext context: Context,
-    ): FtueRepository {
-        return FtueRepository(context)
-    }
+    ): FtueRepository = FtueRepository(context)
 
     @Provides
     @Singleton
     fun provideClassificationPreferences(
         @ApplicationContext context: Context,
-    ): ClassificationPreferences {
-        return ClassificationPreferences(context)
-    }
+    ): ClassificationPreferences = ClassificationPreferences(context)
 
     @Provides
     @Singleton
     fun provideEntitlementManager(
         settingsRepository: SettingsRepository,
         billingProvider: BillingProvider,
-    ): EntitlementManager {
-        return EntitlementManager(settingsRepository, billingProvider)
-    }
+    ): EntitlementManager = EntitlementManager(settingsRepository, billingProvider)
 
     @Provides
     @Singleton
@@ -87,37 +75,34 @@ object RepositoryModule {
         entitlementManager: EntitlementManager,
         connectivityStatusProvider: ConnectivityStatusProvider,
         apiKeyStore: SecureApiKeyStore,
-    ): FeatureFlagRepository {
-        return AndroidFeatureFlagRepository(
+    ): FeatureFlagRepository =
+        AndroidFeatureFlagRepository(
             settingsRepository = settingsRepository,
             configProvider = configProvider,
             entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
             connectivityStatusProvider = connectivityStatusProvider,
             apiKeyStore = apiKeyStore,
         )
-    }
 
     @Provides
     @Singleton
     fun provideVisionInsightsRepository(
         @ApplicationContext context: Context,
         apiKeyStore: SecureApiKeyStore,
-    ): VisionInsightsRepository {
-        return VisionInsightsRepository(
+    ): VisionInsightsRepository =
+        VisionInsightsRepository(
             apiKeyProvider = { apiKeyStore.getApiKey() },
             getDeviceId = { DeviceIdProvider.getHashedDeviceId(context) },
         )
-    }
 
     @Provides
     @Singleton
     fun provideEnrichmentRepository(
         @ApplicationContext context: Context,
         apiKeyStore: SecureApiKeyStore,
-    ): EnrichmentRepository {
-        return EnrichmentRepository(
+    ): EnrichmentRepository =
+        EnrichmentRepository(
             apiKeyProvider = { apiKeyStore.getApiKey() },
             getDeviceId = { DeviceIdProvider.getHashedDeviceId(context) },
         )
-    }
 }

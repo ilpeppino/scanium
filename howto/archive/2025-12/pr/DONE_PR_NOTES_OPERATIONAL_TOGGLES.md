@@ -8,9 +8,11 @@
 
 ***REMOVED******REMOVED*** Summary
 
-Added runtime-configurable telemetry toggles and bounded queue behavior to prevent memory exhaustion and provide operational control without requiring app redeployment.
+Added runtime-configurable telemetry toggles and bounded queue behavior to prevent memory exhaustion
+and provide operational control without requiring app redeployment.
 
 ***REMOVED******REMOVED******REMOVED*** Key Features
+
 1. **Shared TelemetryConfig** - Cross-platform configuration model
 2. **Runtime Toggles** - Enable/disable, severity filtering, trace sampling
 3. **Bounded Queues** - Drop policy when full (DROP_OLDEST/DROP_NEWEST)
@@ -23,7 +25,8 @@ Added runtime-configurable telemetry toggles and bounded queue behavior to preve
 
 ***REMOVED******REMOVED******REMOVED*** 1. Shared Configuration Model
 
-**File:** `shared/telemetry-contract/src/commonMain/kotlin/com/scanium/telemetry/TelemetryConfig.kt` (NEW)
+**File:**
+`shared/telemetry-contract/src/commonMain/kotlin/com/scanium/telemetry/TelemetryConfig.kt` (NEW)
 
 ```kotlin
 data class TelemetryConfig(
@@ -61,6 +64,7 @@ data class TelemetryConfig(
 ```
 
 **Purpose:**
+
 - Provides cross-platform configuration without platform-specific code
 - Enables runtime control without app redeployment
 - Supports environment-specific presets (dev/staging/prod)
@@ -72,12 +76,14 @@ data class TelemetryConfig(
 **File:** `shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/facade/Telemetry.kt`
 
 **Changes:**
+
 - Added `config: TelemetryConfig` parameter
 - Filters events by `minSeverity` (checks `severity.ordinal >= config.minSeverity.ordinal`)
 - Early return if `!config.enabled`
 - Applied to all methods: `event()`, `counter()`, `timer()`, `gauge()`, `beginSpan()`
 
 **Example:**
+
 ```kotlin
 fun event(name: String, severity: TelemetrySeverity, userAttributes: Map<String, String>) {
     // Filter by config
@@ -93,18 +99,21 @@ fun event(name: String, severity: TelemetrySeverity, userAttributes: Map<String,
 ***REMOVED******REMOVED******REMOVED*** 3. Bounded Queue Implementation
 
 **Files:**
+
 - `androidApp/src/main/java/com/scanium/app/telemetry/AndroidLogPortOtlp.kt`
 - `androidApp/src/main/java/com/scanium/app/telemetry/AndroidTracePortOtlp.kt`
 
 **Changes:**
+
 - Replaced `ConcurrentLinkedQueue` with `ArrayDeque<T>` + `ReentrantLock`
 - Enforces `maxQueueSize` limit
 - Implements drop policy:
-  - **DROP_OLDEST:** Removes oldest event when queue is full
-  - **DROP_NEWEST:** Rejects newest event when queue is full
+    - **DROP_OLDEST:** Removes oldest event when queue is full
+    - **DROP_NEWEST:** Rejects newest event when queue is full
 - Logs warnings when drops occur
 
 **Before:**
+
 ```kotlin
 private val buffer = ConcurrentLinkedQueue<TelemetryEvent>()
 
@@ -114,6 +123,7 @@ override fun emit(event: TelemetryEvent) {
 ```
 
 **After:**
+
 ```kotlin
 private val buffer = ArrayDeque<TelemetryEvent>()
 private val lock = ReentrantLock()
@@ -138,6 +148,7 @@ override fun emit(event: TelemetryEvent) {
 **File:** `androidApp/src/main/java/com/scanium/app/telemetry/otlp/OtlpHttpExporter.kt`
 
 **Changes:**
+
 - Added `telemetryConfig: TelemetryConfig` parameter
 - Extracted `executeWithRetry()` helper for all signal types (logs/metrics/traces)
 - Implements exponential backoff: `baseMs * 2^(attempt-1)`
@@ -145,6 +156,7 @@ override fun emit(event: TelemetryEvent) {
 - Does NOT retry on 4xx client errors
 
 **Retry Behavior:**
+
 ```
 Attempt 1: Immediate
 Attempt 2: Wait 1000ms (2^0 * 1000ms)
@@ -153,6 +165,7 @@ Attempt 4: Wait 4000ms (2^2 * 1000ms)
 ```
 
 **Code:**
+
 ```kotlin
 private suspend fun executeWithRetry(url: String, payload: String, signalType: String) {
     var attempt = 0
@@ -183,11 +196,13 @@ private suspend fun executeWithRetry(url: String, payload: String, signalType: S
 **File:** `androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt`
 
 **Changes:**
+
 - Creates `TelemetryConfig` based on build type (development vs production)
 - Passes config to all port implementations
 - Logs configuration on startup
 
 **Code:**
+
 ```kotlin
 private fun initializeTelemetry() {
     val telemetryConfig = if (BuildConfig.DEBUG) {
@@ -218,6 +233,7 @@ private fun initializeTelemetry() {
 **File:** `shared/telemetry/build.gradle.kts`
 
 **Change:**
+
 ```kotlin
 // Before:
 implementation(project(":shared:telemetry-contract"))
@@ -226,13 +242,15 @@ implementation(project(":shared:telemetry-contract"))
 api(project(":shared:telemetry-contract"))
 ```
 
-**Reason:** Makes `TelemetryConfig` and `TelemetrySeverity` transitively available to modules that depend on `shared:telemetry` (like `core-models`).
+**Reason:** Makes `TelemetryConfig` and `TelemetrySeverity` transitively available to modules that
+depend on `shared:telemetry` (like `core-models`).
 
 ---
 
 ***REMOVED******REMOVED*** Recommended Defaults for Mobile
 
 ***REMOVED******REMOVED******REMOVED*** Development
+
 ```kotlin
 TelemetryConfig(
     enabled = true,
@@ -248,6 +266,7 @@ TelemetryConfig(
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Production
+
 ```kotlin
 TelemetryConfig(
     enabled = true,
@@ -263,6 +282,7 @@ TelemetryConfig(
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Staging
+
 ```kotlin
 TelemetryConfig(
     enabled = true,
@@ -281,17 +301,17 @@ TelemetryConfig(
 
 ***REMOVED******REMOVED*** Configuration Knobs
 
-| Knob | Purpose | Mobile Best Practice |
-|------|---------|---------------------|
-| `enabled` | Master on/off switch | Enable in dev/prod, disable for testing |
-| `minSeverity` | Filter noise | DEBUG in dev, INFO in prod |
-| `traceSampleRate` | Control trace volume | 10% dev, 1% prod (traces are expensive) |
-| `maxQueueSize` | Prevent memory exhaustion | 500-1000 (depends on memory budget) |
+| Knob              | Purpose                     | Mobile Best Practice                    |
+|-------------------|-----------------------------|-----------------------------------------|
+| `enabled`         | Master on/off switch        | Enable in dev/prod, disable for testing |
+| `minSeverity`     | Filter noise                | DEBUG in dev, INFO in prod              |
+| `traceSampleRate` | Control trace volume        | 10% dev, 1% prod (traces are expensive) |
+| `maxQueueSize`    | Prevent memory exhaustion   | 500-1000 (depends on memory budget)     |
 | `flushIntervalMs` | Balance latency vs batching | 5-10 seconds (longer = better batching) |
-| `maxBatchSize` | Limit per-request size | 100 events (OTLP size limit ~4MB) |
-| `dropPolicy` | Queue overflow behavior | DROP_OLDEST (preserves recent context) |
-| `maxRetries` | Retry attempts | 3 (total 4 attempts, ~8s max delay) |
-| `retryBackoffMs` | Base retry delay | 1000ms (exponential: 1s, 2s, 4s) |
+| `maxBatchSize`    | Limit per-request size      | 100 events (OTLP size limit ~4MB)       |
+| `dropPolicy`      | Queue overflow behavior     | DROP_OLDEST (preserves recent context)  |
+| `maxRetries`      | Retry attempts              | 3 (total 4 attempts, ~8s max delay)     |
+| `retryBackoffMs`  | Base retry delay            | 1000ms (exponential: 1s, 2s, 4s)        |
 
 ---
 
@@ -300,6 +320,7 @@ TelemetryConfig(
 To change telemetry config for local development:
 
 ***REMOVED******REMOVED******REMOVED*** Option 1: Edit ScaniumApplication.kt (temporary)
+
 ```kotlin
 private fun initializeTelemetry() {
     val telemetryConfig = TelemetryConfig(
@@ -314,6 +335,7 @@ private fun initializeTelemetry() {
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Option 2: Use Environment Presets
+
 ```kotlin
 val telemetryConfig = when (myDebugFlag) {
     true -> TelemetryConfig.development()
@@ -322,6 +344,7 @@ val telemetryConfig = when (myDebugFlag) {
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Option 3: Remote Config (Future Work)
+
 - Add `SettingsRepository` integration
 - Expose toggles in Developer Settings UI
 - Hot-reload config without app restart
@@ -333,26 +356,31 @@ val telemetryConfig = when (myDebugFlag) {
 ***REMOVED******REMOVED******REMOVED*** Manual Verification
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Test 1: Toggle Enabled
+
 1. Set `enabled = false` in ScaniumApplication
 2. Run app, perform scan
 3. Verify: NO exports in Grafana/Loki/Tempo
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Test 2: Severity Filtering
+
 1. Set `minSeverity = INFO`
 2. Emit DEBUG and INFO events
 3. Verify: Only INFO events appear in Loki
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Test 3: Queue Overflow (DROP_OLDEST)
+
 1. Set `maxQueueSize = 5`, `dropPolicy = DROP_OLDEST`
 2. Emit 10 events rapidly
 3. Verify: Only last 5 events are exported
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Test 4: Queue Overflow (DROP_NEWEST)
+
 1. Set `maxQueueSize = 5`, `dropPolicy = DROP_NEWEST`
 2. Emit 10 events rapidly
 3. Verify: Only first 5 events are exported
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Test 5: Retry on Failure
+
 1. Stop Grafana Alloy (no OTLP endpoint)
 2. Emit events
 3. Verify: Logs show retry attempts with backoff (1s, 2s, 4s)
@@ -363,10 +391,12 @@ val telemetryConfig = when (myDebugFlag) {
 ***REMOVED******REMOVED*** Build Status
 
 **Shared Modules:** ✅ PASS
+
 - `shared:telemetry-contract` compiles successfully
 - `shared:telemetry` compiles successfully
 
 **Android App:** ⚠️ PRE-EXISTING ERRORS
+
 - Unrelated compilation errors in `ItemsViewModel.kt` and `AssistantViewModel.kt`
 - These errors exist on main branch and are NOT introduced by this PR
 - Telemetry-specific changes compile correctly
@@ -376,11 +406,13 @@ val telemetryConfig = when (myDebugFlag) {
 ***REMOVED******REMOVED*** Files Changed
 
 ***REMOVED******REMOVED******REMOVED*** New Files
+
 ```
 shared/telemetry-contract/src/commonMain/kotlin/com/scanium/telemetry/TelemetryConfig.kt
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Modified Files
+
 ```
 shared/telemetry/build.gradle.kts
 shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/facade/Telemetry.kt
@@ -438,7 +470,8 @@ androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt
 
 ***REMOVED******REMOVED*** Next Steps
 
-1. **Fix Pre-Existing Errors:** Resolve `ItemsViewModel.kt` and `AssistantViewModel.kt` compilation errors (unrelated to this PR)
+1. **Fix Pre-Existing Errors:** Resolve `ItemsViewModel.kt` and `AssistantViewModel.kt` compilation
+   errors (unrelated to this PR)
 2. **Manual Testing:** Verify toggles work as expected in dev/prod builds
 3. **Remote Config (Future):** Add SettingsRepository integration for runtime toggle changes
 4. **iOS Support (Future):** Implement iOS OTLP port adapters with same bounded queue pattern

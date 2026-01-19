@@ -9,7 +9,6 @@ import kotlin.test.assertFails
  * Tests for custom assertion matchers.
  */
 class MatchersTest {
-
     @Test
     fun assertRectsEqual_passesForEqualRects() {
         val rect1 = testNormalizedRect(0.1f, 0.2f, 0.5f, 0.8f)
@@ -52,71 +51,77 @@ class MatchersTest {
 
     @Test
     fun assertDetectionMatches_passesForMatchingDetections() {
-        val detection1 = testDetectionInfo(
-            trackingId = "test_1",
-            confidence = 0.85f,
-            category = ItemCategory.FASHION
-        )
-        val detection2 = testDetectionInfo(
-            trackingId = "test_1",
-            confidence = 0.85f,
-            category = ItemCategory.FASHION
-        )
+        val detection1 =
+            testDetectionInfo(
+                trackingId = "test_1",
+                confidence = 0.85f,
+                category = ItemCategory.FASHION,
+            )
+        val detection2 =
+            testDetectionInfo(
+                trackingId = "test_1",
+                confidence = 0.85f,
+                category = ItemCategory.FASHION,
+            )
 
         assertDetectionMatches(detection1, detection2)
     }
 
     @Test
     fun assertItemMatches_passesForMatchingItem() {
-        val item = testScannedItem(
-            id = "item_123",
-            category = ItemCategory.ELECTRONICS,
-            labelText = "Laptop",
-            mergeCount = 3
-        )
+        val item =
+            testScannedItem(
+                id = "item_123",
+                category = ItemCategory.ELECTRONICS,
+                labelText = "Laptop",
+                mergeCount = 3,
+            )
 
         assertItemMatches(
             item = item,
             expectedId = "item_123",
             expectedCategory = ItemCategory.ELECTRONICS,
             expectedLabelText = "Laptop",
-            expectedMergeCount = 3
+            expectedMergeCount = 3,
         )
     }
 
     @Test
     fun assertTrackerStats_passesForMatchingStats() {
-        val stats = TrackerStats(
-            activeCandidates = 5,
-            confirmedCandidates = 3,
-            currentFrame = 10
-        )
+        val stats =
+            TrackerStats(
+                activeCandidates = 5,
+                confirmedCandidates = 3,
+                currentFrame = 10,
+            )
 
         assertTrackerStats(
             stats = stats,
             expectedActiveCandidates = 5,
             expectedConfirmedCandidates = 3,
-            expectedCurrentFrame = 10
+            expectedCurrentFrame = 10,
         )
     }
 
     @Test
     fun assertContainsMatching_passesWhenItemMatches() {
-        val items = listOf(
-            testScannedItem(category = ItemCategory.FASHION),
-            testScannedItem(category = ItemCategory.ELECTRONICS),
-            testScannedItem(category = ItemCategory.HOME_GOOD)
-        )
+        val items =
+            listOf(
+                testScannedItem(category = ItemCategory.FASHION),
+                testScannedItem(category = ItemCategory.ELECTRONICS),
+                testScannedItem(category = ItemCategory.HOME_GOOD),
+            )
 
         assertContainsMatching(items) { it.category == ItemCategory.ELECTRONICS }
     }
 
     @Test
     fun assertContainsMatching_failsWhenNoMatch() {
-        val items = listOf(
-            testScannedItem(category = ItemCategory.FASHION),
-            testScannedItem(category = ItemCategory.HOME_GOOD)
-        )
+        val items =
+            listOf(
+                testScannedItem(category = ItemCategory.FASHION),
+                testScannedItem(category = ItemCategory.HOME_GOOD),
+            )
 
         assertFails {
             assertContainsMatching(items) { it.category == ItemCategory.ELECTRONICS }
@@ -125,10 +130,11 @@ class MatchersTest {
 
     @Test
     fun assertDoesNotContainMatching_passesWhenNoMatch() {
-        val items = listOf(
-            testScannedItem(category = ItemCategory.FASHION),
-            testScannedItem(category = ItemCategory.HOME_GOOD)
-        )
+        val items =
+            listOf(
+                testScannedItem(category = ItemCategory.FASHION),
+                testScannedItem(category = ItemCategory.HOME_GOOD),
+            )
 
         assertDoesNotContainMatching(items) { it.category == ItemCategory.ELECTRONICS }
     }
@@ -153,33 +159,37 @@ class MatchersTest {
 
     @Test
     fun assertOrdered_passesForAscendingOrder() {
-        val items = listOf(
-            testScannedItem(confidence = 0.5f),
-            testScannedItem(confidence = 0.7f),
-            testScannedItem(confidence = 0.9f)
-        )
+        val items =
+            listOf(
+                testScannedItem(confidence = 0.5f),
+                testScannedItem(confidence = 0.7f),
+                testScannedItem(confidence = 0.9f),
+            )
 
         assertOrdered(items, descending = false) { it.confidence }
     }
 
     @Test
     fun assertOrdered_passesForDescendingOrder() {
-        val items = listOf(
-            testScannedItem(confidence = 0.9f),
-            testScannedItem(confidence = 0.7f),
-            testScannedItem(confidence = 0.5f)
-        )
+        val items =
+            listOf(
+                testScannedItem(confidence = 0.9f),
+                testScannedItem(confidence = 0.7f),
+                testScannedItem(confidence = 0.5f),
+            )
 
         assertOrdered(items, descending = true) { it.confidence }
     }
 
     @Test
     fun assertOrdered_failsForIncorrectOrder() {
-        val items = listOf(
-            testScannedItem(confidence = 0.5f),
-            testScannedItem(confidence = 0.9f),
-            testScannedItem(confidence = 0.7f) // Out of order
-        )
+        val items =
+            listOf(
+                testScannedItem(confidence = 0.5f),
+                testScannedItem(confidence = 0.9f),
+                // Out of order
+                testScannedItem(confidence = 0.7f),
+            )
 
         assertFails {
             assertOrdered(items, descending = false) { it.confidence }

@@ -24,7 +24,6 @@ internal fun <T> Flow<Preferences>.safeMap(
             } else {
                 throw exception
             }
-        }
-        .map { preferences ->
+        }.map { preferences ->
             runCatching { transform(preferences) }.getOrElse { default }
         }

@@ -101,7 +101,9 @@ internal interface DeviceSoundPolicy {
     fun isSoundAllowed(): Boolean
 }
 
-internal class AndroidDeviceSoundPolicy(context: Context) : DeviceSoundPolicy {
+internal class AndroidDeviceSoundPolicy(
+    context: Context,
+) : DeviceSoundPolicy {
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 

@@ -218,7 +218,8 @@ class ItemAggregatorTest {
                 category = ItemCategory.FASHION,
                 labelText = "Lamp",
                 confidence = 0.8f,
-                boundingBox = testCenteredRect(size = 0.2f), // area 0.04
+                // area 0.04
+                boundingBox = testCenteredRect(size = 0.2f),
             )
         val detection2 =
             createDetection(
@@ -226,7 +227,8 @@ class ItemAggregatorTest {
                 category = ItemCategory.FASHION,
                 labelText = "Lamp",
                 confidence = 0.85f,
-                boundingBox = testCenteredRect(size = 0.1f), // area 0.01 -> sizeScore 0.25
+                // area 0.01 -> sizeScore 0.25
+                boundingBox = testCenteredRect(size = 0.1f),
             )
 
         val item1 = aggregator.processDetection(detection1)
@@ -261,7 +263,8 @@ class ItemAggregatorTest {
                 category = ItemCategory.FASHION,
                 labelText = "Lamp",
                 confidence = 0.8f,
-                boundingBox = testCenteredRect(size = 0.2f), // area 0.04
+                // area 0.04
+                boundingBox = testCenteredRect(size = 0.2f),
             )
         val detection2 =
             createDetection(
@@ -269,7 +272,8 @@ class ItemAggregatorTest {
                 category = ItemCategory.FASHION,
                 labelText = "Lamp",
                 confidence = 0.85f,
-                boundingBox = testCenteredRect(size = 0.08f), // area 0.0064 -> sizeScore 0.16
+                // area 0.0064 -> sizeScore 0.16
+                boundingBox = testCenteredRect(size = 0.08f),
             )
 
         val item1 = aggregator.processDetection(detection1)

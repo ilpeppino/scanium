@@ -1,6 +1,7 @@
 ***REMOVED*** Backend Connectivity Guide
 
-**Purpose**: Configure the Scanium Android app to reliably reach the backend running on your NAS (Synology) in both LAN and remote modes.
+**Purpose**: Configure the Scanium Android app to reliably reach the backend running on your NAS (
+Synology) in both LAN and remote modes.
 
 **Last Updated**: 2026-01-01
 
@@ -24,17 +25,18 @@
 The Scanium Android app supports two connectivity modes:
 
 - **LAN Mode** (Debug): Connect directly to your NAS over HTTP on the local network
-  - Example: `http://192.168.1.100:3000`
-  - Use this for local development and testing
-  - Requires physical device on the same network as your NAS
+    - Example: `http://192.168.1.100:3000`
+    - Use this for local development and testing
+    - Requires physical device on the same network as your NAS
 
 - **Remote Mode** (Release/Beta): Connect via HTTPS through a public domain
-  - Example: `https://scanium.yourdomain.com`
-  - Use this for production, beta testing, or remote access
-  - Works from anywhere with internet connection
-  - Typically uses Cloudflare Tunnel or similar reverse proxy
+    - Example: `https://scanium.yourdomain.com`
+    - Use this for production, beta testing, or remote access
+    - Works from anywhere with internet connection
+    - Typically uses Cloudflare Tunnel or similar reverse proxy
 
 The app automatically selects the appropriate configuration based on the build type:
+
 - **Debug builds**: Use LAN URL if configured, otherwise fall back to remote URL
 - **Release builds**: Always use remote URL (HTTPS required)
 
@@ -46,23 +48,23 @@ The app automatically selects the appropriate configuration based on the build t
 
 The app has 4 build variants (combinations of flavor + build type):
 
-| Variant | Flavor | Build Type | Use Case | Default URL |
-|---------|--------|------------|----------|-------------|
-| `devDebug` | dev | debug | Local development with LAN backend | LAN URL or Remote URL |
-| `devRelease` | dev | release | Internal testing with remote backend | Remote URL (HTTPS) |
-| `betaDebug` | beta | debug | Beta testing with LAN backend | LAN URL or Remote URL |
-| `betaRelease` | beta | release | Beta distribution with remote backend | Remote URL (HTTPS) |
+| Variant       | Flavor | Build Type | Use Case                              | Default URL           |
+|---------------|--------|------------|---------------------------------------|-----------------------|
+| `devDebug`    | dev    | debug      | Local development with LAN backend    | LAN URL or Remote URL |
+| `devRelease`  | dev    | release    | Internal testing with remote backend  | Remote URL (HTTPS)    |
+| `betaDebug`   | beta   | debug      | Beta testing with LAN backend         | LAN URL or Remote URL |
+| `betaRelease` | beta   | release    | Beta distribution with remote backend | Remote URL (HTTPS)    |
 
 ***REMOVED******REMOVED******REMOVED*** Network Security
 
 - **Debug builds**: Allow cleartext HTTP traffic (for LAN access)
-  - Config: `androidApp/src/debug/res/xml/network_security_config_debug.xml`
-  - Allows HTTP to any host (e.g., `http://192.168.1.100:3000`)
+    - Config: `androidApp/src/debug/res/xml/network_security_config_debug.xml`
+    - Allows HTTP to any host (e.g., `http://192.168.1.100:3000`)
 
 - **Release builds**: Enforce HTTPS only (security)
-  - Config: `androidApp/src/main/res/xml/network_security_config.xml`
-  - Blocks HTTP except for localhost/emulator
-  - Use this for production/beta with Cloudflare Tunnel or similar
+    - Config: `androidApp/src/main/res/xml/network_security_config.xml`
+    - Blocks HTTP except for localhost/emulator
+    - Use this for production/beta with Cloudflare Tunnel or similar
 
 ---
 
@@ -104,6 +106,7 @@ scanium.api.key=your-api-key-here
 ***REMOVED******REMOVED******REMOVED*** 3. Build & Install
 
 For LAN mode (debug):
+
 ```bash
 ***REMOVED*** Build debug APK
 ./gradlew :androidApp:assembleDevDebug
@@ -116,6 +119,7 @@ For LAN mode (debug):
 ```
 
 For Remote mode (release):
+
 ```bash
 ***REMOVED*** Build release APK (requires signing config)
 ./gradlew :androidApp:assembleDevRelease
@@ -127,6 +131,7 @@ For Remote mode (release):
 ***REMOVED******REMOVED******REMOVED*** 4. Verify Connectivity
 
 Open the Scanium app and check:
+
 1. Go to **Settings** → **Developer Options** (in dev builds)
 2. Look for the base URL displayed
 3. Try a backend-dependent feature (e.g., cloud classification, feature flags)
@@ -175,6 +180,7 @@ scanium.api.key=your-dev-api-key
 ```
 
 **Important**:
+
 - This file is gitignored - it's safe to commit changes to it
 - Changes take effect after rebuilding the app
 - Environment variables override local.properties (useful for CI/CD)
@@ -196,6 +202,7 @@ Priority: `local.properties` → `environment variables` → `default value`
 The `build.gradle.kts` uses the following logic:
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Debug Builds:
+
 ```kotlin
 val debugUrl = local.properties["scanium.api.base.url.debug"] ?: env["SCANIUM_API_BASE_URL_DEBUG"] ?: ""
 val effectiveUrl = debugUrl.ifEmpty {
@@ -206,6 +213,7 @@ val effectiveUrl = debugUrl.ifEmpty {
 **Translation**: Debug builds prefer the `.debug` URL, but fall back to the main URL if not set.
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Release Builds:
+
 ```kotlin
 val releaseUrl = local.properties["scanium.api.base.url"] ?: env["SCANIUM_API_BASE_URL"]
 ```
@@ -223,6 +231,7 @@ BuildConfig.SCANIUM_API_KEY       // e.g., "your-api-key"
 ```
 
 These are used throughout the app:
+
 - `CloudClassifier.kt`: `val baseUrl = BuildConfig.SCANIUM_API_BASE_URL`
 - `AndroidFeatureFlagRepository.kt`: `val baseUrl = BuildConfig.SCANIUM_API_BASE_URL`
 - `AssistantRepository.kt`: `val baseUrl = BuildConfig.SCANIUM_API_BASE_URL`
@@ -239,9 +248,9 @@ These are used throughout the app:
    java -version  ***REMOVED*** Should show version 17+
    ```
 3. **Physical Android Device**:
-   - For LAN mode, device must be on the same network as your NAS
-   - Enable USB debugging in Developer Options
-   - Connect via USB
+    - For LAN mode, device must be on the same network as your NAS
+    - Enable USB debugging in Developer Options
+    - Connect via USB
 
 ***REMOVED******REMOVED******REMOVED*** Build Commands
 
@@ -262,6 +271,7 @@ adb shell pm list packages | grep scanium
 ```
 
 **What happens**:
+
 - Uses `scanium.api.base.url.debug` (LAN URL) if set
 - Falls back to `scanium.api.base.url` (remote URL) if debug URL not set
 - Allows HTTP traffic (cleartext) via debug network security config
@@ -279,6 +289,7 @@ adb shell pm list packages | grep scanium
 ```
 
 **What happens**:
+
 - Uses `scanium.api.base.url` (remote URL)
 - Enforces HTTPS only (no cleartext HTTP except localhost)
 - Requires signing config (see [Signing Configuration](***REMOVED***signing-configuration) below)
@@ -296,6 +307,7 @@ adb shell pm list packages | grep scanium
 ```
 
 **What happens**:
+
 - Uses `scanium.api.base.url` (remote URL)
 - Enforces HTTPS only
 - Requires signing config
@@ -373,6 +385,7 @@ Use the provided script to verify your configuration:
 ```
 
 **What it checks**:
+
 - Current build variant
 - Resolved base URL from BuildConfig
 - Network connectivity from device to backend
@@ -408,6 +421,7 @@ adb shell curl -v https://scanium.yourdomain.com/health
 ```
 
 **Expected responses**:
+
 - `200 OK` for healthy backend
 - `curl: (7) Failed to connect` if backend is unreachable
 - `curl: (35) SSL connect error` for HTTPS/certificate issues
@@ -433,6 +447,7 @@ adb logcat | grep -i scanium
 5. Try **Test Backend Connection** button (if available)
 
 Or:
+
 1. Take a photo of an item
 2. If cloud classification is configured, it should attempt to classify
 3. Check for network errors in the UI
@@ -446,12 +461,14 @@ Or:
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 1. App Can't Reach Backend (Debug Build)
 
 **Symptoms**:
+
 - Error: "Failed to connect to /192.168.1.100:3000"
 - Logcat: `java.net.ConnectException: Failed to connect`
 
 **Possible Causes**:
 
 **A. Device and NAS on different networks**
+
 ```bash
 ***REMOVED*** Check device IP
 adb shell ip addr show wlan0 | grep inet
@@ -462,6 +479,7 @@ adb shell ip addr show wlan0 | grep inet
 **Solution**: Connect device to same WiFi as NAS
 
 **B. Backend not running on NAS**
+
 ```bash
 ***REMOVED*** SSH into NAS
 ssh admin@192.168.1.100
@@ -475,6 +493,7 @@ curl http://localhost:3000/health
 **Solution**: Start backend on NAS
 
 **C. NAS firewall blocking port 3000**
+
 ```bash
 ***REMOVED*** On NAS, check firewall rules
 sudo iptables -L -n | grep 3000
@@ -485,6 +504,7 @@ sudo iptables -L -n | grep 3000
 **Solution**: Allow port 3000 in NAS firewall
 
 **D. Wrong IP or port in configuration**
+
 ```bash
 ***REMOVED*** Check local.properties
 cat local.properties | grep scanium.api.base.url.debug
@@ -498,12 +518,14 @@ ping 192.168.1.100
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 2. App Can't Reach Backend (Release Build)
 
 **Symptoms**:
+
 - Error: "Cleartext HTTP traffic to ... not permitted"
 - Logcat: `java.net.UnknownServiceException: CLEARTEXT communication not permitted`
 
 **Cause**: Release builds block HTTP traffic (security policy)
 
 **Solution**:
+
 - Use HTTPS URL in `scanium.api.base.url`
 - Set up Cloudflare Tunnel or reverse proxy with SSL
 - OR use debug build for LAN testing
@@ -511,12 +533,14 @@ ping 192.168.1.100
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Certificate/SSL Errors (Release Build)
 
 **Symptoms**:
+
 - Error: "SSL handshake failed"
 - Logcat: `javax.net.ssl.SSLHandshakeException`
 
 **Possible Causes**:
 
 **A. Self-signed certificate**
+
 ```bash
 ***REMOVED*** Check certificate
 openssl s_client -servername scanium.yourdomain.com -connect scanium.yourdomain.com:443 < /dev/null
@@ -542,6 +566,7 @@ openssl s_client -servername scanium.yourdomain.com -connect scanium.yourdomain.
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Base URL Not Set
 
 **Symptoms**:
+
 - UI shows: "Classification will use on-device processing until SCANIUM_API_BASE_URL is configured"
 - Logcat: "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)"
 
@@ -552,9 +577,11 @@ openssl s_client -servername scanium.yourdomain.com -connect scanium.yourdomain.
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Wrong Build Variant Installed
 
 **Symptoms**:
+
 - Debug URL used when expecting release URL (or vice versa)
 
 **Check installed variant**:
+
 ```bash
 ***REMOVED*** List installed packages
 adb shell pm list packages -f | grep scanium
@@ -565,6 +592,7 @@ adb shell pm list packages -f | grep scanium
 ```
 
 **Solution**: Uninstall and reinstall correct variant
+
 ```bash
 adb uninstall com.scanium.app.dev
 ./gradlew :androidApp:installDevDebug
@@ -575,6 +603,7 @@ adb uninstall com.scanium.app.dev
 **Cause**: BuildConfig is generated at build time, not runtime
 
 **Solution**: Clean and rebuild
+
 ```bash
 ./gradlew clean
 ./gradlew :androidApp:installDevDebug
@@ -583,10 +612,12 @@ adb uninstall com.scanium.app.dev
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 7. Cloudflare Tunnel / Reverse Proxy Issues
 
 **Symptoms**:
+
 - Backend works on LAN but not via public domain
 - Error: 502 Bad Gateway or 504 Gateway Timeout
 
 **Check Cloudflare Tunnel**:
+
 ```bash
 ***REMOVED*** On NAS, check tunnel status
 docker logs <cloudflare-tunnel-container>
@@ -596,6 +627,7 @@ curl -v https://scanium.yourdomain.com/health
 ```
 
 **Common Cloudflare Tunnel Issues**:
+
 - Tunnel not running: Start tunnel container
 - Wrong backend URL in tunnel config: Update `config.yml`
 - Firewall blocking tunnel: Check NAS firewall rules
@@ -770,25 +802,25 @@ Before deploying to production:
 
 ***REMOVED******REMOVED******REMOVED*** Configuration Properties
 
-| Property | Description | Example | Required |
-|----------|-------------|---------|----------|
-| `scanium.api.base.url` | Remote backend URL (HTTPS) | `https://scanium.yourdomain.com` | Yes (for release) |
-| `scanium.api.base.url.debug` | LAN backend URL (HTTP) | `http://192.168.1.100:3000` | No (falls back to main URL) |
-| `scanium.api.key` | API key | `your-api-key` | Yes |
-| `scanium.api.certificate.pin` | Certificate pin (SHA-256) | `sha256/AAAA...` | No (recommended for prod) |
-| `scanium.keystore.file` | Keystore path for signing | `/path/to/keystore.jks` | Yes (for release) |
-| `scanium.keystore.password` | Keystore password | `secret` | Yes (for release) |
-| `scanium.key.alias` | Key alias | `scanium-release` | Yes (for release) |
-| `scanium.key.password` | Key password | `secret` | Yes (for release) |
+| Property                      | Description                | Example                          | Required                    |
+|-------------------------------|----------------------------|----------------------------------|-----------------------------|
+| `scanium.api.base.url`        | Remote backend URL (HTTPS) | `https://scanium.yourdomain.com` | Yes (for release)           |
+| `scanium.api.base.url.debug`  | LAN backend URL (HTTP)     | `http://192.168.1.100:3000`      | No (falls back to main URL) |
+| `scanium.api.key`             | API key                    | `your-api-key`                   | Yes                         |
+| `scanium.api.certificate.pin` | Certificate pin (SHA-256)  | `sha256/AAAA...`                 | No (recommended for prod)   |
+| `scanium.keystore.file`       | Keystore path for signing  | `/path/to/keystore.jks`          | Yes (for release)           |
+| `scanium.keystore.password`   | Keystore password          | `secret`                         | Yes (for release)           |
+| `scanium.key.alias`           | Key alias                  | `scanium-release`                | Yes (for release)           |
+| `scanium.key.password`        | Key password               | `secret`                         | Yes (for release)           |
 
 ***REMOVED******REMOVED******REMOVED*** Build Variants
 
-| Command | Variant | URL Source | HTTP Allowed | Use Case |
-|---------|---------|------------|--------------|----------|
-| `installDevDebug` | devDebug | `.debug` → fallback | Yes | Local dev with LAN backend |
-| `installDevRelease` | devRelease | `.base.url` | No (HTTPS only) | Internal testing with remote backend |
-| `installBetaDebug` | betaDebug | `.debug` → fallback | Yes | Beta testing with LAN backend |
-| `installBetaRelease` | betaRelease | `.base.url` | No (HTTPS only) | Public beta with remote backend |
+| Command              | Variant     | URL Source          | HTTP Allowed    | Use Case                             |
+|----------------------|-------------|---------------------|-----------------|--------------------------------------|
+| `installDevDebug`    | devDebug    | `.debug` → fallback | Yes             | Local dev with LAN backend           |
+| `installDevRelease`  | devRelease  | `.base.url`         | No (HTTPS only) | Internal testing with remote backend |
+| `installBetaDebug`   | betaDebug   | `.debug` → fallback | Yes             | Beta testing with LAN backend        |
+| `installBetaRelease` | betaRelease | `.base.url`         | No (HTTPS only) | Public beta with remote backend      |
 
 ***REMOVED******REMOVED******REMOVED*** Useful Commands
 
@@ -842,10 +874,10 @@ If you encounter issues not covered in this guide:
 3. Run the verification script: `./scripts/verify-backend-config.sh`
 4. Collect logs: `adb logcat | grep -i scanium > scanium.log`
 5. Create a new issue with:
-   - Build variant used
-   - Configuration (sanitized, no secrets)
-   - Error messages from logcat
-   - Output from verification script
+    - Build variant used
+    - Configuration (sanitized, no secrets)
+    - Error messages from logcat
+    - Output from verification script
 
 ---
 

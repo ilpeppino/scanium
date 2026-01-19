@@ -63,11 +63,12 @@ class ItemsStateManager(
     private val itemAggregator = ItemAggregator(config = aggregationConfig)
     private val stateStore = ItemsStateStore()
     private val persistence = ItemsPersistence(itemsStore)
-    private val telemetry = ItemsTelemetry(
-        scope = scope,
-        workerDispatcher = initialWorkerDispatcher,
-        statsProvider = { itemAggregator.getStats() },
-    )
+    private val telemetry =
+        ItemsTelemetry(
+            scope = scope,
+            workerDispatcher = initialWorkerDispatcher,
+            statsProvider = { itemAggregator.getStats() },
+        )
 
     val items: StateFlow<List<ScannedItem>> = stateStore.items
     val itemAddedEvents = stateStore.itemAddedEvents
@@ -178,9 +179,7 @@ class ItemsStateManager(
 
     fun getScannedItems(): List<ScannedItem> = itemAggregator.getScannedItems()
 
-    fun getItem(itemId: String): ScannedItem? {
-        return stateStore.getItem(itemId)
-    }
+    fun getItem(itemId: String): ScannedItem? = stateStore.getItem(itemId)
 
     fun updateListingStatus(
         itemId: String,
@@ -234,16 +233,18 @@ class ItemsStateManager(
             stateStore.getItems().map { item ->
                 val update = updates[item.id]
                 if (update != null) {
-                    val newUserPriceCents = when {
-                        update.clearUserPriceCents -> null
-                        update.userPriceCents != null -> update.userPriceCents
-                        else -> item.userPriceCents
-                    }
-                    val newCondition = when {
-                        update.clearCondition -> null
-                        update.condition != null -> update.condition
-                        else -> item.condition
-                    }
+                    val newUserPriceCents =
+                        when {
+                            update.clearUserPriceCents -> null
+                            update.userPriceCents != null -> update.userPriceCents
+                            else -> item.userPriceCents
+                        }
+                    val newCondition =
+                        when {
+                            update.clearCondition -> null
+                            update.condition != null -> update.condition
+                            else -> item.condition
+                        }
                     item.copy(
                         labelText = update.labelText ?: item.labelText,
                         recognizedText = update.recognizedText ?: item.recognizedText,
@@ -287,9 +288,7 @@ class ItemsStateManager(
         }
     }
 
-    fun getCurrentSimilarityThreshold(): Float {
-        return itemAggregator.getCurrentSimilarityThreshold()
-    }
+    fun getCurrentSimilarityThreshold(): Float = itemAggregator.getCurrentSimilarityThreshold()
 
     fun applyEnhancedClassification(
         aggregatedId: String,
@@ -354,13 +353,14 @@ class ItemsStateManager(
 
         itemAggregator.applyEnhancedClassification(
             aggregatedId = aggregatedId,
-            category = categoryHint?.let { hint ->
-                try {
-                    ItemCategory.entries.find { it.name.equals(hint, ignoreCase = true) }
-                } catch (e: Exception) {
-                    null
-                }
-            },
+            category =
+                categoryHint?.let { hint ->
+                    try {
+                        ItemCategory.entries.find { it.name.equals(hint, ignoreCase = true) }
+                    } catch (e: Exception) {
+                        null
+                    }
+                },
             label = suggestedLabel,
             priceRange = null,
             classificationConfidence = null,
@@ -389,9 +389,7 @@ class ItemsStateManager(
         itemAggregator.updatePriceEstimation(aggregatedId, status, priceRange)
     }
 
-    private fun buildVisionAttributeMap(
-        visionAttributes: VisionAttributes,
-    ): Map<String, ItemAttribute> {
+    private fun buildVisionAttributeMap(visionAttributes: VisionAttributes): Map<String, ItemAttribute> {
         val attributes = mutableMapOf<String, ItemAttribute>()
 
         val brand = visionAttributes.primaryBrand?.trim()?.takeIf { it.isNotEmpty() }
@@ -402,52 +400,67 @@ class ItemsStateManager(
 
         val colors = visionAttributes.colors.sortedByDescending { it.score }
         colors.getOrNull(0)?.let { color ->
-            attributes["color"] = ItemAttribute(
-                value = color.name,
-                confidence = color.score,
-                source = "vision-color",
-            )
+            attributes["color"] =
+                ItemAttribute(
+                    value = color.name,
+                    confidence = color.score,
+                    source = "vision-color",
+                )
         }
         colors.getOrNull(1)?.let { color ->
-            attributes["secondaryColor"] = ItemAttribute(
-                value = color.name,
-                confidence = color.score,
-                source = "vision-color",
-            )
+            attributes["secondaryColor"] =
+                ItemAttribute(
+                    value = color.name,
+                    confidence = color.score,
+                    source = "vision-color",
+                )
         }
 
-        val itemType = visionAttributes.itemType?.trim()?.takeIf { it.isNotEmpty() }
-            ?: visionAttributes.labels.firstOrNull()?.name?.trim()?.takeIf { it.isNotEmpty() }
+        val itemType =
+            visionAttributes.itemType?.trim()?.takeIf { it.isNotEmpty() }
+                ?: visionAttributes.labels
+                    .firstOrNull()
+                    ?.name
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
         if (itemType != null) {
             val confidence = visionAttributes.labels.maxOfOrNull { it.score } ?: 0.7f
-            attributes["itemType"] = ItemAttribute(
-                value = itemType,
-                confidence = confidence,
-                source = "vision-label",
-            )
+            attributes["itemType"] =
+                ItemAttribute(
+                    value = itemType,
+                    confidence = confidence,
+                    source = "vision-label",
+                )
         }
 
-        val labelNames = visionAttributes.labels.map { it.name }.distinct().take(3)
+        val labelNames =
+            visionAttributes.labels
+                .map { it.name }
+                .distinct()
+                .take(3)
         if (labelNames.isNotEmpty()) {
             val confidence = visionAttributes.labels.maxOfOrNull { it.score } ?: 0.5f
-            attributes["labelHints"] = ItemAttribute(
-                value = labelNames.joinToString(", "),
-                confidence = confidence,
-                source = "vision-label",
-            )
+            attributes["labelHints"] =
+                ItemAttribute(
+                    value = labelNames.joinToString(", "),
+                    confidence = confidence,
+                    source = "vision-label",
+                )
         }
 
-        val ocrSnippet = visionAttributes.ocrText
-            ?.lineSequence()
-            ?.map { it.trim() }
-            ?.firstOrNull { it.isNotEmpty() }
-            ?.take(80)
+        val ocrSnippet =
+            visionAttributes.ocrText
+                ?.lineSequence()
+                ?.map { it.trim() }
+                ?.firstOrNull { it.isNotEmpty() }
+                ?.take(80)
         if (!ocrSnippet.isNullOrBlank()) {
-            attributes["ocrText"] = ItemAttribute(
-                value = ocrSnippet,
-                confidence = 0.8f,
-                source = "vision-ocr",
-            )
+            attributes["ocrText"] =
+                ItemAttribute(
+                    value = ocrSnippet,
+                    confidence = 0.8f,
+                    source = "vision-ocr",
+                )
         }
 
         return attributes
@@ -479,13 +492,14 @@ class ItemsStateManager(
         triggerCallback: Boolean = true,
         animationEnabled: Boolean = true,
     ) {
-        val scannedItems = stateStore.updateFromAggregator(
-            itemAggregator = itemAggregator,
-            notifyNewItems = notifyNewItems,
-            triggerCallback = triggerCallback,
-            animationEnabled = animationEnabled,
-            onStateChanged = onStateChanged,
-        )
+        val scannedItems =
+            stateStore.updateFromAggregator(
+                itemAggregator = itemAggregator,
+                notifyNewItems = notifyNewItems,
+                triggerCallback = triggerCallback,
+                animationEnabled = animationEnabled,
+                onStateChanged = onStateChanged,
+            )
 
         persistItems(scannedItems)
     }
@@ -549,16 +563,22 @@ class ItemsStateManager(
 
     fun updateEnrichmentStatus(
         itemId: String,
-        transform: (com.scanium.shared.core.models.items.EnrichmentLayerStatus) -> com.scanium.shared.core.models.items.EnrichmentLayerStatus,
+        transform: (
+            com.scanium.shared.core.models.items.EnrichmentLayerStatus,
+        ) -> com.scanium.shared.core.models.items.EnrichmentLayerStatus,
     ) {
         val updatedItems =
             stateStore.getItems().map { item ->
                 if (item.id == itemId) {
                     val newStatus = transform(item.enrichmentStatus)
                     item.copy(
-                        enrichmentStatus = newStatus.copy(
-                            lastUpdated = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
-                        ),
+                        enrichmentStatus =
+                            newStatus.copy(
+                                lastUpdated =
+                                    kotlinx.datetime.Clock.System
+                                        .now()
+                                        .toEpochMilliseconds(),
+                            ),
                     )
                 } else {
                     item
@@ -654,7 +674,10 @@ class ItemsStateManager(
         exportModel: String?,
         exportConfidenceTier: String?,
     ) {
-        val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        val now =
+            kotlinx.datetime.Clock.System
+                .now()
+                .toEpochMilliseconds()
         val updatedItems =
             stateStore.getItems().map { item ->
                 if (item.id == itemId) {

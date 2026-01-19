@@ -5,8 +5,8 @@ import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.network.security.RequestSigner
 import com.scanium.app.selling.assistant.network.AssistantHttpConfig
-import com.scanium.app.telemetry.TraceContext
 import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
+import com.scanium.app.telemetry.TraceContext
 import com.scanium.shared.core.models.assistant.AssistantPromptRequest
 import com.scanium.shared.core.models.assistant.AssistantResponse
 import kotlinx.coroutines.Dispatchers
@@ -82,7 +82,7 @@ class AssistantRepository(
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true
-            explicitNulls = false  // Don't encode null values for optional fields
+            explicitNulls = false // Don't encode null values for optional fields
         }
 
     // Client-side throttling
@@ -124,41 +124,44 @@ class AssistantRepository(
 
             val baseUrl =
                 BuildConfig.SCANIUM_API_BASE_URL.takeIf { it.isNotBlank() }
-                    ?: return@withContext Result.failure<AssistantResponse>(
-                        AssistantException(
-                            errorCode = "CONFIG_ERROR",
-                            userMessage = "Assistant is not configured. Please check app settings.",
-                        ),
-                    ).also {
-                        assistSpan?.end(mapOf("status" to "config_error"))
-                        TraceContext.clearActiveSpan()
-                    }
+                    ?: return@withContext Result
+                        .failure<AssistantResponse>(
+                            AssistantException(
+                                errorCode = "CONFIG_ERROR",
+                                userMessage = "Assistant is not configured. Please check app settings.",
+                            ),
+                        ).also {
+                            assistSpan?.end(mapOf("status" to "config_error"))
+                            TraceContext.clearActiveSpan()
+                        }
 
             val apiKey =
                 apiKeyProvider()?.takeIf { it.isNotBlank() }
-                    ?: return@withContext Result.failure<AssistantResponse>(
-                        AssistantException(
-                            errorCode = "CONFIG_ERROR",
-                            userMessage = "API key is missing. Please check app settings.",
-                        ),
-                    ).also {
-                        assistSpan?.end(mapOf("status" to "config_error"))
-                        TraceContext.clearActiveSpan()
-                    }
+                    ?: return@withContext Result
+                        .failure<AssistantResponse>(
+                            AssistantException(
+                                errorCode = "CONFIG_ERROR",
+                                userMessage = "API key is missing. Please check app settings.",
+                            ),
+                        ).also {
+                            assistSpan?.end(mapOf("status" to "config_error"))
+                            TraceContext.clearActiveSpan()
+                        }
 
             // Client-side throttling
             val now = System.currentTimeMillis()
             val lastTime = lastRequestTime.get()
             if (now - lastTime < MIN_REQUEST_INTERVAL_MS) {
-                return@withContext Result.failure<AssistantResponse>(
-                    AssistantException(
-                        errorCode = "THROTTLED",
-                        userMessage = "Please wait a moment before sending another message.",
-                    ),
-                ).also {
-                    assistSpan?.end(mapOf("status" to "throttled"))
-                    TraceContext.clearActiveSpan()
-                }
+                return@withContext Result
+                    .failure<AssistantResponse>(
+                        AssistantException(
+                            errorCode = "THROTTLED",
+                            userMessage = "Please wait a moment before sending another message.",
+                        ),
+                    ).also {
+                        assistSpan?.end(mapOf("status" to "throttled"))
+                        TraceContext.clearActiveSpan()
+                    }
             }
             lastRequestTime.set(now)
 
@@ -170,7 +173,8 @@ class AssistantRepository(
                 val requestBody = requestBodyJson.toRequestBody("application/json".toMediaType())
 
                 val httpRequestBuilder =
-                    Request.Builder()
+                    Request
+                        .Builder()
                         .url(endpoint)
                         .post(requestBody)
                         .header("X-API-Key", apiKey)
@@ -414,13 +418,12 @@ class AssistantRepository(
             }
         }
 
-    private fun hashDeviceId(deviceId: String): String {
-        return try {
+    private fun hashDeviceId(deviceId: String): String =
+        try {
             val digest = MessageDigest.getInstance("SHA-256")
             val hash = digest.digest(deviceId.toByteArray())
             hash.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
             deviceId // Fallback to original if hashing fails
         }
-    }
 }

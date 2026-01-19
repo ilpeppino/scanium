@@ -2,7 +2,12 @@
   "uid": "scanium-scan-performance",
   "title": "Scanium - Performance & Latency",
   "description": "Regression detection for ML and frame processing",
-  "tags": ["scanium", "performance", "ml", "latency"],
+  "tags": [
+    "scanium",
+    "performance",
+    "ml",
+    "latency"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
@@ -18,11 +23,26 @@
         "label": "Platform",
         "type": "custom",
         "query": "android,ios",
-        "current": { "text": "All", "value": "$__all" },
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "android", "value": "android", "selected": false },
-          { "text": "ios", "value": "ios", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "android",
+            "value": "android",
+            "selected": false
+          },
+          {
+            "text": "ios",
+            "value": "ios",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -32,12 +52,31 @@
         "label": "Environment",
         "type": "custom",
         "query": "dev,stage,prod",
-        "current": { "text": "All", "value": "$__all" },
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "dev", "value": "dev", "selected": false },
-          { "text": "stage", "value": "stage", "selected": false },
-          { "text": "prod", "value": "prod", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "dev",
+            "value": "dev",
+            "selected": false
+          },
+          {
+            "text": "stage",
+            "value": "stage",
+            "selected": false
+          },
+          {
+            "text": "prod",
+            "value": "prod",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -46,12 +85,18 @@
         "name": "app_version",
         "label": "App Version",
         "type": "query",
-        "datasource": { "type": "loki", "uid": "LOKI" },
+        "datasource": {
+          "type": "loki",
+          "uid": "LOKI"
+        },
         "query": "label_values({source=\"scanium-mobile\"}, app_version)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       }
     ]
   },
@@ -60,8 +105,16 @@
       "id": 1,
       "title": "Inference Latency (p50/p95/p99)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -79,14 +132,26 @@
           "legendFormat": "p99"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "ms" } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      }
     },
     {
       "id": 2,
       "title": "Latency by App Version (p95)",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -94,14 +159,26 @@
           "legendFormat": "{{app_version}}"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "ms" } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      }
     },
     {
       "id": 3,
       "title": "Trace Count (Tempo)",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "tempo", "uid": "TEMPO" },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "TEMPO"
+      },
       "targets": [
         {
           "refId": "A",
@@ -112,7 +189,7 @@
       ],
       "description": "Just a link to explore traces",
       "links": [
-         {
+        {
           "title": "Explore Traces",
           "url": "/explore?orgId=1&left=%7B%22datasource%22:%22TEMPO%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22datasource%22:%7B%22type%22:%22tempo%22,%22uid%22:%22TEMPO%22%7D,%22queryType%22:%22nativeSearch%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D",
           "targetBlank": true

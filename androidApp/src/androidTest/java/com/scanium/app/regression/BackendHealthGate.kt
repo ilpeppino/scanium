@@ -93,14 +93,17 @@ object BackendHealthGate {
                                     Log.i(TAG, "Backend healthy: $healthUrl (${latency}ms)")
                                     HealthResult.Healthy(latency)
                                 }
+
                                 response.code in 401..403 -> {
                                     Log.w(TAG, "Backend auth required: ${response.code}")
                                     HealthResult.Unhealthy("Auth required", response.code)
                                 }
+
                                 response.code in 500..599 -> {
                                     Log.e(TAG, "Backend server error: ${response.code}")
                                     HealthResult.Unhealthy("Server error", response.code)
                                 }
+
                                 else -> {
                                     Log.w(TAG, "Backend unexpected response: ${response.code}")
                                     HealthResult.Unhealthy("Unexpected response", response.code)
@@ -130,18 +133,21 @@ object BackendHealthGate {
             is HealthResult.Healthy -> {
                 Log.i(TAG, "Backend ready (${result.latencyMs}ms)")
             }
+
             is HealthResult.NotConfigured -> {
                 Assume.assumeTrue(
                     "Backend not configured: Set SCANIUM_BASE_URL instrumentation arg or BuildConfig",
                     false,
                 )
             }
+
             is HealthResult.Unhealthy -> {
                 Assume.assumeTrue(
                     "Backend unhealthy: ${result.reason} (HTTP ${result.statusCode})",
                     false,
                 )
             }
+
             is HealthResult.Unreachable -> {
                 Assume.assumeTrue(
                     "Backend not reachable: ${result.error}. " +

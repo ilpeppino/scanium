@@ -19,10 +19,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.scanium.app.selling.assistant.local.LocalSuggestionsCard
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.SuggestedAttribute
+import com.scanium.app.selling.assistant.local.LocalSuggestionsCard
 
 @Composable
 fun AssistantChatList(

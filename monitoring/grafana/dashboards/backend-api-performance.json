@@ -2,7 +2,13 @@
   "uid": "scanium-backend-api-perf",
   "title": "Scanium - Backend API Performance",
   "description": "Detailed API performance analysis: latency, throughput, and errors by route",
-  "tags": ["scanium", "backend", "api", "performance", "latency"],
+  "tags": [
+    "scanium",
+    "backend",
+    "api",
+    "performance",
+    "latency"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
@@ -17,24 +23,49 @@
         "name": "service",
         "label": "Service",
         "type": "query",
-        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "MIMIR"
+        },
         "query": "label_values(scanium_http_request_duration_ms_bucket, service_name)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       },
       {
         "name": "env",
         "label": "Environment",
         "type": "custom",
         "query": "dev,stage,prod",
-        "current": { "text": "All", "value": "$__all" },
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "dev", "value": "dev", "selected": false },
-          { "text": "stage", "value": "stage", "selected": false },
-          { "text": "prod", "value": "prod", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "dev",
+            "value": "dev",
+            "selected": false
+          },
+          {
+            "text": "stage",
+            "value": "stage",
+            "selected": false
+          },
+          {
+            "text": "prod",
+            "value": "prod",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -43,23 +74,35 @@
         "name": "route",
         "label": "Route",
         "type": "query",
-        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "MIMIR"
+        },
         "query": "label_values(scanium_http_request_duration_ms_bucket{service_name=~\"$service\"}, route)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       },
       {
         "name": "method",
         "label": "HTTP Method",
         "type": "query",
-        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "MIMIR"
+        },
         "query": "label_values(scanium_http_request_duration_ms_bucket, method)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
       }
     ]
   },
@@ -68,7 +111,12 @@
       "id": 1,
       "title": "Latency Overview",
       "type": "row",
-      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
       "collapsed": false
     },
     {
@@ -76,8 +124,16 @@
       "title": "p50 Latency",
       "description": "Median request latency",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -92,15 +148,28 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 100 },
-              { "color": "red", "value": 300 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 300
+              }
             ]
           }
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "graphMode": "area"
       }
@@ -110,8 +179,16 @@
       "title": "p95 Latency",
       "description": "95th percentile latency",
       "type": "stat",
-      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -126,15 +203,28 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 200 },
-              { "color": "red", "value": 500 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 200
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
             ]
           }
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "graphMode": "area"
       }
@@ -144,8 +234,16 @@
       "title": "p99 Latency",
       "description": "99th percentile latency (tail latency)",
       "type": "stat",
-      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -160,15 +258,28 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 500 },
-              { "color": "red", "value": 1000 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 500
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
             ]
           }
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "graphMode": "area"
       }
@@ -178,8 +289,16 @@
       "title": "Throughput (req/s)",
       "description": "Requests per second",
       "type": "stat",
-      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -194,13 +313,20 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null }
+              {
+                "color": "blue",
+                "value": null
+              }
             ]
           }
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "graphMode": "area"
       }
@@ -210,8 +336,16 @@
       "title": "Latency Percentiles Over Time",
       "description": "p50, p90, p95, p99 latency trends",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -237,7 +371,9 @@
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 10,
@@ -247,15 +383,30 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max", "last"] },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
       "id": 7,
       "title": "Route Analysis",
       "type": "row",
-      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 1 },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      },
       "collapsed": false
     },
     {
@@ -263,8 +414,16 @@
       "title": "Latency by Route (p95)",
       "description": "95th percentile latency per route",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -275,7 +434,9 @@
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 10,
@@ -284,8 +445,17 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -293,8 +463,16 @@
       "title": "Throughput by Route",
       "description": "Request rate per route",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -305,18 +483,31 @@
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
             "lineWidth": 2,
-            "stacking": { "mode": "normal" }
+            "stacking": {
+              "mode": "normal"
+            }
           }
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "sum"] },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -324,8 +515,16 @@
       "title": "Slowest Routes (p95 > 200ms)",
       "description": "Routes with high latency requiring attention",
       "type": "table",
-      "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -338,7 +537,10 @@
         {
           "id": "organize",
           "options": {
-            "excludeByName": { "Time": true, "le": true },
+            "excludeByName": {
+              "Time": true,
+              "le": true
+            },
             "renameByName": {
               "route": "Route",
               "service_name": "Service",
@@ -348,38 +550,75 @@
         },
         {
           "id": "sortBy",
-          "options": { "sort": [{ "field": "p95 (ms)", "desc": true }] }
+          "options": {
+            "sort": [
+              {
+                "field": "p95 (ms)",
+                "desc": true
+              }
+            ]
+          }
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "align": "auto" }
+          "custom": {
+            "align": "auto"
+          }
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "p95 (ms)" },
+            "matcher": {
+              "id": "byName",
+              "options": "p95 (ms)"
+            },
             "properties": [
-              { "id": "unit", "value": "ms" },
-              { "id": "decimals", "value": 1 },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
               {
                 "id": "thresholds",
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "yellow", "value": null },
-                    { "color": "orange", "value": 500 },
-                    { "color": "red", "value": 1000 }
+                    {
+                      "color": "yellow",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 500
+                    },
+                    {
+                      "color": "red",
+                      "value": 1000
+                    }
                   ]
                 }
               },
-              { "id": "custom.cellOptions", "value": { "type": "color-background" } }
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
             ]
           }
         ]
       },
       "options": {
         "showHeader": true,
-        "sortBy": [{ "displayName": "p95 (ms)", "desc": true }]
+        "sortBy": [
+          {
+            "displayName": "p95 (ms)",
+            "desc": true
+          }
+        ]
       }
     },
     {
@@ -387,8 +626,16 @@
       "title": "Route Error Rate",
       "description": "Error rate percentage by route",
       "type": "table",
-      "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -401,7 +648,9 @@
         {
           "id": "organize",
           "options": {
-            "excludeByName": { "Time": true },
+            "excludeByName": {
+              "Time": true
+            },
             "renameByName": {
               "route": "Route",
               "service_name": "Service",
@@ -411,31 +660,63 @@
         },
         {
           "id": "sortBy",
-          "options": { "sort": [{ "field": "Error Rate (%)", "desc": true }] }
+          "options": {
+            "sort": [
+              {
+                "field": "Error Rate (%)",
+                "desc": true
+              }
+            ]
+          }
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "align": "auto" }
+          "custom": {
+            "align": "auto"
+          }
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "Error Rate (%)" },
+            "matcher": {
+              "id": "byName",
+              "options": "Error Rate (%)"
+            },
             "properties": [
-              { "id": "unit", "value": "percent" },
-              { "id": "decimals", "value": 2 },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
               {
                 "id": "thresholds",
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "green", "value": null },
-                    { "color": "yellow", "value": 1 },
-                    { "color": "red", "value": 5 }
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 5
+                    }
                   ]
                 }
               },
-              { "id": "custom.cellOptions", "value": { "type": "color-background" } }
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
             ]
           }
         ]
@@ -448,7 +729,12 @@
       "id": 12,
       "title": "HTTP Method Analysis",
       "type": "row",
-      "gridPos": { "x": 0, "y": 30, "w": 24, "h": 1 },
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 1
+      },
       "collapsed": false
     },
     {
@@ -456,8 +742,16 @@
       "title": "Latency by HTTP Method (p95)",
       "description": "Latency breakdown by GET, POST, PUT, DELETE, etc.",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 31, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -468,7 +762,9 @@
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -477,8 +773,17 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -486,8 +791,16 @@
       "title": "Throughput by HTTP Method",
       "description": "Request rate by HTTP method",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 31, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 12,
+        "y": 31,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -498,18 +811,31 @@
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "bars",
             "fillOpacity": 80,
             "lineWidth": 1,
-            "stacking": { "mode": "normal" }
+            "stacking": {
+              "mode": "normal"
+            }
           }
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "sum"] },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -517,8 +843,16 @@
       "title": "Latency Heatmap",
       "description": "Latency distribution heatmap showing request density",
       "type": "heatmap",
-      "gridPos": { "x": 0, "y": 39, "w": 24, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 39,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",

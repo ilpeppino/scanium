@@ -2,7 +2,11 @@
   "uid": "scanium-pipeline-health",
   "title": "Scanium - Pipeline Health",
   "description": "Observability pipeline health: Alloy, Loki, Mimir, Tempo ingestion",
-  "tags": ["scanium", "pipeline", "infrastructure"],
+  "tags": [
+    "scanium",
+    "pipeline",
+    "infrastructure"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
@@ -23,9 +27,21 @@
           "value": "$__all"
         },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "android", "value": "android", "selected": false },
-          { "text": "ios", "value": "ios", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "android",
+            "value": "android",
+            "selected": false
+          },
+          {
+            "text": "ios",
+            "value": "ios",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -40,10 +56,26 @@
           "value": "$__all"
         },
         "options": [
-          { "text": "All", "value": "$__all", "selected": true },
-          { "text": "dev", "value": "dev", "selected": false },
-          { "text": "staging", "value": "staging", "selected": false },
-          { "text": "prod", "value": "prod", "selected": false }
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "dev",
+            "value": "dev",
+            "selected": false
+          },
+          {
+            "text": "staging",
+            "value": "staging",
+            "selected": false
+          },
+          {
+            "text": "prod",
+            "value": "prod",
+            "selected": false
+          }
         ],
         "includeAll": true,
         "multi": true
@@ -52,7 +84,10 @@
         "name": "app_version",
         "label": "App Version",
         "type": "query",
-        "datasource": { "type": "loki", "uid": "LOKI" },
+        "datasource": {
+          "type": "loki",
+          "uid": "LOKI"
+        },
         "query": "label_values({source=\"scanium-mobile\"}, app_version)",
         "refresh": 2,
         "includeAll": true,
@@ -70,8 +105,16 @@
       "title": "Log Ingestion Rate (Loki)",
       "description": "Logs ingested per minute",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -81,7 +124,10 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "fixed", "fixedColor": "green" },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 30,
@@ -91,8 +137,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "single" }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
       }
     },
     {
@@ -100,8 +151,16 @@
       "title": "Log Volume by Event Type",
       "description": "Log distribution by event prefix",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -126,19 +185,28 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
             "lineWidth": 2,
-            "stacking": { "mode": "normal" }
+            "stacking": {
+              "mode": "normal"
+            }
           },
           "unit": "short"
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -146,8 +214,16 @@
       "title": "Total Logs (1h)",
       "description": "Total log entries in last hour",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -160,9 +236,18 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 100 },
-              { "color": "green", "value": 1000 }
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "green",
+                "value": 1000
+              }
             ]
           },
           "unit": "short",
@@ -170,7 +255,11 @@
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background"
       }
     },
@@ -179,8 +268,16 @@
       "title": "Avg Logs/min (1h)",
       "description": "Average log rate over last hour",
       "type": "stat",
-      "gridPos": { "x": 6, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 6,
+        "y": 8,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -193,7 +290,10 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null }
+              {
+                "color": "blue",
+                "value": null
+              }
             ]
           },
           "unit": "short",
@@ -202,7 +302,11 @@
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background"
       }
     },
@@ -211,8 +315,16 @@
       "title": "Unique Sessions (1h)",
       "description": "Unique session_ids sending telemetry",
       "type": "stat",
-      "gridPos": { "x": 12, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -225,7 +337,10 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "purple", "value": null }
+              {
+                "color": "purple",
+                "value": null
+              }
             ]
           },
           "unit": "short",
@@ -233,7 +348,11 @@
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background"
       }
     },
@@ -242,8 +361,16 @@
       "title": "Data Freshness",
       "description": "Time since last log received",
       "type": "stat",
-      "gridPos": { "x": 18, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 18,
+        "y": 8,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -256,9 +383,18 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 300 },
-              { "color": "red", "value": 900 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "red",
+                "value": 900
+              }
             ]
           },
           "unit": "s",
@@ -266,7 +402,11 @@
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background"
       }
     },
@@ -275,8 +415,16 @@
       "title": "Event Distribution",
       "description": "Distribution of event types",
       "type": "piechart",
-      "gridPos": { "x": 0, "y": 12, "w": 8, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -286,7 +434,14 @@
         }
       ],
       "options": {
-        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
         "pieType": "donut"
       }
     },
@@ -295,8 +450,16 @@
       "title": "Metrics Series Count (Mimir)",
       "description": "Active metric series in Mimir",
       "type": "timeseries",
-      "gridPos": { "x": 8, "y": 12, "w": 8, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 8,
+        "y": 12,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -306,7 +469,10 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "fixed", "fixedColor": "orange" },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 30,
@@ -317,8 +483,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "single" }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
       }
     },
     {
@@ -326,8 +497,16 @@
       "title": "Trace Count (Tempo)",
       "description": "Traces via TraceQL service search",
       "type": "stat",
-      "gridPos": { "x": 16, "y": 12, "w": 8, "h": 4 },
-      "datasource": { "type": "tempo", "uid": "TEMPO" },
+      "gridPos": {
+        "x": 16,
+        "y": 12,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "TEMPO"
+      },
       "targets": [
         {
           "refId": "A",
@@ -341,7 +520,10 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null }
+              {
+                "color": "blue",
+                "value": null
+              }
             ]
           },
           "unit": "short",
@@ -349,7 +531,11 @@
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["count"] },
+        "reduceOptions": {
+          "calcs": [
+            "count"
+          ]
+        },
         "colorMode": "background"
       }
     },
@@ -358,8 +544,16 @@
       "title": "Pipeline Status",
       "description": "Quick health check for observability pipeline",
       "type": "table",
-      "gridPos": { "x": 16, "y": 16, "w": 8, "h": 4 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 16,
+        "y": 16,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -371,7 +565,15 @@
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "1": { "text": "OK", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "OK",
+                  "color": "green"
+                }
+              }
+            }
           ]
         }
       },
@@ -381,7 +583,11 @@
       "transformations": [
         {
           "id": "reduce",
-          "options": { "reducers": ["last"] }
+          "options": {
+            "reducers": [
+              "last"
+            ]
+          }
         }
       ]
     },
@@ -390,8 +596,16 @@
       "title": "Recent Log Stream",
       "description": "Live log stream from mobile app",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "LOKI"
+      },
       "targets": [
         {
           "refId": "A",
@@ -410,7 +624,12 @@
       "id": 100,
       "title": "Pipeline Self-Observability",
       "type": "row",
-      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 1 },
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 24,
+        "h": 1
+      },
       "collapsed": false,
       "panels": []
     },
@@ -419,8 +638,16 @@
       "title": "Service Status",
       "description": "Health status of observability services (1 = up, 0 = down)",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 29, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 29,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -433,19 +660,46 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "green", "value": 1 }
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
             ]
           },
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
-            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
           ],
           "unit": "short"
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
         "colorMode": "background",
         "graphMode": "none",
         "orientation": "horizontal"
@@ -456,8 +710,16 @@
       "title": "Alloy Build Info",
       "description": "Alloy version and build information",
       "type": "stat",
-      "gridPos": { "x": 6, "y": 29, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 6,
+        "y": 29,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -470,14 +732,22 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null }
+              {
+                "color": "blue",
+                "value": null
+              }
             ]
           },
           "unit": "short"
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
         "colorMode": "background",
         "graphMode": "none",
         "textMode": "name"
@@ -488,8 +758,16 @@
       "title": "Alloy Uptime",
       "description": "Time since Alloy process started",
       "type": "stat",
-      "gridPos": { "x": 12, "y": 29, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 12,
+        "y": 29,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -502,14 +780,21 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null }
+              {
+                "color": "green",
+                "value": null
+              }
             ]
           },
           "unit": "s"
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background"
       }
     },
@@ -518,8 +803,16 @@
       "title": "Scrape Health",
       "description": "Last successful scrape timestamp (seconds ago)",
       "type": "stat",
-      "gridPos": { "x": 18, "y": 29, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 18,
+        "y": 29,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -532,9 +825,18 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 60 },
-              { "color": "red", "value": 120 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 120
+              }
             ]
           },
           "unit": "s",
@@ -542,7 +844,11 @@
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "orientation": "horizontal"
       }
@@ -552,8 +858,16 @@
       "title": "OTLP Receiver - Accepted Records",
       "description": "Records accepted by Alloy OTLP receivers (logs, metrics, spans)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 33, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -573,7 +887,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -583,8 +899,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -592,8 +913,16 @@
       "title": "OTLP Receiver - Refused Records",
       "description": "Records refused by Alloy OTLP receivers (indicates errors)",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 33, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 12,
+        "y": 33,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -613,7 +942,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -623,16 +954,30 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byRegexp", "options": ".*" },
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
             "properties": [
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
             ]
           }
         ]
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -640,8 +985,16 @@
       "title": "Exporter - Sent Records",
       "description": "Records successfully sent to backends (Loki, Mimir, Tempo)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 41, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 41,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -661,7 +1014,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -671,8 +1026,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -680,8 +1040,16 @@
       "title": "Exporter - Send Failures",
       "description": "Records that failed to send (indicates backend issues)",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 41, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 12,
+        "y": 41,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -701,7 +1069,10 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "fixed", "fixedColor": "red" },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 30,
@@ -711,8 +1082,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -720,8 +1096,16 @@
       "title": "Queue Size",
       "description": "Items currently queued for export (backpressure indicator)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 49, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 49,
+        "w": 8,
+        "h": 6
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -731,7 +1115,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -741,8 +1127,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -750,8 +1141,16 @@
       "title": "Queue Capacity",
       "description": "Maximum queue capacity for exporters",
       "type": "stat",
-      "gridPos": { "x": 8, "y": 49, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 8,
+        "y": 49,
+        "w": 8,
+        "h": 6
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -764,14 +1163,21 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null }
+              {
+                "color": "blue",
+                "value": null
+              }
             ]
           },
           "unit": "short"
         }
       },
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
         "colorMode": "background",
         "orientation": "horizontal"
       }
@@ -781,8 +1187,16 @@
       "title": "Retry Attempts",
       "description": "Exporter retry attempts (indicates temporary failures)",
       "type": "timeseries",
-      "gridPos": { "x": 16, "y": 49, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 16,
+        "y": 49,
+        "w": 8,
+        "h": 6
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -802,7 +1216,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -812,8 +1228,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -821,8 +1242,16 @@
       "title": "Loki Health",
       "description": "Loki ingester memory streams and request rate",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 55, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 0,
+        "y": 55,
+        "w": 8,
+        "h": 6
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -837,7 +1266,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -847,8 +1278,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -856,8 +1292,16 @@
       "title": "Tempo Health",
       "description": "Tempo live traces and request rate",
       "type": "timeseries",
-      "gridPos": { "x": 8, "y": 55, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 8,
+        "y": 55,
+        "w": 8,
+        "h": 6
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -872,7 +1316,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -882,8 +1328,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -891,8 +1342,16 @@
       "title": "Mimir Health",
       "description": "Mimir active series and request rate",
       "type": "timeseries",
-      "gridPos": { "x": 16, "y": 55, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "gridPos": {
+        "x": 16,
+        "y": 55,
+        "w": 8,
+        "h": 6
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "MIMIR"
+      },
       "targets": [
         {
           "refId": "A",
@@ -907,7 +1366,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
@@ -917,8 +1378,13 @@
         }
       },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi" }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     }
   ],

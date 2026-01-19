@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit
  */
 @RunWith(RobolectricTestRunner::class)
 class AssistantRetryInterceptorTest {
-
     private lateinit var mockWebServer: MockWebServer
     private lateinit var client: OkHttpClient
 
@@ -35,7 +34,10 @@ class AssistantRetryInterceptorTest {
         mockWebServer.shutdown()
     }
 
-    private fun createClient(maxRetries: Int = 1, retryDelayMs: Long = 10L): OkHttpClient {
+    private fun createClient(
+        maxRetries: Int = 1,
+        retryDelayMs: Long = 10L,
+    ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(AssistantRetryInterceptor(maxRetries, retryDelayMs))
             .connectTimeout(1, TimeUnit.SECONDS)
@@ -238,7 +240,7 @@ class AssistantRetryInterceptorTest {
         // First request times out, second succeeds
         mockWebServer.enqueue(
             MockResponse()
-                .setSocketPolicy(SocketPolicy.NO_RESPONSE)
+                .setSocketPolicy(SocketPolicy.NO_RESPONSE),
         )
         mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("success"))
 
@@ -274,7 +276,7 @@ class AssistantRetryInterceptorTest {
         // First request disconnects, second succeeds
         mockWebServer.enqueue(
             MockResponse()
-                .setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST)
+                .setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST),
         )
         mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("success"))
 

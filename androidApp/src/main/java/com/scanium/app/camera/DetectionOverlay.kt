@@ -204,34 +204,41 @@ fun DetectionOverlay(
             // - LOCKED: thick, bright green with pulse (scan-ready)
             val (outlineColor, glowColor, strokeMultiplier) =
                 when (boxStyle) {
-                    OverlayBoxStyle.LOCKED ->
+                    OverlayBoxStyle.LOCKED -> {
                         Triple(
                             BboxColors.LockedOutline,
                             BboxColors.LockedGlow,
                             1.4f * lockedPulseScale.value,
 // Thick stroke with pulse effect
                         )
-                    OverlayBoxStyle.READY ->
+                    }
+
+                    OverlayBoxStyle.READY -> {
                         Triple(
                             BboxColors.ReadyOutline,
                             BboxColors.ReadyGlow,
                             1.1f,
 // Medium-thick stroke for ready
                         )
-                    OverlayBoxStyle.SELECTED ->
+                    }
+
+                    OverlayBoxStyle.SELECTED -> {
                         Triple(
                             BboxColors.SelectedOutline,
                             BboxColors.SelectedGlow,
                             0.9f,
 // Medium stroke for selected
                         )
-                    OverlayBoxStyle.EYE ->
+                    }
+
+                    OverlayBoxStyle.EYE -> {
                         Triple(
                             BboxColors.EyeOutline,
                             BboxColors.EyeGlow,
                             0.5f,
 // Very thin stroke for eye mode
                         )
+                    }
                 }
 
             val clampedConfidence = detection.confidence.coerceIn(0f, 1f)
@@ -427,7 +434,14 @@ fun DetectionOverlay(
                                 "(${String.format("%.2f", it.bboxNorm.right)}, " +
                                 "${String.format("%.2f", it.bboxNorm.bottom)})"
                         } ?: "Bbox: N/A",
-                        "Bbox aspect (h/w): ${bboxAspectRatio?.let { String.format("%.2f", it) } ?: "N/A"} ${if ((bboxAspectRatio ?: 0f) > 1f) "(TALL)" else "(wide)"}",
+                        "Bbox aspect (h/w): ${
+                            bboxAspectRatio?.let {
+                                String.format(
+                                    "%.2f",
+                                    it,
+                                )
+                            } ?: "N/A"
+                        } ${if ((bboxAspectRatio ?: 0f) > 1f) "(TALL)" else "(wide)"}",
                         topDetectionScreen?.let {
                             "Screen: (${it.left.toInt()}, ${it.top.toInt()}) - " +
                                 "(${it.right.toInt()}, ${it.bottom.toInt()})"

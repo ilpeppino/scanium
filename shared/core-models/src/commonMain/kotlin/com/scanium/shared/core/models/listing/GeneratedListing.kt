@@ -46,8 +46,10 @@ data class GeneratedListingWarning(
 enum class WarningType {
     /** Attribute or field needs manual verification */
     NEEDS_VERIFICATION,
+
     /** Low confidence in the generated content */
     LOW_CONFIDENCE,
+
     /** Missing information that could improve the listing */
     MISSING_INFO,
 }

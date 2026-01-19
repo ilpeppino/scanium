@@ -224,11 +224,12 @@ class ObjectTrackerTest {
     @Test
     fun getConfirmedCandidatesReturnsAllConfirmed() {
         // Confirm a candidate through the normal process
-        val detection = testDetectionInfo(
-            trackingId = "confirmed_1",
-            boundingBox = TestFixtures.BoundingBoxes.center,
-            confidence = 0.5f,
-        )
+        val detection =
+            testDetectionInfo(
+                trackingId = "confirmed_1",
+                boundingBox = TestFixtures.BoundingBoxes.center,
+                confidence = 0.5f,
+            )
         repeat(config.minFramesToConfirm) { tracker.processFrame(listOf(detection)) }
 
         // getConfirmedCandidates should return the confirmed candidate
@@ -240,11 +241,12 @@ class ObjectTrackerTest {
     @Test
     fun getConfirmedCandidatesReturnsEmptyBeforeConfirmation() {
         // Add a detection but don't reach confirmation threshold
-        val detection = testDetectionInfo(
-            trackingId = "not_confirmed",
-            boundingBox = TestFixtures.BoundingBoxes.center,
-            confidence = 0.5f,
-        )
+        val detection =
+            testDetectionInfo(
+                trackingId = "not_confirmed",
+                boundingBox = TestFixtures.BoundingBoxes.center,
+                confidence = 0.5f,
+            )
         tracker.processFrame(listOf(detection))
 
         // getConfirmedCandidates should return empty
@@ -255,11 +257,12 @@ class ObjectTrackerTest {
     @Test
     fun markCandidateConsumedRemovesFromConfirmed() {
         // Confirm a candidate
-        val detection = testDetectionInfo(
-            trackingId = "to_consume",
-            boundingBox = TestFixtures.BoundingBoxes.center,
-            confidence = 0.5f,
-        )
+        val detection =
+            testDetectionInfo(
+                trackingId = "to_consume",
+                boundingBox = TestFixtures.BoundingBoxes.center,
+                confidence = 0.5f,
+            )
         repeat(config.minFramesToConfirm) { tracker.processFrame(listOf(detection)) }
 
         // Verify it's confirmed
@@ -283,11 +286,12 @@ class ObjectTrackerTest {
         // 3. But if guidance isn't LOCKED, we don't add items
         // 4. Later frames should still be able to get the confirmed candidate
 
-        val detection = testDetectionInfo(
-            trackingId = "race_condition_test",
-            boundingBox = TestFixtures.BoundingBoxes.center,
-            confidence = 0.5f,
-        )
+        val detection =
+            testDetectionInfo(
+                trackingId = "race_condition_test",
+                boundingBox = TestFixtures.BoundingBoxes.center,
+                confidence = 0.5f,
+            )
 
         // Confirm the candidate
         repeat(config.minFramesToConfirm) { tracker.processFrame(listOf(detection)) }
@@ -311,11 +315,12 @@ class ObjectTrackerTest {
 
     @Test
     fun consumedCandidateNotReturnedAgain() {
-        val detection = testDetectionInfo(
-            trackingId = "consume_once",
-            boundingBox = TestFixtures.BoundingBoxes.center,
-            confidence = 0.5f,
-        )
+        val detection =
+            testDetectionInfo(
+                trackingId = "consume_once",
+                boundingBox = TestFixtures.BoundingBoxes.center,
+                confidence = 0.5f,
+            )
 
         // Confirm the candidate
         repeat(config.minFramesToConfirm) { tracker.processFrame(listOf(detection)) }
@@ -335,16 +340,18 @@ class ObjectTrackerTest {
     @Test
     fun multipleConfirmedCandidatesAllRetrievable() {
         // Confirm multiple candidates
-        val detection1 = testDetectionInfo(
-            trackingId = "multi_1",
-            boundingBox = TestFixtures.BoundingBoxes.topLeft,
-            confidence = 0.5f,
-        )
-        val detection2 = testDetectionInfo(
-            trackingId = "multi_2",
-            boundingBox = TestFixtures.BoundingBoxes.bottomRight,
-            confidence = 0.6f,
-        )
+        val detection1 =
+            testDetectionInfo(
+                trackingId = "multi_1",
+                boundingBox = TestFixtures.BoundingBoxes.topLeft,
+                confidence = 0.5f,
+            )
+        val detection2 =
+            testDetectionInfo(
+                trackingId = "multi_2",
+                boundingBox = TestFixtures.BoundingBoxes.bottomRight,
+                confidence = 0.6f,
+            )
 
         // Process both detections together
         repeat(config.minFramesToConfirm) {

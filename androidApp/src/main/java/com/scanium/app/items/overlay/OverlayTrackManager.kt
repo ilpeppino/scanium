@@ -134,17 +134,13 @@ class OverlayTrackManager(
     /**
      * Check if an aggregated item is marked as ready.
      */
-    fun isItemReady(aggregatedId: String): Boolean {
-        return overlayReadyStates[aggregatedId] ?: false
-    }
+    fun isItemReady(aggregatedId: String): Boolean = overlayReadyStates[aggregatedId] ?: false
 
     /**
      * Check if detections exist but none are inside ROI.
      * Used for showing "Center the object" hint.
      */
-    fun hasDetectionsOutsideRoiOnly(): Boolean {
-        return _lastRoiFilterResult.value?.hasDetectionsOutsideRoiOnly ?: false
-    }
+    fun hasDetectionsOutsideRoiOnly(): Boolean = _lastRoiFilterResult.value?.hasDetectionsOutsideRoiOnly ?: false
 
     // ==================== Internal Methods ====================
 

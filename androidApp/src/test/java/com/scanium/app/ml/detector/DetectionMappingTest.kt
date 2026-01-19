@@ -19,7 +19,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class DetectionMappingTest {
-
     // =========================================================================
     // uprightBboxToSensorBbox tests - Coordinate transforms
     // =========================================================================
@@ -33,12 +32,13 @@ class DetectionMappingTest {
         val rotation = 0
 
         // Act
-        val sensorBbox = DetectionMapping.uprightBboxToSensorBbox(
-            uprightBbox = uprightBbox,
-            inputImageWidth = imageWidth,
-            inputImageHeight = imageHeight,
-            rotationDegrees = rotation,
-        )
+        val sensorBbox =
+            DetectionMapping.uprightBboxToSensorBbox(
+                uprightBbox = uprightBbox,
+                inputImageWidth = imageWidth,
+                inputImageHeight = imageHeight,
+                rotationDegrees = rotation,
+            )
 
         // Assert: Should be identical for 0° rotation
         assertThat(sensorBbox.left).isEqualTo(320)
@@ -57,12 +57,13 @@ class DetectionMappingTest {
         val rotation = 90
 
         // Act
-        val sensorBbox = DetectionMapping.uprightBboxToSensorBbox(
-            uprightBbox = uprightBbox,
-            inputImageWidth = uprightWidth,
-            inputImageHeight = uprightHeight,
-            rotationDegrees = rotation,
-        )
+        val sensorBbox =
+            DetectionMapping.uprightBboxToSensorBbox(
+                uprightBbox = uprightBbox,
+                inputImageWidth = uprightWidth,
+                inputImageHeight = uprightHeight,
+                rotationDegrees = rotation,
+            )
 
         // Assert: Sensor dimensions are 1280x720 (swapped back)
         // For 90°: upright (x, y) -> sensor (y, 1-x)
@@ -87,12 +88,13 @@ class DetectionMappingTest {
         val rotation = 180
 
         // Act
-        val sensorBbox = DetectionMapping.uprightBboxToSensorBbox(
-            uprightBbox = uprightBbox,
-            inputImageWidth = imageWidth,
-            inputImageHeight = imageHeight,
-            rotationDegrees = rotation,
-        )
+        val sensorBbox =
+            DetectionMapping.uprightBboxToSensorBbox(
+                uprightBbox = uprightBbox,
+                inputImageWidth = imageWidth,
+                inputImageHeight = imageHeight,
+                rotationDegrees = rotation,
+            )
 
         // Assert: 180° should flip both axes
         // normalized upright: left=0.25, top=0.25, right=0.375, bottom=0.5
@@ -112,12 +114,13 @@ class DetectionMappingTest {
         val rotation = 270
 
         // Act
-        val sensorBbox = DetectionMapping.uprightBboxToSensorBbox(
-            uprightBbox = uprightBbox,
-            inputImageWidth = uprightWidth,
-            inputImageHeight = uprightHeight,
-            rotationDegrees = rotation,
-        )
+        val sensorBbox =
+            DetectionMapping.uprightBboxToSensorBbox(
+                uprightBbox = uprightBbox,
+                inputImageWidth = uprightWidth,
+                inputImageHeight = uprightHeight,
+                rotationDegrees = rotation,
+            )
 
         // Assert: Should produce valid sensor-space bbox
         assertThat(sensorBbox.width()).isGreaterThan(0)
@@ -135,28 +138,32 @@ class DetectionMappingTest {
         val imageWidth = 1000
         val imageHeight = 1000
 
-        val uprightNormArea = (uprightBbox.width() * uprightBbox.height()).toFloat() /
-            (imageWidth * imageHeight)
+        val uprightNormArea =
+            (uprightBbox.width() * uprightBbox.height()).toFloat() /
+                (imageWidth * imageHeight)
 
         // Act - test all rotations
         listOf(0, 90, 180, 270).forEach { rotation ->
-            val (w, h) = if (rotation == 90 || rotation == 270) {
-                imageHeight to imageWidth
-            } else {
-                imageWidth to imageHeight
-            }
+            val (w, h) =
+                if (rotation == 90 || rotation == 270) {
+                    imageHeight to imageWidth
+                } else {
+                    imageWidth to imageHeight
+                }
 
-            val sensorBbox = DetectionMapping.uprightBboxToSensorBbox(
-                uprightBbox = uprightBbox,
-                inputImageWidth = imageWidth,
-                inputImageHeight = imageHeight,
-                rotationDegrees = rotation,
-            )
+            val sensorBbox =
+                DetectionMapping.uprightBboxToSensorBbox(
+                    uprightBbox = uprightBbox,
+                    inputImageWidth = imageWidth,
+                    inputImageHeight = imageHeight,
+                    rotationDegrees = rotation,
+                )
 
             val sensorW = if (rotation == 90 || rotation == 270) imageHeight else imageWidth
             val sensorH = if (rotation == 90 || rotation == 270) imageWidth else imageHeight
-            val sensorNormArea = (sensorBbox.width() * sensorBbox.height()).toFloat() /
-                (sensorW * sensorH)
+            val sensorNormArea =
+                (sensorBbox.width() * sensorBbox.height()).toFloat() /
+                    (sensorW * sensorH)
 
             // Assert: Area ratio should be approximately preserved
             assertThat(sensorNormArea).isWithin(0.01f).of(uprightNormArea)

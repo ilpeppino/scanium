@@ -17,8 +17,8 @@ object PostingTargetDefaults {
     const val DEFAULT_BROWSER_ID = "browser"
     const val CUSTOM_TARGET_ID = "custom"
 
-    fun presets(): List<PostingTarget> {
-        return listOf(
+    fun presets(): List<PostingTarget> =
+        listOf(
             PostingTarget(
                 id = DEFAULT_BROWSER_ID,
                 label = "Browser",
@@ -32,14 +32,12 @@ object PostingTargetDefaults {
                 value = "https://www.marktplaats.nl/",
             ),
         )
-    }
 
-    fun custom(url: String): PostingTarget {
-        return PostingTarget(
+    fun custom(url: String): PostingTarget =
+        PostingTarget(
             id = CUSTOM_TARGET_ID,
             label = "Custom URL",
             type = PostingTargetType.URL,
             value = url,
         )
-    }
 }

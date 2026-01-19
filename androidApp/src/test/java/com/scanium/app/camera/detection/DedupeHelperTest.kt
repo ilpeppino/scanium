@@ -1,7 +1,9 @@
 package com.scanium.app.camera.detection
 
 import com.scanium.core.models.geometry.NormalizedRect
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

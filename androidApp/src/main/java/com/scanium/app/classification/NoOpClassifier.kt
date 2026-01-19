@@ -16,8 +16,8 @@ class NoOpClassifier : Classifier {
         thumbnail: ImageRef,
         hint: String?,
         domainPackId: String,
-    ): ClassificationResult {
-        return ClassificationResult(
+    ): ClassificationResult =
+        ClassificationResult(
             domainCategoryId = null,
             confidence = 0f,
             source = ClassificationSource.FALLBACK,
@@ -28,5 +28,4 @@ class NoOpClassifier : Classifier {
             status = ClassificationStatus.SKIPPED,
             errorMessage = "Classifier disabled",
         )
-    }
 }

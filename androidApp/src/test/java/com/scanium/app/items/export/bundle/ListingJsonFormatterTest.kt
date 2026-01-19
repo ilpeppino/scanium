@@ -3,7 +3,9 @@ package com.scanium.app.items.export.bundle
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.ml.ItemCategory
 import org.json.JSONObject
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -19,15 +21,15 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class ListingJsonFormatterTest {
-
     @Test
     fun `formatSingle produces valid JSON with required fields`() {
-        val bundle = createTestBundle(
-            itemId = "item-123",
-            title = "Nike Air Max",
-            description = "Classic sneakers in excellent condition",
-            category = ItemCategory.FASHION,
-        )
+        val bundle =
+            createTestBundle(
+                itemId = "item-123",
+                title = "Nike Air Max",
+                description = "Classic sneakers in excellent condition",
+                category = ItemCategory.FASHION,
+            )
 
         val json = ListingJsonFormatter.formatSingle(bundle)
 
@@ -39,9 +41,10 @@ class ListingJsonFormatterTest {
 
     @Test
     fun `formatSingle includes bullets array when present`() {
-        val bundle = createTestBundle(
-            bullets = listOf("Size 10", "Original box", "Never worn"),
-        )
+        val bundle =
+            createTestBundle(
+                bullets = listOf("Size 10", "Original box", "Never worn"),
+            )
 
         val json = ListingJsonFormatter.formatSingle(bundle)
 
@@ -55,12 +58,14 @@ class ListingJsonFormatterTest {
 
     @Test
     fun `formatSingle includes attributes with metadata`() {
-        val bundle = createTestBundle(
-            attributes = mapOf(
-                "brand" to ItemAttribute(value = "Nike", confidence = 0.95f, source = "vision"),
-                "color" to ItemAttribute(value = "Blue", confidence = 0.8f, source = "user"),
-            ),
-        )
+        val bundle =
+            createTestBundle(
+                attributes =
+                    mapOf(
+                        "brand" to ItemAttribute(value = "Nike", confidence = 0.95f, source = "vision"),
+                        "color" to ItemAttribute(value = "Blue", confidence = 0.8f, source = "user"),
+                    ),
+            )
 
         val json = ListingJsonFormatter.formatSingle(bundle)
 
@@ -81,29 +86,33 @@ class ListingJsonFormatterTest {
 
     @Test
     fun `formatSingle includes photos array`() {
-        // Primary photo is separate from photoUris; formatter deduplicates and puts primary first
-        val bundle = createTestBundle(
-            primaryPhotoUri = "/path/primary.jpg",
-            photoUris = listOf("/path/1.jpg", "/path/2.jpg"),
-        )
+        val bundle =
+            createTestBundle(
+                primaryPhotoUri = "/path/primary.jpg",
+                photoUris = listOf("/path/1.jpg", "/path/2.jpg"),
+            )
 
         val json = ListingJsonFormatter.formatSingle(bundle)
 
         val photos = json.getJSONArray("photos")
-        assertEquals(3, photos.length()) // primary + 2 additional (deduplicated)
-        assertEquals("/path/primary.jpg", photos.getString(0)) // primary first
+        // primary + 2 additional (deduplicated)
+        assertEquals(3, photos.length())
+        // primary first
+        assertEquals("/path/primary.jpg", photos.getString(0))
         assertEquals("/path/1.jpg", photos.getString(1))
         assertEquals("/path/2.jpg", photos.getString(2))
-        assertEquals(3, json.getInt("photoCount")) // photos.length()
+        // photos.length()
+        assertEquals(3, json.getInt("photoCount"))
     }
 
     @Test
     fun `formatSingle includes export status flags`() {
-        val bundle = createTestBundle(
-            flags = setOf(ExportBundleFlag.READY),
-            confidenceTier = "HIGH",
-            exportModel = "gpt-4",
-        )
+        val bundle =
+            createTestBundle(
+                flags = setOf(ExportBundleFlag.READY),
+                confidenceTier = "HIGH",
+                exportModel = "gpt-4",
+            )
 
         val json = ListingJsonFormatter.formatSingle(bundle)
 
@@ -117,9 +126,10 @@ class ListingJsonFormatterTest {
 
     @Test
     fun `formatSingle marks NEEDS_AI correctly`() {
-        val bundle = createTestBundle(
-            flags = setOf(ExportBundleFlag.NEEDS_AI, ExportBundleFlag.NO_PHOTOS),
-        )
+        val bundle =
+            createTestBundle(
+                flags = setOf(ExportBundleFlag.NEEDS_AI, ExportBundleFlag.NO_PHOTOS),
+            )
 
         val json = ListingJsonFormatter.formatSingle(bundle)
 
@@ -131,11 +141,12 @@ class ListingJsonFormatterTest {
 
     @Test
     fun `formatMultiple creates JSON array with all items`() {
-        val bundles = listOf(
-            createTestBundle(itemId = "item-1", title = "First Item"),
-            createTestBundle(itemId = "item-2", title = "Second Item"),
-            createTestBundle(itemId = "item-3", title = "Third Item"),
-        )
+        val bundles =
+            listOf(
+                createTestBundle(itemId = "item-1", title = "First Item"),
+                createTestBundle(itemId = "item-2", title = "Second Item"),
+                createTestBundle(itemId = "item-3", title = "Third Item"),
+            )
 
         val jsonArray = ListingJsonFormatter.formatMultiple(bundles)
 
@@ -147,12 +158,14 @@ class ListingJsonFormatterTest {
 
     @Test
     fun `formatSimpleAttributes returns flat key-value map`() {
-        val bundle = createTestBundle(
-            attributes = mapOf(
-                "brand" to ItemAttribute(value = "Nike", confidence = 0.95f),
-                "color" to ItemAttribute(value = "Blue", confidence = 0.8f),
-            ),
-        )
+        val bundle =
+            createTestBundle(
+                attributes =
+                    mapOf(
+                        "brand" to ItemAttribute(value = "Nike", confidence = 0.95f),
+                        "color" to ItemAttribute(value = "Blue", confidence = 0.8f),
+                    ),
+            )
 
         val simpleAttrs = ListingJsonFormatter.formatSimpleAttributes(bundle)
 
@@ -175,15 +188,17 @@ class ListingJsonFormatterTest {
 
     @Test
     fun `formatSingle output is deterministic`() {
-        val bundle = createTestBundle(
-            itemId = "test-id",
-            title = "Test Item",
-            description = "Test description",
-            attributes = mapOf(
-                "brand" to ItemAttribute(value = "Nike"),
-                "color" to ItemAttribute(value = "Blue"),
-            ),
-        )
+        val bundle =
+            createTestBundle(
+                itemId = "test-id",
+                title = "Test Item",
+                description = "Test description",
+                attributes =
+                    mapOf(
+                        "brand" to ItemAttribute(value = "Nike"),
+                        "color" to ItemAttribute(value = "Blue"),
+                    ),
+            )
 
         val json1 = ListingJsonFormatter.formatSingle(bundle).toString()
         val json2 = ListingJsonFormatter.formatSingle(bundle).toString()
@@ -200,7 +215,8 @@ class ListingJsonFormatterTest {
         attributes: Map<String, ItemAttribute> = emptyMap(),
         photoUris: List<String> = emptyList(),
         primaryPhotoUri: String? = null,
-        createdAt: Long = 1704067200000L, // Fixed timestamp for determinism
+        // Fixed timestamp for determinism
+        createdAt: Long = 1704067200000L,
         flags: Set<ExportBundleFlag> = setOf(ExportBundleFlag.READY),
         confidenceTier: String? = null,
         exportModel: String? = null,

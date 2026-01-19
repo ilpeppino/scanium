@@ -2,11 +2,13 @@
 
 ***REMOVED******REMOVED*** Executive Summary
 
-Phase 2 adds **market awareness** to the baseline pricing system without marketplace dependency. The goal is to answer:
+Phase 2 adds **market awareness** to the baseline pricing system without marketplace dependency. The
+goal is to answer:
 
 > "What price will likely work in this market, right now, for this type of item?"
 
 **Key Constraints:**
+
 - No live marketplace scraping
 - No marketplace APIs (eBay, Vinted, etc.)
 - No user sales history
@@ -14,6 +16,7 @@ Phase 2 adds **market awareness** to the baseline pricing system without marketp
 - All logic lives on backend
 
 **Allowed Inputs:**
+
 - Country/region (coarse)
 - Urban vs non-urban signal
 - Currency zone
@@ -147,6 +150,7 @@ type CategorySegment =
 ```
 
 **Justification:**
+
 - PPP (Purchasing Power Parity) data is publicly available from Eurostat, OECD
 - Updated annually (low maintenance)
 - Category-specific because electronics resale differs from furniture resale
@@ -154,6 +158,7 @@ type CategorySegment =
 ***REMOVED******REMOVED******REMOVED*** 2.2 Urban Premium
 
 Urban areas typically have higher resale prices due to:
+
 - Higher disposable income
 - Faster turnover
 - More competition (can command higher prices)
@@ -180,10 +185,11 @@ const URBAN_PREMIUM: UrbanPremiumConfig = {
 ```
 
 **How "Urban" is Determined:**
+
 - Client sends `isUrban: boolean` based on:
-  - Device location (if permitted) → lookup against city boundaries
-  - User-provided postal code → lookup against urban classification
-  - Fallback: assume suburban (neutral 1.0 multiplier)
+    - Device location (if permitted) → lookup against city boundaries
+    - User-provided postal code → lookup against urban classification
+    - Fallback: assume suburban (neutral 1.0 multiplier)
 
 ***REMOVED******REMOVED******REMOVED*** 2.3 Seasonality Adjustments
 
@@ -265,7 +271,8 @@ const CURRENCIES: Record<RegionCode, CurrencyConfig> = {
 };
 ```
 
-**Note:** Exchange rates are refreshed monthly from public sources (ECB, Federal Reserve). NOT real-time to avoid external dependencies.
+**Note:** Exchange rates are refreshed monthly from public sources (ECB, Federal Reserve). NOT
+real-time to avoid external dependencies.
 
 ---
 
@@ -420,12 +427,12 @@ function calculateConfidenceV2(
 
 ***REMOVED******REMOVED******REMOVED*** Data Sources
 
-| Dataset | Source | Refresh | Cost | License |
-|---------|--------|---------|------|---------|
-| Regional PPP | Eurostat, OECD | Annual | Free | Open |
-| Exchange Rates | ECB, Federal Reserve | Monthly | Free | Open |
-| Urban Boundaries | OpenStreetMap, GeoNames | Annual | Free | ODbL |
-| Seasonality Patterns | Internal analysis | Annual | Free | Internal |
+| Dataset              | Source                  | Refresh | Cost | License  |
+|----------------------|-------------------------|---------|------|----------|
+| Regional PPP         | Eurostat, OECD          | Annual  | Free | Open     |
+| Exchange Rates       | ECB, Federal Reserve    | Monthly | Free | Open     |
+| Urban Boundaries     | OpenStreetMap, GeoNames | Annual  | Free | ODbL     |
+| Seasonality Patterns | Internal analysis       | Annual  | Free | Internal |
 
 ***REMOVED******REMOVED******REMOVED*** Storage & Versioning
 
@@ -811,33 +818,33 @@ function estimatePriceV2(input: PriceEstimateRequestV2): PriceEstimateResponseV2
 
 ***REMOVED******REMOVED******REMOVED*** Compute Cost
 
-| Operation | Complexity | Latency Impact |
-|-----------|------------|----------------|
-| Phase 1 baseline | O(1) | ~1ms |
-| Regional lookup | O(1) hash | ~0.01ms |
-| Urban lookup | O(1) hash | ~0.01ms |
-| Seasonality lookup | O(1) array | ~0.01ms |
-| Photo quality calc | O(1) arithmetic | ~0.01ms |
-| Range narrowing | O(1) arithmetic | ~0.01ms |
-| Currency conversion | O(1) arithmetic | ~0.01ms |
-| **Total Phase 2** | O(1) | **~1.1ms** |
+| Operation           | Complexity      | Latency Impact |
+|---------------------|-----------------|----------------|
+| Phase 1 baseline    | O(1)            | ~1ms           |
+| Regional lookup     | O(1) hash       | ~0.01ms        |
+| Urban lookup        | O(1) hash       | ~0.01ms        |
+| Seasonality lookup  | O(1) array      | ~0.01ms        |
+| Photo quality calc  | O(1) arithmetic | ~0.01ms        |
+| Range narrowing     | O(1) arithmetic | ~0.01ms        |
+| Currency conversion | O(1) arithmetic | ~0.01ms        |
+| **Total Phase 2**   | O(1)            | **~1.1ms**     |
 
 ***REMOVED******REMOVED******REMOVED*** Memory Cost
 
-| Data | Size | Load Frequency |
-|------|------|----------------|
-| Regional indices | ~5KB | Startup |
-| Currency rates | ~2KB | Startup |
-| Seasonality patterns | ~3KB | Startup |
-| Urban classification | ~50KB (EU+US) | Startup |
-| **Total** | **~60KB** | **Once** |
+| Data                 | Size          | Load Frequency |
+|----------------------|---------------|----------------|
+| Regional indices     | ~5KB          | Startup        |
+| Currency rates       | ~2KB          | Startup        |
+| Seasonality patterns | ~3KB          | Startup        |
+| Urban classification | ~50KB (EU+US) | Startup        |
+| **Total**            | **~60KB**     | **Once**       |
 
 ***REMOVED******REMOVED******REMOVED*** Network Cost
 
-| Operation | External Calls | Cost |
-|-----------|----------------|------|
-| Price estimation | 0 | Free |
-| Dataset updates | 1/month (manual) | Free |
+| Operation        | External Calls   | Cost |
+|------------------|------------------|------|
+| Price estimation | 0                | Free |
+| Dataset updates  | 1/month (manual) | Free |
 
 ***REMOVED******REMOVED******REMOVED*** Scaling
 
@@ -998,20 +1005,21 @@ describe('Phase 1 Compatibility', () => {
 
 Phase 3 will add marketplace awareness. It is explicitly **out of scope** for Phase 2:
 
-| Feature | Phase 2 | Phase 3 |
-|---------|---------|---------|
-| Regional PPP indices | ✅ | ✅ |
-| Urban/rural premium | ✅ | ✅ |
-| Seasonality | ✅ | ✅ |
-| Photo quality weighting | ✅ | ✅ |
-| Live marketplace prices | ❌ | ✅ |
-| User sales history | ❌ | ✅ |
-| A/B pricing strategies | ❌ | ✅ |
-| Marketplace-specific heuristics | ❌ | ✅ |
-| Dynamic pricing optimization | ❌ | ✅ |
-| Competitor monitoring | ❌ | ✅ |
+| Feature                         | Phase 2 | Phase 3 |
+|---------------------------------|---------|---------|
+| Regional PPP indices            | ✅       | ✅       |
+| Urban/rural premium             | ✅       | ✅       |
+| Seasonality                     | ✅       | ✅       |
+| Photo quality weighting         | ✅       | ✅       |
+| Live marketplace prices         | ❌       | ✅       |
+| User sales history              | ❌       | ✅       |
+| A/B pricing strategies          | ❌       | ✅       |
+| Marketplace-specific heuristics | ❌       | ✅       |
+| Dynamic pricing optimization    | ❌       | ✅       |
+| Competitor monitoring           | ❌       | ✅       |
 
 **Phase 3 will require:**
+
 - Marketplace API integrations (eBay, Vinted, etc.)
 - Real-time price scraping infrastructure
 - User sales tracking and analytics
@@ -1019,6 +1027,7 @@ Phase 3 will add marketplace awareness. It is explicitly **out of scope** for Ph
 - Legal review for price scraping compliance
 
 **Phase 2 prepares for Phase 3 by:**
+
 - Establishing the layered architecture
 - Defining the market context contract
 - Implementing the confidence framework
@@ -1061,9 +1070,11 @@ Phase 3 will add marketplace awareness. It is explicitly **out of scope** for Ph
 
 1. **Urban Classification Source:** ✅ Postal code database (lighter than OSM, sufficient accuracy)
 
-2. **Seasonality Granularity:** ✅ Monthly factors (simpler, weekly adds complexity without proportional value)
+2. **Seasonality Granularity:** ✅ Monthly factors (simpler, weekly adds complexity without
+   proportional value)
 
-3. **Wear Detection Integration:** ✅ Yes, add wear detection to vision pipeline first (Phase 2 will stub the interface)
+3. **Wear Detection Integration:** ✅ Yes, add wear detection to vision pipeline first (Phase 2 will
+   stub the interface)
 
 4. **Currency Rate Source:** ✅ ECB for EUR, Federal Reserve for USD crosses
 

@@ -124,10 +124,12 @@ fun LightningScanPulse(
                         val y = frameTop + frameHeight * progress.value
                         Offset(frameLeft, y) to Offset(frameRight, y)
                     }
+
                     PulseDirection.HORIZONTAL_RIGHT -> {
                         val x = frameLeft + frameWidth * progress.value
                         Offset(x, frameTop) to Offset(x, frameBottom)
                     }
+
                     PulseDirection.DIAGONAL_DOWN_RIGHT -> {
                         val x = frameLeft + frameWidth * progress.value
                         val y = frameTop + frameHeight * progress.value

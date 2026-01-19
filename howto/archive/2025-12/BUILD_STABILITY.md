@@ -1,4 +1,5 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
+
 ***REMOVED*** Build Stability Rules and Guardrails
 
 **Status:** Phase 4 - Build Stability + iOS Prep
@@ -14,6 +15,7 @@
 **Requirement:** All Kotlin modules MUST use Java 17 toolchain.
 
 **Verification:**
+
 ```bash
 ***REMOVED*** Check Java version
 java -version
@@ -41,6 +43,7 @@ android {
 ```
 
 **Rationale:**
+
 - Android Gradle Plugin 8.5.0 requires Java 17
 - Kotlin 2.0.0 fully supports Java 17
 - Long-term support (LTS) version with stability guarantees
@@ -52,18 +55,19 @@ android {
 
 **Critical:** These versions MUST remain in sync across all modules.
 
-| Dependency | Version | Upgrade Policy |
-|------------|---------|----------------|
-| **Android Gradle Plugin (AGP)** | 8.5.0 | Minor updates only (8.5.x), review breaking changes |
-| **Kotlin** | 2.0.0 | Patch updates only (2.0.x), major updates require ADR |
-| **Compose Compiler** | 2.0.0 | Must match Kotlin version exactly |
-| **Kotlin Multiplatform** | 2.0.0 | Must match Kotlin version exactly |
-| **Java Toolchain** | 17 (LTS) | No upgrades until Android requires Java 21 |
-| **compileSdk** | 34 | Update with new Android releases (annual) |
-| **minSdk** | 24 (Android 7.0) | No changes (wide device coverage) |
-| **targetSdk** | 34 | Update annually with new Android releases |
+| Dependency                      | Version          | Upgrade Policy                                        |
+|---------------------------------|------------------|-------------------------------------------------------|
+| **Android Gradle Plugin (AGP)** | 8.5.0            | Minor updates only (8.5.x), review breaking changes   |
+| **Kotlin**                      | 2.0.0            | Patch updates only (2.0.x), major updates require ADR |
+| **Compose Compiler**            | 2.0.0            | Must match Kotlin version exactly                     |
+| **Kotlin Multiplatform**        | 2.0.0            | Must match Kotlin version exactly                     |
+| **Java Toolchain**              | 17 (LTS)         | No upgrades until Android requires Java 21            |
+| **compileSdk**                  | 34               | Update with new Android releases (annual)             |
+| **minSdk**                      | 24 (Android 7.0) | No changes (wide device coverage)                     |
+| **targetSdk**                   | 34               | Update annually with new Android releases             |
 
 **Verification Command:**
+
 ```bash
 ./gradlew dependencies --configuration releaseRuntimeClasspath | grep -E "(kotlin|agp|compose)"
 ```
@@ -110,6 +114,7 @@ plugins {
 **Rule:** No module can depend on `:androidApp` (prevents circular dependencies)
 
 **Enforcement:**
+
 ```kotlin
 // build.gradle.kts (root)
 subprojects {
@@ -127,7 +132,8 @@ subprojects {
 }
 ```
 
-**Why:** Presentation layer (androidApp) is the integration point. Other modules provide building blocks.
+**Why:** Presentation layer (androidApp) is the integration point. Other modules provide building
+blocks.
 
 ---
 
@@ -136,11 +142,13 @@ subprojects {
 **Rule:** `core-models` and `core-tracking` must have NO Android imports
 
 **Enforcement:**
+
 ```bash
 ./gradlew checkPortableModules
 ```
 
 **What it checks:**
+
 - No `import android.graphics.*`
 - No `import android.util.*`
 - No `import androidx.*`
@@ -148,6 +156,7 @@ subprojects {
 **Fails build if violations found.**
 
 **Extend to domain package:**
+
 ```kotlin
 // build.gradle.kts (root)
 tasks.register("checkDomainPackage") {
@@ -190,6 +199,7 @@ tasks.register("checkDomainPackage") {
 ```
 
 **Add to check task:**
+
 ```kotlin
 tasks.named("check") {
     dependsOn("checkPortableModules")
@@ -204,12 +214,14 @@ tasks.named("check") {
 **Rule:** Builds must be reproducible (same inputs → same outputs)
 
 **Requirements:**
+
 - No timestamp injection in BuildConfig
 - No random values in generated code
 - Deterministic ProGuard/R8 mappings
 - Locked dependency versions (no dynamic `+` versions)
 
 **Verification:**
+
 ```bash
 ***REMOVED*** Build twice, compare APKs
 ./gradlew clean assembleDebug
@@ -230,7 +242,8 @@ diff <(unzip -p build1.apk classes.dex | md5) \
 ***REMOVED******REMOVED******REMOVED*** Environment Requirements
 
 **⚠️ Container/Docker Limitation:**
-Commands marked with 🏗️ require the **Android SDK** and will **fail in container environments** (e.g., Claude Code, Docker without Android SDK). Use these alternatives:
+Commands marked with 🏗️ require the **Android SDK** and will **fail in container environments** (
+e.g., Claude Code, Docker without Android SDK). Use these alternatives:
 
 - **Container-friendly:** `./gradlew prePushJvmCheck` (runs JVM-only tests for shared modules)
 - **Full validation:** Run on **workstation** with Android Studio or **CI runners** (GitHub Actions)
@@ -298,16 +311,19 @@ echo "✅ All checks passed!"
 ```
 
 **Make executable:**
+
 ```bash
 chmod +x scripts/verify-build.sh
 ```
 
 **Run before every PR (workstation only):**
+
 ```bash
 ./scripts/verify-build.sh
 ```
 
 **Container alternative (JVM-only):**
+
 ```bash
 ./gradlew prePushJvmCheck
 ```
@@ -318,9 +334,11 @@ chmod +x scripts/verify-build.sh
 
 ***REMOVED******REMOVED******REMOVED*** Philosophy: Tests Must Not Block Builds
 
-**Core Principle:** Tests validate correctness but must not prevent developers from building and running the app locally or in CI.
+**Core Principle:** Tests validate correctness but must not prevent developers from building and
+running the app locally or in CI.
 
 **Requirements:**
+
 - ✅ All tests must be **optional** for `assembleDebug` and `assembleRelease`
 - ✅ Tests run separately via `./gradlew test` (can fail without blocking APK generation)
 - ✅ Mock implementations available for offline/hermetic builds
@@ -335,6 +353,7 @@ chmod +x scripts/verify-build.sh
 **What:** Pure Kotlin logic tests running on JVM (no Android emulator/device needed)
 
 **Coverage:**
+
 - Domain logic (use cases, business rules)
 - Data transformations (aggregation, mapping)
 - Repository implementations (with mocked dependencies)
@@ -342,12 +361,14 @@ chmod +x scripts/verify-build.sh
 - Category mapping logic
 
 **Location:**
+
 ```
 androidApp/src/test/java/com/scanium/
 core-tracking/src/test/java/com/scanium/
 ```
 
 **Example:**
+
 ```kotlin
 // androidApp/src/test/java/com/scanium/domain/repository/MockClassifierTest.kt
 class MockClassifierTest {
@@ -380,6 +401,7 @@ class MockClassifierTest {
 ```
 
 **Run:**
+
 ```bash
 ./gradlew test
 ***REMOVED*** Or specific module:
@@ -387,6 +409,7 @@ class MockClassifierTest {
 ```
 
 **Benefits:**
+
 - Fast execution (no emulator startup)
 - Run in CI without Android SDK
 - Easy to parallelize
@@ -399,29 +422,34 @@ class MockClassifierTest {
 **What:** Tests running on Android emulator or physical device
 
 **Coverage:**
+
 - UI integration tests (Compose UI, navigation)
 - CameraX integration
 - Android-specific platform code
 - End-to-end flows (scan → classify → display)
 
 **Location:**
+
 ```
 androidApp/src/androidTest/java/com/scanium/
 ```
 
 **Run:**
+
 ```bash
 ***REMOVED*** Requires emulator or connected device
 ./gradlew connectedAndroidTest
 ```
 
 **When to Use:**
+
 - Manual QA before release
 - Nightly builds (not on every PR)
 - Debugging platform-specific issues
 - Performance profiling
 
 **Not Required For:**
+
 - `assembleDebug` to succeed
 - CI checks on PRs (too slow, flaky)
 - Local development (optional)
@@ -435,12 +463,14 @@ androidApp/src/androidTest/java/com/scanium/
 **Purpose:** Fallback classifier that always returns UNKNOWN category
 
 **Use Cases:**
+
 - Offline builds (no backend available)
 - CI environments without network access
 - Testing aggregation logic without classification
 - Graceful degradation when cloud service unavailable
 
 **Implementation:**
+
 ```kotlin
 // androidApp/src/main/java/com/scanium/domain/repository/impl/NoopClassifier.kt
 package com.scanium.domain.repository.impl
@@ -486,11 +516,13 @@ class NoopClassifier : ItemClassifier {
 **Purpose:** Returns predictable results based on hints for testing
 
 **Use Cases:**
+
 - Unit tests for domain logic
 - UI development (consistent test data)
 - Demo mode (show different categories)
 
 **Implementation:**
+
 ```kotlin
 // androidApp/src/test/java/com/scanium/domain/repository/impl/MockClassifier.kt
 package com.scanium.domain.repository.impl
@@ -563,6 +595,7 @@ class MockClassifier : ItemClassifier {
 **Purpose:** Test category mapping without domain pack files
 
 **Implementation:**
+
 ```kotlin
 // androidApp/src/test/java/com/scanium/domain/repository/impl/InMemoryCategoryEngine.kt
 package com.scanium.domain.repository.impl
@@ -645,6 +678,7 @@ tasks.named("check") {
 ```
 
 **Test dependencies:**
+
 ```kotlin
 dependencies {
     // Unit testing
@@ -664,6 +698,7 @@ dependencies {
 ***REMOVED******REMOVED******REMOVED*** Running Tests Locally
 
 **Essential (fast, run frequently):**
+
 ```bash
 ***REMOVED*** Unit tests only (< 30 seconds)
 ./gradlew test
@@ -673,6 +708,7 @@ dependencies {
 ```
 
 **Optional (slow, run before release):**
+
 ```bash
 ***REMOVED*** Instrumented tests (requires emulator, 5-10 minutes)
 ./gradlew connectedAndroidTest
@@ -686,6 +722,7 @@ dependencies {
 ***REMOVED******REMOVED******REMOVED*** CI Test Strategy
 
 **On every PR (fast checks):**
+
 ```yaml
 ***REMOVED*** .github/workflows/pr-check.yml
 ***REMOVED*** Note: CI runners have Android SDK, so full test suite works
@@ -707,6 +744,7 @@ dependencies {
 ```
 
 **Container environments (JVM-only validation):**
+
 ```bash
 ***REMOVED*** For developers in Claude Code or Docker without Android SDK
 ./gradlew prePushJvmCheck
@@ -716,6 +754,7 @@ dependencies {
 ```
 
 **Nightly (comprehensive checks):**
+
 ```yaml
 ***REMOVED*** .github/workflows/nightly.yml
 - name: Run instrumented tests
@@ -733,6 +772,7 @@ dependencies {
 ***REMOVED******REMOVED******REMOVED*** Success Metrics
 
 **Unit Test Coverage Goals:**
+
 - Domain logic: 80%+ coverage
 - Repository implementations: 70%+ coverage
 - Aggregation logic: 90%+ coverage (critical path)
@@ -745,6 +785,7 @@ dependencies {
 | Instrumented tests | < 5 min | 10 min |
 
 **Measure coverage:**
+
 ```bash
 ./gradlew testDebugUnitTestCoverage
 ***REMOVED*** Report: androidApp/build/reports/coverage/test/debug/index.html
@@ -804,6 +845,7 @@ jobs:
 ```
 
 **Security scans (weekly):**
+
 ```yaml
 name: Security Scan
 
@@ -861,6 +903,7 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 ```
 
 **Usage:**
+
 ```kotlin
 // build.gradle.kts
 plugins {
@@ -875,6 +918,7 @@ dependencies {
 ```
 
 **Benefits:**
+
 - Single source of truth for versions
 - Easier to update dependencies
 - Type-safe accessors
@@ -887,6 +931,7 @@ dependencies {
 ***REMOVED******REMOVED******REMOVED*** 1. Gradle Daemon
 
 **Enable in `gradle.properties`:**
+
 ```properties
 org.gradle.daemon=true
 org.gradle.parallel=true
@@ -897,11 +942,13 @@ org.gradle.configureondemand=true
 ***REMOVED******REMOVED******REMOVED*** 2. Build Cache
 
 **Local cache (developer machines):**
+
 ```properties
 org.gradle.caching=true
 ```
 
 **Remote cache (CI, optional):**
+
 ```properties
 ***REMOVED*** gradle.properties (CI only)
 org.gradle.caching=true
@@ -914,6 +961,7 @@ org.gradle.cache.remote.push=true
 **Enabled by default in Kotlin 2.0**
 
 Verify in `gradle.properties`:
+
 ```properties
 kotlin.incremental=true
 kotlin.incremental.java=true
@@ -934,6 +982,7 @@ kotlin {
 ```
 
 **Run with:**
+
 ```bash
 ./gradlew assembleDebug -PenableComposeCompilerReports=true
 ```
@@ -948,6 +997,7 @@ kotlin {
 
 **Cause:** Kotlin/Java version mismatch
 **Fix:**
+
 ```bash
 ***REMOVED*** Verify Java 17
 java -version
@@ -962,6 +1012,7 @@ kotlin {
 
 **Cause:** Resource conflicts or missing resources
 **Fix:**
+
 ```bash
 ***REMOVED*** Clean and rebuild
 ./gradlew clean assembleDebug
@@ -974,6 +1025,7 @@ find androidApp/src/main/res -type f -name "*.xml" | sort | uniq -d
 
 **Cause:** Android imports in portable code
 **Fix:**
+
 ```bash
 ***REMOVED*** Find violations
 grep -r "import android" core-models/ core-tracking/
@@ -987,6 +1039,7 @@ grep -r "import android" core-models/ core-tracking/
 
 **Cause:** KSP version incompatible with Kotlin version
 **Fix:**
+
 ```kotlin
 // Ensure KSP version matches Kotlin
 // Kotlin 2.0.0 → KSP 2.0.0-1.0.24
@@ -1002,12 +1055,14 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 **Zero tolerance:** Main branch must ALWAYS build successfully.
 
 **If build breaks:**
+
 1. **Immediate revert:** Revert the breaking commit
 2. **Fix forward:** Open PR with fix, ensure all checks pass
 3. **Root cause analysis:** Document why break happened
 4. **Prevention:** Add check to prevent similar breaks
 
 **Never acceptable:**
+
 - "Builds fine on my machine" (use clean build in CI environment)
 - "Will fix later" (fix immediately or revert)
 - Ignoring failing tests (fix or remove test)
@@ -1015,6 +1070,7 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 ***REMOVED******REMOVED******REMOVED*** On Feature Branches
 
 **Pre-merge requirements:**
+
 - ✅ `./gradlew assembleDebug` succeeds
 - ✅ `./gradlew test` all pass
 - ✅ `./gradlew checkPortableModules` passes
@@ -1030,15 +1086,16 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 
 **Goals (measured on CI):**
 
-| Build Type | Target | Maximum |
-|------------|--------|---------|
-| Clean build | < 3 min | 5 min |
-| Incremental build | < 30 sec | 1 min |
-| Unit tests | < 2 min | 3 min |
-| Instrumented tests | < 5 min | 10 min |
-| Full verification | < 10 min | 15 min |
+| Build Type         | Target   | Maximum |
+|--------------------|----------|---------|
+| Clean build        | < 3 min  | 5 min   |
+| Incremental build  | < 30 sec | 1 min   |
+| Unit tests         | < 2 min  | 3 min   |
+| Instrumented tests | < 5 min  | 10 min  |
+| Full verification  | < 10 min | 15 min  |
 
 **Monitor via CI:**
+
 ```yaml
 - name: Build with timing
   run: |
@@ -1055,11 +1112,13 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 ***REMOVED******REMOVED******REMOVED*** Patch Updates (Auto-approve)
 
 **Safe to update without review:**
+
 - Kotlin 2.0.0 → 2.0.1 (bug fixes only)
 - AGP 8.5.0 → 8.5.1 (bug fixes only)
 - Library patches (1.2.3 → 1.2.4)
 
 **Requirements:**
+
 - Run full verification suite
 - Check release notes for breaking changes
 - Update version lock table in this document
@@ -1067,11 +1126,13 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 ***REMOVED******REMOVED******REMOVED*** Minor Updates (Review required)
 
 **Require ADR or review:**
+
 - Kotlin 2.0.x → 2.1.0 (new features)
 - AGP 8.5.x → 8.6.0 (new features)
 - Library minor (1.2.x → 1.3.0)
 
 **Requirements:**
+
 - Read migration guide
 - Test all affected features
 - Update documentation
@@ -1080,12 +1141,14 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 ***REMOVED******REMOVED******REMOVED*** Major Updates (ADR required)
 
 **Must create ADR:**
+
 - Kotlin 2.x → 3.0
 - AGP 8.x → 9.0
 - Java 17 → 21
 - Library major (1.x → 2.0)
 
 **Requirements:**
+
 - Impact analysis
 - Migration plan
 - Compatibility testing

@@ -1,10 +1,10 @@
 package com.scanium.app.items.state
 
 import android.util.Log
+import com.scanium.app.aggregation.ItemAggregator
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.app.aggregation.ItemAggregator
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -26,9 +26,7 @@ internal class ItemsStateStore {
 
     fun getItemCount(): Int = _items.value.size
 
-    fun getItem(itemId: String): ScannedItem? {
-        return _items.value.find { it.id == itemId }
-    }
+    fun getItem(itemId: String): ScannedItem? = _items.value.find { it.id == itemId }
 
     fun setItems(items: List<ScannedItem>) {
         _items.value = items
@@ -52,9 +50,10 @@ internal class ItemsStateStore {
         Log.d(TAG, "Updated UI state: ${cachedItems.size} items")
 
         if (notifyNewItems && animationEnabled) {
-            val newItems = cachedItems.filter { newItem ->
-                oldItems.none { oldItem -> oldItem.id == newItem.id }
-            }
+            val newItems =
+                cachedItems.filter { newItem ->
+                    oldItems.none { oldItem -> oldItem.id == newItem.id }
+                }
             newItems.forEach {
                 if (DEBUG_LOGGING) {
                     Log.d(TAG, "Emitting new item event: ${it.id}")

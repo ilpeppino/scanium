@@ -1,10 +1,13 @@
 ***REMOVED*** KMP Structure
 
-This document describes the target Kotlin Multiplatform (KMP) module layout for Scanium after the extraction of shared business logic from the Android-specific codebase.
+This document describes the target Kotlin Multiplatform (KMP) module layout for Scanium after the
+extraction of shared business logic from the Android-specific codebase.
 
 ***REMOVED******REMOVED*** Overview
 
-The `/shared` directory will contain all platform-independent Kotlin Multiplatform modules. These modules will use the `commonMain` / `androidMain` / `iosMain` source set structure to share core business logic while allowing platform-specific implementations where needed.
+The `/shared` directory will contain all platform-independent Kotlin Multiplatform modules. These
+modules will use the `commonMain` / `androidMain` / `iosMain` source set structure to share core
+business logic while allowing platform-specific implementations where needed.
 
 ***REMOVED******REMOVED*** Directory Structure
 
@@ -26,10 +29,12 @@ scanium/
 ***REMOVED******REMOVED*** Module Descriptions
 
 ***REMOVED******REMOVED******REMOVED*** `/shared/core-models`
+
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Platform-independent data models and types
 
 **Contains**:
+
 - `ImageRef` - Platform-agnostic image reference (sealed class)
 - `NormalizedRect` - Normalized bounding box (0-1 coordinates)
 - `ItemCategory` - Enum mapping detection categories
@@ -42,6 +47,7 @@ scanium/
 **Dependencies**: None (pure Kotlin stdlib + Kotlinx Serialization)
 
 **Source Sets**:
+
 - `commonMain` - All models and types
 - `androidMain` - Android-specific extensions if needed
 - `iosMain` - iOS-specific extensions if needed
@@ -49,10 +55,12 @@ scanium/
 ---
 
 ***REMOVED******REMOVED******REMOVED*** `/shared/core-tracking`
+
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Object tracking and item aggregation logic
 
 **Contains**:
+
 - `ObjectTracker` - Multi-frame tracking with spatial matching
 - `ObjectCandidate` - Candidate state during tracking
 - `TrackerConfig` - Tunable thresholds
@@ -63,25 +71,30 @@ scanium/
 - `DetectionInfo` - Input to tracker
 
 **Dependencies**:
+
 - `core-models`
 - Kotlin Coroutines
 - Kotlinx Serialization
 
 **Source Sets**:
+
 - `commonMain` - All tracking and aggregation logic
 - `androidMain` - `AndroidLogger` implementation (wraps `android.util.Log`)
 - `iosMain` - `IOSLogger` implementation (wraps `NSLog`/`os_log`)
 
 **expect/actual**:
+
 - `expect class Logger` (platform-specific logging)
 
 ---
 
 ***REMOVED******REMOVED******REMOVED*** `/shared/core-domainpack`
+
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Domain Pack system for category taxonomy
 
 **Contains**:
+
 - `DomainPack` - Schema for 23 categories + 10 attributes
 - `DomainCategory`, `DomainAttribute` - Category and attribute models
 - `DomainPackRepository` - Repository interface
@@ -90,31 +103,38 @@ scanium/
 - `DomainPackProvider` - Singleton accessor
 
 **Dependencies**:
+
 - `core-models`
 - Kotlinx Serialization
 
 **Source Sets**:
+
 - `commonMain` - All domain logic and repository interface
 - `androidMain` - Android JSON resource loading from `res/raw/`
 - `iosMain` - iOS bundle resource loading
 
 **expect/actual**:
+
 - `expect fun loadDomainPackJson(): String` (platform-specific resource loading)
 
 ---
 
 ***REMOVED******REMOVED******REMOVED*** `/shared/core-scan`
+
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Scan-related contracts and interfaces (placeholder)
 
 **Contains**:
+
 - Future: Platform-independent scan contracts
 - Future: Scan session management interfaces
 
 **Dependencies**:
+
 - `core-models`
 
 **Source Sets**:
+
 - `commonMain` - Scan contracts
 - `androidMain` - Android-specific scan extensions
 - `iosMain` - iOS-specific scan extensions
@@ -124,16 +144,19 @@ scanium/
 ---
 
 ***REMOVED******REMOVED******REMOVED*** `/shared/core-contracts`
+
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Shared contracts and interfaces (placeholder)
 
 **Contains**:
+
 - Future: Platform-independent interfaces for camera, ML, etc.
 - Future: Common protocol definitions
 
 **Dependencies**: None (pure Kotlin stdlib)
 
 **Source Sets**:
+
 - `commonMain` - All contracts and interfaces
 
 **Status**: Currently a placeholder module for future expansion.
@@ -187,6 +210,7 @@ scanium/
 ```
 
 **Dependency Rules**:
+
 1. **No circular dependencies** between shared modules
 2. **Bottom-up dependencies only**: Lower layers cannot depend on higher layers
 3. **Platform modules** (`:androidApp`, `:android-*`) can depend on shared modules
@@ -294,35 +318,38 @@ include(
 ***REMOVED******REMOVED*** Migration Strategy
 
 ***REMOVED******REMOVED******REMOVED*** Phase 1: Structure Setup (Current)
+
 ✅ Create `/shared` directory structure
 ✅ Add placeholder modules
 ✅ Document target architecture
 🚧 No code moved yet
 
 ***REMOVED******REMOVED******REMOVED*** Phase 2: Module Conversion
+
 1. Convert `core-models` to KMP
-   - Apply `multiplatform` plugin
-   - Move code to `commonMain`
-   - Remove Android dependencies (`Uri`, etc.)
-   - Add `androidMain`/`iosMain` stubs
+    - Apply `multiplatform` plugin
+    - Move code to `commonMain`
+    - Remove Android dependencies (`Uri`, etc.)
+    - Add `androidMain`/`iosMain` stubs
 
 2. Convert `core-tracking` to KMP
-   - Apply `multiplatform` plugin
-   - Move code to `commonMain`
-   - Implement `expect class Logger` with Android/iOS actuals
-   - Update tests to `commonTest`
+    - Apply `multiplatform` plugin
+    - Move code to `commonMain`
+    - Implement `expect class Logger` with Android/iOS actuals
+    - Update tests to `commonTest`
 
 3. Convert `core-domainpack` to KMP
-   - Apply `multiplatform` plugin
-   - Move code to `commonMain`
-   - Implement resource loading via expect/actual
-   - Platform-specific JSON resource access
+    - Apply `multiplatform` plugin
+    - Move code to `commonMain`
+    - Implement resource loading via expect/actual
+    - Platform-specific JSON resource access
 
 4. Platform Adapters
-   - Keep `android-platform-adapters` as Android library
-   - Create `ios-platform-adapters` for iOS-specific conversions
+    - Keep `android-platform-adapters` as Android library
+    - Create `ios-platform-adapters` for iOS-specific conversions
 
 ***REMOVED******REMOVED******REMOVED*** Phase 3: iOS Integration
+
 1. Create `:iosApp` module with SwiftUI
 2. Implement iOS platform providers (Camera, ML)
 3. Wire up shared logic with iOS UI
@@ -334,8 +361,10 @@ include(
 
 1. **Android Must Remain Functional**: Every migration step must keep Android builds working
 2. **No Breaking Changes**: Existing Android features must continue working throughout migration
-3. **Platform Optimizations Allowed**: Each platform can use native optimizations (ML Kit vs Core ML)
-4. **Shared Code Must Be Android-Free**: No `android.*`, `androidx.*`, CameraX, or ML Kit in `shared/*`
+3. **Platform Optimizations Allowed**: Each platform can use native optimizations (ML Kit vs Core
+   ML)
+4. **Shared Code Must Be Android-Free**: No `android.*`, `androidx.*`, CameraX, or ML Kit in
+   `shared/*`
 5. **CI Validation**: GitHub Actions must validate Android builds on every push
 6. **Incremental Migration**: Move code module-by-module, not all at once
 
@@ -344,15 +373,18 @@ include(
 ***REMOVED******REMOVED*** Testing Strategy
 
 ***REMOVED******REMOVED******REMOVED*** Shared Modules
+
 - **Common Tests** (`commonTest`): Platform-independent unit tests
 - **Android Tests** (`androidUnitTest`): Android-specific test cases
 - **iOS Tests** (`iosTest`): iOS-specific test cases
 
 ***REMOVED******REMOVED******REMOVED*** Platform Modules
+
 - **Android**: Existing test suite in `androidApp/src/test/` continues
 - **iOS**: New test suite in `iosApp/src/test/` (future)
 
 ***REMOVED******REMOVED******REMOVED*** CI Pipeline
+
 - Build all KMP modules for Android + iOS targets
 - Run common tests on JVM
 - Run Android tests on Android emulator

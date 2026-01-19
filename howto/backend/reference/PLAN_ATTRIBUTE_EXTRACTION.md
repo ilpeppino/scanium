@@ -9,10 +9,13 @@
 ***REMOVED******REMOVED*** Executive Summary
 
 This plan enhances Scanium's item classification pipeline with:
-1. **Attribute extraction** (brand, model, color, material, condition) using existing Google Vision infrastructure
+
+1. **Attribute extraction** (brand, model, color, material, condition) using existing Google Vision
+   infrastructure
 2. **Marketplace-ready description generation** via AI Assistant
 
 **Key Finding:** The backend already has 80% of the infrastructure built. The main gaps are:
+
 - Android `ScannedItem` model lacks an `attributes` field
 - Classification response attributes are received but not persisted
 - UI has no attribute display/editing
@@ -83,24 +86,24 @@ This plan enhances Scanium's item classification pipeline with:
 
 ***REMOVED******REMOVED******REMOVED*** Key File Locations
 
-| Component | File | Lines |
-|-----------|------|-------|
-| Cloud Classifier (Android) | `androidApp/.../ml/classification/CloudClassifier.kt` | 77-410 |
-| Classification Result | `core-models/.../ml/classification/ClassificationResult.kt` | 20-30 |
-| Classification Coordinator | `androidApp/.../items/classification/ItemClassificationCoordinator.kt` | 71-401 |
-| Cloud Call Gate | `androidApp/.../ml/classification/CloudCallGate.kt` | 13-102 |
-| Items State Manager | `androidApp/.../items/state/ItemsStateManager.kt` | 1-600+ |
-| Scanned Item Model | `shared/core-models/.../items/ScannedItem.kt` | 66-128 |
-| Scanned Item Entity | `androidApp/.../items/persistence/ScannedItemEntity.kt` | 16-200+ |
-| Backend Classifier Routes | `backend/src/modules/classifier/routes.ts` | 75-356 |
-| Backend Classifier Service | `backend/src/modules/classifier/service.ts` | 24-150 |
-| Google Vision Classifier | `backend/src/modules/classifier/providers/google-vision.ts` | 10-111 |
-| Domain Mapper | `backend/src/modules/classifier/domain/mapper.ts` | 39-144 |
-| Vision Extractor | `backend/src/modules/vision/extractor.ts` | 172-396 |
-| Attribute Resolver | `backend/src/modules/vision/attribute-resolver.ts` | 407-428 |
-| Assistant Routes | `backend/src/modules/assistant/routes.ts` | 135-961 |
-| Assistant Repository (Android) | `androidApp/.../selling/assistant/AssistantRepository.kt` | 50-628 |
-| Domain Pack JSON | `core-domainpack/src/main/res/raw/home_resale_domain_pack.json` | 1-434 |
+| Component                      | File                                                                   | Lines   |
+|--------------------------------|------------------------------------------------------------------------|---------|
+| Cloud Classifier (Android)     | `androidApp/.../ml/classification/CloudClassifier.kt`                  | 77-410  |
+| Classification Result          | `core-models/.../ml/classification/ClassificationResult.kt`            | 20-30   |
+| Classification Coordinator     | `androidApp/.../items/classification/ItemClassificationCoordinator.kt` | 71-401  |
+| Cloud Call Gate                | `androidApp/.../ml/classification/CloudCallGate.kt`                    | 13-102  |
+| Items State Manager            | `androidApp/.../items/state/ItemsStateManager.kt`                      | 1-600+  |
+| Scanned Item Model             | `shared/core-models/.../items/ScannedItem.kt`                          | 66-128  |
+| Scanned Item Entity            | `androidApp/.../items/persistence/ScannedItemEntity.kt`                | 16-200+ |
+| Backend Classifier Routes      | `backend/src/modules/classifier/routes.ts`                             | 75-356  |
+| Backend Classifier Service     | `backend/src/modules/classifier/service.ts`                            | 24-150  |
+| Google Vision Classifier       | `backend/src/modules/classifier/providers/google-vision.ts`            | 10-111  |
+| Domain Mapper                  | `backend/src/modules/classifier/domain/mapper.ts`                      | 39-144  |
+| Vision Extractor               | `backend/src/modules/vision/extractor.ts`                              | 172-396 |
+| Attribute Resolver             | `backend/src/modules/vision/attribute-resolver.ts`                     | 407-428 |
+| Assistant Routes               | `backend/src/modules/assistant/routes.ts`                              | 135-961 |
+| Assistant Repository (Android) | `androidApp/.../selling/assistant/AssistantRepository.kt`              | 50-628  |
+| Domain Pack JSON               | `core-domainpack/src/main/res/raw/home_resale_domain_pack.json`        | 1-434   |
 
 ---
 
@@ -108,36 +111,36 @@ This plan enhances Scanium's item classification pipeline with:
 
 ***REMOVED******REMOVED******REMOVED*** Desired Attributes
 
-| Attribute | Exists in Domain Pack | Extraction Method | Backend Support | Android Support |
-|-----------|----------------------|-------------------|-----------------|-----------------|
-| **brand** | Yes (lines 309-325) | OCR | **PARTIAL** (VisionExtractor has OCR, attribute-resolver resolves) | **NO** (not stored) |
-| **model** | Yes (lines 381-392) | OCR | **PARTIAL** (same as brand) | **NO** |
-| **color** | Yes (lines 327-337) | CLIP → server-side extraction | **YES** (color-extractor.ts) | **NO** |
-| **material** | Yes (lines 339-351) | CLIP → label hints | **PARTIAL** (label detection) | **NO** |
-| **size** | Yes (lines 353-363) | HEURISTIC | **NO** | **NO** |
-| **condition** | Yes (lines 365-378) | CLOUD | **NO** (requires LLM) | **NO** |
-| **year** | Yes (lines 393-402) | OCR | **PARTIAL** (OCR exists) | **NO** |
-| **sku/isbn** | Yes (lines 406-423) | BARCODE | **NO** (ML Kit on device) | **YES** (barcodeValue exists) |
+| Attribute     | Exists in Domain Pack | Extraction Method             | Backend Support                                                    | Android Support               |
+|---------------|-----------------------|-------------------------------|--------------------------------------------------------------------|-------------------------------|
+| **brand**     | Yes (lines 309-325)   | OCR                           | **PARTIAL** (VisionExtractor has OCR, attribute-resolver resolves) | **NO** (not stored)           |
+| **model**     | Yes (lines 381-392)   | OCR                           | **PARTIAL** (same as brand)                                        | **NO**                        |
+| **color**     | Yes (lines 327-337)   | CLIP → server-side extraction | **YES** (color-extractor.ts)                                       | **NO**                        |
+| **material**  | Yes (lines 339-351)   | CLIP → label hints            | **PARTIAL** (label detection)                                      | **NO**                        |
+| **size**      | Yes (lines 353-363)   | HEURISTIC                     | **NO**                                                             | **NO**                        |
+| **condition** | Yes (lines 365-378)   | CLOUD                         | **NO** (requires LLM)                                              | **NO**                        |
+| **year**      | Yes (lines 393-402)   | OCR                           | **PARTIAL** (OCR exists)                                           | **NO**                        |
+| **sku/isbn**  | Yes (lines 406-423)   | BARCODE                       | **NO** (ML Kit on device)                                          | **YES** (barcodeValue exists) |
 
 ***REMOVED******REMOVED******REMOVED*** Current Gaps
 
 1. **ScannedItem model** (`shared/core-models/.../items/ScannedItem.kt:66-88`):
-   - **Missing:** `attributes: Map<String, String>` field
-   - **Missing:** `attributeConfidence: Map<String, Float>` field
+    - **Missing:** `attributes: Map<String, String>` field
+    - **Missing:** `attributeConfidence: Map<String, Float>` field
 
 2. **ScannedItemEntity** (`androidApp/.../items/persistence/ScannedItemEntity.kt`):
-   - **Missing:** `attributes` column (JSON string or separate table)
+    - **Missing:** `attributes` column (JSON string or separate table)
 
 3. **ItemClassificationCoordinator.handleClassificationResult()** (lines 309-372):
-   - **Bug:** `result.attributes` is received but NOT passed to state manager
+    - **Bug:** `result.attributes` is received but NOT passed to state manager
 
 4. **Backend /v1/classify**:
-   - **Gap:** Only uses LABEL_DETECTION, not full VisionExtractor with OCR/logos/colors
-   - **Gap:** Domain mapper returns category.attributes (static), not extracted attributes
+    - **Gap:** Only uses LABEL_DETECTION, not full VisionExtractor with OCR/logos/colors
+    - **Gap:** Domain mapper returns category.attributes (static), not extracted attributes
 
 5. **Assistant /v1/assist/chat**:
-   - **Provider:** `GroundedMockAssistantProvider` returns mock responses
-   - **Need:** Real LLM provider (Claude/GPT) for description generation
+    - **Provider:** `GroundedMockAssistantProvider` returns mock responses
+    - **Need:** Real LLM provider (Claude/GPT) for description generation
 
 ---
 
@@ -196,15 +199,16 @@ Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryI
 
 **Vision Features to Use:**
 
-| Attribute | Vision Feature | Normalization |
-|-----------|---------------|---------------|
-| Brand | LOGO_DETECTION + TEXT_DETECTION | Brand dictionary matching (lines 52-85 of attribute-resolver.ts) |
-| Model | TEXT_DETECTION | Model regex pattern (line 105) |
-| Color | Server-side extraction (color-extractor.ts) | 11 basic colors: black, white, gray, red, orange, yellow, green, blue, purple, pink, brown |
-| Material | LABEL_DETECTION | Material label list (lines 353-355) |
-| Year | TEXT_DETECTION | 4-digit year regex: `/\b(19|20)\d{2}\b/` |
+| Attribute | Vision Feature                              | Normalization                                                                              |
+|-----------|---------------------------------------------|--------------------------------------------------------------------------------------------|
+| Brand     | LOGO_DETECTION + TEXT_DETECTION             | Brand dictionary matching (lines 52-85 of attribute-resolver.ts)                           |
+| Model     | TEXT_DETECTION                              | Model regex pattern (line 105)                                                             |
+| Color     | Server-side extraction (color-extractor.ts) | 11 basic colors: black, white, gray, red, orange, yellow, green, blue, purple, pink, brown |
+| Material  | LABEL_DETECTION                             | Material label list (lines 353-355)                                                        |
+| Year      | TEXT_DETECTION                              | 4-digit year regex: `/\b(19                                                                |20)\d{2}\b/` |
 
 **Cost Controls:**
+
 - Only trigger for stable items (CloudCallGate already enforces)
 - Cache by image hash (already exists in classifier)
 - Batch multiple images per item in single Vision call
@@ -268,6 +272,7 @@ Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryI
 ```
 
 **Localization:**
+
 - Default: English
 - Supported (with assistantPrefs.language): Dutch (NL), German (DE), French (FR), Italian (IT)
 - Prompt includes language instruction based on prefs
@@ -282,22 +287,25 @@ Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryI
 
 **Files to Change:**
 
-| File | Change |
-|------|--------|
-| `shared/core-models/.../items/ScannedItem.kt` | Add `attributes: Map<String, ItemAttribute>? = null` field |
-| `core-models/.../ItemAttribute.kt` (NEW) | Create `data class ItemAttribute(value: String, confidence: Float, source: String?)` |
-| `androidApp/.../persistence/ScannedItemEntity.kt` | Add `attributesJson: String?` column, converters |
-| `androidApp/.../persistence/ScannedItemDatabase.kt` | Add migration from version 3 → 4 |
+| File                                                | Change                                                                               |
+|-----------------------------------------------------|--------------------------------------------------------------------------------------|
+| `shared/core-models/.../items/ScannedItem.kt`       | Add `attributes: Map<String, ItemAttribute>? = null` field                           |
+| `core-models/.../ItemAttribute.kt` (NEW)            | Create `data class ItemAttribute(value: String, confidence: Float, source: String?)` |
+| `androidApp/.../persistence/ScannedItemEntity.kt`   | Add `attributesJson: String?` column, converters                                     |
+| `androidApp/.../persistence/ScannedItemDatabase.kt` | Add migration from version 3 → 4                                                     |
 
 **Risks:**
+
 - Database migration could fail on existing installs → Add fallback to clear DB on migration failure
 - Large attribute maps could bloat DB → Limit to 20 attributes max per item
 
 **Tests:**
+
 - Unit: `ScannedItemEntityTest.kt` - verify attributes serialization/deserialization
 - Unit: Migration test - upgrade from v3 → v4 preserves existing items
 
 **Acceptance Criteria:**
+
 - [ ] `ScannedItem.attributes` field exists and is optional
 - [ ] Entity can persist/load items with attributes
 - [ ] Existing items without attributes load successfully
@@ -311,12 +319,12 @@ Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryI
 
 **Files to Change:**
 
-| File | Change |
-|------|--------|
-| `backend/src/modules/classifier/routes.ts` | Add optional `enrichAttributes=true` query param |
+| File                                        | Change                                                  |
+|---------------------------------------------|---------------------------------------------------------|
+| `backend/src/modules/classifier/routes.ts`  | Add optional `enrichAttributes=true` query param        |
 | `backend/src/modules/classifier/service.ts` | Inject VisionExtractor, call when enrichAttributes=true |
-| `backend/src/modules/classifier/types.ts` | Add `EnrichedClassificationResult` with attributes |
-| `backend/src/config/index.ts` | Add `classifier.enableAttributeEnrichment` flag |
+| `backend/src/modules/classifier/types.ts`   | Add `EnrichedClassificationResult` with attributes      |
+| `backend/src/config/index.ts`               | Add `classifier.enableAttributeEnrichment` flag         |
 
 **Implementation:**
 
@@ -339,15 +347,18 @@ if (request.enrichAttributes && config.classifier.enableAttributeEnrichment) {
 ```
 
 **Risks:**
+
 - Vision API latency adds ~200-500ms → Make enrichment opt-in
 - Vision API cost increases → Add per-API-key daily quota
 - Logo detection has additional cost → Make configurable
 
 **Tests:**
+
 - Unit: `ClassifierService.test.ts` - mock VisionExtractor, verify attributes populated
 - Integration: `classifier.routes.test.ts` - E2E with mock Vision provider
 
 **Acceptance Criteria:**
+
 - [ ] `GET /v1/classify?enrichAttributes=true` returns attributes in response
 - [ ] Attributes include brand, model, color, material when detectable
 - [ ] Each attribute has confidence tier (HIGH/MED/LOW) and evidence source
@@ -362,13 +373,13 @@ if (request.enrichAttributes && config.classifier.enableAttributeEnrichment) {
 
 **Files to Change:**
 
-| File | Change |
-|------|--------|
-| `androidApp/.../ml/classification/CloudClassifier.kt` | Add `enrichAttributes=true` to request, parse response attributes |
-| `androidApp/.../items/classification/ItemClassificationCoordinator.kt` | Pass `result.attributes` to state manager |
-| `androidApp/.../items/state/ItemsStateManager.kt` | Add `applyAttributes(itemId, attributes)` method |
-| `androidApp/.../aggregation/ItemAggregator.kt` | Store attributes on AggregatedItem |
-| `androidApp/.../items/persistence/ScannedItemRepository.kt` | Serialize/deserialize attributes |
+| File                                                                   | Change                                                            |
+|------------------------------------------------------------------------|-------------------------------------------------------------------|
+| `androidApp/.../ml/classification/CloudClassifier.kt`                  | Add `enrichAttributes=true` to request, parse response attributes |
+| `androidApp/.../items/classification/ItemClassificationCoordinator.kt` | Pass `result.attributes` to state manager                         |
+| `androidApp/.../items/state/ItemsStateManager.kt`                      | Add `applyAttributes(itemId, attributes)` method                  |
+| `androidApp/.../aggregation/ItemAggregator.kt`                         | Store attributes on AggregatedItem                                |
+| `androidApp/.../items/persistence/ScannedItemRepository.kt`            | Serialize/deserialize attributes                                  |
 
 **Key Changes in handleClassificationResult():**
 
@@ -385,14 +396,17 @@ stateManager.applyEnhancedClassification(
 ```
 
 **Risks:**
+
 - Attributes may be null from backend → Handle gracefully, don't overwrite existing
 - Large attribute maps could cause OOM → Limit to 20 per item
 
 **Tests:**
+
 - Unit: `ItemClassificationCoordinatorTest.kt` - verify attributes flow to state manager
 - Unit: `ItemsStateManagerTest.kt` - verify attributes persisted and loaded
 
 **Acceptance Criteria:**
+
 - [ ] Cloud classification returns attributes from backend
 - [ ] Attributes stored in ScannedItem and persisted to database
 - [ ] Attributes survive app restart (process death)
@@ -406,12 +420,12 @@ stateManager.applyEnhancedClassification(
 
 **Files to Change:**
 
-| File | Change |
-|------|--------|
-| `androidApp/.../items/ItemsListScreen.kt` | Show attribute badges (brand, color) on list item |
-| `androidApp/.../items/ItemDetailSheet.kt` (NEW or existing) | Display all attributes with confidence indicators |
-| `androidApp/.../items/components/AttributeChip.kt` (NEW) | Reusable chip with confidence color (green=HIGH, yellow=MED, gray=LOW) |
-| `androidApp/.../items/components/AttributeEditDialog.kt` (NEW) | Dialog to edit/confirm attribute value |
+| File                                                           | Change                                                                 |
+|----------------------------------------------------------------|------------------------------------------------------------------------|
+| `androidApp/.../items/ItemsListScreen.kt`                      | Show attribute badges (brand, color) on list item                      |
+| `androidApp/.../items/ItemDetailSheet.kt` (NEW or existing)    | Display all attributes with confidence indicators                      |
+| `androidApp/.../items/components/AttributeChip.kt` (NEW)       | Reusable chip with confidence color (green=HIGH, yellow=MED, gray=LOW) |
+| `androidApp/.../items/components/AttributeEditDialog.kt` (NEW) | Dialog to edit/confirm attribute value                                 |
 
 **UI Design:**
 
@@ -427,19 +441,23 @@ stateManager.applyEnhancedClassification(
 ```
 
 **Chip Colors:**
+
 - GREEN (✓): HIGH confidence - verified
 - YELLOW (?): MED confidence - likely correct
 - GRAY: LOW confidence - needs confirmation
 
 **Risks:**
+
 - Too many chips clutters UI → Show max 3 on list, all in detail sheet
 - Low confidence attributes confuse users → Clear visual distinction
 
 **Tests:**
+
 - UI: Screenshot tests for chips at each confidence level
 - Unit: AttributeChip renders correctly for all states
 
 **Acceptance Criteria:**
+
 - [ ] Items with attributes show up to 3 chips on list view
 - [ ] Tapping item shows full attribute list in detail sheet
 - [ ] Each attribute shows confidence indicator
@@ -454,12 +472,12 @@ stateManager.applyEnhancedClassification(
 
 **Files to Change:**
 
-| File | Change |
-|------|--------|
-| `androidApp/.../selling/assistant/AssistantRepository.kt` | Already supports `ItemContextSnapshot.attributes` |
-| `androidApp/.../items/ItemDetailSheet.kt` | Add "Generate Listing" button |
-| `androidApp/.../selling/GeneratedListingScreen.kt` (NEW) | Display generated title/description with copy buttons |
-| `androidApp/.../model/ListingDraft.kt` (NEW) | Data class for generated listing |
+| File                                                      | Change                                                |
+|-----------------------------------------------------------|-------------------------------------------------------|
+| `androidApp/.../selling/assistant/AssistantRepository.kt` | Already supports `ItemContextSnapshot.attributes`     |
+| `androidApp/.../items/ItemDetailSheet.kt`                 | Add "Generate Listing" button                         |
+| `androidApp/.../selling/GeneratedListingScreen.kt` (NEW)  | Display generated title/description with copy buttons |
+| `androidApp/.../model/ListingDraft.kt` (NEW)              | Data class for generated listing                      |
 
 **User Flow:**
 
@@ -490,14 +508,17 @@ stateManager.applyEnhancedClassification(
 ```
 
 **Risks:**
+
 - Backend assistant is mock → Need real LLM in PR 6
 - Generation fails → Show graceful error with retry button
 
 **Tests:**
+
 - Unit: Mock AssistantRepository, verify request includes attributes
 - UI: Screenshot test for generated listing screen
 
 **Acceptance Criteria:**
+
 - [ ] "Generate Listing" button visible on items with attributes
 - [ ] Loading state shown during API call
 - [ ] Generated title and description displayed
@@ -513,12 +534,12 @@ stateManager.applyEnhancedClassification(
 
 **Files to Change:**
 
-| File | Change |
-|------|--------|
-| `backend/src/modules/assistant/provider.ts` | Add `ClaudeAssistantProvider` class |
-| `backend/src/modules/assistant/prompts/listing-generation.ts` (NEW) | System/user prompt templates |
-| `backend/src/config/index.ts` | Add `assistant.provider: 'mock' | 'claude' | 'openai'` |
-| `backend/src/modules/assistant/routes.ts` | Switch provider based on config |
+| File                                                                | Change                              |
+|---------------------------------------------------------------------|-------------------------------------|
+| `backend/src/modules/assistant/provider.ts`                         | Add `ClaudeAssistantProvider` class |
+| `backend/src/modules/assistant/prompts/listing-generation.ts` (NEW) | System/user prompt templates        |
+| `backend/src/config/index.ts`                                       | Add `assistant.provider: 'mock'     | 'claude' | 'openai'` |
+| `backend/src/modules/assistant/routes.ts`                           | Switch provider based on config     |
 
 **Claude Integration:**
 
@@ -543,6 +564,7 @@ class ClaudeAssistantProvider implements AssistantProvider {
 ```
 
 **Guardrails in Prompt:**
+
 ```
 CRITICAL RULES:
 1. ONLY use brand/model if confidence >= MED. If LOW, say "Unknown brand" or "Possibly [brand]".
@@ -553,15 +575,18 @@ CRITICAL RULES:
 ```
 
 **Risks:**
+
 - LLM costs → Track per-request cost, enforce daily quota
 - Latency → Stream response or accept 2-3s latency
 - Hallucination → Strong prompt constraints + post-processing validation
 
 **Tests:**
+
 - Unit: Mock Claude client, verify prompt construction
 - Integration: Test with real API key in staging
 
 **Acceptance Criteria:**
+
 - [ ] Claude provider generates coherent listing text
 - [ ] Unknown attributes marked as "Unknown" not invented
 - [ ] MED confidence attributes flagged for verification
@@ -576,21 +601,21 @@ CRITICAL RULES:
 
 **Metrics to Add:**
 
-| Metric | Type | Labels |
-|--------|------|--------|
-| `scanium_attribute_extraction_latency_ms` | Histogram | `provider`, `feature` |
-| `scanium_attribute_extraction_success_rate` | Counter | `provider`, `attribute_type` |
-| `scanium_attribute_confidence_distribution` | Histogram | `attribute_type` |
-| `scanium_vision_api_cost_estimate` | Counter | `feature` |
-| `scanium_assistant_generation_latency_ms` | Histogram | `provider` |
-| `scanium_assistant_cache_hit_rate` | Gauge | - |
+| Metric                                      | Type      | Labels                       |
+|---------------------------------------------|-----------|------------------------------|
+| `scanium_attribute_extraction_latency_ms`   | Histogram | `provider`, `feature`        |
+| `scanium_attribute_extraction_success_rate` | Counter   | `provider`, `attribute_type` |
+| `scanium_attribute_confidence_distribution` | Histogram | `attribute_type`             |
+| `scanium_vision_api_cost_estimate`          | Counter   | `feature`                    |
+| `scanium_assistant_generation_latency_ms`   | Histogram | `provider`                   |
+| `scanium_assistant_cache_hit_rate`          | Gauge     | -                            |
 
 **Files to Change:**
 
-| File | Change |
-|------|--------|
-| `backend/src/modules/classifier/service.ts` | Add metric recording |
-| `backend/src/modules/assistant/routes.ts` | Add metric recording |
+| File                                         | Change                |
+|----------------------------------------------|-----------------------|
+| `backend/src/modules/classifier/service.ts`  | Add metric recording  |
+| `backend/src/modules/assistant/routes.ts`    | Add metric recording  |
 | `backend/src/infra/observability/metrics.ts` | Define metric schemas |
 
 **Logs (Structured):**
@@ -610,11 +635,13 @@ CRITICAL RULES:
 ```
 
 **Sensitive Data Handling:**
+
 - NEVER log OCR text content (may contain PII)
 - Log attribute values only in debug mode
 - Hash image data before logging
 
 **Acceptance Criteria:**
+
 - [ ] Metrics exported to Prometheus endpoint
 - [ ] Grafana dashboard for extraction success rate
 - [ ] Alert on Vision API error rate > 5%
@@ -626,34 +653,34 @@ CRITICAL RULES:
 
 ***REMOVED******REMOVED******REMOVED*** Unit Tests (Per PR)
 
-| PR | Test File | Coverage Target |
-|----|-----------|-----------------|
-| PR1 | `ScannedItemEntityTest.kt` | Attribute serialization |
-| PR2 | `ClassifierService.test.ts` | Attribute extraction flow |
-| PR3 | `ItemClassificationCoordinatorTest.kt` | Attribute propagation |
-| PR4 | `AttributeChipTest.kt` | UI rendering |
-| PR5 | `GeneratedListingScreenTest.kt` | Assistant integration |
-| PR6 | `ClaudeProviderTest.ts` | Prompt construction |
-| PR7 | `MetricsTest.ts` | Metric recording |
+| PR  | Test File                              | Coverage Target           |
+|-----|----------------------------------------|---------------------------|
+| PR1 | `ScannedItemEntityTest.kt`             | Attribute serialization   |
+| PR2 | `ClassifierService.test.ts`            | Attribute extraction flow |
+| PR3 | `ItemClassificationCoordinatorTest.kt` | Attribute propagation     |
+| PR4 | `AttributeChipTest.kt`                 | UI rendering              |
+| PR5 | `GeneratedListingScreenTest.kt`        | Assistant integration     |
+| PR6 | `ClaudeProviderTest.ts`                | Prompt construction       |
+| PR7 | `MetricsTest.ts`                       | Metric recording          |
 
 ***REMOVED******REMOVED******REMOVED*** Integration Tests
 
 1. **End-to-End Classification with Attributes:**
-   - Upload test image (IKEA bookshelf)
-   - Verify response contains `brand: "IKEA"`, `color: "white"`
-   - Verify confidence levels correct
+    - Upload test image (IKEA bookshelf)
+    - Verify response contains `brand: "IKEA"`, `color: "white"`
+    - Verify confidence levels correct
 
 2. **Process Death Persistence:**
-   - Scan item with attributes
-   - Kill app process
-   - Relaunch
-   - Verify attributes still present
+    - Scan item with attributes
+    - Kill app process
+    - Relaunch
+    - Verify attributes still present
 
 3. **Description Generation:**
-   - Create item with known attributes
-   - Call assistant API
-   - Verify generated text includes attributes
-   - Verify no hallucinated specs
+    - Create item with known attributes
+    - Call assistant API
+    - Verify generated text includes attributes
+    - Verify no hallucinated specs
 
 ***REMOVED******REMOVED******REMOVED*** Manual Test Checklist
 
@@ -671,17 +698,18 @@ CRITICAL RULES:
 
 ***REMOVED******REMOVED*** F. Sequenced Rollout
 
-| Week | PR | Milestone |
-|------|-----|-----------|
-| 1 | PR1 | Data model ready |
-| 1-2 | PR2 | Backend extracts attributes |
-| 2 | PR3 | Android stores attributes |
-| 3 | PR4 | UI displays attributes |
-| 3-4 | PR5 | Generate description button |
-| 4 | PR6 | Real LLM integration |
-| 5 | PR7 | Observability |
+| Week | PR  | Milestone                   |
+|------|-----|-----------------------------|
+| 1    | PR1 | Data model ready            |
+| 1-2  | PR2 | Backend extracts attributes |
+| 2    | PR3 | Android stores attributes   |
+| 3    | PR4 | UI displays attributes      |
+| 3-4  | PR5 | Generate description button |
+| 4    | PR6 | Real LLM integration        |
+| 5    | PR7 | Observability               |
 
 **Feature Flag:**
+
 - `cloud_attribute_enrichment_enabled` (default: false in prod)
 - Roll out to 10% → 50% → 100% over 2 weeks after PR3
 
@@ -690,21 +718,21 @@ CRITICAL RULES:
 ***REMOVED******REMOVED*** G. Open Questions / Decisions Needed
 
 1. **LLM Provider:** Claude vs OpenAI vs Azure OpenAI?
-   - Recommendation: Claude (Anthropic) for consistency with Claude Code tooling
+    - Recommendation: Claude (Anthropic) for consistency with Claude Code tooling
 
 2. **Condition Assessment:** Requires visual inspection of wear/damage
-   - Option A: Add to VisionExtractor with custom labels
-   - Option B: LLM-based assessment from image
-   - Recommendation: Option B in Phase 2
+    - Option A: Add to VisionExtractor with custom labels
+    - Option B: LLM-based assessment from image
+    - Recommendation: Option B in Phase 2
 
 3. **Attribute Editing Workflow:**
-   - Option A: Inline edit on chips
-   - Option B: Dedicated edit sheet
-   - Recommendation: Option B for cleaner UX
+    - Option A: Inline edit on chips
+    - Option B: Dedicated edit sheet
+    - Recommendation: Option B for cleaner UX
 
 4. **Localization Priority:**
-   - English first, then Dutch (NL market focus)?
-   - Or all EU languages at once?
+    - English first, then Dutch (NL market focus)?
+    - Or all EU languages at once?
 
 ---
 
@@ -753,6 +781,7 @@ export function resolveAttributes(
 **Location:** `backend/src/modules/vision/attribute-resolver.ts:52-85`
 
 Contains 100+ curated brands across:
+
 - Furniture (IKEA, West Elm, Pottery Barn)
 - Electronics (Apple, Samsung, Dell, Sony)
 - Fashion (Nike, Adidas, North Face, Coach)

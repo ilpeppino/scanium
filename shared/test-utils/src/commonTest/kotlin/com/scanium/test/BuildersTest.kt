@@ -12,7 +12,6 @@ import kotlin.test.assertTrue
  * These tests validate that the test-utils infrastructure works correctly.
  */
 class BuildersTest {
-
     @Test
     fun testNormalizedRect_createsValidRect() {
         val rect = testNormalizedRect(0.1f, 0.2f, 0.5f, 0.8f)
@@ -41,13 +40,14 @@ class BuildersTest {
 
     @Test
     fun testDetectionInfo_createsValidDetection() {
-        val detection = testDetectionInfo(
-            trackingId = "test_123",
-            boundingBox = testNormalizedRect(0.1f, 0.1f, 0.5f, 0.5f),
-            confidence = 0.85f,
-            category = ItemCategory.FASHION,
-            labelText = "Test Item"
-        )
+        val detection =
+            testDetectionInfo(
+                trackingId = "test_123",
+                boundingBox = testNormalizedRect(0.1f, 0.1f, 0.5f, 0.5f),
+                confidence = 0.85f,
+                category = ItemCategory.FASHION,
+                labelText = "Test Item",
+            )
 
         assertEquals("test_123", detection.trackingId)
         assertEquals(0.85f, detection.confidence)
@@ -68,12 +68,13 @@ class BuildersTest {
 
     @Test
     fun testScannedItem_createsValidItem() {
-        val item = testScannedItem(
-            id = "item_456",
-            category = ItemCategory.ELECTRONICS,
-            labelText = "Laptop",
-            confidence = 0.92f
-        )
+        val item =
+            testScannedItem(
+                id = "item_456",
+                category = ItemCategory.ELECTRONICS,
+                labelText = "Laptop",
+                confidence = 0.92f,
+            )
 
         assertEquals("item_456", item.aggregatedId)
         assertEquals(ItemCategory.ELECTRONICS, item.category)
@@ -111,7 +112,7 @@ class BuildersTest {
                 // Boxes should not be identical
                 assertTrue(
                     box1.left != box2.left || box1.top != box2.top,
-                    "Detections $i and $j should have different positions"
+                    "Detections $i and $j should have different positions",
                 )
             }
         }

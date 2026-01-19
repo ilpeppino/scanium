@@ -79,8 +79,8 @@ data class ScannedItemHistoryEntity(
 fun ScannedItemEntity.toHistoryEntity(
     changedAt: Long,
     snapshotHash: String,
-): ScannedItemHistoryEntity {
-    return ScannedItemHistoryEntity(
+): ScannedItemHistoryEntity =
+    ScannedItemHistoryEntity(
         itemId = id,
         changedAt = changedAt,
         snapshotHash = snapshotHash,
@@ -143,4 +143,3 @@ fun ScannedItemEntity.toHistoryEntity(
         clientUpdatedAt = clientUpdatedAt,
         deletedAt = deletedAt,
     )
-}

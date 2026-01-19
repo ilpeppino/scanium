@@ -111,15 +111,16 @@ class AndroidMetricPortOtlp(
 
         val key = metricKey(name, attributes)
         histograms.compute(key) { _, existing ->
-            val data = existing ?: HistogramData(
-                name = name,
-                attributes = attributes,
-                bounds = defaultHistogramBounds,
-                bucketCounts = LongArray(defaultHistogramBounds.size + 1),
-                count = 0L,
-                sum = 0.0,
-                timestampMs = System.currentTimeMillis()
-            )
+            val data =
+                existing ?: HistogramData(
+                    name = name,
+                    attributes = attributes,
+                    bounds = defaultHistogramBounds,
+                    bucketCounts = LongArray(defaultHistogramBounds.size + 1),
+                    count = 0L,
+                    sum = 0.0,
+                    timestampMs = System.currentTimeMillis(),
+                )
 
             // Find the appropriate bucket for this value
             var bucketIndex = data.bounds.size // Default to overflow bucket
@@ -135,7 +136,7 @@ class AndroidMetricPortOtlp(
             data.copy(
                 count = data.count + 1,
                 sum = data.sum + value,
-                timestampMs = System.currentTimeMillis()
+                timestampMs = System.currentTimeMillis(),
             )
         }
     }

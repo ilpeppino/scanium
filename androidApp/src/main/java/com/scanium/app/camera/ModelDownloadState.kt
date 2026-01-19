@@ -27,5 +27,7 @@ sealed class ModelDownloadState {
      *
      * @param message Human-readable error message
      */
-    data class Error(val message: String) : ModelDownloadState()
+    data class Error(
+        val message: String,
+    ) : ModelDownloadState()
 }

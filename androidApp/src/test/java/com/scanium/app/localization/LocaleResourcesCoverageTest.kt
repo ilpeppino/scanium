@@ -20,7 +20,6 @@ import java.io.File
  */
 @RunWith(RobolectricTestRunner::class)
 class LocaleResourcesCoverageTest {
-
     private fun getProjectRoot(): File {
         val userDir = File(System.getProperty("user.dir"))
         return if (userDir.name == "scanium") {
@@ -64,16 +63,17 @@ class LocaleResourcesCoverageTest {
     /**
      * Map BCP-47 locale tag to Android resource qualifier
      */
-    private fun getBcpToAndroidQualifier(locale: String): String? = when (locale) {
-        "en" -> "values"
-        "es" -> "values-es"
-        "it" -> "values-it"
-        "fr" -> "values-fr"
-        "nl" -> "values-nl"
-        "de" -> "values-de"
-        "pt-BR" -> "values-pt-rBR"
-        else -> null
-    }
+    private fun getBcpToAndroidQualifier(locale: String): String? =
+        when (locale) {
+            "en" -> "values"
+            "es" -> "values-es"
+            "it" -> "values-it"
+            "fr" -> "values-fr"
+            "nl" -> "values-nl"
+            "de" -> "values-de"
+            "pt-BR" -> "values-pt-rBR"
+            else -> null
+        }
 
     @Test
     fun allSupportedLocalesHaveResourceFolders() {
@@ -93,14 +93,14 @@ class LocaleResourcesCoverageTest {
             assertTrue(
                 "Locale resource directory missing: $qualifier (for locale $locale) at $resDir. " +
                     "Run: bash scripts/localization/generate-placeholder-locales.sh",
-                resDir.exists() && resDir.isDirectory
+                resDir.exists() && resDir.isDirectory,
             )
 
             val stringsFile = File(resDir, "strings.xml")
             assertTrue(
                 "Strings file missing: $qualifier/strings.xml (for locale $locale). " +
                     "Run: bash scripts/localization/generate-placeholder-locales.sh",
-                stringsFile.exists() && stringsFile.isFile
+                stringsFile.exists() && stringsFile.isFile,
             )
         }
     }
@@ -109,13 +109,15 @@ class LocaleResourcesCoverageTest {
     fun noUnmappedLocaleResourceFolders() {
         // Verify that all values-XX directories correspond to a supported locale
         val supportedLocales = discoverSupportedLocales()
-        val supportedQualifiers = supportedLocales
-            .mapNotNull { getBcpToAndroidQualifier(it) }
-            .toSet()
+        val supportedQualifiers =
+            supportedLocales
+                .mapNotNull { getBcpToAndroidQualifier(it) }
+                .toSet()
 
-        val resDirectories = baseResDir.listFiles()?.filter {
-            it.isDirectory && it.name.startsWith("values-")
-        } ?: emptyList()
+        val resDirectories =
+            baseResDir.listFiles()?.filter {
+                it.isDirectory && it.name.startsWith("values-")
+            } ?: emptyList()
 
         for (resDir in resDirectories) {
             val isNightMode = resDir.name == "values-night"
@@ -126,7 +128,7 @@ class LocaleResourcesCoverageTest {
                     "Orphaned locale resource folder found: ${resDir.name}. " +
                         "This folder does not correspond to any supported app language. " +
                         "Supported locales: $supportedLocales",
-                    resDir.name in supportedQualifiers
+                    resDir.name in supportedQualifiers,
                 )
             }
         }

@@ -1,6 +1,7 @@
 ***REMOVED*** Scanium NAS Deployment Guide
 
-Deploy Scanium backend and monitoring stack on a Synology NAS (DS418play or similar x86_64 NAS) using Docker Compose via Synology Container Manager.
+Deploy Scanium backend and monitoring stack on a Synology NAS (DS418play or similar x86_64 NAS)
+using Docker Compose via Synology Container Manager.
 
 ***REMOVED******REMOVED*** Table of Contents
 
@@ -55,32 +56,32 @@ Deploy Scanium backend and monitoring stack on a Synology NAS (DS418play or simi
 
 Target: Synology DS418play (Intel Celeron J3455, 2 cores, 6GB RAM)
 
-| Service    | Memory Limit | CPU Limit | Notes                    |
-|------------|--------------|-----------|--------------------------|
-| PostgreSQL | 512 MB       | -         | Database                 |
-| Backend API| 512 MB       | 1 core    | Node.js application      |
-| Grafana    | 256 MB       | 0.5 core  | Dashboard UI             |
-| Alloy      | 128 MB       | 0.25 core | Telemetry collector      |
-| Loki       | 256 MB       | 0.5 core  | Log storage              |
-| Tempo      | 256 MB       | 0.5 core  | Trace storage            |
-| Mimir      | 256 MB       | 0.5 core  | Metrics storage          |
-| **Total**  | **~2.2 GB**  | -         | Leaves ~3.8GB for system |
+| Service     | Memory Limit | CPU Limit | Notes                    |
+|-------------|--------------|-----------|--------------------------|
+| PostgreSQL  | 512 MB       | -         | Database                 |
+| Backend API | 512 MB       | 1 core    | Node.js application      |
+| Grafana     | 256 MB       | 0.5 core  | Dashboard UI             |
+| Alloy       | 128 MB       | 0.25 core | Telemetry collector      |
+| Loki        | 256 MB       | 0.5 core  | Log storage              |
+| Tempo       | 256 MB       | 0.5 core  | Trace storage            |
+| Mimir       | 256 MB       | 0.5 core  | Metrics storage          |
+| **Total**   | **~2.2 GB**  | -         | Leaves ~3.8GB for system |
 
 ---
 
 ***REMOVED******REMOVED*** Prerequisites
 
 1. **Synology NAS** with Container Manager installed
-   - DSM 7.0 or later
-   - x86_64 architecture (DS418play, DS920+, etc.)
-   - At least 4GB RAM (6GB+ recommended)
+    - DSM 7.0 or later
+    - x86_64 architecture (DS418play, DS920+, etc.)
+    - At least 4GB RAM (6GB+ recommended)
 
 2. **SSH access** to NAS (for initial setup)
-   - Enable in Control Panel → Terminal & SNMP
+    - Enable in Control Panel → Terminal & SNMP
 
 3. **Development machine** (Mac/Linux) with:
-   - Docker Desktop
-   - Git
+    - Docker Desktop
+    - Git
 
 4. **Network access** to NAS from your mobile device
 
@@ -182,6 +183,7 @@ nano monitoring.env
 ```
 
 **Required changes in `backend.env`:**
+
 - `PUBLIC_BASE_URL` → `http://YOUR_NAS_IP:8080`
 - `DATABASE_URL` → Update password to match `POSTGRES_PASSWORD`
 - `POSTGRES_PASSWORD` → Generate with `openssl rand -base64 24`
@@ -189,6 +191,7 @@ nano monitoring.env
 - `SESSION_SIGNING_SECRET` → Generate with `openssl rand -base64 64`
 
 **Required changes in `monitoring.env`:**
+
 - `GF_SECURITY_ADMIN_PASSWORD` → Generate with `openssl rand -base64 24`
 
 ***REMOVED******REMOVED******REMOVED*** 1.4 Create Docker Network
@@ -260,7 +263,7 @@ rm -rf /volume1/docker/scanium/backend-src
 3. Project name: `scanium-monitoring`
 4. Path: `/volume1/docker/scanium`
 5. Source: **Upload docker-compose.yml**
-   - Upload `deploy/nas/compose/docker-compose.nas.monitoring.yml`
+    - Upload `deploy/nas/compose/docker-compose.nas.monitoring.yml`
 6. Click **Next**
 7. Environment file: Select `/volume1/docker/scanium/monitoring.env`
 8. Review and click **Done**
@@ -306,10 +309,12 @@ sudo docker ps --format "table {{.Names}}\t{{.Status}}"
 ```
 
 Access Grafana at `http://YOUR_NAS_IP:3000`
+
 - Login with credentials from `monitoring.env`
 
 > **Important: Grafana Credential Persistence**
-> Grafana stores admin credentials in its SQLite database (`/var/lib/grafana/grafana.db`) on first startup. After initialization:
+> Grafana stores admin credentials in its SQLite database (`/var/lib/grafana/grafana.db`) on first
+> startup. After initialization:
 > - Changing `GF_SECURITY_ADMIN_PASSWORD` in `monitoring.env` will NOT update the password
 > - To reset password: delete `${NAS_DATA_PATH}/monitoring/grafana/grafana.db` and restart Grafana
 > - Deleting the database also removes any manually created dashboards or users
@@ -325,7 +330,7 @@ Access Grafana at `http://YOUR_NAS_IP:3000`
 3. Project name: `scanium-backend`
 4. Path: `/volume1/docker/scanium`
 5. Source: **Upload docker-compose.yml**
-   - Upload `deploy/nas/compose/docker-compose.nas.backend.yml`
+    - Upload `deploy/nas/compose/docker-compose.nas.backend.yml`
 6. Click **Next**
 7. Environment file: Select `/volume1/docker/scanium/backend.env`
 8. Review and click **Done**
@@ -373,6 +378,7 @@ sudo docker exec scanium-api npx prisma migrate status
 ```
 
 **Expected output:**
+
 ```
 Database schema is up to date!
 ```
@@ -492,6 +498,7 @@ docker compose -f docker-compose.nas.monitoring.yml --env-file ../env/monitoring
 ***REMOVED******REMOVED******REMOVED*** LAN-Only Access (Default)
 
 By default, services are only accessible on your local network:
+
 - Backend API: `http://YOUR_NAS_IP:8080`
 - Grafana: `http://YOUR_NAS_IP:3000`
 - OTLP endpoint: `http://YOUR_NAS_IP:4318`
@@ -504,7 +511,8 @@ This is safe for home use where your network is trusted.
 
 Provides secure HTTPS access without port forwarding:
 
-1. Create a Cloudflare Tunnel at [dash.cloudflare.com](https://dash.cloudflare.com) → Zero Trust → Networks → Tunnels
+1. Create a Cloudflare Tunnel at [dash.cloudflare.com](https://dash.cloudflare.com) → Zero Trust →
+   Networks → Tunnels
 2. Get the tunnel token
 3. Edit `backend.env`:
    ```
@@ -537,24 +545,29 @@ Use Synology VPN Server or WireGuard:
 
 ***REMOVED******REMOVED******REMOVED*** Monitoring Stack Configuration
 
-The monitoring stack configurations in `monitoring/` have been optimized for the DS418play's resource constraints (2 cores, 4 threads, 6GB RAM). These tuned values differ from development workstation configurations.
+The monitoring stack configurations in `monitoring/` have been optimized for the DS418play's
+resource constraints (2 cores, 4 threads, 6GB RAM). These tuned values differ from development
+workstation configurations.
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Key Configuration Differences
 
-| Setting | Dev Value | NAS Value | File | Rationale |
-|---------|-----------|-----------|------|-----------|
-| **Tempo: Storage Workers** | 100 | 4 | `monitoring/tempo/tempo.yaml:40` | Match NAS thread count (4 threads) |
-| **Tempo: Queue Depth** | 10000 | 1000 | `monitoring/tempo/tempo.yaml:41` | Reduce memory pressure |
-| **Mimir: Query Parallelism** | 32 | 4 | `monitoring/mimir/mimir.yaml:102` | Prevent CPU contention |
-| **Mimir: Index Cache** | 512MB | 128MB | `monitoring/mimir/mimir.yaml:37` | Conserve RAM for other services |
-| **Alloy: Scrape Interval** | 15s | 60s | `monitoring/alloy/config.alloy` | Reduce CPU and I/O load |
-| **Loki: Retention** | 168h (7d) | 72h (3d) | `monitoring/loki/loki.yaml:35` | Conserve disk space |
+| Setting                      | Dev Value | NAS Value | File                              | Rationale                          |
+|------------------------------|-----------|-----------|-----------------------------------|------------------------------------|
+| **Tempo: Storage Workers**   | 100       | 4         | `monitoring/tempo/tempo.yaml:40`  | Match NAS thread count (4 threads) |
+| **Tempo: Queue Depth**       | 10000     | 1000      | `monitoring/tempo/tempo.yaml:41`  | Reduce memory pressure             |
+| **Mimir: Query Parallelism** | 32        | 4         | `monitoring/mimir/mimir.yaml:102` | Prevent CPU contention             |
+| **Mimir: Index Cache**       | 512MB     | 128MB     | `monitoring/mimir/mimir.yaml:37`  | Conserve RAM for other services    |
+| **Alloy: Scrape Interval**   | 15s       | 60s       | `monitoring/alloy/config.alloy`   | Reduce CPU and I/O load            |
+| **Loki: Retention**          | 168h (7d) | 72h (3d)  | `monitoring/loki/loki.yaml:35`    | Conserve disk space                |
 
-> **Note:** The index cache value in the table above shows the recommended NAS value (128MB). However, the current configuration uses 512MB as specified in line 37 of `monitoring/mimir/mimir.yaml`. If you experience memory pressure, consider reducing this to 128MB.
+> **Note:** The index cache value in the table above shows the recommended NAS value (128MB).
+> However, the current configuration uses 512MB as specified in line 37 of
+`monitoring/mimir/mimir.yaml`. If you experience memory pressure, consider reducing this to 128MB.
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Related Issues
 
 These optimizations address the following performance issues:
+
 - [***REMOVED***363](https://github.com/username/scanium/issues/363) - Tempo storage pool workers
 - [***REMOVED***364](https://github.com/username/scanium/issues/364) - Prometheus scrape intervals
 
@@ -590,6 +603,7 @@ df -h    ***REMOVED*** Check disk space
 ```
 
 Expected resource usage:
+
 - **Total Memory:** ~2.2GB across all services
 - **CPU Usage:** <50% under normal load
 - **Disk Growth:** ~100MB/day with 3-day retention
@@ -597,16 +611,19 @@ Expected resource usage:
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Troubleshooting Performance Issues
 
 **High CPU Usage (>70%):**
+
 - Increase Alloy scrape intervals further (e.g., 120s)
 - Reduce Mimir compaction frequency
 - Consider disabling Tempo if traces aren't needed
 
 **Memory Pressure (>5GB used):**
+
 - Reduce Mimir index cache to 128MB
 - Reduce Loki/Tempo retention periods
 - Check for metric/log cardinality explosion
 
 **Disk Space Issues:**
+
 - Reduce retention periods further
 - Enable compaction for Loki/Tempo
 - Archive old data to external storage
@@ -652,6 +669,7 @@ sudo docker compose -f docker-compose.nas.monitoring.yml --env-file monitoring.e
 ***REMOVED******REMOVED******REMOVED*** Backup Data
 
 Important directories to backup:
+
 - `/volume1/docker/scanium/postgres/` - Database
 - `/volume1/docker/scanium/monitoring/grafana/` - Grafana data (dashboards, etc.)
 - `/volume1/docker/scanium/*.env` - Environment files (store securely!)
@@ -680,6 +698,7 @@ sudo docker images | grep scanium-api
 ```
 
 **Solutions:**
+
 - Missing image: Build or load the image (Step 2)
 - Missing env file: Ensure `.env` files exist and have required values
 - Missing network: Create with `docker network create scanium-observability`
@@ -694,6 +713,7 @@ sudo netstat -tlnp | grep :8080
 ```
 
 **Solutions:**
+
 - Change the port in `.env` file (e.g., `API_HOST_PORT=8081`)
 - Stop conflicting service
 
@@ -725,6 +745,7 @@ echo $DATABASE_URL
 ```
 
 **Solutions:**
+
 - Ensure `POSTGRES_PASSWORD` in env matches password in `DATABASE_URL`
 - Use container name (`scanium-postgres`) not `localhost` in DATABASE_URL
 - Ensure both containers are on same network
@@ -739,6 +760,7 @@ sudo docker inspect scanium-api | grep Architecture
 ```
 
 **Solutions:**
+
 - DS418play is x86_64 - ensure images are built for amd64
 - Rebuild on an x86 machine, not Apple Silicon
 - Use `--platform linux/amd64` when building on Apple Silicon:
@@ -759,6 +781,7 @@ free -h
 ```
 
 **Solutions:**
+
 - Reduce memory limits in docker-compose
 - Reduce Loki/Mimir retention periods
 - Disable services not needed (e.g., Tempo if not using traces)
@@ -768,7 +791,8 @@ free -h
 
 **Symptom:** "Invalid username or password" even with correct `monitoring.env` values
 
-**Cause:** Grafana persists credentials in its SQLite database after first startup. Changing env vars doesn't update stored credentials.
+**Cause:** Grafana persists credentials in its SQLite database after first startup. Changing env
+vars doesn't update stored credentials.
 
 ```bash
 ***REMOVED*** Check what user Grafana has stored
@@ -776,6 +800,7 @@ sudo docker exec scanium-grafana sqlite3 /var/lib/grafana/grafana.db "SELECT log
 ```
 
 **Solutions:**
+
 1. **Reset password via CLI (preserves data):**
    ```bash
    sudo docker exec scanium-grafana grafana-cli admin reset-admin-password YOUR_NEW_PASSWORD
@@ -802,6 +827,7 @@ sudo docker exec scanium-grafana wget -qO- http://loki:3100/ready
 ```
 
 **Solutions:**
+
 - Ensure all monitoring services are on `scanium-observability` network
 - Wait for services to become healthy (can take 1-2 minutes)
 - Check datasource URLs use container names, not localhost
@@ -812,7 +838,8 @@ sudo docker exec scanium-grafana wget -qO- http://loki:3100/ready
 
 **Troubleshooting steps:**
 
-1. **Check time range in Grafana:** Default is "Last 6 hours". Select "Last 5 minutes" if you just started sending data.
+1. **Check time range in Grafana:** Default is "Last 6 hours". Select "Last 5 minutes" if you just
+   started sending data.
 
 2. **Verify OTLP ingestion:**
    ```bash
@@ -846,6 +873,7 @@ sudo docker exec scanium-api node -e "require('http').get('http://localhost:8080
 ```
 
 **Solutions:**
+
 - Check application logs for errors
 - Ensure `start_period` is long enough for slow NAS
 - Check container has network access
@@ -878,18 +906,18 @@ sudo docker image prune -a
 
 ***REMOVED******REMOVED******REMOVED*** Service URLs
 
-| Service     | URL                         | Notes                    |
-|-------------|-----------------------------|-----------------------------|
-| Backend API | `http://NAS_IP:8080`        | Health: `/health`        |
-| Grafana     | `http://NAS_IP:3000`        | Login required           |
-| OTLP HTTP   | `http://NAS_IP:4318`        | For app telemetry        |
-| OTLP gRPC   | `http://NAS_IP:4317`        | For app telemetry        |
+| Service     | URL                  | Notes             |
+|-------------|----------------------|-------------------|
+| Backend API | `http://NAS_IP:8080` | Health: `/health` |
+| Grafana     | `http://NAS_IP:3000` | Login required    |
+| OTLP HTTP   | `http://NAS_IP:4318` | For app telemetry |
+| OTLP gRPC   | `http://NAS_IP:4317` | For app telemetry |
 
 ***REMOVED******REMOVED******REMOVED*** File Locations
 
-| File                  | Purpose                          |
-|-----------------------|----------------------------------|
-| `backend.env`         | Backend secrets & config         |
-| `monitoring.env`      | Grafana password & settings      |
-| `postgres/`           | PostgreSQL database files        |
-| `monitoring/grafana/` | Grafana dashboards & data        |
+| File                  | Purpose                     |
+|-----------------------|-----------------------------|
+| `backend.env`         | Backend secrets & config    |
+| `monitoring.env`      | Grafana password & settings |
+| `postgres/`           | PostgreSQL database files   |
+| `monitoring/grafana/` | Grafana dashboards & data   |

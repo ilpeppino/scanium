@@ -6,7 +6,9 @@
 
 ***REMOVED******REMOVED*** Problem
 
-The classification system architecture is implemented but uses **placeholder/stub classifiers** instead of real ML models. This is likely intentional for a PoC, but should be explicitly documented.
+The classification system architecture is implemented but uses **placeholder/stub classifiers**
+instead of real ML models. This is likely intentional for a PoC, but should be explicitly
+documented.
 
 ***REMOVED******REMOVED*** Current State
 
@@ -17,6 +19,7 @@ File: `/app/src/main/java/com/scanium/app/ml/classification/OnDeviceClassifier.k
 **Lines 17-72**: Uses brightness/contrast heuristics instead of actual CLIP/TFLite model
 
 **Evidence:**
+
 ```kotlin
 // Lightweight on-device classifier **placeholder**
 // In production, this would use:
@@ -26,6 +29,7 @@ File: `/app/src/main/java/com/scanium/app/ml/classification/OnDeviceClassifier.k
 ```
 
 Fake logic:
+
 ```kotlin
 val avgBrightness = // calculate from pixels
 val contrast = // calculate from pixels
@@ -57,13 +61,15 @@ private val apiUrl = BuildConfig.CLOUD_CLASSIFIER_URL.ifEmpty {
 
 File: `/app/src/main/java/com/scanium/app/ml/classification/ClassificationOrchestrator.kt`
 
-**Status**: ✅ Implementation is correct - properly orchestrates classifiers, just depends on placeholder implementations above.
+**Status**: ✅ Implementation is correct - properly orchestrates classifiers, just depends on
+placeholder implementations above.
 
 ***REMOVED******REMOVED*** Impact
 
 **Current**: System appears to work but provides low-quality classifications
 
 **User Experience**:
+
 - OnDeviceClassifier returns random/fake categories
 - CloudClassifier is disabled by default
 - Users get poor category refinement
@@ -79,6 +85,7 @@ Choose ONE:
 Add prominent documentation that classification is placeholder-only:
 
 **In CLAUDE.md:**
+
 ```markdown
 ***REMOVED******REMOVED*** Classification System (Placeholder Implementation)
 
@@ -98,6 +105,7 @@ Add prominent documentation that classification is placeholder-only:
 ***REMOVED******REMOVED******REMOVED*** Option 2: Implement Real Classifiers
 
 Significant effort required:
+
 - Research and select CLIP model variant
 - Convert to TensorFlow Lite
 - Integrate with Android ML inference
@@ -155,6 +163,7 @@ buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY",
 ***REMOVED******REMOVED******REMOVED*** Investigation Summary
 
 The classification system was reviewed against:
+
 - Android best practices (lifecycle, threading, memory)
 - Jetpack Compose best practices
 - CameraX & ML Kit integration patterns
@@ -163,35 +172,36 @@ The classification system was reviewed against:
 ***REMOVED******REMOVED******REMOVED*** Key Findings
 
 1. **System is Working as Designed**
-   - Classification infrastructure is **actively integrated** in production (`ScaniumApp.kt:45-48`)
-   - OnDeviceClassifier and CloudClassifier are instantiated (not NoopClassifier in production)
-   - ClassificationOrchestrator correctly orchestrates the pipeline
-   - System provides optional "enhanced classification" on top of core ML Kit detection
-   - Graceful degradation: returns null on failure, no crashes or functional issues
+    - Classification infrastructure is **actively integrated** in production (`ScaniumApp.kt:45-48`)
+    - OnDeviceClassifier and CloudClassifier are instantiated (not NoopClassifier in production)
+    - ClassificationOrchestrator correctly orchestrates the pipeline
+    - System provides optional "enhanced classification" on top of core ML Kit detection
+    - Graceful degradation: returns null on failure, no crashes or functional issues
 
 2. **Consistent with Project Architecture**
-   - Multiple components use PoC-appropriate implementations:
-     - `PricingEngine` - mocked EUR price generation
-     - `MockEbayApi` - simulated marketplace
-     - `OnDeviceClassifier` - brightness/contrast heuristics
-   - All documented in "Known Limitations" sections across README.md, CLAUDE.md, ARCHITECTURE.md
-   - Project explicitly scoped as "proof-of-concept" throughout documentation
+    - Multiple components use PoC-appropriate implementations:
+        - `PricingEngine` - mocked EUR price generation
+        - `MockEbayApi` - simulated marketplace
+        - `OnDeviceClassifier` - brightness/contrast heuristics
+    - All documented in "Known Limitations" sections across README.md, CLAUDE.md, ARCHITECTURE.md
+    - Project explicitly scoped as "proof-of-concept" throughout documentation
 
 3. **No Android Best Practice Violations**
-   - Clean separation of concerns with pluggable interfaces
-   - Proper coroutine usage (Dispatchers.Default, Dispatchers.IO)
-   - Safe bitmap handling with recycling
-   - Appropriate error handling and logging
-   - No lifecycle, threading, or memory issues
+    - Clean separation of concerns with pluggable interfaces
+    - Proper coroutine usage (Dispatchers.Default, Dispatchers.IO)
+    - Safe bitmap handling with recycling
+    - Appropriate error handling and logging
+    - No lifecycle, threading, or memory issues
 
 4. **User Experience Not Impacted**
-   - Core ML Kit object detection works independently
-   - Enhanced classification is supplementary/optional
-   - App delivers on its core value proposition
+    - Core ML Kit object detection works independently
+    - Enhanced classification is supplementary/optional
+    - App delivers on its core value proposition
 
 ***REMOVED******REMOVED******REMOVED*** Decision: Follow Option 1 (Document as Intentional)
 
 **Rationale:**
+
 - Placeholder implementations are **expected and appropriate** for PoC scope
 - Issue is correctly tagged `priority:p3` (low) and `feature-incomplete`
 - Code is well-architected and ready for real ML model integration when needed
@@ -200,22 +210,25 @@ The classification system was reviewed against:
 ***REMOVED******REMOVED******REMOVED*** Recommended Next Actions
 
 **Priority 1: Documentation (Immediate)**
+
 - [ ] Add "Classification System (Placeholder)" section to `CLAUDE.md`
 - [ ] Update "Known Limitations" to explicitly mention classification placeholders
 - [ ] Document expected classification quality ("PoC heuristics only")
 
 **Priority 2: Configuration Guidance (Optional)**
+
 - [ ] Add CloudClassifier setup instructions to `SETUP.md` or `CLAUDE.md`
 - [ ] Show how to configure `local.properties` for cloud endpoint testing
 - [ ] Provide example cloud API contract/payload format
 
 **Priority 3: Future Roadmap (When Transitioning to Production)**
+
 - Create `docs/roadmap/ML_MODEL_INTEGRATION.md` with:
-  - CLIP model selection and TFLite conversion guide
-  - On-device model integration steps
-  - Cloud API design and integration
-  - Performance benchmarking approach
-  - Estimated effort (2-3 sprints)
+    - CLIP model selection and TFLite conversion guide
+    - On-device model integration steps
+    - Cloud API design and integration
+    - Performance benchmarking approach
+    - Estimated effort (2-3 sprints)
 
 ***REMOVED******REMOVED******REMOVED*** Why Not Implement Real Classifiers Now?
 
@@ -236,6 +249,7 @@ The classification system was reviewed against:
 ***REMOVED******REMOVED******REMOVED*** When to Revisit
 
 **Triggers for implementing real classifiers:**
+
 - PoC validated and moving to production
 - User feedback requests better category refinement
 - Business case established for enhanced classification
@@ -243,6 +257,7 @@ The classification system was reviewed against:
 - Team bandwidth available for 2-3 sprint ML integration effort
 
 **Metrics to Track:**
+
 - User engagement with detected items
 - Category accuracy needs (ML Kit 5 coarse categories sufficient?)
 - Classification confidence distribution

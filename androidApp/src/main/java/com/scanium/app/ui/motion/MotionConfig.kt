@@ -1,6 +1,7 @@
 package com.scanium.app.ui.motion
 
 import com.scanium.app.BuildConfig
+import com.scanium.app.ui.motion.MotionConfig.setMotionOverlaysEnabled
 
 /**
  * Configuration for motion overlays.

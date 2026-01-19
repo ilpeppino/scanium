@@ -33,9 +33,7 @@ class FirstSyncManager
         /**
          * Check if first sync has been completed
          */
-        fun isFirstSyncCompleted(): Boolean {
-            return prefs.getBoolean(PREF_FIRST_SYNC_COMPLETED, false)
-        }
+        fun isFirstSyncCompleted(): Boolean = prefs.getBoolean(PREF_FIRST_SYNC_COMPLETED, false)
 
         /**
          * Handle first sign-in flow
@@ -73,16 +71,19 @@ class FirstSyncManager
                         markFirstSyncCompleted()
                         itemCount to true
                     }
+
                     is SyncResult.NetworkError -> {
                         Log.w(TAG, "First sync failed: Network error", result.error)
                         // Don't mark as completed, will retry later
                         itemCount to false
                     }
+
                     is SyncResult.ServerError -> {
                         Log.e(TAG, "First sync failed: Server error", result.error)
                         // Don't mark as completed, will retry later
                         itemCount to false
                     }
+
                     is SyncResult.NotAuthenticated -> {
                         Log.w(TAG, "First sync failed: Not authenticated")
                         // This shouldn't happen, but don't mark as completed

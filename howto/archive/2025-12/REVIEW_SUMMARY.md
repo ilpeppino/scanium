@@ -30,21 +30,22 @@
 
 **Location:** `/home/user/scanium/docs/issues/`
 
-Since GitHub CLI (`gh`) is not installed, issues were generated as offline markdown files ready for manual creation.
+Since GitHub CLI (`gh`) is not installed, issues were generated as offline markdown files ready for
+manual creation.
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Critical Priority (P0) - 3 Issues:
 
 - *****REMOVED***001**: Remove Duplicate CandidateTracker (Dead Code)
-  - **Impact:** High - Reduces confusion, speeds up navigation
-  - **Effort:** Small (2-4 hours)
+    - **Impact:** High - Reduces confusion, speeds up navigation
+    - **Effort:** Small (2-4 hours)
 
 - *****REMOVED***002**: Remove or Activate Unused Room Database Layer
-  - **Impact:** Critical - Resolves architectural drift
-  - **Effort:** Small to delete, Large to activate (decision required)
+    - **Impact:** Critical - Resolves architectural drift
+    - **Effort:** Small to delete, Large to activate (decision required)
 
 - *****REMOVED***003**: Remove SessionDeduplicator (Dead Code)
-  - **Impact:** High - Cleanup unused 300-line implementation
-  - **Effort:** Small (1-2 hours)
+    - **Impact:** High - Cleanup unused 300-line implementation
+    - **Effort:** Small (1-2 hours)
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** High Priority (P1) - 6 Issues:
 
@@ -76,6 +77,7 @@ Since GitHub CLI (`gh`) is not installed, issues were generated as offline markd
 **Size:** 22 KB, 754 lines
 
 Comprehensive roadmap including:
+
 - Executive summary of current strengths and risks
 - Priority matrix (P0, P1, P2, P3)
 - Detailed improvement backlog with scope, impact, and dependencies
@@ -90,102 +92,102 @@ Comprehensive roadmap including:
 ***REMOVED******REMOVED******REMOVED*** Strengths Identified
 
 1. **Solid Architecture:**
-   - Clean MVVM with proper separation of concerns
-   - Well-designed tracking system (ObjectTracker with spatial matching)
-   - Sophisticated aggregation system (ItemAggregator with configurable presets)
-   - Domain Pack system for extensible category taxonomy
+    - Clean MVVM with proper separation of concerns
+    - Well-designed tracking system (ObjectTracker with spatial matching)
+    - Sophisticated aggregation system (ItemAggregator with configurable presets)
+    - Domain Pack system for extensible category taxonomy
 
 2. **Comprehensive Testing:**
-   - 175+ tests (unit + instrumented)
-   - 33 test classes covering tracking, ML, items, selling, domain, aggregation
-   - Integration tests for complex flows
+    - 175+ tests (unit + instrumented)
+    - 33 test classes covering tracking, ML, items, selling, domain, aggregation
+    - Integration tests for complex flows
 
 3. **Good Documentation:**
-   - Detailed ARCHITECTURE.md
-   - Tracking implementation docs
-   - ML Kit improvements docs
-   - CLAUDE.md with usage instructions
+    - Detailed ARCHITECTURE.md
+    - Tracking implementation docs
+    - ML Kit improvements docs
+    - CLAUDE.md with usage instructions
 
 4. **Modern Android Practices:**
-   - Jetpack Compose UI
-   - Kotlin coroutines and Flow
-   - CameraX for camera abstraction
-   - ML Kit for on-device inference
-   - Room database (though unused)
+    - Jetpack Compose UI
+    - Kotlin coroutines and Flow
+    - CameraX for camera abstraction
+    - ML Kit for on-device inference
+    - Room database (though unused)
 
 ***REMOVED******REMOVED******REMOVED*** Critical Issues Discovered
 
 1. **Dead Code Accumulation (3 issues):**
-   - CandidateTracker + DetectionCandidate in ml/ package (replaced by ObjectTracker) ✅ Removed
-   - SessionDeduplicator in items/ package (replaced by ItemAggregator)
-   - Complete Room database layer (implemented but never used)
-   - **Impact:** Confusion, maintenance burden, outdated tests
+    - CandidateTracker + DetectionCandidate in ml/ package (replaced by ObjectTracker) ✅ Removed
+    - SessionDeduplicator in items/ package (replaced by ItemAggregator)
+    - Complete Room database layer (implemented but never used)
+    - **Impact:** Confusion, maintenance burden, outdated tests
 
 2. **Documentation Drift (3 issues):**
-   - TrackerConfig values in CLAUDE.md don't match actual code
-   - ItemAggregator system completely undocumented
-   - Comments reference wrong tracker (CandidateTracker vs ObjectTracker) ✅ CameraXManager updated
-   - **Impact:** Onboarding difficulty, tuning mistakes
+    - TrackerConfig values in CLAUDE.md don't match actual code
+    - ItemAggregator system completely undocumented
+    - Comments reference wrong tracker (CandidateTracker vs ObjectTracker) ✅ CameraXManager updated
+    - **Impact:** Onboarding difficulty, tuning mistakes
 
 3. **Memory Management Concerns:**
-   - 8 Bitmap.createBitmap() calls, only 1 recycle() call
-   - Risk of OOM on extended scanning sessions
-   - No bitmap lifecycle documentation
-   - **Impact:** Potential crashes with heavy usage
+    - 8 Bitmap.createBitmap() calls, only 1 recycle() call
+    - Risk of OOM on extended scanning sessions
+    - No bitmap lifecycle documentation
+    - **Impact:** Potential crashes with heavy usage
 
 4. **First-Launch UX Gap:**
-   - ML Kit model download (10-30 seconds) has no progress UI
-   - Camera errors show blank screen
-   - No permission denial recovery flow
-   - **Impact:** Poor first impression, user confusion, uninstalls
+    - ML Kit model download (10-30 seconds) has no progress UI
+    - Camera errors show blank screen
+    - No permission denial recovery flow
+    - **Impact:** Poor first impression, user confusion, uninstalls
 
 5. **Accessibility Missing:**
-   - No TalkBack support (content descriptions missing)
-   - Detection events not announced
-   - Interactive elements missing semantic labels
-   - **Impact:** App unusable for visually impaired users
+    - No TalkBack support (content descriptions missing)
+    - Detection events not announced
+    - Interactive elements missing semantic labels
+    - **Impact:** App unusable for visually impaired users
 
 6. **Configuration Management:**
-   - Hardcoded thresholds scattered across 6+ files
-   - No central configuration object
-   - Difficult to A/B test or tune performance
-   - **Impact:** Maintenance difficulty, experimentation friction
+    - Hardcoded thresholds scattered across 6+ files
+    - No central configuration object
+    - Difficult to A/B test or tune performance
+    - **Impact:** Maintenance difficulty, experimentation friction
 
 ***REMOVED******REMOVED******REMOVED*** Architecture Inconsistencies
 
 1. **Tracking System Cleanup:**
-   - Legacy CandidateTracker removed; ObjectTracker is the single implementation
-   - Tests now focus on ObjectTracker/ObjectCandidate
+    - Legacy CandidateTracker removed; ObjectTracker is the single implementation
+    - Tests now focus on ObjectTracker/ObjectCandidate
 
 2. **Dual Deduplication Systems:**
-   - SessionDeduplicator (dead) vs ItemAggregator (active)
-   - Only ItemAggregator is integrated
-   - Tests exist for both
+    - SessionDeduplicator (dead) vs ItemAggregator (active)
+    - Only ItemAggregator is integrated
+    - Tests exist for both
 
 3. **Persistence Layer Paradox:**
-   - Complete Room database implementation
-   - Never initialized or used in main code
-   - CLAUDE.md says "No Persistence Layer"
-   - Schema is missing 4 fields from domain model
+    - Complete Room database implementation
+    - Never initialized or used in main code
+    - CLAUDE.md says "No Persistence Layer"
+    - Schema is missing 4 fields from domain model
 
 4. **Classification System Placeholders:**
-   - OnDeviceClassifier uses fake heuristics (brightness/contrast)
-   - CloudClassifier requires external config (empty by default)
-   - Likely intentional for PoC but not documented
+    - OnDeviceClassifier uses fake heuristics (brightness/contrast)
+    - CloudClassifier requires external config (empty by default)
+    - Likely intentional for PoC but not documented
 
 ***REMOVED******REMOVED******REMOVED*** Performance Concerns
 
 1. **Bitmap Memory:**
-   - Multiple createBitmap() without recycle()
-   - Potential memory leaks on long sessions
+    - Multiple createBitmap() without recycle()
+    - Potential memory leaks on long sessions
 
 2. **Threading:**
-   - Thread.sleep() in CameraSoundManager (blocking)
-   - Should use coroutine delay()
+    - Thread.sleep() in CameraSoundManager (blocking)
+    - Should use coroutine delay()
 
 3. **Logging:**
-   - One printStackTrace() call (should use Log.e with exception)
-   - Extensive debug logging (good for dev, ensure disabled in release)
+    - One printStackTrace() call (should use Log.e with exception)
+    - Extensive debug logging (good for dev, ensure disabled in release)
 
 ---
 
@@ -194,50 +196,50 @@ Comprehensive roadmap including:
 ***REMOVED******REMOVED******REMOVED*** Immediate (This Week):
 
 1. **Delete dead code:**
-   - CandidateTracker, DetectionCandidate ✅ Completed
-   - SessionDeduplicator
-   - Room database layer (or make activation decision)
+    - CandidateTracker, DetectionCandidate ✅ Completed
+    - SessionDeduplicator
+    - Room database layer (or make activation decision)
 
 2. **Sync documentation:**
-   - Update CLAUDE.md with correct TrackerConfig values
-   - Document ItemAggregator system
-   - Fix incorrect comments
+    - Update CLAUDE.md with correct TrackerConfig values
+    - Document ItemAggregator system
+    - Fix incorrect comments
 
 3. **Fix critical bugs:**
-   - Add bitmap recycling
-   - Replace Thread.sleep()
-   - Replace printStackTrace()
+    - Add bitmap recycling
+    - Replace Thread.sleep()
+    - Replace printStackTrace()
 
 ***REMOVED******REMOVED******REMOVED*** Sprint 1 (Next 2 Weeks):
 
 4. **Externalize configuration:**
-   - Create ScaniumConfig object
-   - Move all hardcoded thresholds
+    - Create ScaniumConfig object
+    - Move all hardcoded thresholds
 
 5. **Error handling:**
-   - Camera unavailable states with user-friendly UI
-   - ML Kit download progress indicator
-   - Permission denial recovery flow
+    - Camera unavailable states with user-friendly UI
+    - ML Kit download progress indicator
+    - Permission denial recovery flow
 
 6. **Memory management:**
-   - Comprehensive bitmap lifecycle management
-   - Memory stress testing
+    - Comprehensive bitmap lifecycle management
+    - Memory stress testing
 
 ***REMOVED******REMOVED******REMOVED*** Sprint 2 (Following 2 Weeks):
 
 7. **Accessibility:**
-   - Add content descriptions to all interactive elements
-   - Implement live regions for dynamic content
-   - TalkBack testing
+    - Add content descriptions to all interactive elements
+    - Implement live regions for dynamic content
+    - TalkBack testing
 
 8. **UX polish:**
-   - Classification mode feedback
-   - Loading states
-   - Error state designs
+    - Classification mode feedback
+    - Loading states
+    - Error state designs
 
 9. **Performance:**
-   - Profile and optimize hot paths
-   - Test on mid-range devices
+    - Profile and optimize hot paths
+    - Test on mid-range devices
 
 ***REMOVED******REMOVED******REMOVED*** Future Roadmap (3-6 Months):
 
@@ -266,26 +268,26 @@ Comprehensive roadmap including:
 - **Modules:** 1 (single module, appropriate for PoC)
 - **Packages:** 15 feature-based packages
 - **Major components:**
-  - Camera system (CameraXManager, CameraScreen, ScanMode)
-  - ML system (ObjectDetectorClient, BarcodeScannerClient, DocumentTextRecognitionClient)
-  - Tracking system (ObjectTracker, ObjectCandidate)
-  - Aggregation system (ItemAggregator, AggregationPresets)
-  - Items management (ItemsViewModel, ScannedItem)
-  - Domain Pack system (LocalDomainPackRepository, BasicCategoryEngine)
-  - Selling integration (MockEbayApi, EbayMarketplaceService, ListingViewModel)
+    - Camera system (CameraXManager, CameraScreen, ScanMode)
+    - ML system (ObjectDetectorClient, BarcodeScannerClient, DocumentTextRecognitionClient)
+    - Tracking system (ObjectTracker, ObjectCandidate)
+    - Aggregation system (ItemAggregator, AggregationPresets)
+    - Items management (ItemsViewModel, ScannedItem)
+    - Domain Pack system (LocalDomainPackRepository, BasicCategoryEngine)
+    - Selling integration (MockEbayApi, EbayMarketplaceService, ListingViewModel)
 
 ***REMOVED******REMOVED******REMOVED*** Dead Code Identified:
 
 - **Files removed:**
-  - CandidateTracker.kt
-  - DetectionCandidate.kt
-  - CandidateTrackerTest.kt
-  - DetectionCandidateTest.kt
+    - CandidateTracker.kt
+    - DetectionCandidate.kt
+    - CandidateTrackerTest.kt
+    - DetectionCandidateTest.kt
 
 - **Remaining cleanup:**
-  - SessionDeduplicator.kt
-  - SessionDeduplicatorTest.kt
-  - Database layer (5 files) - OR activate with fixes
+    - SessionDeduplicator.kt
+    - SessionDeduplicatorTest.kt
+    - Database layer (5 files) - OR activate with fixes
 
 ---
 
@@ -308,6 +310,7 @@ All identified issues are actionable and testable:
 ***REMOVED******REMOVED******REMOVED*** Step 1: Review Issues
 
 Navigate to `/home/user/scanium/docs/issues/` and review all 18 issue files. Each issue contains:
+
 - Clear problem description
 - Steps to reproduce
 - Expected behavior
@@ -341,6 +344,7 @@ done
 ***REMOVED******REMOVED******REMOVED*** Step 3: Implement P0 Issues (Critical Path)
 
 Start with:
+
 1. Issue ***REMOVED***001 (Remove CandidateTracker)
 2. Issue ***REMOVED***002 (Remove/activate database)
 3. Issue ***REMOVED***003 (Remove SessionDeduplicator)
@@ -350,6 +354,7 @@ These unblock documentation and reduce confusion.
 ***REMOVED******REMOVED******REMOVED*** Step 4: Documentation Sprint
 
 After P0:
+
 4. Issue ***REMOVED***007 (Document ItemAggregator)
 5. Issue ***REMOVED***009 (Fix TrackerConfig docs)
 6. Issue ***REMOVED***004 (Fix comment)
@@ -357,6 +362,7 @@ After P0:
 ***REMOVED******REMOVED******REMOVED*** Step 5: Production Readiness Sprint
 
 After docs:
+
 7. Issue ***REMOVED***016 (Camera error handling)
 8. Issue ***REMOVED***018 (ML Kit download UI)
 9. Issue ***REMOVED***012 (Memory management)
@@ -365,6 +371,7 @@ After docs:
 ***REMOVED******REMOVED******REMOVED*** Step 6: Polish Sprint
 
 After core issues:
+
 11. Issue ***REMOVED***006 (Config externalization)
 12. Issue ***REMOVED***017 (Classification mode UX)
 13. Remaining P2/P3 issues
@@ -376,20 +383,24 @@ After core issues:
 **Overall Assessment:** ✅ **GOOD FOUNDATION, NEEDS CLEANUP & POLISH**
 
 Scanium demonstrates solid Android engineering with:
+
 - Clean architecture (MVVM)
 - Comprehensive testing (175+ tests)
 - Modern practices (Compose, Coroutines, CameraX, ML Kit)
 - Thoughtful abstractions (Domain Packs, Aggregation system)
 
 The issues identified are primarily:
+
 - **Technical debt** (dead code, documentation drift)
 - **UX gaps** (error states, accessibility, first-launch experience)
 - **Configuration management** (hardcoded values)
 - **Memory management** (bitmap lifecycle)
 
-None of the issues represent fundamental architecture flaws. With P0 and P1 issues addressed (estimated 2-3 sprints), Scanium will be well-positioned for production launch.
+None of the issues represent fundamental architecture flaws. With P0 and P1 issues addressed (
+estimated 2-3 sprints), Scanium will be well-positioned for production launch.
 
 **Recommended Timeline:**
+
 - **Week 1:** P0 cleanup (dead code + docs)
 - **Week 2-3:** P1 critical issues (error handling, memory, accessibility)
 - **Week 4-5:** P2 polish (UX, performance, testing)
@@ -400,12 +411,14 @@ None of the issues represent fundamental architecture flaws. With P0 and P1 issu
 ***REMOVED******REMOVED*** Contact & Questions
 
 For questions about this review:
+
 - Review artifacts: `/home/user/scanium/docs/`
 - Issues: `/home/user/scanium/docs/issues/` (18 files)
 - Roadmap: `/home/user/scanium/docs/IMPROVEMENTS.md`
 - Summary: `/home/user/scanium/docs/REVIEW_SUMMARY.md` (this file)
 
-All findings are grounded in actual code analysis and architectural documentation review. Recommendations are prioritized by user impact and engineering value.
+All findings are grounded in actual code analysis and architectural documentation review.
+Recommendations are prioritized by user impact and engineering value.
 
 ---
 

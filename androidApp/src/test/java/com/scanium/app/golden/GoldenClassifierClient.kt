@@ -6,16 +6,17 @@ import com.scanium.app.ml.classification.CloudClassificationResponse
 import com.scanium.app.ml.classification.EnrichedAttributesResponse
 import com.scanium.app.ml.classification.VisionAttributesResponse
 import com.scanium.app.network.security.RequestSigner
-import java.io.File
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 
 sealed class GoldenClassificationOutcome {
     data class Success(val result: GoldenClassificationResult) : GoldenClassificationOutcome()
+
     data class Error(val message: String, val statusCode: Int? = null) : GoldenClassificationOutcome()
 }
 

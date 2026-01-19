@@ -4,13 +4,13 @@ Step-by-step workflow for investigating Sentry issues using the full observabili
 
 ***REMOVED******REMOVED*** Quick Reference
 
-| Tool | Purpose | URL |
-|------|---------|-----|
-| Sentry | Crash reports, stack traces | Your Sentry project URL |
-| Grafana | Logs, metrics, traces, dashboards | http://localhost:3000 |
-| Loki | Log queries | Grafana → Explore → Loki |
-| Tempo | Distributed traces | Grafana → Explore → Tempo |
-| Mimir | Metrics queries | Grafana → Explore → Mimir |
+| Tool    | Purpose                           | URL                       |
+|---------|-----------------------------------|---------------------------|
+| Sentry  | Crash reports, stack traces       | Your Sentry project URL   |
+| Grafana | Logs, metrics, traces, dashboards | http://localhost:3000     |
+| Loki    | Log queries                       | Grafana → Explore → Loki  |
+| Tempo   | Distributed traces                | Grafana → Explore → Tempo |
+| Mimir   | Metrics queries                   | Grafana → Explore → Mimir |
 
 ***REMOVED******REMOVED*** Triage Workflow Overview
 
@@ -61,14 +61,14 @@ When you receive a Sentry notification:
 
 In the Sentry issue detail view, locate these tags in the sidebar:
 
-| Tag | Example | Use For |
-|-----|---------|---------|
-| `session_id` | `cls-550e8400-e29b-41d4-...` | Find all events from same user session |
-| `app_version` | `1.0.42` | Filter logs/metrics by version |
-| `build` | `42` | Precise build identification |
-| `platform` | `android` | Platform filtering |
-| `env` | `prod` | Environment isolation |
-| `scan_mode` | `CLOUD` | Classification mode context |
+| Tag           | Example                      | Use For                                |
+|---------------|------------------------------|----------------------------------------|
+| `session_id`  | `cls-550e8400-e29b-41d4-...` | Find all events from same user session |
+| `app_version` | `1.0.42`                     | Filter logs/metrics by version         |
+| `build`       | `42`                         | Precise build identification           |
+| `platform`    | `android`                    | Platform filtering                     |
+| `env`         | `prod`                       | Environment isolation                  |
+| `scan_mode`   | `CLOUD`                      | Classification mode context            |
 
 ***REMOVED******REMOVED******REMOVED*** Extract from Event Details
 
@@ -95,9 +95,9 @@ Copy this value for Grafana queries.
 1. Open Grafana: http://localhost:3000
 2. Navigate to: Dashboards → Scanium → App Health
 3. Set filters at top:
-   - **Environment:** `prod` (or `dev`)
-   - **Version:** `1.0.42` (from Sentry)
-   - **Time range:** 30 minutes around crash timestamp
+    - **Environment:** `prod` (or `dev`)
+    - **Version:** `1.0.42` (from Sentry)
+    - **Time range:** 30 minutes around crash timestamp
 
 ***REMOVED******REMOVED******REMOVED*** Option B: Direct Loki Query (Session-Specific)
 
@@ -180,8 +180,8 @@ In Grafana Explore with Tempo datasource:
 
 1. Select **Search** tab
 2. Filter by:
-   - `service.name = scanium-mobile`
-   - `session_id = cls-550e8400-...` (custom attribute)
+    - `service.name = scanium-mobile`
+    - `session_id = cls-550e8400-...` (custom attribute)
 3. Click trace to view spans
 
 ***REMOVED******REMOVED******REMOVED*** Trace Analysis Checklist
@@ -248,23 +248,23 @@ sum(rate(scanium_errors_total{app_version="1.0.41", env="prod"}[5m]))
 
 Build a timeline of events:
 
-| Time | Source | Event |
-|------|--------|-------|
-| 10:29:50 | Loki | `scan.started` with `scan_mode=LOCAL` |
-| 10:29:52 | Tempo | Inference span started |
-| 10:29:54 | Mimir | Latency spike to 3000ms |
-| 10:29:55 | Loki | `ERROR: OutOfMemoryError` |
-| 10:29:55 | Sentry | Crash captured |
+| Time     | Source | Event                                 |
+|----------|--------|---------------------------------------|
+| 10:29:50 | Loki   | `scan.started` with `scan_mode=LOCAL` |
+| 10:29:52 | Tempo  | Inference span started                |
+| 10:29:54 | Mimir  | Latency spike to 3000ms               |
+| 10:29:55 | Loki   | `ERROR: OutOfMemoryError`             |
+| 10:29:55 | Sentry | Crash captured                        |
 
 ***REMOVED******REMOVED******REMOVED*** Common Root Causes
 
-| Symptom | Likely Cause | Where to Look |
-|---------|--------------|---------------|
-| Crashes after version update | Regression in new code | Sentry release compare |
-| Timeouts on network calls | Backend latency/errors | Tempo spans, backend logs |
-| OOM crashes | Memory leak, large models | Heap dumps, model size |
-| Inference failures | Model compatibility | Loki ML logs, model version |
-| Random crashes | Race conditions | Breadcrumbs, thread info |
+| Symptom                      | Likely Cause              | Where to Look               |
+|------------------------------|---------------------------|-----------------------------|
+| Crashes after version update | Regression in new code    | Sentry release compare      |
+| Timeouts on network calls    | Backend latency/errors    | Tempo spans, backend logs   |
+| OOM crashes                  | Memory leak, large models | Heap dumps, model size      |
+| Inference failures           | Model compatibility       | Loki ML logs, model version |
+| Random crashes               | Race conditions           | Breadcrumbs, thread info    |
 
 ***REMOVED******REMOVED*** Step 8: Document and Resolve
 
@@ -293,28 +293,31 @@ After deploying fix:
 
 ***REMOVED******REMOVED******REMOVED*** Pre-built Dashboards
 
-| Dashboard | Purpose | Path |
-|-----------|---------|------|
-| App Health | Overall app health metrics | Dashboards → Scanium → App Health |
+| Dashboard        | Purpose                        | Path                                    |
+|------------------|--------------------------------|-----------------------------------------|
+| App Health       | Overall app health metrics     | Dashboards → Scanium → App Health       |
 | Scan Performance | Classification latency/success | Dashboards → Scanium → Scan Performance |
-| Pipeline Health | OTLP pipeline status | Dashboards → Scanium → Pipeline Health |
-| Usage | User activity patterns | Dashboards → Scanium → Usage |
+| Pipeline Health  | OTLP pipeline status           | Dashboards → Scanium → Pipeline Health  |
+| Usage            | User activity patterns         | Dashboards → Scanium → Usage            |
 
 ***REMOVED******REMOVED******REMOVED*** Useful Explore Queries
 
 Save these as Grafana "starred" queries:
 
 **Loki - Errors by Session:**
+
 ```logql
 {source="scanium-mobile", env="prod"} |= "ERROR" | json | line_format "{{.session_id}}: {{.message}}"
 ```
 
 **Loki - Classification Events:**
+
 ```logql
 {source="scanium-mobile"} |~ "scan\\.(started|completed|failed)"
 ```
 
 **Mimir - Error Rate Trend:**
+
 ```promql
 sum(increase(scanium_errors_total{env="prod"}[1h])) by (app_version)
 ```
@@ -342,12 +345,12 @@ sum(increase(scanium_errors_total{env="prod"}[1h])) by (app_version)
 
 ***REMOVED******REMOVED*** Escalation Path
 
-| Severity | Action | Contact |
-|----------|--------|---------|
-| P1 (Crash spike) | Immediate investigation + potential rollback | On-call + team lead |
-| P2 (New critical bug) | Same-day investigation | Assigned owner |
-| P3 (Regression) | Next sprint | Backlog |
-| P4 (Edge case) | When capacity allows | Backlog |
+| Severity              | Action                                       | Contact             |
+|-----------------------|----------------------------------------------|---------------------|
+| P1 (Crash spike)      | Immediate investigation + potential rollback | On-call + team lead |
+| P2 (New critical bug) | Same-day investigation                       | Assigned owner      |
+| P3 (Regression)       | Next sprint                                  | Backlog             |
+| P4 (Edge case)        | When capacity allows                         | Backlog             |
 
 ***REMOVED******REMOVED*** See Also
 

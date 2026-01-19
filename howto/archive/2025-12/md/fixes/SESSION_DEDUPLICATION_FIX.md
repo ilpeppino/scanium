@@ -2,25 +2,33 @@
 
 ***REMOVED******REMOVED*** Problem
 
-The SessionDeduplicator was treating all UNKNOWN category items as duplicates, causing only 1-2 items to be added during scanning while slowly panning the camera.
+The SessionDeduplicator was treating all UNKNOWN category items as duplicates, causing only 1-2
+items to be added during scanning while slowly panning the camera.
 
 ***REMOVED******REMOVED*** Root Causes
 
 ***REMOVED******REMOVED******REMOVED*** 1. Empty Label Bug (Critical)
-The `calculateLabelSimilarity()` function checked `if (label1 == label2) return 1.0f` **before** checking for empty strings. This meant empty labels matched with 100% similarity.
+
+The `calculateLabelSimilarity()` function checked `if (label1 == label2) return 1.0f` **before**
+checking for empty strings. This meant empty labels matched with 100% similarity.
 
 ***REMOVED******REMOVED******REMOVED*** 2. Category Name Fallback Bug (Critical)
-The `extractMetadata()` function used `item.category.name` as the label fallback, causing all UNKNOWN items to have labelText="UNKNOWN", which then matched as identical.
+
+The `extractMetadata()` function used `item.category.name` as the label fallback, causing all
+UNKNOWN items to have labelText="UNKNOWN", which then matched as identical.
 
 ***REMOVED******REMOVED******REMOVED*** 3. Missing Position Data
+
 `ScannedItem` didn't include bounding box position, so spatial proximity matching couldn't work.
 
 ***REMOVED******REMOVED******REMOVED*** 4. Missing Label Data
+
 `ScannedItem` didn't include ML Kit label text, so label-based matching couldn't work.
 
 ***REMOVED******REMOVED*** Fixes Applied
 
 ***REMOVED******REMOVED******REMOVED*** Fix 1: Empty Label Check First (SessionDeduplicator.kt:149-156)
+
 ```kotlin
 private fun calculateLabelSimilarity(label1: String, label2: String): Float {
     // CRITICAL: Check for empty labels FIRST, before comparing equality
@@ -34,6 +42,7 @@ private fun calculateLabelSimilarity(label1: String, label2: String): Float {
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Fix 2: Add Position and Label Fields to ScannedItem (ScannedItem.kt:22-33)
+
 ```kotlin
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
@@ -50,6 +59,7 @@ data class ScannedItem(
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Fix 3: Pass Position and Label from ObjectDetectorClient (ObjectDetectorClient.kt:492-513)
+
 ```kotlin
 // Normalize bounding box to 0-1 coordinates for session deduplication
 val imageWidth = (sourceBitmap?.width ?: fallbackWidth).toFloat()
@@ -73,6 +83,7 @@ ScannedItem(
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Fix 4: Use Actual Position and Labels in extractMetadata (SessionDeduplicator.kt:215-256)
+
 ```kotlin
 // Extract position from bounding box if available
 val (centerX, centerY, boxArea, hasPosition) = when {
@@ -101,21 +112,24 @@ val labelText = when {
 ***REMOVED******REMOVED*** Results
 
 ***REMOVED******REMOVED******REMOVED*** Before Fix
+
 - **Item accumulation**: Only 1-2 items total
 - **Logs**: `labelSim=1.0` for all comparisons
 - **Behavior**: Every item rejected as "similar to existing"
 
 ***REMOVED******REMOVED******REMOVED*** After Fix
+
 - **Item accumulation**: ~27 items in 16 seconds (~1-2 items/second)
 - **Logs**: `labelSim=0.0` for empty labels, proper position-based matching
 - **Behavior**:
-  - ✅ Position-based deduplication: "positions very close (distance=0.045) - likely same object"
-  - ✅ Spatial separation: "positions differ (distance=0.120) - treating as different"
-  - ✅ Size matching: "sizeRatio=0.9196" + position → deduplicated
-  - ✅ Proper rejection: "Similar item found... REJECTED"
-  - ✅ Proper acceptance: "ACCEPTED: unique item"
+    - ✅ Position-based deduplication: "positions very close (distance=0.045) - likely same object"
+    - ✅ Spatial separation: "positions differ (distance=0.120) - treating as different"
+    - ✅ Size matching: "sizeRatio=0.9196" + position → deduplicated
+    - ✅ Proper rejection: "Similar item found... REJECTED"
+    - ✅ Proper acceptance: "ACCEPTED: unique item"
 
 ***REMOVED******REMOVED******REMOVED*** Memory Usage
+
 - **Stable**: 18-29MB (out of 256MB max)
 - **No leaks**: Adding items causes 0MB additional memory
 - **No crashes**: App runs continuously without crashes
@@ -127,20 +141,21 @@ val labelText = when {
 1. **Category must match** (essential)
 
 2. **Label similarity** (if both have labels):
-   - Levenshtein distance normalized
-   - Minimum 70% similarity required
-   - Empty labels return 0.0 similarity
+    - Levenshtein distance normalized
+    - Minimum 70% similarity required
+    - Empty labels return 0.0 similarity
 
 3. **Size similarity**:
-   - Normalized box area comparison
-   - Maximum 40% size difference allowed
+    - Normalized box area comparison
+    - Maximum 40% size difference allowed
 
 4. **Spatial proximity** (REQUIRED when labels are missing):
-   - When no labels: position check is **mandatory**
-   - Distance threshold: 5% of frame diagonal (strict)
-   - When labels present: 15% of frame diagonal (lenient)
+    - When no labels: position check is **mandatory**
+    - Distance threshold: 5% of frame diagonal (strict)
+    - When labels present: 15% of frame diagonal (lenient)
 
 ***REMOVED******REMOVED******REMOVED*** Distance Calculation (SessionDeduplicator.kt:202-210)
+
 ```kotlin
 private fun calculateNormalizedDistance(item1: ItemMetadata, item2: ItemMetadata): Float {
     val dx = item1.centerX - item2.centerX
@@ -156,16 +171,18 @@ private fun calculateNormalizedDistance(item1: ItemMetadata, item2: ItemMetadata
 ***REMOVED******REMOVED*** Testing
 
 ***REMOVED******REMOVED******REMOVED*** Manual Test Results
+
 1. **Launch app**: `adb shell am start -n com.scanium.app/.MainActivity`
 2. **Long-press to scan**: Camera detects objects
 3. **Observed behavior**:
-   - Items with similar positions → Deduplicated ✅
-   - Items in different positions → Added as unique ✅
-   - ~1-2 items added per second ✅
-   - Memory stays at 18-29MB ✅
-   - No crashes ✅
+    - Items with similar positions → Deduplicated ✅
+    - Items in different positions → Added as unique ✅
+    - ~1-2 items added per second ✅
+    - Memory stays at 18-29MB ✅
+    - No crashes ✅
 
 ***REMOVED******REMOVED******REMOVED*** Example Log Output
+
 ```
 SessionDeduplicator: No labels: positions very close (distance=0.045774244) - likely same object
 SessionDeduplicator: Items are similar: labelSim=0.0, sizeRatio=0.9196152
@@ -179,6 +196,7 @@ ItemsViewModel:     ACCEPTED: unique item 43cf1857...
 ***REMOVED******REMOVED*** Related Fixes
 
 This fix builds on previous work:
+
 - `ML_KIT_NATIVE_CRASH_FIX.md`: Using SINGLE_IMAGE_MODE to avoid crashes
 - `MEMORY_CRASH_FIX.md`: Thumbnail downscaling to 200x200 max
 - `ML_KIT_ZERO_DETECTIONS_FIX.md`: Removing `.enableClassification()` for better detection
@@ -186,18 +204,18 @@ This fix builds on previous work:
 ***REMOVED******REMOVED*** Files Modified
 
 1. `app/src/main/java/com/scanium/app/items/ScannedItem.kt`
-   - Added `boundingBox: RectF?` field
-   - Added `labelText: String?` field
+    - Added `boundingBox: RectF?` field
+    - Added `labelText: String?` field
 
 2. `app/src/main/java/com/scanium/app/items/SessionDeduplicator.kt`
-   - Fixed `calculateLabelSimilarity()` to check empty labels first
-   - Updated `extractMetadata()` to use actual position and label data
-   - Removed category name fallback
+    - Fixed `calculateLabelSimilarity()` to check empty labels first
+    - Updated `extractMetadata()` to use actual position and label data
+    - Removed category name fallback
 
 3. `app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
-   - Updated `convertToScannedItem()` to pass normalized boundingBox
-   - Updated `convertToScannedItem()` to pass labelText from ML Kit
-   - Updated `candidateToScannedItem()` to pass position and label from ObjectCandidate
+    - Updated `convertToScannedItem()` to pass normalized boundingBox
+    - Updated `convertToScannedItem()` to pass labelText from ML Kit
+    - Updated `candidateToScannedItem()` to pass position and label from ObjectCandidate
 
 ***REMOVED******REMOVED*** Verification
 

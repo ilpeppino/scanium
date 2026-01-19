@@ -29,10 +29,11 @@ OTLP receivers in `monitoring/alloy/config.alloy`:
 
 Sources and flows:
 
-- Backend exports OTLP metrics (`backend/src/infra/telemetry/index.ts`) and exposes `/metrics` for Prometheus scrape.
+- Backend exports OTLP metrics (`backend/src/infra/telemetry/index.ts`) and exposes `/metrics` for
+  Prometheus scrape.
 - Alloy scrapes:
-  - Alloy, Loki, Tempo, Mimir internal metrics.
-  - Backend `/metrics` (`prometheus.scrape "backend"` in `config.alloy`).
+    - Alloy, Loki, Tempo, Mimir internal metrics.
+    - Backend `/metrics` (`prometheus.scrape "backend"` in `config.alloy`).
 - Metrics are written to Mimir via Prometheus remote_write.
 
 Retention:
@@ -53,7 +54,8 @@ Retention:
 
 PII considerations:
 
-- Mobile telemetry attributes are sanitized client-side (see `shared/telemetry-contract` and `androidApp/src/main/java/com/scanium/app/telemetry/`).
+- Mobile telemetry attributes are sanitized client-side (see `shared/telemetry-contract` and
+  `androidApp/src/main/java/com/scanium/app/telemetry/`).
 - Backend logging redacts sensitive headers (`backend/src/app.ts`).
 
 ***REMOVED******REMOVED*** 5. Dashboards
@@ -68,14 +70,17 @@ Provisioned dashboards live in `monitoring/grafana/dashboards/`, including:
 - `traces-drilldown.json`
 - `pipeline-health.json`
 
-Datasources are provisioned in `monitoring/grafana/provisioning/datasources/datasources.yaml` with Loki, Tempo, and Mimir wired for trace/log/metrics correlations.
+Datasources are provisioned in `monitoring/grafana/provisioning/datasources/datasources.yaml` with
+Loki, Tempo, and Mimir wired for trace/log/metrics correlations.
 
 ***REMOVED******REMOVED*** 6. Alerts & Health
 
 Alerting is provisioned via Grafana:
 
-- Rules: `monitoring/grafana/provisioning/alerting/rules.yaml` (error rate spikes, telemetry drop, latency regression).
-- Contact points: `monitoring/grafana/provisioning/alerting/contactpoints.yaml` (placeholders by default).
+- Rules: `monitoring/grafana/provisioning/alerting/rules.yaml` (error rate spikes, telemetry drop,
+  latency regression).
+- Contact points: `monitoring/grafana/provisioning/alerting/contactpoints.yaml` (placeholders by
+  default).
 - Notification policies: `monitoring/grafana/provisioning/alerting/notification-policies.yaml`.
 
 Health endpoints:
@@ -94,11 +99,13 @@ Port exposure (local dev `monitoring/docker-compose.yml`):
 Grafana auth:
 
 - Local dev enables anonymous admin (see `monitoring/docker-compose.yml`).
-- NAS deployment uses env-based credentials (`deploy/nas/compose/docker-compose.nas.monitoring.yml`).
+- NAS deployment uses env-based credentials (
+  `deploy/nas/compose/docker-compose.nas.monitoring.yml`).
 
 NAS hardening:
 
-- Use Cloudflare Tunnel or VPN for Grafana access; avoid exposing Loki/Tempo/Mimir to the public internet.
+- Use Cloudflare Tunnel or VPN for Grafana access; avoid exposing Loki/Tempo/Mimir to the public
+  internet.
 
 ***REMOVED******REMOVED*** 8. Interaction With Other Components
 
@@ -114,7 +121,8 @@ Backend -> Monitoring:
 
 Config mismatch to note:
 
-- Local backend compose uses `OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4318` while Alloy config expects backend OTLP on `:4319`.
+- Local backend compose uses `OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4318` while Alloy config
+  expects backend OTLP on `:4319`.
 - NAS compose uses `http://scanium-alloy:4319` and matches `config.alloy`.
 
 ***REMOVED******REMOVED*** 9. Operational Notes
@@ -131,4 +139,5 @@ Retention tuning:
 
 Backups:
 
-- Persisted data lives in `monitoring/data/*` (local) or `/volume1/docker/scanium/monitoring/*` (NAS). Snapshot these directories for backups.
+- Persisted data lives in `monitoring/data/*` (local) or `/volume1/docker/scanium/monitoring/*` (
+  NAS). Snapshot these directories for backups.

@@ -2,7 +2,7 @@
 ***REMOVED*** Enables metrics generator for all tenants including single-tenant mode
 
 overrides:
-  "*":  ***REMOVED*** Wildcard for all tenants
+  "*": ***REMOVED*** Wildcard for all tenants
     ***REMOVED*** Ingestion rate limits (required in Tempo v2.7+)
     ingestion_rate_limit_bytes: 15000000  ***REMOVED*** 15MB/s
     ingestion_burst_size_bytes: 20000000  ***REMOVED*** 20MB burst

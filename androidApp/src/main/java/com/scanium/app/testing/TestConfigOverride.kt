@@ -112,9 +112,7 @@ object TestConfigOverride {
     /**
      * Get effective base URL (test override or BuildConfig default).
      */
-    fun getEffectiveBaseUrl(): String {
-        return baseUrl ?: BuildConfig.SCANIUM_API_BASE_URL
-    }
+    fun getEffectiveBaseUrl(): String = baseUrl ?: BuildConfig.SCANIUM_API_BASE_URL
 
     /**
      * Reset test configuration (useful for test cleanup).

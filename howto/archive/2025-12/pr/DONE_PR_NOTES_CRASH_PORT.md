@@ -2,7 +2,9 @@
 
 ***REMOVED******REMOVED*** Summary
 
-This PR introduces a **vendor-neutral CrashPort interface** in the shared Kotlin Multiplatform code and implements it using the Sentry Android SDK. This architecture keeps crash reporting abstracted from the shared business logic while allowing platform-specific implementations.
+This PR introduces a **vendor-neutral CrashPort interface** in the shared Kotlin Multiplatform code
+and implements it using the Sentry Android SDK. This architecture keeps crash reporting abstracted
+from the shared business logic while allowing platform-specific implementations.
 
 ***REMOVED******REMOVED******REMOVED*** Key Features
 
@@ -69,48 +71,52 @@ This PR introduces a **vendor-neutral CrashPort interface** in the shared Kotlin
 ***REMOVED******REMOVED******REMOVED*** Shared Code (Kotlin Multiplatform)
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** New Files
+
 - **`shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/ports/CrashPort.kt`**
   Vendor-neutral interface for crash reporting (setTag, addBreadcrumb, captureException)
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Modified Files
+
 - **`shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/ports/NoOpPorts.kt`**
   Added `NoOpCrashPort` for testing and disabled builds
 
 - **`shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/facade/Telemetry.kt`**
-  - Added optional `crashPort: CrashPort?` parameter
-  - Auto-forwards WARN/ERROR events as breadcrumbs
-  - Filters out redundant attributes (platform, app_version, etc.) from breadcrumbs
+    - Added optional `crashPort: CrashPort?` parameter
+    - Auto-forwards WARN/ERROR events as breadcrumbs
+    - Filters out redundant attributes (platform, app_version, etc.) from breadcrumbs
 
 ***REMOVED******REMOVED******REMOVED*** Android App
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** New Files
+
 - **`androidApp/src/main/java/com/scanium/app/crash/AndroidCrashPortAdapter.kt`**
   Sentry Android SDK implementation of CrashPort
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Modified Files
+
 - **`androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt`**
-  - Refactored to use CrashPort adapter
-  - Sets required tags: `platform`, `app_version`, `build`, `env`
-  - Sets session tags: `session_id`, `scan_mode`, `build_type`
-  - Placeholder for `domain_pack_version` (future feature)
-  - Falls back to NoOpCrashPort when Sentry DSN not configured
+    - Refactored to use CrashPort adapter
+    - Sets required tags: `platform`, `app_version`, `build`, `env`
+    - Sets session tags: `session_id`, `scan_mode`, `build_type`
+    - Placeholder for `domain_pack_version` (future feature)
+    - Falls back to NoOpCrashPort when Sentry DSN not configured
 
 - **`androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt`**
-  - Added `Application` parameter to access CrashPort
-  - Added `triggerCrashTest(throwCrash: Boolean)` for manual testing
+    - Added `Application` parameter to access CrashPort
+    - Added `triggerCrashTest(throwCrash: Boolean)` for manual testing
 
 - **`androidApp/src/main/java/com/scanium/app/ui/settings/SettingsScreen.kt`**
-  - Added "Test Crash Reporting" button in Developer section (DEBUG only)
+    - Added "Test Crash Reporting" button in Developer section (DEBUG only)
 
 - **`androidApp/src/main/java/com/scanium/app/ScaniumApp.kt`**
-  - Updated SettingsViewModel.Factory to pass Application instance
+    - Updated SettingsViewModel.Factory to pass Application instance
 
 - **`androidApp/src/main/java/com/scanium/app/navigation/NavGraph.kt`**
-  - Updated SettingsViewModel.Factory to pass Application instance
+    - Updated SettingsViewModel.Factory to pass Application instance
 
 - **`androidApp/build.gradle.kts`**
-  - Added dependencies: `implementation(project(":shared:telemetry"))`
-  - Added dependencies: `implementation(project(":shared:telemetry-contract"))`
+    - Added dependencies: `implementation(project(":shared:telemetry"))`
+    - Added dependencies: `implementation(project(":shared:telemetry-contract"))`
 
 ---
 
@@ -171,21 +177,21 @@ Crash reporting respects the **"Share Diagnostics"** setting in the app:
    ```
 
 2. **Enable crash reporting:**
-   - Open the app
-   - Navigate to: **Settings → Privacy & Data**
-   - Enable **"Share Diagnostics"**
+    - Open the app
+    - Navigate to: **Settings → Privacy & Data**
+    - Enable **"Share Diagnostics"**
 
 3. **Trigger a test crash:**
-   - Navigate to: **Settings → Developer**
-   - Enable **"Developer Mode"** (if not already enabled)
-   - Tap **"Test Crash Reporting"**
+    - Navigate to: **Settings → Developer**
+    - Enable **"Developer Mode"** (if not already enabled)
+    - Tap **"Test Crash Reporting"**
 
 4. **Verify in Sentry:**
-   - Go to your Sentry project dashboard
-   - Navigate to **Issues**
-   - Look for: `RuntimeException: 🧪 Test crash from developer settings - this is intentional!`
-   - Verify tags: `platform=android`, `app_version`, `build`, `env=dev`, `crash_test=true`
-   - Check breadcrumbs: Should include "User triggered crash test"
+    - Go to your Sentry project dashboard
+    - Navigate to **Issues**
+    - Look for: `RuntimeException: 🧪 Test crash from developer settings - this is intentional!`
+    - Verify tags: `platform=android`, `app_version`, `build`, `env=dev`, `crash_test=true`
+    - Check breadcrumbs: Should include "User triggered crash test"
 
 ***REMOVED******REMOVED******REMOVED*** Expected Tags in Sentry
 
@@ -213,6 +219,7 @@ To keep breadcrumb volume low (as per requirements):
 3. **Sentry SDK limit:** Default max 100 breadcrumbs (FIFO eviction)
 
 Future optimization options:
+
 - Sampling (e.g., forward 10% of WARN events)
 - Rate limiting (e.g., max 10 breadcrumbs per minute)
 - Grouping (e.g., deduplicate identical events)
@@ -224,7 +231,8 @@ Future optimization options:
 - [ ] **OTLP export:** Add OpenTelemetry export alongside Sentry
 - [ ] **iOS implementation:** Create `IOSCrashPortAdapter` using Sentry iOS SDK
 - [ ] **Domain pack version tag:** Wire up actual version once domain pack system is implemented
-- [ ] **Telemetry → DiagnosticsPort integration:** Auto-forward events to DiagnosticsPort for crash attachments
+- [ ] **Telemetry → DiagnosticsPort integration:** Auto-forward events to DiagnosticsPort for crash
+  attachments
 - [ ] **Crash report enrichment:** Attach diagnostic bundles from DiagnosticsPort to Sentry events
 
 ---
@@ -234,8 +242,8 @@ Future optimization options:
 If this integration causes issues:
 
 1. **Disable crash reporting:**
-   - Remove `SENTRY_DSN` from `local.properties` or environment
-   - App will fall back to `NoOpCrashPort`
+    - Remove `SENTRY_DSN` from `local.properties` or environment
+    - App will fall back to `NoOpCrashPort`
 
 2. **Revert PR:**
    ```bash
@@ -248,7 +256,8 @@ If this integration causes issues:
 
 ***REMOVED******REMOVED*** Security Considerations
 
-✅ **PII protection:** Telemetry events are already sanitized by `AttributeSanitizer` before reaching CrashPort
+✅ **PII protection:** Telemetry events are already sanitized by `AttributeSanitizer` before reaching
+CrashPort
 ✅ **User consent:** Crash reporting only active when user opts in via "Share Diagnostics"
 ✅ **Vendor isolation:** Shared code has zero dependencies on Sentry (only on CrashPort interface)
 ✅ **Secrets management:** Sentry DSN stored in `local.properties` (gitignored)
@@ -287,12 +296,14 @@ If this integration causes issues:
 
 **Q: Why not use Sentry SDK directly in shared code?**
 A: Keeping shared code vendor-neutral allows us to:
+
 - Swap crash reporting vendors without changing business logic
 - Support multiple backends simultaneously (e.g., Sentry + OpenTelemetry)
 - Test with NoOpCrashPort in unit tests
 
 **Q: How are breadcrumbs different from telemetry events?**
-A: Breadcrumbs are lightweight context markers attached to crash reports. Telemetry events are full observability data sent to analytics backends. CrashPort bridges the two.
+A: Breadcrumbs are lightweight context markers attached to crash reports. Telemetry events are full
+observability data sent to analytics backends. CrashPort bridges the two.
 
 **Q: What happens if I don't configure a Sentry DSN?**
 A: The app uses `NoOpCrashPort`, which discards all crash data. No errors, just silent no-op.

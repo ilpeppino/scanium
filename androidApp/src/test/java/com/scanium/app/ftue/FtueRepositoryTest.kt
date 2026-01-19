@@ -6,14 +6,12 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,7 +25,6 @@ import java.io.File
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FtueRepositoryTest {
-
     @get:Rule
     val tempFolder = TemporaryFolder()
 
@@ -41,10 +38,11 @@ class FtueRepositoryTest {
     @Before
     fun setup() {
         // Create a test DataStore in a temporary directory
-        testDataStore = PreferenceDataStoreFactory.create(
-            scope = testScope,
-            produceFile = { File(tempFolder.root, "test_ftue_preferences.preferences_pb") }
-        )
+        testDataStore =
+            PreferenceDataStoreFactory.create(
+                scope = testScope,
+                produceFile = { File(tempFolder.root, "test_ftue_preferences.preferences_pb") },
+            )
 
         // Create mock context - we'll use a test implementation
         mockContext = mock(Context::class.java)
@@ -64,22 +62,24 @@ class FtueRepositoryTest {
      * Test: On fresh install, languageSelectionShown should default to false.
      */
     @Test
-    fun `fresh install has languageSelectionShown as false`() = runTest {
-        // The default value in FtueRepository is false for languageSelectionShown
-        // This verifies the contract that first-time users will see the language dialog
-        val defaultValue = false
-        assertEquals(defaultValue, false)
-    }
+    fun `fresh install has languageSelectionShown as false`() =
+        runTest {
+            // The default value in FtueRepository is false for languageSelectionShown
+            // This verifies the contract that first-time users will see the language dialog
+            val defaultValue = false
+            assertEquals(defaultValue, false)
+        }
 
     /**
      * Test: On fresh install, ftue_completed should default to false.
      */
     @Test
-    fun `fresh install has ftue_completed as false`() = runTest {
-        // The default value in FtueRepository is false for completedFlow
-        val defaultValue = false
-        assertEquals(defaultValue, false)
-    }
+    fun `fresh install has ftue_completed as false`() =
+        runTest {
+            // The default value in FtueRepository is false for completedFlow
+            val defaultValue = false
+            assertEquals(defaultValue, false)
+        }
 
     /**
      * Test: Verify the expected initial state values for first-run flow.
@@ -92,17 +92,26 @@ class FtueRepositoryTest {
     @Test
     fun `verify expected initial state values for first-run flow`() {
         // These are the expected default values from FtueRepository
-        val expectedDefaults = mapOf(
-            "permission_education_shown" to false,  // No longer used in first-run flow
-            "language_selection_shown" to false,    // Triggers language dialog
-            "ftue_completed" to false,              // Triggers tour
-            "shutter_hint_shown" to false           // Triggers shutter hint
-        )
+        val expectedDefaults =
+            mapOf(
+                // No longer used in first-run flow
+                "permission_education_shown" to false,
+                // Triggers language dialog
+                "language_selection_shown" to false,
+                // Triggers tour
+                "ftue_completed" to false,
+                // Triggers shutter hint
+                "shutter_hint_shown" to false,
+            )
 
         // Verify defaults are as expected
-        assertFalse("language_selection_shown should default to false",
-            expectedDefaults["language_selection_shown"] == true)
-        assertFalse("ftue_completed should default to false",
-            expectedDefaults["ftue_completed"] == true)
+        assertFalse(
+            "language_selection_shown should default to false",
+            expectedDefaults["language_selection_shown"] == true,
+        )
+        assertFalse(
+            "ftue_completed should default to false",
+            expectedDefaults["ftue_completed"] == true,
+        )
     }
 }

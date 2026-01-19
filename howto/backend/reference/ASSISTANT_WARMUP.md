@@ -1,6 +1,7 @@
 ***REMOVED*** Assistant Warmup Endpoint
 
-The warmup endpoint allows the mobile app to pre-verify that the assistant is configured and reachable before initiating a chat session.
+The warmup endpoint allows the mobile app to pre-verify that the assistant is configured and
+reachable before initiating a chat session.
 
 ***REMOVED******REMOVED*** Endpoint
 
@@ -11,6 +12,7 @@ POST /v1/assist/warmup
 ***REMOVED******REMOVED*** Request
 
 Headers:
+
 - `X-API-Key`: Required. Valid assistant API key.
 
 Body: Empty (no payload required)
@@ -86,11 +88,13 @@ curl -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 ***REMOVED******REMOVED******REMOVED*** Expected Output
 
 On success, you should see:
+
 ```json
 {"status":"ok","provider":"claude","model":"...","ts":"...","correlationId":"..."}
 ```
 
-If you see `404 "Route not found"`, the container is running an old image. See [REDEPLOY.md](./REDEPLOY.md) for instructions.
+If you see `404 "Route not found"`, the container is running an old image.
+See [REDEPLOY.md](./REDEPLOY.md) for instructions.
 
 ***REMOVED******REMOVED*** Troubleshooting
 
@@ -99,6 +103,7 @@ If you see `404 "Route not found"`, the container is running an old image. See [
 **Cause**: The Docker container is running an old image that doesn't have the warmup route.
 
 **Fix**: Rebuild and restart the container:
+
 ```bash
 cd /volume1/docker/scanium/backend
 docker compose down api
@@ -117,6 +122,7 @@ docker compose up -d api
 **Cause**: The assistant provider environment variables are not set.
 
 **Fix**: Check `.env` for:
+
 - `ASSISTANT_PROVIDER=claude`
 - `CLAUDE_API_KEY=...`
 
@@ -125,6 +131,7 @@ docker compose up -d api
 **Cause**: Container is not running or port is not exposed.
 
 **Fix**: Check container status:
+
 ```bash
 docker ps | grep scanium-api
 docker logs scanium-api --tail 50
@@ -140,6 +147,7 @@ npm test -- --run src/modules/assistant/routes.e2e.test.ts
 ```
 
 This includes tests that specifically verify:
+
 - Warmup endpoint returns 200 (not 404)
 - Warmup endpoint is registered under `/v1` prefix
 - Authentication is enforced

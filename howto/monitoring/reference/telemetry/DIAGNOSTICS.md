@@ -7,7 +7,9 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The diagnostics module provides bounded in-memory storage for recent telemetry events (breadcrumbs) and the ability to build compact diagnostic bundles for crash reports or "send report" functionality.
+The diagnostics module provides bounded in-memory storage for recent telemetry events (breadcrumbs)
+and the ability to build compact diagnostic bundles for crash reports or "send report"
+functionality.
 
 ***REMOVED******REMOVED*** Key Features
 
@@ -56,6 +58,7 @@ The diagnostics module provides bounded in-memory storage for recent telemetry e
 ***REMOVED******REMOVED******REMOVED*** 1. DiagnosticsBuffer
 
 Thread-safe ring buffer with dual limits:
+
 - **maxEvents**: Maximum number of events (default: 200)
 - **maxBytes**: Maximum total byte size (default: 256KB)
 
@@ -94,6 +97,7 @@ val jsonBytes = builder.buildJsonBytes(context, events)
 ```
 
 **Bundle Format:**
+
 ```json
 {
   "generatedAt": "2025-12-24T10:30:00Z",
@@ -132,6 +136,7 @@ interface DiagnosticsPort {
 ```
 
 **Implementations:**
+
 - `DefaultDiagnosticsPort`: Uses DiagnosticsBuffer + DiagnosticsBundleBuilder
 - `NoOpDiagnosticsPort`: Discards all breadcrumbs (testing/disabled)
 
@@ -285,25 +290,25 @@ val bundle = diagnosticsPort.buildDiagnosticsBundle()
 ***REMOVED******REMOVED*** Best Practices
 
 1. **Set Appropriate Limits:**
-   - `maxEvents = 200` captures ~10 minutes of activity at ~20 events/min
-   - `maxBytes = 256KB` is conservative for mobile crash reporters
+    - `maxEvents = 200` captures ~10 minutes of activity at ~20 events/min
+    - `maxBytes = 256KB` is conservative for mobile crash reporters
 
 2. **Clear After Send:**
-   - Always clear breadcrumbs after successfully sending a report
-   - Prevents duplicate reports with stale breadcrumbs
+    - Always clear breadcrumbs after successfully sending a report
+    - Prevents duplicate reports with stale breadcrumbs
 
 3. **Context Provider:**
-   - Keep context provider lightweight (called on every bundle build)
-   - Include only essential fields (platform, version, session)
+    - Keep context provider lightweight (called on every bundle build)
+    - Include only essential fields (platform, version, session)
 
 4. **NoOp for Testing:**
-   - Use `NoOpDiagnosticsPort` in unit tests to avoid memory accumulation
-   - Use real port in integration tests to verify breadcrumb capture
+    - Use `NoOpDiagnosticsPort` in unit tests to avoid memory accumulation
+    - Use real port in integration tests to verify breadcrumb capture
 
 5. **Memory Management:**
-   - Default limits (200 events, 256KB) are safe for most apps
-   - Reduce limits for memory-constrained environments
-   - Monitor `breadcrumbCount()` in development
+    - Default limits (200 events, 256KB) are safe for most apps
+    - Reduce limits for memory-constrained environments
+    - Monitor `breadcrumbCount()` in development
 
 ***REMOVED******REMOVED*** Limitations
 
@@ -327,6 +332,7 @@ This module is new as of PR ***REMOVED***3. No migration required.
 ***REMOVED******REMOVED*** API Stability
 
 This module is **stable** as of v1.0. Breaking changes will require:
+
 1. Major version bump
 2. Deprecation period for removed methods
 3. Migration guide for consumers

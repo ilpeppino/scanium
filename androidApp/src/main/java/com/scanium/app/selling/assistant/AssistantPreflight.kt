@@ -2,16 +2,17 @@ package com.scanium.app.selling.assistant
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import com.scanium.app.BuildConfig
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.scanium.app.BuildConfig
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.network.DeviceIdProvider
 import com.scanium.app.network.security.RequestSigner
+import com.scanium.app.selling.assistant.AssistantPreflightManagerImpl.Companion.PREFLIGHT_CACHE_TTL_MS
 import com.scanium.app.selling.assistant.network.AssistantHttpConfig
 import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import kotlinx.coroutines.CancellationException
@@ -42,26 +43,35 @@ import okhttp3.RequestBody.Companion.toRequestBody
 enum class PreflightStatus {
     /** Assistant backend is reachable and ready */
     AVAILABLE,
+
     /** Backend is temporarily unavailable (network, timeout, 503) */
     TEMPORARILY_UNAVAILABLE,
+
     /** Backend is unreachable (offline, DNS failure) */
     OFFLINE,
+
     /** Rate limited by backend */
     RATE_LIMITED,
+
     /** Authorization issue (401/403) */
     UNAUTHORIZED,
+
     /** Backend not configured (no URL or no API key) */
     NOT_CONFIGURED,
+
     /** Endpoint not found (404) - likely wrong base URL or tunnel route */
     ENDPOINT_NOT_FOUND,
+
     /**
      * Client configuration error (400) - preflight request was malformed.
      * This does NOT mean the assistant is unavailable - real chat may work.
      * Input should remain enabled.
      */
     CLIENT_ERROR,
+
     /** Preflight check in progress */
     CHECKING,
+
     /** No preflight result yet */
     UNKNOWN,
 }
@@ -79,12 +89,14 @@ data class PreflightResult(
 ) {
     val isAvailable: Boolean get() = status == PreflightStatus.AVAILABLE
     val canRetry: Boolean
-        get() = status in listOf(
-            PreflightStatus.TEMPORARILY_UNAVAILABLE,
-            PreflightStatus.OFFLINE,
-            PreflightStatus.RATE_LIMITED,
-            PreflightStatus.CLIENT_ERROR, // Client error should allow chat attempt
-        )
+        get() =
+            status in
+                listOf(
+                    PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                    PreflightStatus.OFFLINE,
+                    PreflightStatus.RATE_LIMITED,
+                    PreflightStatus.CLIENT_ERROR, // Client error should allow chat attempt
+                )
 }
 
 private val Context.preflightDataStore: DataStore<Preferences> by preferencesDataStore(
@@ -99,8 +111,11 @@ interface AssistantPreflightManager {
     val lastStatusFlow: Flow<PreflightResult?>
 
     suspend fun preflight(forceRefresh: Boolean = false): PreflightResult
+
     suspend fun warmUp(): Boolean
+
     fun cancelWarmUp()
+
     suspend fun clearCache()
 }
 
@@ -142,10 +157,11 @@ class AssistantPreflightManagerImpl(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // Use factory-created clients with standardized configuration
-    private val client: OkHttpClient = AssistantOkHttpClientFactory.create(
-        config = preflightConfig,
-        logStartupPolicy = false, // Don't log for preflight, let chat client log
-    )
+    private val client: OkHttpClient =
+        AssistantOkHttpClientFactory.create(
+            config = preflightConfig,
+            logStartupPolicy = false, // Don't log for preflight, let chat client log
+        )
 
     // Lazy-init warmup client only when needed
     private val warmupClient: OkHttpClient by lazy {
@@ -160,18 +176,20 @@ class AssistantPreflightManagerImpl(
         AssistantOkHttpClientFactory.logConfigurationUsage("preflight", preflightConfig)
     }
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true // Required: ensures items=[] and history=[] are sent
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true // Required: ensures items=[] and history=[] are sent
+        }
     private val preflightPolicy = PreflightPolicy(json)
 
-    private val _currentResult = MutableStateFlow(
-        PreflightResult(
-            status = PreflightStatus.UNKNOWN,
-            latencyMs = 0,
-        ),
-    )
+    private val _currentResult =
+        MutableStateFlow(
+            PreflightResult(
+                status = PreflightStatus.UNKNOWN,
+                latencyMs = 0,
+            ),
+        )
     override val currentResult: StateFlow<PreflightResult> = _currentResult.asStateFlow()
 
     private var warmupJob: Job? = null
@@ -192,18 +210,20 @@ class AssistantPreflightManagerImpl(
     /**
      * Flow of the last persisted preflight status for developer diagnostics.
      */
-    override val lastStatusFlow: Flow<PreflightResult?> = context.preflightDataStore.data.map { prefs ->
-        val status = prefs[KEY_LAST_STATUS]?.let {
-            runCatching { PreflightStatus.valueOf(it) }.getOrNull()
-        } ?: return@map null
+    override val lastStatusFlow: Flow<PreflightResult?> =
+        context.preflightDataStore.data.map { prefs ->
+            val status =
+                prefs[KEY_LAST_STATUS]?.let {
+                    runCatching { PreflightStatus.valueOf(it) }.getOrNull()
+                } ?: return@map null
 
-        PreflightResult(
-            status = status,
-            latencyMs = prefs[KEY_LAST_LATENCY] ?: 0,
-            checkedAt = prefs[KEY_LAST_CHECKED] ?: 0,
-            reasonCode = prefs[KEY_LAST_REASON],
-        )
-    }
+            PreflightResult(
+                status = status,
+                latencyMs = prefs[KEY_LAST_LATENCY] ?: 0,
+                checkedAt = prefs[KEY_LAST_CHECKED] ?: 0,
+                reasonCode = prefs[KEY_LAST_REASON],
+            )
+        }
 
     /**
      * Perform a preflight health check.
@@ -263,20 +283,21 @@ class AssistantPreflightManagerImpl(
         // Cancel any existing warmup
         warmupJob?.cancel()
 
-        warmupJob = scope.launch {
-            try {
-                performWarmUp()
-                // Update last warmup timestamp
-                context.preflightDataStore.edit { prefs ->
-                    prefs[KEY_LAST_WARMUP] = System.currentTimeMillis()
+        warmupJob =
+            scope.launch {
+                try {
+                    performWarmUp()
+                    // Update last warmup timestamp
+                    context.preflightDataStore.edit { prefs ->
+                        prefs[KEY_LAST_WARMUP] = System.currentTimeMillis()
+                    }
+                    ScaniumLog.i(TAG, "Warmup: completed successfully")
+                } catch (e: CancellationException) {
+                    ScaniumLog.d(TAG, "Warmup: cancelled")
+                } catch (e: Exception) {
+                    ScaniumLog.w(TAG, "Warmup: failed", e)
                 }
-                ScaniumLog.i(TAG, "Warmup: completed successfully")
-            } catch (e: CancellationException) {
-                ScaniumLog.d(TAG, "Warmup: cancelled")
-            } catch (e: Exception) {
-                ScaniumLog.w(TAG, "Warmup: failed", e)
             }
-        }
 
         return true
     }
@@ -295,10 +316,11 @@ class AssistantPreflightManagerImpl(
      * Clear cached preflight result, forcing next preflight() to make a fresh request.
      */
     override suspend fun clearCache() {
-        _currentResult.value = PreflightResult(
-            status = PreflightStatus.UNKNOWN,
-            latencyMs = 0,
-        )
+        _currentResult.value =
+            PreflightResult(
+                status = PreflightStatus.UNKNOWN,
+                latencyMs = 0,
+            )
         context.preflightDataStore.edit { prefs ->
             prefs.remove(KEY_LAST_STATUS)
             prefs.remove(KEY_LAST_CHECKED)
@@ -310,17 +332,19 @@ class AssistantPreflightManagerImpl(
 
     private suspend fun loadPersistedState() {
         val prefs = context.preflightDataStore.data.first()
-        val status = prefs[KEY_LAST_STATUS]?.let {
-            runCatching { PreflightStatus.valueOf(it) }.getOrNull()
-        }
+        val status =
+            prefs[KEY_LAST_STATUS]?.let {
+                runCatching { PreflightStatus.valueOf(it) }.getOrNull()
+            }
 
         if (status != null) {
-            _currentResult.value = PreflightResult(
-                status = status,
-                latencyMs = prefs[KEY_LAST_LATENCY] ?: 0,
-                checkedAt = prefs[KEY_LAST_CHECKED] ?: 0,
-                reasonCode = prefs[KEY_LAST_REASON],
-            )
+            _currentResult.value =
+                PreflightResult(
+                    status = status,
+                    latencyMs = prefs[KEY_LAST_LATENCY] ?: 0,
+                    checkedAt = prefs[KEY_LAST_CHECKED] ?: 0,
+                    reasonCode = prefs[KEY_LAST_REASON],
+                )
         }
     }
 
@@ -338,11 +362,12 @@ class AssistantPreflightManagerImpl(
 
         // Check configuration first
         if (baseUrl.isBlank()) {
-            val result = PreflightResult(
-                status = PreflightStatus.NOT_CONFIGURED,
-                latencyMs = 0,
-                reasonCode = "base_url_not_configured",
-            )
+            val result =
+                PreflightResult(
+                    status = PreflightStatus.NOT_CONFIGURED,
+                    latencyMs = 0,
+                    reasonCode = "base_url_not_configured",
+                )
             _currentResult.value = result
             persistResult(result)
             ScaniumLog.w(TAG, "Preflight: NOT_CONFIGURED (no base URL)")
@@ -353,11 +378,12 @@ class AssistantPreflightManagerImpl(
         if (key.isNullOrBlank()) {
             // Missing API key - mark as UNKNOWN to allow chat attempt
             // The actual chat might work (different auth flow) or fail with clear error
-            val result = PreflightResult(
-                status = PreflightStatus.UNKNOWN,
-                latencyMs = 0,
-                reasonCode = "api_key_missing",
-            )
+            val result =
+                PreflightResult(
+                    status = PreflightStatus.UNKNOWN,
+                    latencyMs = 0,
+                    reasonCode = "api_key_missing",
+                )
             _currentResult.value = result
             persistResult(result)
             ScaniumLog.w(TAG, "Preflight: UNKNOWN (no API key - will allow chat attempt)")
@@ -372,11 +398,12 @@ class AssistantPreflightManagerImpl(
         val path = parsedUrl?.path ?: "/v1/assist/chat"
 
         return try {
-            val request = preflightPolicy.buildRequest(
-                context = context,
-                endpoint = endpoint,
-                apiKey = key,
-            )
+            val request =
+                preflightPolicy.buildRequest(
+                    context = context,
+                    endpoint = endpoint,
+                    apiKey = key,
+                )
 
             client.newCall(request).execute().use { response ->
                 val latency = System.currentTimeMillis() - startTime
@@ -427,12 +454,14 @@ class AssistantPreflightManagerImpl(
         // This primes the connection and any backend caches
         val endpoint = "$baseUrl/v1/assist/warmup"
 
-        val requestBuilder = Request.Builder()
-            .url(endpoint)
-            .post(ByteArray(0).toRequestBody(null))
-            .header("X-API-Key", key)
-            .header("X-Client", "Scanium-Android")
-            .header("X-App-Version", BuildConfig.VERSION_NAME)
+        val requestBuilder =
+            Request
+                .Builder()
+                .url(endpoint)
+                .post(ByteArray(0).toRequestBody(null))
+                .header("X-API-Key", key)
+                .header("X-Client", "Scanium-Android")
+                .header("X-App-Version", BuildConfig.VERSION_NAME)
 
         // Add device ID header for rate limiting
         // Backend expects raw device ID (not hashed) in this header

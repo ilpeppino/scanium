@@ -12,21 +12,22 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class EnrichmentModelsParsingTest {
-
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
 
     @Test
     fun `parse EnrichSubmitResponse with success`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "requestId": "550e8400-e29b-41d4-a716-446655440000",
                 "correlationId": "corr-123"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichSubmitResponse>(responseJson)
 
@@ -38,7 +39,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichSubmitResponse with error`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": false,
                 "error": {
@@ -47,7 +49,7 @@ class EnrichmentModelsParsingTest {
                     "correlationId": "corr-456"
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichSubmitResponse>(responseJson)
 
@@ -60,7 +62,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichStatusResponse with vision facts`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -83,7 +86,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067205000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
 
@@ -106,7 +109,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichStatusResponse with normalized attributes`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -139,7 +143,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067210000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
 
@@ -167,7 +171,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichStatusResponse with draft`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -191,7 +196,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067215000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
 
@@ -219,7 +224,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichStatusResponse with error`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -237,7 +243,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067205000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
 
@@ -291,7 +297,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse status with unknown stage falls back to FAILED`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -303,7 +310,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067205000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
         val status = response.status!!
@@ -314,7 +321,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse empty vision facts and attributes`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -332,7 +340,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067205000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
         val visionFacts = response.status!!.visionFacts!!
@@ -347,7 +355,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichStatusResponse with structured attributes and summary text`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -393,7 +402,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067210000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
         assertThat(response.success).isTrue()
@@ -437,7 +446,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichStatusResponse with USER source attribute`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -459,7 +469,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067210000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
         val status = response.status!!
@@ -472,7 +482,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichStatusResponse with suggested additions`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -518,7 +529,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067210000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
         val status = response.status!!
@@ -541,7 +552,8 @@ class EnrichmentModelsParsingTest {
 
     @Test
     fun `parse EnrichStatusResponse with replace suggestion`() {
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -578,7 +590,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067210000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
         val status = response.status!!
@@ -598,7 +610,8 @@ class EnrichmentModelsParsingTest {
     @Test
     fun `parse status without Phase 2 fields for backwards compatibility`() {
         // Old response format without attributesStructured, summaryText, suggestedAdditions
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "success": true,
                 "status": {
@@ -613,7 +626,7 @@ class EnrichmentModelsParsingTest {
                     "updatedAt": 1704067210000
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
         val status = response.status!!

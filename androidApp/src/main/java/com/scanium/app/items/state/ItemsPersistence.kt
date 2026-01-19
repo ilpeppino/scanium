@@ -17,19 +17,25 @@ internal class ItemsPersistence(
         itemsStore.deleteAll()
     }
 
-    fun logPersistenceStats(operation: String, items: List<ScannedItem>) {
+    fun logPersistenceStats(
+        operation: String,
+        items: List<ScannedItem>,
+    ) {
         val totalItems = items.size
         val withThumbnailBytes = items.count { it.thumbnail is ImageRef.Bytes }
         val withThumbnailRefBytes = items.count { it.thumbnailRef is ImageRef.Bytes }
-        val withCacheKey = items.count {
-            it.thumbnail is ImageRef.CacheKey || it.thumbnailRef is ImageRef.CacheKey
-        }
-        val withNoThumbnail = items.count {
-            it.thumbnail == null && it.thumbnailRef == null
-        }
-        val missingThumbnailWithUri = items.count {
-            (it.thumbnail == null && it.thumbnailRef == null) && it.fullImageUri != null
-        }
+        val withCacheKey =
+            items.count {
+                it.thumbnail is ImageRef.CacheKey || it.thumbnailRef is ImageRef.CacheKey
+            }
+        val withNoThumbnail =
+            items.count {
+                it.thumbnail == null && it.thumbnailRef == null
+            }
+        val missingThumbnailWithUri =
+            items.count {
+                (it.thumbnail == null && it.thumbnailRef == null) && it.fullImageUri != null
+            }
 
         Log.i(TAG, "┌─────────────────────────────────────────────────────────────")
         Log.i(TAG, "│ PERSISTENCE STATS ($operation)")
@@ -47,9 +53,10 @@ internal class ItemsPersistence(
         }
 
         if (withNoThumbnail > 0) {
-            val affectedIds = items
-                .filter { it.thumbnail == null && it.thumbnailRef == null }
-                .map { it.id }
+            val affectedIds =
+                items
+                    .filter { it.thumbnail == null && it.thumbnailRef == null }
+                    .map { it.id }
             Log.w(TAG, "Items with missing thumbnails (legacy bug): $affectedIds")
         }
     }

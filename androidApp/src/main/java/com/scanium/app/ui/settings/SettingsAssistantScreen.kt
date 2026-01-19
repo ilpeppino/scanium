@@ -1,10 +1,7 @@
 package com.scanium.app.ui.settings
 
-import android.Manifest
-import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,11 +10,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.SettingsVoice
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
@@ -43,17 +37,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.scanium.app.R
 import com.scanium.app.data.MarketplaceRepository
-import com.scanium.app.model.AiLanguageChoice
-import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
-import com.scanium.app.model.Country
-import com.scanium.app.model.FollowOrCustom
-import com.scanium.app.model.TtsLanguageChoice
 import com.scanium.app.model.config.AssistantPrerequisiteState
 import kotlinx.coroutines.launch
 
@@ -98,8 +86,8 @@ fun SettingsAssistantScreen(
 
     // Helper to get language display name
     @Composable
-    fun getLanguageDisplayName(languageTag: String): String {
-        return when (languageTag.uppercase()) {
+    fun getLanguageDisplayName(languageTag: String): String =
+        when (languageTag.uppercase()) {
             "EN" -> stringResource(R.string.settings_language_en)
             "NL" -> stringResource(R.string.settings_language_nl)
             "DE" -> stringResource(R.string.settings_language_de)
@@ -109,34 +97,34 @@ fun SettingsAssistantScreen(
             "PT_BR", "PT-BR" -> stringResource(R.string.settings_language_pt_br)
             else -> languageTag
         }
-    }
 
     // AI Language options with "Follow primary" and "Auto-detect"
-    val aiLanguageOptions = buildList {
-        // "Follow primary" option
-        add(
-            SettingOption(
-                value = "follow",
-                label = stringResource(R.string.settings_assistant_language_follow_primary, getLanguageDisplayName(primaryLanguage)),
-                isRecommended = true,
+    val aiLanguageOptions =
+        buildList {
+            // "Follow primary" option
+            add(
+                SettingOption(
+                    value = "follow",
+                    label = stringResource(R.string.settings_assistant_language_follow_primary, getLanguageDisplayName(primaryLanguage)),
+                    isRecommended = true,
+                ),
             )
-        )
-        // "Auto-detect" option
-        add(
-            SettingOption(
-                value = "auto_detect",
-                label = stringResource(R.string.settings_assistant_language_auto_detect),
+            // "Auto-detect" option
+            add(
+                SettingOption(
+                    value = "auto_detect",
+                    label = stringResource(R.string.settings_assistant_language_auto_detect),
+                ),
             )
-        )
-        // Individual language options
-        add(SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)))
-        add(SettingOption(value = "NL", label = stringResource(R.string.settings_language_nl)))
-        add(SettingOption(value = "DE", label = stringResource(R.string.settings_language_de)))
-        add(SettingOption(value = "FR", label = stringResource(R.string.settings_language_fr)))
-        add(SettingOption(value = "ES", label = stringResource(R.string.settings_language_es)))
-        add(SettingOption(value = "IT", label = stringResource(R.string.settings_language_it)))
-        add(SettingOption(value = "PT_BR", label = stringResource(R.string.settings_language_pt_br)))
-    }
+            // Individual language options
+            add(SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)))
+            add(SettingOption(value = "NL", label = stringResource(R.string.settings_language_nl)))
+            add(SettingOption(value = "DE", label = stringResource(R.string.settings_language_de)))
+            add(SettingOption(value = "FR", label = stringResource(R.string.settings_language_fr)))
+            add(SettingOption(value = "ES", label = stringResource(R.string.settings_language_es)))
+            add(SettingOption(value = "IT", label = stringResource(R.string.settings_language_it)))
+            add(SettingOption(value = "PT_BR", label = stringResource(R.string.settings_language_pt_br)))
+        }
 
     // Legacy language options (for backward compatibility if needed)
     val languageOptions =
@@ -167,30 +155,35 @@ fun SettingsAssistantScreen(
         }
 
     // Marketplace country options with "Follow primary"
-    val primaryCountry = remember(primaryRegionCountry, countries) {
-        countries.find { it.code == primaryRegionCountry }
-    }
-    val primaryCountryLabel = primaryCountry?.let {
-        "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage.lowercase())}"
-    } ?: primaryRegionCountry
+    val primaryCountry =
+        remember(primaryRegionCountry, countries) {
+            countries.find { it.code == primaryRegionCountry }
+        }
+    val primaryCountryLabel =
+        primaryCountry?.let {
+            "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage.lowercase())}"
+        } ?: primaryRegionCountry
 
-    val marketplaceCountryOptions = buildList {
-        // "Follow primary" option
-        add(
-            SettingOption(
-                value = "follow",
-                label = stringResource(R.string.settings_assistant_country_follow_primary, primaryCountryLabel),
-                isRecommended = true,
+    val marketplaceCountryOptions =
+        buildList {
+            // "Follow primary" option
+            add(
+                SettingOption(
+                    value = "follow",
+                    label = stringResource(R.string.settings_assistant_country_follow_primary, primaryCountryLabel),
+                    isRecommended = true,
+                ),
             )
-        )
-        // Individual country options
-        addAll(countries.map { country ->
-            SettingOption(
-                value = country.code,
-                label = "${country.getFlagEmoji()} ${country.getDisplayName(primaryLanguage.lowercase())}",
+            // Individual country options
+            addAll(
+                countries.map { country ->
+                    SettingOption(
+                        value = country.code,
+                        label = "${country.getFlagEmoji()} ${country.getDisplayName(primaryLanguage.lowercase())}",
+                    )
+                },
             )
-        })
-    }
+        }
 
     // Legacy country options (for backward compatibility if needed)
     val countryOptions =
@@ -232,31 +225,32 @@ fun SettingsAssistantScreen(
         }
 
     // TTS (Voice output) language options with unified settings
-    val ttsLanguageOptions = buildList {
-        // "Follow AI language" option (default)
-        add(
-            SettingOption(
-                value = "follow_ai",
-                label = stringResource(R.string.settings_tts_language_follow_ai, getLanguageDisplayName(effectiveAiOutputLanguage)),
-                isRecommended = true,
+    val ttsLanguageOptions =
+        buildList {
+            // "Follow AI language" option (default)
+            add(
+                SettingOption(
+                    value = "follow_ai",
+                    label = stringResource(R.string.settings_tts_language_follow_ai, getLanguageDisplayName(effectiveAiOutputLanguage)),
+                    isRecommended = true,
+                ),
             )
-        )
-        // "Follow primary" option
-        add(
-            SettingOption(
-                value = "follow_primary",
-                label = stringResource(R.string.settings_tts_language_follow_primary, getLanguageDisplayName(primaryLanguage)),
+            // "Follow primary" option
+            add(
+                SettingOption(
+                    value = "follow_primary",
+                    label = stringResource(R.string.settings_tts_language_follow_primary, getLanguageDisplayName(primaryLanguage)),
+                ),
             )
-        )
-        // Individual language options
-        add(SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)))
-        add(SettingOption(value = "NL", label = stringResource(R.string.settings_language_nl)))
-        add(SettingOption(value = "DE", label = stringResource(R.string.settings_language_de)))
-        add(SettingOption(value = "FR", label = stringResource(R.string.settings_language_fr)))
-        add(SettingOption(value = "ES", label = stringResource(R.string.settings_language_es)))
-        add(SettingOption(value = "IT", label = stringResource(R.string.settings_language_it)))
-        add(SettingOption(value = "PT_BR", label = stringResource(R.string.settings_language_pt_br)))
-    }
+            // Individual language options
+            add(SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)))
+            add(SettingOption(value = "NL", label = stringResource(R.string.settings_language_nl)))
+            add(SettingOption(value = "DE", label = stringResource(R.string.settings_language_de)))
+            add(SettingOption(value = "FR", label = stringResource(R.string.settings_language_fr)))
+            add(SettingOption(value = "ES", label = stringResource(R.string.settings_language_es)))
+            add(SettingOption(value = "IT", label = stringResource(R.string.settings_language_it)))
+            add(SettingOption(value = "PT_BR", label = stringResource(R.string.settings_language_pt_br)))
+        }
 
     // Legacy voice language options (for backward compatibility)
     val currentLanguageLabel = languageOptions.find { it.value == assistantLanguage }?.label ?: ""
@@ -416,11 +410,17 @@ private fun AssistantPrerequisiteDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_assistant_prereq_title)) },
         text = {
-            Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement =
+                    androidx.compose.foundation.layout.Arrangement
+                        .spacedBy(8.dp),
+            ) {
                 prerequisiteState.prerequisites.forEach { prerequisite ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+                        horizontalArrangement =
+                            androidx.compose.foundation.layout.Arrangement
+                                .spacedBy(12.dp),
                     ) {
                         Icon(
                             imageVector = if (prerequisite.satisfied) Icons.Filled.CheckCircle else Icons.Filled.Warning,
@@ -451,12 +451,15 @@ private fun AssistantPrerequisiteDialog(
                     is ConnectionTestState.Testing -> {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                            horizontalArrangement =
+                                androidx.compose.foundation.layout.Arrangement
+                                    .spacedBy(8.dp),
                         ) {
                             CircularProgressIndicator(modifier = Modifier.padding(4.dp))
                             Text(text = stringResource(R.string.settings_assistant_connection_testing))
                         }
                     }
+
                     is ConnectionTestState.Success -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -471,6 +474,7 @@ private fun AssistantPrerequisiteDialog(
                             )
                         }
                     }
+
                     is ConnectionTestState.Failed -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -485,7 +489,8 @@ private fun AssistantPrerequisiteDialog(
                             )
                         }
                     }
-                    else -> { }
+
+                    else -> {}
                 }
             }
         },

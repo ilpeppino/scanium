@@ -159,14 +159,14 @@ class CloudClassifierApi(
         correlationId: String,
     ): ApiResult {
         val requestBody =
-            MultipartBody.Builder()
+            MultipartBody
+                .Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart(
                     name = "image",
                     filename = "item.jpg",
                     body = imageBytes.toRequestBody("image/jpeg".toMediaType()),
-                )
-                .addFormDataPart("domainPackId", domainPackId)
+                ).addFormDataPart("domainPackId", domainPackId)
                 .build()
 
         // Log API key status
@@ -178,7 +178,8 @@ class CloudClassifierApi(
         }
 
         val request =
-            Request.Builder()
+            Request
+                .Builder()
                 .url(endpoint)
                 .post(requestBody)
                 .apply {
@@ -198,8 +199,7 @@ class CloudClassifierApi(
                     header("X-Scanium-Correlation-Id", correlationId)
                     header("X-Client", "Scanium-Android")
                     header("X-App-Version", BuildConfig.VERSION_NAME)
-                }
-                .build()
+                }.build()
 
         client.newCall(request).execute().use { response ->
             val responseCode = response.code
@@ -216,14 +216,17 @@ class CloudClassifierApi(
                         ApiResult.Error(ApiError.ParseError("Failed to parse response: ${e.message}", e))
                     }
                 }
+
                 responseCode == 503 || responseCode == 504 -> {
                     val message = "Classification failed (HTTP $responseCode)${responseBody?.let { ": $it" } ?: ""}"
                     ApiResult.Error(ApiError.ServerError(message, responseCode, isOffline = true))
                 }
+
                 isRetryableError(responseCode) -> {
                     val message = "Classification failed (HTTP $responseCode)${responseBody?.let { ": $it" } ?: ""}"
                     ApiResult.Error(ApiError.ServerError(message, responseCode))
                 }
+
                 else -> {
                     val message = "Classification failed (HTTP $responseCode)${responseBody?.let { ": $it" } ?: ""}"
                     ApiResult.Error(ApiError.ClientError(message, responseCode))
@@ -246,9 +249,7 @@ class CloudClassifierApi(
      * - 403 Forbidden
      * - 404 Not Found
      */
-    private fun isRetryableError(statusCode: Int): Boolean {
-        return statusCode == 408 || statusCode == 429 || statusCode >= 500
-    }
+    private fun isRetryableError(statusCode: Int): Boolean = statusCode == 408 || statusCode == 429 || statusCode >= 500
 
     /**
      * Calculate exponential backoff delay.
@@ -275,9 +276,17 @@ class CloudClassifierApi(
  * API result wrapper.
  */
 sealed class ApiResult {
-    data class Success(val response: CloudClassificationResponse) : ApiResult()
-    data class Error(val error: ApiError) : ApiResult()
-    data class ConfigError(val message: String) : ApiResult()
+    data class Success(
+        val response: CloudClassificationResponse,
+    ) : ApiResult()
+
+    data class Error(
+        val error: ApiError,
+    ) : ApiResult()
+
+    data class ConfigError(
+        val message: String,
+    ) : ApiResult()
 }
 
 /**

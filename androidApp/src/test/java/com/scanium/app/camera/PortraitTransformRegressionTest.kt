@@ -1,6 +1,5 @@
 package com.scanium.app.camera
 
-import android.graphics.RectF
 import com.google.common.truth.Truth.assertThat
 import com.scanium.core.models.geometry.NormalizedRect
 import org.junit.Test
@@ -18,7 +17,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class PortraitTransformRegressionTest {
-
     @Test
     fun `portrait 90deg - centered box maps to preview center`() {
         // ARRANGE: Simulate portrait mode on a phone
@@ -34,32 +32,44 @@ class PortraitTransformRegressionTest {
 
         // ML Kit returns a bbox centered in the upright (portrait) space
         // Normalized coordinates in 1080x1920 space
-        val centeredBox = NormalizedRect(
-            left = 0.4f,   // 40% from left = 432px
-            top = 0.4f,    // 40% from top = 768px
-            right = 0.6f,  // 60% from left = 648px
-            bottom = 0.6f  // 60% from top = 1152px
-        )
+        val centeredBox =
+            NormalizedRect(
+                // 40% from left = 432px
+                left = 0.4f,
+                // 40% from top = 768px
+                top = 0.4f,
+                // 60% from left = 648px
+                right = 0.6f,
+                // 60% from top = 1152px
+                bottom = 0.6f,
+            )
 
         // ACT: Transform bbox to preview coordinates
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         val previewBox = mapBboxToPreview(centeredBox, transform)
 
         // DEBUG: Print transform and result
         println("=== Portrait 90deg Centered Box Test ===")
-        println("Transform: scale=${transform.scale}, offset=(${transform.offsetX}, ${transform.offsetY})")
+        println(
+            "Transform: scale=${transform.scale}, offset=(${transform.offsetX}, ${transform.offsetY})",
+        )
         println("Effective dims: ${transform.effectiveImageWidth}x${transform.effectiveImageHeight}")
         println("Input bbox (normalized): $centeredBox")
-        println("Output bbox (preview px): left=${previewBox.left}, top=${previewBox.top}, right=${previewBox.right}, bottom=${previewBox.bottom}")
-        println("Preview dims: ${previewWidth}x${previewHeight}")
+        println(
+            "Output bbox (preview px): " +
+                "left=${previewBox.left}, top=${previewBox.top}, " +
+                "right=${previewBox.right}, bottom=${previewBox.bottom}",
+        )
+        println("Preview dims: ${previewWidth}x$previewHeight")
 
         // ASSERT: Box should be centered in preview
         // Expected center in preview: (540, 960)
@@ -84,7 +94,7 @@ class PortraitTransformRegressionTest {
         val boxWidth = previewBox.right - previewBox.left
         val boxHeight = previewBox.bottom - previewBox.top
         val aspectRatio = boxHeight / boxWidth
-        val expectedAspectRatio = 1920f / 1080f  // 16:9 = 1.778
+        val expectedAspectRatio = 1920f / 1080f // 16:9 = 1.778
         assertThat(aspectRatio).isWithin(0.1f).of(expectedAspectRatio)
     }
 
@@ -98,22 +108,24 @@ class PortraitTransformRegressionTest {
         val previewHeight = 1920f
 
         // Box in top-left corner of upright space
-        val topLeftBox = NormalizedRect(
-            left = 0.1f,
-            top = 0.1f,
-            right = 0.3f,
-            bottom = 0.3f
-        )
+        val topLeftBox =
+            NormalizedRect(
+                left = 0.1f,
+                top = 0.1f,
+                right = 0.3f,
+                bottom = 0.3f,
+            )
 
         // ACT
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         val previewBox = mapBboxToPreview(topLeftBox, transform)
 
@@ -128,23 +140,24 @@ class PortraitTransformRegressionTest {
     @Test
     fun `portrait 90deg - effective dimensions are swapped`() {
         // ARRANGE
-        val sensorWidth = 1920  // Landscape sensor
+        val sensorWidth = 1920 // Landscape sensor
         val sensorHeight = 1080
         val rotationDegrees = 90
 
         // ACT
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = 1080f,
-            previewHeight = 1920f,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // ASSERT: Effective dimensions should be portrait (height > width)
-        assertThat(transform.effectiveImageWidth).isEqualTo(sensorHeight)  // 1080
-        assertThat(transform.effectiveImageHeight).isEqualTo(sensorWidth)  // 1920
+        assertThat(transform.effectiveImageWidth).isEqualTo(sensorHeight) // 1080
+        assertThat(transform.effectiveImageHeight).isEqualTo(sensorWidth) // 1920
         assertThat(transform.effectiveImageHeight).isGreaterThan(transform.effectiveImageWidth)
     }
 
@@ -160,21 +173,22 @@ class PortraitTransformRegressionTest {
         val previewHeight = 2000f
 
         // ACT
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // ASSERT: Scale should be calculated based on effective dimensions
         // Effective: 1080x1920, Preview: 1000x2000
         // FILL_CENTER uses the larger scale to fill the preview
-        val scaleByWidth = previewWidth / 1080f   // ~0.926
+        val scaleByWidth = previewWidth / 1080f // ~0.926
         val scaleByHeight = previewHeight / 1920f // ~1.042
-        val expectedScale = maxOf(scaleByWidth, scaleByHeight)  // 1.042
+        val expectedScale = maxOf(scaleByWidth, scaleByHeight) // 1.042
 
         assertThat(transform.scale).isWithin(0.01f).of(expectedScale)
     }
@@ -188,22 +202,24 @@ class PortraitTransformRegressionTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val centeredBox = NormalizedRect(
-            left = 0.4f,
-            top = 0.4f,
-            right = 0.6f,
-            bottom = 0.6f
-        )
+        val centeredBox =
+            NormalizedRect(
+                left = 0.4f,
+                top = 0.4f,
+                right = 0.6f,
+                bottom = 0.6f,
+            )
 
         // ACT
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         val previewBox = mapBboxToPreview(centeredBox, transform)
 
@@ -226,22 +242,24 @@ class PortraitTransformRegressionTest {
         val previewWidth = 1920f
         val previewHeight = 1080f
 
-        val centeredBox = NormalizedRect(
-            left = 0.4f,
-            top = 0.4f,
-            right = 0.6f,
-            bottom = 0.6f
-        )
+        val centeredBox =
+            NormalizedRect(
+                left = 0.4f,
+                top = 0.4f,
+                right = 0.6f,
+                bottom = 0.6f,
+            )
 
         // ACT
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         val previewBox = mapBboxToPreview(centeredBox, transform)
 
@@ -265,22 +283,24 @@ class PortraitTransformRegressionTest {
         val previewHeight = 2400f
 
         // ACT
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Box clearly in top-left quadrant of upright portrait space
-        val topLeftBox = NormalizedRect(
-            left = 0.15f,
-            top = 0.1f,
-            right = 0.35f,
-            bottom = 0.25f
-        )
+        val topLeftBox =
+            NormalizedRect(
+                left = 0.15f,
+                top = 0.1f,
+                right = 0.35f,
+                bottom = 0.25f,
+            )
 
         val previewBox = mapBboxToPreview(topLeftBox, transform)
 
@@ -290,10 +310,12 @@ class PortraitTransformRegressionTest {
 
         println("=== REGRESSION GUARD: Top-left bbox offset test ===")
         println("Input bbox (norm): left=${topLeftBox.left}, top=${topLeftBox.top}")
-        println("Transform: scale=${transform.scale}, offset=(${transform.offsetX}, ${transform.offsetY})")
+        println(
+            "Transform: scale=${transform.scale}, offset=(${transform.offsetX}, ${transform.offsetY})",
+        )
         println("Preview box: left=${previewBox.left}, top=${previewBox.top}, right=${previewBox.right}, bottom=${previewBox.bottom}")
         println("Preview center: ($quadrantMidX, $quadrantMidY)")
-        println("Box center: (${(previewBox.left + previewBox.right)/2}, ${(previewBox.top + previewBox.bottom)/2})")
+        println("Box center: (${(previewBox.left + previewBox.right) / 2}, ${(previewBox.top + previewBox.bottom) / 2})")
 
         // CRITICAL ASSERTIONS:
         // 1. Box should NOT be in bottom half (center Y should be less than midY)
@@ -317,14 +339,15 @@ class PortraitTransformRegressionTest {
         val previewWidth = 1440f
         val previewHeight = 3120f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Effective dimensions after rotation: 1080x1920
         assertThat(transform.effectiveImageWidth).isEqualTo(1080)

@@ -31,42 +31,33 @@ object ClassificationModule {
     @Provides
     @Singleton
     @Named("onDevice")
-    fun provideOnDeviceClassifier(): ItemClassifier {
-        return OnDeviceClassifier()
-    }
+    fun provideOnDeviceClassifier(): ItemClassifier = OnDeviceClassifier()
 
     @Provides
     @Singleton
     @Named("cloud")
     fun provideCloudClassifier(
         @ApplicationContext context: Context,
-    ): ItemClassifier {
-        return CloudClassifier(context = context)
-    }
+    ): ItemClassifier = CloudClassifier(context = context)
 
     @Provides
     @Singleton
     fun provideStableItemCropper(
         @ApplicationContext context: Context,
-    ): StableItemCropper {
-        return StableItemCropper(context)
-    }
+    ): StableItemCropper = StableItemCropper(context)
 
     @Provides
     @Singleton
-    fun provideClassificationThumbnailProvider(stableItemCropper: StableItemCropper): ClassificationThumbnailProvider {
-        return stableItemCropper
-    }
+    fun provideClassificationThumbnailProvider(stableItemCropper: StableItemCropper): ClassificationThumbnailProvider = stableItemCropper
 
     @Provides
     @Singleton
     fun provideClassificationModeFlow(
         classificationPreferences: ClassificationPreferences,
         @ApplicationScope scope: CoroutineScope,
-    ): StateFlow<ClassificationMode> {
-        return classificationPreferences.mode
+    ): StateFlow<ClassificationMode> =
+        classificationPreferences.mode
             .stateIn(scope, SharingStarted.Eagerly, ClassificationMode.CLOUD)
-    }
 
     @Provides
     @Singleton
@@ -74,8 +65,7 @@ object ClassificationModule {
     fun provideCloudClassificationEnabledFlow(
         featureFlagRepository: FeatureFlagRepository,
         @ApplicationScope scope: CoroutineScope,
-    ): StateFlow<Boolean> {
-        return featureFlagRepository.isCloudClassificationEnabled
+    ): StateFlow<Boolean> =
+        featureFlagRepository.isCloudClassificationEnabled
             .stateIn(scope, SharingStarted.Eagerly, true)
-    }
 }

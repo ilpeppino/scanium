@@ -4,7 +4,9 @@ This document describes the progress UI states shown during the assistant reques
 
 ***REMOVED******REMOVED*** Overview
 
-The assistant request lifecycle now provides detailed progress feedback to users through a state machine. This replaces the generic spinner with context-aware progress labels that help users understand what's happening.
+The assistant request lifecycle now provides detailed progress feedback to users through a state
+machine. This replaces the generic spinner with context-aware progress labels that help users
+understand what's happening.
 
 ***REMOVED******REMOVED*** State Machine
 
@@ -18,33 +20,36 @@ IDLE ─┬─> SENDING ─> THINKING ─┬─> DRAFTING ─> FINALIZING ─> D
 
 ***REMOVED******REMOVED*** Progress States
 
-| State | Display Label | When Shown | Duration |
-|-------|--------------|------------|----------|
-| `Idle` | *(empty)* | No request in progress | - |
-| `Sending` | "Sending..." | Request is being prepared and sent | ~100-500ms |
-| `Thinking` | "Thinking..." | Request sent, waiting for backend | ~500ms-2s |
-| `ExtractingVision` | "Analyzing images..." / "Analyzing N images..." | Backend processing images | ~1-3s per image |
-| `Drafting` | "Drafting answer..." | Backend generating response | ~2-5s |
-| `Finalizing` | "Finalizing..." | Post-processing (mapping suggestedDraftUpdates) | ~100-500ms |
-| `Done` | *(empty)* | Request completed successfully | - |
-| `ErrorTemporary` | "Temporarily unavailable" | Timeout, 5xx errors | Retryable |
-| `ErrorAuth` | "Authentication required" | 401 errors | Not retryable |
-| `ErrorValidation` | "Invalid request" | 400 errors | Not retryable |
+| State              | Display Label                                   | When Shown                                      | Duration        |
+|--------------------|-------------------------------------------------|-------------------------------------------------|-----------------|
+| `Idle`             | *(empty)*                                       | No request in progress                          | -               |
+| `Sending`          | "Sending..."                                    | Request is being prepared and sent              | ~100-500ms      |
+| `Thinking`         | "Thinking..."                                   | Request sent, waiting for backend               | ~500ms-2s       |
+| `ExtractingVision` | "Analyzing images..." / "Analyzing N images..." | Backend processing images                       | ~1-3s per image |
+| `Drafting`         | "Drafting answer..."                            | Backend generating response                     | ~2-5s           |
+| `Finalizing`       | "Finalizing..."                                 | Post-processing (mapping suggestedDraftUpdates) | ~100-500ms      |
+| `Done`             | *(empty)*                                       | Request completed successfully                  | -               |
+| `ErrorTemporary`   | "Temporarily unavailable"                       | Timeout, 5xx errors                             | Retryable       |
+| `ErrorAuth`        | "Authentication required"                       | 401 errors                                      | Not retryable   |
+| `ErrorValidation`  | "Invalid request"                               | 400 errors                                      | Not retryable   |
 
 ***REMOVED******REMOVED*** UI Behavior
 
 ***REMOVED******REMOVED******REMOVED*** Progress Indicator
+
 - Single-line progress label with small spinner
 - Thin linear progress bar below
 - Uses `Crossfade` animation (200ms) for smooth transitions
 - Fixed height to prevent layout jumps
 
 ***REMOVED******REMOVED******REMOVED*** Last Successful Response
+
 - The last successful assistant response is preserved during new requests
 - Never replaced with "temporarily unavailable" unless the *current* request fails
 - Stored in `AssistantUiState.lastSuccessfulEntry`
 
 ***REMOVED******REMOVED******REMOVED*** Error Handling
+
 - `ErrorTemporary`: Shows retry banner with "Retry" button
 - `ErrorAuth`: Shows error banner (no retry)
 - `ErrorValidation`: Shows error banner (no retry)
@@ -69,6 +74,7 @@ AssistantRequestTiming(
 Logged via `ScaniumLog.i(TAG, "Assist timing: ${timing.toLogString()}")` on completion.
 
 Example log output:
+
 ```
 Assist timing: correlationId=assist-abc123 sending=150ms thinking=800ms vision=1200ms drafting=2500ms total=4650ms
 ```
@@ -76,16 +82,19 @@ Assist timing: correlationId=assist-abc123 sending=150ms thinking=800ms vision=1
 ***REMOVED******REMOVED*** State Transitions
 
 ***REMOVED******REMOVED******REMOVED*** Success Flow (No Images)
+
 ```
 Idle -> Sending -> Thinking -> Drafting -> [Finalizing] -> Done
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Success Flow (With Images)
+
 ```
 Idle -> Sending -> Thinking -> ExtractingVision -> Drafting -> [Finalizing] -> Done
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Error Flow
+
 ```
 Idle -> Sending -> Thinking -> ErrorTemporary (on timeout/5xx)
                             -> ErrorAuth (on 401)
@@ -93,6 +102,7 @@ Idle -> Sending -> Thinking -> ErrorTemporary (on timeout/5xx)
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Retry Flow
+
 ```
 ErrorTemporary -> Idle -> Sending -> ...
 ```
@@ -100,10 +110,14 @@ ErrorTemporary -> Idle -> Sending -> ...
 ***REMOVED******REMOVED*** Implementation Details
 
 ***REMOVED******REMOVED******REMOVED*** Files Changed
-- `AssistantViewModel.kt`: Added `AssistantRequestProgress` sealed class, `AssistantRequestTiming` data class
-- `AssistantScreen.kt`: Added `ProgressIndicatorSection`, `ProgressStageRow`, `ProgressErrorBanner` composables
+
+- `AssistantViewModel.kt`: Added `AssistantRequestProgress` sealed class, `AssistantRequestTiming`
+  data class
+- `AssistantScreen.kt`: Added `ProgressIndicatorSection`, `ProgressStageRow`, `ProgressErrorBanner`
+  composables
 
 ***REMOVED******REMOVED******REMOVED*** Backwards Compatibility
+
 - Legacy `LoadingStage` enum is deprecated but preserved
 - `AssistantUiState.loadingStage` still updated for backwards compatibility
 - `AssistantRequestProgress.toLegacyStage()` provides mapping

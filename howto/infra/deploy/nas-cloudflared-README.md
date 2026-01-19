@@ -2,19 +2,24 @@
 
 ***REMOVED******REMOVED*** The Network Problem
 
-Cloudflared needs to be on the **same Docker network** as the backend to resolve the `scanium-backend` hostname.
+Cloudflared needs to be on the **same Docker network** as the backend to resolve the
+`scanium-backend` hostname.
 
 ***REMOVED******REMOVED******REMOVED*** Why This Keeps Breaking
 
 There are two docker-compose.yml files:
-1. `/volume1/docker/cloudflared/docker-compose.yml` - Active deployment location
-2. `/volume1/docker/scanium/repo/deploy/nas/cloudflared/docker-compose.yml` - Source of truth (in git)
 
-When cloudflared is redeployed (manually or via restart), it may use an outdated compose file that's missing networks.
+1. `/volume1/docker/cloudflared/docker-compose.yml` - Active deployment location
+2. `/volume1/docker/scanium/repo/deploy/nas/cloudflared/docker-compose.yml` - Source of truth (in
+   git)
+
+When cloudflared is redeployed (manually or via restart), it may use an outdated compose file that's
+missing networks.
 
 ***REMOVED******REMOVED******REMOVED*** Required Networks
 
 Cloudflared MUST be connected to these networks:
+
 - `scanium_net` - **CRITICAL** - Where scanium-backend lives
 - `backend_scanium-network` - Legacy network
 - `compose_scanium_net` - Legacy network
@@ -25,12 +30,14 @@ Cloudflared MUST be connected to these networks:
 ***REMOVED******REMOVED******REMOVED*** Option 1: Use the Deployment Script (Recommended)
 
 From your Mac:
+
 ```bash
 ***REMOVED*** From repo root
 ./deploy-cloudflared.sh
 ```
 
 Or directly on NAS:
+
 ```bash
 cd /volume1/docker/cloudflared
 docker-compose down
@@ -41,6 +48,7 @@ docker-compose up -d
 ***REMOVED******REMOVED******REMOVED*** Option 2: Manual Network Connection
 
 If cloudflared is running but not working:
+
 ```bash
 docker network connect scanium_net scanium-cloudflared
 ```
@@ -48,6 +56,7 @@ docker network connect scanium_net scanium-cloudflared
 ***REMOVED******REMOVED*** Deployment Script Features
 
 The `redeploy.sh` script:
+
 - ✅ Verifies all required networks exist
 - ✅ Syncs docker-compose.yml from repo
 - ✅ Backs up current configuration
@@ -76,6 +85,7 @@ curl https://scanium.gtemp1.com/health
 ***REMOVED******REMOVED*** Troubleshooting
 
 ***REMOVED******REMOVED******REMOVED*** Tunnel returns 502 errors
+
 ```bash
 ***REMOVED*** Check cloudflared logs for DNS errors
 docker logs scanium-cloudflared --tail 50 | grep -E 'ERR|no such host'
@@ -85,7 +95,9 @@ docker network connect scanium_net scanium-cloudflared
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Container keeps losing network connection
-This means the container is being recreated from an old docker-compose.yml. Run the deployment script to ensure the correct configuration is used.
+
+This means the container is being recreated from an old docker-compose.yml. Run the deployment
+script to ensure the correct configuration is used.
 
 ***REMOVED******REMOVED*** Preventing Future Issues
 

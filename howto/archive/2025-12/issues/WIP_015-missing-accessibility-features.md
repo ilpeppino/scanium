@@ -6,7 +6,8 @@
 
 ***REMOVED******REMOVED*** Problem
 
-The app is missing critical accessibility features for users with visual impairments. Compose components need content descriptions for TalkBack screen reader support.
+The app is missing critical accessibility features for users with visual impairments. Compose
+components need content descriptions for TalkBack screen reader support.
 
 ***REMOVED******REMOVED*** Missing Features
 
@@ -85,6 +86,7 @@ Should trigger announcement when count updates.
 **Severity**: Medium - App is unusable for blind/low-vision users
 
 **Affected Users**:
+
 - ~15% of users have some visual impairment (WHO stats)
 - TalkBack users can't navigate the app
 - Violates accessibility guidelines (WCAG 2.1)
@@ -98,7 +100,8 @@ Should trigger announcement when count updates.
 1. User lands on camera screen
 2. TalkBack announces: "Camera preview. Tap to capture photo. Long press to start scanning."
 3. User swipes to shutter button
-4. TalkBack announces: "Capture button. Double tap to take photo. Double tap and hold to scan continuously."
+4. TalkBack announces: "Capture button. Double tap to take photo. Double tap and hold to scan
+   continuously."
 5. User takes photo
 6. TalkBack announces: "1 item detected. Scanned fashion item with medium confidence."
 7. User swipes to items button

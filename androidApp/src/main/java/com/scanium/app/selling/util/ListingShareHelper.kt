@@ -59,11 +59,13 @@ object ListingShareHelper {
             0 -> {
                 intent.type = "text/plain"
             }
+
             1 -> {
                 intent.type = "image/*"
                 intent.putExtra(Intent.EXTRA_STREAM, imageUris.first())
                 intent.clipData = ClipData.newUri(contentResolver, "Listing image", imageUris.first())
             }
+
             else -> {
                 intent.type = "image/*"
                 intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(imageUris))
@@ -78,11 +80,10 @@ object ListingShareHelper {
         return intent
     }
 
-    private fun mimeToExtension(mimeType: String): String {
-        return when (mimeType.lowercase(Locale.ROOT)) {
+    private fun mimeToExtension(mimeType: String): String =
+        when (mimeType.lowercase(Locale.ROOT)) {
             "image/png" -> "png"
             "image/webp" -> "webp"
             else -> "jpg"
         }
-    }
 }

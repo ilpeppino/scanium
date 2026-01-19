@@ -41,7 +41,6 @@ data class MissingInfoPrompt(
  * Part of OFFLINE-ASSIST: Provides useful guidance when online assistant is unavailable.
  */
 class LocalSuggestionEngine {
-
     /**
      * Generate structured suggestions from item context.
      * Output is fully deterministic: same input always yields same output.
@@ -68,7 +67,6 @@ class LocalSuggestionEngine {
         val primary = snapshots.firstOrNull() ?: return null
         return generateSuggestions(primary)
     }
-
 }
 
 /**
@@ -79,26 +77,80 @@ internal object CategoryClassifier {
         val normalized = rawCategory?.lowercase()?.trim() ?: return ItemCategory.GENERAL
 
         return when {
-            normalized.containsAny("electronic", "phone", "computer", "laptop", "tablet", "camera", "audio", "gaming", "console", "tv", "television") ->
+            normalized.containsAny(
+                "electronic",
+                "phone",
+                "computer",
+                "laptop",
+                "tablet",
+                "camera",
+                "audio",
+                "gaming",
+                "console",
+                "tv",
+                "television",
+            ) -> {
                 ItemCategory.ELECTRONICS
-            normalized.containsAny("fashion", "clothing", "clothes", "shoes", "apparel", "dress", "shirt", "pants", "jacket", "accessories", "bags", "jewelry", "watch") ->
+            }
+
+            normalized.containsAny(
+                "fashion",
+                "clothing",
+                "clothes",
+                "shoes",
+                "apparel",
+                "dress",
+                "shirt",
+                "pants",
+                "jacket",
+                "accessories",
+                "bags",
+                "jewelry",
+                "watch",
+            ) -> {
                 ItemCategory.FASHION
-            normalized.containsAny("furniture", "home", "decor", "lighting", "chair", "table", "sofa", "bed", "desk", "storage", "shelf", "cabinet") ->
+            }
+
+            normalized.containsAny(
+                "furniture",
+                "home",
+                "decor",
+                "lighting",
+                "chair",
+                "table",
+                "sofa",
+                "bed",
+                "desk",
+                "storage",
+                "shelf",
+                "cabinet",
+            ) -> {
                 ItemCategory.HOME_FURNITURE
-            normalized.containsAny("kitchen", "cookware", "appliance", "dining", "bakeware") ->
+            }
+
+            normalized.containsAny("kitchen", "cookware", "appliance", "dining", "bakeware") -> {
                 ItemCategory.KITCHEN
-            normalized.containsAny("toy", "game", "puzzle", "lego", "doll", "action figure", "board game") ->
+            }
+
+            normalized.containsAny("toy", "game", "puzzle", "lego", "doll", "action figure", "board game") -> {
                 ItemCategory.TOYS_GAMES
-            normalized.containsAny("sport", "fitness", "outdoor", "bike", "bicycle", "camping", "hiking", "exercise", "gym") ->
+            }
+
+            normalized.containsAny("sport", "fitness", "outdoor", "bike", "bicycle", "camping", "hiking", "exercise", "gym") -> {
                 ItemCategory.SPORTS_OUTDOOR
-            normalized.containsAny("book", "media", "dvd", "cd", "vinyl", "record", "magazine", "comic") ->
+            }
+
+            normalized.containsAny("book", "media", "dvd", "cd", "vinyl", "record", "magazine", "comic") -> {
                 ItemCategory.BOOKS_MEDIA
-            else -> ItemCategory.GENERAL
+            }
+
+            else -> {
+                ItemCategory.GENERAL
+            }
         }
     }
 
-    private fun String.containsAny(vararg keywords: String): Boolean =
-        keywords.any { this.contains(it) }
+    private fun String.containsAny(vararg keywords: String): Boolean = keywords.any { this.contains(it) }
 }
 
 /**

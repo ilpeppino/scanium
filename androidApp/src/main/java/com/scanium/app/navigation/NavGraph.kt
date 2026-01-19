@@ -1,14 +1,14 @@
 package com.scanium.app.navigation
 
 import android.net.Uri
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -18,19 +18,17 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.scanium.app.BuildConfig
 import com.scanium.app.ScaniumApplication
-import com.scanium.app.config.FeatureFlags
 import com.scanium.app.billing.ui.PaywallScreen
 import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.camera.CameraScreen
 import com.scanium.app.camera.CameraViewModel
-import com.scanium.app.items.EditItemsScreen
+import com.scanium.app.config.FeatureFlags
+import com.scanium.app.items.ItemsListScreen
+import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.edit.EditItemScreenV3
 import com.scanium.app.items.edit.ExportAssistantViewModel
 import com.scanium.app.items.edit.rememberAddPhotoHandler
-import com.scanium.app.items.ItemsListScreen
-import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.selling.assistant.AssistantScreen
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.generation.GeneratedListingScreen
@@ -81,7 +79,6 @@ object Routes {
     const val PAYWALL = "paywall"
 }
 
-
 /**
  * Navigation graph for Scanium app.
  *
@@ -116,7 +113,7 @@ fun ScaniumNavGraph(
         },
         popExitTransition = {
             slideOutHorizontally(targetOffsetX = { 1000 }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
-        }
+        },
     ) {
         composable(Routes.CAMERA) {
             CameraScreen(
@@ -148,7 +145,11 @@ fun ScaniumNavGraph(
 
         composable(Routes.SETTINGS_GENERAL) {
             val context = androidx.compose.ui.platform.LocalContext.current
-            val marketplaceRepository = remember { com.scanium.app.data.MarketplaceRepository(context) }
+            val marketplaceRepository =
+                remember {
+                    com.scanium.app.data
+                        .MarketplaceRepository(context)
+                }
             SettingsGeneralScreen(
                 viewModel = settingsViewModel,
                 marketplaceRepository = marketplaceRepository,
@@ -243,7 +244,8 @@ fun ScaniumNavGraph(
         }
 
         composable(Routes.ABOUT) {
-            com.scanium.app.ui.settings.AboutScreen(onNavigateBack = { navController.popBackStack() })
+            com.scanium.app.ui.settings
+                .AboutScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Routes.ITEMS_LIST) {
@@ -275,31 +277,35 @@ fun ScaniumNavGraph(
 
         composable(
             route = "${Routes.EDIT_ITEMS}?ids={ids}",
-            arguments = listOf(
-                navArgument("ids") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                },
-            ),
+            arguments =
+                listOf(
+                    navArgument("ids") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                ),
         ) { backStackEntry ->
-            val ids = backStackEntry.arguments?.getString("ids")
-                ?.split(",")
-                ?.filter { it.isNotBlank() }
-                ?: emptyList()
+            val ids =
+                backStackEntry.arguments
+                    ?.getString("ids")
+                    ?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?: emptyList()
             // V3: Single-item edit page with structured fields (uses first ID from selection)
             val itemId = ids.firstOrNull() ?: ""
             if (itemId.isNotEmpty()) {
                 // Add Photo handler - manages camera/gallery capture flow
-                val addPhotoHandler = rememberAddPhotoHandler(
-                    itemsViewModel = itemsViewModel,
-                    onPhotoAdded = { addedItemId ->
-                        // Photo added successfully - UI will update via ViewModel flow
-                        android.util.Log.i("NavGraph", "Photo added to item $addedItemId")
-                    },
-                    onError = { message ->
-                        android.util.Log.e("NavGraph", "Add photo error: $message")
-                    },
-                )
+                val addPhotoHandler =
+                    rememberAddPhotoHandler(
+                        itemsViewModel = itemsViewModel,
+                        onPhotoAdded = { addedItemId ->
+                            // Photo added successfully - UI will update via ViewModel flow
+                            android.util.Log.i("NavGraph", "Photo added to item $addedItemId")
+                        },
+                        onError = { message ->
+                            android.util.Log.e("NavGraph", "Add photo error: $message")
+                        },
+                    )
 
                 EditItemScreenV3(
                     itemId = itemId,
@@ -339,11 +345,16 @@ fun ScaniumNavGraph(
                 ),
         ) { backStackEntry ->
             val ids =
-                backStackEntry.arguments?.getString("itemIds")
+                backStackEntry.arguments
+                    ?.getString("itemIds")
                     ?.split(",")
                     ?.filter { it.isNotBlank() }
                     ?: emptyList()
-            val selectedItems = itemsViewModel.items.collectAsState().value.filter { ids.contains(it.id) }
+            val selectedItems =
+                itemsViewModel.items
+                    .collectAsState()
+                    .value
+                    .filter { ids.contains(it.id) }
             SellOnEbayScreen(
                 onNavigateBack = { navController.popBackStack() },
                 selectedItems = selectedItems,
@@ -363,7 +374,8 @@ fun ScaniumNavGraph(
                 ),
         ) { backStackEntry ->
             val ids =
-                backStackEntry.arguments?.getString("itemIds")
+                backStackEntry.arguments
+                    ?.getString("itemIds")
                     ?.split(",")
                     ?.filter { it.isNotBlank() }
                     ?: emptyList()
@@ -419,7 +431,8 @@ fun ScaniumNavGraph(
                 ),
         ) { backStackEntry ->
             val ids =
-                backStackEntry.arguments?.getString("itemIds")
+                backStackEntry.arguments
+                    ?.getString("itemIds")
                     ?.split(",")
                     ?.filter { it.isNotBlank() }
                     ?: emptyList()
@@ -461,7 +474,8 @@ fun ScaniumNavGraph(
                 return@composable
             }
             val ids =
-                backStackEntry.arguments?.getString("itemIds")
+                backStackEntry.arguments
+                    ?.getString("itemIds")
                     ?.split(",")
                     ?.filter { it.isNotBlank() }
                     ?: emptyList()
@@ -493,7 +507,11 @@ fun ScaniumNavGraph(
                 ),
         ) { backStackEntry ->
             val itemId = backStackEntry.arguments?.getString("itemId").orEmpty()
-            val item = itemsViewModel.items.collectAsState().value.find { it.id == itemId }
+            val item =
+                itemsViewModel.items
+                    .collectAsState()
+                    .value
+                    .find { it.id == itemId }
             val viewModel: ListingGenerationViewModel = hiltViewModel()
 
             // Trigger generation when screen opens
@@ -528,15 +546,33 @@ fun ObjectaNavGraph(
     // Create marketplace service for backward compatibility
     val marketplaceService =
         androidx.compose.ui.platform.LocalContext.current.let { context ->
-            androidx.compose.runtime.remember { EbayMarketplaceService(context, com.scanium.app.selling.data.MockEbayApi()) }
+            androidx.compose.runtime.remember {
+                EbayMarketplaceService(
+                    context,
+                    com.scanium.app.selling.data
+                        .MockEbayApi(),
+                )
+            }
         }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val application = context.applicationContext as ScaniumApplication
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val settingsRepository = androidx.compose.runtime.remember { com.scanium.app.data.SettingsRepository(context) }
-    val billingRepository = androidx.compose.runtime.remember { com.scanium.app.billing.BillingRepository(context) }
-    val billingProvider = androidx.compose.runtime.remember { com.scanium.app.billing.FakeBillingProvider(billingRepository) }
+    val settingsRepository =
+        androidx.compose.runtime.remember {
+            com.scanium.app.data
+                .SettingsRepository(context)
+        }
+    val billingRepository =
+        androidx.compose.runtime.remember {
+            com.scanium.app.billing
+                .BillingRepository(context)
+        }
+    val billingProvider =
+        androidx.compose.runtime.remember {
+            com.scanium.app.billing
+                .FakeBillingProvider(billingRepository)
+        }
     val entitlementManager =
         androidx.compose.runtime.remember {
             com.scanium.app.data.EntitlementManager(
@@ -544,9 +580,21 @@ fun ObjectaNavGraph(
                 billingProvider,
             )
         }
-    val configProvider = androidx.compose.runtime.remember { com.scanium.app.data.AndroidRemoteConfigProvider(context, scope) }
-    val connectivityObserver = androidx.compose.runtime.remember { com.scanium.app.platform.ConnectivityObserver(context) }
-    val apiKeyStore = androidx.compose.runtime.remember { com.scanium.app.config.SecureApiKeyStore(context) }
+    val configProvider =
+        androidx.compose.runtime.remember {
+            com.scanium.app.data
+                .AndroidRemoteConfigProvider(context, scope)
+        }
+    val connectivityObserver =
+        androidx.compose.runtime.remember {
+            com.scanium.app.platform
+                .ConnectivityObserver(context)
+        }
+    val apiKeyStore =
+        androidx.compose.runtime.remember {
+            com.scanium.app.config
+                .SecureApiKeyStore(context)
+        }
     val featureFlagRepository =
         androidx.compose.runtime.remember {
             com.scanium.app.data.AndroidFeatureFlagRepository(
@@ -557,10 +605,22 @@ fun ObjectaNavGraph(
                 apiKeyStore = apiKeyStore,
             )
         }
-    val ftueRepository = androidx.compose.runtime.remember { com.scanium.app.ftue.FtueRepository(context) }
+    val ftueRepository =
+        androidx.compose.runtime.remember {
+            com.scanium.app.ftue
+                .FtueRepository(context)
+        }
     val authHttpClient = androidx.compose.runtime.remember { okhttp3.OkHttpClient() }
-    val authApi = androidx.compose.runtime.remember { com.scanium.app.auth.GoogleAuthApi(authHttpClient) }
-    val authRepository = androidx.compose.runtime.remember { com.scanium.app.auth.AuthRepository(context, apiKeyStore, authApi) }
+    val authApi =
+        androidx.compose.runtime.remember {
+            com.scanium.app.auth
+                .GoogleAuthApi(authHttpClient)
+        }
+    val authRepository =
+        androidx.compose.runtime.remember {
+            com.scanium.app.auth
+                .AuthRepository(context, apiKeyStore, authApi)
+        }
     val settingsViewModel: SettingsViewModel =
         viewModel(
             factory =
@@ -571,7 +631,9 @@ fun ObjectaNavGraph(
                             return SettingsViewModel(
                                 context = context,
                                 settingsRepository = settingsRepository,
-                                marketplaceRepository = com.scanium.app.data.MarketplaceRepository(context),
+                                marketplaceRepository =
+                                    com.scanium.app.data
+                                        .MarketplaceRepository(context),
                                 entitlementManager = entitlementManager,
                                 configProvider = configProvider,
                                 featureFlagRepository = featureFlagRepository,
@@ -603,9 +665,9 @@ fun ObjectaNavGraph(
     val tourViewModelFactory =
         androidx.compose.runtime.remember(ftueRepository) {
             object : com.scanium.app.ftue.TourViewModel.Factory {
-                override fun create(itemsViewModel: ItemsViewModel): com.scanium.app.ftue.TourViewModel {
-                    return com.scanium.app.ftue.TourViewModel(ftueRepository, itemsViewModel)
-                }
+                override fun create(itemsViewModel: ItemsViewModel): com.scanium.app.ftue.TourViewModel =
+                    com.scanium.app.ftue
+                        .TourViewModel(ftueRepository, itemsViewModel)
             }
         }
     val tourViewModel: com.scanium.app.ftue.TourViewModel =

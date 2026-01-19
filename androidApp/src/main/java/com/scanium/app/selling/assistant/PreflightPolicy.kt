@@ -8,8 +8,6 @@ import com.scanium.app.network.DeviceIdProvider
 import com.scanium.app.network.security.RequestSigner
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
@@ -17,7 +15,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.net.SocketTimeoutException
 
-internal class PreflightPolicy(private val json: Json) {
+internal class PreflightPolicy(
+    private val json: Json,
+) {
     fun buildRequest(
         context: Context,
         endpoint: String,
@@ -25,13 +25,15 @@ internal class PreflightPolicy(private val json: Json) {
     ): Request {
         val payloadJson = json.encodeToString(PreflightChatRequest.serializer(), PreflightChatRequest())
 
-        val requestBuilder = Request.Builder()
-            .url(endpoint)
-            .post(payloadJson.toRequestBody("application/json".toMediaType()))
-            .header("X-API-Key", apiKey)
-            .header("X-Client", "Scanium-Android")
-            .header("X-App-Version", BuildConfig.VERSION_NAME)
-            .header("X-Scanium-Preflight", "true")
+        val requestBuilder =
+            Request
+                .Builder()
+                .url(endpoint)
+                .post(payloadJson.toRequestBody("application/json".toMediaType()))
+                .header("X-API-Key", apiKey)
+                .header("X-Client", "Scanium-Android")
+                .header("X-App-Version", BuildConfig.VERSION_NAME)
+                .header("X-Scanium-Preflight", "true")
 
         val deviceId = DeviceIdProvider.getRawDeviceId(context)
         if (deviceId.isNotBlank()) {
@@ -39,7 +41,10 @@ internal class PreflightPolicy(private val json: Json) {
         }
 
         // Add session token for authenticated requests
-        val authToken = com.scanium.app.config.SecureApiKeyStore(context).getAuthToken()
+        val authToken =
+            com.scanium.app.config
+                .SecureApiKeyStore(context)
+                .getAuthToken()
         if (authToken != null) {
             Log.d(TAG, "Preflight: Adding Authorization header (token len=${authToken.length})")
             requestBuilder.header("Authorization", "Bearer $authToken")
@@ -60,9 +65,10 @@ internal class PreflightPolicy(private val json: Json) {
         body: String?,
         latencyMs: Long,
     ): PreflightResult {
-        val chatResponse = body?.let {
-            runCatching { json.decodeFromString<PreflightChatResponse>(it) }.getOrNull()
-        }
+        val chatResponse =
+            body?.let {
+                runCatching { json.decodeFromString<PreflightChatResponse>(it) }.getOrNull()
+            }
 
         if (chatResponse?.assistantError != null) {
             val errorType = chatResponse.assistantError.type.lowercase()
@@ -75,6 +81,7 @@ internal class PreflightPolicy(private val json: Json) {
                         reasonCode = errorType,
                     )
                 }
+
                 else -> {
                     ScaniumLog.w(TAG, "Preflight: 200 with embedded error type=$errorType")
                     PreflightResult(
@@ -94,32 +101,40 @@ internal class PreflightPolicy(private val json: Json) {
     fun mapHttpFailure(
         code: Int,
         latencyMs: Long,
-    ): PreflightResult {
-        return when {
-            code == 401 ->
+    ): PreflightResult =
+        when {
+            code == 401 -> {
                 PreflightResult(
                     status = PreflightStatus.UNAUTHORIZED,
                     latencyMs = latencyMs,
                     reasonCode = "unauthorized_api_key",
                 )
-            code == 403 ->
+            }
+
+            code == 403 -> {
                 PreflightResult(
                     status = PreflightStatus.UNAUTHORIZED,
                     latencyMs = latencyMs,
                     reasonCode = "forbidden_access",
                 )
-            code == 404 ->
+            }
+
+            code == 404 -> {
                 PreflightResult(
                     status = PreflightStatus.ENDPOINT_NOT_FOUND,
                     latencyMs = latencyMs,
                     reasonCode = "endpoint_not_found",
                 )
-            code == 429 ->
+            }
+
+            code == 429 -> {
                 PreflightResult(
                     status = PreflightStatus.RATE_LIMITED,
                     latencyMs = latencyMs,
                     reasonCode = "http_429",
                 )
+            }
+
             code == 400 -> {
                 ScaniumLog.w(
                     TAG,
@@ -131,12 +146,15 @@ internal class PreflightPolicy(private val json: Json) {
                     reasonCode = "preflight_schema_error",
                 )
             }
-            code in 500..599 ->
+
+            code in 500..599 -> {
                 PreflightResult(
                     status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
                     latencyMs = latencyMs,
                     reasonCode = "http_$code",
                 )
+            }
+
             else -> {
                 ScaniumLog.w(TAG, "Preflight: unknown HTTP $code, allowing chat attempt")
                 PreflightResult(
@@ -146,13 +164,12 @@ internal class PreflightPolicy(private val json: Json) {
                 )
             }
         }
-    }
 
     fun mapException(
         exception: Exception,
         latencyMs: Long,
-    ): PreflightResult {
-        return when (exception) {
+    ): PreflightResult =
+        when (exception) {
             is SocketTimeoutException -> {
                 ScaniumLog.w(TAG, "Preflight: UNKNOWN (timeout - will allow chat attempt)", exception)
                 PreflightResult(
@@ -161,6 +178,7 @@ internal class PreflightPolicy(private val json: Json) {
                     reasonCode = "timeout",
                 )
             }
+
             is java.net.UnknownHostException -> {
                 ScaniumLog.w(TAG, "Preflight: OFFLINE (DNS failure)", exception)
                 PreflightResult(
@@ -169,6 +187,7 @@ internal class PreflightPolicy(private val json: Json) {
                     reasonCode = "dns_failure",
                 )
             }
+
             is java.net.ConnectException -> {
                 ScaniumLog.w(TAG, "Preflight: OFFLINE (connection refused)", exception)
                 PreflightResult(
@@ -177,6 +196,7 @@ internal class PreflightPolicy(private val json: Json) {
                     reasonCode = "connection_refused",
                 )
             }
+
             is IOException -> {
                 ScaniumLog.w(TAG, "Preflight: UNKNOWN (IO error - will allow chat attempt)", exception)
                 PreflightResult(
@@ -185,6 +205,7 @@ internal class PreflightPolicy(private val json: Json) {
                     reasonCode = "io_error",
                 )
             }
+
             else -> {
                 Log.w(TAG, "Preflight: unexpected error", exception)
                 PreflightResult(
@@ -194,7 +215,6 @@ internal class PreflightPolicy(private val json: Json) {
                 )
             }
         }
-    }
 
     companion object {
         private const val TAG = "AssistantPreflight"

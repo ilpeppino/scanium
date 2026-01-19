@@ -1,12 +1,14 @@
 ***REMOVED*** OpenAI Monitoring Implementation
 
-This document describes the OpenAI metrics monitoring implementation for Scanium, including runtime per-request metrics collection and visualization in Grafana.
+This document describes the OpenAI metrics monitoring implementation for Scanium, including runtime
+per-request metrics collection and visualization in Grafana.
 
 ***REMOVED******REMOVED*** Overview
 
 **Implementation Strategy: Runtime Per-Request Metrics (Option A)**
 
-We've implemented real-time monitoring of OpenAI API calls by instrumenting the assistant module with OpenTelemetry metrics. This provides operational visibility into:
+We've implemented real-time monitoring of OpenAI API calls by instrumenting the assistant module
+with OpenTelemetry metrics. This provides operational visibility into:
 
 - Request rates and error rates
 - Latency distribution (p50, p95, p99)
@@ -14,6 +16,7 @@ We've implemented real-time monitoring of OpenAI API calls by instrumenting the 
 - Rate limit headroom
 
 **No Usage API polling** was implemented (Option B skipped) because:
+
 - Runtime metrics provide better operational insights
 - OpenAI Usage API has 24-48h delay
 - Cost tracking can be derived from token usage
@@ -36,25 +39,28 @@ Grafana (visualization)
 ***REMOVED******REMOVED******REMOVED*** 1. Backend Changes
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** New Files
+
 - `backend/src/infra/telemetry/index.ts` - OpenTelemetry initialization
 - `backend/src/infra/telemetry/openai-metrics.ts` - OpenAI-specific metrics
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Modified Files
+
 - `backend/package.json` - Added OpenTelemetry dependencies
 - `backend/src/main.ts` - Initialize telemetry on startup
 - `backend/src/modules/assistant/openai-provider.ts` - Instrumented with metrics
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Metrics Exposed
 
-| Metric Name | Type | Labels | Description |
-|-------------|------|--------|-------------|
-| `openai_requests_total` | Counter | `model`, `status`, `error_type` | Total API requests |
-| `openai_request_duration_seconds` | Histogram | `model`, `status` | Request latency |
-| `openai_tokens_total` | Counter | `model`, `token_type` | Token consumption |
-| `openai_rate_limit_requests_remaining` | Gauge | `model`, `limit_type` | Remaining requests |
-| `openai_rate_limit_tokens_remaining` | Gauge | `model`, `limit_type` | Remaining tokens |
+| Metric Name                            | Type      | Labels                          | Description        |
+|----------------------------------------|-----------|---------------------------------|--------------------|
+| `openai_requests_total`                | Counter   | `model`, `status`, `error_type` | Total API requests |
+| `openai_request_duration_seconds`      | Histogram | `model`, `status`               | Request latency    |
+| `openai_tokens_total`                  | Counter   | `model`, `token_type`           | Token consumption  |
+| `openai_rate_limit_requests_remaining` | Gauge     | `model`, `limit_type`           | Remaining requests |
+| `openai_rate_limit_tokens_remaining`   | Gauge     | `model`, `limit_type`           | Remaining tokens   |
 
 **Label Values:**
+
 - `status`: `success`, `error`
 - `error_type`: `UNAUTHORIZED`, `RATE_LIMITED`, `PROVIDER_UNAVAILABLE`, `PROVIDER_ERROR`
 - `token_type`: `input`, `output`, `total`
@@ -67,6 +73,7 @@ Grafana (visualization)
 **Dashboard UID:** `scanium-openai-runtime`
 
 **Sections:**
+
 1. **Overview** - Key metrics at a glance (req/s, p95 latency, error %, tokens/min)
 2. **Request & Error Rates** - Request rate by model, errors by type
 3. **Latency** - Latency percentiles (p50, p95, p99)
@@ -79,13 +86,13 @@ Grafana (visualization)
 
 The following environment variables must be set in the backend service:
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `OTEL_ENABLED` | Enable/disable telemetry | `true` | No |
-| `OTEL_SERVICE_NAME` | Service name for metrics | `scanium-backend` | No |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP endpoint URL | `http://localhost:4318` | Yes* |
-| `OPENAI_API_KEY` | OpenAI API key | - | Yes** |
-| `OPENAI_MODEL` | OpenAI model to use | `gpt-4o-mini` | No |
+| Variable                      | Description              | Default                 | Required |
+|-------------------------------|--------------------------|-------------------------|----------|
+| `OTEL_ENABLED`                | Enable/disable telemetry | `true`                  | No       |
+| `OTEL_SERVICE_NAME`           | Service name for metrics | `scanium-backend`       | No       |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP endpoint URL        | `http://localhost:4318` | Yes*     |
+| `OPENAI_API_KEY`              | OpenAI API key           | -                       | Yes**    |
+| `OPENAI_MODEL`                | OpenAI model to use      | `gpt-4o-mini`           | No       |
 
 \* Must point to Alloy's HTTP endpoint (typically `http://scanium-alloy:4318` in Docker)
 \*\* Only if using OpenAI assistant provider
@@ -147,6 +154,7 @@ Check backend logs for telemetry initialization:
 ```
 
 Expected output:
+
 ```
 📊 OpenTelemetry initialized: scanium-backend (production)
    Exporting to: http://scanium-alloy:4318
@@ -167,7 +175,8 @@ Expected output:
 3. Select datasource: **Mimir**
 4. Run query: `openai_requests_total`
 
-**Expected:** You should see metric series with labels like `model="gpt-4o-mini"`, `status="success"`
+**Expected:** You should see metric series with labels like `model="gpt-4o-mini"`,
+`status="success"`
 
 ***REMOVED******REMOVED******REMOVED*** 2. Generate Test Request
 
@@ -216,26 +225,26 @@ Check that Mimir is ingesting metrics:
 **Possible causes:**
 
 1. **No OpenAI requests made yet**
-   - Generate a test request (see Validation section)
-   - Wait 30-60 seconds for metrics export
+    - Generate a test request (see Validation section)
+    - Wait 30-60 seconds for metrics export
 
 2. **Telemetry disabled**
-   - Check backend logs: `docker logs scanium-backend | grep "OpenTelemetry"`
-   - Ensure `OTEL_ENABLED` is not set to `false`
+    - Check backend logs: `docker logs scanium-backend | grep "OpenTelemetry"`
+    - Ensure `OTEL_ENABLED` is not set to `false`
 
 3. **Wrong OTLP endpoint**
-   - Verify `OTEL_EXPORTER_OTLP_ENDPOINT` points to Alloy
-   - Default in Docker: `http://scanium-alloy:4318`
-   - Check Alloy logs: `docker logs scanium-alloy | grep -i error`
+    - Verify `OTEL_EXPORTER_OTLP_ENDPOINT` points to Alloy
+    - Default in Docker: `http://scanium-alloy:4318`
+    - Check Alloy logs: `docker logs scanium-alloy | grep -i error`
 
 4. **Alloy not forwarding to Mimir**
-   - Check Alloy config: `/volume1/docker/scanium/repo/monitoring/alloy/config.alloy`
-   - Verify `prometheus.remote_write` target points to Mimir
-   - Check Alloy logs for forwarding errors
+    - Check Alloy config: `/volume1/docker/scanium/repo/monitoring/alloy/config.alloy`
+    - Verify `prometheus.remote_write` target points to Mimir
+    - Check Alloy logs for forwarding errors
 
 5. **Metric names changed**
-   - Verify metrics exist: `openai_requests_total` in Grafana Explore
-   - Check for typos in dashboard queries
+    - Verify metrics exist: `openai_requests_total` in Grafana Explore
+    - Check for typos in dashboard queries
 
 ***REMOVED******REMOVED******REMOVED*** Backend not exporting metrics
 
@@ -262,9 +271,11 @@ Check that Mimir is ingesting metrics:
 
 ***REMOVED******REMOVED******REMOVED*** Rate limit metrics not showing
 
-**Note:** Rate limit metrics (`openai_rate_limit_*`) require OpenAI SDK to expose response headers. These may not be available in all SDK versions.
+**Note:** Rate limit metrics (`openai_rate_limit_*`) require OpenAI SDK to expose response headers.
+These may not be available in all SDK versions.
 
 **To verify:**
+
 - Check `backend/src/modules/assistant/openai-provider.ts` line 116
 - The code attempts to read `x-ratelimit-*` headers from response
 - If headers are not exposed, these metrics will remain empty (this is OK)
@@ -276,11 +287,13 @@ Check that Mimir is ingesting metrics:
 While we don't poll the Usage API, you can estimate costs from token metrics:
 
 **Formula:**
+
 ```
 cost = (input_tokens * input_price_per_1k) + (output_tokens * output_price_per_1k)
 ```
 
 **Example PromQL for daily cost estimate (gpt-4o-mini):**
+
 ```promql
 (
   sum(increase(openai_tokens_total{model="gpt-4o-mini", token_type="input"}[1d])) / 1000 * 0.00015
@@ -309,34 +322,36 @@ To update the dashboard:
 3. Pull on NAS: `cd /volume1/docker/scanium/repo && git pull`
 4. Restart Grafana: `docker restart scanium-grafana`
 
-*Note: With `allowUiUpdates: true`, you can also edit in Grafana UI, but changes will be overwritten on restart unless saved to JSON.*
+*Note: With `allowUiUpdates: true`, you can also edit in Grafana UI, but changes will be overwritten
+on restart unless saved to JSON.*
 
 ***REMOVED******REMOVED*** Future Enhancements
 
 Potential improvements (not implemented):
 
 1. **Usage API Polling (Option B)**
-   - Add daily cost/usage metrics from OpenAI Usage API
-   - Requires additional exporter service
-   - Useful for precise billing reconciliation
+    - Add daily cost/usage metrics from OpenAI Usage API
+    - Requires additional exporter service
+    - Useful for precise billing reconciliation
 
 2. **Alerting Rules**
-   - High error rate alert
-   - Rate limit approaching alert
-   - High latency alert
-   - Daily budget alert
+    - High error rate alert
+    - Rate limit approaching alert
+    - High latency alert
+    - Daily budget alert
 
 3. **Trace Correlation**
-   - Link OpenAI spans to Tempo traces
-   - Requires adding span attributes to OpenAI calls
+    - Link OpenAI spans to Tempo traces
+    - Requires adding span attributes to OpenAI calls
 
 4. **Log Correlation**
-   - Add OpenAI request IDs to logs
-   - Link logs to Loki for debugging
+    - Add OpenAI request IDs to logs
+    - Link logs to Loki for debugging
 
 ***REMOVED******REMOVED*** References
 
 - OpenTelemetry Node SDK: https://opentelemetry.io/docs/languages/js/
 - OpenAI API: https://platform.openai.com/docs/api-reference
 - Grafana LGTM: https://grafana.com/docs/grafana-cloud/data-configuration/metrics/
-- Alloy OTLP receiver: https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.receiver.otlp/
+- Alloy OTLP
+  receiver: https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.receiver.otlp/

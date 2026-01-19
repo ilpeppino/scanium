@@ -3,6 +3,7 @@
 ***REMOVED******REMOVED*** Overview
 
 The enrichment pipeline provides automatic scan-to-enrichment for items:
+
 - **POST /v1/items/enrich** - Submit item for enrichment (returns 202)
 - **GET /v1/items/enrich/status/:requestId** - Poll for results
 
@@ -103,20 +104,24 @@ msg: 'LLM draft generation failed'
 ***REMOVED******REMOVED******REMOVED*** Common Issues
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 1. 401 Unauthorized
+
 - Check API key in `X-API-Key` header
 - Verify API key is in `SCANIUM_API_KEYS` environment variable
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Vision Extraction Fails
+
 - Check `GOOGLE_APPLICATION_CREDENTIALS` is set
 - Verify Google Vision API is enabled in GCP project
 - Check `VISION_PROVIDER=google` in environment
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Draft Generation Fails (Falls Back to Template)
+
 - Check `OPENAI_API_KEY` is set
 - Verify OpenAI API quota
 - Template fallback is expected if OpenAI unavailable
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Enrichment Stuck/Slow
+
 - Check concurrent jobs: `curl .../items/enrich/metrics`
 - Default max concurrent: 10
 - Vision extraction timeout: 15s
@@ -164,12 +169,14 @@ enableDraftGeneration: true ***REMOVED*** Can disable to only do vision+attribut
 ***REMOVED******REMOVED*** Health Checks
 
 ***REMOVED******REMOVED******REMOVED*** Backend Health
+
 ```bash
 curl https://api.scanium.family/healthz
 ***REMOVED*** Expected: { "status": "ok" }
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Enrichment Capacity
+
 ```bash
 curl https://api.scanium.family/v1/items/enrich/metrics
 ***REMOVED*** Check: activeJobs < maxConcurrent

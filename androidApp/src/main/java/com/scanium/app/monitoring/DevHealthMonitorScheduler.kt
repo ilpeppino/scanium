@@ -21,7 +21,9 @@ import java.util.concurrent.TimeUnit
  *
  * DEV-only: This class should only be used when FeatureFlags.isDevBuild is true.
  */
-class DevHealthMonitorScheduler(private val context: Context) {
+class DevHealthMonitorScheduler(
+    private val context: Context,
+) {
     companion object {
         private const val TAG = "DevHealthMonitor"
         private const val PERIODIC_INTERVAL_MINUTES = 15L
@@ -43,16 +45,18 @@ class DevHealthMonitorScheduler(private val context: Context) {
             return
         }
 
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+        val constraints =
+            Constraints
+                .Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
 
-        val workRequest = PeriodicWorkRequestBuilder<DevHealthMonitorWorker>(
-            PERIODIC_INTERVAL_MINUTES,
-            TimeUnit.MINUTES,
-        )
-            .setConstraints(constraints)
-            .build()
+        val workRequest =
+            PeriodicWorkRequestBuilder<DevHealthMonitorWorker>(
+                PERIODIC_INTERVAL_MINUTES,
+                TimeUnit.MINUTES,
+            ).setConstraints(constraints)
+                .build()
 
         workManager.enqueueUniquePeriodicWork(
             DevHealthMonitorWorker.WORK_NAME,
@@ -94,13 +98,16 @@ class DevHealthMonitorScheduler(private val context: Context) {
             return
         }
 
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+        val constraints =
+            Constraints
+                .Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
 
-        val workRequest = OneTimeWorkRequestBuilder<DevHealthMonitorWorker>()
-            .setConstraints(constraints)
-            .build()
+        val workRequest =
+            OneTimeWorkRequestBuilder<DevHealthMonitorWorker>()
+                .setConstraints(constraints)
+                .build()
 
         workManager.enqueueUniqueWork(
             ONE_TIME_WORK_NAME,
@@ -114,8 +121,9 @@ class DevHealthMonitorScheduler(private val context: Context) {
     /**
      * Get the current state of the periodic work.
      */
-    fun getWorkInfoFlow(): Flow<WorkState> {
-        return workManager.getWorkInfosForUniqueWorkFlow(DevHealthMonitorWorker.WORK_NAME)
+    fun getWorkInfoFlow(): Flow<WorkState> =
+        workManager
+            .getWorkInfosForUniqueWorkFlow(DevHealthMonitorWorker.WORK_NAME)
             .map { infos ->
                 val info = infos.firstOrNull()
                 when (info?.state) {
@@ -128,7 +136,6 @@ class DevHealthMonitorScheduler(private val context: Context) {
                     null -> WorkState.NotScheduled
                 }
             }
-    }
 
     /**
      * Check if periodic work is currently scheduled.

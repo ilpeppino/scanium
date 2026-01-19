@@ -2,11 +2,9 @@ package com.scanium.app.items
 
 import android.content.Context
 import android.util.Log
-import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
-import com.scanium.shared.core.models.items.ItemCondition
 
 /**
  * Localizes item attribute VALUES (not just labels) for display.
@@ -35,7 +33,6 @@ import com.scanium.shared.core.models.items.ItemCondition
  * ```
  */
 object ItemAttributeLocalizer {
-
     private const val TAG = "ItemAttributeLocalizer"
 
     // ==================== COLOR LOCALIZATION ====================
@@ -44,32 +41,33 @@ object ItemAttributeLocalizer {
      * Canonical color names mapped to their string resource IDs.
      * These are the color values that may come from Vision API or backend.
      */
-    private val colorResourceMap: Map<String, Int> = mapOf(
-        "red" to R.string.attr_color_red,
-        "orange" to R.string.attr_color_orange,
-        "yellow" to R.string.attr_color_yellow,
-        "green" to R.string.attr_color_green,
-        "blue" to R.string.attr_color_blue,
-        "purple" to R.string.attr_color_purple,
-        "pink" to R.string.attr_color_pink,
-        "brown" to R.string.attr_color_brown,
-        "black" to R.string.attr_color_black,
-        "white" to R.string.attr_color_white,
-        "gray" to R.string.attr_color_gray,
-        "grey" to R.string.attr_color_gray, // Alias
-        "beige" to R.string.attr_color_beige,
-        "gold" to R.string.attr_color_gold,
-        "silver" to R.string.attr_color_silver,
-        "navy" to R.string.attr_color_navy,
-        "teal" to R.string.attr_color_teal,
-        "turquoise" to R.string.attr_color_turquoise,
-        "maroon" to R.string.attr_color_maroon,
-        "olive" to R.string.attr_color_olive,
-        "coral" to R.string.attr_color_coral,
-        "cream" to R.string.attr_color_cream,
-        "tan" to R.string.attr_color_tan,
-        "multicolor" to R.string.attr_color_multicolor,
-    )
+    private val colorResourceMap: Map<String, Int> =
+        mapOf(
+            "red" to R.string.attr_color_red,
+            "orange" to R.string.attr_color_orange,
+            "yellow" to R.string.attr_color_yellow,
+            "green" to R.string.attr_color_green,
+            "blue" to R.string.attr_color_blue,
+            "purple" to R.string.attr_color_purple,
+            "pink" to R.string.attr_color_pink,
+            "brown" to R.string.attr_color_brown,
+            "black" to R.string.attr_color_black,
+            "white" to R.string.attr_color_white,
+            "gray" to R.string.attr_color_gray,
+            "grey" to R.string.attr_color_gray, // Alias
+            "beige" to R.string.attr_color_beige,
+            "gold" to R.string.attr_color_gold,
+            "silver" to R.string.attr_color_silver,
+            "navy" to R.string.attr_color_navy,
+            "teal" to R.string.attr_color_teal,
+            "turquoise" to R.string.attr_color_turquoise,
+            "maroon" to R.string.attr_color_maroon,
+            "olive" to R.string.attr_color_olive,
+            "coral" to R.string.attr_color_coral,
+            "cream" to R.string.attr_color_cream,
+            "tan" to R.string.attr_color_tan,
+            "multicolor" to R.string.attr_color_multicolor,
+        )
 
     /**
      * Localize a color value for display.
@@ -85,7 +83,10 @@ object ItemAttributeLocalizer {
     /**
      * Localize a color value for display (Context variant).
      */
-    fun localizeColor(context: Context, canonicalValue: String): String {
+    fun localizeColor(
+        context: Context,
+        canonicalValue: String,
+    ): String {
         val normalized = canonicalValue.trim().lowercase()
         val resId = colorResourceMap[normalized] ?: return canonicalValue
         return context.getString(resId)
@@ -95,7 +96,10 @@ object ItemAttributeLocalizer {
      * Convert a localized color back to its canonical form.
      * Used when saving user input.
      */
-    fun canonicalizeColor(context: Context, localizedValue: String): String {
+    fun canonicalizeColor(
+        context: Context,
+        localizedValue: String,
+    ): String {
         val normalized = localizedValue.trim().lowercase()
 
         // First check if it's already a canonical value
@@ -118,42 +122,41 @@ object ItemAttributeLocalizer {
     /**
      * Check if a color value is in our known vocabulary.
      */
-    fun isKnownColor(value: String): Boolean {
-        return colorResourceMap.containsKey(value.trim().lowercase())
-    }
+    fun isKnownColor(value: String): Boolean = colorResourceMap.containsKey(value.trim().lowercase())
 
     // ==================== MATERIAL LOCALIZATION ====================
 
     /**
      * Canonical material names mapped to their string resource IDs.
      */
-    private val materialResourceMap: Map<String, Int> = mapOf(
-        "cotton" to R.string.attr_material_cotton,
-        "polyester" to R.string.attr_material_polyester,
-        "wool" to R.string.attr_material_wool,
-        "silk" to R.string.attr_material_silk,
-        "leather" to R.string.attr_material_leather,
-        "denim" to R.string.attr_material_denim,
-        "linen" to R.string.attr_material_linen,
-        "nylon" to R.string.attr_material_nylon,
-        "plastic" to R.string.attr_material_plastic,
-        "metal" to R.string.attr_material_metal,
-        "wood" to R.string.attr_material_wood,
-        "glass" to R.string.attr_material_glass,
-        "rubber" to R.string.attr_material_rubber,
-        "ceramic" to R.string.attr_material_ceramic,
-        "fabric" to R.string.attr_material_fabric,
-        "velvet" to R.string.attr_material_velvet,
-        "suede" to R.string.attr_material_suede,
-        "canvas" to R.string.attr_material_canvas,
-        "synthetic" to R.string.attr_material_synthetic,
-        "acrylic" to R.string.attr_material_acrylic,
-        "stainless steel" to R.string.attr_material_stainless_steel,
-        "aluminum" to R.string.attr_material_aluminum,
-        "brass" to R.string.attr_material_brass,
-        "copper" to R.string.attr_material_copper,
-        "porcelain" to R.string.attr_material_porcelain,
-    )
+    private val materialResourceMap: Map<String, Int> =
+        mapOf(
+            "cotton" to R.string.attr_material_cotton,
+            "polyester" to R.string.attr_material_polyester,
+            "wool" to R.string.attr_material_wool,
+            "silk" to R.string.attr_material_silk,
+            "leather" to R.string.attr_material_leather,
+            "denim" to R.string.attr_material_denim,
+            "linen" to R.string.attr_material_linen,
+            "nylon" to R.string.attr_material_nylon,
+            "plastic" to R.string.attr_material_plastic,
+            "metal" to R.string.attr_material_metal,
+            "wood" to R.string.attr_material_wood,
+            "glass" to R.string.attr_material_glass,
+            "rubber" to R.string.attr_material_rubber,
+            "ceramic" to R.string.attr_material_ceramic,
+            "fabric" to R.string.attr_material_fabric,
+            "velvet" to R.string.attr_material_velvet,
+            "suede" to R.string.attr_material_suede,
+            "canvas" to R.string.attr_material_canvas,
+            "synthetic" to R.string.attr_material_synthetic,
+            "acrylic" to R.string.attr_material_acrylic,
+            "stainless steel" to R.string.attr_material_stainless_steel,
+            "aluminum" to R.string.attr_material_aluminum,
+            "brass" to R.string.attr_material_brass,
+            "copper" to R.string.attr_material_copper,
+            "porcelain" to R.string.attr_material_porcelain,
+        )
 
     /**
      * Localize a material value for display.
@@ -168,7 +171,10 @@ object ItemAttributeLocalizer {
     /**
      * Localize a material value for display (Context variant).
      */
-    fun localizeMaterial(context: Context, canonicalValue: String): String {
+    fun localizeMaterial(
+        context: Context,
+        canonicalValue: String,
+    ): String {
         val normalized = canonicalValue.trim().lowercase()
         val resId = materialResourceMap[normalized] ?: return canonicalValue
         return context.getString(resId)
@@ -177,7 +183,10 @@ object ItemAttributeLocalizer {
     /**
      * Convert a localized material back to its canonical form.
      */
-    fun canonicalizeMaterial(context: Context, localizedValue: String): String {
+    fun canonicalizeMaterial(
+        context: Context,
+        localizedValue: String,
+    ): String {
         val normalized = localizedValue.trim().lowercase()
 
         if (materialResourceMap.containsKey(normalized)) {
@@ -197,21 +206,20 @@ object ItemAttributeLocalizer {
     /**
      * Check if a material value is in our known vocabulary.
      */
-    fun isKnownMaterial(value: String): Boolean {
-        return materialResourceMap.containsKey(value.trim().lowercase())
-    }
+    fun isKnownMaterial(value: String): Boolean = materialResourceMap.containsKey(value.trim().lowercase())
 
     // ==================== CONDITION LOCALIZATION ====================
 
     /**
      * Canonical condition names mapped to their string resource IDs.
      */
-    private val conditionResourceMap: Map<String, Int> = mapOf(
-        "new" to R.string.item_condition_new,
-        "as_good_as_new" to R.string.item_condition_as_good_as_new,
-        "used" to R.string.item_condition_used,
-        "refurbished" to R.string.item_condition_refurbished,
-    )
+    private val conditionResourceMap: Map<String, Int> =
+        mapOf(
+            "new" to R.string.item_condition_new,
+            "as_good_as_new" to R.string.item_condition_as_good_as_new,
+            "used" to R.string.item_condition_used,
+            "refurbished" to R.string.item_condition_refurbished,
+        )
 
     /**
      * Localize a condition value for display.
@@ -226,7 +234,10 @@ object ItemAttributeLocalizer {
     /**
      * Localize a condition value for display (Context variant).
      */
-    fun localizeCondition(context: Context, canonicalValue: String): String {
+    fun localizeCondition(
+        context: Context,
+        canonicalValue: String,
+    ): String {
         val normalized = canonicalValue.trim().lowercase()
         val resId = conditionResourceMap[normalized] ?: return canonicalValue
         return context.getString(resId)
@@ -235,7 +246,10 @@ object ItemAttributeLocalizer {
     /**
      * Convert a localized condition back to its canonical form.
      */
-    fun canonicalizeCondition(context: Context, localizedValue: String): String {
+    fun canonicalizeCondition(
+        context: Context,
+        localizedValue: String,
+    ): String {
         val normalized = localizedValue.trim().lowercase()
 
         if (conditionResourceMap.containsKey(normalized)) {
@@ -255,9 +269,7 @@ object ItemAttributeLocalizer {
     /**
      * Check if a condition value is in our known vocabulary.
      */
-    fun isKnownCondition(value: String): Boolean {
-        return conditionResourceMap.containsKey(value.trim().lowercase())
-    }
+    fun isKnownCondition(value: String): Boolean = conditionResourceMap.containsKey(value.trim().lowercase())
 
     // ==================== GENERIC ATTRIBUTE LOCALIZATION ====================
 
@@ -266,39 +278,47 @@ object ItemAttributeLocalizer {
      * Dispatches to the appropriate localizer based on attribute type.
      */
     @Composable
-    fun localizeAttributeValue(key: String, value: String): String {
-        return when (key.lowercase()) {
+    fun localizeAttributeValue(
+        key: String,
+        value: String,
+    ): String =
+        when (key.lowercase()) {
             "color", "primarycolor", "secondarycolor" -> localizeColor(value)
             "material" -> localizeMaterial(value)
             "condition" -> localizeCondition(value)
             else -> value // Not a constrained vocabulary - return as-is
         }
-    }
 
     /**
      * Localize an attribute value based on its key (Context variant).
      */
-    fun localizeAttributeValue(context: Context, key: String, value: String): String {
-        return when (key.lowercase()) {
+    fun localizeAttributeValue(
+        context: Context,
+        key: String,
+        value: String,
+    ): String =
+        when (key.lowercase()) {
             "color", "primarycolor", "secondarycolor" -> localizeColor(context, value)
             "material" -> localizeMaterial(context, value)
             "condition" -> localizeCondition(context, value)
             else -> value
         }
-    }
 
     /**
      * Canonicalize an attribute value based on its key.
      * Used when saving user-edited values to storage.
      */
-    fun canonicalizeAttributeValue(context: Context, key: String, value: String): String {
-        return when (key.lowercase()) {
+    fun canonicalizeAttributeValue(
+        context: Context,
+        key: String,
+        value: String,
+    ): String =
+        when (key.lowercase()) {
             "color", "primarycolor", "secondarycolor" -> canonicalizeColor(context, value)
             "material" -> canonicalizeMaterial(context, value)
             "condition" -> canonicalizeCondition(context, value)
             else -> value
         }
-    }
 
     // ==================== ATTRIBUTE LABEL LOCALIZATION ====================
 
@@ -306,34 +326,40 @@ object ItemAttributeLocalizer {
      * Attribute key to label string resource mapping.
      * These are the field labels shown in the Edit Item screen.
      */
-    private val attributeLabelResourceMap: Map<String, Int> = mapOf(
-        "brand" to R.string.edit_item_field_brand,
-        "itemtype" to R.string.edit_item_field_product_type,
-        "producttype" to R.string.edit_item_field_product_type,
-        "model" to R.string.edit_item_field_model,
-        "color" to R.string.edit_item_field_color,
-        "size" to R.string.edit_item_field_size,
-        "material" to R.string.edit_item_field_material,
-        "condition" to R.string.edit_item_field_condition,
-        "notes" to R.string.edit_item_field_notes,
-    )
+    private val attributeLabelResourceMap: Map<String, Int> =
+        mapOf(
+            "brand" to R.string.edit_item_field_brand,
+            "itemtype" to R.string.edit_item_field_product_type,
+            "producttype" to R.string.edit_item_field_product_type,
+            "model" to R.string.edit_item_field_model,
+            "color" to R.string.edit_item_field_color,
+            "size" to R.string.edit_item_field_size,
+            "material" to R.string.edit_item_field_material,
+            "condition" to R.string.edit_item_field_condition,
+            "notes" to R.string.edit_item_field_notes,
+        )
 
     /**
      * Get the localized label for an attribute key.
      */
     @Composable
     fun getAttributeLabel(key: String): String {
-        val resId = attributeLabelResourceMap[key.lowercase()]
-            ?: return key.replaceFirstChar { it.uppercase() }
+        val resId =
+            attributeLabelResourceMap[key.lowercase()]
+                ?: return key.replaceFirstChar { it.uppercase() }
         return stringResource(resId)
     }
 
     /**
      * Get the localized label for an attribute key (Context variant).
      */
-    fun getAttributeLabel(context: Context, key: String): String {
-        val resId = attributeLabelResourceMap[key.lowercase()]
-            ?: return key.replaceFirstChar { it.uppercase() }
+    fun getAttributeLabel(
+        context: Context,
+        key: String,
+    ): String {
+        val resId =
+            attributeLabelResourceMap[key.lowercase()]
+                ?: return key.replaceFirstChar { it.uppercase() }
         return context.getString(resId)
     }
 
@@ -343,16 +369,42 @@ object ItemAttributeLocalizer {
      * Common English words that indicate an attribute value is in English.
      * Used for debug-mode language violation detection.
      */
-    private val englishIndicatorWords = setOf(
-        // Colors
-        "red", "orange", "yellow", "green", "blue", "purple", "pink", "brown",
-        "black", "white", "gray", "grey", "beige", "gold", "silver", "navy",
-        // Materials
-        "cotton", "polyester", "wool", "silk", "leather", "plastic", "metal",
-        "wood", "glass", "rubber", "fabric",
-        // Conditions
-        "new", "used", "refurbished",
-    )
+    private val englishIndicatorWords =
+        setOf(
+            // Colors
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "blue",
+            "purple",
+            "pink",
+            "brown",
+            "black",
+            "white",
+            "gray",
+            "grey",
+            "beige",
+            "gold",
+            "silver",
+            "navy",
+            // Materials
+            "cotton",
+            "polyester",
+            "wool",
+            "silk",
+            "leather",
+            "plastic",
+            "metal",
+            "wood",
+            "glass",
+            "rubber",
+            "fabric",
+            // Conditions
+            "new",
+            "used",
+            "refurbished",
+        )
 
     /**
      * Check if an attribute value contains obvious English words.

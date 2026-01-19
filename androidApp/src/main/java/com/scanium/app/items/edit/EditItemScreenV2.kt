@@ -2,7 +2,6 @@ package com.scanium.app.items.edit
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +44,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -74,6 +72,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemsViewModel
@@ -83,7 +82,6 @@ import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.EnrichmentLayerStatus
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.LayerState
-import com.scanium.app.config.FeatureFlags
 
 /**
  * Redesigned edit screen for Phase 3: Item details UX.
@@ -119,9 +117,10 @@ fun EditItemScreenV2(
 
     // Export Assistant state
     var showExportAssistantSheet by remember { mutableStateOf(false) }
-    val exportAssistantViewModel = remember(exportAssistantViewModelFactory, itemId) {
-        exportAssistantViewModelFactory?.create(itemId, itemsViewModel)
-    }
+    val exportAssistantViewModel =
+        remember(exportAssistantViewModelFactory, itemId) {
+            exportAssistantViewModelFactory?.create(itemId, itemsViewModel)
+        }
 
     // Summary text state (local draft)
     var summaryText by remember(item?.attributesSummaryText, item?.attributes) {
@@ -170,9 +169,10 @@ fun EditItemScreenV2(
             },
         ) { padding ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(stringResource(R.string.edit_item_not_found), style = MaterialTheme.typography.bodyLarge)
@@ -198,10 +198,11 @@ fun EditItemScreenV2(
                 shadowElevation = 8.dp,
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     // Cancel button
@@ -237,10 +238,11 @@ fun EditItemScreenV2(
                         onClick = {
                             // Parse summary text and save
                             val parsed = AttributeSummaryGenerator.parseSummaryText(summaryText)
-                            val newAttributes = AttributeSummaryGenerator.toAttributeMap(
-                                parsed,
-                                currentItem.attributes,
-                            )
+                            val newAttributes =
+                                AttributeSummaryGenerator.toAttributeMap(
+                                    parsed,
+                                    currentItem.attributes,
+                                )
 
                             // Update via view model
                             itemsViewModel.updateSummaryText(itemId, summaryText, textEdited)
@@ -267,10 +269,11 @@ fun EditItemScreenV2(
         },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState()),
         ) {
             // Photo Gallery Section
             PhotoGallerySection(
@@ -316,12 +319,14 @@ fun EditItemScreenV2(
 
             // Main Summary Text Box
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             ) {
                 OutlinedTextField(
                     value = summaryText,
@@ -339,20 +344,22 @@ fun EditItemScreenV2(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 200.dp, max = 350.dp)
-                        .padding(8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 200.dp, max = 350.dp)
+                            .padding(8.dp),
                     textStyle = MaterialTheme.typography.bodyMedium,
                 )
             }
 
             // Missing fields hint
-            val missingFields = AttributeSummaryGenerator.getMissingFields(
-                attributes = currentItem.attributes,
-                category = currentItem.category,
-                condition = currentItem.condition,
-            )
+            val missingFields =
+                AttributeSummaryGenerator.getMissingFields(
+                    attributes = currentItem.attributes,
+                    category = currentItem.category,
+                    condition = currentItem.condition,
+                )
             if (missingFields.isNotEmpty()) {
                 Text(
                     text = stringResource(R.string.edit_item_missing_fields, missingFields.joinToString(", ")),
@@ -369,7 +376,11 @@ fun EditItemScreenV2(
     // Export Assistant Bottom Sheet
     if (showExportAssistantSheet && exportAssistantViewModel != null) {
         val settingsRepository = remember { SettingsRepository(context) }
-        val ttsManager = remember { com.scanium.app.assistant.tts.TtsManager(context, settingsRepository) }
+        val ttsManager =
+            remember {
+                com.scanium.app.assistant.tts
+                    .TtsManager(context, settingsRepository)
+            }
         ExportAssistantSheet(
             viewModel = exportAssistantViewModel,
             settingsRepository = settingsRepository,
@@ -425,7 +436,10 @@ private fun shouldTriggerEnrichment(item: ScannedItem): Boolean {
     if (lastEnrichment == null || lastEnrichment == 0L) return true
 
     // Trigger if stale (more than 5 minutes old)
-    val age = kotlinx.datetime.Clock.System.now().toEpochMilliseconds() - lastEnrichment
+    val age =
+        kotlinx.datetime.Clock.System
+            .now()
+            .toEpochMilliseconds() - lastEnrichment
     return age > 5 * 60 * 1000L
 }
 
@@ -438,9 +452,10 @@ private fun PhotoGallerySection(
     onAddPhoto: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
     ) {
         Text(
             text = stringResource(R.string.edit_item_photos),
@@ -464,15 +479,16 @@ private fun PhotoGallerySection(
 
             // Additional photos
             items(item.additionalPhotos) { photo ->
-                val photoBitmap = remember(photo.uri) {
-                    photo.uri?.let { uri ->
-                        try {
-                            BitmapFactory.decodeFile(uri)
-                        } catch (e: Exception) {
-                            null
+                val photoBitmap =
+                    remember(photo.uri) {
+                        photo.uri?.let { uri ->
+                            try {
+                                BitmapFactory.decodeFile(uri)
+                            } catch (e: Exception) {
+                                null
+                            }
                         }
                     }
-                }
                 PhotoThumbnail(
                     bitmap = photoBitmap?.asImageBitmap(),
                     label = null,
@@ -498,23 +514,25 @@ private fun PhotoThumbnail(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Card(
-            modifier = Modifier
-                .size(100.dp)
-                .then(
-                    if (isPrimary) {
-                        Modifier.border(
-                            2.dp,
-                            MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(12.dp),
-                        )
-                    } else {
-                        Modifier
-                    },
-                ),
+            modifier =
+                Modifier
+                    .size(100.dp)
+                    .then(
+                        if (isPrimary) {
+                            Modifier.border(
+                                2.dp,
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(12.dp),
+                            )
+                        } else {
+                            Modifier
+                        },
+                    ),
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         ) {
             if (bitmap != null) {
                 Image(
@@ -552,13 +570,15 @@ private fun AddPhotoButton(onClick: () -> Unit) {
     val addPhotoText = stringResource(R.string.edit_item_add_photo)
     val addText = stringResource(R.string.common_add)
     Card(
-        modifier = Modifier
-            .size(100.dp)
-            .clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .size(100.dp)
+                .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -609,24 +629,28 @@ private fun EnrichmentStatusRow(
             showProgress = true
             showRetry = false
         }
+
         enrichmentStatus.layerB == LayerState.FAILED || enrichmentStatus.layerC == LayerState.FAILED -> {
             statusMessage = analyzeFailedText
             statusColor = MaterialTheme.colorScheme.error
             showProgress = false
             showRetry = true
         }
+
         enrichmentStatus.isComplete && enrichmentStatus.hasAnyResults -> {
             statusMessage = analyzedText
             statusColor = MaterialTheme.colorScheme.tertiary
             showProgress = false
             showRetry = false
         }
+
         enrichmentStatus.isComplete -> {
             statusMessage = noNewInfoText
             statusColor = MaterialTheme.colorScheme.onSurfaceVariant
             showProgress = false
             showRetry = false
         }
+
         else -> {
             // Idle state - don't show anything
             return
@@ -634,17 +658,20 @@ private fun EnrichmentStatusRow(
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = statusColor.copy(alpha = 0.1f),
-        ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = statusColor.copy(alpha = 0.1f),
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (showProgress) {
@@ -656,11 +683,12 @@ private fun EnrichmentStatusRow(
                 Spacer(Modifier.width(8.dp))
             } else {
                 Icon(
-                    imageVector = when {
-                        enrichmentStatus.layerB == LayerState.FAILED -> Icons.Default.Warning
-                        enrichmentStatus.isComplete && enrichmentStatus.hasAnyResults -> Icons.Default.Check
-                        else -> Icons.Default.Search
-                    },
+                    imageVector =
+                        when {
+                            enrichmentStatus.layerB == LayerState.FAILED -> Icons.Default.Warning
+                            enrichmentStatus.isComplete && enrichmentStatus.hasAnyResults -> Icons.Default.Check
+                            else -> Icons.Default.Search
+                        },
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = statusColor,
@@ -716,12 +744,14 @@ private fun DetectedAttributesSection(
     if (displayAttrs.isEmpty()) return
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            ),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -768,12 +798,13 @@ private fun AttributeChip(
     val context = LocalContext.current
     val userProvidedText = stringResource(R.string.edit_item_user_provided)
     val displayValue = AttributeDisplayFormatter.formatForDisplay(context, attributeKey, value)
-    val containerColor = when {
-        isUserProvided -> MaterialTheme.colorScheme.primaryContainer
-        confidence >= 0.8f -> MaterialTheme.colorScheme.tertiaryContainer
-        confidence >= 0.5f -> MaterialTheme.colorScheme.secondaryContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
+    val containerColor =
+        when {
+            isUserProvided -> MaterialTheme.colorScheme.primaryContainer
+            confidence >= 0.8f -> MaterialTheme.colorScheme.tertiaryContainer
+            confidence >= 0.5f -> MaterialTheme.colorScheme.secondaryContainer
+            else -> MaterialTheme.colorScheme.surfaceVariant
+        }
 
     AssistChip(
         onClick = {},
@@ -800,12 +831,13 @@ private fun AttributeChip(
                     tint = MaterialTheme.colorScheme.primary,
                 )
             } else if (evidenceType != null) {
-                val icon = when (evidenceType) {
-                    "OCR" -> Icons.Default.Search
-                    "LOGO" -> Icons.Default.Check
-                    "COLOR" -> Icons.Default.Check
-                    else -> Icons.Default.AutoAwesome
-                }
+                val icon =
+                    when (evidenceType) {
+                        "OCR" -> Icons.Default.Search
+                        "LOGO" -> Icons.Default.Check
+                        "COLOR" -> Icons.Default.Check
+                        else -> Icons.Default.AutoAwesome
+                    }
                 Icon(
                     icon,
                     contentDescription = evidenceType,
@@ -814,9 +846,10 @@ private fun AttributeChip(
                 )
             }
         },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = containerColor.copy(alpha = 0.6f),
-        ),
+        colors =
+            AssistChipDefaults.assistChipColors(
+                containerColor = containerColor.copy(alpha = 0.6f),
+            ),
     )
 }
 
@@ -831,17 +864,18 @@ private fun buildDisplayableAttributes(
     val result = mutableListOf<DisplayableAttribute>()
     val seen = mutableSetOf<String>()
 
-    val displayNameMap = mapOf(
-        "brand" to "Brand",
-        "color" to "Color",
-        "secondaryColor" to "Secondary Color",
-        "itemType" to "Type",
-        "model" to "Model",
-        "material" to "Material",
-        "size" to "Size",
-        "ocrText" to "Text",
-        "labelHints" to "Labels",
-    )
+    val displayNameMap =
+        mapOf(
+            "brand" to "Brand",
+            "color" to "Color",
+            "secondaryColor" to "Secondary Color",
+            "itemType" to "Type",
+            "model" to "Model",
+            "material" to "Material",
+            "size" to "Size",
+            "ocrText" to "Text",
+            "labelHints" to "Labels",
+        )
 
     // Add from main attributes
     for ((key, attr) in attributes) {
@@ -858,7 +892,7 @@ private fun buildDisplayableAttributes(
                 isUserProvided = attr.source?.contains("user", ignoreCase = true) == true,
                 evidenceType = attr.source?.let { extractEvidenceType(it) },
                 confidence = attr.confidence,
-            )
+            ),
         )
     }
 
@@ -873,7 +907,7 @@ private fun buildDisplayableAttributes(
                     isUserProvided = false,
                     evidenceType = "LOGO",
                     confidence = logo.score,
-                )
+                ),
             )
             seen.add("brand")
         }
@@ -889,7 +923,7 @@ private fun buildDisplayableAttributes(
                     isUserProvided = false,
                     evidenceType = "COLOR",
                     confidence = color.score,
-                )
+                ),
             )
             seen.add("color")
         }
@@ -906,7 +940,7 @@ private fun buildDisplayableAttributes(
                     isUserProvided = false,
                     evidenceType = "LABEL",
                     confidence = 0.7f,
-                )
+                ),
             )
             seen.add("itemType")
         }
@@ -915,12 +949,14 @@ private fun buildDisplayableAttributes(
     // Add OCR snippet if present
     if (!seen.contains("ocrText")) {
         visionAttributes.ocrText?.takeIf { it.isNotBlank() }?.let { text ->
-            val snippet = text.lineSequence()
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .take(2)
-                .joinToString(" | ")
-                .take(60)
+            val snippet =
+                text
+                    .lineSequence()
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .take(2)
+                    .joinToString(" | ")
+                    .take(60)
             if (snippet.isNotBlank()) {
                 result.add(
                     DisplayableAttribute(
@@ -930,7 +966,7 @@ private fun buildDisplayableAttributes(
                         isUserProvided = false,
                         evidenceType = "OCR",
                         confidence = 0.8f,
-                    )
+                    ),
                 )
             }
         }
@@ -939,8 +975,8 @@ private fun buildDisplayableAttributes(
     return result
 }
 
-private fun extractEvidenceType(source: String): String? {
-    return when {
+private fun extractEvidenceType(source: String): String? =
+    when {
         source.contains("ocr", ignoreCase = true) -> "OCR"
         source.contains("logo", ignoreCase = true) -> "LOGO"
         source.contains("color", ignoreCase = true) -> "COLOR"
@@ -949,7 +985,6 @@ private fun extractEvidenceType(source: String): String? {
         source.contains("vision", ignoreCase = true) -> "VISION"
         else -> null
     }
-}
 
 /**
  * Display data for an attribute.
@@ -977,12 +1012,14 @@ private fun SuggestedAdditionsSection(
     val dismissText = stringResource(R.string.common_dismiss)
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
-        ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+            ),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -996,9 +1033,10 @@ private fun SuggestedAdditionsSection(
 
             suggestions.forEach { suggestion ->
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -1071,19 +1109,21 @@ private fun detectSuggestedAdditions(
     for ((key, attr) in item.attributes) {
         if (attr.value.isBlank()) continue
 
-        val displayName = when (key) {
-            "brand" -> "Brand"
-            "color" -> "Color"
-            "model" -> "Model"
-            "material" -> "Material"
-            "size" -> "Size"
-            "itemType" -> "Type"
-            else -> continue // Only suggest standard attributes
-        }
+        val displayName =
+            when (key) {
+                "brand" -> "Brand"
+                "color" -> "Color"
+                "model" -> "Model"
+                "material" -> "Material"
+                "size" -> "Size"
+                "itemType" -> "Type"
+                else -> continue // Only suggest standard attributes
+            }
 
         // Check if the value is missing from the summary
-        val isInSummary = summaryLower.contains("$displayName:".lowercase()) &&
-            summaryLower.contains(attr.value.lowercase())
+        val isInSummary =
+            summaryLower.contains("$displayName:".lowercase()) &&
+                summaryLower.contains(attr.value.lowercase())
 
         val isMissing = summaryLower.contains("$displayName: (missing)".lowercase())
 
@@ -1119,11 +1159,13 @@ private fun insertSuggestionIntoText(
                 ignoreCase = true,
             )
         }
+
         existingPattern.containsMatchIn(summaryText) -> {
             existingPattern.replace(summaryText) {
                 "${suggestion.displayName}: ${suggestion.value}"
             }
         }
+
         else -> {
             // Append at the end before Notes
             val notesIndex = summaryText.indexOf("Notes:", ignoreCase = true)

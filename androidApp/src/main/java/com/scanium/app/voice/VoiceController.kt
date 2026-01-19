@@ -25,7 +25,9 @@ import java.util.Locale
  * - Clear state indicators
  * - No audio storage or transcript logging
  */
-class VoiceController(context: Context) {
+class VoiceController(
+    context: Context,
+) {
     companion object {
         private const val TAG = "VoiceController"
         private const val TTS_UTTERANCE_ID = "assistant-response"
@@ -352,8 +354,8 @@ class VoiceController(context: Context) {
      * Clean text for TTS output.
      * Removes markdown formatting and other elements that shouldn't be spoken.
      */
-    private fun cleanTextForTts(text: String): String {
-        return text
+    private fun cleanTextForTts(text: String): String =
+        text
             // Remove markdown bold/italic
             .replace(Regex("\\*\\*(.+?)\\*\\*"), "$1")
             .replace(Regex("\\*(.+?)\\*"), "$1")
@@ -368,13 +370,12 @@ class VoiceController(context: Context) {
             // Normalize whitespace
             .replace(Regex("\\s+"), " ")
             .trim()
-    }
 
     /**
      * Get human-readable error message for recognition error code.
      */
-    private fun getErrorMessage(errorCode: Int): String {
-        return when (errorCode) {
+    private fun getErrorMessage(errorCode: Int): String =
+        when (errorCode) {
             SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
             SpeechRecognizer.ERROR_CLIENT -> "Client-side error"
             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission denied"
@@ -386,5 +387,4 @@ class VoiceController(context: Context) {
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech detected"
             else -> "Speech recognition error"
         }
-    }
 }

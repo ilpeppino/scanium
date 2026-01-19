@@ -40,9 +40,15 @@ enum class VoiceState {
  * Result of a voice recognition attempt.
  */
 sealed class VoiceResult {
-    data class Success(val transcript: String, val confidence: Float) : VoiceResult()
+    data class Success(
+        val transcript: String,
+        val confidence: Float,
+    ) : VoiceResult()
 
-    data class Error(val message: String, val errorCode: Int) : VoiceResult()
+    data class Error(
+        val message: String,
+        val errorCode: Int,
+    ) : VoiceResult()
 
     data object Cancelled : VoiceResult()
 }
@@ -56,7 +62,9 @@ sealed class VoiceResult {
  * - Clear state indicators
  * - No audio storage
  */
-class AssistantVoiceController(context: Context) {
+class AssistantVoiceController(
+    context: Context,
+) {
     companion object {
         private const val TAG = "AssistantVoice"
         private const val TTS_UTTERANCE_ID = "assistant-response"
@@ -383,8 +391,8 @@ class AssistantVoiceController(context: Context) {
      * Clean text for TTS output.
      * Removes markdown formatting and other elements that shouldn't be spoken.
      */
-    private fun cleanTextForTts(text: String): String {
-        return text
+    private fun cleanTextForTts(text: String): String =
+        text
             // Remove markdown bold/italic
             .replace(Regex("\\*\\*(.+?)\\*\\*"), "$1")
             .replace(Regex("\\*(.+?)\\*"), "$1")
@@ -399,13 +407,12 @@ class AssistantVoiceController(context: Context) {
             // Normalize whitespace
             .replace(Regex("\\s+"), " ")
             .trim()
-    }
 
     /**
      * Get human-readable error message for recognition error code.
      */
-    private fun getErrorMessage(errorCode: Int): String {
-        return when (errorCode) {
+    private fun getErrorMessage(errorCode: Int): String =
+        when (errorCode) {
             SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
             SpeechRecognizer.ERROR_CLIENT -> "Client-side error"
             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission denied"
@@ -417,5 +424,4 @@ class AssistantVoiceController(context: Context) {
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech detected"
             else -> "Speech recognition error"
         }
-    }
 }

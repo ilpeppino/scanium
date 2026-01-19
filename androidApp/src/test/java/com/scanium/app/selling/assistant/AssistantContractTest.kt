@@ -21,35 +21,37 @@ import kotlinx.serialization.json.JsonElement
 import org.junit.Test
 
 class AssistantContractTest {
-
     private val json = Json
 
     @Test
     fun `request payload matches contract fixture`() {
-        val actual = json.parseToJsonElement(
-            AssistantContractCodec.encodeRequest(
-                items = listOf(createItemSnapshot()),
-                history = listOf(
-                    AssistantMessage(
-                        role = AssistantRole.USER,
-                        content = "What is this?",
-                        timestamp = 1704067200000L,
-                        itemContextIds = listOf("item-123"),
-                    ),
+        val actual =
+            json.parseToJsonElement(
+                AssistantContractCodec.encodeRequest(
+                    items = listOf(createItemSnapshot()),
+                    history =
+                        listOf(
+                            AssistantMessage(
+                                role = AssistantRole.USER,
+                                content = "What is this?",
+                                timestamp = 1704067200000L,
+                                itemContextIds = listOf("item-123"),
+                            ),
+                        ),
+                    userMessage = "Generate a listing",
+                    exportProfile = createExportProfile(),
+                    assistantPrefs =
+                        AssistantPrefs(
+                            language = "en",
+                            tone = AssistantTone.MARKETPLACE,
+                            region = AssistantRegion.NL,
+                            units = AssistantUnits.METRIC,
+                            verbosity = AssistantVerbosity.CONCISE,
+                        ),
+                    includePricing = true,
+                    pricingCountryCode = "NL",
                 ),
-                userMessage = "Generate a listing",
-                exportProfile = createExportProfile(),
-                assistantPrefs = AssistantPrefs(
-                    language = "en",
-                    tone = AssistantTone.MARKETPLACE,
-                    region = AssistantRegion.NL,
-                    units = AssistantUnits.METRIC,
-                    verbosity = AssistantVerbosity.CONCISE,
-                ),
-                includePricing = true,
-                pricingCountryCode = "NL",
-            ),
-        )
+            )
 
         val expected = loadJsonFixture("assistant_contract/assistant_request.json")
 
@@ -79,20 +81,21 @@ class AssistantContractTest {
             description = "Brass lamp with shade",
             category = "Lighting",
             confidence = 0.92f,
-            attributes = listOf(
-                ItemAttributeSnapshot(
-                    key = "brand",
-                    value = "Acme",
-                    confidence = 0.77f,
-                    source = AttributeSource.USER,
+            attributes =
+                listOf(
+                    ItemAttributeSnapshot(
+                        key = "brand",
+                        value = "Acme",
+                        confidence = 0.77f,
+                        source = AttributeSource.USER,
+                    ),
+                    ItemAttributeSnapshot(
+                        key = "color",
+                        value = "Brass",
+                        confidence = 0.66f,
+                        source = AttributeSource.DETECTED,
+                    ),
                 ),
-                ItemAttributeSnapshot(
-                    key = "color",
-                    value = "Brass",
-                    confidence = 0.66f,
-                    source = AttributeSource.DETECTED,
-                ),
-            ),
             priceEstimate = 120.5,
             photosCount = 2,
             exportProfileId = ExportProfileId.GENERIC,
@@ -113,8 +116,9 @@ class AssistantContractTest {
     }
 
     private fun loadJsonFixtureText(path: String): String {
-        val stream = javaClass.classLoader?.getResourceAsStream(path)
-            ?: error("Missing test fixture: $path")
+        val stream =
+            javaClass.classLoader?.getResourceAsStream(path)
+                ?: error("Missing test fixture: $path")
         return stream.use {
             it.bufferedReader().readText()
         }

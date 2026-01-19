@@ -2,7 +2,9 @@ package com.scanium.app.items.export.bundle
 
 import com.scanium.shared.core.models.ml.ItemCategory
 import org.json.JSONObject
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -18,7 +20,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class ManifestBuilderTest {
-
     @Test
     fun `build includes manifest version and format`() {
         val result = createTestResult(1)
@@ -44,19 +45,21 @@ class ManifestBuilderTest {
 
     @Test
     fun `build includes accurate statistics`() {
-        val bundles = listOf(
-            createTestBundle("item-1", setOf(ExportBundleFlag.READY)),
-            createTestBundle("item-2", setOf(ExportBundleFlag.READY)),
-            createTestBundle("item-3", setOf(ExportBundleFlag.NEEDS_AI)),
-            createTestBundle("item-4", setOf(ExportBundleFlag.READY, ExportBundleFlag.NO_PHOTOS)),
-        )
-        val result = ExportBundleResult(
-            bundles = bundles,
-            totalItems = 4,
-            readyCount = 3,
-            needsAiCount = 1,
-            noPhotosCount = 1,
-        )
+        val bundles =
+            listOf(
+                createTestBundle("item-1", setOf(ExportBundleFlag.READY)),
+                createTestBundle("item-2", setOf(ExportBundleFlag.READY)),
+                createTestBundle("item-3", setOf(ExportBundleFlag.NEEDS_AI)),
+                createTestBundle("item-4", setOf(ExportBundleFlag.READY, ExportBundleFlag.NO_PHOTOS)),
+            )
+        val result =
+            ExportBundleResult(
+                bundles = bundles,
+                totalItems = 4,
+                readyCount = 3,
+                needsAiCount = 1,
+                noPhotosCount = 1,
+            )
 
         val manifest = JSONObject(ManifestBuilder.build(result))
 
@@ -70,17 +73,19 @@ class ManifestBuilderTest {
 
     @Test
     fun `build marks allReady true when no items need AI`() {
-        val bundles = listOf(
-            createTestBundle("item-1", setOf(ExportBundleFlag.READY)),
-            createTestBundle("item-2", setOf(ExportBundleFlag.READY)),
-        )
-        val result = ExportBundleResult(
-            bundles = bundles,
-            totalItems = 2,
-            readyCount = 2,
-            needsAiCount = 0,
-            noPhotosCount = 0,
-        )
+        val bundles =
+            listOf(
+                createTestBundle("item-1", setOf(ExportBundleFlag.READY)),
+                createTestBundle("item-2", setOf(ExportBundleFlag.READY)),
+            )
+        val result =
+            ExportBundleResult(
+                bundles = bundles,
+                totalItems = 2,
+                readyCount = 2,
+                needsAiCount = 0,
+                noPhotosCount = 0,
+            )
 
         val manifest = JSONObject(ManifestBuilder.build(result))
 
@@ -90,18 +95,20 @@ class ManifestBuilderTest {
 
     @Test
     fun `build includes items summary with paths`() {
-        val bundle = createTestBundle(
-            "test-item-123",
-            setOf(ExportBundleFlag.READY),
-            photoCount = 3,
-        )
-        val result = ExportBundleResult(
-            bundles = listOf(bundle),
-            totalItems = 1,
-            readyCount = 1,
-            needsAiCount = 0,
-            noPhotosCount = 0,
-        )
+        val bundle =
+            createTestBundle(
+                "test-item-123",
+                setOf(ExportBundleFlag.READY),
+                photoCount = 3,
+            )
+        val result =
+            ExportBundleResult(
+                bundles = listOf(bundle),
+                totalItems = 1,
+                readyCount = 1,
+                needsAiCount = 0,
+                noPhotosCount = 0,
+            )
 
         val manifest = JSONObject(ManifestBuilder.build(result))
 
@@ -124,19 +131,21 @@ class ManifestBuilderTest {
 
     @Test
     fun `build determines correct status for each item state`() {
-        val bundles = listOf(
-            createTestBundle("ready", setOf(ExportBundleFlag.READY)),
-            createTestBundle("ready-no-photos", setOf(ExportBundleFlag.READY, ExportBundleFlag.NO_PHOTOS)),
-            createTestBundle("needs-ai", setOf(ExportBundleFlag.NEEDS_AI)),
-            createTestBundle("needs-ai-no-photos", setOf(ExportBundleFlag.NEEDS_AI, ExportBundleFlag.NO_PHOTOS)),
-        )
-        val result = ExportBundleResult(
-            bundles = bundles,
-            totalItems = 4,
-            readyCount = 2,
-            needsAiCount = 2,
-            noPhotosCount = 2,
-        )
+        val bundles =
+            listOf(
+                createTestBundle("ready", setOf(ExportBundleFlag.READY)),
+                createTestBundle("ready-no-photos", setOf(ExportBundleFlag.READY, ExportBundleFlag.NO_PHOTOS)),
+                createTestBundle("needs-ai", setOf(ExportBundleFlag.NEEDS_AI)),
+                createTestBundle("needs-ai-no-photos", setOf(ExportBundleFlag.NEEDS_AI, ExportBundleFlag.NO_PHOTOS)),
+            )
+        val result =
+            ExportBundleResult(
+                bundles = bundles,
+                totalItems = 4,
+                readyCount = 2,
+                needsAiCount = 2,
+                noPhotosCount = 2,
+            )
 
         val manifest = JSONObject(ManifestBuilder.build(result))
 
@@ -149,10 +158,11 @@ class ManifestBuilderTest {
 
     @Test
     fun `build includes flags array for each item`() {
-        val bundle = createTestBundle(
-            "test-item",
-            setOf(ExportBundleFlag.NEEDS_AI, ExportBundleFlag.NO_PHOTOS),
-        )
+        val bundle =
+            createTestBundle(
+                "test-item",
+                setOf(ExportBundleFlag.NEEDS_AI, ExportBundleFlag.NO_PHOTOS),
+            )
         val result = createTestResult(bundles = listOf(bundle))
 
         val manifest = JSONObject(ManifestBuilder.build(result))
@@ -167,18 +177,20 @@ class ManifestBuilderTest {
 
     @Test
     fun `buildMinimal produces compact manifest`() {
-        val bundles = listOf(
-            createTestBundle("item-1"),
-            createTestBundle("item-2"),
-            createTestBundle("item-3"),
-        )
-        val result = ExportBundleResult(
-            bundles = bundles,
-            totalItems = 3,
-            readyCount = 3,
-            needsAiCount = 0,
-            noPhotosCount = 0,
-        )
+        val bundles =
+            listOf(
+                createTestBundle("item-1"),
+                createTestBundle("item-2"),
+                createTestBundle("item-3"),
+            )
+        val result =
+            ExportBundleResult(
+                bundles = bundles,
+                totalItems = 3,
+                readyCount = 3,
+                needsAiCount = 0,
+                noPhotosCount = 0,
+            )
 
         val manifest = JSONObject(ManifestBuilder.buildMinimal(result))
 
@@ -195,11 +207,12 @@ class ManifestBuilderTest {
 
     @Test
     fun `build does not include photos path when item has no photos`() {
-        val bundle = createTestBundle(
-            "no-photos-item",
-            setOf(ExportBundleFlag.READY, ExportBundleFlag.NO_PHOTOS),
-            photoCount = 0,
-        )
+        val bundle =
+            createTestBundle(
+                "no-photos-item",
+                setOf(ExportBundleFlag.READY, ExportBundleFlag.NO_PHOTOS),
+                photoCount = 0,
+            )
         val result = createTestResult(bundles = listOf(bundle))
 
         val manifest = JSONObject(ManifestBuilder.build(result))
@@ -214,9 +227,10 @@ class ManifestBuilderTest {
         itemCount: Int = 1,
         bundles: List<ExportItemBundle>? = null,
     ): ExportBundleResult {
-        val actualBundles = bundles ?: (1..itemCount).map {
-            createTestBundle("item-$it", setOf(ExportBundleFlag.READY))
-        }
+        val actualBundles =
+            bundles ?: (1..itemCount).map {
+                createTestBundle("item-$it", setOf(ExportBundleFlag.READY))
+            }
         return ExportBundleResult(
             bundles = actualBundles,
             totalItems = actualBundles.size,
@@ -231,11 +245,12 @@ class ManifestBuilderTest {
         flags: Set<ExportBundleFlag> = setOf(ExportBundleFlag.READY),
         photoCount: Int = 3,
     ): ExportItemBundle {
-        val photoUris = if (photoCount > 0) {
-            (1..photoCount).map { "/path/photo$it.jpg" }
-        } else {
-            emptyList()
-        }
+        val photoUris =
+            if (photoCount > 0) {
+                (1..photoCount).map { "/path/photo$it.jpg" }
+            } else {
+                emptyList()
+            }
 
         return ExportItemBundle(
             itemId = itemId,

@@ -1,6 +1,7 @@
 ***REMOVED*** Scanium Backend - Complete Deployment Guide
 
-This document provides the complete manual setup steps for deploying the Scanium backend on your Synology NAS.
+This document provides the complete manual setup steps for deploying the Scanium backend on your
+Synology NAS.
 
 ***REMOVED******REMOVED*** 📋 What Was Built
 
@@ -61,11 +62,13 @@ backend/
 ***REMOVED******REMOVED*** 🎯 Implemented Endpoints
 
 ***REMOVED******REMOVED******REMOVED*** Health & Status
+
 - `GET /healthz` - Liveness check (200 if process running)
 - `GET /readyz` - Readiness check (200 if DB connected)
 - `GET /` - API info and endpoint listing
 
 ***REMOVED******REMOVED******REMOVED*** eBay OAuth (Server-Side)
+
 - `POST /auth/ebay/start` - Returns eBay authorization URL
 - `GET /auth/ebay/callback` - Handles OAuth callback, exchanges code for tokens
 - `GET /auth/ebay/status` - Returns connection status
@@ -99,13 +102,13 @@ backend/
 1. In the tunnel configuration, click **Public Hostname**
 2. Click **Add a public hostname**
 3. Configure:
-   - **Subdomain**: `api`
-   - **Domain**: Your domain (e.g., `yourdomain.com`)
-   - **Path**: (leave blank)
-   - **Type**: `HTTP`
-   - **URL**: `api:8080`
-     - `api` = Docker service name from docker-compose.yml
-     - `8080` = internal container port
+    - **Subdomain**: `api`
+    - **Domain**: Your domain (e.g., `yourdomain.com`)
+    - **Path**: (leave blank)
+    - **Type**: `HTTP`
+    - **URL**: `api:8080`
+        - `api` = Docker service name from docker-compose.yml
+        - `8080` = internal container port
 4. Click **Save hostname**
 
 ✅ **Result**: API accessible at `https://api.yourdomain.com`
@@ -118,10 +121,10 @@ backend/
 
 1. Go to **Cloudflare Dashboard > DNS > Records**
 2. Verify CNAME record exists:
-   - **Type**: CNAME
-   - **Name**: `api`
-   - **Target**: `<uuid>.cfargotunnel.com`
-   - **Proxy**: Enabled (orange cloud)
+    - **Type**: CNAME
+    - **Name**: `api`
+    - **Target**: `<uuid>.cfargotunnel.com`
+    - **Proxy**: Enabled (orange cloud)
 
 ✅ **No manual DNS changes needed** - Cloudflare Tunnel creates this automatically!
 
@@ -140,8 +143,8 @@ backend/
 1. Go to [My Keys](https://developer.ebay.com/my/keys)
 2. Under **Sandbox Keys**, click **Create a keyset**
 3. Note down:
-   - **App ID (Client ID)**
-   - **Cert ID (Client Secret)**
+    - **App ID (Client ID)**
+    - **Cert ID (Client Secret)**
 
 ***REMOVED******REMOVED******REMOVED*** 3. Configure RuName (Redirect URL)
 
@@ -149,9 +152,9 @@ backend/
 2. Click **Get a Token from eBay**
 3. Click **Add RuName**
 4. Fill in:
-   - **Your Privacy Policy URL**: Any valid URL (e.g., `https://yourdomain.com/privacy`)
-   - **Your Auth Accepted URL**: `https://api.yourdomain.com/auth/ebay/callback`
-     - ⚠️ **MUST MATCH** `PUBLIC_BASE_URL + EBAY_REDIRECT_PATH`
+    - **Your Privacy Policy URL**: Any valid URL (e.g., `https://yourdomain.com/privacy`)
+    - **Your Auth Accepted URL**: `https://api.yourdomain.com/auth/ebay/callback`
+        - ⚠️ **MUST MATCH** `PUBLIC_BASE_URL + EBAY_REDIRECT_PATH`
 5. Click **Save**
 
 ***REMOVED******REMOVED******REMOVED*** 4. Grant Application Access
@@ -173,6 +176,7 @@ https://api.ebay.com/oauth/api_scope/sell.account
 ```
 
 **Scope breakdown:**
+
 - `api_scope` - Basic API access
 - `sell.inventory` - Create/manage listings
 - `sell.fulfillment` - Order management
@@ -183,6 +187,7 @@ https://api.ebay.com/oauth/api_scope/sell.account
 ***REMOVED******REMOVED******REMOVED*** 6. Production Keys (Later)
 
 For production eBay:
+
 1. Switch to **Production Keys** tab
 2. Create keyset
 3. Repeat RuName configuration
@@ -254,32 +259,32 @@ Replace `GENERATE_*` and `STRONG_PASSWORD_HERE` with generated values.
 ***REMOVED******REMOVED******REMOVED*** 3. Deploy via Container Manager (UI)
 
 1. **Upload Project**:
-   - Open **File Station** on NAS
-   - Navigate to `/docker/` (or create it)
-   - Create folder: `scanium-backend`
-   - Upload entire `backend/` folder contents
-   - Result: `/docker/scanium-backend/`
+    - Open **File Station** on NAS
+    - Navigate to `/docker/` (or create it)
+    - Create folder: `scanium-backend`
+    - Upload entire `backend/` folder contents
+    - Result: `/docker/scanium-backend/`
 
 2. **Open Container Manager**:
-   - Open **Container Manager** app
-   - Go to **Project** tab
-   - Click **Create**
+    - Open **Container Manager** app
+    - Go to **Project** tab
+    - Click **Create**
 
 3. **Configure Project**:
-   - **Project Name**: `scanium`
-   - **Path**: `/docker/scanium-backend`
-   - **Source**: Use existing `docker-compose.yml`
-   - Click **Next**
+    - **Project Name**: `scanium`
+    - **Path**: `/docker/scanium-backend`
+    - **Source**: Use existing `docker-compose.yml`
+    - Click **Next**
 
 4. **Environment Variables**:
-   - Ensure `.env` file exists in project folder
-   - OR: Add variables manually in Container Manager
-   - Click **Next**
+    - Ensure `.env` file exists in project folder
+    - OR: Add variables manually in Container Manager
+    - Click **Next**
 
 5. **Review & Start**:
-   - Review configuration
-   - Click **Done**
-   - Project builds and starts automatically
+    - Review configuration
+    - Click **Done**
+    - Project builds and starts automatically
 
 ***REMOVED******REMOVED******REMOVED*** 4. Deploy via SSH (Alternative)
 
@@ -323,6 +328,7 @@ docker ps
 ```
 
 **Expected output:** 3 running containers
+
 - `scanium-postgres`
 - `scanium-api`
 - `scanium-cloudflared`
@@ -341,6 +347,7 @@ docker logs scanium-postgres
 ```
 
 **API should show:**
+
 ```
 ✅ Configuration loaded (env: production)
 ✅ Application built
@@ -350,6 +357,7 @@ docker logs scanium-postgres
 ```
 
 **Cloudflared should show:**
+
 ```
 Connection registered
 ```
@@ -357,11 +365,13 @@ Connection registered
 ***REMOVED******REMOVED******REMOVED*** 3. Test Endpoints
 
 **Health check:**
+
 ```bash
 curl https://api.yourdomain.com/healthz
 ```
 
 **Expected:**
+
 ```json
 {
   "status": "ok",
@@ -370,11 +380,13 @@ curl https://api.yourdomain.com/healthz
 ```
 
 **Readiness check:**
+
 ```bash
 curl https://api.yourdomain.com/readyz
 ```
 
 **Expected:**
+
 ```json
 {
   "status": "ok",
@@ -384,16 +396,19 @@ curl https://api.yourdomain.com/readyz
 ```
 
 **API info:**
+
 ```bash
 curl https://api.yourdomain.com/
 ```
 
 **eBay status (before OAuth):**
+
 ```bash
 curl https://api.yourdomain.com/auth/ebay/status
 ```
 
 **Expected:**
+
 ```json
 {
   "connected": false,
@@ -500,11 +515,13 @@ Before going live:
 ***REMOVED******REMOVED******REMOVED*** Container won't start
 
 **Check logs:**
+
 ```bash
 docker logs scanium-api
 ```
 
 **Common causes:**
+
 - Missing environment variables (check `.env`)
 - Database not ready (wait for postgres health check)
 - Port 8080 already in use
@@ -512,11 +529,13 @@ docker logs scanium-api
 ***REMOVED******REMOVED******REMOVED*** Database connection failed
 
 **Verify DATABASE_URL:**
+
 - Host must be `postgres` (Docker service name, not localhost)
 - Port must be `5432`
 - Credentials must match `POSTGRES_*` env vars
 
 **Test connection:**
+
 ```bash
 docker exec -it scanium-postgres psql -U scanium -d scanium
 ```
@@ -524,22 +543,26 @@ docker exec -it scanium-postgres psql -U scanium -d scanium
 ***REMOVED******REMOVED******REMOVED*** Cloudflare Tunnel not connecting
 
 **Check token:**
+
 ```bash
 docker logs scanium-cloudflared
 ```
 
 **Common causes:**
+
 - Invalid `CLOUDFLARED_TOKEN`
 - Token has spaces/quotes (should be raw token)
 - Tunnel deleted in Cloudflare Dashboard
 
 **Verify tunnel status:**
+
 - Cloudflare Dashboard > Networks > Tunnels
 - Should show "HEALTHY"
 
 ***REMOVED******REMOVED******REMOVED*** OAuth redirect_uri_mismatch
 
 **Verify RuName:**
+
 - eBay Developer Portal > Application Keys > User Tokens
 - RuName URL must exactly match: `https://api.yourdomain.com/auth/ebay/callback`
 - No trailing slash
@@ -548,10 +571,12 @@ docker logs scanium-cloudflared
 ***REMOVED******REMOVED******REMOVED*** OAuth state mismatch
 
 **Causes:**
+
 - Cookies blocked/cleared
 - Multiple OAuth attempts
 
 **Fix:**
+
 - Clear browser cookies
 - Retry OAuth from fresh start
 - Verify `SESSION_SIGNING_SECRET` is set
@@ -561,21 +586,25 @@ docker logs scanium-cloudflared
 ***REMOVED******REMOVED*** 📊 Monitoring
 
 ***REMOVED******REMOVED******REMOVED*** View logs in real-time:
+
 ```bash
 docker-compose logs -f api
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Check resource usage:
+
 ```bash
 docker stats scanium-api scanium-postgres scanium-cloudflared
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Database backup:
+
 ```bash
 docker exec scanium-postgres pg_dump -U scanium scanium > backup_$(date +%Y%m%d).sql
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Restore backup:
+
 ```bash
 cat backup_20241212.sql | docker exec -i scanium-postgres psql -U scanium scanium
 ```
@@ -620,6 +649,7 @@ Your Scanium backend is now:
 **API URL:** `https://api.yourdomain.com`
 
 **Test it now:**
+
 ```bash
 curl https://api.yourdomain.com/healthz
 ```

@@ -60,7 +60,8 @@ object RequestSigner {
 
         val signature = generateSignature(apiKey, timestampMs, requestBody)
 
-        return request.newBuilder()
+        return request
+            .newBuilder()
             .header(HEADER_TIMESTAMP, timestampMs.toString())
             .header(HEADER_SIGNATURE, signature)
             .build()
@@ -190,7 +191,5 @@ object RequestSigner {
     /**
      * Convert byte array to lowercase hex string.
      */
-    private fun ByteArray.toHexString(): String {
-        return joinToString("") { "%02x".format(it) }
-    }
+    private fun ByteArray.toHexString(): String = joinToString("") { "%02x".format(it) }
 }

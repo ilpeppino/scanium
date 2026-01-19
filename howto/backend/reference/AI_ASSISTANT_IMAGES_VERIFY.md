@@ -1,6 +1,7 @@
 ***REMOVED*** AI Assistant Images Verification Guide
 
-This document describes how to verify that image attachments are correctly sent to the assistant endpoint.
+This document describes how to verify that image attachments are correctly sent to the assistant
+endpoint.
 
 ---
 
@@ -118,6 +119,7 @@ cd androidApp
 ```
 
 Expected output:
+
 - All tests pass
 - No image content logged (only metadata: counts, sizes)
 
@@ -125,14 +127,14 @@ Expected output:
 
 ***REMOVED******REMOVED*** Verification Checklist
 
-| Step | Expected Result |
-|------|-----------------|
-| Toggle OFF, item with photos | No attachments sent, JSON request |
-| Toggle ON, item with photos | Attachments sent, multipart request |
-| Toggle ON, item without photos | No attachments sent, JSON request |
+| Step                           | Expected Result                               |
+|--------------------------------|-----------------------------------------------|
+| Toggle OFF, item with photos   | No attachments sent, JSON request             |
+| Toggle ON, item with photos    | Attachments sent, multipart request           |
+| Toggle ON, item without photos | No attachments sent, JSON request             |
 | Toggle ON, item with 5+ photos | Only 3 attachments sent (MAX_IMAGES_PER_ITEM) |
-| Image > 2MB | Recompressed or skipped with warning |
-| Backend receives multipart | Vision extraction runs, evidence returned |
+| Image > 2MB                    | Recompressed or skipped with warning          |
+| Backend receives multipart     | Vision extraction runs, evidence returned     |
 
 ---
 
@@ -160,14 +162,14 @@ Expected output:
 
 ***REMOVED******REMOVED*** Key Files
 
-| File | Purpose |
-|------|---------|
+| File                                                 | Purpose                              |
+|------------------------------------------------------|--------------------------------------|
 | `androidApp/.../assistant/ImageAttachmentBuilder.kt` | Builds attachments from draft photos |
-| `androidApp/.../assistant/AssistantViewModel.kt` | Reads toggle, passes attachments |
-| `androidApp/.../assistant/AssistantRepository.kt` | Builds multipart request |
-| `androidApp/.../data/SettingsRepository.kt` | `allowAssistantImagesFlow` toggle |
-| `backend/src/modules/assistant/routes.ts` | Parses multipart, extracts images |
-| `backend/src/modules/vision/` | Vision extraction pipeline |
+| `androidApp/.../assistant/AssistantViewModel.kt`     | Reads toggle, passes attachments     |
+| `androidApp/.../assistant/AssistantRepository.kt`    | Builds multipart request             |
+| `androidApp/.../data/SettingsRepository.kt`          | `allowAssistantImagesFlow` toggle    |
+| `backend/src/modules/assistant/routes.ts`            | Parses multipart, extracts images    |
+| `backend/src/modules/vision/`                        | Vision extraction pipeline           |
 
 ---
 

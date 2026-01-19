@@ -19,11 +19,12 @@ data class ItemAttribute(
      * Confidence tier based on score thresholds.
      */
     val confidenceTier: AttributeConfidenceTier
-        get() = when {
-            confidence >= 0.8f -> AttributeConfidenceTier.HIGH
-            confidence >= 0.5f -> AttributeConfidenceTier.MEDIUM
-            else -> AttributeConfidenceTier.LOW
-        }
+        get() =
+            when {
+                confidence >= 0.8f -> AttributeConfidenceTier.HIGH
+                confidence >= 0.5f -> AttributeConfidenceTier.MEDIUM
+                else -> AttributeConfidenceTier.LOW
+            }
 
     /**
      * Whether this attribute has high enough confidence to be trusted.
@@ -40,7 +41,10 @@ data class ItemAttribute(
         /**
          * Create an attribute from backend response map entry.
          */
-        fun fromMapEntry(key: String, value: String): ItemAttribute = ItemAttribute(value = value)
+        fun fromMapEntry(
+            key: String,
+            value: String,
+        ): ItemAttribute = ItemAttribute(value = value)
     }
 }
 

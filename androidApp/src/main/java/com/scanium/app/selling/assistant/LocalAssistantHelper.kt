@@ -30,18 +30,23 @@ class LocalAssistantHelper(
                 normalizedQuestion.contains("category") || normalizedQuestion.contains("what is it") -> {
                     buildCategoryResponse(primary)
                 }
+
                 normalizedQuestion.contains("price") || normalizedQuestion.contains("worth") || normalizedQuestion.contains("estimate") -> {
                     buildPriceResponse(primary)
                 }
+
                 normalizedQuestion.contains("brand") || normalizedQuestion.contains("model") || normalizedQuestion.contains("color") -> {
                     buildAttributeResponse(primary, normalizedQuestion)
                 }
+
                 normalizedQuestion.contains("checklist") || normalizedQuestion.contains("missing") -> {
                     buildChecklistResponse(primary, pack)
                 }
+
                 normalizedQuestion.contains("template") || normalizedQuestion.contains("description") -> {
                     buildTemplateResponse(primary, pack)
                 }
+
                 else -> {
                     buildOverviewResponse(primary, pack)
                 }
@@ -49,10 +54,11 @@ class LocalAssistantHelper(
 
         val suggestedNextPhoto = buildNextPhotoSuggestion(primary, pack, normalizedQuestion)
 
-        return response.copy(
-            suggestedNextPhoto = suggestedNextPhoto,
-            actions = response.actions + buildNextPhotoAction(suggestedNextPhoto),
-        ).withFailureMetadata(failure)
+        return response
+            .copy(
+                suggestedNextPhoto = suggestedNextPhoto,
+                actions = response.actions + buildNextPhotoAction(suggestedNextPhoto),
+            ).withFailureMetadata(failure)
     }
 
     private fun buildCategoryResponse(snapshot: ItemContextSnapshot): AssistantResponse {
@@ -114,7 +120,8 @@ class LocalAssistantHelper(
         return if (found.isNotEmpty()) {
             val summary = found.joinToString { "${it.key.replaceFirstChar { char -> char.uppercase() }}: ${it.value}" }
             val bestTier =
-                found.map { confidenceToTier(it.confidence) }
+                found
+                    .map { confidenceToTier(it.confidence) }
                     .maxByOrNull { confidenceScore(it) } ?: ConfidenceTier.MED
             AssistantResponse(
                 content = summary,
@@ -214,8 +221,8 @@ class LocalAssistantHelper(
             ?: "Take a clear close-up of labels or defects."
     }
 
-    private fun buildNextPhotoAction(suggestion: String?): List<AssistantAction> {
-        return suggestion?.let {
+    private fun buildNextPhotoAction(suggestion: String?): List<AssistantAction> =
+        suggestion?.let {
             listOf(
                 AssistantAction(
                     type = AssistantActionType.SUGGEST_NEXT_PHOTO,
@@ -224,31 +231,27 @@ class LocalAssistantHelper(
                 ),
             )
         } ?: emptyList()
-    }
 
-    private fun buildDescriptionTemplate(pack: LocalTemplatePack): String {
-        return pack.descriptionSections.joinToString(separator = "\n") { section ->
+    private fun buildDescriptionTemplate(pack: LocalTemplatePack): String =
+        pack.descriptionSections.joinToString(separator = "\n") { section ->
             val requiredFlag = if (section.required) " (required)" else ""
             "${section.label}$requiredFlag: ${section.prompt}"
         }
-    }
 
-    private fun confidenceToTier(confidence: Float?): ConfidenceTier {
-        return when {
+    private fun confidenceToTier(confidence: Float?): ConfidenceTier =
+        when {
             confidence == null -> ConfidenceTier.MED
             confidence >= 0.8f -> ConfidenceTier.HIGH
             confidence >= 0.5f -> ConfidenceTier.MED
             else -> ConfidenceTier.LOW
         }
-    }
 
-    private fun confidenceScore(tier: ConfidenceTier): Int {
-        return when (tier) {
+    private fun confidenceScore(tier: ConfidenceTier): Int =
+        when (tier) {
             ConfidenceTier.HIGH -> 3
             ConfidenceTier.MED -> 2
             ConfidenceTier.LOW -> 1
         }
-    }
 
     private fun AssistantResponse.withFailureMetadata(failure: AssistantBackendFailure?): AssistantResponse {
         val metadata = failure?.toMetadata() ?: emptyMap()

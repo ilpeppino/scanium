@@ -1,20 +1,22 @@
 ***REMOVED*** Vision Enrichment for /v1/classify
 
-This document explains how Vision enrichment works in the classify endpoint and how to configure it for production.
+This document explains how Vision enrichment works in the classify endpoint and how to configure it
+for production.
 
 ***REMOVED******REMOVED*** Overview
 
 The `/v1/classify` endpoint has two independent Vision-related configurations:
 
 1. **Classifier Provider** (`SCANIUM_CLASSIFIER_PROVIDER`)
-   - Controls how category classification happens
-   - Options: `mock` (deterministic), `google` (Google Vision labels)
+    - Controls how category classification happens
+    - Options: `mock` (deterministic), `google` (Google Vision labels)
 
 2. **Vision Provider** (`VISION_PROVIDER`)
-   - Controls attribute enrichment (OCR, colors, logos, labels)
-   - Options: `mock` (test data), `google` (real Google Vision API)
+    - Controls attribute enrichment (OCR, colors, logos, labels)
+    - Options: `mock` (test data), `google` (real Google Vision API)
 
-**Key Insight:** These are INDEPENDENT. You can use `mock` classifier with `google` Vision enrichment. This is useful when you want rich attributes but don't need category mapping.
+**Key Insight:** These are INDEPENDENT. You can use `mock` classifier with `google` Vision
+enrichment. This is useful when you want rich attributes but don't need category mapping.
 
 ***REMOVED******REMOVED*** Response Structure
 
@@ -133,6 +135,7 @@ GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp-vision.json
 ***REMOVED******REMOVED******REMOVED*** 1. Ensure GCP Credentials Are Mounted
 
 In `docker-compose.yml`:
+
 ```yaml
 volumes:
   - ./secrets:/secrets:ro
@@ -176,6 +179,7 @@ curl -X POST "https://scanium.gtemp1.com/v1/classify?enrichAttributes=true" \
 ```
 
 Expected response includes:
+
 - `visionStats.visionProvider: "google-vision"`
 - `visualFacts` with real OCR text, colors, logos
 - `enrichedAttributes` derived from Vision data
@@ -201,6 +205,7 @@ This replaces the previous 500 error for corrupted images.
 ***REMOVED******REMOVED******REMOVED*** 400 VALIDATION_ERROR
 
 Returned for validation failures:
+
 - Missing image file
 - Unsupported content type (not JPEG, PNG, or WebP)
 - Invalid hints JSON
@@ -252,7 +257,8 @@ curl -X POST "https://scanium.gtemp1.com/v1/classify?enrichAttributes=true" \
 
 **Cause:** This is expected when `SCANIUM_CLASSIFIER_PROVIDER=mock`.
 
-**Explanation:** The `provider` field refers to the classification provider, not Vision enrichment. Vision enrichment status is in `visionStats.visionProvider`.
+**Explanation:** The `provider` field refers to the classification provider, not Vision enrichment.
+Vision enrichment status is in `visionStats.visionProvider`.
 
 ***REMOVED******REMOVED******REMOVED*** No visualFacts in response
 
@@ -263,11 +269,13 @@ curl -X POST "https://scanium.gtemp1.com/v1/classify?enrichAttributes=true" \
 ***REMOVED******REMOVED******REMOVED*** Vision extraction errors
 
 Check logs:
+
 ```bash
 docker logs scanium-api --tail 100 | grep -i vision
 ```
 
 Common issues:
+
 - Missing or invalid GCP credentials
 - `GOOGLE_APPLICATION_CREDENTIALS` points to wrong path
 - Vision API quota exceeded
@@ -285,7 +293,8 @@ On classifier cache hit, `visionStats.attempted: false` and no new Vision API ca
 
 ***REMOVED******REMOVED******REMOVED*** VISION_FEATURE (CSV Format)
 
-The `VISION_FEATURE` environment variable controls which Google Vision API features are requested for classification. It supports CSV format:
+The `VISION_FEATURE` environment variable controls which Google Vision API features are requested
+for classification. It supports CSV format:
 
 ```bash
 ***REMOVED*** Single feature (backward compatible)
@@ -316,6 +325,7 @@ VISION_FEATURE=LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION
 ```
 
 This enables:
+
 - **ocrText**: Brand/model from label text
 - **colors**: Dominant color extraction `[{name, hex, score}]`
 - **logos**: Brand detection `[{name, score}]`
@@ -353,11 +363,11 @@ Every `/v1/classify` response includes `visionStats`:
 }
 ```
 
-| Counter | Description |
-|---------|-------------|
-| `visionExtractions` | Number of Vision API calls made |
-| `visionCacheHits` | Number of cache hits (no API call) |
-| `visionErrors` | Number of extraction failures |
+| Counter             | Description                        |
+|---------------------|------------------------------------|
+| `visionExtractions` | Number of Vision API calls made    |
+| `visionCacheHits`   | Number of cache hits (no API call) |
+| `visionErrors`      | Number of extraction failures      |
 
 ***REMOVED******REMOVED******REMOVED*** Server Logs
 
@@ -376,6 +386,7 @@ Classifier response logs include these counters:
 ***REMOVED******REMOVED******REMOVED*** Metrics
 
 Metrics are recorded for:
+
 - `scanium_classifier_request_latency_ms` - Request duration
 - `scanium_attribute_extractions_total` - Attribute extraction count by type
 - `scanium_attribute_confidence` - Confidence distribution
@@ -383,6 +394,7 @@ Metrics are recorded for:
 ***REMOVED******REMOVED*** Cost Considerations
 
 Google Vision API pricing (per 1000 images):
+
 - Label Detection: $1.50
 - Text Detection (OCR): $1.50
 - Logo Detection: $1.50

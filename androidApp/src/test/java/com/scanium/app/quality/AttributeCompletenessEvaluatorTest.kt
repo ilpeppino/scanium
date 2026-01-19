@@ -2,7 +2,10 @@ package com.scanium.app.quality
 
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.ml.ItemCategory
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -15,13 +18,13 @@ import org.junit.Test
  * - Category-specific requirements
  */
 class AttributeCompletenessEvaluatorTest {
-
     @Test
     fun `empty attributes returns zero score`() {
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = emptyMap(),
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = emptyMap(),
+            )
 
         assertEquals(0, result.score)
         assertFalse(result.isReadyForListing)
@@ -30,21 +33,23 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `fully filled attributes returns high score`() {
-        val attributes = mapOf(
-            "brand" to ItemAttribute(value = "Nike", confidence = 0.9f, source = "vision"),
-            "itemType" to ItemAttribute(value = "T-Shirt", confidence = 0.9f, source = "vision"),
-            "color" to ItemAttribute(value = "Blue", confidence = 0.8f, source = "vision"),
-            "size" to ItemAttribute(value = "M", confidence = 0.7f, source = "user"),
-            "condition" to ItemAttribute(value = "New", confidence = 0.9f, source = "user"),
-            "material" to ItemAttribute(value = "Cotton", confidence = 0.6f, source = "vision"),
-            "pattern" to ItemAttribute(value = "Solid", confidence = 0.5f, source = "vision"),
-            "style" to ItemAttribute(value = "Casual", confidence = 0.5f, source = "vision"),
-        )
+        val attributes =
+            mapOf(
+                "brand" to ItemAttribute(value = "Nike", confidence = 0.9f, source = "vision"),
+                "itemType" to ItemAttribute(value = "T-Shirt", confidence = 0.9f, source = "vision"),
+                "color" to ItemAttribute(value = "Blue", confidence = 0.8f, source = "vision"),
+                "size" to ItemAttribute(value = "M", confidence = 0.7f, source = "user"),
+                "condition" to ItemAttribute(value = "New", confidence = 0.9f, source = "user"),
+                "material" to ItemAttribute(value = "Cotton", confidence = 0.6f, source = "vision"),
+                "pattern" to ItemAttribute(value = "Solid", confidence = 0.5f, source = "vision"),
+                "style" to ItemAttribute(value = "Casual", confidence = 0.5f, source = "vision"),
+            )
 
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = attributes,
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = attributes,
+            )
 
         assertEquals(100, result.score)
         assertTrue(result.isReadyForListing)
@@ -54,15 +59,17 @@ class AttributeCompletenessEvaluatorTest {
     @Test
     fun `missing high importance attributes lowers score significantly`() {
         // Only low-importance attributes filled
-        val attributes = mapOf(
-            "pattern" to ItemAttribute(value = "Solid", confidence = 0.5f),
-            "style" to ItemAttribute(value = "Casual", confidence = 0.5f),
-        )
+        val attributes =
+            mapOf(
+                "pattern" to ItemAttribute(value = "Solid", confidence = 0.5f),
+                "style" to ItemAttribute(value = "Casual", confidence = 0.5f),
+            )
 
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = attributes,
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = attributes,
+            )
 
         // Score should be low since high-importance attrs are missing
         assertTrue(result.score < 20)
@@ -74,14 +81,16 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `missing attributes ordered by importance`() {
-        val attributes = mapOf(
-            "color" to ItemAttribute(value = "Blue", confidence = 0.8f),
-        )
+        val attributes =
+            mapOf(
+                "color" to ItemAttribute(value = "Blue", confidence = 0.8f),
+            )
 
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = attributes,
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = attributes,
+            )
 
         val missingKeys = result.missingAttributes.map { it.key }
 
@@ -95,21 +104,28 @@ class AttributeCompletenessEvaluatorTest {
     @Test
     fun `ready threshold at 70 percent`() {
         // Fill enough to get ~70%
-        val attributes = mapOf(
-            "brand" to ItemAttribute(value = "Nike", confidence = 0.9f), // weight 10
-            "itemType" to ItemAttribute(value = "Shirt", confidence = 0.9f), // weight 9
-            "color" to ItemAttribute(value = "Blue", confidence = 0.8f), // weight 8
-            "size" to ItemAttribute(value = "M", confidence = 0.7f), // weight 8
-            "condition" to ItemAttribute(value = "Good", confidence = 0.7f), // weight 7
-        )
+        val attributes =
+            mapOf(
+                // weight 10
+                "brand" to ItemAttribute(value = "Nike", confidence = 0.9f),
+                // weight 9
+                "itemType" to ItemAttribute(value = "Shirt", confidence = 0.9f),
+                // weight 8
+                "color" to ItemAttribute(value = "Blue", confidence = 0.8f),
+                // weight 8
+                "size" to ItemAttribute(value = "M", confidence = 0.7f),
+                // weight 7
+                "condition" to ItemAttribute(value = "Good", confidence = 0.7f),
+            )
         // Total filled weight: 10+9+8+8+7 = 42
         // Total weight: 10+9+8+8+7+5+3+3 = 53
         // Score = 42/53 * 100 = ~79%
 
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = attributes,
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = attributes,
+            )
 
         assertTrue(result.score >= AttributeCompletenessEvaluator.READY_THRESHOLD)
         assertTrue(result.isReadyForListing)
@@ -117,15 +133,19 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `low confidence attributes do not count as filled`() {
-        val attributes = mapOf(
-            "brand" to ItemAttribute(value = "Nike", confidence = 0.2f), // below threshold
-            "color" to ItemAttribute(value = "Blue", confidence = 0.8f), // above threshold
-        )
+        val attributes =
+            mapOf(
+                // below threshold
+                "brand" to ItemAttribute(value = "Nike", confidence = 0.2f),
+                // above threshold
+                "color" to ItemAttribute(value = "Blue", confidence = 0.8f),
+            )
 
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = attributes,
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = attributes,
+            )
 
         // Brand should still be in missing list due to low confidence
         assertTrue(result.missingAttributes.any { it.key == "brand" })
@@ -135,14 +155,16 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `user source always counts as filled`() {
-        val attributes = mapOf(
-            "brand" to ItemAttribute(value = "Nike", confidence = 0.1f, source = "user"),
-        )
+        val attributes =
+            mapOf(
+                "brand" to ItemAttribute(value = "Nike", confidence = 0.1f, source = "user"),
+            )
 
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = attributes,
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = attributes,
+            )
 
         // User-entered attributes always count regardless of confidence
         assertTrue(result.filledAttributes.contains("brand"))
@@ -150,15 +172,17 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `electronics category has different requirements`() {
-        val fashionResult = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = emptyMap(),
-        )
+        val fashionResult =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = emptyMap(),
+            )
 
-        val electronicsResult = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.ELECTRONICS,
-            attributes = emptyMap(),
-        )
+        val electronicsResult =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.ELECTRONICS,
+                attributes = emptyMap(),
+            )
 
         // Both should have missing attributes but with different keys
         val fashionKeys = fashionResult.missingAttributes.map { it.key }.toSet()
@@ -171,10 +195,11 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `photo hints provided for missing attributes`() {
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = emptyMap(),
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = emptyMap(),
+            )
 
         // Brand should have a photo hint
         val brandMissing = result.missingAttributes.find { it.key == "brand" }
@@ -184,10 +209,11 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `getTopMissingAttributes limits results`() {
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = emptyMap(),
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = emptyMap(),
+            )
 
         val topMissing = AttributeCompletenessEvaluator.getTopMissingAttributes(result, limit = 3)
 
@@ -196,10 +222,11 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `getNextPhotoGuidance returns hint for most important missing`() {
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = emptyMap(),
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = emptyMap(),
+            )
 
         val guidance = AttributeCompletenessEvaluator.getNextPhotoGuidance(result)
 
@@ -210,10 +237,11 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `unknown category uses default requirements`() {
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.UNKNOWN,
-            attributes = emptyMap(),
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.UNKNOWN,
+                attributes = emptyMap(),
+            )
 
         // Should still have some requirements
         assertTrue(result.missingAttributes.isNotEmpty())
@@ -222,15 +250,17 @@ class AttributeCompletenessEvaluatorTest {
 
     @Test
     fun `blank attribute values do not count as filled`() {
-        val attributes = mapOf(
-            "brand" to ItemAttribute(value = "", confidence = 0.9f),
-            "color" to ItemAttribute(value = "  ", confidence = 0.9f),
-        )
+        val attributes =
+            mapOf(
+                "brand" to ItemAttribute(value = "", confidence = 0.9f),
+                "color" to ItemAttribute(value = "  ", confidence = 0.9f),
+            )
 
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = ItemCategory.FASHION,
-            attributes = attributes,
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = ItemCategory.FASHION,
+                attributes = attributes,
+            )
 
         assertTrue(result.missingAttributes.any { it.key == "brand" })
         assertTrue(result.missingAttributes.any { it.key == "color" })

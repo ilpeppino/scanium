@@ -3,13 +3,13 @@ package com.scanium.app.quality
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.ml.ItemCategory
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.float
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -34,60 +34,65 @@ class CompletenessGoldenTest(
     private val scenarioName: String,
     private val fixture: GoldenFixture,
 ) {
-
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
 
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data(): Collection<Array<Any>> {
-            val fixtures = listOf(
-                loadFixture("golden/nike_shoe_attributes.json"),
-                loadFixture("golden/iphone_partial_attributes.json"),
-                // Add inline fixtures for edge cases
-                createInlineFixture(
-                    name = "empty_attributes",
-                    description = "No attributes detected",
-                    category = ItemCategory.FASHION,
-                    attributes = emptyMap(),
-                    minScore = null,
-                    maxScore = 5,
-                    isReadyForListing = false,
-                    requiredMissing = listOf("brand", "itemType"),
-                ),
-                createInlineFixture(
-                    name = "low_confidence_brand",
-                    description = "Brand detected with low confidence",
-                    category = ItemCategory.FASHION,
-                    attributes = mapOf(
-                        "brand" to ItemAttribute(value = "Unknown", confidence = 0.2f, source = "vision"),
+            val fixtures =
+                listOf(
+                    loadFixture("golden/nike_shoe_attributes.json"),
+                    loadFixture("golden/iphone_partial_attributes.json"),
+                    // Add inline fixtures for edge cases
+                    createInlineFixture(
+                        name = "empty_attributes",
+                        description = "No attributes detected",
+                        category = ItemCategory.FASHION,
+                        attributes = emptyMap(),
+                        minScore = null,
+                        maxScore = 5,
+                        isReadyForListing = false,
+                        requiredMissing = listOf("brand", "itemType"),
                     ),
-                    minScore = null,
-                    maxScore = 10,
-                    isReadyForListing = false,
-                    requiredMissing = listOf("brand"), // Should still be missing due to low confidence
-                ),
-                createInlineFixture(
-                    name = "user_edited_brand",
-                    description = "Brand entered by user (always trusted)",
-                    category = ItemCategory.FASHION,
-                    attributes = mapOf(
-                        "brand" to ItemAttribute(value = "Gucci", confidence = 0.1f, source = "user"),
-                        "color" to ItemAttribute(value = "Red", confidence = 0.9f, source = "vision"),
+                    createInlineFixture(
+                        name = "low_confidence_brand",
+                        description = "Brand detected with low confidence",
+                        category = ItemCategory.FASHION,
+                        attributes =
+                            mapOf(
+                                "brand" to ItemAttribute(value = "Unknown", confidence = 0.2f, source = "vision"),
+                            ),
+                        minScore = null,
+                        maxScore = 10,
+                        isReadyForListing = false,
+                        // Should still be missing due to low confidence
+                        requiredMissing = listOf("brand"),
                     ),
-                    minScore = 30,
-                    maxScore = null,
-                    isReadyForListing = false,
-                    requiredMissing = listOf("itemType"), // User brand should count
-                ),
-            )
+                    createInlineFixture(
+                        name = "user_edited_brand",
+                        description = "Brand entered by user (always trusted)",
+                        category = ItemCategory.FASHION,
+                        attributes =
+                            mapOf(
+                                "brand" to ItemAttribute(value = "Gucci", confidence = 0.1f, source = "user"),
+                                "color" to ItemAttribute(value = "Red", confidence = 0.9f, source = "vision"),
+                            ),
+                        minScore = 30,
+                        maxScore = null,
+                        isReadyForListing = false,
+                        // User brand should count
+                        requiredMissing = listOf("itemType"),
+                    ),
+                )
             return fixtures.map { arrayOf(it.name, it) }
         }
 
         private fun loadFixture(resourcePath: String): GoldenFixture {
-            val stream = CompletenessGoldenTest::class.java.classLoader
-                ?.getResourceAsStream(resourcePath)
-                ?: throw IllegalArgumentException("Resource not found: $resourcePath")
+            val stream =
+                CompletenessGoldenTest::class.java.classLoader
+                    ?.getResourceAsStream(resourcePath)
+                    ?: throw IllegalArgumentException("Resource not found: $resourcePath")
 
             val jsonText = InputStreamReader(stream).use { it.readText() }
             val obj = json.parseToJsonElement(jsonText).jsonObject
@@ -100,11 +105,12 @@ class CompletenessGoldenTest(
             val attributes = mutableMapOf<String, ItemAttribute>()
             attributesObj.keys.forEach { key ->
                 val attrObj = attributesObj[key]!!.jsonObject
-                attributes[key] = ItemAttribute(
-                    value = attrObj["value"]!!.jsonPrimitive.content,
-                    confidence = attrObj["confidence"]!!.jsonPrimitive.float,
-                    source = attrObj["source"]?.jsonPrimitive?.content ?: "",
-                )
+                attributes[key] =
+                    ItemAttribute(
+                        value = attrObj["value"]!!.jsonPrimitive.content,
+                        confidence = attrObj["confidence"]!!.jsonPrimitive.float,
+                        source = attrObj["source"]?.jsonPrimitive?.content ?: "",
+                    )
             }
 
             val expected = obj["expected"]!!.jsonObject
@@ -165,10 +171,11 @@ class CompletenessGoldenTest(
 
     @Test
     fun `evaluate completeness matches golden expectations`() {
-        val result = AttributeCompletenessEvaluator.evaluate(
-            category = fixture.category,
-            attributes = fixture.attributes,
-        )
+        val result =
+            AttributeCompletenessEvaluator.evaluate(
+                category = fixture.category,
+                attributes = fixture.attributes,
+            )
 
         // Verify score is in expected range
         fixture.minScore?.let { min ->

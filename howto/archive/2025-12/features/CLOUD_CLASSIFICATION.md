@@ -2,7 +2,8 @@
 
 ***REMOVED******REMOVED*** Overview
 
-Scanium implements **cloud-first classification** that uploads cropped item images to a backend API for high-quality category recognition and attribute extraction. This system:
+Scanium implements **cloud-first classification** that uploads cropped item images to a backend API
+for high-quality category recognition and attribute extraction. This system:
 
 - ✅ Uploads only cropped item snapshots (not full camera frames)
 - ✅ Strips EXIF metadata for privacy
@@ -79,10 +80,12 @@ POST {SCANIUM_API_BASE_URL}/classify
 **Content-Type**: `multipart/form-data`
 
 **Fields**:
+
 - `image`: JPEG file (cropped item thumbnail, EXIF stripped)
 - `domainPackId`: string (default: "home_resale")
 
 **Headers**:
+
 - `X-API-Key`: Your API key (if configured)
 - `X-Client`: "Scanium-Android"
 - `X-App-Version`: App version (e.g., "1.0")
@@ -115,6 +118,7 @@ curl -X POST https://your-backend.com/api/v1/classify \
 ```
 
 **Fields**:
+
 - `domainCategoryId` (optional): Fine-grained category ID from domain pack (e.g., "furniture_sofa")
 - `confidence` (optional): Classification confidence (0.0 - 1.0)
 - `label` (optional): Human-readable label
@@ -122,6 +126,7 @@ curl -X POST https://your-backend.com/api/v1/classify \
 - `requestId` (optional): Backend request ID for debugging
 
 **Error Codes**:
+
 - `400 Bad Request`: Invalid image or domainPackId (non-retryable)
 - `401 Unauthorized`: Invalid/missing API key (non-retryable)
 - `403 Forbidden`: API key lacks permissions (non-retryable)
@@ -141,18 +146,21 @@ The `ClassificationOrchestrator` automatically retries transient errors:
 - **Jitter**: ±25%
 
 **Retry schedule** (approximate with jitter):
+
 1. Immediate attempt
 2. Retry after ~2 seconds
 3. Retry after ~4 seconds
 4. Retry after ~8 seconds
 
 **Retryable errors**:
+
 - HTTP 408 Request Timeout
 - HTTP 429 Too Many Requests
 - HTTP 5xx Server errors
 - Network I/O errors (timeouts, connection failures)
 
 **Non-retryable errors** (permanent failure):
+
 - HTTP 400 Bad Request
 - HTTP 401 Unauthorized
 - HTTP 403 Forbidden
@@ -160,7 +168,8 @@ The `ClassificationOrchestrator` automatically retries transient errors:
 
 ***REMOVED******REMOVED******REMOVED*** Manual Retry
 
-If classification fails after automatic retries, the item remains visible with status "Unclassified (tap to retry)". Users can tap the retry button to reattempt classification.
+If classification fails after automatic retries, the item remains visible with status "
+Unclassified (tap to retry)". Users can tap the retry button to reattempt classification.
 
 ***REMOVED******REMOVED*** Privacy
 
@@ -184,7 +193,8 @@ The app should display a privacy notice in Settings:
 
 > **Cloud Mode Privacy Notice**
 >
-> When cloud classification is enabled, Scanium uploads cropped item snapshots to our backend for category recognition. We do not upload:
+> When cloud classification is enabled, Scanium uploads cropped item snapshots to our backend for
+> category recognition. We do not upload:
 > - Full camera frames
 > - Location data
 > - Device identifiers
@@ -296,7 +306,8 @@ If backend returns an unknown `domainCategoryId`:
 
 1. Log warning
 2. Fall back to label-based category detection
-3. Display the matched token (the `label` field returned by the backend) so UI still shows a specific noun
+3. Display the matched token (the `label` field returned by the backend) so UI still shows a
+   specific noun
 4. Do **not** crash
 
 ***REMOVED******REMOVED******REMOVED*** Matched Tokens
@@ -326,6 +337,7 @@ If backend returns an unknown `domainCategoryId`:
 **Symptom**: Frequent timeout errors, retries exhaust
 
 **Fix**:
+
 - Check network connection
 - Verify backend is reachable
 - Check backend response time (should be <10s)
@@ -336,6 +348,7 @@ If backend returns an unknown `domainCategoryId`:
 **Symptom**: Items show as pending but never complete
 
 **Fix**:
+
 - Check logcat for classification errors: `adb logcat | grep CloudClassifier`
 - Verify backend is returning HTTP 200 responses
 - Check response JSON format matches contract
@@ -345,6 +358,7 @@ If backend returns an unknown `domainCategoryId`:
 **Symptom**: App memory usage increases during classification
 
 **Fix**: Thumbnails are recycled after classification. If memory is still high:
+
 - Check for bitmap leaks in custom code
 - Verify `AggregatedItem.cleanup()` is called on removal
 

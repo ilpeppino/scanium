@@ -42,7 +42,9 @@ data class ItemPhoto(
         if (bytes != null) {
             if (other.bytes == null) return false
             if (!bytes.contentEquals(other.bytes)) return false
-        } else if (other.bytes != null) return false
+        } else if (other.bytes != null) {
+            return false
+        }
         if (mimeType != other.mimeType) return false
         if (width != other.width) return false
         if (height != other.height) return false

@@ -88,6 +88,7 @@ class LocalDomainPackRepository(
                                     "Failed to parse Domain Pack JSON: ${e.message}",
                                     e,
                                 )
+
                             else ->
                                 DomainPackLoadException(
                                     "Failed to load Domain Pack: ${e.message}",

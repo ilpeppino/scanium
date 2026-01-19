@@ -31,7 +31,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class OnboardingFlowTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -86,60 +85,63 @@ class OnboardingFlowTest {
      * Test: Language selection flag is persisted correctly.
      */
     @Test
-    fun languageSelectionFlagPersistsAfterSelection() = runBlocking {
-        // Initially false
-        val initialValue = ftueRepository.languageSelectionShownFlow.first()
-        assert(!initialValue) { "Initial value should be false" }
+    fun languageSelectionFlagPersistsAfterSelection() =
+        runBlocking {
+            // Initially false
+            val initialValue = ftueRepository.languageSelectionShownFlow.first()
+            assert(!initialValue) { "Initial value should be false" }
 
-        // Set to true (simulating language selection)
-        ftueRepository.setLanguageSelectionShown(true)
+            // Set to true (simulating language selection)
+            ftueRepository.setLanguageSelectionShown(true)
 
-        // Verify it's persisted
-        val afterSelection = ftueRepository.languageSelectionShownFlow.first()
-        assert(afterSelection) { "Value should be true after selection" }
-    }
+            // Verify it's persisted
+            val afterSelection = ftueRepository.languageSelectionShownFlow.first()
+            assert(afterSelection) { "Value should be true after selection" }
+        }
 
     /**
      * Test: FTUE completed flag works correctly.
      */
     @Test
-    fun ftueCompletedFlagPersistsAfterTourCompletion() = runBlocking {
-        // Initially false
-        val initialValue = ftueRepository.completedFlow.first()
-        assert(!initialValue) { "Initial value should be false" }
+    fun ftueCompletedFlagPersistsAfterTourCompletion() =
+        runBlocking {
+            // Initially false
+            val initialValue = ftueRepository.completedFlow.first()
+            assert(!initialValue) { "Initial value should be false" }
 
-        // Set to true (simulating tour completion)
-        ftueRepository.setCompleted(true)
+            // Set to true (simulating tour completion)
+            ftueRepository.setCompleted(true)
 
-        // Verify it's persisted
-        val afterCompletion = ftueRepository.completedFlow.first()
-        assert(afterCompletion) { "Value should be true after completion" }
-    }
+            // Verify it's persisted
+            val afterCompletion = ftueRepository.completedFlow.first()
+            assert(afterCompletion) { "Value should be true after completion" }
+        }
 
     /**
      * Test: Reset all clears all FTUE state.
      */
     @Test
-    fun resetAllClearsAllFtueState() = runBlocking {
-        // Set all flags to true
-        ftueRepository.setLanguageSelectionShown(true)
-        ftueRepository.setCompleted(true)
-        ftueRepository.setShutterHintShown(true)
+    fun resetAllClearsAllFtueState() =
+        runBlocking {
+            // Set all flags to true
+            ftueRepository.setLanguageSelectionShown(true)
+            ftueRepository.setCompleted(true)
+            ftueRepository.setShutterHintShown(true)
 
-        // Reset all
-        ftueRepository.resetAll()
+            // Reset all
+            ftueRepository.resetAll()
 
-        // Verify all are reset
-        assert(!ftueRepository.languageSelectionShownFlow.first()) {
-            "languageSelectionShown should be reset"
+            // Verify all are reset
+            assert(!ftueRepository.languageSelectionShownFlow.first()) {
+                "languageSelectionShown should be reset"
+            }
+            assert(!ftueRepository.completedFlow.first()) {
+                "completed should be reset"
+            }
+            assert(!ftueRepository.shutterHintShownFlow.first()) {
+                "shutterHintShown should be reset"
+            }
         }
-        assert(!ftueRepository.completedFlow.first()) {
-            "completed should be reset"
-        }
-        assert(!ftueRepository.shutterHintShownFlow.first()) {
-            "shutterHintShown should be reset"
-        }
-    }
 
     /**
      * Test: Welcome overlay displays correctly for first-time users.

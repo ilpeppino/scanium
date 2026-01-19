@@ -9,10 +9,13 @@ import com.scanium.shared.core.models.ml.ItemCategory
 enum class ExportBundleFlag {
     /** Export fields are present and valid */
     READY,
+
     /** Missing AI-generated export fields - using fallback text */
     NEEDS_AI,
+
     /** No photos available for this item */
     NO_PHOTOS,
+
     /** Item has user-edited summary text (not AI-generated) */
     USER_EDITED,
 }

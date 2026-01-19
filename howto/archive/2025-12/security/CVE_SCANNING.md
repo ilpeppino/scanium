@@ -10,7 +10,8 @@
 
 ***REMOVED******REMOVED*** Overview
 
-This document describes the automated CVE (Common Vulnerabilities and Exposures) scanning system implemented in Scanium to detect and prevent vulnerable dependencies from being deployed.
+This document describes the automated CVE (Common Vulnerabilities and Exposures) scanning system
+implemented in Scanium to detect and prevent vulnerable dependencies from being deployed.
 
 ***REMOVED******REMOVED******REMOVED*** Security Mechanisms
 
@@ -25,7 +26,8 @@ This document describes the automated CVE (Common Vulnerabilities and Exposures)
 
 ***REMOVED******REMOVED******REMOVED*** What It Does
 
-OWASP Dependency-Check scans project dependencies against the National Vulnerability Database (NVD) to identify known security vulnerabilities. It:
+OWASP Dependency-Check scans project dependencies against the National Vulnerability Database (NVD)
+to identify known security vulnerabilities. It:
 
 - Downloads CVE data from NVD (updated continuously)
 - Analyzes all dependencies (direct + transitive)
@@ -106,12 +108,14 @@ DEPENDENCY_CHECK_NVD_API_KEY=your-key-here ./gradlew dependencyCheckAnalyze
 **GitHub Actions Workflow:** `.github/workflows/security-cve-scan.yml`
 
 **Triggers:**
+
 - ✅ Every pull request (when dependencies change)
 - ✅ Push to main/master branch
 - ✅ Weekly schedule (Monday 2am UTC)
 - ✅ Manual trigger via GitHub UI
 
 **What It Does:**
+
 1. Runs OWASP Dependency-Check
 2. Uploads SARIF results to GitHub Security tab
 3. Uploads HTML/JSON reports as artifacts
@@ -136,6 +140,7 @@ app/build/reports/
 ***REMOVED******REMOVED******REMOVED*** Report Structure
 
 **HTML Report Sections:**
+
 1. **Summary:** Total dependencies scanned, vulnerabilities found
 2. **Dependency Details:** Each dependency with CVE list
 3. **Vulnerability Details:** CVE ID, CVSS score, description, references
@@ -153,12 +158,12 @@ Fix: Upgrade to okhttp:4.12.1 or later
 
 ***REMOVED******REMOVED******REMOVED*** CVSS Severity Levels
 
-| Score Range | Severity | Build Action |
-|-------------|----------|--------------|
-| 9.0 - 10.0 | **CRITICAL** | ❌ FAIL BUILD |
-| 7.0 - 8.9 | **HIGH** | ❌ FAIL BUILD |
-| 4.0 - 6.9 | **MEDIUM** | ⚠️ WARN (allow) |
-| 0.1 - 3.9 | **LOW** | ✅ PASS |
+| Score Range | Severity     | Build Action    |
+|-------------|--------------|-----------------|
+| 9.0 - 10.0  | **CRITICAL** | ❌ FAIL BUILD    |
+| 7.0 - 8.9   | **HIGH**     | ❌ FAIL BUILD    |
+| 4.0 - 6.9   | **MEDIUM**   | ⚠️ WARN (allow) |
+| 0.1 - 3.9   | **LOW**      | ✅ PASS          |
 
 **Current Threshold:** `failBuildOnCVSS = 7.0f` (HIGH or above fails build)
 
@@ -245,6 +250,7 @@ Create `app/dependency-check-suppressions.xml`:
 ```
 
 **⚠️ Suppression Guidelines:**
+
 - Always document **rationale** (why it's safe to suppress)
 - Always document **reviewer** and **review date**
 - Set **expiration** date (force re-review)
@@ -259,11 +265,13 @@ Create `app/dependency-check-suppressions.xml`:
 CVE scan results are automatically uploaded to GitHub's Security tab via SARIF format.
 
 **View Results:**
+
 1. Go to repository → **Security** tab
 2. Click **Dependabot alerts** or **Code scanning alerts**
 3. View vulnerability details, affected files, remediation advice
 
 **Benefits:**
+
 - ✅ Centralized vulnerability tracking
 - ✅ Automatic PRs from Dependabot (if enabled)
 - ✅ Security advisories visible to team
@@ -289,6 +297,7 @@ updates:
 ```
 
 Dependabot will:
+
 - Automatically detect outdated/vulnerable dependencies
 - Create PRs with version upgrades
 - Include changelogs and vulnerability info
@@ -340,6 +349,7 @@ on:
 The NVD database download can take 30+ minutes. Get a free API key to reduce this to seconds.
 
 **Get API Key:**
+
 1. Visit https://nvd.nist.gov/developers/request-an-api-key
 2. Request API key (free, instant approval)
 3. Add to GitHub Secrets: `NVD_API_KEY`
@@ -360,6 +370,7 @@ Already configured in workflow - just add secret to repository.
 ***REMOVED******REMOVED******REMOVED*** Caching Strategy
 
 **Local Cache:**
+
 ```
 app/build/dependency-check-data/
 ├── odc.mv.db        ***REMOVED*** NVD database (cached)
@@ -370,6 +381,7 @@ app/build/dependency-check-data/
 GitHub Actions caches `~/.gradle/dependency-check-data` across runs.
 
 **Cache Invalidation:**
+
 - Purge manually: `./gradlew dependencyCheckPurge`
 - Auto-updates: Daily when running scans
 
@@ -380,9 +392,9 @@ GitHub Actions caches `~/.gradle/dependency-check-data` across runs.
 ***REMOVED******REMOVED******REMOVED*** Development Workflow
 
 1. **Before Adding Dependency:**
-   - Check dependency age and maintenance status
-   - Check for known vulnerabilities: https://snyk.io/vuln/
-   - Prefer well-maintained, popular libraries
+    - Check dependency age and maintenance status
+    - Check for known vulnerabilities: https://snyk.io/vuln/
+    - Prefer well-maintained, popular libraries
 
 2. **After Adding Dependency:**
    ```bash
@@ -398,9 +410,9 @@ GitHub Actions caches `~/.gradle/dependency-check-data` across runs.
    ```
 
 3. **On CVE Alert:**
-   - Assess impact within 24 hours (HIGH/CRITICAL)
-   - Fix or suppress within 1 week (HIGH/CRITICAL)
-   - Fix or suppress within 1 month (MEDIUM)
+    - Assess impact within 24 hours (HIGH/CRITICAL)
+    - Fix or suppress within 1 week (HIGH/CRITICAL)
+    - Fix or suppress within 1 month (MEDIUM)
 
 ***REMOVED******REMOVED******REMOVED*** Release Workflow
 
@@ -431,10 +443,10 @@ cp app/build/reports/scanium-bom.json releases/v1.0/security/
 - **Security Champion:** Assign one team member to monitor CVE alerts
 - **Weekly Review:** Review GitHub Security tab every Monday
 - **Response SLA:**
-  - CRITICAL: 24 hours
-  - HIGH: 1 week
-  - MEDIUM: 1 month
-  - LOW: Next sprint
+    - CRITICAL: 24 hours
+    - HIGH: 1 week
+    - MEDIUM: 1 month
+    - LOW: Next sprint
 - **Documentation:** Document all suppressions with rationale
 
 ---
@@ -446,6 +458,7 @@ cp app/build/reports/scanium-bom.json releases/v1.0/security/
 **Cause:** No API key, slow network
 
 **Solution:**
+
 ```bash
 ***REMOVED*** Get NVD API key (free)
 ***REMOVED*** https://nvd.nist.gov/developers/request-an-api-key
@@ -460,6 +473,7 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 **Cause:** Dependency-Check matches CVEs conservatively
 
 **Solution:**
+
 1. Verify it's actually a false positive (read CVE description)
 2. Add suppression to `dependency-check-suppressions.xml`
 3. Document rationale clearly
@@ -471,6 +485,7 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 **Cause:** Different NVD data versions, cached data
 
 **Solution:**
+
 ```bash
 ***REMOVED*** Purge and re-download NVD data
 ./gradlew dependencyCheckPurge
@@ -480,6 +495,7 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 ***REMOVED******REMOVED******REMOVED*** Issue: "Scan is too slow (30+ minutes)"
 
 **Solutions:**
+
 1. **Use NVD API key** (reduces to ~2 minutes)
 2. **Disable unused analyzers** (already done in config)
 3. **Cache NVD data** (already configured)
@@ -492,15 +508,18 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 ***REMOVED******REMOVED******REMOVED*** Snyk
 
 **Pros:**
+
 - Faster than OWASP Dependency-Check
 - Better fix advice
 - Automatic PRs
 
 **Cons:**
+
 - Requires account (free tier available)
 - Uploads dependency data to Snyk servers
 
 **Setup:**
+
 1. Sign up at https://snyk.io/
 2. Add `SNYK_TOKEN` to GitHub Secrets
 3. Enable Snyk workflow in `.github/workflows/security-cve-scan.yml`
@@ -508,15 +527,18 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 ***REMOVED******REMOVED******REMOVED*** Grype (by Anchore)
 
 **Pros:**
+
 - Open source
 - Works offline with SBOM
 - Very fast
 
 **Cons:**
+
 - Requires SBOM (we have it from SEC-002!)
 - Fewer features than Snyk/Dependency-Check
 
 **Usage:**
+
 ```bash
 ***REMOVED*** Install Grype
 brew install grype  ***REMOVED*** macOS
@@ -605,18 +627,18 @@ cp app/build/reports/dependency-check-report.html reports/2025-12-cve-scan.html
    ```
 
 2. **Get NVD API Key** (optional but recommended):
-   - Request at: https://nvd.nist.gov/developers/request-an-api-key
-   - Add to GitHub Secrets as `NVD_API_KEY`
+    - Request at: https://nvd.nist.gov/developers/request-an-api-key
+    - Add to GitHub Secrets as `NVD_API_KEY`
 
 3. **Test Workflow:**
-   - Create test PR changing `app/build.gradle.kts`
-   - Verify workflow runs and comments on PR
-   - Check GitHub Security tab for SARIF results
+    - Create test PR changing `app/build.gradle.kts`
+    - Verify workflow runs and comments on PR
+    - Check GitHub Security tab for SARIF results
 
 4. **Establish Response Process:**
-   - Assign security champion
-   - Define response SLAs
-   - Create escalation path
+    - Assign security champion
+    - Define response SLAs
+    - Create escalation path
 
 ***REMOVED******REMOVED******REMOVED*** Security Impact
 

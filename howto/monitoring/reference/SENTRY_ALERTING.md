@@ -4,7 +4,8 @@ This document covers Sentry project configuration for crash and error monitoring
 
 ***REMOVED******REMOVED*** Overview
 
-Sentry handles crash reporting and error tracking separately from the LGTM observability stack. This separation is intentional:
+Sentry handles crash reporting and error tracking separately from the LGTM observability stack. This
+separation is intentional:
 
 - **Sentry excels at:** Crash symbolication, stack grouping, issue deduplication, release tracking
 - **LGTM excels at:** Metrics, logs, traces, dashboards, custom business alerts
@@ -18,19 +19,23 @@ com.scanium.app@{VERSION_NAME}+{VERSION_CODE}
 ```
 
 **Examples:**
+
 - `com.scanium.app@1.0.42+42` (production build 42)
 - `com.scanium.app@1.0.0+1` (local development)
 
-This format follows [Sentry's recommended release naming](https://docs.sentry.io/platforms/android/configuration/releases/) and is set automatically in the app initialization.
+This format
+follows [Sentry's recommended release naming](https://docs.sentry.io/platforms/android/configuration/releases/)
+and is set automatically in the app initialization.
 
 ***REMOVED******REMOVED******REMOVED*** Version Components
 
-| Component | Source | Example |
-|-----------|--------|---------|
+| Component      | Source                                               | Example  |
+|----------------|------------------------------------------------------|----------|
 | `VERSION_NAME` | `SCANIUM_VERSION_NAME` env var or `local.properties` | `1.0.42` |
-| `VERSION_CODE` | `SCANIUM_VERSION_CODE` env var or `local.properties` | `42` |
+| `VERSION_CODE` | `SCANIUM_VERSION_CODE` env var or `local.properties` | `42`     |
 
 In CI, versions are set by GitHub Actions (see `.github/workflows/android-release-bundle.yml`):
+
 ```yaml
 SCANIUM_VERSION_CODE: ${{ github.run_number }}
 SCANIUM_VERSION_NAME: "1.0.${{ github.run_number }}"
@@ -40,10 +45,10 @@ SCANIUM_VERSION_NAME: "1.0.${{ github.run_number }}"
 
 Two environments are used:
 
-| Environment | When | Characteristics |
-|-------------|------|-----------------|
-| `dev` | `BuildConfig.DEBUG = true` | Local builds, debug APKs |
-| `prod` | `BuildConfig.DEBUG = false` | Release builds, Play Store |
+| Environment | When                        | Characteristics            |
+|-------------|-----------------------------|----------------------------|
+| `dev`       | `BuildConfig.DEBUG = true`  | Local builds, debug APKs   |
+| `prod`      | `BuildConfig.DEBUG = false` | Release builds, Play Store |
 
 Environment is set automatically based on build type.
 
@@ -51,21 +56,22 @@ Environment is set automatically based on build type.
 
 The app sets these Sentry tags at initialization for filtering and grouping:
 
-| Tag | Description | Example Values |
-|-----|-------------|----------------|
-| `platform` | Platform identifier | `android` |
-| `app_version` | Version name | `1.0.42` |
-| `build` | Version code | `42` |
-| `env` | Environment | `dev`, `prod` |
-| `build_type` | Build variant | `debug`, `release` |
-| `session_id` | Classification session ID | `cls-550e8400-...` |
-| `scan_mode` | Current classification mode | `LOCAL`, `CLOUD`, `HYBRID` |
-| `cloud_allowed` | Cloud classification enabled | `true`, `false` |
-| `domain_pack_version` | Domain model version | `unknown` (placeholder) |
+| Tag                   | Description                  | Example Values             |
+|-----------------------|------------------------------|----------------------------|
+| `platform`            | Platform identifier          | `android`                  |
+| `app_version`         | Version name                 | `1.0.42`                   |
+| `build`               | Version code                 | `42`                       |
+| `env`                 | Environment                  | `dev`, `prod`              |
+| `build_type`          | Build variant                | `debug`, `release`         |
+| `session_id`          | Classification session ID    | `cls-550e8400-...`         |
+| `scan_mode`           | Current classification mode  | `LOCAL`, `CLOUD`, `HYBRID` |
+| `cloud_allowed`       | Cloud classification enabled | `true`, `false`            |
+| `domain_pack_version` | Domain model version         | `unknown` (placeholder)    |
 
 ***REMOVED******REMOVED******REMOVED*** Dynamic Tag Updates
 
 These tags are updated in real-time as user preferences change:
+
 - `scan_mode` / `cloud_mode` - Updated when classification mode changes
 - `cloud_allowed` - Updated when cloud classification permission changes
 - `session_id` - Set at startup; new sessions create new IDs
@@ -74,7 +80,8 @@ These tags are updated in real-time as user preferences change:
 
 ***REMOVED******REMOVED******REMOVED*** Understanding DSN Exposure
 
-Sentry DSNs are intentionally "semi-public" by design. The DSN is embedded in the client application (APK) and can be extracted, but this is expected behavior:
+Sentry DSNs are intentionally "semi-public" by design. The DSN is embedded in the client
+application (APK) and can be extracted, but this is expected behavior:
 
 - **DSN identifies the project** - It tells Sentry where to send events
 - **DSN does not grant read access** - Attackers cannot view existing crash data
@@ -92,17 +99,17 @@ Limit events per period to prevent spam attacks:
 
 1. Go to **Settings → Subscription → Quota**
 2. Configure rate limits:
-   - **Per-project limit:** 10,000 events/hour (adjust based on user base)
-   - **Spike protection:** Enable to prevent sudden event floods
-   - **Per-key limit:** Consider separate DSNs for debug/release with different quotas
+    - **Per-project limit:** 10,000 events/hour (adjust based on user base)
+    - **Spike protection:** Enable to prevent sudden event floods
+    - **Per-key limit:** Consider separate DSNs for debug/release with different quotas
 
 **Recommended thresholds:**
 
-| User Base | Events/Hour | Events/Day |
-|-----------|-------------|------------|
-| < 1K DAU | 1,000 | 10,000 |
-| 1K-10K DAU | 10,000 | 100,000 |
-| > 10K DAU | 50,000 | 500,000 |
+| User Base  | Events/Hour | Events/Day |
+|------------|-------------|------------|
+| < 1K DAU   | 1,000       | 10,000     |
+| 1K-10K DAU | 10,000      | 100,000    |
+| > 10K DAU  | 50,000      | 500,000    |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Inbound Filters
 
@@ -110,13 +117,13 @@ Block known bad actors and suspicious traffic:
 
 1. Go to **Settings → Processing → Inbound Filters**
 2. Enable:
-   - [ ] **Filter localhost events** (blocks development pollution)
-   - [ ] **Filter known bots/crawlers**
-   - [ ] **Filter by release** (block events from unknown versions)
+    - [ ] **Filter localhost events** (blocks development pollution)
+    - [ ] **Filter known bots/crawlers**
+    - [ ] **Filter by release** (block events from unknown versions)
 
 3. Add custom IP filters if abuse patterns detected:
-   - Go to **Settings → Processing → Inbound Data Filters**
-   - Add suspicious IP ranges to blocklist
+    - Go to **Settings → Processing → Inbound Data Filters**
+    - Add suspicious IP ranges to blocklist
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 3. DSN Rotation Schedule
 
@@ -125,28 +132,28 @@ Rotate the DSN monthly to invalidate any leaked or abused keys:
 **Rotation Procedure:**
 
 1. **Generate new DSN:**
-   - Go to **Settings → Client Keys (DSN)**
-   - Click "Generate New Key"
+    - Go to **Settings → Client Keys (DSN)**
+    - Click "Generate New Key"
 
 2. **Update configuration:**
-   - Update `SCANIUM_SENTRY_DSN` in CI/CD secrets
-   - Update `local.properties` for local development
+    - Update `SCANIUM_SENTRY_DSN` in CI/CD secrets
+    - Update `local.properties` for local development
 
 3. **Deploy new app version:**
-   - Release app update with new DSN
-   - Allow 30-day grace period for user updates
+    - Release app update with new DSN
+    - Allow 30-day grace period for user updates
 
 4. **Disable old DSN:**
-   - After grace period, disable old key in Sentry
-   - Monitor for any legitimate traffic on old key
+    - After grace period, disable old key in Sentry
+    - Monitor for any legitimate traffic on old key
 
 **Rotation Calendar:**
 
-| Month | Action |
-|-------|--------|
-| 1st | Generate new DSN, deploy app update |
-| 15th | Monitor adoption of new version |
-| 30th | Disable old DSN if adoption > 90% |
+| Month | Action                              |
+|-------|-------------------------------------|
+| 1st   | Generate new DSN, deploy app update |
+| 15th  | Monitor adoption of new version     |
+| 30th  | Disable old DSN if adoption > 90%   |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Monitoring for Abuse
 
@@ -165,6 +172,7 @@ Actions:
 ```
 
 **Signs of abuse:**
+
 - Sudden spike in events from unknown releases
 - Events with invalid/garbage data
 - Events from unexpected geographic regions
@@ -241,12 +249,12 @@ Frequency: Alert once per 30 minutes per issue
 
 **Threshold guidance:**
 
-| User Base | Threshold | Time Window |
-|-----------|-----------|-------------|
-| < 1K DAU | > 5 crashes | 10 min |
-| 1K-10K DAU | > 10 crashes | 10 min |
-| 10K-100K DAU | > 50 crashes | 10 min |
-| > 100K DAU | > 0.1% session crash rate | 10 min |
+| User Base    | Threshold                 | Time Window |
+|--------------|---------------------------|-------------|
+| < 1K DAU     | > 5 crashes               | 10 min      |
+| 1K-10K DAU   | > 10 crashes              | 10 min      |
+| 10K-100K DAU | > 50 crashes              | 10 min      |
+| > 100K DAU   | > 0.1% session crash rate | 10 min      |
 
 ***REMOVED******REMOVED******REMOVED*** Alert Rule 2: New Issue (Regressions)
 
@@ -360,9 +368,9 @@ Use tag-based routing for targeted alerts:
 1. Go to Settings → Integrations → GitHub
 2. Connect repository: `ilpeppino/scanium`
 3. Enable:
-   - [ ] Stack trace linking
-   - [ ] Suspect commits
-   - [ ] Issue sync
+    - [ ] Stack trace linking
+    - [ ] Suspect commits
+    - [ ] Issue sync
 
 ***REMOVED******REMOVED******REMOVED*** PagerDuty (Production)
 

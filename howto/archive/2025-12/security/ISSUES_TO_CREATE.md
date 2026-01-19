@@ -1,4 +1,3 @@
-
 ---
 
 ***REMOVED******REMOVED*** P2 - Medium/Low Priority Issues
@@ -6,9 +5,10 @@
 ***REMOVED******REMOVED******REMOVED*** Remaining Issues (SEC-009 through SEC-020)
 
 The following issues cover:
+
 - SEC-009: Certificate pinning guidance
 - SEC-010: FLAG_SECURE for screenshots
-- SEC-011, SEC-019: Image cleanup policies  
+- SEC-011, SEC-019: Image cleanup policies
 - SEC-012: Privacy policy requirement
 - SEC-004, SEC-020: Auth and crypto documentation
 
@@ -34,13 +34,15 @@ set -e
 echo "Creating security issues via gh CLI..."
 
 ***REMOVED*** Check gh authentication
+
 if ! gh auth status >/dev/null 2>&1; then
-    echo "Error: gh CLI not authenticated"
-    echo "Run: gh auth login"
-    exit 1
+echo "Error: gh CLI not authenticated"
+echo "Run: gh auth login"
+exit 1
 fi
 
 ***REMOVED*** Source each issue command from this file
+
 ***REMOVED*** Extract gh commands and execute them
 
 echo "✅ All 18 security issues created successfully"

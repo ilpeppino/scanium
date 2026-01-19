@@ -16,7 +16,6 @@ import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class SettingsScreenLocalizationTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -25,7 +24,7 @@ class SettingsScreenLocalizationTest {
         // Force the locale for this test
         Locale.setDefault(Locale.ITALIAN)
         val context = ApplicationProvider.getApplicationContext<Context>()
-        
+
         // A real view model is used here, matching patterns in other tests.
         val viewModel = SettingsViewModel(context.applicationContext as Application)
 
@@ -44,10 +43,10 @@ class SettingsScreenLocalizationTest {
                 )
             }
         }
-        
+
         val expectedText = context.getString(R.string.settings_category_storage_title)
         val expectedSubtitle = context.getString(R.string.settings_category_storage_desc)
-        
+
         // Assert that both the title and subtitle are displayed and translated
         composeTestRule.onNodeWithText(expectedText).assertIsDisplayed()
         composeTestRule.onNodeWithText(expectedSubtitle).assertIsDisplayed()

@@ -1,12 +1,7 @@
 package com.scanium.app.selling.assistant
 
 import com.scanium.app.copy.CustomerSafeCopyPolicy
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 
 /**
@@ -18,11 +13,11 @@ import org.json.JSONObject
  * 3. Return null if insufficient data → renders as plain text bubble
  */
 object AssistantDisplayModelMapper {
-
-    private val jsonParser = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val jsonParser =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     /**
      * Attempts to parse response text into a structured display model.
@@ -53,26 +48,30 @@ object AssistantDisplayModelMapper {
      * @param model The model to sanitize
      * @return Sanitized model with banned tokens removed
      */
-    fun sanitize(model: AssistantDisplayModel): AssistantDisplayModel {
-        return model.copy(
+    fun sanitize(model: AssistantDisplayModel): AssistantDisplayModel =
+        model.copy(
             title = CustomerSafeCopyPolicy.sanitize(model.title),
-            priceSuggestion = model.priceSuggestion?.let {
-                CustomerSafeCopyPolicy.sanitize(it)
-            },
-            condition = model.condition?.let {
-                CustomerSafeCopyPolicy.sanitize(it)
-            },
-            description = model.description?.let {
-                CustomerSafeCopyPolicy.sanitize(it)
-            },
-            highlights = model.highlights
-                .map { CustomerSafeCopyPolicy.sanitize(it) }
-                .filter { it.isNotBlank() },
-            tags = model.tags
-                .map { CustomerSafeCopyPolicy.sanitize(it) }
-                .filter { it.isNotBlank() }
+            priceSuggestion =
+                model.priceSuggestion?.let {
+                    CustomerSafeCopyPolicy.sanitize(it)
+                },
+            condition =
+                model.condition?.let {
+                    CustomerSafeCopyPolicy.sanitize(it)
+                },
+            description =
+                model.description?.let {
+                    CustomerSafeCopyPolicy.sanitize(it)
+                },
+            highlights =
+                model.highlights
+                    .map { CustomerSafeCopyPolicy.sanitize(it) }
+                    .filter { it.isNotBlank() },
+            tags =
+                model.tags
+                    .map { CustomerSafeCopyPolicy.sanitize(it) }
+                    .filter { it.isNotBlank() },
         )
-    }
 
     /**
      * Attempts to parse JSON structure from response text.
@@ -86,27 +85,36 @@ object AssistantDisplayModelMapper {
             // Try org.json for lenient parsing
             val jsonObj = JSONObject(jsonString)
 
-            val title = jsonObj.optString("title", "").takeIf { it.isNotBlank() }
-                ?: return null
+            val title =
+                jsonObj.optString("title", "").takeIf { it.isNotBlank() }
+                    ?: return null
 
             return AssistantDisplayModel(
                 title = title,
-                priceSuggestion = jsonObj.optString("price", "")
-                    .takeIf { it.isNotBlank() },
-                condition = jsonObj.optString("condition", "")
-                    .takeIf { it.isNotBlank() },
-                description = jsonObj.optString("description", "")
-                    .takeIf { it.isNotBlank() },
-                highlights = jsonObj.optJSONArray("highlights")?.let { arr ->
-                    (0 until arr.length()).mapNotNull { i ->
-                        arr.optString(i).takeIf { it.isNotBlank() }
-                    }
-                } ?: emptyList(),
-                tags = jsonObj.optJSONArray("tags")?.let { arr ->
-                    (0 until arr.length()).mapNotNull { i ->
-                        arr.optString(i).takeIf { it.isNotBlank() }
-                    }
-                } ?: emptyList()
+                priceSuggestion =
+                    jsonObj
+                        .optString("price", "")
+                        .takeIf { it.isNotBlank() },
+                condition =
+                    jsonObj
+                        .optString("condition", "")
+                        .takeIf { it.isNotBlank() },
+                description =
+                    jsonObj
+                        .optString("description", "")
+                        .takeIf { it.isNotBlank() },
+                highlights =
+                    jsonObj.optJSONArray("highlights")?.let { arr ->
+                        (0 until arr.length()).mapNotNull { i ->
+                            arr.optString(i).takeIf { it.isNotBlank() }
+                        }
+                    } ?: emptyList(),
+                tags =
+                    jsonObj.optJSONArray("tags")?.let { arr ->
+                        (0 until arr.length()).mapNotNull { i ->
+                            arr.optString(i).takeIf { it.isNotBlank() }
+                        }
+                    } ?: emptyList(),
             )
         } catch (e: Exception) {
             null
@@ -133,8 +141,14 @@ object AssistantDisplayModelMapper {
             }
 
             when {
-                char == '"' -> inString = !inString
-                char == '{' && !inString -> braceCount++
+                char == '"' -> {
+                    inString = !inString
+                }
+
+                char == '{' && !inString -> {
+                    braceCount++
+                }
+
                 char == '}' && !inString -> {
                     braceCount--
                     if (braceCount == 0) {
@@ -168,8 +182,11 @@ object AssistantDisplayModelMapper {
         // Try "Title: ..." pattern first
         lines.forEachIndexed { index, line ->
             if (line.startsWith("Title:", ignoreCase = true)) {
-                title = line.substringAfter(":").trim()
-                    .takeIf { it.isNotBlank() }
+                title =
+                    line
+                        .substringAfter(":")
+                        .trim()
+                        .takeIf { it.isNotBlank() }
                 titleLineIndex = index
                 return@forEachIndexed
             }
@@ -179,8 +196,11 @@ object AssistantDisplayModelMapper {
         if (title == null) {
             lines.forEachIndexed { index, line ->
                 if (line.startsWith("**") && line.endsWith("**")) {
-                    title = line.removeSurrounding("**").trim()
-                        .takeIf { it.isNotBlank() }
+                    title =
+                        line
+                            .removeSurrounding("**")
+                            .trim()
+                            .takeIf { it.isNotBlank() }
                     titleLineIndex = index
                     return@forEachIndexed
                 }
@@ -202,35 +222,50 @@ object AssistantDisplayModelMapper {
         lines.forEachIndexed { index, line ->
             when {
                 line.startsWith("Price:", ignoreCase = true) -> {
-                    priceSuggestion = line.substringAfter(":").trim()
-                        .takeIf { it.isNotBlank() }
+                    priceSuggestion =
+                        line
+                            .substringAfter(":")
+                            .trim()
+                            .takeIf { it.isNotBlank() }
                 }
 
                 line.startsWith("Condition:", ignoreCase = true) -> {
-                    condition = line.substringAfter(":").trim()
-                        .takeIf { it.isNotBlank() }
+                    condition =
+                        line
+                            .substringAfter(":")
+                            .trim()
+                            .takeIf { it.isNotBlank() }
                 }
 
                 line.startsWith("Description:", ignoreCase = true) -> {
-                    description = line.substringAfter(":").trim()
-                        .takeIf { it.isNotBlank() }
+                    description =
+                        line
+                            .substringAfter(":")
+                            .trim()
+                            .takeIf { it.isNotBlank() }
                 }
 
                 line.startsWith("Tags:", ignoreCase = true) -> {
                     val tagString = line.substringAfter(":").trim()
                     if (tagString.isNotBlank()) {
                         tags.addAll(
-                            tagString.split(",").map { it.trim() }
-                                .filter { it.isNotBlank() }
+                            tagString
+                                .split(",")
+                                .map { it.trim() }
+                                .filter { it.isNotBlank() },
                         )
                     }
                 }
 
                 // Bullet point patterns for highlights
                 line.startsWith("-") || line.startsWith("•") || line.startsWith("*") -> {
-                    val highlight = line.removePrefix("-").removePrefix("•")
-                        .removePrefix("*").trim()
-                        .takeIf { it.isNotBlank() }
+                    val highlight =
+                        line
+                            .removePrefix("-")
+                            .removePrefix("•")
+                            .removePrefix("*")
+                            .trim()
+                            .takeIf { it.isNotBlank() }
                     if (highlight != null && index > titleLineIndex) {
                         highlights.add(highlight)
                     }
@@ -239,8 +274,9 @@ object AssistantDisplayModelMapper {
         }
 
         // Return model only if we have meaningful structure
-        val hasStructure = priceSuggestion != null || condition != null ||
-            description != null || highlights.isNotEmpty() || tags.isNotEmpty()
+        val hasStructure =
+            priceSuggestion != null || condition != null ||
+                description != null || highlights.isNotEmpty() || tags.isNotEmpty()
 
         return if (hasStructure) {
             AssistantDisplayModel(
@@ -249,7 +285,7 @@ object AssistantDisplayModelMapper {
                 condition = condition,
                 description = description,
                 highlights = highlights,
-                tags = tags
+                tags = tags,
             )
         } else {
             null
@@ -260,7 +296,5 @@ object AssistantDisplayModelMapper {
      * Checks if a model is valid for rendering.
      * At minimum, must have a non-empty title.
      */
-    private fun isValid(model: AssistantDisplayModel): Boolean {
-        return model.title.isNotBlank()
-    }
+    private fun isValid(model: AssistantDisplayModel): Boolean = model.title.isNotBlank()
 }

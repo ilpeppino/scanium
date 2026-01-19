@@ -185,12 +185,14 @@ class ScanGuidanceManager(
                 // PHASE 5: Record successful lock
                 metrics.recordLockAchieved(currentTimeMs)
             }
+
             GuidanceState.GOOD -> {
                 // PHASE 5: Record lock attempt start
                 if (from != GuidanceState.LOCKED) {
                     metrics.recordLockAttemptStart(currentTimeMs)
                 }
             }
+
             GuidanceState.SEARCHING -> {
                 // Reset all tracking
                 resetStabilityTracking()
@@ -202,6 +204,7 @@ class ScanGuidanceManager(
                 // PHASE 5: Record lock attempt failure if in progress
                 metrics.recordLockAttemptFailed()
             }
+
             else -> {
                 // If leaving LOCKED, break the lock
                 if (from == GuidanceState.LOCKED) {
@@ -249,11 +252,13 @@ class ScanGuidanceManager(
                         (currentRoiSize - config.roiConfig.sizeAdjustmentStep)
                             .coerceAtLeast(config.roiConfig.minSize)
                     }
+
                     candidate.boxArea < config.roiConfig.tooFarAreaThreshold -> {
                         // Too far - expand zone
                         (currentRoiSize + config.roiConfig.sizeAdjustmentStep)
                             .coerceAtMost(config.roiConfig.maxSize)
                     }
+
                     else -> {
                         // Good distance - maintain or return to default
                         currentRoiSize

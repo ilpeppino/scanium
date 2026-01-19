@@ -15,7 +15,6 @@ import org.junit.Test
  * Part of ARCH-001: Tests for extracted pure domain functions.
  */
 class AssistantUseCasesTest {
-
     // ==================== computeSuggestedQuestions tests ====================
 
     @Test
@@ -26,28 +25,34 @@ class AssistantUseCasesTest {
 
     @Test
     fun `computeSuggestedQuestions returns at most 3 questions`() {
-        val snapshot = ItemContextSnapshot(
-            itemId = "item-1",
-            title = "Short", // Short title triggers suggestion
-            description = "", // Missing description triggers suggestion
-            category = "electronics", // Category triggers specific suggestions
-            confidence = 0.9f,
-            attributes = emptyList(),
-        )
+        val snapshot =
+            ItemContextSnapshot(
+                itemId = "item-1",
+                // Short title triggers suggestion
+                title = "Short",
+                // Missing description triggers suggestion
+                description = "",
+                // Category triggers specific suggestions
+                category = "electronics",
+                confidence = 0.9f,
+                attributes = emptyList(),
+            )
         val result = AssistantUseCases.computeSuggestedQuestions(listOf(snapshot))
         assertThat(result.size).isAtMost(3)
     }
 
     @Test
     fun `computeSuggestedQuestions includes electronics-specific questions for electronics category`() {
-        val snapshot = ItemContextSnapshot(
-            itemId = "item-1",
-            title = "iPhone 12 Pro",
-            description = "A smartphone",
-            category = "electronics",
-            confidence = 0.9f,
-            attributes = emptyList(), // No brand attribute
-        )
+        val snapshot =
+            ItemContextSnapshot(
+                itemId = "item-1",
+                title = "iPhone 12 Pro",
+                description = "A smartphone",
+                category = "electronics",
+                confidence = 0.9f,
+                // No brand attribute
+                attributes = emptyList(),
+            )
 
         // Run multiple times to account for shuffling
         val allSuggestions = mutableSetOf<String>()
@@ -56,51 +61,56 @@ class AssistantUseCasesTest {
         }
 
         // Should include electronics-specific suggestions
-        val electronicsQuestions = listOf(
-            "What brand and model is this?",
-            "What's the storage capacity?",
-            "Does it power on? Any screen issues?",
-            "Are all accessories included?",
-            "Any scratches or dents?",
-        )
+        val electronicsQuestions =
+            listOf(
+                "What brand and model is this?",
+                "What's the storage capacity?",
+                "Does it power on? Any screen issues?",
+                "Are all accessories included?",
+                "Any scratches or dents?",
+            )
         assertThat(allSuggestions.intersect(electronicsQuestions.toSet())).isNotEmpty()
     }
 
     @Test
     fun `computeSuggestedQuestions includes furniture-specific questions`() {
-        val snapshot = ItemContextSnapshot(
-            itemId = "item-1",
-            title = "Oak Dining Table",
-            description = "Solid wood table",
-            category = "furniture",
-            confidence = 0.9f,
-            attributes = emptyList(),
-        )
+        val snapshot =
+            ItemContextSnapshot(
+                itemId = "item-1",
+                title = "Oak Dining Table",
+                description = "Solid wood table",
+                category = "furniture",
+                confidence = 0.9f,
+                attributes = emptyList(),
+            )
 
         val allSuggestions = mutableSetOf<String>()
         repeat(20) {
             allSuggestions.addAll(AssistantUseCases.computeSuggestedQuestions(listOf(snapshot)))
         }
 
-        val furnitureQuestions = listOf(
-            "What are the dimensions (H x W x D)?",
-            "What material is it made of?",
-            "Any scratches, stains, or wear?",
-            "Is assembly required?",
-        )
+        val furnitureQuestions =
+            listOf(
+                "What are the dimensions (H x W x D)?",
+                "What material is it made of?",
+                "Any scratches, stains, or wear?",
+                "Is assembly required?",
+            )
         assertThat(allSuggestions.intersect(furnitureQuestions.toSet())).isNotEmpty()
     }
 
     @Test
     fun `computeSuggestedQuestions adds title suggestion for short titles`() {
-        val snapshot = ItemContextSnapshot(
-            itemId = "item-1",
-            title = "Item", // Very short
-            description = "A detailed description that is long enough",
-            category = null,
-            confidence = 0.9f,
-            attributes = emptyList(),
-        )
+        val snapshot =
+            ItemContextSnapshot(
+                itemId = "item-1",
+                // Very short
+                title = "Item",
+                description = "A detailed description that is long enough",
+                category = null,
+                confidence = 0.9f,
+                attributes = emptyList(),
+            )
 
         val allSuggestions = mutableSetOf<String>()
         repeat(20) {
@@ -112,14 +122,16 @@ class AssistantUseCasesTest {
 
     @Test
     fun `computeSuggestedQuestions adds description suggestion when missing`() {
-        val snapshot = ItemContextSnapshot(
-            itemId = "item-1",
-            title = "A Proper Long Enough Title",
-            description = "", // Missing description
-            category = null,
-            confidence = 0.9f,
-            attributes = emptyList(),
-        )
+        val snapshot =
+            ItemContextSnapshot(
+                itemId = "item-1",
+                title = "A Proper Long Enough Title",
+                // Missing description
+                description = "",
+                category = null,
+                confidence = 0.9f,
+                attributes = emptyList(),
+            )
 
         val allSuggestions = mutableSetOf<String>()
         repeat(20) {
@@ -131,15 +143,17 @@ class AssistantUseCasesTest {
 
     @Test
     fun `computeSuggestedQuestions adds price suggestion when missing`() {
-        val snapshot = ItemContextSnapshot(
-            itemId = "item-1",
-            title = "A Proper Long Enough Title",
-            description = "A detailed description that is long enough to not trigger",
-            category = null,
-            confidence = 0.9f,
-            attributes = emptyList(),
-            priceEstimate = null, // No price
-        )
+        val snapshot =
+            ItemContextSnapshot(
+                itemId = "item-1",
+                title = "A Proper Long Enough Title",
+                description = "A detailed description that is long enough to not trigger",
+                category = null,
+                confidence = 0.9f,
+                attributes = emptyList(),
+                // No price
+                priceEstimate = null,
+            )
 
         val allSuggestions = mutableSetOf<String>()
         repeat(20) {
@@ -212,11 +226,12 @@ class AssistantUseCasesTest {
     @Test
     fun `updateDraftFromPayload updates multiple fields`() {
         val draft = createTestDraft()
-        val payload = mapOf(
-            "title" to "Updated Title",
-            "description" to "Updated Description",
-            "price" to "150.00",
-        )
+        val payload =
+            mapOf(
+                "title" to "Updated Title",
+                "description" to "Updated Description",
+                "price" to "150.00",
+            )
 
         val updated = AssistantUseCases.updateDraftFromPayload(draft, payload)
 
@@ -259,17 +274,18 @@ class AssistantUseCasesTest {
     private fun createTestDraft(
         id: String = "draft-1",
         itemId: String = "item-1",
-    ): ListingDraft = ListingDraft(
-        id = id,
-        itemId = itemId,
-        profile = ExportProfileId.GENERIC,
-        title = DraftField("Original Title", confidence = 0.5f, source = DraftProvenance.DEFAULT),
-        description = DraftField("Original Description", confidence = 0.5f, source = DraftProvenance.DEFAULT),
-        fields = emptyMap(),
-        price = DraftField(10.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
-        photos = emptyList(),
-        status = DraftStatus.DRAFT,
-        createdAt = System.currentTimeMillis() - 1000,
-        updatedAt = System.currentTimeMillis() - 1000,
-    )
+    ): ListingDraft =
+        ListingDraft(
+            id = id,
+            itemId = itemId,
+            profile = ExportProfileId.GENERIC,
+            title = DraftField("Original Title", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            description = DraftField("Original Description", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            fields = emptyMap(),
+            price = DraftField(10.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            photos = emptyList(),
+            status = DraftStatus.DRAFT,
+            createdAt = System.currentTimeMillis() - 1000,
+            updatedAt = System.currentTimeMillis() - 1000,
+        )
 }

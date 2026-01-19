@@ -1,7 +1,14 @@
 package com.scanium.app.telemetry
 
 import android.util.Log
-import com.scanium.app.telemetry.otlp.*
+import com.scanium.app.telemetry.otlp.AnyValue
+import com.scanium.app.telemetry.otlp.ExportLogsServiceRequest
+import com.scanium.app.telemetry.otlp.InstrumentationScope
+import com.scanium.app.telemetry.otlp.KeyValue
+import com.scanium.app.telemetry.otlp.LogRecord
+import com.scanium.app.telemetry.otlp.OtlpHttpExporter
+import com.scanium.app.telemetry.otlp.ResourceLogs
+import com.scanium.app.telemetry.otlp.ScopeLogs
 import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.TelemetryEvent
 import com.scanium.telemetry.TelemetrySeverity
@@ -71,6 +78,7 @@ class AndroidLogPortOtlp(
                         buffer.removeFirstOrNull()
                         Log.w(tag, "Queue full (${telemetryConfig.maxQueueSize}), dropped oldest event")
                     }
+
                     TelemetryConfig.DropPolicy.DROP_NEWEST -> {
                         Log.w(tag, "Queue full (${telemetryConfig.maxQueueSize}), dropping newest event: ${event.name}")
                         return // Don't add the new event
@@ -151,13 +159,12 @@ class AndroidLogPortOtlp(
         }
     }
 
-    private fun mapSeverity(severity: TelemetrySeverity): Int {
-        return when (severity) {
+    private fun mapSeverity(severity: TelemetrySeverity): Int =
+        when (severity) {
             TelemetrySeverity.DEBUG -> LogRecord.SEVERITY_DEBUG
             TelemetrySeverity.INFO -> LogRecord.SEVERITY_INFO
             TelemetrySeverity.WARN -> LogRecord.SEVERITY_WARN
             TelemetrySeverity.ERROR -> LogRecord.SEVERITY_ERROR
             TelemetrySeverity.FATAL -> LogRecord.SEVERITY_FATAL
         }
-    }
 }

@@ -5,9 +5,11 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.photos.ItemPhotoManager
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.ml.ItemCategory
-import io.mockk.every
 import io.mockk.mockk
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,12 +41,13 @@ class ExportBundleRepositoryTest {
     @Test
     fun `buildBundles with export fields uses exportTitle and exportDescription`() {
         // Given: item with AI-generated export fields
-        val item = createTestItem(
-            id = "test-1",
-            exportTitle = "Nike Air Max 90",
-            exportDescription = "Classic sneakers in excellent condition",
-            exportBullets = listOf("Size 10", "White colorway", "Original box"),
-        )
+        val item =
+            createTestItem(
+                id = "test-1",
+                exportTitle = "Nike Air Max 90",
+                exportDescription = "Classic sneakers in excellent condition",
+                exportBullets = listOf("Size 10", "White colorway", "Original box"),
+            )
 
         // When: building bundles
         val result = repository.buildBundles(listOf(item))
@@ -63,13 +66,14 @@ class ExportBundleRepositoryTest {
     @Test
     fun `buildBundles with user-edited summaryText uses fallback and marks USER_EDITED`() {
         // Given: item with user-edited summary text (no export fields)
-        val item = createTestItem(
-            id = "test-2",
-            exportTitle = null,
-            exportDescription = null,
-            attributesSummaryText = "My custom description for this item",
-            summaryTextUserEdited = true,
-        )
+        val item =
+            createTestItem(
+                id = "test-2",
+                exportTitle = null,
+                exportDescription = null,
+                attributesSummaryText = "My custom description for this item",
+                summaryTextUserEdited = true,
+            )
 
         // When: building bundles
         val result = repository.buildBundles(listOf(item))
@@ -86,13 +90,14 @@ class ExportBundleRepositoryTest {
     @Test
     fun `buildBundles with enrichment summaryText uses fallback and marks NEEDS_AI`() {
         // Given: item with enrichment-generated summary text (not user-edited)
-        val item = createTestItem(
-            id = "test-3",
-            exportTitle = null,
-            exportDescription = null,
-            attributesSummaryText = "Brand: Nike\nColor: Blue",
-            summaryTextUserEdited = false,
-        )
+        val item =
+            createTestItem(
+                id = "test-3",
+                exportTitle = null,
+                exportDescription = null,
+                attributesSummaryText = "Brand: Nike\nColor: Blue",
+                summaryTextUserEdited = false,
+            )
 
         // When: building bundles
         val result = repository.buildBundles(listOf(item))
@@ -108,16 +113,18 @@ class ExportBundleRepositoryTest {
     @Test
     fun `buildBundles with no text sources generates minimal text`() {
         // Given: item with no export fields and no summary text
-        val item = createTestItem(
-            id = "test-4",
-            exportTitle = null,
-            exportDescription = null,
-            attributesSummaryText = "",
-            attributes = mapOf(
-                "brand" to ItemAttribute(value = "Adidas"),
-                "color" to ItemAttribute(value = "Black"),
-            ),
-        )
+        val item =
+            createTestItem(
+                id = "test-4",
+                exportTitle = null,
+                exportDescription = null,
+                attributesSummaryText = "",
+                attributes =
+                    mapOf(
+                        "brand" to ItemAttribute(value = "Adidas"),
+                        "color" to ItemAttribute(value = "Black"),
+                    ),
+            )
 
         // When: building bundles
         val result = repository.buildBundles(listOf(item))
@@ -133,10 +140,11 @@ class ExportBundleRepositoryTest {
     @Test
     fun `buildBundles marks items without photos as NO_PHOTOS`() {
         // Given: item without photos
-        val item = createTestItem(
-            id = "test-5",
-            fullImagePath = null,
-        )
+        val item =
+            createTestItem(
+                id = "test-5",
+                fullImagePath = null,
+            )
 
         // When: building bundles
         val result = repository.buildBundles(listOf(item))
@@ -152,12 +160,18 @@ class ExportBundleRepositoryTest {
     fun `buildBundles counts statistics correctly`() {
         // Given: mix of items with different states
         // Note: All items will have NO_PHOTOS because the fake paths don't exist
-        val items = listOf(
-            createTestItem(id = "ready-1", exportTitle = "Title 1", exportDescription = "Desc 1"),
-            createTestItem(id = "ready-2", exportTitle = "Title 2", exportDescription = "Desc 2"),
-            createTestItem(id = "needs-ai-1", exportTitle = null, exportDescription = null),
-            createTestItem(id = "no-photos-1", exportTitle = "Title 3", exportDescription = "Desc 3", fullImagePath = null),
-        )
+        val items =
+            listOf(
+                createTestItem(id = "ready-1", exportTitle = "Title 1", exportDescription = "Desc 1"),
+                createTestItem(id = "ready-2", exportTitle = "Title 2", exportDescription = "Desc 2"),
+                createTestItem(id = "needs-ai-1", exportTitle = null, exportDescription = null),
+                createTestItem(
+                    id = "no-photos-1",
+                    exportTitle = "Title 3",
+                    exportDescription = "Desc 3",
+                    fullImagePath = null,
+                ),
+            )
 
         // When: building bundles
         val result = repository.buildBundles(items)
@@ -204,10 +218,11 @@ class ExportBundleRepositoryTest {
     @Test
     fun `buildBundles preserves attribute metadata`() {
         // Given: item with attributes
-        val attrs = mapOf(
-            "brand" to ItemAttribute(value = "Nike", confidence = 0.95f, source = "vision"),
-            "color" to ItemAttribute(value = "Blue", confidence = 0.8f, source = "user"),
-        )
+        val attrs =
+            mapOf(
+                "brand" to ItemAttribute(value = "Nike", confidence = 0.95f, source = "vision"),
+                "color" to ItemAttribute(value = "Blue", confidence = 0.8f, source = "user"),
+            )
         val item = createTestItem(id = "test-attrs", attributes = attrs)
 
         // When: building bundles
@@ -228,30 +243,35 @@ class ExportBundleRepositoryTest {
         val testDir = File(context.filesDir, "test_photos")
         testDir.mkdirs()
 
-        val primaryPhoto = File(testDir, "primary.jpg").apply {
-            writeText("primary photo content")
-        }
-        val additionalPhoto1 = File(testDir, "additional1.jpg").apply {
-            writeText("additional photo 1 content")
-        }
-        val additionalPhoto2 = File(testDir, "additional2.jpg").apply {
-            writeText("additional photo 2 content")
-        }
+        val primaryPhoto =
+            File(testDir, "primary.jpg").apply {
+                writeText("primary photo content")
+            }
+        val additionalPhoto1 =
+            File(testDir, "additional1.jpg").apply {
+                writeText("additional photo 1 content")
+            }
+        val additionalPhoto2 =
+            File(testDir, "additional2.jpg").apply {
+                writeText("additional photo 2 content")
+            }
 
-        val item = createTestItem(
-            id = "test-multi-photo",
-            fullImagePath = primaryPhoto.absolutePath,
-            additionalPhotos = listOf(
-                com.scanium.shared.core.models.items.ItemPhoto(
-                    id = "photo-1",
-                    uri = additionalPhoto1.absolutePath,
-                ),
-                com.scanium.shared.core.models.items.ItemPhoto(
-                    id = "photo-2",
-                    uri = additionalPhoto2.absolutePath,
-                ),
-            ),
-        )
+        val item =
+            createTestItem(
+                id = "test-multi-photo",
+                fullImagePath = primaryPhoto.absolutePath,
+                additionalPhotos =
+                    listOf(
+                        com.scanium.shared.core.models.items.ItemPhoto(
+                            id = "photo-1",
+                            uri = additionalPhoto1.absolutePath,
+                        ),
+                        com.scanium.shared.core.models.items.ItemPhoto(
+                            id = "photo-2",
+                            uri = additionalPhoto2.absolutePath,
+                        ),
+                    ),
+            )
 
         // When: building bundles
         val result = repository.buildBundles(listOf(item))
@@ -278,28 +298,32 @@ class ExportBundleRepositoryTest {
         val testDir = File(context.filesDir, "test_photos_dedup")
         testDir.mkdirs()
 
-        val primaryPhoto = File(testDir, "primary.jpg").apply {
-            writeText("primary photo content")
-        }
-        val additionalPhoto = File(testDir, "additional.jpg").apply {
-            writeText("additional photo content")
-        }
+        val primaryPhoto =
+            File(testDir, "primary.jpg").apply {
+                writeText("primary photo content")
+            }
+        val additionalPhoto =
+            File(testDir, "additional.jpg").apply {
+                writeText("additional photo content")
+            }
 
-        val item = createTestItem(
-            id = "test-dedup",
-            fullImagePath = primaryPhoto.absolutePath,
-            additionalPhotos = listOf(
-                // Intentionally include the primary photo again
-                com.scanium.shared.core.models.items.ItemPhoto(
-                    id = "photo-primary-dup",
-                    uri = primaryPhoto.absolutePath,
-                ),
-                com.scanium.shared.core.models.items.ItemPhoto(
-                    id = "photo-additional",
-                    uri = additionalPhoto.absolutePath,
-                ),
-            ),
-        )
+        val item =
+            createTestItem(
+                id = "test-dedup",
+                fullImagePath = primaryPhoto.absolutePath,
+                additionalPhotos =
+                    listOf(
+                        // Intentionally include the primary photo again
+                        com.scanium.shared.core.models.items.ItemPhoto(
+                            id = "photo-primary-dup",
+                            uri = primaryPhoto.absolutePath,
+                        ),
+                        com.scanium.shared.core.models.items.ItemPhoto(
+                            id = "photo-additional",
+                            uri = additionalPhoto.absolutePath,
+                        ),
+                    ),
+            )
 
         // When: building bundles
         val result = repository.buildBundles(listOf(item))
@@ -331,7 +355,8 @@ class ExportBundleRepositoryTest {
         return ScannedItem(
             id = id,
             category = ItemCategory.FASHION,
-            priceRange = 0.0 to 0.0, // Required field
+            // Required field
+            priceRange = 0.0 to 0.0,
             timestamp = System.currentTimeMillis(),
             exportTitle = exportTitle,
             exportDescription = exportDescription,

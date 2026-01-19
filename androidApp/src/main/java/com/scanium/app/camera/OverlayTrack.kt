@@ -122,10 +122,13 @@ fun mapOverlayTracks(
             when {
                 // LOCKED: This detection is the locked candidate (scan-ready)
                 isLocked -> OverlayBoxStyle.LOCKED
+
                 // READY: Selected + guidance is GOOD + conditions met
                 isSelected && isGoodState && isReady -> OverlayBoxStyle.READY
+
                 // SELECTED: Object center is inside ROI (user intent)
                 isSelected -> OverlayBoxStyle.SELECTED
+
                 // EYE: Object detected but not inside ROI (global vision)
                 else -> OverlayBoxStyle.EYE
             }

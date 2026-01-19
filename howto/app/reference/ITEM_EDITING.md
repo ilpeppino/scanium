@@ -4,7 +4,8 @@ This document describes the architecture and implementation of the item editing 
 
 ***REMOVED******REMOVED*** Overview
 
-The Edit feature allows users to modify properties of scanned items directly from the Items List screen. Users can select one or more items and edit them using a swipe-based interface.
+The Edit feature allows users to modify properties of scanned items directly from the Items List
+screen. Users can select one or more items and edit them using a swipe-based interface.
 
 ***REMOVED******REMOVED*** Architecture
 
@@ -49,11 +50,11 @@ Edits follow the established pattern used by `updateListingStatus()`:
 
 The following fields can be edited by users:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `labelText` | String? | User-facing display name/label |
-| `recognizedText` | String? | Extracted text (documents) |
-| `barcodeValue` | String? | Barcode/QR code value |
+| Field            | Type    | Description                    |
+|------------------|---------|--------------------------------|
+| `labelText`      | String? | User-facing display name/label |
+| `recognizedText` | String? | Extracted text (documents)     |
+| `barcodeValue`   | String? | Barcode/QR code value          |
 
 Note: Fields like `category`, `priceRange`, `confidence` are ML-derived and not user-editable.
 
@@ -70,10 +71,10 @@ Note: Fields like `category`, `priceRange`, `confidence` are ML-derived and not 
 - **Route**: `items/edit?ids={itemIds}`
 - **Navigation**: Uses comma-separated item IDs in URL parameter
 - **Layout**:
-  - Top: Title "Edit Items" with count indicator (e.g., "1/3")
-  - Body: HorizontalPager for swipe navigation between items
-  - Each page: Item thumbnail + editable TextFields
-  - Bottom: Cancel and OK buttons (sticky)
+    - Top: Title "Edit Items" with count indicator (e.g., "1/3")
+    - Body: HorizontalPager for swipe navigation between items
+    - Each page: Item thumbnail + editable TextFields
+    - Bottom: Cancel and OK buttons (sticky)
 
 ***REMOVED******REMOVED******REMOVED*** Draft State Management
 
@@ -96,21 +97,23 @@ const val EDIT_ITEMS = "items/edit"
 
 ***REMOVED******REMOVED******REMOVED*** Arguments
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `ids` | String | Comma-separated list of item IDs |
+| Argument | Type   | Description                      |
+|----------|--------|----------------------------------|
+| `ids`    | String | Comma-separated list of item IDs |
 
 ***REMOVED******REMOVED*** Implementation Notes
 
 ***REMOVED******REMOVED******REMOVED*** Thread Safety
 
 Updates go through `ItemsStateManager` which handles threading:
+
 - State modifications on `workerDispatcher`
 - UI updates on `mainDispatcher`
 
 ***REMOVED******REMOVED******REMOVED*** Stable IDs
 
-Items already have stable UUIDs generated via `generateRandomId()` at creation time. No migration needed.
+Items already have stable UUIDs generated via `generateRandomId()` at creation time. No migration
+needed.
 
 ***REMOVED******REMOVED******REMOVED*** Error Handling
 

@@ -9,13 +9,12 @@ import com.scanium.shared.core.models.listing.ExportProfileId
 import com.scanium.shared.core.models.listing.ExportProfiles
 import com.scanium.shared.core.models.listing.ListingDraft
 import com.scanium.shared.core.models.model.ImageRef
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 
 class AssistantPromptBuilderTest {
     @Test
@@ -98,19 +97,21 @@ class AssistantPromptBuilderTest {
         val draft = sampleDraft()
         val snapshot = ItemContextSnapshotBuilder.fromDraft(draft)
         val profile = ExportProfiles.generic()
-        val request = AssistantPromptBuilder.buildRequest(
-            items = listOf(snapshot),
-            userMessage = "Suggest a price",
-            exportProfile = profile,
-            conversation = emptyList(),
-            assistantPrefs = AssistantPrefs(region = AssistantRegion.NL)
-        )
+        val request =
+            AssistantPromptBuilder.buildRequest(
+                items = listOf(snapshot),
+                userMessage = "Suggest a price",
+                exportProfile = profile,
+                conversation = emptyList(),
+                assistantPrefs = AssistantPrefs(region = AssistantRegion.NL),
+            )
 
         // Add pricing fields manually (since builder doesn't support them yet)
-        val requestWithPricing = request.copy(
-            includePricing = true,
-            pricingPrefs = PricingPrefs(countryCode = "NL")
-        )
+        val requestWithPricing =
+            request.copy(
+                includePricing = true,
+                pricingPrefs = PricingPrefs(countryCode = "NL"),
+            )
 
         val json = Json { ignoreUnknownKeys = true }
         val jsonString = json.encodeToString(requestWithPricing)
@@ -124,7 +125,8 @@ class AssistantPromptBuilderTest {
     @Test
     fun responseSerialization_withPricingInsights() {
         val json = Json { ignoreUnknownKeys = true }
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "reply": "Here's a suggested price",
                 "pricingInsights": {
@@ -157,7 +159,7 @@ class AssistantPromptBuilderTest {
                     ]
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<AssistantResponse>(responseJson)
 
@@ -178,11 +180,12 @@ class AssistantPromptBuilderTest {
     @Test
     fun responseSerialization_withoutPricingInsights() {
         val json = Json { ignoreUnknownKeys = true }
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "reply": "Here's a suggested title"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<AssistantResponse>(responseJson)
 
@@ -193,7 +196,8 @@ class AssistantPromptBuilderTest {
     @Test
     fun responseSerialization_pricingNotSupported() {
         val json = Json { ignoreUnknownKeys = true }
-        val responseJson = """
+        val responseJson =
+            """
             {
                 "reply": "Here's a suggested price",
                 "pricingInsights": {
@@ -202,7 +206,7 @@ class AssistantPromptBuilderTest {
                     "errorCode": "COUNTRY_NOT_SUPPORTED"
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<AssistantResponse>(responseJson)
 

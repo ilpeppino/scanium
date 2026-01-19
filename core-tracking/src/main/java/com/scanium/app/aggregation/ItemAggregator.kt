@@ -111,6 +111,7 @@ class ItemAggregator(
                 bestMatch.merge(detection)
                 return bestMatch
             }
+
             MergeDecision.CREATE_NEW -> {
                 // Create new aggregated item
                 val newItem = createAggregatedItem(detection)

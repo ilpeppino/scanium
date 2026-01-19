@@ -7,14 +7,17 @@
 
 ***REMOVED******REMOVED*** Overview
 
-Google Play requires that reviewers can access and test all features of your app. For Scanium, most features are accessible without login, making review straightforward.
+Google Play requires that reviewers can access and test all features of your app. For Scanium, most
+features are accessible without login, making review straightforward.
 
 ---
 
 ***REMOVED******REMOVED*** App Access Strategy
 
 ***REMOVED******REMOVED******REMOVED*** Public Features (No Login Required) ✅
+
 Scanium's core features are available without sign-in:
+
 - ✅ Camera scanning
 - ✅ Object detection
 - ✅ Item classification
@@ -24,7 +27,9 @@ Scanium's core features are available without sign-in:
 **Result:** Reviewers can test primary functionality immediately without credentials.
 
 ***REMOVED******REMOVED******REMOVED*** Optional Sign-In Features (Google OAuth) ⚠️
+
 These features require Google Sign-In:
+
 - Data synchronization across devices
 - AI assistant (if enabled)
 - eBay marketplace integration (if user connects)
@@ -41,13 +46,17 @@ These features require Google Sign-In:
 When filling out **App access** in Play Console:
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Question: "Do all features in your app require login?"
+
 **Answer:** ❌ **No**
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Question: "Does your app allow users to create an account?"
+
 **Answer:** ✅ **Yes** (via Google Sign-In)
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Provide Instructions for Review
+
 **Sample text:**
+
 ```
 Scanium's primary features (camera scanning, object detection, item classification)
 are fully accessible without login.
@@ -67,6 +76,7 @@ No test account needed - any Gmail account will work.
 ***REMOVED******REMOVED******REMOVED*** No Test Credentials Needed ✅
 
 Reasons:
+
 1. **OAuth with Google** - Reviewers can use their own Google accounts
 2. **No custom authentication** - No username/password system
 3. **No restricted access** - No approval process, roles, or membership levels
@@ -79,6 +89,7 @@ Some reviewers may still request access details. Provide this:
 **Account Type:** Google Sign-In (OAuth)
 **Test Account:** Not required - use any Google account
 **Sign-In Steps:**
+
 1. Open Scanium app
 2. Navigate to Settings
 3. Tap "Continue with Google"
@@ -86,6 +97,7 @@ Some reviewers may still request access details. Provide this:
 5. Grant permissions when prompted
 
 **Alternative:** If Play Console form requires an email, provide:
+
 - **Email:** `scanium.reviewer@gmail.com` (create a dedicated test account if needed)
 - **Password:** Not applicable (OAuth flow)
 
@@ -94,20 +106,23 @@ Some reviewers may still request access details. Provide this:
 ***REMOVED******REMOVED*** Review Scenarios
 
 ***REMOVED******REMOVED******REMOVED*** Scenario 1: Reviewer Tests Without Sign-In ✅
+
 - **Expected:** Full access to scanning, detection, classification
 - **Features tested:** 90% of app functionality
 - **Outcome:** Should approve if these work correctly
 
 ***REMOVED******REMOVED******REMOVED*** Scenario 2: Reviewer Tests With Sign-In ✅
+
 - **Expected:** Additional features like sync, AI assistant
 - **Reviewer uses:** Own Google account
 - **Outcome:** Full feature coverage
 
 ***REMOVED******REMOVED******REMOVED*** Scenario 3: Reviewer Can't Sign In ❌
+
 - **Likely cause:**
-  - OAuth consent screen in "Testing" mode (not "In production")
-  - Reviewer not added to test users list
-  - Production OAuth client not configured
+    - OAuth consent screen in "Testing" mode (not "In production")
+    - Reviewer not added to test users list
+    - Production OAuth client not configured
 - **Fix:** See `oauth-production-readiness.md`
 
 ---
@@ -115,14 +130,17 @@ Some reviewers may still request access details. Provide this:
 ***REMOVED******REMOVED*** OAuth Consent Screen Configuration for Review
 
 ***REMOVED******REMOVED******REMOVED*** Publishing Status
+
 **Set to:** ✅ **In production**
 
 If kept in "Testing" mode:
+
 - Only users added to "Test users" list can sign in
 - Reviewers will be blocked unless added to test user list
 - Google may reject app for restricted access
 
 ***REMOVED******REMOVED******REMOVED*** Required Fields
+
 - ✅ App name: "Scanium"
 - ✅ User support email: `contact@scanium.app`
 - ✅ Developer contact email: `your-dev-email@example.com`
@@ -144,6 +162,7 @@ If kept in "Testing" mode:
 - [ ] Account deletion works (in-app + web)
 
 ***REMOVED******REMOVED******REMOVED*** Test With Fresh Account
+
 1. Create a new Google account (or use a friend's with permission)
 2. Install production build
 3. Test core features without sign-in
@@ -155,12 +174,12 @@ If kept in "Testing" mode:
 
 ***REMOVED******REMOVED*** Common Review Issues
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| "Can't access features" | OAuth in testing mode | Publish OAuth consent screen |
-| "Login required but no credentials" | Instructions unclear | Update App Access description in Play Console |
-| "Sign-in doesn't work" | Production OAuth not configured | See `oauth-production-readiness.md` |
-| "App crashes on sign-in" | Release build signing mismatch | Verify SHA-1 in Google Cloud Console |
+| Issue                               | Cause                           | Fix                                           |
+|-------------------------------------|---------------------------------|-----------------------------------------------|
+| "Can't access features"             | OAuth in testing mode           | Publish OAuth consent screen                  |
+| "Login required but no credentials" | Instructions unclear            | Update App Access description in Play Console |
+| "Sign-in doesn't work"              | Production OAuth not configured | See `oauth-production-readiness.md`           |
+| "App crashes on sign-in"            | Release build signing mismatch  | Verify SHA-1 in Google Cloud Console          |
 
 ---
 
@@ -196,13 +215,17 @@ Not required - reviewers can use their own Google accounts
 ***REMOVED******REMOVED*** App Content Rating & Target Audience
 
 ***REMOVED******REMOVED******REMOVED*** Content Rating
+
 **Recommended:** Everyone (all ages)
+
 - No mature content
 - No violence, profanity, or adult themes
 - Primary use: item scanning for resale/organization
 
 ***REMOVED******REMOVED******REMOVED*** Target Audience
+
 **Age group:** 18+ (due to marketplace features like eBay integration)
+
 - Declare: "App designed for adults involved in online resale"
 
 ---
@@ -219,7 +242,8 @@ Not required - reviewers can use their own Google accounts
 
 ***REMOVED******REMOVED*** References
 
-- **Play Console App Access:** https://support.google.com/googleplay/android-developer/answer/9859455
+- **Play Console App Access:
+  ** https://support.google.com/googleplay/android-developer/answer/9859455
 - **OAuth Consent Screen:** https://support.google.com/cloud/answer/10311615
 - **Scanium OAuth Setup:** `oauth-production-readiness.md`
 

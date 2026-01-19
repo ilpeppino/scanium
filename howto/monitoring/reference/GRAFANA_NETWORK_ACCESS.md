@@ -8,18 +8,20 @@
 ***REMOVED******REMOVED*** Diagnosis
 
 ✅ **Grafana is running correctly**:
+
 - Container: `scanium-grafana` is UP and healthy
 - Port 3000 is listening on 0.0.0.0:3000
 - API responds correctly when accessed via SSH
 
 ❌ **Network Issue**:
+
 - NAS IP: `REDACTED_INTERNAL_IP/24` (eth1 interface)
 - Your device cannot reach this IP address
 - This could be due to:
-  - Different network subnet
-  - Firewall blocking the connection
-  - VPN or proxy interference
-  - Accessing from outside local network
+    - Different network subnet
+    - Firewall blocking the connection
+    - VPN or proxy interference
+    - Accessing from outside local network
 
 ---
 
@@ -28,11 +30,13 @@
 Create an SSH tunnel to access Grafana through localhost:
 
 ***REMOVED******REMOVED******REMOVED*** Mac/Linux:
+
 ```bash
 ssh -L 3000:localhost:3000 nas
 ```
 
 Then access Grafana at:
+
 ```
 http://localhost:3000
 ```
@@ -40,6 +44,7 @@ http://localhost:3000
 Keep the SSH session running while using Grafana.
 
 ***REMOVED******REMOVED******REMOVED*** Alternative Port (if 3000 is in use):
+
 ```bash
 ssh -L 8080:localhost:3000 nas
 ```
@@ -75,10 +80,12 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 ```
 
 **If you're on 192.168.178.x subnet**:
+
 - You should be able to access http://REDACTED_INTERNAL_IP:3000 directly
 - If not, check your device's firewall settings
 
 **If you're on a different subnet** (e.g., 192.168.68.x):
+
 - You need SSH tunnel (Solution 1)
 - OR configure router to allow routing between subnets
 - OR connect to the same network as the NAS
@@ -95,10 +102,12 @@ http://DSPlay418.local:3000
 ```
 
 This works if:
+
 - Your device's DNS can resolve the NAS hostname
 - mDNS/Bonjour is working on your network
 
 Test hostname resolution:
+
 ```bash
 ping DSPlay418
 ***REMOVED*** or
@@ -116,13 +125,15 @@ If your router supports it, set up port forwarding:
 3. Forward external port (e.g., 3000) to REDACTED_INTERNAL_IP:3000
 4. Access via your router's IP or external IP
 
-⚠️ **Security Warning**: Only do this if you understand the security implications. Grafana is configured with anonymous access.
+⚠️ **Security Warning**: Only do this if you understand the security implications. Grafana is
+configured with anonymous access.
 
 ---
 
 ***REMOVED******REMOVED*** Quick Test Commands
 
 ***REMOVED******REMOVED******REMOVED*** From Mac - Test if you can reach the NAS IP:
+
 ```bash
 ***REMOVED*** Test TCP connection
 nc -zv REDACTED_INTERNAL_IP 3000
@@ -135,6 +146,7 @@ ssh nas "curl -s http://localhost:3000/api/health"
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Check NAS network configuration:
+
 ```bash
 ssh nas "ip addr show eth1"
 ssh nas "ip route"
@@ -147,12 +159,14 @@ ssh nas "ip route"
 **For regular access**, I recommend setting up a permanent SSH tunnel:
 
 ***REMOVED******REMOVED******REMOVED*** Create alias in ~/.zshrc or ~/.bashrc:
+
 ```bash
 ***REMOVED*** Add this to your shell config
 alias grafana-tunnel='ssh -L 3000:localhost:3000 nas'
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Then use it:
+
 ```bash
 ***REMOVED*** Start tunnel
 grafana-tunnel
@@ -166,6 +180,7 @@ open http://localhost:3000
 ***REMOVED******REMOVED*** Troubleshooting
 
 ***REMOVED******REMOVED******REMOVED*** "Port 3000 already in use"
+
 ```bash
 ***REMOVED*** Find what's using port 3000
 lsof -i :3000
@@ -176,13 +191,16 @@ ssh -L 8080:localhost:3000 nas
 ```
 
 ***REMOVED******REMOVED******REMOVED*** "SSH tunnel keeps disconnecting"
+
 ```bash
 ***REMOVED*** Keep tunnel alive with keep-alive option
 ssh -o ServerAliveInterval=60 -L 3000:localhost:3000 nas
 ```
 
 ***REMOVED******REMOVED******REMOVED*** "Cannot resolve hostname 'nas'"
+
 Update your SSH config (`~/.ssh/config`):
+
 ```
 Host nas
   HostName REDACTED_INTERNAL_IP
@@ -195,17 +213,20 @@ Host nas
 ***REMOVED******REMOVED*** Current Grafana Status
 
 ✅ **Container Running**:
+
 ```
 NAMES             STATUS                    PORTS
 scanium-grafana   Up 11 minutes (healthy)   0.0.0.0:3000->3000/tcp
 ```
 
 ✅ **Port Listening**:
+
 ```
 tcp  0  0  0.0.0.0:3000  0.0.0.0:*  LISTEN
 ```
 
 ✅ **API Health Check** (via SSH):
+
 ```json
 {
   "commit": "00a22ff8b28550d593ec369ba3da1b25780f0a4a",

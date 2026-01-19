@@ -48,7 +48,8 @@ enum class ItemCategory(val displayName: String) {
                 normalized.contains("chair") || normalized.contains("sofa") || normalized.contains("table") -> HOME_GOOD
                 normalized.contains("food") || normalized.contains("snack") || normalized.contains("drink") -> FOOD
                 normalized.contains("plant") || normalized.contains("flower") -> PLANT
-                normalized.contains("phone") || normalized.contains("laptop") || normalized.contains("device") || normalized.contains("monitor") -> ELECTRONICS
+                normalized.contains("phone") || normalized.contains("laptop") ||
+                    normalized.contains("device") || normalized.contains("monitor") -> ELECTRONICS
                 normalized.contains("document") || normalized.contains("paper") -> DOCUMENT
                 else -> fromMlKitLabel(label)
             }

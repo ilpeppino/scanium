@@ -11,15 +11,15 @@ import java.util.concurrent.TimeUnit
  * Verifies that clients are created with correct configurations.
  */
 class AssistantOkHttpClientFactoryTest {
-
     // ==================== Client Creation Tests ====================
 
     @Test
     fun `create with DEFAULT config applies correct timeouts`() {
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.DEFAULT,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.DEFAULT,
+                logStartupPolicy = false,
+            )
 
         assertThat(client.connectTimeoutMillis)
             .isEqualTo(TimeUnit.SECONDS.toMillis(AssistantHttpConfig.DEFAULT_CONNECT_TIMEOUT_SECONDS))
@@ -33,10 +33,11 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `create with PREFLIGHT config applies tight timeouts`() {
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.PREFLIGHT,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.PREFLIGHT,
+                logStartupPolicy = false,
+            )
 
         assertThat(client.connectTimeoutMillis)
             .isEqualTo(TimeUnit.SECONDS.toMillis(AssistantHttpConfig.PREFLIGHT_CONNECT_TIMEOUT_SECONDS))
@@ -50,10 +51,11 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `create with WARMUP config applies moderate timeouts`() {
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.WARMUP,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.WARMUP,
+                logStartupPolicy = false,
+            )
 
         assertThat(client.connectTimeoutMillis)
             .isEqualTo(TimeUnit.SECONDS.toMillis(AssistantHttpConfig.WARMUP_CONNECT_TIMEOUT_SECONDS))
@@ -63,10 +65,11 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `create with TEST config applies short timeouts`() {
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.TEST,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.TEST,
+                logStartupPolicy = false,
+            )
 
         // Test config should have 5s timeouts
         assertThat(client.connectTimeoutMillis).isEqualTo(5000L)
@@ -77,17 +80,19 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `create with custom config applies custom timeouts`() {
-        val customConfig = AssistantHttpConfig(
-            connectTimeoutSeconds = 20L,
-            readTimeoutSeconds = 120L,
-            writeTimeoutSeconds = 45L,
-            callTimeoutSeconds = 150L,
-        )
+        val customConfig =
+            AssistantHttpConfig(
+                connectTimeoutSeconds = 20L,
+                readTimeoutSeconds = 120L,
+                writeTimeoutSeconds = 45L,
+                callTimeoutSeconds = 150L,
+            )
 
-        val client = AssistantOkHttpClientFactory.create(
-            config = customConfig,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = customConfig,
+                logStartupPolicy = false,
+            )
 
         assertThat(client.connectTimeoutMillis).isEqualTo(20000L)
         assertThat(client.readTimeoutMillis).isEqualTo(120000L)
@@ -101,10 +106,11 @@ class AssistantOkHttpClientFactoryTest {
     fun `create with retryCount greater than 0 adds retry interceptor`() {
         val configWithRetry = AssistantHttpConfig(retryCount = 1)
 
-        val client = AssistantOkHttpClientFactory.create(
-            config = configWithRetry,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = configWithRetry,
+                logStartupPolicy = false,
+            )
 
         val hasRetryInterceptor = client.interceptors.any { it is AssistantRetryInterceptor }
         assertThat(hasRetryInterceptor).isTrue()
@@ -114,10 +120,11 @@ class AssistantOkHttpClientFactoryTest {
     fun `create with retryCount 0 does not add retry interceptor`() {
         val configWithoutRetry = AssistantHttpConfig(retryCount = 0)
 
-        val client = AssistantOkHttpClientFactory.create(
-            config = configWithoutRetry,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = configWithoutRetry,
+                logStartupPolicy = false,
+            )
 
         val hasRetryInterceptor = client.interceptors.any { it is AssistantRetryInterceptor }
         assertThat(hasRetryInterceptor).isFalse()
@@ -125,10 +132,11 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `PREFLIGHT config does not add retry interceptor`() {
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.PREFLIGHT,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.PREFLIGHT,
+                logStartupPolicy = false,
+            )
 
         val hasRetryInterceptor = client.interceptors.any { it is AssistantRetryInterceptor }
         assertThat(hasRetryInterceptor).isFalse()
@@ -136,10 +144,11 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `DEFAULT config adds retry interceptor`() {
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.DEFAULT,
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.DEFAULT,
+                logStartupPolicy = false,
+            )
 
         val hasRetryInterceptor = client.interceptors.any { it is AssistantRetryInterceptor }
         assertThat(hasRetryInterceptor).isTrue()
@@ -149,35 +158,40 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `create with additional interceptors adds them to client`() {
-        val customInterceptor = object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response {
-                return chain.proceed(chain.request())
+        val customInterceptor =
+            object : Interceptor {
+                override fun intercept(chain: Interceptor.Chain): Response {
+                    return chain.proceed(chain.request())
+                }
             }
-        }
 
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.TEST,
-            additionalInterceptors = listOf(customInterceptor),
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.TEST,
+                additionalInterceptors = listOf(customInterceptor),
+                logStartupPolicy = false,
+            )
 
         assertThat(client.interceptors).contains(customInterceptor)
     }
 
     @Test
     fun `create with multiple additional interceptors adds all`() {
-        val interceptor1 = object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(chain.request())
-        }
-        val interceptor2 = object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(chain.request())
-        }
+        val interceptor1 =
+            object : Interceptor {
+                override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(chain.request())
+            }
+        val interceptor2 =
+            object : Interceptor {
+                override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(chain.request())
+            }
 
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.TEST,
-            additionalInterceptors = listOf(interceptor1, interceptor2),
-            logStartupPolicy = false,
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.TEST,
+                additionalInterceptors = listOf(interceptor1, interceptor2),
+                logStartupPolicy = false,
+            )
 
         assertThat(client.interceptors).contains(interceptor1)
         assertThat(client.interceptors).contains(interceptor2)
@@ -187,15 +201,17 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `derive creates client with new timeout config`() {
-        val baseClient = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.DEFAULT,
-            logStartupPolicy = false,
-        )
+        val baseClient =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.DEFAULT,
+                logStartupPolicy = false,
+            )
 
-        val derivedClient = AssistantOkHttpClientFactory.derive(
-            baseClient = baseClient,
-            config = AssistantHttpConfig.PREFLIGHT,
-        )
+        val derivedClient =
+            AssistantOkHttpClientFactory.derive(
+                baseClient = baseClient,
+                config = AssistantHttpConfig.PREFLIGHT,
+            )
 
         // Derived client should have preflight timeouts
         assertThat(derivedClient.connectTimeoutMillis)
@@ -206,20 +222,23 @@ class AssistantOkHttpClientFactoryTest {
 
     @Test
     fun `derive preserves base client interceptors`() {
-        val customInterceptor = object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(chain.request())
-        }
+        val customInterceptor =
+            object : Interceptor {
+                override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(chain.request())
+            }
 
-        val baseClient = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.DEFAULT,
-            additionalInterceptors = listOf(customInterceptor),
-            logStartupPolicy = false,
-        )
+        val baseClient =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.DEFAULT,
+                additionalInterceptors = listOf(customInterceptor),
+                logStartupPolicy = false,
+            )
 
-        val derivedClient = AssistantOkHttpClientFactory.derive(
-            baseClient = baseClient,
-            config = AssistantHttpConfig.PREFLIGHT,
-        )
+        val derivedClient =
+            AssistantOkHttpClientFactory.derive(
+                baseClient = baseClient,
+                config = AssistantHttpConfig.PREFLIGHT,
+            )
 
         // Custom interceptor should be preserved
         assertThat(derivedClient.interceptors).contains(customInterceptor)
@@ -257,10 +276,11 @@ class AssistantOkHttpClientFactoryTest {
             AssistantHttpConfig.WARMUP,
             AssistantHttpConfig.TEST,
         ).forEach { config ->
-            val client = AssistantOkHttpClientFactory.create(
-                config = config,
-                logStartupPolicy = false,
-            )
+            val client =
+                AssistantOkHttpClientFactory.create(
+                    config = config,
+                    logStartupPolicy = false,
+                )
 
             // Client should be created successfully with positive timeouts
             assertThat(client.connectTimeoutMillis).isGreaterThan(0)

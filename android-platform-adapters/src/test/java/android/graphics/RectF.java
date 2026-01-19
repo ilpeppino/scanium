@@ -13,7 +13,8 @@ public class RectF {
         this.bottom = bottom;
     }
 
-    public RectF() {}
+    public RectF() {
+    }
 
     @Override
     public String toString() {

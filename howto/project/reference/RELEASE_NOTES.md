@@ -6,40 +6,47 @@
 
 ***REMOVED******REMOVED*** Summary
 
-This release stabilizes the localization infrastructure and fixes camera issues introduced in v1.3.0. It marks the last-known-good state of main before freezing for production release.
+This release stabilizes the localization infrastructure and fixes camera issues introduced in
+v1.3.0. It marks the last-known-good state of main before freezing for production release.
 
 ***REMOVED******REMOVED*** Key Changes
 
 ***REMOVED******REMOVED******REMOVED*** Localization & Internationalization
+
 - Structured pricing fields for proper localization (no hardcoded currency/format strings)
 - Placeholder locale resources generated for all supported languages
 - Storage & Export settings fully localized
 - Customer-safe copy formatter for display text
 
 ***REMOVED******REMOVED******REMOVED*** Camera & Vision
+
 - WYSIWYG structural fix for camera overlay alignment
 - Portrait mode bbox normalization corrected
 - Preview and ImageAnalysis aspect ratios aligned
 - YUV to Bitmap conversion stride handling fixed (regression from v1.1.0)
 
 ***REMOVED******REMOVED******REMOVED*** AI Assistant
+
 - First-click trigger reliability improved
 - Unified language setting propagation
 - Customer-safe response shaping
 - Assist mode for structured listing sections
 
 ***REMOVED******REMOVED******REMOVED*** Authentication
+
 - Reactive auth state management
 - UNAUTHORIZED error dialog
 - Settings deep link for AI gate
 
 ***REMOVED******REMOVED******REMOVED*** Stability
+
 - Release blocker camera fix merged
 - Debug instrumentation disabled for release builds
 - Camera filename collision bug guarded
 - Golden dataset regression tests added
 
 ***REMOVED******REMOVED*** Known Limitations
+
 - 182 pre-existing lint warnings (no baseline configured)
 - Legacy pricing test format deprecated (now uses structured PricingDisplay)
 

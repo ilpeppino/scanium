@@ -124,32 +124,32 @@ object ImageUtils {
     fun rotateBitmap(
         bitmap: Bitmap,
         rotationDegrees: Int,
-    ): Bitmap {
-        return if (rotationDegrees != 0) {
+    ): Bitmap =
+        if (rotationDegrees != 0) {
             val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
-            Bitmap.createBitmap(
-                bitmap,
-                0,
-                0,
-                bitmap.width,
-                bitmap.height,
-                matrix,
-                true,
-            ).also {
-                if (it != bitmap) {
-                    bitmap.recycle()
+            Bitmap
+                .createBitmap(
+                    bitmap,
+                    0,
+                    0,
+                    bitmap.width,
+                    bitmap.height,
+                    matrix,
+                    true,
+                ).also {
+                    if (it != bitmap) {
+                        bitmap.recycle()
+                    }
                 }
-            }
         } else {
             bitmap
         }
-    }
 
     fun readExifRotation(
         context: Context,
         uri: Uri,
-    ): Int {
-        return runCatching {
+    ): Int =
+        runCatching {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 val exif = ExifInterface(inputStream)
                 getRotationFromExif(exif)
@@ -158,26 +158,23 @@ object ImageUtils {
             Log.w(TAG, "Unable to read EXIF rotation for $uri", exception)
             0
         }
-    }
 
-    fun readExifRotation(path: String): Int {
-        return runCatching {
+    fun readExifRotation(path: String): Int =
+        runCatching {
             val exif = ExifInterface(path)
             getRotationFromExif(exif)
         }.getOrElse { exception ->
             Log.w(TAG, "Unable to read EXIF rotation for $path", exception)
             0
         }
-    }
 
-    private fun getRotationFromExif(exif: ExifInterface): Int {
-        return when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+    private fun getRotationFromExif(exif: ExifInterface): Int =
+        when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
             ExifInterface.ORIENTATION_ROTATE_90, ExifInterface.ORIENTATION_TRANSPOSE -> 90
             ExifInterface.ORIENTATION_ROTATE_180 -> 180
             ExifInterface.ORIENTATION_ROTATE_270, ExifInterface.ORIENTATION_TRANSVERSE -> 270
             else -> 0
         }
-    }
 
     /**
      * Calculates a sharpness score for the given bitmap using Laplacian variance.

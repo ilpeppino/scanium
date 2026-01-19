@@ -1,7 +1,9 @@
 package com.scanium.app.camera
 
 import com.scanium.core.models.ml.ItemCategory
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**

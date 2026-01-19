@@ -1,17 +1,22 @@
-> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current state.
+> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
+> state.
+
 ***REMOVED*** SEC-003: API Key TLS Security Implementation
 
 ***REMOVED******REMOVED*** Overview
 
-This document describes the security improvements implemented to address SEC-003, which identified vulnerabilities in API key transmission and TLS verification.
+This document describes the security improvements implemented to address SEC-003, which identified
+vulnerabilities in API key transmission and TLS verification.
 
 ***REMOVED******REMOVED*** Security Issues Addressed
 
 ***REMOVED******REMOVED******REMOVED*** 1. API Keys Transmitted Without TLS Verification
 
-**Problem**: API keys were transmitted in X-API-Key headers but TLS certificate validation was not explicitly enforced.
+**Problem**: API keys were transmitted in X-API-Key headers but TLS certificate validation was not
+explicitly enforced.
 
 **Solution**: Implemented explicit HTTPS enforcement middleware that:
+
 - Checks the protocol of incoming requests in production environments
 - Rejects HTTP requests with a 403 Forbidden status
 - Logs security violations for monitoring
@@ -19,9 +24,11 @@ This document describes the security improvements implemented to address SEC-003
 
 ***REMOVED******REMOVED******REMOVED*** 2. No API Key Rotation Mechanism
 
-**Problem**: No mechanism existed to rotate API keys, making it difficult to respond to potential key compromises.
+**Problem**: No mechanism existed to rotate API keys, making it difficult to respond to potential
+key compromises.
 
 **Solution**: Implemented comprehensive `ApiKeyManager` class with:
+
 - Cryptographically secure key generation using `crypto.randomBytes(32)`
 - Key metadata tracking (creation date, expiration, rotation history)
 - Key rotation support with automatic old key deprecation
@@ -33,6 +40,7 @@ This document describes the security improvements implemented to address SEC-003
 **Problem**: No logging of API key usage for security monitoring and incident response.
 
 **Solution**: Implemented comprehensive usage logging:
+
 - All API key authentication attempts (success and failure) are logged
 - Structured logging includes: timestamp, endpoint, IP address, user agent, error codes
 - Usage statistics tracking per API key
@@ -44,6 +52,7 @@ This document describes the security improvements implemented to address SEC-003
 **Problem**: Application did not set security headers to protect against common web vulnerabilities.
 
 **Solution**: Added comprehensive security headers middleware:
+
 - `Strict-Transport-Security` (HSTS): Forces HTTPS for 1 year
 - `Content-Security-Policy`: Prevents XSS and data injection attacks
 - `X-Content-Type-Options`: Prevents MIME type sniffing
@@ -57,27 +66,27 @@ This document describes the security improvements implemented to address SEC-003
 ***REMOVED******REMOVED******REMOVED*** Files Modified
 
 1. **backend/src/infra/http/plugins/security.ts** (NEW)
-   - Security plugin for HTTPS enforcement
-   - Security headers middleware
-   - Configurable based on environment
+    - Security plugin for HTTPS enforcement
+    - Security headers middleware
+    - Configurable based on environment
 
 2. **backend/src/modules/classifier/api-key-manager.ts** (NEW)
-   - API key lifecycle management
-   - Rotation and expiration tracking
-   - Usage logging and statistics
+    - API key lifecycle management
+    - Rotation and expiration tracking
+    - Usage logging and statistics
 
 3. **backend/src/modules/classifier/routes.ts**
-   - Updated to use `ApiKeyManager`
-   - Added comprehensive logging for API key usage
-   - Enhanced error handling and security events
+    - Updated to use `ApiKeyManager`
+    - Added comprehensive logging for API key usage
+    - Enhanced error handling and security events
 
 4. **backend/src/app.ts**
-   - Registered security plugin
-   - Integrated into application startup
+    - Registered security plugin
+    - Integrated into application startup
 
 5. **backend/src/config/index.ts**
-   - Added security configuration schema
-   - Environment variable mappings for security settings
+    - Added security configuration schema
+    - Environment variable mappings for security settings
 
 ***REMOVED******REMOVED******REMOVED*** Configuration
 
@@ -106,7 +115,8 @@ SECURITY_LOG_API_KEY_USAGE=true      ***REMOVED*** Log all API key usage
 
 ***REMOVED******REMOVED******REMOVED*** Key Generation
 
-Keys are generated using `crypto.randomBytes(32)` and encoded as base64url for safe transmission in HTTP headers. This provides 256 bits of entropy.
+Keys are generated using `crypto.randomBytes(32)` and encoded as base64url for safe transmission in
+HTTP headers. This provides 256 bits of entropy.
 
 ```typescript
 const key = randomBytes(32).toString('base64url');
@@ -121,6 +131,7 @@ const newKey = apiKeyManager.rotateKey(oldKey, expirationDays);
 ```
 
 This will:
+
 1. Generate a new cryptographically secure key
 2. Link it to the old key in metadata
 3. Set the old key to expire in 30 days (transition period)
@@ -228,11 +239,13 @@ When `SECURITY_ENFORCE_HTTPS=true` and `NODE_ENV=production`:
 
 ***REMOVED******REMOVED******REMOVED*** Development Behavior
 
-HTTPS enforcement is **disabled** in development mode (`NODE_ENV=development`) to allow local testing.
+HTTPS enforcement is **disabled** in development mode (`NODE_ENV=development`) to allow local
+testing.
 
 ***REMOVED******REMOVED******REMOVED*** Load Balancer/Proxy Setup
 
-If your application runs behind a load balancer or reverse proxy that terminates TLS, ensure the proxy sets the `X-Forwarded-Proto` header:
+If your application runs behind a load balancer or reverse proxy that terminates TLS, ensure the
+proxy sets the `X-Forwarded-Proto` header:
 
 ```
 X-Forwarded-Proto: https
@@ -241,6 +254,7 @@ X-Forwarded-Proto: https
 Common proxy configurations:
 
 **Nginx:**
+
 ```nginx
 proxy_set_header X-Forwarded-Proto $scheme;
 ```
@@ -318,15 +332,15 @@ HTTP requests in production are logged at WARN level:
 Comprehensive test suites have been added:
 
 1. **backend/src/modules/classifier/api-key-manager.test.ts**
-   - Key generation and validation
-   - Key rotation and revocation
-   - Usage logging and statistics
-   - Expiration handling
+    - Key generation and validation
+    - Key rotation and revocation
+    - Usage logging and statistics
+    - Expiration handling
 
 2. **backend/src/infra/http/plugins/security.test.ts**
-   - HTTPS enforcement
-   - Security headers validation
-   - Environment-specific behavior
+    - HTTPS enforcement
+    - Security headers validation
+    - Environment-specific behavior
 
 Run tests with:
 
@@ -340,7 +354,8 @@ npm test
 
 1. **Update Environment Variables**
 
-   Add the new security environment variables to your deployment configuration. The defaults are secure, but you can customize:
+   Add the new security environment variables to your deployment configuration. The defaults are
+   secure, but you can customize:
 
    ```bash
    SECURITY_ENFORCE_HTTPS=true
@@ -357,16 +372,16 @@ npm test
 3. **Monitor Logs**
 
    After deployment, monitor logs for:
-   - Failed authentication attempts (potential security incidents)
-   - HTTPS violations (misconfigured clients)
-   - API key usage patterns (for capacity planning)
+    - Failed authentication attempts (potential security incidents)
+    - HTTPS violations (misconfigured clients)
+    - API key usage patterns (for capacity planning)
 
 4. **Plan Key Rotation**
 
-   - Review existing API keys
-   - Plan rotation schedule (recommend 90 days)
-   - Communicate rotation to API clients
-   - Use the rotation feature to generate new keys
+    - Review existing API keys
+    - Plan rotation schedule (recommend 90 days)
+    - Communicate rotation to API clients
+    - Use the rotation feature to generate new keys
 
 ***REMOVED******REMOVED******REMOVED*** New Deployments
 
@@ -379,56 +394,56 @@ All security features are enabled by default. Simply ensure:
 ***REMOVED******REMOVED*** Security Best Practices
 
 1. **API Key Rotation**
-   - Rotate API keys every 90 days (configurable)
-   - Rotate immediately if key compromise is suspected
-   - Maintain transition period to avoid service disruption
+    - Rotate API keys every 90 days (configurable)
+    - Rotate immediately if key compromise is suspected
+    - Maintain transition period to avoid service disruption
 
 2. **Monitoring**
-   - Enable usage logging in production
-   - Set up alerts for failed authentication attempts
-   - Monitor for unusual usage patterns
-   - Review logs regularly for security incidents
+    - Enable usage logging in production
+    - Set up alerts for failed authentication attempts
+    - Monitor for unusual usage patterns
+    - Review logs regularly for security incidents
 
 3. **Key Storage**
-   - Store API keys securely (environment variables, secrets manager)
-   - Never commit keys to version control
-   - Use different keys for different environments
+    - Store API keys securely (environment variables, secrets manager)
+    - Never commit keys to version control
+    - Use different keys for different environments
 
 4. **TLS Configuration**
-   - Use TLS 1.2 or higher
-   - Use strong cipher suites
-   - Keep TLS certificates up to date
-   - Consider certificate pinning for high-security applications
+    - Use TLS 1.2 or higher
+    - Use strong cipher suites
+    - Keep TLS certificates up to date
+    - Consider certificate pinning for high-security applications
 
 5. **Rate Limiting**
-   - Keep rate limiting enabled (already configured)
-   - Monitor rate limit violations
-   - Adjust limits based on legitimate usage patterns
+    - Keep rate limiting enabled (already configured)
+    - Monitor rate limit violations
+    - Adjust limits based on legitimate usage patterns
 
 ***REMOVED******REMOVED*** Threat Model
 
 This implementation addresses the following threats:
 
 1. **Man-in-the-Middle (MITM) Attacks**
-   - Mitigated by HTTPS enforcement
-   - HSTS prevents protocol downgrade attacks
+    - Mitigated by HTTPS enforcement
+    - HSTS prevents protocol downgrade attacks
 
 2. **API Key Interception**
-   - Mitigated by mandatory TLS encryption
-   - Logging enables detection of compromised keys
+    - Mitigated by mandatory TLS encryption
+    - Logging enables detection of compromised keys
 
 3. **Key Compromise**
-   - Mitigated by rotation mechanism
-   - Revocation enables immediate response
+    - Mitigated by rotation mechanism
+    - Revocation enables immediate response
 
 4. **Unauthorized Access**
-   - Mitigated by key validation and expiration
-   - Rate limiting prevents brute force attacks
+    - Mitigated by key validation and expiration
+    - Rate limiting prevents brute force attacks
 
 5. **Common Web Attacks**
-   - Mitigated by comprehensive security headers
-   - CSP prevents XSS attacks
-   - X-Frame-Options prevents clickjacking
+    - Mitigated by comprehensive security headers
+    - CSP prevents XSS attacks
+    - X-Frame-Options prevents clickjacking
 
 ***REMOVED******REMOVED*** Compliance
 
@@ -444,24 +459,24 @@ This implementation helps meet requirements for:
 Potential future security improvements:
 
 1. **Certificate Pinning**
-   - Pin specific certificates for critical API endpoints
-   - Requires client-side implementation
+    - Pin specific certificates for critical API endpoints
+    - Requires client-side implementation
 
 2. **API Key Scopes**
-   - Grant fine-grained permissions per key
-   - Principle of least privilege
+    - Grant fine-grained permissions per key
+    - Principle of least privilege
 
 3. **Multi-factor Authentication**
-   - Additional authentication factors for sensitive operations
-   - Time-based or challenge-response
+    - Additional authentication factors for sensitive operations
+    - Time-based or challenge-response
 
 4. **Anomaly Detection**
-   - Machine learning-based detection of unusual patterns
-   - Automatic key suspension on suspicious activity
+    - Machine learning-based detection of unusual patterns
+    - Automatic key suspension on suspicious activity
 
 5. **Key Encryption at Rest**
-   - Encrypt API keys in storage
-   - Hardware security module (HSM) integration
+    - Encrypt API keys in storage
+    - Hardware security module (HSM) integration
 
 ***REMOVED******REMOVED*** Support
 

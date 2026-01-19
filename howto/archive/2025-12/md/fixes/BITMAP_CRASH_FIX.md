@@ -6,15 +6,19 @@ The app was crashing immediately after detecting objects and adding them to the 
 
 ***REMOVED******REMOVED******REMOVED*** Root Cause
 
-The crash was caused by **bitmap recycling** in thumbnail images. The issue was in the `cropThumbnail()` methods in:
+The crash was caused by **bitmap recycling** in thumbnail images. The issue was in the
+`cropThumbnail()` methods in:
+
 - `ObjectDetectorClient.kt`
 - `BarcodeScannerClient.kt`
 - `DocumentTextRecognitionClient.kt`
 
 **What was happening:**
+
 1. Camera captures frame and creates a bitmap
 2. ML Kit detects objects with bounding boxes
-3. `cropThumbnail()` creates thumbnails using `Bitmap.createBitmap(source, left, top, width, height)`
+3. `cropThumbnail()` creates thumbnails using
+   `Bitmap.createBitmap(source, left, top, width, height)`
 4. **This creates a bitmap that SHARES pixel data with the source bitmap**
 5. Source bitmap gets recycled after camera processing completes
 6. ScannedItem with thumbnail gets passed to ItemsViewModel
@@ -30,7 +34,9 @@ private fun cropThumbnail(source: Bitmap, boundingBox: Rect): Bitmap? {
 }
 ```
 
-When `Bitmap.createBitmap(source, ...)` is called, it creates a **mutable bitmap that shares the same underlying pixel buffer** as the source. This is efficient for temporary operations, but dangerous when the source lifetime is shorter than the derived bitmap.
+When `Bitmap.createBitmap(source, ...)` is called, it creates a **mutable bitmap that shares the
+same underlying pixel buffer** as the source. This is efficient for temporary operations, but
+dangerous when the source lifetime is shorter than the derived bitmap.
 
 ***REMOVED******REMOVED*** Solution
 
@@ -44,11 +50,13 @@ private fun cropThumbnail(source: Bitmap, boundingBox: Rect): Bitmap? {
 }
 ```
 
-The `.copy(Bitmap.Config.ARGB_8888, false)` creates a **new bitmap with its own pixel buffer**, making it safe to use even after the source is recycled.
+The `.copy(Bitmap.Config.ARGB_8888, false)` creates a **new bitmap with its own pixel buffer**,
+making it safe to use even after the source is recycled.
 
 ***REMOVED******REMOVED*** Changes Made
 
 ***REMOVED******REMOVED******REMOVED*** 1. ObjectDetectorClient.kt (line 569-573)
+
 ```kotlin
 // CRITICAL: Create a COPY of the bitmap so it has its own pixel data
 // Without .copy(), the cropped bitmap shares pixels with source and crashes
@@ -58,6 +66,7 @@ cropped.copy(Bitmap.Config.ARGB_8888, false)
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 2. BarcodeScannerClient.kt (line 163-167)
+
 ```kotlin
 // CRITICAL: Create a COPY of the bitmap so it has its own pixel data
 // Without .copy(), the cropped bitmap shares pixels with source and crashes
@@ -67,6 +76,7 @@ cropped.copy(Bitmap.Config.ARGB_8888, false)
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 3. DocumentTextRecognitionClient.kt (line 140-144)
+
 ```kotlin
 // CRITICAL: Create a COPY of the bitmap so it has its own pixel data
 // Without .copy(), the cropped bitmap shares pixels with source and crashes
@@ -104,13 +114,15 @@ To verify the fix:
 3. Open app and long-press to scan objects
 
 4. Expected behavior:
-   - Objects are detected
-   - Items appear in the list with thumbnails
-   - **No crash** when items are added or when viewing the items list
+    - Objects are detected
+    - Items appear in the list with thumbnails
+    - **No crash** when items are added or when viewing the items list
 
 ***REMOVED******REMOVED*** Why This Matters
 
-This is a critical fix for production stability. The previous implementation would crash **every time** an object was successfully detected and added to the list. With this fix, the multi-layer de-duplication system can now work reliably in production.
+This is a critical fix for production stability. The previous implementation would crash **every
+time** an object was successfully detected and added to the list. With this fix, the multi-layer
+de-duplication system can now work reliably in production.
 
 ***REMOVED******REMOVED*** Related Documentation
 

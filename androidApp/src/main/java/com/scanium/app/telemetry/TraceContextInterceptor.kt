@@ -86,7 +86,8 @@ class TraceContextInterceptor(
 
         // Add traceparent header to request
         val newRequest =
-            request.newBuilder()
+            request
+                .newBuilder()
                 .header(TRACEPARENT_HEADER, traceparent)
                 .build()
 

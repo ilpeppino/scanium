@@ -15,20 +15,19 @@ import com.scanium.app.listing.ExportProfileId
 import com.scanium.app.listing.ExportProfileRepository
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraft
-import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
 import com.scanium.app.selling.assistant.local.LocalSuggestionEngine
+import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -501,18 +500,24 @@ class AssistantViewModelTest {
     /**
      * Helper to create a draft with photos for testing.
      */
-    private fun createDraftWithPhotos(itemId: String, photoCount: Int): ListingDraft {
-        val photos = (0 until photoCount).map { index ->
-            DraftPhotoRef(
-                image = ImageRef.Bytes(
-                    bytes = ByteArray(1024) { it.toByte() }, // 1KB test image
-                    mimeType = "image/jpeg",
-                    width = 100,
-                    height = 100,
-                ),
-                source = DraftProvenance.DETECTED,
-            )
-        }
+    private fun createDraftWithPhotos(
+        itemId: String,
+        photoCount: Int,
+    ): ListingDraft {
+        val photos =
+            (0 until photoCount).map { index ->
+                DraftPhotoRef(
+                    image =
+                        ImageRef.Bytes(
+                            // 1KB test image
+                            bytes = ByteArray(1024) { it.toByte() },
+                            mimeType = "image/jpeg",
+                            width = 100,
+                            height = 100,
+                        ),
+                    source = DraftProvenance.DETECTED,
+                )
+            }
         return ListingDraft(
             id = "draft-$itemId",
             itemId = itemId,
@@ -646,20 +651,22 @@ class AssistantViewModelTest {
      * Fake preflight manager that always returns Available status for testing.
      */
     private class FakeAssistantPreflightManager : AssistantPreflightManager {
-        private val _currentResult = MutableStateFlow(
-            PreflightResult(
-                status = PreflightStatus.AVAILABLE,
-                latencyMs = 10,
-            ),
-        )
+        private val _currentResult =
+            MutableStateFlow(
+                PreflightResult(
+                    status = PreflightStatus.AVAILABLE,
+                    latencyMs = 10,
+                ),
+            )
         override val currentResult: StateFlow<PreflightResult> = _currentResult
 
         override val lastStatusFlow: Flow<PreflightResult?> = flowOf(_currentResult.value)
 
-        private var preflightResult = PreflightResult(
-            status = PreflightStatus.AVAILABLE,
-            latencyMs = 10,
-        )
+        private var preflightResult =
+            PreflightResult(
+                status = PreflightStatus.AVAILABLE,
+                latencyMs = 10,
+            )
 
         override suspend fun preflight(forceRefresh: Boolean): PreflightResult {
             _currentResult.value = preflightResult
@@ -671,10 +678,11 @@ class AssistantViewModelTest {
         override fun cancelWarmUp() {}
 
         override suspend fun clearCache() {
-            _currentResult.value = PreflightResult(
-                status = PreflightStatus.UNKNOWN,
-                latencyMs = 0,
-            )
+            _currentResult.value =
+                PreflightResult(
+                    status = PreflightStatus.UNKNOWN,
+                    latencyMs = 0,
+                )
         }
 
         fun setPreflightResult(result: PreflightResult) {
@@ -687,376 +695,396 @@ class AssistantViewModelTest {
     // These tests verify that preflight failures don't permanently block the assistant UI.
 
     @Test
-    fun `preflight UNKNOWN allows chat attempt and success marks Available`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FakeAssistantRepository()
+    fun `preflight UNKNOWN allows chat attempt and success marks Available`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
 
-        // Set preflight to UNKNOWN (simulating timeout or auth error)
-        preflightManager.setPreflightResult(
-            PreflightResult(
-                status = PreflightStatus.UNKNOWN,
-                latencyMs = 100,
-                reasonCode = "timeout",
-            ),
-        )
+            // Set preflight to UNKNOWN (simulating timeout or auth error)
+            preflightManager.setPreflightResult(
+                PreflightResult(
+                    status = PreflightStatus.UNKNOWN,
+                    latencyMs = 100,
+                    reasonCode = "timeout",
+                ),
+            )
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
 
-        advanceUntilIdle()
+            advanceUntilIdle()
 
-        // Even with UNKNOWN preflight, user should be able to send messages
-        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
-        assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
+            // Even with UNKNOWN preflight, user should be able to send messages
+            assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+            assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
 
-        // Send a message - it should succeed
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
+            // Send a message - it should succeed
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
 
-        // After success, availability should be Available
-        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
-        assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.ONLINE)
-    }
-
-    @Test
-    fun `preflight UNAUTHORIZED allows chat attempt when online`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FakeAssistantRepository()
-
-        // Set preflight to UNAUTHORIZED (edge case - normally returns UNKNOWN now)
-        preflightManager.setPreflightResult(
-            PreflightResult(
-                status = PreflightStatus.UNAUTHORIZED,
-                latencyMs = 50,
-                reasonCode = "http_401",
-            ),
-        )
-
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
-
-        advanceUntilIdle()
-
-        // UNAUTHORIZED from preflight should NOT block UI - allow chat attempt
-        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
-        assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
-    }
+            // After success, availability should be Available
+            assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+            assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.ONLINE)
+        }
 
     @Test
-    fun `chat success clears preflight warning`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FakeAssistantRepository()
+    fun `preflight UNAUTHORIZED allows chat attempt when online`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
 
-        // Start with preflight failure (which now shows warning but allows chat)
-        preflightManager.setPreflightResult(
-            PreflightResult(
-                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                latencyMs = 100,
-                reasonCode = "http_503",
-            ),
-        )
+            // Set preflight to UNAUTHORIZED (edge case - normally returns UNKNOWN now)
+            preflightManager.setPreflightResult(
+                PreflightResult(
+                    status = PreflightStatus.UNAUTHORIZED,
+                    latencyMs = 50,
+                    reasonCode = "http_401",
+                ),
+            )
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
 
-        advanceUntilIdle()
+            advanceUntilIdle()
 
-        // Preflight failures now allow chat attempts (availability = Available)
-        // But show a warning banner
-        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
-        assertThat(viewModel.uiState.value.preflightWarning).isNotNull()
-        assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
-
-        // Now send a message
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
-
-        // After chat success, warning should be cleared
-        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
-        assertThat(viewModel.uiState.value.preflightWarning).isNull()
-        assertThat(viewModel.uiState.value.lastBackendFailure).isNull()
-    }
+            // UNAUTHORIZED from preflight should NOT block UI - allow chat attempt
+            assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+            assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
+        }
 
     @Test
-    fun `preflight ENDPOINT_NOT_FOUND allows chat attempt with warning`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FakeAssistantRepository()
+    fun `chat success clears preflight warning`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
 
-        // Set preflight to ENDPOINT_NOT_FOUND - configuration error but still allow chat attempt
-        preflightManager.setPreflightResult(
-            PreflightResult(
-                status = PreflightStatus.ENDPOINT_NOT_FOUND,
-                latencyMs = 50,
-                reasonCode = "endpoint_not_found",
-            ),
-        )
+            // Start with preflight failure (which now shows warning but allows chat)
+            preflightManager.setPreflightResult(
+                PreflightResult(
+                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                    latencyMs = 100,
+                    reasonCode = "http_503",
+                ),
+            )
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
 
-        advanceUntilIdle()
+            advanceUntilIdle()
 
-        // ENDPOINT_NOT_FOUND now allows chat attempt (input enabled) but will likely fail
-        // The key is that preflight NEVER blocks the UI
-        val availability = viewModel.uiState.value.availability
-        assertThat(availability).isEqualTo(AssistantAvailability.Available)
-        assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
-    }
+            // Preflight failures now allow chat attempts (availability = Available)
+            // But show a warning banner
+            assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+            assertThat(viewModel.uiState.value.preflightWarning).isNotNull()
+            assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
+
+            // Now send a message
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
+
+            // After chat success, warning should be cleared
+            assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+            assertThat(viewModel.uiState.value.preflightWarning).isNull()
+            assertThat(viewModel.uiState.value.lastBackendFailure).isNull()
+        }
+
+    @Test
+    fun `preflight ENDPOINT_NOT_FOUND allows chat attempt with warning`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
+
+            // Set preflight to ENDPOINT_NOT_FOUND - configuration error but still allow chat attempt
+            preflightManager.setPreflightResult(
+                PreflightResult(
+                    status = PreflightStatus.ENDPOINT_NOT_FOUND,
+                    latencyMs = 50,
+                    reasonCode = "endpoint_not_found",
+                ),
+            )
+
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
+
+            advanceUntilIdle()
+
+            // ENDPOINT_NOT_FOUND now allows chat attempt (input enabled) but will likely fail
+            // The key is that preflight NEVER blocks the UI
+            val availability = viewModel.uiState.value.availability
+            assertThat(availability).isEqualTo(AssistantAvailability.Available)
+            assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
+        }
 
     // ==================== Progress state transition tests ====================
     // These tests verify the rich progress UI states during assistant requests.
 
     @Test
-    fun `sendMessage transitions through progress states on success`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FakeAssistantRepository()
+    fun `sendMessage transitions through progress states on success`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
 
-        // Initial progress should be Idle
-        assertThat(viewModel.uiState.value.progress).isEqualTo(AssistantRequestProgress.Idle)
+            // Initial progress should be Idle
+            assertThat(viewModel.uiState.value.progress).isEqualTo(AssistantRequestProgress.Idle)
 
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
 
-        // After completion, progress should be Done
-        val progress = viewModel.uiState.value.progress
-        assertThat(progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
-        // Duration may be 0 in test dispatcher as all coroutines run instantly
-        assertThat((progress as AssistantRequestProgress.Done).totalDurationMs).isAtLeast(0)
-    }
-
-    @Test
-    fun `sendMessage sets progress to ErrorTemporary on timeout`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = TimeoutAssistantRepository()
-
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
-
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
-
-        // After timeout, progress should be ErrorTemporary with retryable=true
-        val progress = viewModel.uiState.value.progress
-        assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorTemporary::class.java)
-        assertThat((progress as AssistantRequestProgress.ErrorTemporary).retryable).isTrue()
-    }
+            // After completion, progress should be Done
+            val progress = viewModel.uiState.value.progress
+            assertThat(progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
+            // Duration may be 0 in test dispatcher as all coroutines run instantly
+            assertThat((progress as AssistantRequestProgress.Done).totalDurationMs).isAtLeast(0)
+        }
 
     @Test
-    fun `sendMessage sets progress to ErrorAuth on 401`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = UnauthorizedAssistantRepository()
+    fun `sendMessage sets progress to ErrorTemporary on timeout`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = TimeoutAssistantRepository()
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
 
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
 
-        // After 401, progress should be ErrorAuth
-        val progress = viewModel.uiState.value.progress
-        assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorAuth::class.java)
-    }
-
-    @Test
-    fun `sendMessage sets progress to ErrorValidation on 400`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = ValidationErrorAssistantRepository()
-
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
-
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
-
-        // After 400, progress should be ErrorValidation
-        val progress = viewModel.uiState.value.progress
-        assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorValidation::class.java)
-    }
+            // After timeout, progress should be ErrorTemporary with retryable=true
+            val progress = viewModel.uiState.value.progress
+            assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorTemporary::class.java)
+            assertThat((progress as AssistantRequestProgress.ErrorTemporary).retryable).isTrue()
+        }
 
     @Test
-    fun `sendMessage preserves lastSuccessfulEntry during new request`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FakeAssistantRepository()
+    fun `sendMessage sets progress to ErrorAuth on 401`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = UnauthorizedAssistantRepository()
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
 
-        advanceUntilIdle() // Let init complete
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
 
-        // First message - should succeed
-        viewModel.sendMessage("First message")
-        advanceUntilIdle()
-
-        val firstEntry = viewModel.uiState.value.lastSuccessfulEntry
-        assertThat(firstEntry).isNotNull()
-        assertThat(firstEntry!!.message.content).isEqualTo("ok") // FakeAssistantRepository returns "ok"
-
-        // Second message - should produce new lastSuccessfulEntry
-        viewModel.sendMessage("Second message")
-        advanceUntilIdle()
-
-        val secondEntry = viewModel.uiState.value.lastSuccessfulEntry
-        assertThat(secondEntry).isNotNull()
-        // The entry content is the same ("ok"), but it should be a different instance
-        // Both represent successful assistant responses
-        assertThat(secondEntry!!.message.content).isEqualTo("ok")
-    }
+            // After 401, progress should be ErrorAuth
+            val progress = viewModel.uiState.value.progress
+            assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorAuth::class.java)
+        }
 
     @Test
-    fun `retryLastMessage resets progress to Idle before sending`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = SuccessAfterFailureRepository()
+    fun `sendMessage sets progress to ErrorValidation on 400`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = ValidationErrorAssistantRepository()
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
 
-        // First message fails
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
 
-        // Should be in error state
-        assertThat(viewModel.uiState.value.progress.isError).isTrue()
+            // After 400, progress should be ErrorValidation
+            val progress = viewModel.uiState.value.progress
+            assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorValidation::class.java)
+        }
 
-        // Retry should succeed
-        viewModel.retryLastMessage()
-        advanceUntilIdle()
+    @Test
+    fun `sendMessage preserves lastSuccessfulEntry during new request`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
 
-        // Should be Done
-        assertThat(viewModel.uiState.value.progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
-    }
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
+
+            advanceUntilIdle() // Let init complete
+
+            // First message - should succeed
+            viewModel.sendMessage("First message")
+            advanceUntilIdle()
+
+            val firstEntry = viewModel.uiState.value.lastSuccessfulEntry
+            assertThat(firstEntry).isNotNull()
+            assertThat(firstEntry!!.message.content).isEqualTo("ok") // FakeAssistantRepository returns "ok"
+
+            // Second message - should produce new lastSuccessfulEntry
+            viewModel.sendMessage("Second message")
+            advanceUntilIdle()
+
+            val secondEntry = viewModel.uiState.value.lastSuccessfulEntry
+            assertThat(secondEntry).isNotNull()
+            // The entry content is the same ("ok"), but it should be a different instance
+            // Both represent successful assistant responses
+            assertThat(secondEntry!!.message.content).isEqualTo("ok")
+        }
+
+    @Test
+    fun `retryLastMessage resets progress to Idle before sending`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = SuccessAfterFailureRepository()
+
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
+
+            // First message fails
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
+
+            // Should be in error state
+            assertThat(viewModel.uiState.value.progress.isError).isTrue()
+
+            // Retry should succeed
+            viewModel.retryLastMessage()
+            advanceUntilIdle()
+
+            // Should be Done
+            assertThat(viewModel.uiState.value.progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
+        }
 
     @Test
     fun `progress displayLabel returns correct text for each state`() {
@@ -1099,17 +1127,18 @@ class AssistantViewModelTest {
 
     @Test
     fun `AssistantRequestTiming calculates durations correctly`() {
-        val timing = AssistantRequestTiming(
-            correlationId = "test-123",
-            requestStartedAt = 0,
-            sendingStartedAt = 0,
-            thinkingStartedAt = 100,
-            extractingVisionStartedAt = 200,
-            draftingStartedAt = 500,
-            finalizingStartedAt = 800,
-            completedAt = 1000,
-            hasImages = true,
-        )
+        val timing =
+            AssistantRequestTiming(
+                correlationId = "test-123",
+                requestStartedAt = 0,
+                sendingStartedAt = 0,
+                thinkingStartedAt = 100,
+                extractingVisionStartedAt = 200,
+                draftingStartedAt = 500,
+                finalizingStartedAt = 800,
+                completedAt = 1000,
+                hasImages = true,
+            )
 
         assertThat(timing.sendingDurationMs).isEqualTo(100)
         assertThat(timing.thinkingDurationMs).isEqualTo(100) // 200 - 100
@@ -1121,15 +1150,16 @@ class AssistantViewModelTest {
 
     @Test
     fun `AssistantRequestTiming toLogString contains all durations`() {
-        val timing = AssistantRequestTiming(
-            correlationId = "test-123",
-            requestStartedAt = 0,
-            sendingStartedAt = 0,
-            thinkingStartedAt = 100,
-            draftingStartedAt = 300,
-            completedAt = 500,
-            hasImages = false,
-        )
+        val timing =
+            AssistantRequestTiming(
+                correlationId = "test-123",
+                requestStartedAt = 0,
+                sendingStartedAt = 0,
+                thinkingStartedAt = 100,
+                draftingStartedAt = 300,
+                completedAt = 500,
+                hasImages = false,
+            )
 
         val logString = timing.toLogString()
         assertThat(logString).contains("correlationId=test-123")
@@ -1243,46 +1273,49 @@ class AssistantViewModelTest {
      * with non-actionable text. The fix shows a dialog with "Go to Settings" button.
      */
     @Test
-    fun `sendMessage with AUTH_REQUIRED emits ShowAuthRequiredDialog event`() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = AuthRequiredAssistantRepository()
+    fun `sendMessage with AUTH_REQUIRED emits ShowAuthRequiredDialog event`() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = AuthRequiredAssistantRepository()
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            localSuggestionEngine = localSuggestionEngine,
-            connectivityStatusProvider = connectivityStatusProvider,
-            preflightManager = preflightManager,
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
 
-        // Collect events in background - start before sendMessage
-        val receivedEvents = mutableListOf<AssistantUiEvent>()
-        val job = launch(testDispatcher) {
-            viewModel.events.collect { event ->
-                receivedEvents.add(event)
-            }
+            // Collect events in background - start before sendMessage
+            val receivedEvents = mutableListOf<AssistantUiEvent>()
+            val job =
+                launch(testDispatcher) {
+                    viewModel.events.collect { event ->
+                        receivedEvents.add(event)
+                    }
+                }
+
+            // Let init complete
+            advanceUntilIdle()
+
+            // Send message that will trigger AUTH_REQUIRED
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
+
+            // Cancel event collection
+            job.cancel()
+
+            // CRITICAL: Must receive ShowAuthRequiredDialog event (not just snackbar)
+            val hasAuthDialogEvent = receivedEvents.any { it is AssistantUiEvent.ShowAuthRequiredDialog }
+            assertThat(hasAuthDialogEvent).isTrue()
         }
-
-        // Let init complete
-        advanceUntilIdle()
-
-        // Send message that will trigger AUTH_REQUIRED
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
-
-        // Cancel event collection
-        job.cancel()
-
-        // CRITICAL: Must receive ShowAuthRequiredDialog event (not just snackbar)
-        val hasAuthDialogEvent = receivedEvents.any { it is AssistantUiEvent.ShowAuthRequiredDialog }
-        assertThat(hasAuthDialogEvent).isTrue()
-    }
 }

@@ -24,13 +24,16 @@ private const val TAG = "ClassificationPrefs"
  */
 private val Context.classificationDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "classification_preferences",
-    corruptionHandler = ReplaceFileCorruptionHandler { exception ->
-        Log.e(TAG, "DataStore corrupted, resetting to defaults", exception)
-        emptyPreferences()
-    },
+    corruptionHandler =
+        ReplaceFileCorruptionHandler { exception ->
+            Log.e(TAG, "DataStore corrupted, resetting to defaults", exception)
+            emptyPreferences()
+        },
 )
 
-class ClassificationPreferences(private val context: Context) {
+class ClassificationPreferences(
+    private val context: Context,
+) {
     companion object {
         private val CLASSIFICATION_MODE_KEY = stringPreferencesKey("classification_mode")
         private val SAVE_CLOUD_CROPS_KEY = booleanPreferencesKey("save_cloud_crops")
@@ -47,8 +50,7 @@ class ClassificationPreferences(private val context: Context) {
                 } else {
                     throw exception
                 }
-            }
-            .map { preferences ->
+            }.map { preferences ->
                 val raw = preferences[CLASSIFICATION_MODE_KEY]
                 // Default to CLOUD mode for production cloud-first classification
                 raw?.let { runCatching { ClassificationMode.valueOf(it) }.getOrNull() } ?: ClassificationMode.CLOUD

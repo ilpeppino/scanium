@@ -1,10 +1,37 @@
 package com.scanium.app.ui.settings.developer
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,9 +57,10 @@ fun PreflightDiagnosticsSection(
     onClearCache: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
     ) {
         // Header with actions
         Row(
@@ -97,9 +125,10 @@ fun PreflightDiagnosticsSection(
         // Details card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            ),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                ),
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 // Status
@@ -179,58 +208,88 @@ fun PreflightDiagnosticsSection(
 
 @Composable
 private fun PreflightStatusBadge(status: PreflightStatus) {
-    val (color, text, icon) = when (status) {
-        PreflightStatus.AVAILABLE -> Triple(
-            Color(0xFF4CAF50),
-            stringResource(R.string.settings_dev_preflight_status_available),
-            Icons.Default.CheckCircle,
-        )
-        PreflightStatus.CHECKING -> Triple(
-            Color(0xFF2196F3),
-            stringResource(R.string.settings_dev_preflight_status_checking),
-            Icons.Default.Sync,
-        )
-        PreflightStatus.TEMPORARILY_UNAVAILABLE -> Triple(
-            Color(0xFFFF9800),
-            stringResource(R.string.settings_dev_preflight_status_temporarily_unavailable),
-            Icons.Default.Warning,
-        )
-        PreflightStatus.OFFLINE -> Triple(
-            Color(0xFFF44336),
-            stringResource(R.string.settings_dev_preflight_status_offline),
-            Icons.Default.CloudOff,
-        )
-        PreflightStatus.RATE_LIMITED -> Triple(
-            Color(0xFFFF9800),
-            stringResource(R.string.settings_dev_preflight_status_rate_limited),
-            Icons.Default.Timer,
-        )
-        PreflightStatus.UNAUTHORIZED -> Triple(
-            Color(0xFFF44336),
-            stringResource(R.string.settings_dev_preflight_status_unauthorized),
-            Icons.Default.Lock,
-        )
-        PreflightStatus.NOT_CONFIGURED -> Triple(
-            Color(0xFF9E9E9E),
-            stringResource(R.string.settings_dev_preflight_status_not_configured),
-            Icons.Default.Settings,
-        )
-        PreflightStatus.ENDPOINT_NOT_FOUND -> Triple(
-            Color(0xFFF44336),
-            stringResource(R.string.settings_dev_preflight_status_endpoint_not_found),
-            Icons.Default.LinkOff,
-        )
-        PreflightStatus.UNKNOWN -> Triple(
-            Color(0xFF9E9E9E),
-            stringResource(R.string.settings_dev_preflight_status_unknown),
-            Icons.Filled.Help,
-        )
-        PreflightStatus.CLIENT_ERROR -> Triple(
-            Color(0xFFFF9800),
-            stringResource(R.string.settings_dev_preflight_status_client_error),
-            Icons.Default.Info,
-        )
-    }
+    val (color, text, icon) =
+        when (status) {
+            PreflightStatus.AVAILABLE -> {
+                Triple(
+                    Color(0xFF4CAF50),
+                    stringResource(R.string.settings_dev_preflight_status_available),
+                    Icons.Default.CheckCircle,
+                )
+            }
+
+            PreflightStatus.CHECKING -> {
+                Triple(
+                    Color(0xFF2196F3),
+                    stringResource(R.string.settings_dev_preflight_status_checking),
+                    Icons.Default.Sync,
+                )
+            }
+
+            PreflightStatus.TEMPORARILY_UNAVAILABLE -> {
+                Triple(
+                    Color(0xFFFF9800),
+                    stringResource(R.string.settings_dev_preflight_status_temporarily_unavailable),
+                    Icons.Default.Warning,
+                )
+            }
+
+            PreflightStatus.OFFLINE -> {
+                Triple(
+                    Color(0xFFF44336),
+                    stringResource(R.string.settings_dev_preflight_status_offline),
+                    Icons.Default.CloudOff,
+                )
+            }
+
+            PreflightStatus.RATE_LIMITED -> {
+                Triple(
+                    Color(0xFFFF9800),
+                    stringResource(R.string.settings_dev_preflight_status_rate_limited),
+                    Icons.Default.Timer,
+                )
+            }
+
+            PreflightStatus.UNAUTHORIZED -> {
+                Triple(
+                    Color(0xFFF44336),
+                    stringResource(R.string.settings_dev_preflight_status_unauthorized),
+                    Icons.Default.Lock,
+                )
+            }
+
+            PreflightStatus.NOT_CONFIGURED -> {
+                Triple(
+                    Color(0xFF9E9E9E),
+                    stringResource(R.string.settings_dev_preflight_status_not_configured),
+                    Icons.Default.Settings,
+                )
+            }
+
+            PreflightStatus.ENDPOINT_NOT_FOUND -> {
+                Triple(
+                    Color(0xFFF44336),
+                    stringResource(R.string.settings_dev_preflight_status_endpoint_not_found),
+                    Icons.Default.LinkOff,
+                )
+            }
+
+            PreflightStatus.UNKNOWN -> {
+                Triple(
+                    Color(0xFF9E9E9E),
+                    stringResource(R.string.settings_dev_preflight_status_unknown),
+                    Icons.Filled.Help,
+                )
+            }
+
+            PreflightStatus.CLIENT_ERROR -> {
+                Triple(
+                    Color(0xFFFF9800),
+                    stringResource(R.string.settings_dev_preflight_status_client_error),
+                    Icons.Default.Info,
+                )
+            }
+        }
 
     Surface(
         color = color.copy(alpha = 0.15f),
@@ -238,9 +297,10 @@ private fun PreflightStatusBadge(status: PreflightStatus) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -268,9 +328,10 @@ private fun PreflightDetailRow(
     isMono: Boolean = false,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
@@ -288,24 +349,31 @@ private fun PreflightDetailRow(
 }
 
 @Composable
-private fun getPreflightStatusColor(status: PreflightStatus): Color {
-    return when (status) {
+private fun getPreflightStatusColor(status: PreflightStatus): Color =
+    when (status) {
         PreflightStatus.AVAILABLE -> Color(0xFF4CAF50)
+
         PreflightStatus.CHECKING -> Color(0xFF2196F3)
+
         PreflightStatus.TEMPORARILY_UNAVAILABLE -> Color(0xFFFF9800)
+
         PreflightStatus.OFFLINE -> Color(0xFFF44336)
+
         PreflightStatus.RATE_LIMITED -> Color(0xFFFF9800)
+
         PreflightStatus.UNAUTHORIZED -> Color(0xFFF44336)
+
         PreflightStatus.NOT_CONFIGURED -> Color(0xFF9E9E9E)
+
         PreflightStatus.ENDPOINT_NOT_FOUND -> Color(0xFFF44336)
-        PreflightStatus.CLIENT_ERROR -> Color(0xFFFF9800) // Orange - warning but allows chat
+
+        PreflightStatus.CLIENT_ERROR -> Color(0xFFFF9800)
+
+        // Orange - warning but allows chat
         PreflightStatus.UNKNOWN -> Color(0xFF9E9E9E)
     }
-}
 
 /**
  * Format timestamp to readable time.
  */
-private fun formatTimestamp(timestamp: Long): String {
-    return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
-}
+private fun formatTimestamp(timestamp: Long): String = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp))

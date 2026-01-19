@@ -50,37 +50,41 @@ class EnrichmentRepository(
         private const val POLL_MAX_ATTEMPTS = 30
     }
 
-    private val client: OkHttpClient = run {
-        val baseClient = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.VISION,
-            logStartupPolicy = false,
-        )
+    private val client: OkHttpClient =
+        run {
+            val baseClient =
+                AssistantOkHttpClientFactory.create(
+                    config = AssistantHttpConfig.VISION,
+                    logStartupPolicy = false,
+                )
 
-        // Add certificate pinning if configured
-        val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
-        val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
-        if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
-            val host = runCatching { URI(baseUrl).host }.getOrNull()
-            if (!host.isNullOrBlank()) {
-                baseClient.newBuilder()
-                    .certificatePinner(
-                        CertificatePinner.Builder()
-                            .add(host, certificatePin)
-                            .build()
-                    )
-                    .build()
+            // Add certificate pinning if configured
+            val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
+            val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
+            if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
+                val host = runCatching { URI(baseUrl).host }.getOrNull()
+                if (!host.isNullOrBlank()) {
+                    baseClient
+                        .newBuilder()
+                        .certificatePinner(
+                            CertificatePinner
+                                .Builder()
+                                .add(host, certificatePin)
+                                .build(),
+                        ).build()
+                } else {
+                    baseClient
+                }
             } else {
                 baseClient
             }
-        } else {
-            baseClient
         }
-    }
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
 
     /**
      * Submit an item for enrichment and poll until complete.
@@ -94,18 +98,19 @@ class EnrichmentRepository(
         bitmap: Bitmap,
         itemId: String,
         onProgress: (EnrichmentStatus) -> Unit = {},
-    ): Result<EnrichmentStatus> = withContext(Dispatchers.IO) {
-        // Step 1: Submit enrichment request
-        val submitResult = submitEnrichment(bitmap, itemId)
-        if (submitResult.isFailure) {
-            return@withContext Result.failure(submitResult.exceptionOrNull()!!)
+    ): Result<EnrichmentStatus> =
+        withContext(Dispatchers.IO) {
+            // Step 1: Submit enrichment request
+            val submitResult = submitEnrichment(bitmap, itemId)
+            if (submitResult.isFailure) {
+                return@withContext Result.failure(submitResult.exceptionOrNull()!!)
+            }
+
+            val requestId = submitResult.getOrThrow()
+
+            // Step 2: Poll for status until complete
+            pollForCompletion(requestId, onProgress)
         }
-
-        val requestId = submitResult.getOrThrow()
-
-        // Step 2: Poll for status until complete
-        pollForCompletion(requestId, onProgress)
-    }
 
     /**
      * Submit an item for enrichment (non-blocking).
@@ -117,188 +122,194 @@ class EnrichmentRepository(
     suspend fun submitEnrichment(
         bitmap: Bitmap,
         itemId: String,
-    ): Result<String> = withContext(Dispatchers.IO) {
-        val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
-        val baseUrl = baseUrlRaw.takeIf { it.isNotBlank() }
-            ?: return@withContext Result.failure(
-                EnrichmentException(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "Enrichment service not configured.",
-                    retryable = false,
+    ): Result<String> =
+        withContext(Dispatchers.IO) {
+            val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
+            val baseUrl =
+                baseUrlRaw.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure(
+                        EnrichmentException(
+                            errorCode = "CONFIG_ERROR",
+                            userMessage = "Enrichment service not configured.",
+                            retryable = false,
+                        ),
+                    )
+
+            val apiKeyRaw = apiKeyProvider()
+            val apiKey =
+                apiKeyRaw?.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure(
+                        EnrichmentException(
+                            errorCode = "CONFIG_ERROR",
+                            userMessage = "API key is missing.",
+                            retryable = false,
+                        ),
+                    )
+
+            val endpoint = "${baseUrl.trimEnd('/')}/v1/items/enrich"
+            val correlationId = CorrelationIds.currentClassificationSessionId()
+
+            try {
+                // Prepare image
+                val processedBitmap = resizeIfNeeded(bitmap)
+                val imageBytes = processedBitmap.toJpegBytes()
+
+                // Build multipart request
+                val requestBody =
+                    MultipartBody
+                        .Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart(
+                            name = "image",
+                            filename = "scan.jpg",
+                            body = imageBytes.toRequestBody("image/jpeg".toMediaType()),
+                        ).addFormDataPart("itemId", itemId)
+                        .build()
+
+                val httpRequestBuilder =
+                    Request
+                        .Builder()
+                        .url(endpoint)
+                        .post(requestBody)
+                        .header("X-API-Key", apiKey)
+                        .header("X-Scanium-Correlation-Id", correlationId)
+                        .header("X-Client", "Scanium-Android")
+                        .header("X-App-Version", BuildConfig.VERSION_NAME)
+
+                // Add HMAC signature
+                RequestSigner.addSignatureHeaders(
+                    builder = httpRequestBuilder,
+                    apiKey = apiKey,
+                    params = mapOf("itemId" to itemId),
+                    binaryContentSize = imageBytes.size.toLong(),
                 )
-            )
 
-        val apiKeyRaw = apiKeyProvider()
-        val apiKey = apiKeyRaw?.takeIf { it.isNotBlank() }
-            ?: return@withContext Result.failure(
-                EnrichmentException(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "API key is missing.",
-                    retryable = false,
-                )
-            )
+                // Add device ID
+                val deviceId = getDeviceId()
+                if (deviceId.isNotBlank()) {
+                    httpRequestBuilder.header("X-Scanium-Device-Id", hashDeviceId(deviceId))
+                }
 
-        val endpoint = "${baseUrl.trimEnd('/')}/v1/items/enrich"
-        val correlationId = CorrelationIds.currentClassificationSessionId()
+                val httpRequest = httpRequestBuilder.build()
+                val startTime = System.currentTimeMillis()
 
-        try {
-            // Prepare image
-            val processedBitmap = resizeIfNeeded(bitmap)
-            val imageBytes = processedBitmap.toJpegBytes()
+                client.newCall(httpRequest).execute().use { response ->
+                    val responseBody = response.body?.string()
+                    val latencyMs = System.currentTimeMillis() - startTime
 
-            // Build multipart request
-            val requestBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart(
-                    name = "image",
-                    filename = "scan.jpg",
-                    body = imageBytes.toRequestBody("image/jpeg".toMediaType()),
-                )
-                .addFormDataPart("itemId", itemId)
-                .build()
+                    Log.d(TAG, "ENRICH: Submit response ${response.code} in ${latencyMs}ms")
 
-            val httpRequestBuilder = Request.Builder()
-                .url(endpoint)
-                .post(requestBody)
-                .header("X-API-Key", apiKey)
-                .header("X-Scanium-Correlation-Id", correlationId)
-                .header("X-Client", "Scanium-Android")
-                .header("X-App-Version", BuildConfig.VERSION_NAME)
-
-            // Add HMAC signature
-            RequestSigner.addSignatureHeaders(
-                builder = httpRequestBuilder,
-                apiKey = apiKey,
-                params = mapOf("itemId" to itemId),
-                binaryContentSize = imageBytes.size.toLong(),
-            )
-
-            // Add device ID
-            val deviceId = getDeviceId()
-            if (deviceId.isNotBlank()) {
-                httpRequestBuilder.header("X-Scanium-Device-Id", hashDeviceId(deviceId))
-            }
-
-            val httpRequest = httpRequestBuilder.build()
-            val startTime = System.currentTimeMillis()
-
-            client.newCall(httpRequest).execute().use { response ->
-                val responseBody = response.body?.string()
-                val latencyMs = System.currentTimeMillis() - startTime
-
-                Log.d(TAG, "ENRICH: Submit response ${response.code} in ${latencyMs}ms")
-
-                when {
-                    response.code == 202 -> {
-                        if (responseBody == null) {
-                            return@use Result.failure(
-                                EnrichmentException(
-                                    errorCode = "EMPTY_RESPONSE",
-                                    userMessage = "No response received.",
-                                    retryable = true,
+                    when {
+                        response.code == 202 -> {
+                            if (responseBody == null) {
+                                return@use Result.failure(
+                                    EnrichmentException(
+                                        errorCode = "EMPTY_RESPONSE",
+                                        userMessage = "No response received.",
+                                        retryable = true,
+                                    ),
                                 )
-                            )
+                            }
+
+                            val apiResponse = json.decodeFromString<EnrichSubmitResponse>(responseBody)
+
+                            if (!apiResponse.success || apiResponse.requestId == null) {
+                                return@use Result.failure(
+                                    EnrichmentException(
+                                        errorCode = apiResponse.error?.code ?: "SUBMIT_FAILED",
+                                        userMessage = apiResponse.error?.message ?: "Failed to submit enrichment.",
+                                        retryable = false,
+                                    ),
+                                )
+                            }
+
+                            Log.d(TAG, "ENRICH: Submitted successfully, requestId=${apiResponse.requestId}")
+                            Result.success(apiResponse.requestId)
                         }
 
-                        val apiResponse = json.decodeFromString<EnrichSubmitResponse>(responseBody)
-
-                        if (!apiResponse.success || apiResponse.requestId == null) {
-                            return@use Result.failure(
+                        response.code == 401 -> {
+                            Log.e(TAG, "ENRICH: 401 UNAUTHORIZED")
+                            Result.failure(
                                 EnrichmentException(
-                                    errorCode = apiResponse.error?.code ?: "SUBMIT_FAILED",
-                                    userMessage = apiResponse.error?.message ?: "Failed to submit enrichment.",
+                                    errorCode = "UNAUTHORIZED",
+                                    userMessage = "Authentication failed.",
                                     retryable = false,
-                                )
+                                ),
                             )
                         }
 
-                        Log.d(TAG, "ENRICH: Submitted successfully, requestId=${apiResponse.requestId}")
-                        Result.success(apiResponse.requestId)
-                    }
-
-                    response.code == 401 -> {
-                        Log.e(TAG, "ENRICH: 401 UNAUTHORIZED")
-                        Result.failure(
-                            EnrichmentException(
-                                errorCode = "UNAUTHORIZED",
-                                userMessage = "Authentication failed.",
-                                retryable = false,
+                        response.code == 429 -> {
+                            Log.w(TAG, "ENRICH: Rate limited (429)")
+                            Result.failure(
+                                EnrichmentException(
+                                    errorCode = "RATE_LIMITED",
+                                    userMessage = "Too many requests. Please wait.",
+                                    retryable = true,
+                                ),
                             )
-                        )
-                    }
+                        }
 
-                    response.code == 429 -> {
-                        Log.w(TAG, "ENRICH: Rate limited (429)")
-                        Result.failure(
-                            EnrichmentException(
-                                errorCode = "RATE_LIMITED",
-                                userMessage = "Too many requests. Please wait.",
-                                retryable = true,
+                        response.code == 413 -> {
+                            Log.e(TAG, "ENRICH: Image too large (413)")
+                            Result.failure(
+                                EnrichmentException(
+                                    errorCode = "IMAGE_TOO_LARGE",
+                                    userMessage = "Image is too large.",
+                                    retryable = false,
+                                ),
                             )
-                        )
-                    }
+                        }
 
-                    response.code == 413 -> {
-                        Log.e(TAG, "ENRICH: Image too large (413)")
-                        Result.failure(
-                            EnrichmentException(
-                                errorCode = "IMAGE_TOO_LARGE",
-                                userMessage = "Image is too large.",
-                                retryable = false,
+                        else -> {
+                            Log.e(TAG, "ENRICH: Unexpected HTTP ${response.code}")
+                            Result.failure(
+                                EnrichmentException(
+                                    errorCode = "UNKNOWN_ERROR",
+                                    userMessage = "Something went wrong.",
+                                    retryable = true,
+                                ),
                             )
-                        )
-                    }
-
-                    else -> {
-                        Log.e(TAG, "ENRICH: Unexpected HTTP ${response.code}")
-                        Result.failure(
-                            EnrichmentException(
-                                errorCode = "UNKNOWN_ERROR",
-                                userMessage = "Something went wrong.",
-                                retryable = true,
-                            )
-                        )
+                        }
                     }
                 }
+            } catch (e: SocketTimeoutException) {
+                Log.e(TAG, "ENRICH: Request timed out", e)
+                Result.failure(
+                    EnrichmentException(
+                        errorCode = "TIMEOUT",
+                        userMessage = "Request timed out.",
+                        retryable = true,
+                    ),
+                )
+            } catch (e: UnknownHostException) {
+                Log.e(TAG, "ENRICH: Offline", e)
+                Result.failure(
+                    EnrichmentException(
+                        errorCode = "OFFLINE",
+                        userMessage = "No network connection.",
+                        retryable = true,
+                    ),
+                )
+            } catch (e: IOException) {
+                Log.e(TAG, "ENRICH: Network error", e)
+                Result.failure(
+                    EnrichmentException(
+                        errorCode = "NETWORK_ERROR",
+                        userMessage = "Network error. Please try again.",
+                        retryable = true,
+                    ),
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "ENRICH: Unexpected error", e)
+                Result.failure(
+                    EnrichmentException(
+                        errorCode = "UNKNOWN_ERROR",
+                        userMessage = "Something went wrong.",
+                        retryable = false,
+                    ),
+                )
             }
-        } catch (e: SocketTimeoutException) {
-            Log.e(TAG, "ENRICH: Request timed out", e)
-            Result.failure(
-                EnrichmentException(
-                    errorCode = "TIMEOUT",
-                    userMessage = "Request timed out.",
-                    retryable = true,
-                )
-            )
-        } catch (e: UnknownHostException) {
-            Log.e(TAG, "ENRICH: Offline", e)
-            Result.failure(
-                EnrichmentException(
-                    errorCode = "OFFLINE",
-                    userMessage = "No network connection.",
-                    retryable = true,
-                )
-            )
-        } catch (e: IOException) {
-            Log.e(TAG, "ENRICH: Network error", e)
-            Result.failure(
-                EnrichmentException(
-                    errorCode = "NETWORK_ERROR",
-                    userMessage = "Network error. Please try again.",
-                    retryable = true,
-                )
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "ENRICH: Unexpected error", e)
-            Result.failure(
-                EnrichmentException(
-                    errorCode = "UNKNOWN_ERROR",
-                    userMessage = "Something went wrong.",
-                    retryable = false,
-                )
-            )
         }
-    }
 
     /**
      * Get the status of an enrichment request.
@@ -306,124 +317,129 @@ class EnrichmentRepository(
      * @param requestId The request ID to check
      * @return Current enrichment status
      */
-    suspend fun getStatus(requestId: String): Result<EnrichmentStatus> = withContext(Dispatchers.IO) {
-        val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
-        val baseUrl = baseUrlRaw.takeIf { it.isNotBlank() }
-            ?: return@withContext Result.failure(
-                EnrichmentException(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "Enrichment service not configured.",
-                    retryable = false,
-                )
-            )
+    suspend fun getStatus(requestId: String): Result<EnrichmentStatus> =
+        withContext(Dispatchers.IO) {
+            val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
+            val baseUrl =
+                baseUrlRaw.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure(
+                        EnrichmentException(
+                            errorCode = "CONFIG_ERROR",
+                            userMessage = "Enrichment service not configured.",
+                            retryable = false,
+                        ),
+                    )
 
-        val apiKeyRaw = apiKeyProvider()
-        val apiKey = apiKeyRaw?.takeIf { it.isNotBlank() }
-            ?: return@withContext Result.failure(
-                EnrichmentException(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "API key is missing.",
-                    retryable = false,
-                )
-            )
+            val apiKeyRaw = apiKeyProvider()
+            val apiKey =
+                apiKeyRaw?.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure(
+                        EnrichmentException(
+                            errorCode = "CONFIG_ERROR",
+                            userMessage = "API key is missing.",
+                            retryable = false,
+                        ),
+                    )
 
-        val endpoint = "${baseUrl.trimEnd('/')}/v1/items/enrich/status/$requestId"
+            val endpoint = "${baseUrl.trimEnd('/')}/v1/items/enrich/status/$requestId"
 
-        try {
-            val httpRequest = Request.Builder()
-                .url(endpoint)
-                .get()
-                .header("X-API-Key", apiKey)
-                .header("X-Client", "Scanium-Android")
-                .build()
+            try {
+                val httpRequest =
+                    Request
+                        .Builder()
+                        .url(endpoint)
+                        .get()
+                        .header("X-API-Key", apiKey)
+                        .header("X-Client", "Scanium-Android")
+                        .build()
 
-            client.newCall(httpRequest).execute().use { response ->
-                val responseBody = response.body?.string()
+                client.newCall(httpRequest).execute().use { response ->
+                    val responseBody = response.body?.string()
 
-                when {
-                    response.isSuccessful -> {
-                        if (responseBody == null) {
-                            return@use Result.failure(
-                                EnrichmentException(
-                                    errorCode = "EMPTY_RESPONSE",
-                                    userMessage = "No response received.",
-                                    retryable = true,
+                    when {
+                        response.isSuccessful -> {
+                            if (responseBody == null) {
+                                return@use Result.failure(
+                                    EnrichmentException(
+                                        errorCode = "EMPTY_RESPONSE",
+                                        userMessage = "No response received.",
+                                        retryable = true,
+                                    ),
                                 )
-                            )
+                            }
+
+                            val apiResponse = json.decodeFromString<EnrichStatusResponse>(responseBody)
+
+                            if (!apiResponse.success || apiResponse.status == null) {
+                                return@use Result.failure(
+                                    EnrichmentException(
+                                        errorCode = apiResponse.error?.code ?: "STATUS_FAILED",
+                                        userMessage = apiResponse.error?.message ?: "Failed to get status.",
+                                        retryable = false,
+                                    ),
+                                )
+                            }
+
+                            Result.success(apiResponse.status)
                         }
 
-                        val apiResponse = json.decodeFromString<EnrichStatusResponse>(responseBody)
-
-                        if (!apiResponse.success || apiResponse.status == null) {
-                            return@use Result.failure(
+                        response.code == 404 -> {
+                            Result.failure(
                                 EnrichmentException(
-                                    errorCode = apiResponse.error?.code ?: "STATUS_FAILED",
-                                    userMessage = apiResponse.error?.message ?: "Failed to get status.",
+                                    errorCode = "NOT_FOUND",
+                                    userMessage = "Request not found.",
                                     retryable = false,
-                                )
+                                ),
                             )
                         }
 
-                        Result.success(apiResponse.status)
-                    }
-
-                    response.code == 404 -> {
-                        Result.failure(
-                            EnrichmentException(
-                                errorCode = "NOT_FOUND",
-                                userMessage = "Request not found.",
-                                retryable = false,
+                        response.code == 401 -> {
+                            Result.failure(
+                                EnrichmentException(
+                                    errorCode = "UNAUTHORIZED",
+                                    userMessage = "Authentication failed.",
+                                    retryable = false,
+                                ),
                             )
-                        )
-                    }
+                        }
 
-                    response.code == 401 -> {
-                        Result.failure(
-                            EnrichmentException(
-                                errorCode = "UNAUTHORIZED",
-                                userMessage = "Authentication failed.",
-                                retryable = false,
+                        else -> {
+                            Result.failure(
+                                EnrichmentException(
+                                    errorCode = "UNKNOWN_ERROR",
+                                    userMessage = "Something went wrong.",
+                                    retryable = true,
+                                ),
                             )
-                        )
-                    }
-
-                    else -> {
-                        Result.failure(
-                            EnrichmentException(
-                                errorCode = "UNKNOWN_ERROR",
-                                userMessage = "Something went wrong.",
-                                retryable = true,
-                            )
-                        )
+                        }
                     }
                 }
+            } catch (e: SocketTimeoutException) {
+                Result.failure(
+                    EnrichmentException(
+                        errorCode = "TIMEOUT",
+                        userMessage = "Request timed out.",
+                        retryable = true,
+                    ),
+                )
+            } catch (e: IOException) {
+                Result.failure(
+                    EnrichmentException(
+                        errorCode = "NETWORK_ERROR",
+                        userMessage = "Network error.",
+                        retryable = true,
+                    ),
+                )
+            } catch (e: Exception) {
+                Result.failure(
+                    EnrichmentException(
+                        errorCode = "UNKNOWN_ERROR",
+                        userMessage = "Something went wrong.",
+                        retryable = false,
+                    ),
+                )
             }
-        } catch (e: SocketTimeoutException) {
-            Result.failure(
-                EnrichmentException(
-                    errorCode = "TIMEOUT",
-                    userMessage = "Request timed out.",
-                    retryable = true,
-                )
-            )
-        } catch (e: IOException) {
-            Result.failure(
-                EnrichmentException(
-                    errorCode = "NETWORK_ERROR",
-                    userMessage = "Network error.",
-                    retryable = true,
-                )
-            )
-        } catch (e: Exception) {
-            Result.failure(
-                EnrichmentException(
-                    errorCode = "UNKNOWN_ERROR",
-                    userMessage = "Something went wrong.",
-                    retryable = false,
-                )
-            )
         }
-    }
 
     /**
      * Poll for enrichment completion with exponential backoff.
@@ -469,7 +485,7 @@ class EnrichmentRepository(
                 errorCode = "POLL_TIMEOUT",
                 userMessage = "Enrichment took too long.",
                 retryable = true,
-            )
+            ),
         )
     }
 
@@ -492,13 +508,12 @@ class EnrichmentRepository(
         return stream.toByteArray()
     }
 
-    private fun hashDeviceId(deviceId: String): String {
-        return try {
+    private fun hashDeviceId(deviceId: String): String =
+        try {
             val digest = MessageDigest.getInstance("SHA-256")
             val hash = digest.digest(deviceId.toByteArray())
             hash.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
             deviceId
         }
-    }
 }

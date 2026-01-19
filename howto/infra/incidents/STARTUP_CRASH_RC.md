@@ -7,6 +7,7 @@
 ***REMOVED******REMOVED*** Symptom
 
 The app occasionally crash-loops immediately after install:
+
 - Splash screen shows for ~0.5s then returns to home screen
 - Re-opening triggers Android warning "app keeps stopping"
 - Intermittent (not every install) - depends on DataStore state
@@ -14,11 +15,13 @@ The app occasionally crash-loops immediately after install:
 ***REMOVED******REMOVED*** How to Reproduce
 
 1. Install fresh APK (any flavor: dev/beta/prod)
-2. If DataStore preferences file becomes corrupted (e.g., due to process kill during write, disk issues, or app update edge cases)
+2. If DataStore preferences file becomes corrupted (e.g., due to process kill during write, disk
+   issues, or app update edge cases)
 3. App crashes on launch before Sentry is initialized
 4. No crash report is captured, making diagnosis difficult
 
 **Reproduction helper script:**
+
 ```bash
 ./scripts/dev/capture_startup_crash.sh --clear --loop 10 --stop-on-crash
 ```
@@ -47,7 +50,8 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 )
 ```
 
-If the preferences file becomes corrupted (possible after process kill, disk issues, or app updates), `dataStore.data.first()` throws an `IOException`.
+If the preferences file becomes corrupted (possible after process kill, disk issues, or app
+updates), `dataStore.data.first()` throws an `IOException`.
 
 ***REMOVED******REMOVED******REMOVED*** 2. Unprotected runBlocking in Application.onCreate()
 
@@ -61,6 +65,7 @@ val initialLanguage = runBlocking {
 ```
 
 If DataStore threw, this crashed the app **before Sentry was initialized**, so:
+
 - No crash report was captured
 - Android showed "app keeps stopping" on subsequent launches
 - The crash loop continued until the user cleared app data
@@ -128,6 +133,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 - Successful startup (first composition rendered) resets the counter
 
 **Files:**
+
 - `app/startup/StartupGuard.kt` - Crash-loop detection
 - `app/startup/StartupOrchestrator.kt` - Phased initialization framework
 
@@ -136,6 +142,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 ***REMOVED******REMOVED******REMOVED*** 1. Instrumented Tests
 
 `StartupReliabilityRegressionTest.kt` validates:
+
 - App starts and reaches RESUMED state
 - StartupGuard correctly records success
 - Application components are initialized
@@ -143,6 +150,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 - Safe mode activates after crash threshold
 
 **Run:**
+
 ```bash
 ./gradlew :androidApp:connectedDevDebugAndroidTest \
     --tests "com.scanium.app.regression.StartupReliabilityRegressionTest"
@@ -151,6 +159,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 ***REMOVED******REMOVED******REMOVED*** 2. Unit Tests
 
 `StartupGuardTest.kt` validates crash-loop detection logic:
+
 - Initial state has no crashes
 - Startup timestamps are recorded
 - Crash counter resets on success
@@ -158,6 +167,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 - Slow restarts don't count as crashes
 
 **Run:**
+
 ```bash
 ./gradlew :androidApp:testDevDebugUnitTest \
     --tests "com.scanium.app.startup.StartupGuardTest"
@@ -166,12 +176,14 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 ***REMOVED******REMOVED******REMOVED*** 3. Capture Script
 
 `scripts/dev/capture_startup_crash.sh` provides:
+
 - Automated logcat capture on startup
 - Loop mode for catching intermittent crashes
 - FATAL EXCEPTION extraction
 - Package info and process state capture
 
 **Usage:**
+
 ```bash
 ***REMOVED*** Single capture
 ./scripts/dev/capture_startup_crash.sh
@@ -185,25 +197,25 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 
 ***REMOVED******REMOVED*** Remaining Risks and Mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| Other DataStore instances without corruption handlers | Audit other DataStore usages; use safeMap pattern |
-| Native library loading failures | DomainPackProvider.initialize() is already wrapped in try-catch |
-| Hilt DI initialization failures | Compile-time safety from KSP; no known issues |
-| Network security config issues | Build-time validation by AGP |
+| Risk                                                  | Mitigation                                                      |
+|-------------------------------------------------------|-----------------------------------------------------------------|
+| Other DataStore instances without corruption handlers | Audit other DataStore usages; use safeMap pattern               |
+| Native library loading failures                       | DomainPackProvider.initialize() is already wrapped in try-catch |
+| Hilt DI initialization failures                       | Compile-time safety from KSP; no known issues                   |
+| Network security config issues                        | Build-time validation by AGP                                    |
 
 ***REMOVED******REMOVED*** Files Changed
 
-| File | Change |
-|------|--------|
-| `data/SettingsRepository.kt` | Added corruption handler and safeMap helper |
-| `ScaniumApplication.kt` | Added runCatching for locale loading, integrated StartupGuard |
-| `MainActivity.kt` | Added StartupGuard.recordStartupSuccess() call |
-| `startup/StartupGuard.kt` | New crash-loop detection class |
-| `startup/StartupOrchestrator.kt` | New phased initialization framework |
-| `scripts/dev/capture_startup_crash.sh` | New capture script |
-| `regression/StartupReliabilityRegressionTest.kt` | New instrumented tests |
-| `startup/StartupGuardTest.kt` | New unit tests |
+| File                                             | Change                                                        |
+|--------------------------------------------------|---------------------------------------------------------------|
+| `data/SettingsRepository.kt`                     | Added corruption handler and safeMap helper                   |
+| `ScaniumApplication.kt`                          | Added runCatching for locale loading, integrated StartupGuard |
+| `MainActivity.kt`                                | Added StartupGuard.recordStartupSuccess() call                |
+| `startup/StartupGuard.kt`                        | New crash-loop detection class                                |
+| `startup/StartupOrchestrator.kt`                 | New phased initialization framework                           |
+| `scripts/dev/capture_startup_crash.sh`           | New capture script                                            |
+| `regression/StartupReliabilityRegressionTest.kt` | New instrumented tests                                        |
+| `startup/StartupGuardTest.kt`                    | New unit tests                                                |
 
 ***REMOVED******REMOVED*** Verification
 

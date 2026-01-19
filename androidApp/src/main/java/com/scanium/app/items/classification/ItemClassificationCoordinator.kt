@@ -139,12 +139,13 @@ class ItemClassificationCoordinator(
     fun triggerEnhancedClassification() {
         scope.launch(mainDispatcher) {
             // Create root span for classification session
-            val sessionSpan = telemetry?.beginSpan(
-                "classification.session",
-                mapOf(
-                    "mode" to effectiveClassificationMode.value.name,
-                ),
-            )
+            val sessionSpan =
+                telemetry?.beginSpan(
+                    "classification.session",
+                    mapOf(
+                        "mode" to effectiveClassificationMode.value.name,
+                    ),
+                )
 
             // Set span as active for trace context propagation
             sessionSpan?.let { TraceContext.setActiveSpan(it) }
@@ -153,7 +154,8 @@ class ItemClassificationCoordinator(
                 // Stage 1: Preliminary filter (check orchestrator + gate cooldown/stability)
                 val candidates =
                     withContext(workerDispatcher) {
-                        stateManager.getAggregatedItems()
+                        stateManager
+                            .getAggregatedItems()
                             .filter {
                                 (it.thumbnail != null || it.fullImageUri != null) &&
                                     classificationOrchestrator.shouldClassify(it.aggregatedId) &&
@@ -426,14 +428,11 @@ class ItemClassificationCoordinator(
             }
     }
 
-    private fun resolveCachedThumbnail(item: AggregatedItem): ImageRef? {
-        return resolveCacheKey(item.thumbnail)
-    }
+    private fun resolveCachedThumbnail(item: AggregatedItem): ImageRef? = resolveCacheKey(item.thumbnail)
 
-    private fun resolveCacheKey(thumbnail: ImageRef?): ImageRef? {
-        return when (thumbnail) {
+    private fun resolveCacheKey(thumbnail: ImageRef?): ImageRef? =
+        when (thumbnail) {
             is ImageRef.CacheKey -> ThumbnailCache.get(thumbnail.key)
             else -> thumbnail
         }
-    }
 }

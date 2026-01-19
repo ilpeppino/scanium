@@ -81,9 +81,7 @@ object PerformanceMonitor {
     fun beginSpan(
         name: String,
         attributes: Map<String, String> = emptyMap(),
-    ): SpanContext? {
-        return telemetry?.beginSpan(name, attributes)
-    }
+    ): SpanContext? = telemetry?.beginSpan(name, attributes)
 
     /**
      * Records a timer metric with the given duration.
@@ -223,14 +221,13 @@ object PerformanceMonitor {
     inline fun <T> measureFrameAnalysis(
         scanMode: String,
         block: () -> T,
-    ): T {
-        return measure(
+    ): T =
+        measure(
             metricName = Metrics.FRAME_ANALYSIS_LATENCY_MS,
             spanName = Spans.FRAME_ANALYSIS,
             attributes = mapOf("scan_mode" to scanMode),
             block = block,
         )
-    }
 
     /**
      * Measures aggregation duration and records metrics.
@@ -242,14 +239,13 @@ object PerformanceMonitor {
     inline fun <T> measureAggregation(
         itemCount: Int,
         block: () -> T,
-    ): T {
-        return measure(
+    ): T =
+        measure(
             metricName = Metrics.AGGREGATION_LATENCY_MS,
             spanName = Spans.AGGREGATION,
             attributes = mapOf("item_count" to itemCount.toString()),
             block = block,
         )
-    }
 
     /**
      * Measures bitmap decode duration and records metrics.
@@ -261,14 +257,13 @@ object PerformanceMonitor {
     inline fun <T> measureBitmapDecode(
         imageSize: String = "unknown",
         block: () -> T,
-    ): T {
-        return measure(
+    ): T =
+        measure(
             metricName = Metrics.BITMAP_DECODE_LATENCY_MS,
             spanName = Spans.BITMAP_DECODE,
             attributes = mapOf("image_size" to imageSize),
             block = block,
         )
-    }
 
     /**
      * Measures overlay draw duration and records metrics.
@@ -280,20 +275,21 @@ object PerformanceMonitor {
     inline fun <T> measureOverlayDraw(
         detectionCount: Int,
         block: () -> T,
-    ): T {
-        return measure(
+    ): T =
+        measure(
             metricName = Metrics.OVERLAY_DRAW_LATENCY_MS,
             spanName = Spans.OVERLAY_DRAW,
             attributes = mapOf("detection_count" to detectionCount.toString()),
             block = block,
         )
-    }
 
     /**
      * Simple timer utility for manual timing without telemetry dependency.
      * Useful for low-level code where telemetry might not be initialized.
      */
-    class Timer(private val name: String) {
+    class Timer(
+        private val name: String,
+    ) {
         private val startTime = SystemClock.elapsedRealtime()
 
         fun stop(attributes: Map<String, String> = emptyMap()): Long {

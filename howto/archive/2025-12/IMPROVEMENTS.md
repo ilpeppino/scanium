@@ -8,9 +8,13 @@
 
 ***REMOVED******REMOVED*** Executive Summary
 
-Scanium is a well-architected Android camera-first scanning app with solid foundations in MVVM, Jetpack Compose, and ML Kit integration. The codebase demonstrates strong engineering practices including comprehensive testing (175+ tests), proper separation of concerns, and thoughtful abstraction layers.
+Scanium is a well-architected Android camera-first scanning app with solid foundations in MVVM,
+Jetpack Compose, and ML Kit integration. The codebase demonstrates strong engineering practices
+including comprehensive testing (175+ tests), proper separation of concerns, and thoughtful
+abstraction layers.
 
 **Current Strengths:**
+
 - ✅ Clean MVVM architecture with proper state management
 - ✅ Robust tracking system (ObjectTracker) with spatial matching
 - ✅ Sophisticated aggregation system (ItemAggregator) with configurable presets
@@ -20,7 +24,9 @@ Scanium is a well-architected Android camera-first scanning app with solid found
 - ✅ Well-documented codebase with detailed architectural docs
 
 **Key Risks & Bottlenecks:**
-- ⚠️ **Dead code accumulation**: Duplicate tracking systems, unused database layer, legacy deduplicators
+
+- ⚠️ **Dead code accumulation**: Duplicate tracking systems, unused database layer, legacy
+  deduplicators
 - ⚠️ **Documentation drift**: Code evolved faster than docs (tracker configs, aggregation system)
 - ⚠️ **Hardcoded configurations**: Thresholds scattered throughout codebase
 - ⚠️ **First-launch UX**: No loading feedback during ML Kit model download
@@ -64,6 +70,7 @@ These issues block maintainability and create confusion for current/future devel
 **Impact:** High - Reduces confusion, speeds up navigation, clarifies architecture
 
 **Tasks:**
+
 - ✅ Delete CandidateTracker + DetectionCandidate (ml/ package) - replaced by ObjectTracker
 - Delete SessionDeduplicator - replaced by ItemAggregator
 - Delete unused Room database layer OR activate it (decision required)
@@ -71,6 +78,7 @@ These issues block maintainability and create confusion for current/future devel
 - Update documentation to reference correct components
 
 **Why This Matters:**
+
 - New developers spend time understanding dead code
 - Tests run against unused implementations (wasted CI time)
 - Documentation references non-existent architecture
@@ -87,6 +95,7 @@ These issues block maintainability and create confusion for current/future devel
 **Impact:** High - Enables accurate onboarding and maintenance
 
 **Tasks:**
+
 - Document ItemAggregator system in CLAUDE.md (currently completely missing!)
 - Fix TrackerConfig values in docs (documented: 0.25f, actual: 0.2f)
 - Fix CameraXManager comment referencing wrong tracker
@@ -94,6 +103,7 @@ These issues block maintainability and create confusion for current/future devel
 - Cross-reference tracking vs aggregation systems
 
 **Why This Matters:**
+
 - Onboarding new developers requires accurate docs
 - Tuning performance needs correct baseline values
 - Architecture decisions should be documented with reasoning
@@ -113,6 +123,7 @@ Critical for production-ready user experience and maintainability.
 **Impact:** High - Enables A/B testing, easier tuning, clearer documentation
 
 **Current Problem:**
+
 - TrackerConfig hardcoded in CameraXManager (6 parameters)
 - Camera resolution hardcoded (1280x720)
 - Analysis interval hardcoded (800ms)
@@ -159,12 +170,14 @@ object ScaniumConfig {
 ```
 
 **User Value:**
+
 - Product team can A/B test different tracker configs
 - Easier to tune for different devices (high-end vs low-end)
 - Clear documentation of all tunable parameters
 - Future: Runtime config via RemoteConfig (Firebase)
 
 **Engineering Value:**
+
 - Single source of truth for all magic numbers
 - Easier to reason about performance characteristics
 - Facilitates experimentation
@@ -180,6 +193,7 @@ object ScaniumConfig {
 **Impact:** Critical for first-launch experience and robustness
 
 **Current Problems:**
+
 - Camera binding failures show blank screen (no explanation)
 - Permission denied shows blank screen (no recovery option)
 - ML Kit model download blocks UI with no feedback (first launch)
@@ -207,6 +221,7 @@ sealed class AppError {
 ```
 
 **User-Facing Solutions:**
+
 - Permission denied → Show rationale dialog with "Open Settings" button
 - Camera in use → Show "Camera unavailable" with retry + view items options
 - No camera → Show "No camera detected" with items-only mode
@@ -214,6 +229,7 @@ sealed class AppError {
 - Download failed → Retry button with network troubleshooting tips
 
 **Why This Matters:**
+
 - **First Launch UX**: 30-second model download with no feedback = app uninstalls
 - **Trust**: Users need to know why things aren't working
 - **Recovery**: Every error should have actionable next step
@@ -222,6 +238,7 @@ sealed class AppError {
 **User Impact:** Affects 100% of users on first launch
 
 **Engineering Value:**
+
 - Reduces support burden (clearer error messages)
 - Easier debugging (structured error types)
 - Better crash reporting
@@ -237,6 +254,7 @@ sealed class AppError {
 **Impact:** High - Prevents OOM crashes on extended scanning sessions
 
 **Current Problem:**
+
 - 8 `Bitmap.createBitmap()` calls found
 - Only 1 `bitmap.recycle()` call found
 - Thumbnails retained in ScannedItem without lifecycle management
@@ -269,10 +287,11 @@ sealed class AppError {
    ```
 
 3. **Document bitmap lifecycle**:
-   - Add comments clarifying which bitmaps are retained vs temporary
-   - Document when recycle() should/shouldn't be called
+    - Add comments clarifying which bitmaps are retained vs temporary
+    - Document when recycle() should/shouldn't be called
 
 **Testing:**
+
 - Memory stress test: Scan 100+ items, clear, repeat 10 times
 - Verify memory stabilizes (doesn't grow unbounded)
 - Use Android Profiler to track native memory
@@ -294,6 +313,7 @@ sealed class AppError {
 **Impact:** Medium-High - Opens app to visually impaired users (~15% of population)
 
 **Missing Features:**
+
 - IconButton content descriptions (Items button, mode switcher, remove button)
 - ShutterButton semantic role and labels
 - Detection events not announced (TalkBack users don't know when objects detected)
@@ -325,10 +345,11 @@ sealed class AppError {
    ```
 
 3. **Touch Target Sizes**:
-   - Ensure all interactive elements ≥ 48dp (Material Design guideline)
-   - Current risk: Advanced controls might be too small
+    - Ensure all interactive elements ≥ 48dp (Material Design guideline)
+    - Current risk: Advanced controls might be too small
 
 **Testing Checklist:**
+
 - [ ] Enable TalkBack
 - [ ] Navigate camera screen with swipe gestures
 - [ ] Verify all buttons have clear labels
@@ -338,6 +359,7 @@ sealed class AppError {
 - [ ] No "touch target too small" warnings
 
 **Why This Matters:**
+
 - **Legal Compliance**: Some jurisdictions require accessibility
 - **Market Expansion**: 15% of users have visual impairments
 - **Quality Signal**: Accessibility indicates engineering excellence
@@ -361,6 +383,7 @@ Improvements that enhance quality but aren't blocking production.
 **Impact:** Medium - Better perceived quality
 
 **Improvements:**
+
 - Classification mode toggle shows confirmation toast
 - Mode switch includes explanatory dialog (first time)
 - Visual indicator of current classification mode
@@ -368,11 +391,13 @@ Improvements that enhance quality but aren't blocking production.
 - Fix `printStackTrace()` call to use proper logging
 
 **User Value:**
+
 - Clearer feedback for mode changes
 - Understanding of classification trade-offs
 - Professional polish
 
 **Engineering Value:**
+
 - Modern coroutine-based threading
 - Proper Android logging
 
@@ -388,32 +413,34 @@ Improvements that enhance quality but aren't blocking production.
 **Optimization Opportunities:**
 
 1. **Image Processing Pipeline**:
-   - Profile imageProxyToBitmap() conversion time
-   - Consider downsampling large images before ML Kit
-   - Reuse bitmap buffers if possible
+    - Profile imageProxyToBitmap() conversion time
+    - Consider downsampling large images before ML Kit
+    - Reuse bitmap buffers if possible
 
 2. **UI Rendering**:
-   - DetectionOverlay recomposition frequency
-   - LazyColumn performance in ItemsListScreen with many items
-   - Reduce allocations in hot paths
+    - DetectionOverlay recomposition frequency
+    - LazyColumn performance in ItemsListScreen with many items
+    - Reduce allocations in hot paths
 
 3. **ML Kit Tuning**:
-   - Experiment with lower target resolution (960x540 vs 1280x720)
-   - A/B test analysis interval (600ms vs 800ms)
-   - Measure actual frame processing time
+    - Experiment with lower target resolution (960x540 vs 1280x720)
+    - A/B test analysis interval (600ms vs 800ms)
+    - Measure actual frame processing time
 
 4. **Aggregation Performance**:
-   - Profile similarity scoring with 50+ items
-   - Consider spatial indexing for distance calculations
-   - Cache category comparisons
+    - Profile similarity scoring with 50+ items
+    - Consider spatial indexing for distance calculations
+    - Cache category comparisons
 
 **Metrics to Track:**
+
 - Frame processing time (target: <200ms)
 - UI frame rate (target: 60fps)
 - Memory usage (target: <100MB for 50 items)
 - Time to first detection (target: <2 seconds)
 
 **Tools:**
+
 - Android Profiler (CPU, Memory)
 - Compose Layout Inspector
 - Logcat timing logs (already present)
@@ -436,27 +463,29 @@ Improvements that enhance quality but aren't blocking production.
 **Gaps Identified:**
 
 1. **Integration Tests**:
-   - Full camera → ML Kit → tracker → aggregator → ViewModel flow
-   - Error recovery scenarios (camera fails, permission denied)
-   - ML Kit model download simulation
+    - Full camera → ML Kit → tracker → aggregator → ViewModel flow
+    - Error recovery scenarios (camera fails, permission denied)
+    - ML Kit model download simulation
 
 2. **UI Tests**:
-   - Compose screenshot tests (capture UI snapshots)
-   - CameraScreen user journeys (tap, long-press, mode switch)
-   - ItemsListScreen interactions (swipe to delete, bulk select)
+    - Compose screenshot tests (capture UI snapshots)
+    - CameraScreen user journeys (tap, long-press, mode switch)
+    - ItemsListScreen interactions (swipe to delete, bulk select)
 
 3. **Edge Cases**:
-   - Rapid mode switching during scanning
-   - Memory pressure scenarios
-   - Concurrent modifications to items list
-   - Network failures during cloud classification
+    - Rapid mode switching during scanning
+    - Memory pressure scenarios
+    - Concurrent modifications to items list
+    - Network failures during cloud classification
 
 **Recommended Framework Additions:**
+
 - Compose screenshot testing (Paparazzi or Roborazzi)
 - Espresso for complex gesture sequences
 - MockK for ML Kit detector responses
 
 **Engineering Value:**
+
 - Catch regressions before production
 - Enable confident refactoring
 - Document expected behavior
@@ -476,6 +505,7 @@ Features and improvements for scaling beyond PoC.
 **Impact:** High - Core value proposition
 
 **Current State:**
+
 - OnDeviceClassifier uses fake heuristics (brightness/contrast)
 - CloudClassifier requires external API (not implemented)
 - Classification quality is placeholder-only
@@ -483,6 +513,7 @@ Features and improvements for scaling beyond PoC.
 **Production Options:**
 
 **Option A: CLIP Integration (On-Device)**
+
 - Model: OpenAI CLIP (vision-language model)
 - Conversion: PyTorch → ONNX → TensorFlow Lite
 - Size: ~100 MB quantized model
@@ -490,6 +521,7 @@ Features and improvements for scaling beyond PoC.
 - Effort: 3-4 sprints (model selection, conversion, integration, optimization)
 
 **Option B: Custom TensorFlow Lite Model**
+
 - Train on product image dataset (e.g., eBay listings, Amazon products)
 - Fine-tune MobileNetV3 or EfficientNet-Lite
 - Size: ~20 MB
@@ -497,6 +529,7 @@ Features and improvements for scaling beyond PoC.
 - Effort: 4-6 sprints (data collection, training, deployment)
 
 **Option C: Cloud API (Google Cloud Vision, AWS Rekognition)**
+
 - Pros: Highest accuracy, no on-device processing
 - Cons: Latency, cost, privacy concerns
 - Effort: 1-2 sprints (API integration, caching)
@@ -504,11 +537,13 @@ Features and improvements for scaling beyond PoC.
 **Recommended:** Start with Option C (cloud) for MVP, add Option A (CLIP) later for offline mode.
 
 **User Value:**
+
 - Accurate product categorization
 - Brand recognition
 - Condition assessment (new/used)
 
 **Engineering Value:**
+
 - Experience with ML deployment
 - Model optimization techniques
 
@@ -527,6 +562,7 @@ Features and improvements for scaling beyond PoC.
 If **activating**:
 
 **Tasks:**
+
 1. Add missing fields to ScannedItemEntity (fullImageUri, listingStatus, listingId, listingUrl)
 2. Create type converters (Uri ↔ String, ItemListingStatus ↔ String)
 3. Refactor ItemsViewModel to use ItemsRepository
@@ -535,11 +571,13 @@ If **activating**:
 6. Document schema versioning
 
 **User Value:**
+
 - Items persist across app restarts
 - Historical scanning data
 - Better UX for power users
 
 **Trade-Offs:**
+
 - Increased complexity
 - Database migrations needed
 - Privacy considerations (delete on uninstall?)
@@ -554,12 +592,14 @@ If **activating**:
 **Impact:** Medium - Scalability
 
 **When to Modularize:**
+
 - Team grows beyond 3-5 developers
 - App adds 5+ major features
 - Build times exceed 2-3 minutes
 - Need independent feature testing
 
 **Proposed Structure:**
+
 ```
 :app                    ***REMOVED*** UI navigation, DI setup
 :feature:camera         ***REMOVED*** Camera screen, CameraXManager
@@ -572,12 +612,14 @@ If **activating**:
 ```
 
 **Benefits:**
+
 - Faster incremental builds
 - Clear module boundaries
 - Easier feature flag/experimentation
 - Better team ownership
 
 **Costs:**
+
 - Migration effort
 - Module dependency management
 - Increased build configuration complexity
@@ -592,11 +634,13 @@ If **activating**:
 **Impact:** Medium - Product insights
 
 **Recommended Tools:**
+
 - Firebase Analytics (user behavior)
 - Firebase Crashlytics (crash reporting)
 - Firebase Performance Monitoring (app performance)
 
 **Key Metrics:**
+
 - Scans per session
 - Items detected per scan
 - Scan mode usage (object vs barcode vs document)
@@ -606,6 +650,7 @@ If **activating**:
 - Session duration
 
 **Events to Track:**
+
 - app_open
 - scan_started (mode: OBJECT|BARCODE|DOCUMENT)
 - scan_completed (items_detected: Int)
@@ -615,9 +660,11 @@ If **activating**:
 - error_occurred (type: String)
 
 **User Value:**
+
 - Better product decisions based on usage data
 
 **Engineering Value:**
+
 - Proactive crash detection
 - Performance regression alerts
 
@@ -633,6 +680,7 @@ If **activating**:
 **Recommended Setup:**
 
 **GitHub Actions Workflow:**
+
 ```yaml
 name: Android CI
 
@@ -674,6 +722,7 @@ jobs:
 ```
 
 **Benefits:**
+
 - Automated testing on every commit
 - Catch failures before merge
 - Consistent build environment
@@ -737,18 +786,23 @@ P3: Analytics & CI/CD
 
 ***REMOVED******REMOVED*** Closing Thoughts
 
-Scanium has a solid foundation with well-thought-out architecture and comprehensive testing. The identified issues are primarily **technical debt** and **polish** rather than fundamental design flaws.
+Scanium has a solid foundation with well-thought-out architecture and comprehensive testing. The
+identified issues are primarily **technical debt** and **polish** rather than fundamental design
+flaws.
 
 **Strengths to preserve:**
+
 - Clean MVVM architecture
 - Comprehensive testing culture
 - Domain-driven design (Domain Packs)
 - Extensibility points for future features
 
 **Areas for growth:**
+
 - Code hygiene (remove dead code promptly)
 - Documentation discipline (keep docs in sync with code)
 - User experience (error states, accessibility, first-launch UX)
 - Configuration management (externalize magic numbers)
 
-With the P0 and P1 improvements addressed, Scanium will be well-positioned for production launch and future scaling.
+With the P0 and P1 improvements addressed, Scanium will be well-positioned for production launch and
+future scaling.

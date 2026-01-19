@@ -10,7 +10,6 @@ import org.junit.Test
  * These are pure Kotlin tests with no Android framework dependencies.
  */
 class ConfidenceTiersTest {
-
     // ==================== Tier Structure Tests ====================
 
     @Test
@@ -99,7 +98,10 @@ class ConfidenceTiersTest {
 
     // ==================== Filter Tests ====================
 
-    private fun createTestTrack(confidence: Float, label: String = "Test"): OverlayTrack {
+    private fun createTestTrack(
+        confidence: Float,
+        label: String = "Test",
+    ): OverlayTrack {
         return OverlayTrack(
             bboxNorm = NormalizedRect(0.1f, 0.1f, 0.5f, 0.5f),
             label = label,
@@ -112,12 +114,13 @@ class ConfidenceTiersTest {
 
     @Test
     fun filterDetectionsWithStep0ReturnsAll() {
-        val detections = listOf(
-            createTestTrack(0.1f, "VeryLow"),
-            createTestTrack(0.3f, "Low"),
-            createTestTrack(0.6f, "Medium"),
-            createTestTrack(0.9f, "High"),
-        )
+        val detections =
+            listOf(
+                createTestTrack(0.1f, "VeryLow"),
+                createTestTrack(0.3f, "Low"),
+                createTestTrack(0.6f, "Medium"),
+                createTestTrack(0.9f, "High"),
+            )
 
         val filtered = ConfidenceTiers.filterDetections(detections, 0)
 
@@ -127,14 +130,15 @@ class ConfidenceTiersTest {
 
     @Test
     fun filterDetectionsWithStep1FiltersBelow25Percent() {
-        val detections = listOf(
-            createTestTrack(0.1f, "VeryLow"),
-            createTestTrack(0.24f, "JustBelow"),
-            createTestTrack(0.25f, "AtThreshold"),
-            createTestTrack(0.3f, "Low"),
-            createTestTrack(0.6f, "Medium"),
-            createTestTrack(0.9f, "High"),
-        )
+        val detections =
+            listOf(
+                createTestTrack(0.1f, "VeryLow"),
+                createTestTrack(0.24f, "JustBelow"),
+                createTestTrack(0.25f, "AtThreshold"),
+                createTestTrack(0.3f, "Low"),
+                createTestTrack(0.6f, "Medium"),
+                createTestTrack(0.9f, "High"),
+            )
 
         val filtered = ConfidenceTiers.filterDetections(detections, 1)
 
@@ -144,14 +148,15 @@ class ConfidenceTiersTest {
 
     @Test
     fun filterDetectionsWithStep2FiltersBelow50Percent() {
-        val detections = listOf(
-            createTestTrack(0.1f, "VeryLow"),
-            createTestTrack(0.3f, "Low"),
-            createTestTrack(0.49f, "JustBelow"),
-            createTestTrack(0.50f, "AtThreshold"),
-            createTestTrack(0.6f, "Medium"),
-            createTestTrack(0.9f, "High"),
-        )
+        val detections =
+            listOf(
+                createTestTrack(0.1f, "VeryLow"),
+                createTestTrack(0.3f, "Low"),
+                createTestTrack(0.49f, "JustBelow"),
+                createTestTrack(0.50f, "AtThreshold"),
+                createTestTrack(0.6f, "Medium"),
+                createTestTrack(0.9f, "High"),
+            )
 
         val filtered = ConfidenceTiers.filterDetections(detections, 2)
 
@@ -161,14 +166,15 @@ class ConfidenceTiersTest {
 
     @Test
     fun filterDetectionsWithStep3FiltersBelow75Percent() {
-        val detections = listOf(
-            createTestTrack(0.1f, "VeryLow"),
-            createTestTrack(0.3f, "Low"),
-            createTestTrack(0.6f, "Medium"),
-            createTestTrack(0.74f, "JustBelow"),
-            createTestTrack(0.75f, "AtThreshold"),
-            createTestTrack(0.9f, "High"),
-        )
+        val detections =
+            listOf(
+                createTestTrack(0.1f, "VeryLow"),
+                createTestTrack(0.3f, "Low"),
+                createTestTrack(0.6f, "Medium"),
+                createTestTrack(0.74f, "JustBelow"),
+                createTestTrack(0.75f, "AtThreshold"),
+                createTestTrack(0.9f, "High"),
+            )
 
         val filtered = ConfidenceTiers.filterDetections(detections, 3)
 
@@ -184,10 +190,11 @@ class ConfidenceTiersTest {
 
     @Test
     fun filterDetectionsWithAllBelowThresholdReturnsEmpty() {
-        val detections = listOf(
-            createTestTrack(0.1f, "VeryLow"),
-            createTestTrack(0.2f, "Low"),
-        )
+        val detections =
+            listOf(
+                createTestTrack(0.1f, "VeryLow"),
+                createTestTrack(0.2f, "Low"),
+            )
 
         val filtered = ConfidenceTiers.filterDetections(detections, 3)
         assertThat(filtered).isEmpty()
@@ -196,9 +203,10 @@ class ConfidenceTiersTest {
     @Test
     fun filterDetectionsWithBoundaryValuesIncludesExactMatches() {
         // Edge case: confidence exactly at threshold should be included
-        val detections = listOf(
-            createTestTrack(0.50f, "ExactlyAtMedium"),
-        )
+        val detections =
+            listOf(
+                createTestTrack(0.50f, "ExactlyAtMedium"),
+            )
 
         val filtered = ConfidenceTiers.filterDetections(detections, 2) // Medium+ = >=50%
 

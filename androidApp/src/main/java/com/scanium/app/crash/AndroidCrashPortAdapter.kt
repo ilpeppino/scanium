@@ -1,6 +1,7 @@
 package com.scanium.app.crash
 
 import android.util.Log
+import com.scanium.app.crash.AndroidCrashPortAdapter.Companion.MAX_ATTACHMENT_BYTES
 import com.scanium.diagnostics.DiagnosticsPort
 import com.scanium.telemetry.ports.CrashPort
 import io.sentry.Attachment

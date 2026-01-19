@@ -22,9 +22,12 @@ private const val TAG = "ImageRefExtensions"
  * - Items loaded from DB have ImageRef.Bytes (see ScannedItemEntity.toModel)
  * - ThumbnailCache is populated before items are displayed (see ItemsStateManager.cacheThumbnails)
  */
-fun ImageRef?.resolveBytes(): ImageRef.Bytes? {
-    return when (this) {
-        is ImageRef.Bytes -> this
+fun ImageRef?.resolveBytes(): ImageRef.Bytes? =
+    when (this) {
+        is ImageRef.Bytes -> {
+            this
+        }
+
         is ImageRef.CacheKey -> {
             val cached = ThumbnailCache.get(key)
             if (cached == null && BuildConfig.DEBUG) {
@@ -33,14 +36,12 @@ fun ImageRef?.resolveBytes(): ImageRef.Bytes? {
             }
             cached
         }
-        else -> null
+
+        else -> {
+            null
+        }
     }
-}
 
-fun ImageRef?.toBitmap(): Bitmap? {
-    return resolveBytes()?.toBitmap()
-}
+fun ImageRef?.toBitmap(): Bitmap? = resolveBytes()?.toBitmap()
 
-fun ImageRef?.toImageBitmap(): ImageBitmap? {
-    return this.toBitmap()?.asImageBitmap()
-}
+fun ImageRef?.toImageBitmap(): ImageBitmap? = this.toBitmap()?.asImageBitmap()

@@ -1,21 +1,25 @@
 ***REMOVED*** DEV Background Health Monitor
 
-A DEV-flavor-only background health monitoring system that periodically checks backend endpoints and sends local notifications when disruptions occur.
+A DEV-flavor-only background health monitoring system that periodically checks backend endpoints and
+sends local notifications when disruptions occur.
 
 ***REMOVED******REMOVED*** Overview
 
-The health monitor runs every 15 minutes in the background using Android WorkManager. It checks the same endpoints used by ops smoke checks and notifies developers via local notifications when issues are detected.
+The health monitor runs every 15 minutes in the background using Android WorkManager. It checks the
+same endpoints used by ops smoke checks and notifies developers via local notifications when issues
+are detected.
 
-**Important:** This feature is only available in DEV builds. Beta and Prod builds do not include the feature, UI, worker scheduling, or notification channel.
+**Important:** This feature is only available in DEV builds. Beta and Prod builds do not include the
+feature, UI, worker scheduling, or notification channel.
 
 ***REMOVED******REMOVED*** Endpoints Checked
 
-| Endpoint | Pass Conditions (with API key) | Pass Conditions (no API key) |
-|----------|-------------------------------|------------------------------|
-| `/health` | HTTP 200 | HTTP 200 |
-| `/v1/config` | HTTP 200 | HTTP 200 or 401 |
-| `/v1/preflight` | HTTP 200 | HTTP 200 or 401 |
-| `/v1/assist/status` | HTTP 200 or 403 | HTTP 200 or 403 |
+| Endpoint            | Pass Conditions (with API key) | Pass Conditions (no API key) |
+|---------------------|--------------------------------|------------------------------|
+| `/health`           | HTTP 200                       | HTTP 200                     |
+| `/v1/config`        | HTTP 200                       | HTTP 200 or 401              |
+| `/v1/preflight`     | HTTP 200                       | HTTP 200 or 401              |
+| `/v1/assist/status` | HTTP 200 or 403                | HTTP 200 or 403              |
 
 ***REMOVED******REMOVED*** Enabling the Monitor
 
@@ -41,6 +45,7 @@ The health monitor runs every 15 minutes in the background using Android WorkMan
 - **Text**: Describes the failure (e.g., "health timeout", "config unauthorized (401)")
 
 Notifications are sent:
+
 - Immediately on OK → FAIL transition
 - On signature change while failing (different endpoint or status code)
 - As reminder every 6 hours while continuously failing
@@ -116,16 +121,16 @@ adb logcat -s DevHealthMonitor HealthCheck
 
 ***REMOVED******REMOVED*** Files
 
-| File | Purpose |
-|------|---------|
-| `monitoring/HealthCheckModels.kt` | Domain models (MonitorHealthStatus, HealthCheckResult, etc.) |
-| `monitoring/HealthCheckRepository.kt` | HTTP client for endpoint checks |
-| `monitoring/DevHealthMonitorStateStore.kt` | DataStore for persistent state |
-| `monitoring/NotificationDecision.kt` | Pure functions for notification logic |
-| `monitoring/DevHealthMonitorWorker.kt` | WorkManager CoroutineWorker |
-| `monitoring/DevHealthMonitorScheduler.kt` | Work scheduling management |
-| `ui/settings/DeveloperOptionsScreen.kt` | UI section (HealthMonitorSection) |
-| `ui/settings/DeveloperOptionsViewModel.kt` | ViewModel health monitor controls |
+| File                                       | Purpose                                                      |
+|--------------------------------------------|--------------------------------------------------------------|
+| `monitoring/HealthCheckModels.kt`          | Domain models (MonitorHealthStatus, HealthCheckResult, etc.) |
+| `monitoring/HealthCheckRepository.kt`      | HTTP client for endpoint checks                              |
+| `monitoring/DevHealthMonitorStateStore.kt` | DataStore for persistent state                               |
+| `monitoring/NotificationDecision.kt`       | Pure functions for notification logic                        |
+| `monitoring/DevHealthMonitorWorker.kt`     | WorkManager CoroutineWorker                                  |
+| `monitoring/DevHealthMonitorScheduler.kt`  | Work scheduling management                                   |
+| `ui/settings/DeveloperOptionsScreen.kt`    | UI section (HealthMonitorSection)                            |
+| `ui/settings/DeveloperOptionsViewModel.kt` | ViewModel health monitor controls                            |
 
 ***REMOVED******REMOVED*** Testing
 
@@ -135,6 +140,7 @@ Unit tests are located in `src/test/java/com/scanium/app/monitoring/`:
 - `HealthCheckRepositoryTest.kt` - Tests for endpoint validation rules using MockWebServer
 
 Run tests:
+
 ```bash
 ./gradlew :androidApp:testDevDebugUnitTest --tests "com.scanium.app.monitoring.*"
 ```
@@ -148,12 +154,14 @@ The feature uses runtime guards via `FeatureFlags.isDevBuild`:
 - UI is only visible in Developer Options (already DEV-only screen)
 
 Beta/Prod builds:
+
 - Include the code (to avoid complex source set management)
 - Worker immediately returns `Result.success()` without executing
 - No work is ever scheduled
 - Notification channel is never created
 
 This approach ensures:
+
 1. Simple codebase with single source set
 2. R8 can potentially strip unused code paths
 3. No runtime overhead in Beta/Prod

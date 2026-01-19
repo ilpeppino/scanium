@@ -3,7 +3,6 @@ package com.scanium.shared.core.models.items
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -16,7 +15,6 @@ import kotlin.test.assertTrue
  * - Data class properties
  */
 class VisionAttributesTest {
-
     // ==========================================================================
     // isEmpty Tests
     // ==========================================================================
@@ -37,27 +35,30 @@ class VisionAttributesTest {
 
     @Test
     fun whenOnlyColorsPresent_thenIsEmptyFalse() {
-        val attrs = VisionAttributes(
-            colors = listOf(VisionColor(name = "blue", hex = "***REMOVED***0000FF", score = 0.8f))
-        )
+        val attrs =
+            VisionAttributes(
+                colors = listOf(VisionColor(name = "blue", hex = "***REMOVED***0000FF", score = 0.8f)),
+            )
 
         assertFalse(attrs.isEmpty)
     }
 
     @Test
     fun whenOnlyLogosPresent_thenIsEmptyFalse() {
-        val attrs = VisionAttributes(
-            logos = listOf(VisionLogo(name = "Nike", score = 0.9f))
-        )
+        val attrs =
+            VisionAttributes(
+                logos = listOf(VisionLogo(name = "Nike", score = 0.9f)),
+            )
 
         assertFalse(attrs.isEmpty)
     }
 
     @Test
     fun whenOnlyLabelsPresent_thenIsEmptyFalse() {
-        val attrs = VisionAttributes(
-            labels = listOf(VisionLabel(name = "Furniture", score = 0.85f))
-        )
+        val attrs =
+            VisionAttributes(
+                labels = listOf(VisionLabel(name = "Furniture", score = 0.85f)),
+            )
 
         assertFalse(attrs.isEmpty)
     }
@@ -126,32 +127,37 @@ class VisionAttributesTest {
 
     @Test
     fun whenLogoPresent_thenPrimaryBrandFromLogo() {
-        val attrs = VisionAttributes(
-            logos = listOf(VisionLogo(name = "Nike", score = 0.9f)),
-            brandCandidates = listOf("Adidas") // Should be ignored when logo exists
-        )
+        val attrs =
+            VisionAttributes(
+                logos = listOf(VisionLogo(name = "Nike", score = 0.9f)),
+                // Should be ignored when logo exists
+                brandCandidates = listOf("Adidas"),
+            )
 
         assertEquals("Nike", attrs.primaryBrand)
     }
 
     @Test
     fun whenMultipleLogos_thenPrimaryBrandFromHighestScore() {
-        val attrs = VisionAttributes(
-            logos = listOf(
-                VisionLogo(name = "Nike", score = 0.7f),
-                VisionLogo(name = "Adidas", score = 0.95f),
-                VisionLogo(name = "Puma", score = 0.6f),
+        val attrs =
+            VisionAttributes(
+                logos =
+                    listOf(
+                        VisionLogo(name = "Nike", score = 0.7f),
+                        VisionLogo(name = "Adidas", score = 0.95f),
+                        VisionLogo(name = "Puma", score = 0.6f),
+                    ),
             )
-        )
 
         assertEquals("Adidas", attrs.primaryBrand)
     }
 
     @Test
     fun whenNoLogosButCandidatesPresent_thenPrimaryBrandFromCandidates() {
-        val attrs = VisionAttributes(
-            brandCandidates = listOf("IKEA", "KALLAX")
-        )
+        val attrs =
+            VisionAttributes(
+                brandCandidates = listOf("IKEA", "KALLAX"),
+            )
 
         assertEquals("IKEA", attrs.primaryBrand)
     }
@@ -169,9 +175,10 @@ class VisionAttributesTest {
 
     @Test
     fun whenModelCandidatesPresent_thenPrimaryModelIsFirst() {
-        val attrs = VisionAttributes(
-            modelCandidates = listOf("XK-9000", "802.758.87", "M100")
-        )
+        val attrs =
+            VisionAttributes(
+                modelCandidates = listOf("XK-9000", "802.758.87", "M100"),
+            )
 
         assertEquals("XK-9000", attrs.primaryModel)
     }
@@ -239,20 +246,23 @@ class VisionAttributesTest {
 
     @Test
     fun whenFullVisionResponse_thenAllPropertiesAccessible() {
-        val attrs = VisionAttributes(
-            colors = listOf(
-                VisionColor("white", "***REMOVED***FFFFFF", 0.35f),
-                VisionColor("brown", "***REMOVED***8B5A2B", 0.28f),
-            ),
-            ocrText = "IKEA\nKALLAX\n77x77 cm\nMade in Poland\nArt. 802.758.87",
-            logos = listOf(VisionLogo("IKEA", 0.91f)),
-            labels = listOf(
-                VisionLabel("Furniture", 0.95f),
-                VisionLabel("Shelf", 0.92f),
-            ),
-            brandCandidates = listOf("IKEA", "KALLAX"),
-            modelCandidates = listOf("802.758.87"),
-        )
+        val attrs =
+            VisionAttributes(
+                colors =
+                    listOf(
+                        VisionColor("white", "***REMOVED***FFFFFF", 0.35f),
+                        VisionColor("brown", "***REMOVED***8B5A2B", 0.28f),
+                    ),
+                ocrText = "IKEA\nKALLAX\n77x77 cm\nMade in Poland\nArt. 802.758.87",
+                logos = listOf(VisionLogo("IKEA", 0.91f)),
+                labels =
+                    listOf(
+                        VisionLabel("Furniture", 0.95f),
+                        VisionLabel("Shelf", 0.92f),
+                    ),
+                brandCandidates = listOf("IKEA", "KALLAX"),
+                modelCandidates = listOf("802.758.87"),
+            )
 
         assertFalse(attrs.isEmpty)
         assertEquals("white", attrs.primaryColor?.name)
@@ -266,14 +276,15 @@ class VisionAttributesTest {
 
     @Test
     fun whenWeakBrandDetection_thenFallsToCandidates() {
-        val attrs = VisionAttributes(
-            ocrText = "Generic Product\nModel X100",
-            labels = listOf(VisionLabel("Table", 0.85f)),
-            colors = listOf(VisionColor("black", "***REMOVED***000000", 0.45f)),
-            // No logos, only candidates from OCR
-            brandCandidates = listOf("Generic Product"),
-            modelCandidates = listOf("X100"),
-        )
+        val attrs =
+            VisionAttributes(
+                ocrText = "Generic Product\nModel X100",
+                labels = listOf(VisionLabel("Table", 0.85f)),
+                colors = listOf(VisionColor("black", "***REMOVED***000000", 0.45f)),
+                // No logos, only candidates from OCR
+                brandCandidates = listOf("Generic Product"),
+                modelCandidates = listOf("X100"),
+            )
 
         assertEquals("Generic Product", attrs.primaryBrand)
         assertEquals("X100", attrs.primaryModel)

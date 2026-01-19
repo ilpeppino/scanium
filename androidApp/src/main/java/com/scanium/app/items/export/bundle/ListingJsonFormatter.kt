@@ -36,101 +36,107 @@ object ListingJsonFormatter {
     /**
      * Format a single bundle as a JSON object.
      */
-    fun formatSingle(bundle: ExportItemBundle): JSONObject = JSONObject().apply {
-        put("id", bundle.itemId)
-        put("title", bundle.title)
-        put("description", bundle.description)
+    fun formatSingle(bundle: ExportItemBundle): JSONObject =
+        JSONObject().apply {
+            put("id", bundle.itemId)
+            put("title", bundle.title)
+            put("description", bundle.description)
 
-        // Bullets array
-        if (bundle.bullets.isNotEmpty()) {
-            put("bullets", JSONArray(bundle.bullets))
-        }
-
-        // Category
-        put("category", bundle.category.name)
-        put("categoryDisplayName", bundle.category.displayName)
-
-        // Attributes with full structure
-        put("attributes", formatAttributes(bundle))
-
-        // Photos (relative paths for ZIP, absolute for standalone)
-        // Primary photo is first, followed by additional photos (deduplicated)
-        val photos = JSONArray()
-        val seenPaths = mutableSetOf<String>()
-        bundle.primaryPhotoUri?.let {
-            photos.put(it)
-            seenPaths.add(it)
-        }
-        bundle.photoUris.forEach { uri ->
-            if (uri !in seenPaths) {
-                photos.put(uri)
-                seenPaths.add(uri)
+            // Bullets array
+            if (bundle.bullets.isNotEmpty()) {
+                put("bullets", JSONArray(bundle.bullets))
             }
+
+            // Category
+            put("category", bundle.category.name)
+            put("categoryDisplayName", bundle.category.displayName)
+
+            // Attributes with full structure
+            put("attributes", formatAttributes(bundle))
+
+            // Photos (relative paths for ZIP, absolute for standalone)
+            // Primary photo is first, followed by additional photos (deduplicated)
+            val photos = JSONArray()
+            val seenPaths = mutableSetOf<String>()
+            bundle.primaryPhotoUri?.let {
+                photos.put(it)
+                seenPaths.add(it)
+            }
+            bundle.photoUris.forEach { uri ->
+                if (uri !in seenPaths) {
+                    photos.put(uri)
+                    seenPaths.add(uri)
+                }
+            }
+            put("photos", photos)
+            put("photoCount", photos.length())
+
+            // Timestamps
+            put("createdAt", isoFormat.format(Date(bundle.createdAt)))
+
+            // Export status
+            put(
+                "exportStatus",
+                JSONObject().apply {
+                    put("ready", bundle.isReady)
+                    put("needsAi", bundle.needsAi)
+                    put("hasPhotos", !bundle.hasNoPhotos)
+                    bundle.confidenceTier?.let { put("confidenceTier", it) }
+                    bundle.exportModel?.let { put("model", it) }
+                },
+            )
         }
-        put("photos", photos)
-        put("photoCount", photos.length())
-
-        // Timestamps
-        put("createdAt", isoFormat.format(Date(bundle.createdAt)))
-
-        // Export status
-        put("exportStatus", JSONObject().apply {
-            put("ready", bundle.isReady)
-            put("needsAi", bundle.needsAi)
-            put("hasPhotos", !bundle.hasNoPhotos)
-            bundle.confidenceTier?.let { put("confidenceTier", it) }
-            bundle.exportModel?.let { put("model", it) }
-        })
-    }
 
     /**
      * Format a single bundle as a JSON string.
      */
-    fun formatSingleString(bundle: ExportItemBundle, indent: Int = 2): String {
-        return formatSingle(bundle).toString(indent)
-    }
+    fun formatSingleString(
+        bundle: ExportItemBundle,
+        indent: Int = 2,
+    ): String = formatSingle(bundle).toString(indent)
 
     /**
      * Format multiple bundles as a JSON array.
      */
-    fun formatMultiple(bundles: List<ExportItemBundle>): JSONArray {
-        return JSONArray().apply {
+    fun formatMultiple(bundles: List<ExportItemBundle>): JSONArray =
+        JSONArray().apply {
             bundles.forEach { bundle ->
                 put(formatSingle(bundle))
             }
         }
-    }
 
     /**
      * Format multiple bundles as a JSON string.
      */
-    fun formatMultipleString(bundles: List<ExportItemBundle>, indent: Int = 2): String {
-        return formatMultiple(bundles).toString(indent)
-    }
+    fun formatMultipleString(
+        bundles: List<ExportItemBundle>,
+        indent: Int = 2,
+    ): String = formatMultiple(bundles).toString(indent)
 
     /**
      * Format attributes as a JSON object with full metadata.
      */
-    private fun formatAttributes(bundle: ExportItemBundle): JSONObject {
-        return JSONObject().apply {
+    private fun formatAttributes(bundle: ExportItemBundle): JSONObject =
+        JSONObject().apply {
             bundle.attributes.forEach { (key, attr) ->
-                put(key, JSONObject().apply {
-                    put("value", attr.value)
-                    put("confidence", attr.confidence)
-                    attr.source?.let { put("source", it) }
-                })
+                put(
+                    key,
+                    JSONObject().apply {
+                        put("value", attr.value)
+                        put("confidence", attr.confidence)
+                        attr.source?.let { put("source", it) }
+                    },
+                )
             }
         }
-    }
 
     /**
      * Format attributes as a simple key-value object.
      */
-    fun formatSimpleAttributes(bundle: ExportItemBundle): JSONObject {
-        return JSONObject().apply {
+    fun formatSimpleAttributes(bundle: ExportItemBundle): JSONObject =
+        JSONObject().apply {
             bundle.attributes.forEach { (key, attr) ->
                 put(key, attr.value)
             }
         }
-    }
 }

@@ -2,7 +2,10 @@
 
 ***REMOVED******REMOVED*** Overview
 
-This document describes the implementation of a robust tracking and de-duplication system for the Scanium Android app. The system uses ML Kit's Object Detection & Tracking capabilities combined with custom spatial matching heuristics to ensure that each physical object is recognized only once per scanning session.
+This document describes the implementation of a robust tracking and de-duplication system for the
+Scanium Android app. The system uses ML Kit's Object Detection & Tracking capabilities combined with
+custom spatial matching heuristics to ensure that each physical object is recognized only once per
+scanning session.
 
 ***REMOVED******REMOVED*** Implementation Summary
 
@@ -13,6 +16,7 @@ This document describes the implementation of a robust tracking and de-duplicati
 A data class representing a candidate object being tracked across multiple frames.
 
 **Key Properties:**
+
 - `internalId`: Stable identifier (ML Kit trackingId or generated)
 - `boundingBox`: Current bounding box (RectF)
 - `lastSeenFrame`: Frame number when last observed
@@ -24,6 +28,7 @@ A data class representing a candidate object being tracked across multiple frame
 - `averageBoxArea`: Running average of normalized box area
 
 **Key Methods:**
+
 - `update()`: Updates candidate with new detection information
 - `getCenterPoint()`: Calculates bounding box center
 - `distanceTo()`: Calculates Euclidean distance to another box
@@ -34,6 +39,7 @@ A data class representing a candidate object being tracked across multiple frame
 The core tracking component that manages candidate objects and applies confirmation logic.
 
 **Key Features:**
+
 - Maintains in-memory collection of candidates keyed by internalId
 - Implements frame-based tracking with temporal information
 - Uses ML Kit trackingId when available
@@ -42,6 +48,7 @@ The core tracking component that manages candidate objects and applies confirmat
 - Confirmation logic based on configurable thresholds
 
 **Configuration (TrackerConfig):**
+
 - `minFramesToConfirm = 3`: Require 3 frames to confirm
 - `minConfidence = 0.4f`: Minimum confidence threshold
 - `minBoxArea = 0.001f`: Minimum 0.1% of frame area
@@ -50,8 +57,10 @@ The core tracking component that manages candidate objects and applies confirmat
 - `expiryFrames = 10`: Expire after 10 frames without detection
 
 **Key Methods:**
+
 - `processFrame(detections)`: Processes detections and returns newly confirmed candidates
-- `findMatchingCandidate()`: Matches detection to existing candidate using trackingId or spatial heuristics
+- `findMatchingCandidate()`: Matches detection to existing candidate using trackingId or spatial
+  heuristics
 - `reset()`: Clears all candidates and state
 - `getStats()`: Returns tracking statistics for debugging
 
@@ -60,6 +69,7 @@ The core tracking component that manages candidate objects and applies confirmat
 A data class holding raw detection information extracted from ML Kit.
 
 **Properties:**
+
 - `trackingId`: ML Kit tracking ID (nullable)
 - `boundingBox`: Bounding box as RectF
 - `confidence`: Label confidence
@@ -73,11 +83,13 @@ A data class holding raw detection information extracted from ML Kit.
 ***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectDetectorClient (`app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`)
 
 **New Methods:**
+
 - `detectObjectsWithTracking()`: Extracts raw detection information for tracking pipeline
 - `extractDetectionInfo()`: Converts DetectedObject to DetectionInfo with tracking metadata
 - `candidateToScannedItem()`: Converts confirmed ObjectCandidate to ScannedItem
 
 **Key Changes:**
+
 - Imports DetectionInfo from tracking package
 - Uses STREAM_MODE by default for tracking (provides better trackingId availability)
 - Extracts all necessary metadata for spatial matching (bounding box as RectF, confidence, etc.)
@@ -85,14 +97,17 @@ A data class holding raw detection information extracted from ML Kit.
 ***REMOVED******REMOVED******REMOVED******REMOVED*** CameraXManager (`app/src/main/java/com/scanium/app/camera/CameraXManager.kt`)
 
 **New Components:**
+
 - `objectTracker`: ObjectTracker instance with configured thresholds
 - `currentScanMode`: Tracks current scan mode to detect mode changes
 
 **New Methods:**
+
 - `processObjectDetectionWithTracking()`: Processes frame through tracking pipeline
 - `resetTracker()`: Manually resets the object tracker
 
 **Key Changes:**
+
 - `startScanning()`: Resets tracker when mode changes or new session starts
 - `stopScanning()`: Resets tracker when scanning stops
 - `processImageProxy()`: Routes to tracking pipeline when in OBJECT_DETECTION + STREAM mode
@@ -100,6 +115,7 @@ A data class holding raw detection information extracted from ML Kit.
 - Single-shot captures still use SINGLE_IMAGE_MODE without tracking
 
 **Integration Logic:**
+
 ```kotlin
 when (scanMode) {
     ScanMode.OBJECT_DETECTION -> {
@@ -117,9 +133,11 @@ when (scanMode) {
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** ItemsViewModel (`app/src/main/java/com/scanium/app/items/ItemsViewModel.kt`)
 
-**No changes required!** The existing ID-based de-duplication using `seenIds` set works perfectly with stable tracking IDs from ObjectTracker.
+**No changes required!** The existing ID-based de-duplication using `seenIds` set works perfectly
+with stable tracking IDs from ObjectTracker.
 
 **Existing De-duplication:**
+
 - `addItem()`: Checks if ID exists before adding
 - `addItems()`: Filters out items with IDs already in seenIds
 - `removeItem()`: Removes from both list and seenIds
@@ -128,6 +146,7 @@ when (scanMode) {
 ***REMOVED******REMOVED******REMOVED*** 3. Data Flow
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Previous Flow (Without Tracking)
+
 ```
 ImageProxy → ML Kit Detection → DetectedObject[]
   → For each object: Create ScannedItem with UUID
@@ -136,6 +155,7 @@ ImageProxy → ML Kit Detection → DetectedObject[]
 ```
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** New Flow (With Tracking)
+
 ```
 ImageProxy → ML Kit Detection (STREAM_MODE) → DetectedObject[]
   → For each object: Extract DetectionInfo (trackingId, bbox, confidence, etc.)
@@ -163,6 +183,7 @@ ImageProxy → ML Kit Detection (STREAM_MODE) → DetectedObject[]
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Matching Strategy
 
 **Primary: Direct trackingId Match**
+
 ```kotlin
 if (detection.trackingId != null) {
     val candidate = candidates[detection.trackingId]
@@ -171,6 +192,7 @@ if (detection.trackingId != null) {
 ```
 
 **Fallback: Spatial Matching**
+
 ```kotlin
 for (candidate in candidates.values) {
     val iou = candidate.calculateIoU(detection.boundingBox)
@@ -189,6 +211,7 @@ for (candidate in candidates.values) {
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Confirmation Criteria
 
 A candidate is confirmed when ALL of these are met:
+
 ```kotlin
 candidate.seenCount >= minFramesToConfirm &&
 candidate.maxConfidence >= minConfidence &&
@@ -239,6 +262,7 @@ TrackerConfig(
 - Tracker stats: `"Tracker stats: active=N, confirmed=M, frame=F"`
 
 **Tracker Statistics Available:**
+
 ```kotlin
 val stats = objectTracker.getStats()
 // stats.activeCandidates - Current candidates being tracked
@@ -249,6 +273,7 @@ val stats = objectTracker.getStats()
 ***REMOVED******REMOVED******REMOVED*** 8. Mode Management
 
 **Tracker is reset when:**
+
 1. Starting a new scan session: `startScanning()` → `objectTracker.reset()`
 2. Switching scan modes: `currentScanMode != scanMode` → `objectTracker.reset()`
 3. Stopping scanning: `stopScanning()` → `objectTracker.reset()`
@@ -256,17 +281,20 @@ val stats = objectTracker.getStats()
 5. Manual reset: `resetTracker()` → `objectTracker.reset()`
 
 **Tracking is used only for:**
+
 - Object detection mode
 - During continuous scanning (not single-shot tap capture)
 - When STREAM_MODE is active
 
 **Other modes unchanged:**
+
 - Barcode scanning: Uses existing pipeline without tracking
 - Document text: Uses existing pipeline without tracking
 
 ***REMOVED******REMOVED******REMOVED*** 9. Compatibility
 
 **Backward Compatibility:**
+
 - Single-shot tap capture: Uses SINGLE_IMAGE_MODE without tracking (existing behavior)
 - Barcode mode: No changes
 - Document mode: No changes
@@ -274,6 +302,7 @@ val stats = objectTracker.getStats()
 - UI: No changes required, receives ScannedItem as before
 
 **ML Kit Compatibility:**
+
 - Works with ML Kit Object Detection & Tracking 17.0.1
 - STREAM_MODE provides trackingId more reliably than SINGLE_IMAGE_MODE
 - Graceful fallback when trackingId is null
@@ -281,32 +310,35 @@ val stats = objectTracker.getStats()
 ***REMOVED******REMOVED******REMOVED*** 10. Testing Recommendations
 
 **Manual Testing:**
+
 1. **Single Object Scanning**: Point camera at single object, long-press to scan
-   - Expected: Object appears once after 3 frames
-   - Verify: Check logs for candidate lifecycle
+    - Expected: Object appears once after 3 frames
+    - Verify: Check logs for candidate lifecycle
 
 2. **Multiple Objects**: Scan multiple objects simultaneously
-   - Expected: Each object confirmed independently
-   - Verify: Tracker stats show multiple active candidates
+    - Expected: Each object confirmed independently
+    - Verify: Tracker stats show multiple active candidates
 
 3. **Object Movement**: Move object while scanning
-   - Expected: Spatial matching keeps tracking same object
-   - Verify: Logs show "Updated candidate" not "Created new candidate"
+    - Expected: Spatial matching keeps tracking same object
+    - Verify: Logs show "Updated candidate" not "Created new candidate"
 
 4. **Mode Switching**: Switch between Object/Barcode/Document modes
-   - Expected: Tracker resets on mode change
-   - Verify: Logs show "Resetting tracker (mode change...)"
+    - Expected: Tracker resets on mode change
+    - Verify: Logs show "Resetting tracker (mode change...)"
 
 5. **Stop/Start Scanning**: Stop (double-tap) and restart (long-press)
-   - Expected: Tracker resets, fresh scan session
-   - Verify: Frame counter resets to 0
+    - Expected: Tracker resets, fresh scan session
+    - Verify: Frame counter resets to 0
 
 **Log Verification:**
+
 ```bash
 adb logcat | grep -E "ObjectTracker|CameraXManager|ObjectDetectorClient"
 ```
 
 **Look for:**
+
 - Confirmation messages after 3+ frames
 - No duplicate confirmations for same physical object
 - Proper tracking across frames (seenCount incrementing)
@@ -323,6 +355,7 @@ adb logcat | grep -E "ObjectTracker|CameraXManager|ObjectDetectorClient"
 ***REMOVED******REMOVED******REMOVED*** 12. Future Enhancements
 
 **Potential improvements:**
+
 1. **Color Matching**: Add dominant color extraction for better spatial matching
 2. **Adaptive Thresholds**: Adjust thresholds based on scene complexity
 3. **Persistence**: Save tracker state across app restarts
@@ -332,7 +365,8 @@ adb logcat | grep -E "ObjectTracker|CameraXManager|ObjectDetectorClient"
 
 ***REMOVED******REMOVED*** Summary
 
-The tracking and de-duplication system is fully implemented and integrated into the Scanium app. It provides:
+The tracking and de-duplication system is fully implemented and integrated into the Scanium app. It
+provides:
 
 ✅ **Robust Tracking**: Uses ML Kit trackingId + spatial fallback
 ✅ **De-duplication**: Each physical object appears once per scan

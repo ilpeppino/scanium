@@ -1,11 +1,15 @@
-> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current state.
+> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
+> state.
+
 ***REMOVED*** eBay Domain Pack Generator
 
 Auto-generate Scanium Domain Packs from eBay marketplace category trees using the eBay Taxonomy API.
 
 ***REMOVED******REMOVED*** Overview
 
-This tool downloads eBay category hierarchies and transforms them into Scanium Domain Pack JSON files that can be used for:
+This tool downloads eBay category hierarchies and transforms them into Scanium Domain Pack JSON
+files that can be used for:
+
 - Classification mapping (text-to-category matching)
 - Listing title generation
 - Future eBay integration (category selection + item aspects)
@@ -37,7 +41,9 @@ Create an eBay Developer account and application:
 
 ***REMOVED******REMOVED******REMOVED*** 2. Required API Access
 
-The generator uses the [eBay Taxonomy API](https://developer.ebay.com/api-docs/commerce/taxonomy/) which requires:
+The generator uses the [eBay Taxonomy API](https://developer.ebay.com/api-docs/commerce/taxonomy/)
+which requires:
+
 - **OAuth Scope**: `https://api.ebay.com/oauth/api_scope`
 - **Authentication**: Application token (client credentials flow)
 
@@ -95,6 +101,7 @@ npm run gen -- generate \
 ```
 
 **Output:**
+
 - `electronics.json`
 - `fashion.json`
 - `home_garden.json`
@@ -102,6 +109,7 @@ npm run gen -- generate \
 - etc.
 
 **Pros:**
+
 - Manageable pack sizes (typically 100-500 categories each)
 - Easier to maintain and update specific verticals
 - Faster to load in the app
@@ -147,16 +155,16 @@ npm run gen -- generate \
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Options Reference
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-m, --marketplace <id>` | Marketplace ID (EBAY_DE, EBAY_FR, etc.) | EBAY_NL |
-| `-s, --strategy <type>` | Generation strategy (by-branch, subtree, full) | by-branch |
-| `-r, --root-category <id>` | Root category ID for subtree strategy | - |
-| `-o, --output <dir>` | Output directory | domainpacks/ebay |
-| `--enable-aspects` | Fetch and include eBay item aspects | false |
-| `--cache <dir>` | Cache directory for API responses | .cache/ebay |
-| `--env <env>` | eBay environment (sandbox, production) | production |
-| `--dry-run` | Preview generation without writing files | false |
+| Option                     | Description                                    | Default          |
+|----------------------------|------------------------------------------------|------------------|
+| `-m, --marketplace <id>`   | Marketplace ID (EBAY_DE, EBAY_FR, etc.)        | EBAY_NL          |
+| `-s, --strategy <type>`    | Generation strategy (by-branch, subtree, full) | by-branch        |
+| `-r, --root-category <id>` | Root category ID for subtree strategy          | -                |
+| `-o, --output <dir>`       | Output directory                               | domainpacks/ebay |
+| `--enable-aspects`         | Fetch and include eBay item aspects            | false            |
+| `--cache <dir>`            | Cache directory for API responses              | .cache/ebay      |
+| `--env <env>`              | eBay environment (sandbox, production)         | production       |
+| `--dry-run`                | Preview generation without writing files       | false            |
 
 ***REMOVED******REMOVED******REMOVED*** Dry Run Mode
 
@@ -233,22 +241,23 @@ Generated domain packs follow this schema:
 
 ***REMOVED******REMOVED******REMOVED*** Field Descriptions
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Unique pack identifier |
-| `name` | string | Human-readable pack name |
-| `threshold` | number | Classification confidence threshold |
-| `categories[]` | array | Array of category definitions |
-| `categories[].id` | string | Stable category slug (deterministic) |
-| `categories[].label` | string | Human-readable category name |
-| `categories[].itemCategoryName` | enum | Scanium internal category |
-| `categories[].priority` | number | Priority for tie-breaking (higher = more specific) |
-| `categories[].tokens` | string[] | Searchable keyword tokens |
-| `categories[].attributes` | object | Metadata and eBay-specific info |
+| Field                           | Type     | Description                                        |
+|---------------------------------|----------|----------------------------------------------------|
+| `id`                            | string   | Unique pack identifier                             |
+| `name`                          | string   | Human-readable pack name                           |
+| `threshold`                     | number   | Classification confidence threshold                |
+| `categories[]`                  | array    | Array of category definitions                      |
+| `categories[].id`               | string   | Stable category slug (deterministic)               |
+| `categories[].label`            | string   | Human-readable category name                       |
+| `categories[].itemCategoryName` | enum     | Scanium internal category                          |
+| `categories[].priority`         | number   | Priority for tie-breaking (higher = more specific) |
+| `categories[].tokens`           | string[] | Searchable keyword tokens                          |
+| `categories[].attributes`       | object   | Metadata and eBay-specific info                    |
 
 ***REMOVED******REMOVED*** Category Mapping Rules
 
-eBay categories are mapped to Scanium `ItemCategory` enums using pattern-based rules defined in `category-mapping-rules.yaml`.
+eBay categories are mapped to Scanium `ItemCategory` enums using pattern-based rules defined in
+`category-mapping-rules.yaml`.
 
 ***REMOVED******REMOVED******REMOVED*** Supported Scanium Categories
 
@@ -299,25 +308,26 @@ Rules are evaluated in order; first match wins.
 Tokens are generated from category names and paths using these rules:
 
 1. **Normalization:**
-   - Convert to lowercase
-   - Replace `&` with "and"
-   - Remove punctuation
-   - Split on whitespace and special chars
+    - Convert to lowercase
+    - Replace `&` with "and"
+    - Remove punctuation
+    - Split on whitespace and special chars
 
 2. **N-grams:**
-   - Single words: `"laptop"`, `"computer"`
-   - Bigrams: `"laptop computer"`
-   - Trigrams: `"gaming laptop computer"`
+    - Single words: `"laptop"`, `"computer"`
+    - Bigrams: `"laptop computer"`
+    - Trigrams: `"gaming laptop computer"`
 
 3. **Denylist:**
-   - Generic words are excluded: `"other"`, `"misc"`, `"parts"`, `"accessories"`, `"home"`, `"general"`
+    - Generic words are excluded: `"other"`, `"misc"`, `"parts"`, `"accessories"`, `"home"`,
+      `"general"`
 
 4. **Limits:**
-   - Max 15 tokens per category (configurable)
-   - Min 2 characters per token
+    - Max 15 tokens per category (configurable)
+    - Min 2 characters per token
 
 5. **Deterministic:**
-   - Tokens are sorted alphabetically for stable output
+    - Tokens are sorted alphabetically for stable output
 
 ***REMOVED******REMOVED*** Caching
 
@@ -326,9 +336,9 @@ The generator caches API responses to reduce network calls:
 - **Cache location:** `.cache/ebay/` (configurable)
 - **Cache duration:** 24 hours (daily refresh)
 - **Cached data:**
-  - Category tree IDs
-  - Category trees
-  - Item aspects (if enabled)
+    - Category tree IDs
+    - Category trees
+    - Item aspects (if enabled)
 
 Clear cache:
 
@@ -387,6 +397,7 @@ eBay category trees change over time. To update packs:
 **Error:** `eBay OAuth failed (401)`
 
 **Solution:**
+
 - Verify `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` are correct
 - Check that your app has the required scope: `https://api.ebay.com/oauth/api_scope`
 - Ensure you're using the correct environment (sandbox vs production)
@@ -396,6 +407,7 @@ eBay category trees change over time. To update packs:
 **Error:** `Failed to get item aspects (429)`
 
 **Solution:**
+
 - The generator includes built-in rate limiting (100ms delay between requests)
 - Use `--cache` to avoid re-fetching data
 - Consider disabling `--enable-aspects` if not needed
@@ -405,6 +417,7 @@ eBay category trees change over time. To update packs:
 **Issue:** Generated pack has 0 categories
 
 **Solution:**
+
 - Check that the marketplace is supported
 - Verify you have network connectivity
 - Try with `--env sandbox` to test with sandbox data
@@ -415,6 +428,7 @@ eBay category trees change over time. To update packs:
 **Error:** `Failed to get category tree`
 
 **Solution:**
+
 - eBay may have changed the tree ID for the marketplace
 - Clear cache: `rm -rf .cache/ebay`
 - Try again
@@ -468,5 +482,6 @@ UNLICENSED - Internal Scanium tool
 ***REMOVED******REMOVED*** Support
 
 For issues or questions:
+
 - File an issue in the Scanium repository
 - Contact the backend team

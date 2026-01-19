@@ -1,22 +1,5 @@
 package com.scanium.app.listing
 
-import com.scanium.shared.core.models.listing.DescriptionFormat
-import com.scanium.shared.core.models.listing.DraftCompleteness
-import com.scanium.shared.core.models.listing.DraftField
-import com.scanium.shared.core.models.listing.DraftFieldKey
-import com.scanium.shared.core.models.listing.DraftPhotoRef
-import com.scanium.shared.core.models.listing.DraftProvenance
-import com.scanium.shared.core.models.listing.DraftRequiredField
-import com.scanium.shared.core.models.listing.DraftStatus
-import com.scanium.shared.core.models.listing.ExportDescriptionRules
-import com.scanium.shared.core.models.listing.ExportFieldKey
-import com.scanium.shared.core.models.listing.ExportProfileDefinition
-import com.scanium.shared.core.models.listing.ExportProfileId
-import com.scanium.shared.core.models.listing.ExportProfileRepository
-import com.scanium.shared.core.models.listing.ExportProfiles
-import com.scanium.shared.core.models.listing.ExportTitleRules
-import com.scanium.shared.core.models.listing.MissingFieldPolicy
-import com.scanium.shared.core.models.listing.TitleCapitalization
 import com.scanium.shared.core.models.listing.DraftFieldsSerializer as SharedDraftFieldsSerializer
 import com.scanium.shared.core.models.listing.ListingDraft as SharedListingDraft
 import com.scanium.shared.core.models.listing.ListingDraftBuilder as SharedListingDraftBuilder

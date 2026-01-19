@@ -68,8 +68,8 @@ internal class CameraImageConverter {
             for (row in 0 until uvHeight) {
                 for (col in 0 until uvWidth) {
                     val vuPos = row * uvRowStride + col * uvPixelStride
-                    nv21[pos++] = vBuffer.get(vuPos)   // V comes first in NV21
-                    nv21[pos++] = uBuffer.get(vuPos)   // U comes second
+                    nv21[pos++] = vBuffer.get(vuPos) // V comes first in NV21
+                    nv21[pos++] = uBuffer.get(vuPos) // U comes second
                 }
             }
         }

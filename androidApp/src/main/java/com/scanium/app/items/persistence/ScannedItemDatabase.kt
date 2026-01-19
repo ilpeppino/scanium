@@ -23,19 +23,18 @@ abstract class ScannedItemDatabase : RoomDatabase() {
         @Volatile
         private var instance: ScannedItemDatabase? = null
 
-        fun getInstance(context: Context): ScannedItemDatabase {
-            return instance ?: synchronized(this) {
+        fun getInstance(context: Context): ScannedItemDatabase =
+            instance ?: synchronized(this) {
                 instance ?: buildDatabase(context).also { instance = it }
             }
-        }
 
-        private fun buildDatabase(context: Context): ScannedItemDatabase {
-            return Room.databaseBuilder(
-                context.applicationContext,
-                ScannedItemDatabase::class.java,
-                "scanned_items.db",
-            )
-                .addMigrations(
+        private fun buildDatabase(context: Context): ScannedItemDatabase =
+            Room
+                .databaseBuilder(
+                    context.applicationContext,
+                    ScannedItemDatabase::class.java,
+                    "scanned_items.db",
+                ).addMigrations(
                     MIGRATION_1_2,
                     MIGRATION_2_3,
                     MIGRATION_3_4,
@@ -49,7 +48,6 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
                 .build()
-        }
 
         private val MIGRATION_1_2 =
             object : Migration(1, 2) {

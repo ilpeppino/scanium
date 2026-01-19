@@ -24,24 +24,26 @@ import androidx.compose.ui.graphics.graphicsLayer
  * @param enabled If true, applies the pulse animation. If false, no animation.
  * @return Modifier with optional pulse animation
  */
-fun Modifier.ftuePulse(enabled: Boolean): Modifier = composed {
-    if (!enabled) {
-        this
-    } else {
-        val infiniteTransition = rememberInfiniteTransition(label = "ftuePulse")
-        val scale by infiniteTransition.animateFloat(
-            initialValue = 1.0f,
-            targetValue = 1.08f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 900, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "pulseScale",
-        )
+fun Modifier.ftuePulse(enabled: Boolean): Modifier =
+    composed {
+        if (!enabled) {
+            this
+        } else {
+            val infiniteTransition = rememberInfiniteTransition(label = "ftuePulse")
+            val scale by infiniteTransition.animateFloat(
+                initialValue = 1.0f,
+                targetValue = 1.08f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis = 900, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                label = "pulseScale",
+            )
 
-        this.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
+            this.graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
         }
     }
-}

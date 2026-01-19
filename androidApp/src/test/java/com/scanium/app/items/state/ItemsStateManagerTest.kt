@@ -262,11 +262,12 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // Act - Apply classification from backend
-            val brandAttribute = ItemAttribute(
-                value = "Nike",
-                confidence = 0.85f,
-                source = "logo",
-            )
+            val brandAttribute =
+                ItemAttribute(
+                    value = "Nike",
+                    confidence = 0.85f,
+                    source = "logo",
+                )
             manager.applyEnhancedClassification(
                 aggregatedId = "item-1",
                 category = null,
@@ -298,11 +299,12 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // Apply initial classification from backend
-            val detectedBrand = ItemAttribute(
-                value = "Nike",
-                confidence = 0.85f,
-                source = "logo",
-            )
+            val detectedBrand =
+                ItemAttribute(
+                    value = "Nike",
+                    confidence = 0.85f,
+                    source = "logo",
+                )
             manager.applyEnhancedClassification(
                 aggregatedId = "item-1",
                 category = null,
@@ -315,11 +317,12 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // Act - User edits the attribute
-            val userBrand = ItemAttribute(
-                value = "Adidas",
-                confidence = 1.0f,
-                source = "user",
-            )
+            val userBrand =
+                ItemAttribute(
+                    value = "Adidas",
+                    confidence = 1.0f,
+                    source = "user",
+                )
             manager.updateItemAttribute(
                 itemId = "item-1",
                 attributeKey = "brand",
@@ -348,11 +351,12 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // User sets a brand value
-            val userBrand = ItemAttribute(
-                value = "Adidas",
-                confidence = 1.0f,
-                source = "user",
-            )
+            val userBrand =
+                ItemAttribute(
+                    value = "Adidas",
+                    confidence = 1.0f,
+                    source = "user",
+                )
             manager.updateItemAttribute(
                 itemId = "item-1",
                 attributeKey = "brand",
@@ -361,11 +365,12 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // Act - New classification arrives from backend
-            val detectedBrand = ItemAttribute(
-                value = "Nike",
-                confidence = 0.85f,
-                source = "logo",
-            )
+            val detectedBrand =
+                ItemAttribute(
+                    value = "Nike",
+                    confidence = 0.85f,
+                    source = "logo",
+                )
             manager.applyEnhancedClassification(
                 aggregatedId = "item-1",
                 category = null,
@@ -456,10 +461,11 @@ class ItemsStateManagerTest {
 
             // Arrange - Create item with thumbnail bytes
             val thumbnailBytes = createTestThumbnailBytes()
-            val itemWithThumbnail = createTestItem(
-                id = "item-with-thumbnail",
-                category = ItemCategory.FASHION,
-            ).copy(thumbnail = thumbnailBytes)
+            val itemWithThumbnail =
+                createTestItem(
+                    id = "item-with-thumbnail",
+                    category = ItemCategory.FASHION,
+                ).copy(thumbnail = thumbnailBytes)
 
             fakeStore.seedItems(listOf(itemWithThumbnail))
 
@@ -492,14 +498,15 @@ class ItemsStateManagerTest {
     fun whenMultipleItemsWithThumbnails_afterProcessDeath_allThumbnailsPreserved() =
         runTest {
             // Arrange - Create multiple items with thumbnail bytes
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION)
-                    .copy(thumbnail = createTestThumbnailBytes()),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS)
-                    .copy(thumbnail = createTestThumbnailBytes()),
-                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD)
-                    .copy(thumbnail = createTestThumbnailBytes()),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION)
+                        .copy(thumbnail = createTestThumbnailBytes()),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS)
+                        .copy(thumbnail = createTestThumbnailBytes()),
+                    createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD)
+                        .copy(thumbnail = createTestThumbnailBytes()),
+                )
             fakeStore.seedItems(items)
 
             // Act - Load items, simulate process death, reload
@@ -530,10 +537,11 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // Act - Add item with thumbnail bytes during session
-            val itemWithThumbnail = createTestItem(
-                id = "new-item",
-                category = ItemCategory.PLANT,
-            ).copy(thumbnail = createTestThumbnailBytes())
+            val itemWithThumbnail =
+                createTestItem(
+                    id = "new-item",
+                    category = ItemCategory.PLANT,
+                ).copy(thumbnail = createTestThumbnailBytes())
 
             manager.addItem(itemWithThumbnail)
             advanceUntilIdle()
@@ -558,13 +566,14 @@ class ItemsStateManagerTest {
             val initialUpsertCount = fakeStore.upsertAllCallCount
 
             // Act - Add multiple items in rapid succession
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
-                createTestItem(id = "item-4", category = ItemCategory.PLANT),
-                createTestItem(id = "item-5", category = ItemCategory.FOOD),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                    createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+                    createTestItem(id = "item-4", category = ItemCategory.PLANT),
+                    createTestItem(id = "item-5", category = ItemCategory.FOOD),
+                )
 
             // Add items one by one rapidly
             items.forEach { manager.addItem(it) }
@@ -589,11 +598,12 @@ class ItemsStateManagerTest {
             val initialUpsertCount = fakeStore.upsertAllCallCount
 
             // Act - Add items using batch method
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                    createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -643,11 +653,12 @@ class ItemsStateManagerTest {
         runTest {
             // Arrange
             val manager = createManager()
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                    createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -655,9 +666,10 @@ class ItemsStateManagerTest {
             val initialUpsertCount = fakeStore.upsertAllCallCount
 
             // Act - Update multiple items using bulk update
-            val updates = itemsAfterAdd.associate { item ->
-                item.id to ItemFieldUpdate(labelText = "Bulk Update ${item.id}")
-            }
+            val updates =
+                itemsAfterAdd.associate { item ->
+                    item.id to ItemFieldUpdate(labelText = "Bulk Update ${item.id}")
+                }
             manager.updateItemsFields(updates)
             advanceUntilIdle()
 
@@ -678,10 +690,11 @@ class ItemsStateManagerTest {
         runTest {
             // Arrange
             val manager = createManager()
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -710,11 +723,12 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // Act - Add multiple items
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                    createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -732,11 +746,12 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // Act - Add similar items (same category, same position)
-            val similarItems = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION, confidence = 0.9f),
-                createTestItem(id = "item-2", category = ItemCategory.FASHION, confidence = 0.85f),
-                createTestItem(id = "item-3", category = ItemCategory.FASHION, confidence = 0.88f),
-            )
+            val similarItems =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION, confidence = 0.9f),
+                    createTestItem(id = "item-2", category = ItemCategory.FASHION, confidence = 0.85f),
+                    createTestItem(id = "item-3", category = ItemCategory.FASHION, confidence = 0.88f),
+                )
             manager.addItems(similarItems)
             advanceUntilIdle()
 
@@ -758,17 +773,18 @@ class ItemsStateManagerTest {
             advanceUntilIdle()
 
             // Act - Add different items (different categories, different positions)
-            val differentItems = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION).copy(
-                    boundingBox = NormalizedRect(0.1f, 0.1f, 0.3f, 0.3f),
-                ),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS).copy(
-                    boundingBox = NormalizedRect(0.5f, 0.5f, 0.7f, 0.7f),
-                ),
-                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD).copy(
-                    boundingBox = NormalizedRect(0.8f, 0.1f, 0.9f, 0.3f),
-                ),
-            )
+            val differentItems =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION).copy(
+                        boundingBox = NormalizedRect(0.1f, 0.1f, 0.3f, 0.3f),
+                    ),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS).copy(
+                        boundingBox = NormalizedRect(0.5f, 0.5f, 0.7f, 0.7f),
+                    ),
+                    createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD).copy(
+                        boundingBox = NormalizedRect(0.8f, 0.1f, 0.9f, 0.3f),
+                    ),
+                )
             manager.addItems(differentItems)
             advanceUntilIdle()
 
@@ -838,11 +854,12 @@ class ItemsStateManagerTest {
         runTest {
             // Arrange
             val manager = createManager()
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                    createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -867,17 +884,18 @@ class ItemsStateManagerTest {
             val oldTimestamp = System.currentTimeMillis() - 60_000L // 60 seconds ago
             val recentTimestamp = System.currentTimeMillis()
 
-            val items = listOf(
-                createTestItem(id = "stale-1", category = ItemCategory.FASHION).copy(
-                    timestamp = oldTimestamp,
-                ),
-                createTestItem(id = "recent-1", category = ItemCategory.ELECTRONICS).copy(
-                    timestamp = recentTimestamp,
-                ),
-                createTestItem(id = "stale-2", category = ItemCategory.HOME_GOOD).copy(
-                    timestamp = oldTimestamp,
-                ),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "stale-1", category = ItemCategory.FASHION).copy(
+                        timestamp = oldTimestamp,
+                    ),
+                    createTestItem(id = "recent-1", category = ItemCategory.ELECTRONICS).copy(
+                        timestamp = recentTimestamp,
+                    ),
+                    createTestItem(id = "stale-2", category = ItemCategory.HOME_GOOD).copy(
+                        timestamp = oldTimestamp,
+                    ),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -896,10 +914,11 @@ class ItemsStateManagerTest {
         runTest {
             // Arrange
             val manager = createManager()
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -916,11 +935,12 @@ class ItemsStateManagerTest {
         runTest {
             // Arrange
             val manager = createManager()
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                    createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -939,10 +959,11 @@ class ItemsStateManagerTest {
             val manager = createManager()
             advanceUntilIdle()
 
-            val seedItems = listOf(
-                createTestItem(id = "seed-1", category = ItemCategory.FASHION),
-                createTestItem(id = "seed-2", category = ItemCategory.ELECTRONICS),
-            )
+            val seedItems =
+                listOf(
+                    createTestItem(id = "seed-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "seed-2", category = ItemCategory.ELECTRONICS),
+                )
 
             // Act - Seed the aggregator
             manager.seedFromScannedItems(seedItems)
@@ -962,11 +983,12 @@ class ItemsStateManagerTest {
             val manager = createManager()
 
             // Add items that should merge (same category, same position)
-            val items = listOf(
-                createTestItem(id = "item-1", category = ItemCategory.FASHION),
-                createTestItem(id = "item-2", category = ItemCategory.FASHION),
-                createTestItem(id = "item-3", category = ItemCategory.FASHION),
-            )
+            val items =
+                listOf(
+                    createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-2", category = ItemCategory.FASHION),
+                    createTestItem(id = "item-3", category = ItemCategory.FASHION),
+                )
             manager.addItems(items)
             advanceUntilIdle()
 
@@ -986,17 +1008,27 @@ class ItemsStateManagerTest {
     private fun createTestThumbnailBytes(): ImageRef.Bytes {
         // Create a minimal valid PNG-like byte array for testing
         // Real PNG header + minimal data
-        val testBytes = byteArrayOf(
-            0x89.toByte(), 0x50, 0x4E, 0x47, // PNG signature
-            0x0D, 0x0A, 0x1A, 0x0A,           // PNG signature continued
-            0x00, 0x00, 0x00, 0x0D,           // IHDR chunk length
-            0x49, 0x48, 0x44, 0x52,           // "IHDR"
-            0x00, 0x00, 0x00, 0x01,           // width = 1
-            0x00, 0x00, 0x00, 0x01,           // height = 1
-            0x08, 0x02,                       // bit depth, color type
-            0x00, 0x00, 0x00,                 // compression, filter, interlace
-            0x00, 0x00, 0x00, 0x00,           // CRC placeholder
-        )
+        val testBytes =
+            byteArrayOf(
+                // PNG signature
+                0x89.toByte(), 0x50, 0x4E, 0x47,
+                // PNG signature continued
+                0x0D, 0x0A, 0x1A, 0x0A,
+                // IHDR chunk length
+                0x00, 0x00, 0x00, 0x0D,
+                // "IHDR"
+                0x49, 0x48, 0x44, 0x52,
+                // width = 1
+                0x00, 0x00, 0x00, 0x01,
+                // height = 1
+                0x00, 0x00, 0x00, 0x01,
+                // bit depth, color type
+                0x08, 0x02,
+                // compression, filter, interlace
+                0x00, 0x00, 0x00,
+                // CRC placeholder
+                0x00, 0x00, 0x00, 0x00,
+            )
         return ImageRef.Bytes(
             bytes = testBytes,
             mimeType = "image/png",

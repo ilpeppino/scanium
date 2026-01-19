@@ -15,8 +15,22 @@
     "includeConditionLine": false,
     "includeDisclaimerLine": false
   },
-  "fieldOrdering": ["price", "category", "condition", "brand", "model", "color", "photos"],
-  "requiredFields": ["title", "price", "condition", "category", "photos"],
+  "fieldOrdering": [
+    "price",
+    "category",
+    "condition",
+    "brand",
+    "model",
+    "color",
+    "photos"
+  ],
+  "requiredFields": [
+    "title",
+    "price",
+    "condition",
+    "category",
+    "photos"
+  ],
   "optionalFieldLabels": {
     "price": "Price",
     "category": "Category",

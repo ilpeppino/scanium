@@ -1,8 +1,6 @@
 package com.scanium.app.items
 
-import android.app.Application
 import android.content.Context
-import android.content.res.Configuration
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -10,7 +8,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.util.Locale
 
 /**
  * Unit tests for ItemAttributeLocalizer.
@@ -32,7 +29,6 @@ import java.util.Locale
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class ItemAttributeLocalizerTest {
-
     private lateinit var applicationContext: Context
 
     @Before
@@ -135,10 +131,11 @@ class ItemAttributeLocalizerTest {
     @Test
     fun whenAttributeHasEnglishColor_andLanguageIsItalian_thenDetectsViolation() {
         // Arrange
-        val attributes = mapOf(
-            "color" to "orange",
-            "brand" to "Nike",
-        )
+        val attributes =
+            mapOf(
+                "color" to "orange",
+                "brand" to "Nike",
+            )
 
         // Act
         val violations = ItemAttributeLocalizer.detectEnglishViolations(attributes, "it")
@@ -151,10 +148,11 @@ class ItemAttributeLocalizerTest {
     @Test
     fun whenAttributeHasEnglishMaterial_andLanguageIsGerman_thenDetectsViolation() {
         // Arrange
-        val attributes = mapOf(
-            "material" to "plastic",
-            "size" to "Large",
-        )
+        val attributes =
+            mapOf(
+                "material" to "plastic",
+                "size" to "Large",
+            )
 
         // Act
         val violations = ItemAttributeLocalizer.detectEnglishViolations(attributes, "de")
@@ -167,11 +165,12 @@ class ItemAttributeLocalizerTest {
     @Test
     fun whenAttributeHasMultipleViolations_thenDetectsAll() {
         // Arrange
-        val attributes = mapOf(
-            "color" to "orange",
-            "material" to "plastic",
-            "condition" to "used",
-        )
+        val attributes =
+            mapOf(
+                "color" to "orange",
+                "material" to "plastic",
+                "condition" to "used",
+            )
 
         // Act
         val violations = ItemAttributeLocalizer.detectEnglishViolations(attributes, "fr")
@@ -183,10 +182,11 @@ class ItemAttributeLocalizerTest {
     @Test
     fun whenAttributeHasLocalizedValues_andLanguageIsItalian_thenNoViolation() {
         // Arrange - These are non-English words
-        val attributes = mapOf(
-            "color" to "arancione",
-            "material" to "plastica",
-        )
+        val attributes =
+            mapOf(
+                "color" to "arancione",
+                "material" to "plastica",
+            )
 
         // Act
         val violations = ItemAttributeLocalizer.detectEnglishViolations(attributes, "it")
@@ -198,11 +198,12 @@ class ItemAttributeLocalizerTest {
     @Test
     fun whenLanguageIsEnglish_thenNoViolationCheck() {
         // Arrange - English values are OK when language is English
-        val attributes = mapOf(
-            "color" to "orange",
-            "material" to "plastic",
-            "condition" to "used",
-        )
+        val attributes =
+            mapOf(
+                "color" to "orange",
+                "material" to "plastic",
+                "condition" to "used",
+            )
 
         // Act
         val violations = ItemAttributeLocalizer.detectEnglishViolations(attributes, "en")
@@ -214,9 +215,10 @@ class ItemAttributeLocalizerTest {
     @Test
     fun whenLanguageIsEnUppercase_thenNoViolationCheck() {
         // Arrange - Case insensitive check for language
-        val attributes = mapOf(
-            "color" to "orange",
-        )
+        val attributes =
+            mapOf(
+                "color" to "orange",
+            )
 
         // Act
         val violations = ItemAttributeLocalizer.detectEnglishViolations(attributes, "EN")
@@ -228,11 +230,12 @@ class ItemAttributeLocalizerTest {
     @Test
     fun whenNonConstrainedVocabularyHasEnglishWords_thenNoViolation() {
         // Arrange - Brand and size are not constrained vocabularies
-        val attributes = mapOf(
-            "brand" to "Apple",
-            "size" to "Medium",
-            "model" to "iPhone 15 Pro",
-        )
+        val attributes =
+            mapOf(
+                "brand" to "Apple",
+                "size" to "Medium",
+                "model" to "iPhone 15 Pro",
+            )
 
         // Act
         val violations = ItemAttributeLocalizer.detectEnglishViolations(attributes, "it")
@@ -269,5 +272,4 @@ class ItemAttributeLocalizerTest {
         // Assert
         assertThat(result).isEqualTo("Nike")
     }
-
 }

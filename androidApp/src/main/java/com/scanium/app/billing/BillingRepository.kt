@@ -15,7 +15,9 @@ import kotlinx.coroutines.flow.map
 
 private val Context.billingDataStore: DataStore<Preferences> by preferencesDataStore(name = "billing_prefs")
 
-class BillingRepository(private val context: Context) {
+class BillingRepository(
+    private val context: Context,
+) {
     companion object {
         private val KEY_STATUS = stringPreferencesKey("entitlement_status")
         private val KEY_SOURCE = stringPreferencesKey("entitlement_source")

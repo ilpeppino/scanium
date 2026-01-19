@@ -6,7 +6,9 @@
 ***REMOVED******REMOVED*** Executive Summary
 
 **Root Causes**:
-1. ✅ **FIXED**: Dashboard variable `$status_code` missing `allValue` property, causing "All" selection to not expand to proper regex pattern
+
+1. ✅ **FIXED**: Dashboard variable `$status_code` missing `allValue` property, causing "All"
+   selection to not expand to proper regex pattern
 2. ✅ **Initial Issue**: No ongoing error traffic in the system
 
 **Status**: ✅ All issues resolved
@@ -18,22 +20,28 @@
 
 ***REMOVED******REMOVED******REMOVED*** Additional Root Cause Discovered
 
-After generating error traffic, **only 4xx panels showed data** while other panels remained empty. Investigation revealed:
+After generating error traffic, **only 4xx panels showed data** while other panels remained empty.
+Investigation revealed:
 
 **Problem**: Grafana multi-value variables without `allValue` property don't expand correctly.
 
 When `$status_code` variable is set to "All" (`$__all`), queries like:
+
 ```promql
 sum(increase(scanium_http_requests_total{status_code=~"$status_code"}[1h]))
 ```
 
 Were being expanded to:
+
 ```promql
 sum(increase(scanium_http_requests_total{status_code=~"$__all"}[1h]))
 ```
-This literal `"$__all"` string matches **nothing**, causing all panels using `$status_code` filter to show empty results.
+
+This literal `"$__all"` string matches **nothing**, causing all panels using `$status_code` filter
+to show empty results.
 
 **Solution**: Added `allValue` property to variables:
+
 ```json
 {
   "name": "status_code",
@@ -44,16 +52,19 @@ This literal `"$__all"` string matches **nothing**, causing all panels using `$s
 ```
 
 Now when "All" is selected, queries expand correctly to:
+
 ```promql
 sum(increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h]))
 ```
 
 **Files Changed**:
+
 - `monitoring/grafana/dashboards/backend-errors.json`:
-  - Added `"allValue": "4..|5.."` to `status_code` variable
-  - Added `"allValue": ".*"` to `env` variable
+    - Added `"allValue": "4..|5.."` to `status_code` variable
+    - Added `"allValue": ".*"` to `env` variable
 
 **Panels Fixed**:
+
 - ✅ Total Errors (1h) - now shows all errors (4xx+5xx)
 - ✅ Error Rate (%) - now calculates correctly
 - ✅ Errors by Status Code - now shows breakdown
@@ -62,6 +73,7 @@ sum(increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h]))
 - ✅ Error Rate by Route (Table) - now shows complete data
 
 **Panels Still Empty (Expected)**:
+
 - 5xx Server Errors - shows 0 (no 5xx errors exist) ✓
 - Error Logs panels - no error-level logs in Loki ✓
 - Error Traces - no traces with error status ✓
@@ -74,17 +86,21 @@ sum(increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h]))
 
 **Backend Metric**: `scanium_http_requests_total`
 **Label Schema**:
+
 - `method`: HTTP method (GET, POST, etc.)
 - `route`: Normalized route pattern
 - `status_code`: HTTP status code (200, 404, 401, 500, etc.)
-- Infrastructure labels: `deployment_environment`, `env`, `instance`, `job`, `service_name`, `source`
+- Infrastructure labels: `deployment_environment`, `env`, `instance`, `job`, `service_name`,
+  `source`
 
 **Verification**:
+
 ```bash
 curl -s http://172.23.0.5:8080/metrics | grep scanium_http_requests_total
 ```
 
 Example series:
+
 ```
 scanium_http_requests_total{method="GET",route="/",status_code="200"} 6
 scanium_http_requests_total{method="GET",route="/nonexistent",status_code="404"} 1
@@ -95,6 +111,7 @@ scanium_http_requests_total{method="GET",route="/nonexistent",status_code="404"}
 **Finding**: Error series exist in Mimir but with static values (no recent changes).
 
 **Test Queries**:
+
 ```promql
 ***REMOVED*** Check if metric exists
 scanium_http_requests_total{status_code="404"}
@@ -111,6 +128,7 @@ sum(rate(scanium_http_requests_total{status_code=~"4.."}[5m]))
 **Script**: `howto/monitoring/generate-error-traffic.sh`
 
 Generated 178 requests over 90 seconds (~2 rps):
+
 - **200 OK**: ~37.5% (health, root, config endpoints)
 - **401 Unauthorized**: ~25% (protected endpoints without auth)
 - **404 Not Found**: ~37.5% (nonexistent routes)
@@ -122,23 +140,29 @@ Generated 178 requests over 90 seconds (~2 rps):
 **Tested Queries** (from `backend-errors.json`):
 
 1. **4xx Error Rate**:
+
 ```promql
 sum(rate(scanium_http_requests_total{status_code=~"4.."}[5m]))
 ```
+
 Result: 0.24 req/s ✅
 
 2. **4xx Count (1h)**:
+
 ```promql
 sum(increase(scanium_http_requests_total{status_code=~"4.."}[1h])) or vector(0)
 ```
+
 Result: ~74 errors ✅
 
 3. **Error Ratio**:
+
 ```promql
 sum(rate(scanium_http_requests_total{status_code=~"4.."}[5m]))
 /
 sum(rate(scanium_http_requests_total[5m])) * 100
 ```
+
 Result: ~71.5% ✅
 
 ---
@@ -185,20 +209,20 @@ curl -s "http://127.0.0.1:9009/prometheus/api/v1/query?query=sum(rate(scanium_ht
 All dashboards correctly configured and now showing data:
 
 1. **backend-errors.json** (Errors & Failures)
-   - 4xx/5xx error counts
-   - Error rate trends
-   - Top error routes
-   - Status code breakdown
+    - 4xx/5xx error counts
+    - Error rate trends
+    - Top error routes
+    - Status code breakdown
 
 2. **backend-health.json** (Backend Health)
-   - Error rate percentage
-   - 4xx/5xx rate gauges
+    - Error rate percentage
+    - 4xx/5xx rate gauges
 
 3. **backend-api-performance.json** (API Performance)
-   - 5xx error ratio by route
+    - 5xx error ratio by route
 
 4. **system-overview.json** (RED metrics)
-   - Error rate in RED dashboard
+    - Error rate in RED dashboard
 
 ---
 
@@ -206,8 +230,10 @@ All dashboards correctly configured and now showing data:
 
 ***REMOVED******REMOVED******REMOVED*** ✅ What Was Correct
 
-1. **Backend Instrumentation**: `recordHttpRequest()` in `backend/src/app.ts:113` correctly increments counters for ALL responses including errors
-2. **Metric Labels**: Status codes properly captured as `status_code="404"`, `status_code="401"`, etc.
+1. **Backend Instrumentation**: `recordHttpRequest()` in `backend/src/app.ts:113` correctly
+   increments counters for ALL responses including errors
+2. **Metric Labels**: Status codes properly captured as `status_code="404"`, `status_code="401"`,
+   etc.
 3. **Alloy Scraping**: Metrics successfully scraped and forwarded to Mimir
 4. **Dashboard Queries**: All PromQL queries use correct metric names and label filters
 5. **Grafana Datasources**: Mimir datasource correctly configured at `http://mimir:9009/prometheus`
@@ -215,6 +241,7 @@ All dashboards correctly configured and now showing data:
 ***REMOVED******REMOVED******REMOVED*** ❌ What Was "Wrong"
 
 **Nothing was broken.** The system correctly showed "No data" / zero rates because:
+
 - No errors were occurring in the application
 - `rate()` function requires counter increases over time
 - Static counters (no new errors) legitimately produce zero rates
@@ -233,11 +260,13 @@ Implement periodic health checks that intentionally generate controlled errors:
 ```
 
 **Benefits**:
+
 - Verifies monitoring stack is functioning
 - Keeps error panels "alive" with recent data
 - Detects metric collection failures quickly
 
 **Tradeoffs**:
+
 - Adds noise to metrics
 - May confuse during incident analysis
 - Not recommended for production
@@ -254,6 +283,7 @@ verify metric collection with: curl http://backend:8080/metrics"
 ***REMOVED******REMOVED******REMOVED*** 3. Alerting Strategy
 
 Create alerts for:
+
 - **High error rate**: `rate(scanium_http_requests_total{status_code=~"5.."}[5m]) > 0.1`
 - **Metric collection failure**: `absent_over_time(scanium_http_requests_total[10m])`
 
@@ -261,10 +291,14 @@ Create alerts for:
 
 ***REMOVED******REMOVED*** Lessons Learned
 
-1. **"No data" ≠ "Broken"**: Zero error rates in monitoring are a sign of system health, not monitoring failure
+1. **"No data" ≠ "Broken"**: Zero error rates in monitoring are a sign of system health, not
+   monitoring failure
 2. **Test with Traffic**: Always generate test traffic when validating observability systems
-3. **Rate vs. Instant**: Dashboards using `rate()` require ongoing changes; use `increase()` or instant queries for historical analysis
-4. **Label Consistency**: Both `scanium_http_requests_total` (counter) and `scanium_http_request_duration_ms_bucket` (histogram) share identical labels, enabling flexible queries
+3. **Rate vs. Instant**: Dashboards using `rate()` require ongoing changes; use `increase()` or
+   instant queries for historical analysis
+4. **Label Consistency**: Both `scanium_http_requests_total` (counter) and
+   `scanium_http_request_duration_ms_bucket` (histogram) share identical labels, enabling flexible
+   queries
 
 ---
 
@@ -281,18 +315,21 @@ Create alerts for:
 ***REMOVED******REMOVED*** Appendix: Prometheus Query Patterns
 
 ***REMOVED******REMOVED******REMOVED*** Error Rate (per second)
+
 ```promql
 sum(rate(scanium_http_requests_total{status_code=~"4.."}[5m]))
 sum(rate(scanium_http_requests_total{status_code=~"5.."}[5m]))
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Error Count (absolute over time range)
+
 ```promql
 sum(increase(scanium_http_requests_total{status_code=~"4.."}[1h]))
 sum(increase(scanium_http_requests_total{status_code=~"5.."}[1h]))
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Error Ratio (percentage)
+
 ```promql
 sum(rate(scanium_http_requests_total{status_code=~"[45].."}[5m]))
 /
@@ -300,11 +337,13 @@ sum(rate(scanium_http_requests_total[5m])) * 100
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Top Error Routes
+
 ```promql
 topk(10, sum by (route) (increase(scanium_http_requests_total{status_code=~"[45].."}[1h])))
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Status Code Breakdown
+
 ```promql
 sum by (status_code) (increase(scanium_http_requests_total{status_code=~"[45].."}[1h]))
 ```

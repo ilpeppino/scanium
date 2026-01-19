@@ -1,12 +1,9 @@
 package com.scanium.app.items
 
-import android.content.Context
-import android.net.Uri
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
-import com.scanium.app.items.state.ItemsStateManager
-import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.ml.CropBasedEnricher
 import com.scanium.app.ml.LocalVisionExtractor
 import com.scanium.app.ml.VisionInsightsPrefiller
@@ -21,7 +18,6 @@ import com.scanium.telemetry.facade.Telemetry
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -72,9 +68,10 @@ fun createTestItemsViewModel(
     stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     visionInsightsPrefiller: VisionInsightsPrefiller = NoopVisionInsightsPrefiller.create(),
     cropBasedEnricher: CropBasedEnricher = NoopCropBasedEnricher.create(),
-    settingsRepository: SettingsRepository = mockk<SettingsRepository>(relaxed = true).also {
-        every { it.openItemListAfterScanFlow } returns flowOf(false)
-    },
+    settingsRepository: SettingsRepository =
+        mockk<SettingsRepository>(relaxed = true).also {
+            every { it.openItemListAfterScanFlow } returns flowOf(false)
+        },
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
     mainDispatcher: CoroutineDispatcher = workerDispatcher,

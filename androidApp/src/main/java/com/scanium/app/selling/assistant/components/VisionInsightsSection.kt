@@ -57,16 +57,17 @@ import com.scanium.shared.core.models.items.ItemAttribute
  * | label   | category       | Category          | subcategory       |
  * | *       | (as-is)        | (capitalized)     | key + "2"         |
  */
-private val ATTRIBUTE_DISPLAY_NAMES = mapOf(
-    "color" to "Color",
-    "secondaryColor" to "Secondary Color",
-    "brand" to "Brand",
-    "brand2" to "Alternative Brand",
-    "model" to "Model",
-    "model2" to "Alternative Model",
-    "category" to "Category",
-    "subcategory" to "Subcategory",
-)
+private val ATTRIBUTE_DISPLAY_NAMES =
+    mapOf(
+        "color" to "Color",
+        "secondaryColor" to "Secondary Color",
+        "brand" to "Brand",
+        "brand2" to "Alternative Brand",
+        "model" to "Model",
+        "model2" to "Alternative Model",
+        "category" to "Category",
+        "subcategory" to "Subcategory",
+    )
 
 /**
  * Displays vision analysis results as interactive chips.
@@ -103,22 +104,25 @@ fun VisionInsightsSection(
     val brandAttributes = suggestedAttributes.filter { it.source in listOf("logo", "brand") }
     val labelAttributes = suggestedAttributes.filter { it.source == "label" }
     val ocrAttributes = suggestedAttributes.filter { it.source == "ocr" }
-    val otherAttributes = suggestedAttributes.filter {
-        it.source !in listOf("color", "logo", "brand", "label", "ocr")
-    }
+    val otherAttributes =
+        suggestedAttributes.filter {
+            it.source !in listOf("color", "logo", "brand", "label", "ocr")
+        }
 
     var expandedSection by remember { mutableStateOf<String?>(null) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Header
@@ -295,9 +299,10 @@ private fun CollapsibleAttributeSection(
             if (needsCollapse) {
                 TextButton(
                     onClick = onToggle,
-                    modifier = Modifier.semantics {
-                        contentDescription = if (isExpanded) "Collapse $title" else "Expand $title"
-                    },
+                    modifier =
+                        Modifier.semantics {
+                            contentDescription = if (isExpanded) "Collapse $title" else "Expand $title"
+                        },
                 ) {
                     Text(
                         text = if (isExpanded) "Less" else "+${attributes.size - collapsedThreshold} more",
@@ -341,23 +346,33 @@ private fun VisionAttributeChip(
     onApply: () -> Unit,
     enabled: Boolean,
 ) {
-    val (backgroundColor, borderColor) = when (attribute.confidence) {
-        ConfidenceTier.HIGH -> Pair(
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-        )
-        ConfidenceTier.MED -> Pair(
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
-        )
-        ConfidenceTier.LOW -> Pair(
-            MaterialTheme.colorScheme.surfaceVariant,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-        )
-    }
+    val (backgroundColor, borderColor) =
+        when (attribute.confidence) {
+            ConfidenceTier.HIGH -> {
+                Pair(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                )
+            }
 
-    val displayName = ATTRIBUTE_DISPLAY_NAMES[attribute.key]
-        ?: attribute.key.replaceFirstChar { it.uppercase() }
+            ConfidenceTier.MED -> {
+                Pair(
+                    MaterialTheme.colorScheme.tertiaryContainer,
+                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
+                )
+            }
+
+            ConfidenceTier.LOW -> {
+                Pair(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                )
+            }
+        }
+
+    val displayName =
+        ATTRIBUTE_DISPLAY_NAMES[attribute.key]
+            ?: attribute.key.replaceFirstChar { it.uppercase() }
 
     SuggestionChip(
         onClick = onApply,
@@ -378,15 +393,18 @@ private fun VisionAttributeChip(
                 )
             }
         },
-        colors = SuggestionChipDefaults.suggestionChipColors(
-            containerColor = backgroundColor,
-        ),
-        border = SuggestionChipDefaults.suggestionChipBorder(
-            enabled = enabled,
-            borderColor = borderColor,
-        ),
-        modifier = Modifier.semantics {
-            contentDescription = "Apply $displayName: ${attribute.value}"
-        },
+        colors =
+            SuggestionChipDefaults.suggestionChipColors(
+                containerColor = backgroundColor,
+            ),
+        border =
+            SuggestionChipDefaults.suggestionChipBorder(
+                enabled = enabled,
+                borderColor = borderColor,
+            ),
+        modifier =
+            Modifier.semantics {
+                contentDescription = "Apply $displayName: ${attribute.value}"
+            },
     )
 }

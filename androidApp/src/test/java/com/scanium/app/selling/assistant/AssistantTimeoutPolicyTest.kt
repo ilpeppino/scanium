@@ -13,7 +13,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -24,7 +23,6 @@ import java.util.concurrent.TimeUnit
  */
 @RunWith(RobolectricTestRunner::class)
 class AssistantTimeoutPolicyTest {
-
     private lateinit var mockWebServer: MockWebServer
 
     @Before
@@ -44,18 +42,20 @@ class AssistantTimeoutPolicyTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setBody("""{"content":"Generated content"}""")
-                .setBodyDelay(3, TimeUnit.SECONDS)
+                .setBodyDelay(3, TimeUnit.SECONDS),
         )
 
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.DEFAULT,
-            logStartupPolicy = false
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.DEFAULT,
+                logStartupPolicy = false,
+            )
 
-        val request = Request.Builder()
-            .url(mockWebServer.url("/v1/assist/chat"))
-            .post("""{"message":"test"}""".toRequestBody("application/json".toMediaType()))
-            .build()
+        val request =
+            Request.Builder()
+                .url(mockWebServer.url("/v1/assist/chat"))
+                .post("""{"message":"test"}""".toRequestBody("application/json".toMediaType()))
+                .build()
 
         // Should NOT throw SocketTimeoutException
         val response = client.newCall(request).execute()
@@ -70,18 +70,20 @@ class AssistantTimeoutPolicyTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setBody("""{"success":true,"ocrSnippets":["Nike"]}""")
-                .setBodyDelay(2, TimeUnit.SECONDS)
+                .setBodyDelay(2, TimeUnit.SECONDS),
         )
 
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.VISION,
-            logStartupPolicy = false
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.VISION,
+                logStartupPolicy = false,
+            )
 
-        val request = Request.Builder()
-            .url(mockWebServer.url("/v1/vision/insights"))
-            .post("""{"image":"data"}""".toRequestBody("application/json".toMediaType()))
-            .build()
+        val request =
+            Request.Builder()
+                .url(mockWebServer.url("/v1/vision/insights"))
+                .post("""{"image":"data"}""".toRequestBody("application/json".toMediaType()))
+                .build()
 
         // Should NOT throw SocketTimeoutException
         val response = client.newCall(request).execute()
@@ -103,18 +105,20 @@ class AssistantTimeoutPolicyTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setBody("""{"status":"healthy"}""")
-                .setBodyDelay(2, TimeUnit.SECONDS)
+                .setBodyDelay(2, TimeUnit.SECONDS),
         )
 
-        val client = AssistantOkHttpClientFactory.create(
-            config = AssistantHttpConfig.PREFLIGHT,
-            logStartupPolicy = false
-        )
+        val client =
+            AssistantOkHttpClientFactory.create(
+                config = AssistantHttpConfig.PREFLIGHT,
+                logStartupPolicy = false,
+            )
 
-        val request = Request.Builder()
-            .url(mockWebServer.url("/health"))
-            .get()
-            .build()
+        val request =
+            Request.Builder()
+                .url(mockWebServer.url("/health"))
+                .get()
+                .build()
 
         // Should complete successfully
         val response = client.newCall(request).execute()
@@ -143,12 +147,13 @@ class AssistantTimeoutPolicyTest {
     fun `all timeout configs have consistent values`() {
         // Ensure call timeout is reasonable relative to read timeout
         // Call timeout should be at least as long as read timeout (not necessarily connect + read)
-        val configs = listOf(
-            "DEFAULT" to AssistantHttpConfig.DEFAULT,
-            "PREFLIGHT" to AssistantHttpConfig.PREFLIGHT,
-            "WARMUP" to AssistantHttpConfig.WARMUP,
-            "VISION" to AssistantHttpConfig.VISION
-        )
+        val configs =
+            listOf(
+                "DEFAULT" to AssistantHttpConfig.DEFAULT,
+                "PREFLIGHT" to AssistantHttpConfig.PREFLIGHT,
+                "WARMUP" to AssistantHttpConfig.WARMUP,
+                "VISION" to AssistantHttpConfig.VISION,
+            )
 
         configs.forEach { (name, config) ->
             // Call timeout should be >= read timeout (since read is the longest single phase)

@@ -37,8 +37,8 @@ datasources:
       tracesToLogs:
         ***REMOVED*** Link traces to logs in Loki
         datasourceUid: LOKI
-        tags: ['service.name', 'deployment.environment']
-        mappedTags: [{ key: 'service.name', value: 'service' }]
+        tags: [ 'service.name', 'deployment.environment' ]
+        mappedTags: [ { key: 'service.name', value: 'service' } ]
         mapTagNamesEnabled: false
         spanStartTimeShift: '1h'
         spanEndTimeShift: '1h'
@@ -47,7 +47,7 @@ datasources:
       tracesToMetrics:
         ***REMOVED*** Link traces to metrics in Mimir
         datasourceUid: MIMIR
-        tags: [{ key: 'service.name', value: 'service' }]
+        tags: [ { key: 'service.name', value: 'service' } ]
         queries:
           - name: 'Sample query'
             query: 'sum(rate(tempo_spanmetrics_latency_bucket{$__tags}[5m]))'

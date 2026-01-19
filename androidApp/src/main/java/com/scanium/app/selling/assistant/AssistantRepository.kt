@@ -123,11 +123,12 @@ class AssistantRepositoryFactory(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-internal val ASSISTANT_JSON = Json {
-    ignoreUnknownKeys = true
-    encodeDefaults = true
-    explicitNulls = false  // Don't encode null values for optional fields
-}
+internal val ASSISTANT_JSON =
+    Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        explicitNulls = false // Don't encode null values for optional fields
+    }
 
 internal fun buildAssistantRequestPayload(
     items: List<ItemContextSnapshot>,
@@ -137,19 +138,19 @@ internal fun buildAssistantRequestPayload(
     assistantPrefs: AssistantPrefs?,
     includePricing: Boolean,
     pricingCountryCode: String?,
-): AssistantChatRequest {
-    return AssistantChatRequest(
+): AssistantChatRequest =
+    AssistantChatRequest(
         items = items.map { ItemContextSnapshotDto.fromModel(it) },
         history = history.map { AssistantMessageDto.fromModel(it) },
         message = userMessage,
-        exportProfile = ExportProfileSnapshotDto.fromModel(
-            ExportProfileSnapshot(exportProfile.id, exportProfile.displayName),
-        ),
+        exportProfile =
+            ExportProfileSnapshotDto.fromModel(
+                ExportProfileSnapshot(exportProfile.id, exportProfile.displayName),
+            ),
         assistantPrefs = assistantPrefs?.let { AssistantPrefsDto.fromModel(it) },
         includePricing = includePricing,
         pricingPrefs = pricingCountryCode?.let { PricingPrefsDto(countryCode = it) },
     )
-}
 
 @VisibleForTesting
 internal object AssistantContractCodec {
@@ -162,15 +163,16 @@ internal object AssistantContractCodec {
         includePricing: Boolean,
         pricingCountryCode: String?,
     ): String {
-        val payload = buildAssistantRequestPayload(
-            items = items,
-            history = history,
-            userMessage = userMessage,
-            exportProfile = exportProfile,
-            assistantPrefs = assistantPrefs,
-            includePricing = includePricing,
-            pricingCountryCode = pricingCountryCode,
-        )
+        val payload =
+            buildAssistantRequestPayload(
+                items = items,
+                history = history,
+                userMessage = userMessage,
+                exportProfile = exportProfile,
+                assistantPrefs = assistantPrefs,
+                includePricing = includePricing,
+                pricingCountryCode = pricingCountryCode,
+            )
         return ASSISTANT_JSON.encodeToString(AssistantChatRequest.serializer(), payload)
     }
 
@@ -212,15 +214,16 @@ private class CloudAssistantRepository(
                 )
             }
 
-            val requestPayload = buildAssistantRequestPayload(
-                items = items,
-                history = history,
-                userMessage = userMessage,
-                exportProfile = exportProfile,
-                assistantPrefs = assistantPrefs,
-                includePricing = includePricing,
-                pricingCountryCode = pricingCountryCode,
-            )
+            val requestPayload =
+                buildAssistantRequestPayload(
+                    items = items,
+                    history = history,
+                    userMessage = userMessage,
+                    exportProfile = exportProfile,
+                    assistantPrefs = assistantPrefs,
+                    includePricing = includePricing,
+                    pricingCountryCode = pricingCountryCode,
+                )
 
             val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
             return@withContext api.send(
@@ -252,15 +255,14 @@ internal data class AssistantPrefsDto(
     val verbosity: String? = null,
 ) {
     companion object {
-        fun fromModel(model: AssistantPrefs): AssistantPrefsDto {
-            return AssistantPrefsDto(
+        fun fromModel(model: AssistantPrefs): AssistantPrefsDto =
+            AssistantPrefsDto(
                 language = model.language,
                 tone = model.tone?.name,
                 region = model.region?.name,
                 units = model.units?.name,
                 verbosity = model.verbosity?.name,
             )
-        }
     }
 }
 
@@ -303,9 +305,11 @@ internal data class AssistantChatResponse(
         )
     }
 
-    private fun parseConfidenceTier(tier: String): com.scanium.app.model.ConfidenceTier? {
-        return runCatching { com.scanium.app.model.ConfidenceTier.valueOf(tier) }.getOrNull()
-    }
+    private fun parseConfidenceTier(tier: String): com.scanium.app.model.ConfidenceTier? =
+        runCatching {
+            com.scanium.app.model.ConfidenceTier
+                .valueOf(tier)
+        }.getOrNull()
 }
 
 @Serializable
@@ -316,14 +320,13 @@ internal data class AssistantMessageDto(
     val itemContextIds: List<String> = emptyList(),
 ) {
     companion object {
-        fun fromModel(model: AssistantMessage): AssistantMessageDto {
-            return AssistantMessageDto(
+        fun fromModel(model: AssistantMessage): AssistantMessageDto =
+            AssistantMessageDto(
                 role = model.role.name,
                 content = model.content,
                 timestamp = model.timestamp,
                 itemContextIds = model.itemContextIds,
             )
-        }
     }
 }
 
@@ -352,7 +355,9 @@ internal data class EvidenceBulletDto(
     val type: String,
     val text: String,
 ) {
-    fun toModel() = com.scanium.app.model.EvidenceBullet(type = type, text = text)
+    fun toModel() =
+        com.scanium.app.model
+            .EvidenceBullet(type = type, text = text)
 }
 
 @Serializable
@@ -370,10 +375,11 @@ internal data class SuggestedAttributeDto(
             source = source,
         )
 
-    private fun parseConfidence(tier: String): com.scanium.app.model.ConfidenceTier {
-        return runCatching { com.scanium.app.model.ConfidenceTier.valueOf(tier) }
-            .getOrElse { com.scanium.app.model.ConfidenceTier.LOW }
-    }
+    private fun parseConfidence(tier: String): com.scanium.app.model.ConfidenceTier =
+        runCatching {
+            com.scanium.app.model.ConfidenceTier
+                .valueOf(tier)
+        }.getOrElse { com.scanium.app.model.ConfidenceTier.LOW }
 }
 
 @Serializable
@@ -391,10 +397,11 @@ internal data class SuggestedDraftUpdateDto(
             requiresConfirmation = requiresConfirmation,
         )
 
-    private fun parseConfidence(tier: String): com.scanium.app.model.ConfidenceTier {
-        return runCatching { com.scanium.app.model.ConfidenceTier.valueOf(tier) }
-            .getOrElse { com.scanium.app.model.ConfidenceTier.LOW }
-    }
+    private fun parseConfidence(tier: String): com.scanium.app.model.ConfidenceTier =
+        runCatching {
+            com.scanium.app.model.ConfidenceTier
+                .valueOf(tier)
+        }.getOrElse { com.scanium.app.model.ConfidenceTier.LOW }
 }
 
 @Serializable
@@ -410,8 +417,8 @@ internal data class ItemContextSnapshotDto(
     val exportProfileId: String? = null,
 ) {
     companion object {
-        fun fromModel(model: ItemContextSnapshot): ItemContextSnapshotDto {
-            return ItemContextSnapshotDto(
+        fun fromModel(model: ItemContextSnapshot): ItemContextSnapshotDto =
+            ItemContextSnapshotDto(
                 itemId = model.itemId,
                 title = model.title,
                 description = model.description,
@@ -422,7 +429,6 @@ internal data class ItemContextSnapshotDto(
                 photosCount = model.photosCount,
                 exportProfileId = model.exportProfileId.value,
             )
-        }
     }
 }
 
@@ -434,15 +440,14 @@ internal data class ItemAttributeSnapshotDto(
     val source: String? = null,
 ) {
     companion object {
-        fun fromModel(model: com.scanium.app.model.ItemAttributeSnapshot): ItemAttributeSnapshotDto {
-            return ItemAttributeSnapshotDto(
+        fun fromModel(model: com.scanium.app.model.ItemAttributeSnapshot): ItemAttributeSnapshotDto =
+            ItemAttributeSnapshotDto(
                 key = model.key,
                 value = model.value,
                 confidence = model.confidence,
                 // Map source enum to backend-expected string values
                 source = model.source?.name,
             )
-        }
     }
 }
 
@@ -452,11 +457,10 @@ internal data class ExportProfileSnapshotDto(
     val displayName: String,
 ) {
     companion object {
-        fun fromModel(model: ExportProfileSnapshot): ExportProfileSnapshotDto {
-            return ExportProfileSnapshotDto(
+        fun fromModel(model: ExportProfileSnapshot): ExportProfileSnapshotDto =
+            ExportProfileSnapshotDto(
                 id = model.id.value,
                 displayName = model.displayName,
             )
-        }
     }
 }

@@ -8,7 +8,7 @@ max_line_length = 140
 
 ***REMOVED*** Custom rules
 ***REMOVED*** Disable wildcard import check as they are used extensively in tests and UI
-ij_kotlin_imports_layout = *,java.**,javax.**,kotlin.**,^
+ij_kotlin_imports_layout = *, java.**, javax.**, kotlin.**, ^
 no-wildcard-imports = disabled
 
 ***REMOVED*** Disable function naming check for Composables (PascalCase)

@@ -15,8 +15,22 @@
     "includeConditionLine": true,
     "includeDisclaimerLine": true
   },
-  "fieldOrdering": ["price", "condition", "category", "brand", "model", "color", "photos"],
-  "requiredFields": ["title", "price", "condition", "category", "photos"],
+  "fieldOrdering": [
+    "price",
+    "condition",
+    "category",
+    "brand",
+    "model",
+    "color",
+    "photos"
+  ],
+  "requiredFields": [
+    "title",
+    "price",
+    "condition",
+    "category",
+    "photos"
+  ],
   "optionalFieldLabels": {
     "price": "Prijs",
     "condition": "Conditie",

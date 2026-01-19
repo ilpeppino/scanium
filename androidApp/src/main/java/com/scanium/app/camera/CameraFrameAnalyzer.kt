@@ -127,7 +127,10 @@ internal class CameraFrameAnalyzer(
         return motionScore
     }
 
-    fun updateDocumentCandidateState(candidate: DocumentCandidate?, timestampMs: Long) {
+    fun updateDocumentCandidateState(
+        candidate: DocumentCandidate?,
+        timestampMs: Long,
+    ) {
         val current = getDocumentCandidateState()
         if (candidate != null && candidate.confidence >= DOCUMENT_CANDIDATE_MIN_CONFIDENCE) {
             updateDocumentCandidateState(
@@ -186,7 +189,10 @@ internal class CameraFrameAnalyzer(
                     cachedBitmap =
                         runCatching {
                             val bitmap = imageConverter.toBitmap(imageProxy)
-                            Log.i(TAG, ">>> processImageProxy: [LAZY] Created bitmap ${bitmap.width}x${bitmap.height}, rotation=$rotationDegrees")
+                            Log.i(
+                                TAG,
+                                ">>> processImageProxy: [LAZY] Created bitmap ${bitmap.width}x${bitmap.height}, rotation=$rotationDegrees",
+                            )
                             bitmap
                         }.getOrElse { e ->
                             Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
@@ -199,7 +205,7 @@ internal class CameraFrameAnalyzer(
             val imageBoundsForFiltering = android.graphics.Rect(0, 0, imageProxy.width, imageProxy.height)
 
             when (scanMode) {
-                ScanMode.OBJECT_DETECTION ->
+                ScanMode.OBJECT_DETECTION -> {
                     processObjectDetectionMode(
                         inputImage = inputImage,
                         lazyBitmapProvider = lazyBitmapProvider,
@@ -208,9 +214,15 @@ internal class CameraFrameAnalyzer(
                         edgeInsetRatio = edgeInsetRatio,
                         isScanning = isScanning,
                     )
+                }
 
-                ScanMode.BARCODE -> processBarcodeMode(inputImage, lazyBitmapProvider, onDetectionEvent)
-                ScanMode.DOCUMENT_TEXT -> processDocumentTextMode(inputImage, lazyBitmapProvider, onDetectionEvent)
+                ScanMode.BARCODE -> {
+                    processBarcodeMode(inputImage, lazyBitmapProvider, onDetectionEvent)
+                }
+
+                ScanMode.DOCUMENT_TEXT -> {
+                    processDocumentTextMode(inputImage, lazyBitmapProvider, onDetectionEvent)
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, ">>> processImageProxy: ERROR", e)
@@ -242,8 +254,8 @@ internal class CameraFrameAnalyzer(
         onDetectionEvent: (DetectionEvent) -> Unit,
         edgeInsetRatio: Float,
         isScanning: Boolean,
-    ): Pair<List<ScannedItem>, List<DetectionResult>> {
-        return if (isScanning) {
+    ): Pair<List<ScannedItem>, List<DetectionResult>> =
+        if (isScanning) {
             Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (isScanning=$isScanning)")
             val (items, detections) =
                 processObjectDetectionWithTracking(
@@ -278,7 +290,6 @@ internal class CameraFrameAnalyzer(
             onDetectionEvent(event)
             Pair(response.scannedItems, response.detectionResults)
         }
-    }
 
     private suspend fun processBarcodeMode(
         inputImage: InputImage,
@@ -350,7 +361,9 @@ internal class CameraFrameAnalyzer(
                 SharpnessCalculator.calculateSharpness(bitmap)
             } ?: 0f
 
-        val frameId = com.scanium.app.camera.detection.LiveScanDiagnostics.nextFrameId()
+        val frameId =
+            com.scanium.app.camera.detection.LiveScanDiagnostics
+                .nextFrameId()
         scanDiagnostics.logSharpness(
             frameId = frameId,
             sharpnessScore = frameSharpness,

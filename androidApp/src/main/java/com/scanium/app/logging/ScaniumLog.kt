@@ -60,13 +60,12 @@ object ScaniumLog {
     fun sanitizeBillingMessage(
         responseCode: Int,
         debugMessage: String?,
-    ): String {
-        return if (BuildConfig.DEBUG) {
+    ): String =
+        if (BuildConfig.DEBUG) {
             "code=$responseCode, debug=${debugMessage ?: "[none]"}"
         } else {
             "code=$responseCode"
         }
-    }
 
     /**
      * Sanitizes an HTTP response body for safe logging.
@@ -92,11 +91,20 @@ object ScaniumLog {
                 // Bearer tokens
                 Regex("""[Bb]earer\s+[a-zA-Z0-9._-]+""") to "Bearer [TOKEN]",
                 // API keys (common patterns)
-                Regex("""["\']?(?:api[_-]?key|apikey|x-api-key)["\']?\s*[:=]\s*["\']?[a-zA-Z0-9_-]{16,}["\']?""", RegexOption.IGNORE_CASE) to "[API_KEY]",
+                Regex(
+                    """["\']?(?:api[_-]?key|apikey|x-api-key)["\']?\s*[:=]\s*["\']?[a-zA-Z0-9_-]{16,}["\']?""",
+                    RegexOption.IGNORE_CASE,
+                ) to "[API_KEY]",
                 // Authorization headers
-                Regex("""["\']?(?:authorization|auth)["\']?\s*[:=]\s*["\']?[a-zA-Z0-9._\-/+=]+["\']?""", RegexOption.IGNORE_CASE) to "[AUTH]",
+                Regex(
+                    """["\']?(?:authorization|auth)["\']?\s*[:=]\s*["\']?[a-zA-Z0-9._\-/+=]+["\']?""",
+                    RegexOption.IGNORE_CASE,
+                ) to "[AUTH]",
                 // Session tokens
-                Regex("""["\']?(?:session[_-]?(?:id|token)|sessionid|sessiontoken)["\']?\s*[:=]\s*["\']?[a-zA-Z0-9_-]+["\']?""", RegexOption.IGNORE_CASE) to "[SESSION]",
+                Regex(
+                    """["\']?(?:session[_-]?(?:id|token)|sessionid|sessiontoken)["\']?\s*[:=]\s*["\']?[a-zA-Z0-9_-]+["\']?""",
+                    RegexOption.IGNORE_CASE,
+                ) to "[SESSION]",
                 // Credit card numbers (basic pattern)
                 Regex("""\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b""") to "[CARD]",
                 // Phone numbers (various formats)

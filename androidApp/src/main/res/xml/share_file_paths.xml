@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <cache-path name="listing_share" path="listing_share/" />
-    <cache-path name="exports" path="exports/" />
-    <cache-path name="share_items" path="share_items/" />
-    <cache-path name="camera_captures" path="camera_captures/" />
+    <cache-path
+        name="listing_share"
+        path="listing_share/" />
+    <cache-path
+        name="exports"
+        path="exports/" />
+    <cache-path
+        name="share_items"
+        path="share_items/" />
+    <cache-path
+        name="camera_captures"
+        path="camera_captures/" />
 </paths>

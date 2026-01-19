@@ -29,11 +29,10 @@ object BillingModule {
         @ApplicationContext context: Context,
         billingRepository: BillingRepository,
         @ApplicationScope scope: CoroutineScope,
-    ): BillingProvider {
-        return if (BuildConfig.DEBUG) {
+    ): BillingProvider =
+        if (BuildConfig.DEBUG) {
             FakeBillingProvider(billingRepository)
         } else {
             AndroidBillingProvider(context, billingRepository, scope)
         }
-    }
 }

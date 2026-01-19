@@ -2,7 +2,9 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The Domain Pack system provides a **config-driven, fine-grained category taxonomy** for Scanium that extends beyond the coarse-grained `ItemCategory` enum. This architecture enables multi-tenancy, domain-specific classification, and future integration with CLIP and cloud classifiers.
+The Domain Pack system provides a **config-driven, fine-grained category taxonomy** for Scanium that
+extends beyond the coarse-grained `ItemCategory` enum. This architecture enables multi-tenancy,
+domain-specific classification, and future integration with CLIP and cloud classifiers.
 
 **Status:** ✅ Track A Complete (Foundation)
 **Future Tracks:** Track B (On-Device CLIP), Track C (Cloud Classifier), Track D (Attribute Engine)
@@ -14,23 +16,25 @@ The Domain Pack system provides a **config-driven, fine-grained category taxonom
 ***REMOVED******REMOVED******REMOVED*** What is a Domain Pack?
 
 A **Domain Pack** is a JSON configuration file that defines:
+
 - **Category taxonomy**: Fine-grained categories (e.g., "sofa", "laptop", "running shoes")
 - **Attribute definitions**: Properties to extract (e.g., brand, color, condition)
 - **Extraction methods**: How to extract attributes (OCR, CLIP, barcode, cloud, heuristic)
 - **CLIP prompts**: Text prompts for on-device classification (future use)
 - **Mapping to ItemCategory**: Bridge to existing coarse categories
 
-Example Domain Pack: `home_resale_domain_pack.json` (for second-hand furniture, electronics, clothing)
+Example Domain Pack: `home_resale_domain_pack.json` (for second-hand furniture, electronics,
+clothing)
 
 ***REMOVED******REMOVED******REMOVED*** Why Domain Packs?
 
-| Problem | Solution |
-|---------|----------|
-| Coarse ML Kit categories (5 types) | Fine-grained domain categories (20+ types) |
-| Hardcoded category logic | Config-driven taxonomy (JSON) |
-| Single business domain | Multi-tenancy support (e.g., "home_resale", "retail_inventory") |
-| No attribute extraction | Extensible attribute definitions |
-| Future CLIP/cloud integration | Prompts and extraction methods pre-configured |
+| Problem                            | Solution                                                        |
+|------------------------------------|-----------------------------------------------------------------|
+| Coarse ML Kit categories (5 types) | Fine-grained domain categories (20+ types)                      |
+| Hardcoded category logic           | Config-driven taxonomy (JSON)                                   |
+| Single business domain             | Multi-tenancy support (e.g., "home_resale", "retail_inventory") |
+| No attribute extraction            | Extensible attribute definitions                                |
+| Future CLIP/cloud integration      | Prompts and extraction methods pre-configured                   |
 
 ---
 
@@ -291,30 +295,30 @@ The default pack (`home_resale_domain_pack.json`) contains **23 categories** and
 
 ***REMOVED******REMOVED******REMOVED*** Categories by Group
 
-| Group | Categories | ItemCategory Mapping |
-|-------|-----------|---------------------|
-| **Furniture** | Sofa, Chair, Table, Bookshelf | HOME_GOOD |
-| **Electronics** | Laptop, Monitor, TV, Phone, Tablet, Speaker | ELECTRONICS |
-| **Clothing** | Shoes, Jacket, Bag | FASHION |
-| **Kitchenware** | Pan, Pot, Blender | HOME_GOOD |
-| **Appliances** | Microwave, Vacuum Cleaner | HOME_GOOD |
-| **Toys** | Action Figure, Board Game | UNKNOWN |
-| **Other** | Indoor Plant, Book, Bicycle | PLANT, UNKNOWN, UNKNOWN |
+| Group           | Categories                                  | ItemCategory Mapping    |
+|-----------------|---------------------------------------------|-------------------------|
+| **Furniture**   | Sofa, Chair, Table, Bookshelf               | HOME_GOOD               |
+| **Electronics** | Laptop, Monitor, TV, Phone, Tablet, Speaker | ELECTRONICS             |
+| **Clothing**    | Shoes, Jacket, Bag                          | FASHION                 |
+| **Kitchenware** | Pan, Pot, Blender                           | HOME_GOOD               |
+| **Appliances**  | Microwave, Vacuum Cleaner                   | HOME_GOOD               |
+| **Toys**        | Action Figure, Board Game                   | UNKNOWN                 |
+| **Other**       | Indoor Plant, Book, Bicycle                 | PLANT, UNKNOWN, UNKNOWN |
 
 ***REMOVED******REMOVED******REMOVED*** Attributes
 
-| Attribute | Type | Extraction Method | Applies To |
-|-----------|------|------------------|-----------|
-| `brand` | STRING | OCR | Electronics, Clothing, Appliances |
-| `color` | STRING | CLIP | Furniture, Clothing |
-| `material` | STRING | CLIP | Furniture, Kitchenware |
-| `size` | STRING | HEURISTIC | Clothing, Electronics (TV/Monitor) |
-| `condition` | ENUM | CLOUD | Electronics, Furniture |
-| `model` | STRING | OCR | Electronics |
-| `year` | NUMBER | OCR | Electronics, Bicycle |
-| `sku` | STRING | BARCODE | Books, Board Games |
-| `isbn` | STRING | BARCODE | Books |
-| `plant_type` | STRING | CLIP | Indoor Plant |
+| Attribute    | Type   | Extraction Method | Applies To                         |
+|--------------|--------|-------------------|------------------------------------|
+| `brand`      | STRING | OCR               | Electronics, Clothing, Appliances  |
+| `color`      | STRING | CLIP              | Furniture, Clothing                |
+| `material`   | STRING | CLIP              | Furniture, Kitchenware             |
+| `size`       | STRING | HEURISTIC         | Clothing, Electronics (TV/Monitor) |
+| `condition`  | ENUM   | CLOUD             | Electronics, Furniture             |
+| `model`      | STRING | OCR               | Electronics                        |
+| `year`       | NUMBER | OCR               | Electronics, Bicycle               |
+| `sku`        | STRING | BARCODE           | Books, Board Games                 |
+| `isbn`       | STRING | BARCODE           | Books                              |
+| `plant_type` | STRING | CLIP              | Indoor Plant                       |
 
 ---
 
@@ -325,19 +329,19 @@ The default pack (`home_resale_domain_pack.json`) contains **23 categories** and
 The Domain Pack system is **purely additive** and does not break existing functionality:
 
 1. **ScannedItem**: Added optional `domainCategoryId: String?` field
-   - Existing code continues to use `category: ItemCategory`
-   - New code can optionally populate `domainCategoryId`
+    - Existing code continues to use `category: ItemCategory`
+    - New code can optionally populate `domainCategoryId`
 
 2. **ItemsViewModel**: No changes required
-   - Continues to work with `ItemCategory`
-   - Future: Could use `domainCategoryId` for richer UI
+    - Continues to work with `ItemCategory`
+    - Future: Could use `domainCategoryId` for richer UI
 
 3. **PricingEngine**: No changes required
-   - Continues to use `ItemCategory` for pricing
-   - Future: Could use fine-grained categories for more accurate prices
+    - Continues to use `ItemCategory` for pricing
+    - Future: Could use fine-grained categories for more accurate prices
 
 4. **ObjectDetectorClient**: No changes in Track A
-   - Future Tracks (B/C) will integrate CLIP/cloud here
+    - Future Tracks (B/C) will integrate CLIP/cloud here
 
 ***REMOVED******REMOVED******REMOVED*** Initialization
 
@@ -357,35 +361,35 @@ This loads the pack asynchronously on first access (lazy initialization).
 **61 tests added** across 5 test files:
 
 1. **DomainPackTest.kt** (10 tests)
-   - JSON serialization/deserialization
-   - Helper methods (getEnabledCategories, getCategoryById, etc.)
-   - Priority sorting
-   - Filtering logic
+    - JSON serialization/deserialization
+    - Helper methods (getEnabledCategories, getCategoryById, etc.)
+    - Priority sorting
+    - Filtering logic
 
 2. **LocalDomainPackRepositoryTest.kt** (14 tests)
-   - Loading from res/raw
-   - Caching behavior
-   - Validation (category IDs, itemCategoryName, prompts)
-   - Attribute referential integrity
+    - Loading from res/raw
+    - Caching behavior
+    - Validation (category IDs, itemCategoryName, prompts)
+    - Attribute referential integrity
 
 3. **CategoryMapperTest.kt** (11 tests)
-   - Valid enum mapping
-   - Invalid name handling
-   - Case sensitivity
-   - Default fallback
+    - Valid enum mapping
+    - Invalid name handling
+    - Case sensitivity
+    - Default fallback
 
 4. **BasicCategoryEngineTest.kt** (16 tests)
-   - ML Kit label matching
-   - Case insensitivity
-   - Priority-based selection
-   - Disabled category filtering
-   - Candidate scoring
+    - ML Kit label matching
+    - Case insensitivity
+    - Priority-based selection
+    - Disabled category filtering
+    - Candidate scoring
 
 5. **DomainPackProviderTest.kt** (10 tests)
-   - Singleton initialization
-   - Idempotency
-   - Error handling before init
-   - Reset functionality
+    - Singleton initialization
+    - Idempotency
+    - Error handling before init
+    - Reset functionality
 
 ***REMOVED******REMOVED******REMOVED*** Running Tests
 
@@ -502,12 +506,12 @@ class AttributeEngine(
 
 ***REMOVED******REMOVED******REMOVED*** Why JSON Configuration?
 
-| Pros | Cons |
-|------|------|
-| ✅ No code changes for new categories | ❌ Validation needed at runtime |
-| ✅ A/B testing via enable/disable flags | ❌ Larger APK size (negligible) |
-| ✅ Multi-tenancy support | ❌ No compile-time type safety |
-| ✅ Easy to version and audit | ❌ Requires careful schema design |
+| Pros                                   | Cons                             |
+|----------------------------------------|----------------------------------|
+| ✅ No code changes for new categories   | ❌ Validation needed at runtime   |
+| ✅ A/B testing via enable/disable flags | ❌ Larger APK size (negligible)   |
+| ✅ Multi-tenancy support                | ❌ No compile-time type safety    |
+| ✅ Easy to version and audit            | ❌ Requires careful schema design |
 
 **Decision:** JSON wins for flexibility. Validation handled by comprehensive tests.
 
@@ -593,6 +597,7 @@ Future: If "furniture_sofa" doesn't match, try parent "furniture".
 - **Candidate scoring**: <5ms
 
 Future optimizations:
+
 - Build trie for fast prefix matching
 - Cache embedding computations (CLIP)
 
@@ -603,17 +608,20 @@ Future optimizations:
 The Domain Pack system is designed for gradual adoption:
 
 ***REMOVED******REMOVED******REMOVED*** Phase 1: Foundation (Track A - COMPLETE ✅)
+
 - Domain Pack loaded and cached
 - CategoryEngine available but not required
 - Existing code continues using ItemCategory
 
 ***REMOVED******REMOVED******REMOVED*** Phase 2: Optional Usage (Track B/C)
+
 - New detections populate `domainCategoryId`
 - UI can show fine-grained categories: "Laptop" instead of "Electronics"
 - Pricing can optionally use fine-grained categories
 - Existing data (without domainCategoryId) still works
 
 ***REMOVED******REMOVED******REMOVED*** Phase 3: Full Integration (Track D+)
+
 - Attribute extraction based on Domain Pack
 - Rich item details (brand, color, condition, etc.)
 - Domain Pack becomes primary source of truth
@@ -625,25 +633,25 @@ The Domain Pack system is designed for gradual adoption:
 ***REMOVED******REMOVED******REMOVED*** Validation Checks
 
 1. **Load-time validation** (LocalDomainPackRepository):
-   - At least one enabled category
-   - Unique category IDs
-   - Valid `itemCategoryName` values (warns if invalid)
-   - Attributes reference valid category IDs
+    - At least one enabled category
+    - Unique category IDs
+    - Valid `itemCategoryName` values (warns if invalid)
+    - Attributes reference valid category IDs
 
 2. **Fallback behavior**:
-   - Invalid pack → use empty fallback pack (app doesn't crash)
-   - Invalid category mapping → return UNKNOWN ItemCategory
-   - No matching category → return null (caller handles)
+    - Invalid pack → use empty fallback pack (app doesn't crash)
+    - Invalid category mapping → return UNKNOWN ItemCategory
+    - No matching category → return null (caller handles)
 
 ***REMOVED******REMOVED******REMOVED*** Error Scenarios
 
-| Error | Behavior |
-|-------|----------|
-| JSON parse failure | Log error, use fallback pack |
-| Invalid itemCategoryName | Log warning, allow load (graceful degradation) |
-| Duplicate category IDs | Throw DomainPackLoadException |
-| Missing category in attribute | Log warning at load time |
-| CategoryEngine before init | Throw IllegalStateException |
+| Error                         | Behavior                                       |
+|-------------------------------|------------------------------------------------|
+| JSON parse failure            | Log error, use fallback pack                   |
+| Invalid itemCategoryName      | Log warning, allow load (graceful degradation) |
+| Duplicate category IDs        | Throw DomainPackLoadException                  |
+| Missing category in attribute | Log warning at load time                       |
+| CategoryEngine before init    | Throw IllegalStateException                    |
 
 ---
 
@@ -652,38 +660,46 @@ The Domain Pack system is designed for gradual adoption:
 **Track A deliverables:**
 
 ✅ **Configuration-driven category taxonomy**
+
 - JSON schema defined and documented
 - 23 categories + 10 attributes in home_resale pack
 
 ✅ **Data models and repository**
+
 - DomainPack, DomainCategory, DomainAttribute data classes
 - LocalDomainPackRepository with caching and validation
 - DomainPackProvider singleton for app-wide access
 
 ✅ **Category selection engine**
+
 - CategoryEngine interface
 - BasicCategoryEngine with ML Kit label matching
 - CategoryMapper for DomainCategory ↔ ItemCategory
 
 ✅ **Light integration**
+
 - MainActivity initialization
 - ScannedItem.domainCategoryId field (optional)
 - Existing code unmodified and working
 
 ✅ **Comprehensive testing**
+
 - 61 tests across 5 test files
 - 100% test pass rate
 - Covers data models, repository, mapper, engine, provider
 
 ✅ **Documentation**
+
 - This architecture document
 - Inline KDoc comments
 - Usage examples and migration path
 
 **Next steps:**
+
 - Track B: Integrate on-device CLIP model
 - Track C: Add cloud classifier support
 - Track D: Implement attribute extraction engine
 
 **Key architectural win:**
-The system is fully self-contained and CLIP/cloud-agnostic. Future tracks can add advanced classification without breaking Track A foundation.
+The system is fully self-contained and CLIP/cloud-agnostic. Future tracks can add advanced
+classification without breaking Track A foundation.

@@ -1,6 +1,7 @@
 ***REMOVED*** Android 15 Cloud Regression Test Suite
 
-This document describes the cloud regression test suite for Scanium Android, designed to validate camera lifecycle, cloud classification, and share/export functionality on Android 15+ devices.
+This document describes the cloud regression test suite for Scanium Android, designed to validate
+camera lifecycle, cloud classification, and share/export functionality on Android 15+ devices.
 
 ***REMOVED******REMOVED*** Overview
 
@@ -8,23 +9,23 @@ This document describes the cloud regression test suite for Scanium Android, des
 
 The regression test suite validates critical paths that involve cloud backend integration:
 
-| Test | Focus Area | Key Validations |
-|------|-----------|-----------------|
-| **BackendHealthRegressionTest** | Backend connectivity | Health endpoint, cloud mode config, latency |
-| **CameraLifecycleRegressionTest** | Camera pipeline | Frame reception, navigation transitions, no freeze |
-| **CloudClassificationRegressionTest** | Classification API | End-to-end cloud requests, result parsing |
-| **ShareExportRegressionTest** | Export functionality | CSV/ZIP creation, intent configuration |
-| **BackgroundForegroundRegressionTest** | App lifecycle | Background/foreground transitions, camera recovery |
+| Test                                   | Focus Area           | Key Validations                                    |
+|----------------------------------------|----------------------|----------------------------------------------------|
+| **BackendHealthRegressionTest**        | Backend connectivity | Health endpoint, cloud mode config, latency        |
+| **CameraLifecycleRegressionTest**      | Camera pipeline      | Frame reception, navigation transitions, no freeze |
+| **CloudClassificationRegressionTest**  | Classification API   | End-to-end cloud requests, result parsing          |
+| **ShareExportRegressionTest**          | Export functionality | CSV/ZIP creation, intent configuration             |
+| **BackgroundForegroundRegressionTest** | App lifecycle        | Background/foreground transitions, camera recovery |
 
 ***REMOVED******REMOVED******REMOVED*** Regression vs Unit Tests
 
-| Aspect | Unit Tests | Regression Tests |
-|--------|-----------|------------------|
-| **Scope** | Single class/function | End-to-end feature flows |
-| **Dependencies** | Mocked/faked | Real backend required |
-| **Speed** | Fast (ms) | Slower (seconds) |
-| **Environment** | JVM/Robolectric | Physical device recommended |
-| **Data** | Static fixtures | Generated at runtime |
+| Aspect           | Unit Tests            | Regression Tests            |
+|------------------|-----------------------|-----------------------------|
+| **Scope**        | Single class/function | End-to-end feature flows    |
+| **Dependencies** | Mocked/faked          | Real backend required       |
+| **Speed**        | Fast (ms)             | Slower (seconds)            |
+| **Environment**  | JVM/Robolectric       | Physical device recommended |
+| **Data**         | Static fixtures       | Generated at runtime        |
 
 ---
 
@@ -33,7 +34,8 @@ The regression test suite validates critical paths that involve cloud backend in
 ***REMOVED******REMOVED******REMOVED*** Prerequisites
 
 1. **Cloud Backend**: Tests require a running backend with the `/health` endpoint
-2. **Physical Device**: Android 15 device recommended (emulator may work but less reliable for camera tests)
+2. **Physical Device**: Android 15 device recommended (emulator may work but less reliable for
+   camera tests)
 3. **Permissions**: Camera permission must be grantable
 
 ***REMOVED******REMOVED******REMOVED*** Method 1: Instrumentation Arguments (Recommended)
@@ -99,11 +101,11 @@ Then run:
 
 ***REMOVED******REMOVED******REMOVED*** Compatibility Notes
 
-| API Level | Support Level | Notes |
-|-----------|--------------|-------|
-| 35+ (Android 15) | ✅ Full | Primary target, all features tested |
-| 30-34 (Android 11-14) | ✅ Full | Fully compatible |
-| 24-29 (Android 7-10) | ⚠️ Partial | Camera tests may be flaky on older devices |
+| API Level             | Support Level | Notes                                      |
+|-----------------------|---------------|--------------------------------------------|
+| 35+ (Android 15)      | ✅ Full        | Primary target, all features tested        |
+| 30-34 (Android 11-14) | ✅ Full        | Fully compatible                           |
+| 24-29 (Android 7-10)  | ⚠️ Partial    | Camera tests may be flaky on older devices |
 
 ***REMOVED******REMOVED******REMOVED*** Camera Requirements
 
@@ -120,12 +122,14 @@ Then run:
 **Purpose**: Validate cloud backend is reachable and properly configured.
 
 **What it tests**:
+
 - Backend `/health` endpoint returns HTTP 200
 - Response latency is within acceptable range (<3 seconds)
 - Cloud mode configuration is active
 - Diagnostics state contains valid configuration
 
 **Skip conditions**:
+
 - Backend URL not configured
 - Backend not reachable (network error, timeout)
 
@@ -134,15 +138,18 @@ Then run:
 **Purpose**: Ensure camera pipeline doesn't freeze after navigation or lifecycle transitions.
 
 **What it tests**:
+
 - Camera receives frames after app launch
 - Navigation to Items list and back doesn't freeze camera
 - Multiple navigation cycles don't cause resource leaks
 - Debug overlay (if enabled) shows valid state
 
 **Skip conditions**:
+
 - No camera available on device
 
 **Key metrics observed**:
+
 - `lastFrame` timestamp updates
 - `fps` > 0 when camera active
 - Pipeline status is "OK" (not stalled)
@@ -152,12 +159,14 @@ Then run:
 **Purpose**: Validate cloud classification API works end-to-end without real camera captures.
 
 **What it tests**:
+
 - Classification request reaches backend successfully
 - Backend returns valid classification result
 - Multiple requests complete without error
 - Large bitmaps are handled correctly
 
 **Key approach**:
+
 - Uses generated solid-color bitmaps (no binary test assets)
 - Deterministic inputs for reproducible results
 - Tests HTTP path, not ML accuracy
@@ -167,6 +176,7 @@ Then run:
 **Purpose**: Verify CSV and ZIP exports are created correctly with proper attachments.
 
 **What it tests**:
+
 - CSV export creates valid file with correct columns
 - ZIP export creates archive with `images/` folder and `items.csv`
 - Special characters in labels are properly escaped
@@ -174,6 +184,7 @@ Then run:
 - Exported files are readable
 
 **Key validations**:
+
 - `ACTION_SEND` for single item, `ACTION_SEND_MULTIPLE` for multiple
 - `FLAG_GRANT_READ_URI_PERMISSION` is set
 - MIME types are correct (`text/csv`, `application/zip`, `image/*`)
@@ -183,12 +194,14 @@ Then run:
 **Purpose**: Ensure camera pipeline recovers correctly after app backgrounding.
 
 **What it tests**:
+
 - Camera resumes after `RESUMED` → `CREATED` → `RESUMED` transition
 - Home button press and return doesn't break camera
 - Multiple rapid lifecycle changes don't cause resource leaks
 - Configuration change (rotation) doesn't crash camera
 
 **Methods used**:
+
 - `ActivityScenario.moveToState()` for controlled transitions
 - UiAutomator `pressHome()` for real home button simulation
 - `scenario.recreate()` for configuration changes
@@ -210,17 +223,17 @@ Then run:
    ```
 
 2. **Wrong URL**
-   - Verify URL is correct (include protocol: `https://`)
-   - Check for trailing slashes
+    - Verify URL is correct (include protocol: `https://`)
+    - Check for trailing slashes
 
 3. **Network issues**
-   - Ensure device has network connectivity
-   - Check firewall rules
-   - Verify ngrok tunnel is active (for local dev)
+    - Ensure device has network connectivity
+    - Check firewall rules
+    - Verify ngrok tunnel is active (for local dev)
 
 4. **API key invalid**
-   - Regenerate API key in backend
-   - Verify key is correctly passed
+    - Regenerate API key in backend
+    - Verify key is correctly passed
 
 ***REMOVED******REMOVED******REMOVED*** Permission Prompts
 
@@ -274,11 +287,13 @@ Then run:
 **Symptom**: Tests timeout before completing
 
 **Causes**:
+
 - Backend response too slow
 - Device is slow
 - Too many lifecycle transitions
 
 **Solutions**:
+
 - Increase timeout constants in test classes
 - Use faster device
 - Reduce repeat counts in stress tests
@@ -303,22 +318,22 @@ Instrumentation Arguments
 
 ***REMOVED******REMOVED******REMOVED*** Key Classes
 
-| Class | Purpose |
-|-------|---------|
-| `TestConfigOverride` | Reads and stores test configuration |
-| `BackendHealthGate` | Validates backend health before tests |
-| `RegressionTestConfig` | Entry point for test configuration |
-| `TestSemantics` | Centralized test tag constants |
-| `TestBridge` | Debug-only test utilities (item creation) |
+| Class                  | Purpose                                   |
+|------------------------|-------------------------------------------|
+| `TestConfigOverride`   | Reads and stores test configuration       |
+| `BackendHealthGate`    | Validates backend health before tests     |
+| `RegressionTestConfig` | Entry point for test configuration        |
+| `TestSemantics`        | Centralized test tag constants            |
+| `TestBridge`           | Debug-only test utilities (item creation) |
 
 ***REMOVED******REMOVED******REMOVED*** Test Tag Locations
 
-| Tag | Location | Purpose |
-|-----|----------|---------|
+| Tag                  | Location                   | Purpose                |
+|----------------------|----------------------------|------------------------|
 | `cam_pipeline_debug` | CameraPipelineDebugOverlay | Root overlay container |
-| `cam_status` | CameraPipelineDebugOverlay | Pipeline status text |
-| `cam_last_frame` | CameraPipelineDebugOverlay | Frame timestamp |
-| `cam_fps` | CameraPipelineDebugOverlay | Analysis FPS |
+| `cam_status`         | CameraPipelineDebugOverlay | Pipeline status text   |
+| `cam_last_frame`     | CameraPipelineDebugOverlay | Frame timestamp        |
+| `cam_fps`            | CameraPipelineDebugOverlay | Analysis FPS           |
 
 ---
 

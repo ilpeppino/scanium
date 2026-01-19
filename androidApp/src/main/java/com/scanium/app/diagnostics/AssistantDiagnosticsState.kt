@@ -39,17 +39,26 @@ data class AssistantDiagnosticsState(
         get() =
             when {
                 isChecking -> AssistantReadiness.CHECKING
+
                 prerequisiteState.allSatisfied &&
                     isNetworkConnected &&
                     backendReachable == BackendReachabilityStatus.REACHABLE -> AssistantReadiness.READY
+
                 !isNetworkConnected -> AssistantReadiness.NO_NETWORK
+
                 // Map backend status to appropriate readiness (with accurate messages)
                 backendReachable == BackendReachabilityStatus.UNREACHABLE -> AssistantReadiness.BACKEND_UNREACHABLE
+
                 backendReachable == BackendReachabilityStatus.UNAUTHORIZED -> AssistantReadiness.BACKEND_UNAUTHORIZED
+
                 backendReachable == BackendReachabilityStatus.SERVER_ERROR -> AssistantReadiness.BACKEND_SERVER_ERROR
+
                 backendReachable == BackendReachabilityStatus.NOT_FOUND -> AssistantReadiness.BACKEND_NOT_FOUND
+
                 backendReachable == BackendReachabilityStatus.NOT_CONFIGURED -> AssistantReadiness.BACKEND_NOT_CONFIGURED
+
                 !prerequisiteState.allSatisfied -> AssistantReadiness.PREREQUISITES_NOT_MET
+
                 else -> AssistantReadiness.UNKNOWN
             }
 
@@ -75,20 +84,28 @@ data class AssistantDiagnosticsState(
 enum class BackendReachabilityStatus {
     /** Status not yet checked */
     UNKNOWN,
+
     /** Check in progress */
     CHECKING,
+
     /** Backend responded successfully (200) */
     REACHABLE,
+
     /** Network error - cannot reach backend (DNS, timeout, connection refused, SSL) */
     UNREACHABLE,
+
     /** Backend reached but returned 401/403 - invalid API key or unauthorized */
     UNAUTHORIZED,
+
     /** Backend reached but returned 5xx - server is having issues */
     SERVER_ERROR,
+
     /** Backend reached but returned 404 - wrong endpoint or route */
     NOT_FOUND,
+
     /** Backend URL or API key not configured */
     NOT_CONFIGURED,
+
     /** Backend reachable but returned unexpected status */
     DEGRADED,
 }
@@ -102,14 +119,19 @@ enum class AssistantReadiness {
     CHECKING,
     READY,
     NO_NETWORK,
+
     /** Network error - cannot reach backend (DNS, timeout, connection refused) */
     BACKEND_UNREACHABLE,
+
     /** Backend reachable but API key invalid or unauthorized (401/403) */
     BACKEND_UNAUTHORIZED,
+
     /** Backend reachable but server is having issues (5xx) */
     BACKEND_SERVER_ERROR,
+
     /** Backend reachable but endpoint not found (404) */
     BACKEND_NOT_FOUND,
+
     /** Backend URL or API key not configured */
     BACKEND_NOT_CONFIGURED,
     PREREQUISITES_NOT_MET,

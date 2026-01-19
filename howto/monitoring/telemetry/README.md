@@ -5,6 +5,7 @@ This directory contains guides for configuring telemetry collection from various
 ***REMOVED******REMOVED*** Available Guides
 
 ***REMOVED******REMOVED******REMOVED*** [Mobile OTLP Setup](./mobile-otlp-setup.md)
+
 **Source:** Android mobile app
 **Protocol:** OTLP (OpenTelemetry Protocol)
 **Destination:** Alloy → Loki/Mimir/Tempo

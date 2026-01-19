@@ -45,13 +45,12 @@ class CameraViewModel : ViewModel() {
          * Clamps resolution based on FeatureFlags.
          * In beta/prod builds, HIGH is clamped to NORMAL.
          */
-        private fun clampResolution(resolution: CaptureResolution): CaptureResolution {
-            return if (resolution == CaptureResolution.HIGH && !FeatureFlags.allowHighResolution) {
+        private fun clampResolution(resolution: CaptureResolution): CaptureResolution =
+            if (resolution == CaptureResolution.HIGH && !FeatureFlags.allowHighResolution) {
                 CaptureResolution.NORMAL
             } else {
                 resolution
             }
-        }
     }
 
     fun onPermissionStateChanged(

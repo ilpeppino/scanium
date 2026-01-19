@@ -119,11 +119,13 @@ class CloudClassificationRegressionTest {
                     assertThat(result.label).isNotNull()
                     assertThat(result.confidence).isGreaterThan(0f)
                 }
+
                 ClassificationStatus.FAILED -> {
                     // Backend returned an error - still a valid test result
                     // This can happen if the backend doesn't recognize the solid color
                     assertThat(result.errorMessage).isNotNull()
                 }
+
                 else -> {
                     // Unexpected status
                     assertThat(result.status).isAnyOf(

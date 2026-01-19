@@ -5,21 +5,23 @@
 
 ***REMOVED******REMOVED*** Quick Summary
 
-| Signal  | Status | Details |
-|---------|--------|---------|
-| **Metrics** | ✅ **WORKING** | 80 series in Mimir, including `scanium-backend` |
-| **Logs** | ✅ **WORKING** | 5 labels in Loki, Pino integrated with OTLP |
-| **Traces** | ✅ **WORKING** | scanium-backend service in Tempo with HTTP traces |
+| Signal      | Status        | Details                                           |
+|-------------|---------------|---------------------------------------------------|
+| **Metrics** | ✅ **WORKING** | 80 series in Mimir, including `scanium-backend`   |
+| **Logs**    | ✅ **WORKING** | 5 labels in Loki, Pino integrated with OTLP       |
+| **Traces**  | ✅ **WORKING** | scanium-backend service in Tempo with HTTP traces |
 
 ***REMOVED******REMOVED*** What's Working
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Metrics (Mimir)
+
 - **80 data series** successfully ingested
 - **Backend metrics** present (`scanium-backend` job)
 - **LGTM stack metrics** present (alloy, loki, mimir, tempo)
 - **Dashboards should show metrics data**
 
 **Verification**:
+
 ```bash
 ./howto/monitoring/scripts/verify-monitoring.sh
 ***REMOVED*** Shows: series_count: 80, jobs: [alloy, loki, mimir, scanium-backend, tempo]
@@ -34,16 +36,17 @@
 **Root Causes Identified**:
 
 1. **Docker log scraping not working**
-   - `loki.source.docker` component configured but `positions.yml` stays empty
-   - Multiple configuration attempts (targets, relabel_rules) all failed silently
-   - Component shows "healthy" but doesn't tail any containers
+    - `loki.source.docker` component configured but `positions.yml` stays empty
+    - Multiple configuration attempts (targets, relabel_rules) all failed silently
+    - Component shows "healthy" but doesn't tail any containers
 
 2. **OTLP logs not integrated with Pino**
-   - Backend uses Pino for application logging (to stdout)
-   - OpenTelemetry LoggerProvider is initialized but not connected to Pino
-   - Pino logs go to Docker stdout only, not to OTLP exporter
+    - Backend uses Pino for application logging (to stdout)
+    - OpenTelemetry LoggerProvider is initialized but not connected to Pino
+    - Pino logs go to Docker stdout only, not to OTLP exporter
 
 **Fix Required**:
+
 ```typescript
 // Option 1: Pino OTLP Transport (recommended)
 import { createWriteStream } from 'pino-opentelemetry-transport'
@@ -64,15 +67,16 @@ const logger = pino(stream)
 **Root Causes Identified**:
 
 1. **Backend OTLP endpoint was `localhost:4318`** (FIXED)
-   - Now correctly set to `http://scanium-alloy:4319`
-   - Backend logs confirm: "Exporting to: http://scanium-alloy:4319"
+    - Now correctly set to `http://scanium-alloy:4319`
+    - Backend logs confirm: "Exporting to: http://scanium-alloy:4319"
 
 2. **Traces not appearing despite instrumentation**
-   - `HttpInstrumentation` and `FastifyInstrumentation` are configured
-   - Should auto-generate traces for HTTP requests
-   - No traces appearing in Tempo after backend restart
+    - `HttpInstrumentation` and `FastifyInstrumentation` are configured
+    - Should auto-generate traces for HTTP requests
+    - No traces appearing in Tempo after backend restart
 
 **Investigation Needed**:
+
 - Verify traces are being generated (check OTLP endpoint /v1/traces)
 - Check if Alloy is forwarding traces to Tempo
 - Verify Tempo is ingesting (check Tempo logs)
@@ -80,30 +84,35 @@ const logger = pino(stream)
 ***REMOVED******REMOVED*** Infrastructure Status
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Alloy (Telemetry Gateway)
+
 - **Status**: Healthy (marked "unhealthy" due to wget healthcheck issue - cosmetic)
 - **OTLP Receivers**:
-  - `:4317` (gRPC) - mobile
-  - `:4318` (HTTP) - mobile
-  - `:4319` (HTTP) - **backend** ✅
+    - `:4317` (gRPC) - mobile
+    - `:4318` (HTTP) - mobile
+    - `:4319` (HTTP) - **backend** ✅
 - **Exporters**: All configured and healthy
-  - Loki: ✅ Ready
-  - Mimir: ✅ Working
-  - Tempo: ✅ Ready
+    - Loki: ✅ Ready
+    - Mimir: ✅ Working
+    - Tempo: ✅ Ready
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Loki (Log Storage)
+
 - **Status**: Healthy and accepting writes
 - **Test**: Manual log ingestion successful
 - **Issue**: No application logs reaching it
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Mimir (Metrics Storage)
+
 - **Status**: Healthy and storing data
 - **Data**: 80 series across 5 jobs
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Tempo (Trace Storage)
+
 - **Status**: Healthy and ready
 - **Issue**: No traces being sent to it
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Grafana
+
 - **Status**: Healthy
 - **Datasources**: All connected (Mimir, Loki, Tempo)
 
@@ -153,6 +162,7 @@ loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
 ***REMOVED******REMOVED******REMOVED*** Environment Variables
 
 **Current** (after fix):
+
 ```bash
 OTEL_EXPORTER_OTLP_ENDPOINT=http://scanium-alloy:4319 ✅
 OTEL_SERVICE_NAME=scanium-backend ✅
@@ -207,17 +217,17 @@ OTEL_ENABLED=true ✅
 ***REMOVED******REMOVED******REMOVED*** Medium-term
 
 1. **Create `verify-ingestion.sh`** for CI/CD:
-   - Fails if Loki has zero labels
-   - Fails if Mimir has only stack series
-   - Fails if Tempo has zero services
+    - Fails if Loki has zero labels
+    - Fails if Mimir has only stack series
+    - Fails if Tempo has zero services
 
 2. **Add meta-monitoring**:
-   - Dashboard showing ingestion rates
-   - Alerts for telemetry pipeline failures
+    - Dashboard showing ingestion rates
+    - Alerts for telemetry pipeline failures
 
 3. **Fix docker log scraping** (nice-to-have):
-   - Debug why `loki.source.docker` positions stays empty
-   - Consider switching to `loki.source.file` with Docker JSON logs
+    - Debug why `loki.source.docker` positions stays empty
+    - Consider switching to `loki.source.file` with Docker JSON logs
 
 ***REMOVED******REMOVED*** Files Created
 
@@ -252,6 +262,8 @@ curl -s http://localhost:3200/api/search/tags | jq
 
 ***REMOVED******REMOVED*** Fixes Applied
 
-1. **Pino OTLP Integration** - Installed `pino-opentelemetry-transport` and configured Pino to send logs to OpenTelemetry LoggerProvider
-2. **Dockerfile Updates** - Added `--legacy-peer-deps` flag and specified `prisma@5` to avoid dependency conflicts
+1. **Pino OTLP Integration** - Installed `pino-opentelemetry-transport` and configured Pino to send
+   logs to OpenTelemetry LoggerProvider
+2. **Dockerfile Updates** - Added `--legacy-peer-deps` flag and specified `prisma@5` to avoid
+   dependency conflicts
 3. **Telemetry Proof Script** - Fixed Tempo service query to correctly parse `.tagValues[]` array

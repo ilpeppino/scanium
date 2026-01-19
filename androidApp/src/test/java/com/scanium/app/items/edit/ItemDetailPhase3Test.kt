@@ -33,16 +33,16 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class ItemDetailPhase3Test {
-
     // ==================== Test A: Attributes and Summary Display ====================
 
     @Test
     fun `item details show summaryText when present`() {
         // Arrange
-        val item = createTestItem().copy(
-            attributesSummaryText = "Brand: Nike\nColor: Black\nCondition: Used (good)",
-            summaryTextUserEdited = false,
-        )
+        val item =
+            createTestItem().copy(
+                attributesSummaryText = "Brand: Nike\nColor: Black\nCondition: Used (good)",
+                summaryTextUserEdited = false,
+            )
 
         // Assert - summary text is present
         assertThat(item.attributesSummaryText).isNotNull()
@@ -53,13 +53,15 @@ class ItemDetailPhase3Test {
     @Test
     fun `detected attributes are built from item attributes`() {
         // Arrange
-        val item = createTestItem().copy(
-            attributes = mapOf(
-                "brand" to ItemAttribute("Nike", 0.9f, "vision-logo"),
-                "color" to ItemAttribute("Black", 0.85f, "vision-color"),
-                "itemType" to ItemAttribute("T-Shirt", 0.7f, "vision-label"),
-            ),
-        )
+        val item =
+            createTestItem().copy(
+                attributes =
+                    mapOf(
+                        "brand" to ItemAttribute("Nike", 0.9f, "vision-logo"),
+                        "color" to ItemAttribute("Black", 0.85f, "vision-color"),
+                        "itemType" to ItemAttribute("T-Shirt", 0.7f, "vision-label"),
+                    ),
+            )
 
         // Act - verify attributes are accessible
         assertThat(item.attributes["brand"]?.value).isEqualTo("Nike")
@@ -74,15 +76,16 @@ class ItemDetailPhase3Test {
     @Test
     fun `vision attributes provide OCR text and logos`() {
         // Arrange
-        val visionAttrs = VisionAttributes(
-            colors = listOf(VisionColor("Black", "***REMOVED***000000", 0.9f)),
-            ocrText = "NIKE\nJust Do It\nSize L",
-            logos = listOf(VisionLogo("Nike", 0.95f)),
-            labels = listOf(VisionLabel("T-shirt", 0.8f)),
-            brandCandidates = listOf("Nike"),
-            modelCandidates = emptyList(),
-            itemType = "T-Shirt",
-        )
+        val visionAttrs =
+            VisionAttributes(
+                colors = listOf(VisionColor("Black", "***REMOVED***000000", 0.9f)),
+                ocrText = "NIKE\nJust Do It\nSize L",
+                logos = listOf(VisionLogo("Nike", 0.95f)),
+                labels = listOf(VisionLabel("T-shirt", 0.8f)),
+                brandCandidates = listOf("Nike"),
+                modelCandidates = emptyList(),
+                itemType = "T-Shirt",
+            )
         val item = createTestItem().copy(visionAttributes = visionAttrs)
 
         // Assert - vision attributes are populated
@@ -95,22 +98,25 @@ class ItemDetailPhase3Test {
     @Test
     fun `summary text is generated from attributes when not set`() {
         // Arrange
-        val item = createTestItem().copy(
-            attributes = mapOf(
-                "brand" to ItemAttribute("Nike", 0.9f, "vision"),
-                "color" to ItemAttribute("Black", 0.85f, "vision"),
-            ),
-            category = ItemCategory.FASHION,
-            condition = ItemCondition.USED,
-        )
+        val item =
+            createTestItem().copy(
+                attributes =
+                    mapOf(
+                        "brand" to ItemAttribute("Nike", 0.9f, "vision"),
+                        "color" to ItemAttribute("Black", 0.85f, "vision"),
+                    ),
+                category = ItemCategory.FASHION,
+                condition = ItemCondition.USED,
+            )
 
         // Act
-        val generatedSummary = AttributeSummaryGenerator.generateSummaryText(
-            attributes = item.attributes,
-            category = item.category,
-            condition = item.condition,
-            includeEmptyFields = true,
-        )
+        val generatedSummary =
+            AttributeSummaryGenerator.generateSummaryText(
+                attributes = item.attributes,
+                category = item.category,
+                condition = item.condition,
+                includeEmptyFields = true,
+            )
 
         // Assert
         assertThat(generatedSummary).contains("Brand: Nike")
@@ -123,16 +129,18 @@ class ItemDetailPhase3Test {
     @Test
     fun `editing summary sets summaryTextUserEdited to true`() {
         // Arrange
-        val item = createTestItem().copy(
-            attributesSummaryText = "Brand: Nike",
-            summaryTextUserEdited = false,
-        )
+        val item =
+            createTestItem().copy(
+                attributesSummaryText = "Brand: Nike",
+                summaryTextUserEdited = false,
+            )
 
         // Act - simulate user edit
-        val editedItem = item.copy(
-            attributesSummaryText = "Brand: Nike (updated by user)",
-            summaryTextUserEdited = true,
-        )
+        val editedItem =
+            item.copy(
+                attributesSummaryText = "Brand: Nike (updated by user)",
+                summaryTextUserEdited = true,
+            )
 
         // Assert
         assertThat(editedItem.summaryTextUserEdited).isTrue()
@@ -143,26 +151,29 @@ class ItemDetailPhase3Test {
     fun `when summaryTextUserEdited is true, enrichment updates attributes but not summaryText`() {
         // Arrange - User has edited the summary
         val originalSummary = "Brand: Adidas (my personal note)"
-        val item = createTestItem().copy(
-            attributesSummaryText = originalSummary,
-            summaryTextUserEdited = true,
-            attributes = mapOf("brand" to ItemAttribute("Adidas", 0.5f, "user")),
-        )
+        val item =
+            createTestItem().copy(
+                attributesSummaryText = originalSummary,
+                summaryTextUserEdited = true,
+                attributes = mapOf("brand" to ItemAttribute("Adidas", 0.5f, "user")),
+            )
 
         // Act - Simulate enrichment returning new brand (Nike detected from logo)
         // In production, this would go through ItemsStateManager which checks summaryTextUserEdited
-        val newAttributes = mapOf(
-            "brand" to ItemAttribute("Nike", 0.95f, "vision-logo"),
-            "color" to ItemAttribute("Black", 0.9f, "vision"),
-        )
+        val newAttributes =
+            mapOf(
+                "brand" to ItemAttribute("Nike", 0.95f, "vision-logo"),
+                "color" to ItemAttribute("Black", 0.9f, "vision"),
+            )
 
         // Simulate merge logic: summaryText preserved, attributes updated for detected
         // detectedAttributes gets the new values for UI reference
-        val enrichedItem = item.copy(
-            attributes = item.attributes + mapOf("color" to newAttributes["color"]!!),
-            // brand NOT updated because user has USER source
-            detectedAttributes = newAttributes,
-        )
+        val enrichedItem =
+            item.copy(
+                attributes = item.attributes + mapOf("color" to newAttributes["color"]!!),
+                // brand NOT updated because user has USER source
+                detectedAttributes = newAttributes,
+            )
 
         // Assert - summaryText should NOT be changed
         assertThat(enrichedItem.attributesSummaryText).isEqualTo(originalSummary)
@@ -175,10 +186,11 @@ class ItemDetailPhase3Test {
     fun `suggestions are detected when user edited text and new attributes arrive`() {
         // Arrange
         val userSummary = "Brand: (missing)\nColor: Blue"
-        val detectedAttrs = mapOf(
-            "brand" to ItemAttribute("Nike", 0.95f, "vision"),
-            "color" to ItemAttribute("Black", 0.9f, "vision"),
-        )
+        val detectedAttrs =
+            mapOf(
+                "brand" to ItemAttribute("Nike", 0.95f, "vision"),
+                "color" to ItemAttribute("Black", 0.9f, "vision"),
+            )
 
         // Act - Check if brand is suggested (missing in summary but detected)
         val summaryLower = userSummary.lowercase()
@@ -197,11 +209,12 @@ class ItemDetailPhase3Test {
     @Test
     fun `enrichmentStatus isEnriching maps to Running UI state`() {
         // Arrange
-        val status = EnrichmentLayerStatus(
-            layerA = LayerState.COMPLETED,
-            layerB = LayerState.IN_PROGRESS,
-            layerC = LayerState.PENDING,
-        )
+        val status =
+            EnrichmentLayerStatus(
+                layerA = LayerState.COMPLETED,
+                layerB = LayerState.IN_PROGRESS,
+                layerC = LayerState.PENDING,
+            )
 
         // Assert
         assertThat(status.isEnriching).isTrue()
@@ -210,11 +223,12 @@ class ItemDetailPhase3Test {
     @Test
     fun `enrichmentStatus isComplete maps to Updated UI state when hasAnyResults`() {
         // Arrange
-        val status = EnrichmentLayerStatus(
-            layerA = LayerState.COMPLETED,
-            layerB = LayerState.COMPLETED,
-            layerC = LayerState.COMPLETED,
-        )
+        val status =
+            EnrichmentLayerStatus(
+                layerA = LayerState.COMPLETED,
+                layerB = LayerState.COMPLETED,
+                layerC = LayerState.COMPLETED,
+            )
 
         // Assert
         assertThat(status.isComplete).isTrue()
@@ -224,11 +238,12 @@ class ItemDetailPhase3Test {
     @Test
     fun `enrichmentStatus with layerB FAILED maps to Error UI state`() {
         // Arrange
-        val status = EnrichmentLayerStatus(
-            layerA = LayerState.COMPLETED,
-            layerB = LayerState.FAILED,
-            layerC = LayerState.SKIPPED,
-        )
+        val status =
+            EnrichmentLayerStatus(
+                layerA = LayerState.COMPLETED,
+                layerB = LayerState.FAILED,
+                layerC = LayerState.SKIPPED,
+            )
 
         // Assert
         assertThat(status.isEnriching).isFalse()
@@ -238,11 +253,12 @@ class ItemDetailPhase3Test {
     @Test
     fun `enrichmentStatus with all PENDING is IDLE`() {
         // Arrange
-        val status = EnrichmentLayerStatus(
-            layerA = LayerState.PENDING,
-            layerB = LayerState.PENDING,
-            layerC = LayerState.PENDING,
-        )
+        val status =
+            EnrichmentLayerStatus(
+                layerA = LayerState.PENDING,
+                layerB = LayerState.PENDING,
+                layerC = LayerState.PENDING,
+            )
 
         // Assert
         assertThat(status.isEnriching).isFalse()
@@ -254,25 +270,28 @@ class ItemDetailPhase3Test {
     @Test
     fun `additionalPhotos list is updated when photo is added`() {
         // Arrange
-        val item = createTestItem().copy(
-            additionalPhotos = emptyList(),
-        )
-        val newPhoto = ItemPhoto(
-            id = "photo-123",
-            uri = "/path/to/photo.jpg",
-            bytes = null,
-            mimeType = "image/jpeg",
-            width = 1024,
-            height = 768,
-            capturedAt = System.currentTimeMillis(),
-            photoHash = null,
-            photoType = PhotoType.CLOSEUP,
-        )
+        val item =
+            createTestItem().copy(
+                additionalPhotos = emptyList(),
+            )
+        val newPhoto =
+            ItemPhoto(
+                id = "photo-123",
+                uri = "/path/to/photo.jpg",
+                bytes = null,
+                mimeType = "image/jpeg",
+                width = 1024,
+                height = 768,
+                capturedAt = System.currentTimeMillis(),
+                photoHash = null,
+                photoType = PhotoType.CLOSEUP,
+            )
 
         // Act
-        val updatedItem = item.copy(
-            additionalPhotos = item.additionalPhotos + newPhoto,
-        )
+        val updatedItem =
+            item.copy(
+                additionalPhotos = item.additionalPhotos + newPhoto,
+            )
 
         // Assert
         assertThat(updatedItem.additionalPhotos).hasSize(1)
@@ -289,9 +308,10 @@ class ItemDetailPhase3Test {
         val photo3 = createTestPhoto("photo-3", PhotoType.CLOSEUP)
 
         // Act
-        val updatedItem = item.copy(
-            additionalPhotos = listOf(photo1, photo2, photo3),
-        )
+        val updatedItem =
+            item.copy(
+                additionalPhotos = listOf(photo1, photo2, photo3),
+            )
 
         // Assert
         assertThat(updatedItem.additionalPhotos).hasSize(3)

@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
     Network Security Configuration for RELEASE builds
 
     Enforces HTTPS-only communication to prevent MITM attacks.

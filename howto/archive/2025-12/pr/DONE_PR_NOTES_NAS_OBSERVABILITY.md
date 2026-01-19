@@ -2,7 +2,9 @@
 
 ***REMOVED******REMOVED*** Summary
 
-This PR adds a **complete observability stack** for local development and NAS deployment using Docker Compose. The stack includes **Grafana, Loki, Tempo, Mimir** (LGTM) plus **Grafana Alloy** as the OTLP receiver and router.
+This PR adds a **complete observability stack** for local development and NAS deployment using
+Docker Compose. The stack includes **Grafana, Loki, Tempo, Mimir** (LGTM) plus **Grafana Alloy** as
+the OTLP receiver and router.
 
 ***REMOVED******REMOVED******REMOVED*** Key Features
 
@@ -68,49 +70,49 @@ monitoring/
 ***REMOVED******REMOVED******REMOVED*** Alloy Configuration
 
 - **`monitoring/alloy/alloy.hcl`**
-  - OTLP HTTP/gRPC receivers
-  - Batch processor
-  - Exporters to Loki/Tempo/Mimir
-  - Retry logic and backpressure handling
+    - OTLP HTTP/gRPC receivers
+    - Batch processor
+    - Exporters to Loki/Tempo/Mimir
+    - Retry logic and backpressure handling
 
 ***REMOVED******REMOVED******REMOVED*** Backend Configurations
 
 - **`monitoring/loki/loki.yaml`**
-  - Single-node mode
-  - 14-day retention
-  - Filesystem storage
-  - 10MB/s ingestion rate
+    - Single-node mode
+    - 14-day retention
+    - Filesystem storage
+    - 10MB/s ingestion rate
 
 - **`monitoring/tempo/tempo.yaml`**
-  - Single-node mode
-  - 7-day retention
-  - OTLP gRPC/HTTP receivers
-  - Metrics generator (span metrics)
+    - Single-node mode
+    - 7-day retention
+    - OTLP gRPC/HTTP receivers
+    - Metrics generator (span metrics)
 
 - **`monitoring/mimir/mimir.yaml`**
-  - All-in-one mode (all components in single process)
-  - 15-day retention
-  - Filesystem storage
-  - 100k samples/sec ingestion
+    - All-in-one mode (all components in single process)
+    - 15-day retention
+    - Filesystem storage
+    - 100k samples/sec ingestion
 
 ***REMOVED******REMOVED******REMOVED*** Grafana Provisioning
 
 - **`monitoring/grafana/provisioning/datasources/datasources.yaml`**
-  - Loki datasource (logs)
-  - Tempo datasource (traces) with trace-to-logs correlation
-  - Mimir datasource (metrics) with exemplar-to-trace links
+    - Loki datasource (logs)
+    - Tempo datasource (traces) with trace-to-logs correlation
+    - Mimir datasource (metrics) with exemplar-to-trace links
 
 ***REMOVED******REMOVED******REMOVED*** Documentation
 
 - **`monitoring/README.md`**
-  - Quick start guide
-  - Smoke test commands
-  - Troubleshooting guide
-  - Performance tuning tips
-  - Backup/restore procedures
+    - Quick start guide
+    - Smoke test commands
+    - Troubleshooting guide
+    - Performance tuning tips
+    - Backup/restore procedures
 
 - **`PR_NOTES_NAS_OBSERVABILITY.md`** (this file)
-  - PR summary and architecture
+    - PR summary and architecture
 
 ---
 
@@ -241,26 +243,26 @@ curl -s http://localhost:3000/api/datasources | jq '.[].name'
 
 ***REMOVED******REMOVED******REMOVED*** Service Ports
 
-| Service | Port | Purpose | Exposed to Host |
-|---------|------|---------|----------------|
-| Grafana | 3000 | Web UI | ✅ Yes |
-| Alloy | 4317 | OTLP gRPC | ✅ Yes |
-| Alloy | 4318 | OTLP HTTP | ✅ Yes |
-| Alloy | 12345 | Alloy UI | ✅ Yes |
-| Loki | 3100 | HTTP API | ✅ Yes (optional) |
-| Tempo | 3200 | HTTP API | ✅ Yes (optional) |
-| Tempo | 4317 | OTLP gRPC | ❌ Internal only |
-| Mimir | 9009 | HTTP API | ✅ Yes (optional) |
+| Service | Port  | Purpose   | Exposed to Host  |
+|---------|-------|-----------|------------------|
+| Grafana | 3000  | Web UI    | ✅ Yes            |
+| Alloy   | 4317  | OTLP gRPC | ✅ Yes            |
+| Alloy   | 4318  | OTLP HTTP | ✅ Yes            |
+| Alloy   | 12345 | Alloy UI  | ✅ Yes            |
+| Loki    | 3100  | HTTP API  | ✅ Yes (optional) |
+| Tempo   | 3200  | HTTP API  | ✅ Yes (optional) |
+| Tempo   | 4317  | OTLP gRPC | ❌ Internal only  |
+| Mimir   | 9009  | HTTP API  | ✅ Yes (optional) |
 
 **Note:** Loki/Tempo/Mimir ports are exposed for debugging but can be removed for production.
 
 ***REMOVED******REMOVED******REMOVED*** Data Retention
 
-| Service | Retention | Configuration File | Setting |
-|---------|-----------|-------------------|---------|
-| Loki | 14 days | `loki/loki.yaml` | `limits_config.retention_period: 336h` |
-| Tempo | 7 days | `tempo/tempo.yaml` | `compactor.compaction.block_retention: 168h` |
-| Mimir | 15 days | `mimir/mimir.yaml` | `limits.compactor_blocks_retention_period: 15d` |
+| Service | Retention | Configuration File | Setting                                         |
+|---------|-----------|--------------------|-------------------------------------------------|
+| Loki    | 14 days   | `loki/loki.yaml`   | `limits_config.retention_period: 336h`          |
+| Tempo   | 7 days    | `tempo/tempo.yaml` | `compactor.compaction.block_retention: 168h`    |
+| Mimir   | 15 days   | `mimir/mimir.yaml` | `limits.compactor_blocks_retention_period: 15d` |
 
 ***REMOVED******REMOVED******REMOVED*** Resource Limits
 
@@ -318,9 +320,9 @@ Then use `http://localhost:4318` in the app config.
 1. Build and install debug APK
 2. Use the app (scan items, navigate)
 3. Check Grafana Explore:
-   - **Logs:** Loki datasource → `{source="scanium-mobile"}`
-   - **Metrics:** Mimir datasource → `{source="scanium-mobile"}`
-   - **Traces:** Tempo datasource → Search by service.name="scanium-mobile"
+    - **Logs:** Loki datasource → `{source="scanium-mobile"}`
+    - **Metrics:** Mimir datasource → `{source="scanium-mobile"}`
+    - **Traces:** Tempo datasource → Search by service.name="scanium-mobile"
 
 ---
 
@@ -357,6 +359,7 @@ See `monitoring/README.md` for comprehensive troubleshooting guide. Common issue
 ***REMOVED******REMOVED******REMOVED*** No Data in Grafana
 
 **Solution:** Check datasource connectivity
+
 ```bash
 docker exec scanium-grafana wget -qO- http://loki:3100/ready
 ```
@@ -364,6 +367,7 @@ docker exec scanium-grafana wget -qO- http://loki:3100/ready
 ***REMOVED******REMOVED******REMOVED*** Alloy Not Receiving OTLP
 
 **Solution:** Test OTLP endpoint
+
 ```bash
 curl -v http://localhost:4318/v1/logs -d '{"resourceLogs":[]}' -H "Content-Type: application/json"
 ```
@@ -371,9 +375,11 @@ curl -v http://localhost:4318/v1/logs -d '{"resourceLogs":[]}' -H "Content-Type:
 ***REMOVED******REMOVED******REMOVED*** Android App Connection Failed
 
 **For Emulator:**
+
 - Use `http://10.0.2.2:4318` (not localhost)
 
 **For Physical Device:**
+
 - Run `adb reverse tcp:4318 tcp:4318`
 - Use `http://localhost:4318`
 
@@ -441,15 +447,15 @@ docker compose up -d
 ***REMOVED******REMOVED******REMOVED*** Potential Future Work
 
 - Add Grafana dashboards for:
-  - App performance (scan latency, ML inference time)
-  - Error rates and types
-  - User behavior analytics
-  - Infrastructure health
+    - App performance (scan latency, ML inference time)
+    - Error rates and types
+    - User behavior analytics
+    - Infrastructure health
 - Add alert rules for:
-  - High error rate
-  - Slow ML inference
-  - API failures
-  - Resource exhaustion
+    - High error rate
+    - Slow ML inference
+    - API failures
+    - Resource exhaustion
 - Integrate with Alertmanager for notifications
 - Add Prometheus for infrastructure metrics
 - Create Helm chart for Kubernetes deployment
@@ -474,6 +480,7 @@ docker compose up -d
 ***REMOVED******REMOVED*** Summary
 
 This PR delivers a **production-quality observability stack** that:
+
 - ✅ Is **easy to deploy** (single docker-compose command)
 - ✅ Is **fully integrated** with Android OTLP export (PR ***REMOVED***5)
 - ✅ Is **well-documented** (README + troubleshooting guide)

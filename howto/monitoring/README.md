@@ -1,6 +1,7 @@
 ***REMOVED*** Scanium Observability Stack
 
-Complete observability infrastructure for Scanium mobile app using the **LGTM stack** (Loki, Grafana, Tempo, Mimir) with **Grafana Alloy** as the OTLP receiver.
+Complete observability infrastructure for Scanium mobile app using the **LGTM stack** (Loki,
+Grafana, Tempo, Mimir) with **Grafana Alloy** as the OTLP receiver.
 
 ***REMOVED******REMOVED*** Architecture
 
@@ -41,33 +42,38 @@ Complete observability infrastructure for Scanium mobile app using the **LGTM st
 
 ***REMOVED******REMOVED*** Components
 
-| Service | Purpose | Ports | Storage |
-|---------|---------|-------|---------|
-| **Grafana** | Visualization & dashboards | 3000 (public) | `./data/grafana` |
-| **Alloy** | OTLP receiver & router | 4317 (gRPC, public), 4318 (HTTP, public), 12345 (UI, localhost) | In-memory |
-| **Loki** | Log aggregation | 3100 (localhost) | `./data/loki` |
-| **Tempo** | Distributed tracing | 3200 (localhost), 4317 (OTLP, internal) | `./data/tempo` |
-| **Mimir** | Metrics storage | 9009 (localhost) | `./data/mimir` |
+| Service     | Purpose                    | Ports                                                           | Storage          |
+|-------------|----------------------------|-----------------------------------------------------------------|------------------|
+| **Grafana** | Visualization & dashboards | 3000 (public)                                                   | `./data/grafana` |
+| **Alloy**   | OTLP receiver & router     | 4317 (gRPC, public), 4318 (HTTP, public), 12345 (UI, localhost) | In-memory        |
+| **Loki**    | Log aggregation            | 3100 (localhost)                                                | `./data/loki`    |
+| **Tempo**   | Distributed tracing        | 3200 (localhost), 4317 (OTLP, internal)                         | `./data/tempo`   |
+| **Mimir**   | Metrics storage            | 9009 (localhost)                                                | `./data/mimir`   |
 
-> **Security Note:** Backend service ports (Loki, Tempo, Mimir, Alloy UI) are bound to localhost (127.0.0.1) only. OTLP ingestion ports (4317, 4318) and Grafana (3000) are publicly accessible for app telemetry.
+> **Security Note:** Backend service ports (Loki, Tempo, Mimir, Alloy UI) are bound to localhost (
+> 127.0.0.1) only. OTLP ingestion ports (4317, 4318) and Grafana (3000) are publicly accessible for
+> app telemetry.
 
 ***REMOVED******REMOVED*** Deployment Options
 
 This documentation covers **local development** deployment. For NAS deployment, see:
 
-- **[deploy/nas/README.md](../deploy/nas/README.md)** - Complete NAS deployment guide (Synology DS418play)
-- **[deploy/nas/compose/docker-compose.nas.monitoring.yml](../deploy/nas/compose/docker-compose.nas.monitoring.yml)** - NAS-optimized compose file
+- **[deploy/nas/README.md](../deploy/nas/README.md)** - Complete NAS deployment guide (Synology
+  DS418play)
+- *
+  *[deploy/nas/compose/docker-compose.nas.monitoring.yml](../deploy/nas/compose/docker-compose.nas.monitoring.yml)
+  ** - NAS-optimized compose file
 
 ***REMOVED******REMOVED******REMOVED*** Key Differences: Local vs NAS
 
-| Aspect | Local Development | NAS Deployment |
-|--------|------------------|----------------|
-| **Grafana Auth** | Anonymous admin (open) | Password required |
-| **Resource Limits** | Unlimited | 1.2GB total (~256MB/service) |
-| **Data Paths** | `./data/` | `/volume1/docker/scanium/` |
-| **Network** | Laptop/desktop | LAN-accessible |
-| **User Permissions** | Current user | Root (`user: "0"`) for NAS volumes |
-| **Performance Tuning** | Default values | [NAS-optimized](../deploy/nas/README.md***REMOVED***nas-performance-tuning) |
+| Aspect                 | Local Development      | NAS Deployment                                                  |
+|------------------------|------------------------|-----------------------------------------------------------------|
+| **Grafana Auth**       | Anonymous admin (open) | Password required                                               |
+| **Resource Limits**    | Unlimited              | 1.2GB total (~256MB/service)                                    |
+| **Data Paths**         | `./data/`              | `/volume1/docker/scanium/`                                      |
+| **Network**            | Laptop/desktop         | LAN-accessible                                                  |
+| **User Permissions**   | Current user           | Root (`user: "0"`) for NAS volumes                              |
+| **Performance Tuning** | Default values         | [NAS-optimized](../deploy/nas/README.md***REMOVED***nas-performance-tuning) |
 
 ***REMOVED******REMOVED*** Network Boundaries
 
@@ -108,16 +114,19 @@ This documentation covers **local development** deployment. For NAS deployment, 
 ***REMOVED******REMOVED******REMOVED*** What NOT to Do (Security)
 
 ⚠️ **NEVER** expose these ports publicly (0.0.0.0):
+
 - **Loki (:3100)** - No authentication, allows arbitrary log injection
 - **Tempo (:3200)** - No authentication, allows trace injection
 - **Mimir (:9009)** - No authentication, allows metric injection/deletion
 - **Alloy UI (:12345)** - Exposes internal configuration
 
 ✅ **Safe to expose to LAN** (for home/trusted networks):
+
 - **Grafana (:3000)** - Has authentication (configure password!)
 - **OTLP (:4317/:4318)** - Ingestion only, no query access
 
 ⚠️ **For internet exposure**, use:
+
 - Cloudflare Tunnel (for Grafana UI only - NOT for OTLP ingestion)
 - VPN for full stack access
 - Reverse proxy with TLS and authentication
@@ -126,10 +135,12 @@ This documentation covers **local development** deployment. For NAS deployment, 
 
 The following DevOps dashboards are provisioned automatically:
 
-1.  **Ops Overview**: Executive summary ("Are we OK?"). Key rates, drop detection, and top errors.
-2.  **Application Health**: Functional correctness. Scan funnel (Started -> Created -> Confirmed), ratios, and mode usage.
-3.  **Performance & Latency**: Regression detection. Inference latency (p50/p95/p99), latency by version, and trace integration.
-4.  **Errors & Failures**: Detailed error analysis. Error rates, top error types, and log drilldowns.
+1. **Ops Overview**: Executive summary ("Are we OK?"). Key rates, drop detection, and top errors.
+2. **Application Health**: Functional correctness. Scan funnel (Started -> Created -> Confirmed),
+   ratios, and mode usage.
+3. **Performance & Latency**: Regression detection. Inference latency (p50/p95/p99), latency by
+   version, and trace integration.
+4. **Errors & Failures**: Detailed error analysis. Error rates, top error types, and log drilldowns.
 
 ***REMOVED******REMOVED*** Quick Start
 
@@ -158,6 +169,7 @@ MONITORING=0 howto/backend/scripts/start-dev.sh
 ```
 
 **What this does:**
+
 1. ✅ Starts backend services (PostgreSQL, API, ngrok)
 2. ✅ Starts monitoring stack (Grafana, Alloy, Loki, Tempo, Mimir)
 3. ✅ Performs health checks on all services
@@ -165,6 +177,7 @@ MONITORING=0 howto/backend/scripts/start-dev.sh
 5. ✅ Handles idempotency (safe to run multiple times)
 
 **Output includes:**
+
 - Grafana dashboard URL (http://localhost:3000)
 - OTLP endpoints for app telemetry (localhost:4317/4318)
 - Backend storage endpoints (Loki, Tempo, Mimir)
@@ -172,6 +185,7 @@ MONITORING=0 howto/backend/scripts/start-dev.sh
 - Management commands for logs, restart, stop
 
 **To stop everything:**
+
 ```bash
 ***REMOVED*** Stop backend + monitoring
 howto/backend/scripts/stop-dev.sh --with-monitoring
@@ -203,6 +217,7 @@ howto/monitoring/scripts/print-urls.sh
 ```
 
 This script provides:
+
 - ✅ Grafana dashboard URL (with LAN IP for mobile testing)
 - ✅ OTLP ingestion endpoints (gRPC + HTTP)
 - ✅ Backend storage endpoints (Loki, Tempo, Mimir)
@@ -218,6 +233,7 @@ docker compose -p scanium-monitoring ps
 ```
 
 Expected output:
+
 ```
 NAME                STATUS              PORTS
 scanium-alloy      running (healthy)   0.0.0.0:4317-4318->4317-4318/tcp, 127.0.0.1:12345->12345/tcp
@@ -238,7 +254,9 @@ Open http://localhost:3000 in your browser.
 > **Note on Grafana Credentials:**
 > - **Local dev (`docker-compose.yml`):** Anonymous admin access enabled. No login required.
 > - **NAS deployment:** Password required (set via `GF_SECURITY_ADMIN_PASSWORD` env var).
-> - **Credential persistence:** Grafana stores the admin user in its SQLite database (`/var/lib/grafana/grafana.db`). After first initialization, credentials are persisted even if env vars change. To reset: delete `data/grafana/grafana.db` and restart.
+> - **Credential persistence:** Grafana stores the admin user in its SQLite database (
+    `/var/lib/grafana/grafana.db`). After first initialization, credentials are persisted even if
+    env vars change. To reset: delete `data/grafana/grafana.db` and restart.
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Stop the Monitoring Stack
 
@@ -286,20 +304,24 @@ adb install -r androidApp/build/outputs/apk/debug/androidApp-debug.apk
 Use the app (scan items, navigate screens) to generate telemetry, then check:
 
 **a) Alloy UI** - http://localhost:12345
+
 - Navigate to "Graph" view
 - Verify OTLP receivers show metrics
 
 **b) Grafana Explore** - http://localhost:3000/explore
+
 - Select "Loki" datasource
 - Run query: `{source="scanium-mobile"}`
 - Should see log entries from the app
 
 **c) Grafana Explore (Metrics)** - http://localhost:3000/explore
+
 - Select "Mimir" datasource
 - Run query: `{source="scanium-mobile"}`
 - Should see metrics
 
 **d) Grafana Explore (Traces)** - http://localhost:3000/explore
+
 - Select "Tempo" datasource
 - Click "Search" tab
 - Filter by service.name = "scanium-mobile"
@@ -335,6 +357,7 @@ curl -X POST http://localhost:4318/v1/logs \
 ```
 
 Verify in Grafana:
+
 ```logql
 {service_name="test-service"} |= "Test log from curl"
 ```
@@ -371,6 +394,7 @@ curl -X POST http://localhost:4318/v1/metrics \
 ```
 
 Verify in Grafana (Mimir datasource):
+
 ```promql
 test_counter{service_name="test-service"}
 ```
@@ -383,6 +407,7 @@ curl -s http://localhost:3000/api/datasources | jq '.[].name, .[].basicAuthUser 
 ```
 
 Expected output:
+
 ```
 "Loki"
 "Tempo"
@@ -464,13 +489,16 @@ docker compose stats
 
 ***REMOVED******REMOVED*** Data Retention
 
-| Service | Retention Period | Configuration |
-|---------|------------------|---------------|
-| **Loki** | 3 days (NAS) / 14 days (dev) | `loki/loki.yaml` → `limits_config.retention_period` |
-| **Tempo** | 7 days | `tempo/tempo.yaml` → `compactor.compaction.block_retention` |
-| **Mimir** | 15 days | `mimir/mimir.yaml` → `limits.compactor_blocks_retention_period` |
+| Service   | Retention Period             | Configuration                                                   |
+|-----------|------------------------------|-----------------------------------------------------------------|
+| **Loki**  | 3 days (NAS) / 14 days (dev) | `loki/loki.yaml` → `limits_config.retention_period`             |
+| **Tempo** | 7 days                       | `tempo/tempo.yaml` → `compactor.compaction.block_retention`     |
+| **Mimir** | 15 days                      | `mimir/mimir.yaml` → `limits.compactor_blocks_retention_period` |
 
-> **Note:** The configurations in `monitoring/` are optimized for NAS deployment (Synology DS418play). For development workstation deployment with more resources, you can increase these values. See [NAS Performance Tuning](../deploy/nas/README.md***REMOVED***nas-performance-tuning) for details on resource-constrained optimizations.
+> **Note:** The configurations in `monitoring/` are optimized for NAS deployment (Synology
+> DS418play). For development workstation deployment with more resources, you can increase these
+> values. See [NAS Performance Tuning](../deploy/nas/README.md***REMOVED***nas-performance-tuning) for details on
+> resource-constrained optimizations.
 
 To change retention, edit the config files and restart:
 
@@ -488,17 +516,20 @@ docker compose restart loki
 **Problem:** Grafana shows no data from datasources
 
 **Check 1:** Verify datasources are configured
+
 ```bash
 ***REMOVED*** Should show 3 datasources
 curl -s http://localhost:3000/api/datasources | jq '. | length'
 ```
 
 **Check 2:** Verify datasources are healthy
+
 ```bash
 curl -s http://localhost:3000/api/datasources | jq '.[] | {name: .name, url: .url}'
 ```
 
 **Check 3:** Test datasource connectivity from Grafana container
+
 ```bash
 docker exec scanium-grafana wget -qO- http://loki:3100/ready
 docker exec scanium-grafana wget -qO- http://tempo:3200/ready
@@ -510,11 +541,13 @@ docker exec scanium-grafana wget -qO- http://mimir:9009/ready
 **Problem:** Alloy shows no incoming OTLP data
 
 **Check 1:** Verify Alloy is listening
+
 ```bash
 docker exec scanium-alloy netstat -tuln | grep 4318
 ```
 
 **Check 2:** Test OTLP endpoint from host
+
 ```bash
 curl -v http://localhost:4318/v1/logs \
   -H "Content-Type: application/json" \
@@ -522,6 +555,7 @@ curl -v http://localhost:4318/v1/logs \
 ```
 
 **Check 3:** View Alloy logs
+
 ```bash
 docker compose logs alloy | grep -i error
 ```
@@ -529,6 +563,7 @@ docker compose logs alloy | grep -i error
 **Check 4:** Enable debug logging
 
 Uncomment the debug exporter in `alloy/alloy.hcl`:
+
 ```hcl
 otelcol.exporter.logging "debug" {
   verbosity = "detailed"
@@ -536,6 +571,7 @@ otelcol.exporter.logging "debug" {
 ```
 
 Restart Alloy:
+
 ```bash
 docker compose restart alloy
 ```
@@ -545,6 +581,7 @@ docker compose restart alloy
 **Problem:** Android app shows connection errors
 
 **For Emulator:**
+
 ```bash
 ***REMOVED*** Test from host (should work)
 curl http://localhost:4318/v1/logs -d '{}' -H "Content-Type: application/json"
@@ -555,6 +592,7 @@ curl http://localhost:4318/v1/logs -d '{}' -H "Content-Type: application/json"
 ```
 
 **For Physical Device:**
+
 ```bash
 ***REMOVED*** Set up port forwarding
 adb reverse tcp:4318 tcp:4318
@@ -571,6 +609,7 @@ adb shell curl http://localhost:4318/v1/logs -d '{}' -H "Content-Type: applicati
 **Problem:** Data directory growing too large
 
 **Check disk usage:**
+
 ```bash
 du -sh data/*
 ```
@@ -578,6 +617,7 @@ du -sh data/*
 **Solution 1:** Reduce retention periods (see Data Retention section)
 
 **Solution 2:** Manually compact data
+
 ```bash
 ***REMOVED*** Compact Loki
 docker exec scanium-loki wget -qO- --post-data='' http://localhost:3100/loki/api/v1/delete
@@ -590,6 +630,7 @@ docker exec scanium-mimir wget -qO- --post-data='' http://localhost:9009/compact
 ```
 
 **Solution 3:** Clean old data
+
 ```bash
 ***REMOVED*** ⚠️ DESTRUCTIVE: Removes all stored data
 docker compose down
@@ -602,6 +643,7 @@ docker compose up -d
 **Problem:** Datasource health checks fail
 
 **Check datasource URLs in container network:**
+
 ```bash
 ***REMOVED*** Grafana should reach other services via internal network
 docker exec scanium-grafana nslookup loki
@@ -610,6 +652,7 @@ docker exec scanium-grafana nslookup mimir
 ```
 
 **Reset datasources:**
+
 ```bash
 ***REMOVED*** Remove Grafana data and restart
 docker compose down
@@ -632,7 +675,8 @@ Datasources will be re-provisioned automatically.
    ***REMOVED*** Values should be > 0 if data is flowing
    ```
 
-2. **Wrong time range:** Grafana defaults to "Last 6 hours". If you just started, select "Last 5 minutes".
+2. **Wrong time range:** Grafana defaults to "Last 6 hours". If you just started, select "Last 5
+   minutes".
 
 3. **Label filter mismatch:** Check your query uses correct labels:
    ```logql
@@ -668,12 +712,12 @@ Datasources will be re-provisioned automatically.
 **Common mistakes:**
 
 1. **Using `localhost` in container configs:**
-   - ❌ `http://localhost:3100` (refers to container's own localhost)
-   - ✅ `http://loki:3100` (uses Docker DNS)
+    - ❌ `http://localhost:3100` (refers to container's own localhost)
+    - ✅ `http://loki:3100` (uses Docker DNS)
 
 2. **Using host IP in containers:**
-   - ❌ `http://192.168.1.100:3100` (may be blocked by Docker network)
-   - ✅ `http://loki:3100` (internal network)
+    - ❌ `http://192.168.1.100:3100` (may be blocked by Docker network)
+    - ✅ `http://loki:3100` (internal network)
 
 3. **Network not shared:**
    ```bash
@@ -682,6 +726,7 @@ Datasources will be re-provisioned automatically.
    ```
 
 **Debugging DNS resolution:**
+
 ```bash
 ***REMOVED*** Test DNS from inside a container
 docker exec scanium-grafana nslookup loki
@@ -696,15 +741,18 @@ docker exec scanium-grafana nslookup mimir
 
 **Problem:** "Invalid username or password" despite correct env vars
 
-**Cause:** Grafana stores credentials in SQLite on first startup. Env var changes don't update stored credentials.
+**Cause:** Grafana stores credentials in SQLite on first startup. Env var changes don't update
+stored credentials.
 
 **Solution 1 - Reset via CLI (preserves data):**
+
 ```bash
 docker exec scanium-grafana grafana-cli admin reset-admin-password newpassword
 docker compose restart grafana
 ```
 
 **Solution 2 - Reset database (loses manual dashboards):**
+
 ```bash
 docker compose down
 rm data/grafana/grafana.db
@@ -716,6 +764,7 @@ See [Grafana Credentials Note](***REMOVED***4-access-grafana) for more details.
 ***REMOVED******REMOVED******REMOVED*** Container Fails to Start
 
 **Check logs:**
+
 ```bash
 docker compose logs <service-name>
 ```
@@ -774,21 +823,23 @@ otelcol.processor.batch "mobile" {
 
 ***REMOVED******REMOVED*** Alerting
 
-Scanium includes baseline alerts for monitoring application health. Alerts are provisioned automatically via Grafana's alerting provisioning system.
+Scanium includes baseline alerts for monitoring application health. Alerts are provisioned
+automatically via Grafana's alerting provisioning system.
 
 ***REMOVED******REMOVED******REMOVED*** Alert Overview
 
-| Alert | Type | Condition | Severity |
-|-------|------|-----------|----------|
-| **Error Rate Spike** | Loki (logs) | > 50 errors/10min (prod) | Critical |
-| **Telemetry Drop** | Loki (logs) | 0 events in 15min (prod) | Critical |
-| **No Scan Sessions** | Loki (logs) | 0 sessions in 30min (prod) | Warning |
-| **Inference Latency** | Mimir (metrics) | p95 > 2000ms (prod) | Warning |
-| **Crash Spike** | Sentry | See Sentry setup below | N/A |
+| Alert                 | Type            | Condition                  | Severity |
+|-----------------------|-----------------|----------------------------|----------|
+| **Error Rate Spike**  | Loki (logs)     | > 50 errors/10min (prod)   | Critical |
+| **Telemetry Drop**    | Loki (logs)     | 0 events in 15min (prod)   | Critical |
+| **No Scan Sessions**  | Loki (logs)     | 0 sessions in 30min (prod) | Warning  |
+| **Inference Latency** | Mimir (metrics) | p95 > 2000ms (prod)        | Warning  |
+| **Crash Spike**       | Sentry          | See Sentry setup below     | N/A      |
 
 ***REMOVED******REMOVED******REMOVED*** Configuring Contact Points
 
-Alerts use placeholder webhook URLs by default. To receive notifications, configure the following environment variables in `docker-compose.yml`:
+Alerts use placeholder webhook URLs by default. To receive notifications, configure the following
+environment variables in `docker-compose.yml`:
 
 ```yaml
 ***REMOVED*** Add to grafana service environment section
@@ -807,27 +858,28 @@ environment:
   - SCANIUM_ALERT_EMAIL=team@example.com
 ```
 
-**Important:** Never commit secrets to the repository. Use environment variables, Docker secrets, or a secret manager.
+**Important:** Never commit secrets to the repository. Use environment variables, Docker secrets, or
+a secret manager.
 
 ***REMOVED******REMOVED******REMOVED*** Notification Routing
 
 Alerts are automatically routed based on the `env` label:
 
-| Environment | Contact Point | Group Wait | Repeat Interval |
-|-------------|---------------|------------|-----------------|
-| `prod` | scanium-high-priority | 10s | 1h |
-| `stage` | scanium-low-priority | 1m | 8h |
-| `dev` | scanium-low-priority | 2m | 24h |
+| Environment | Contact Point         | Group Wait | Repeat Interval |
+|-------------|-----------------------|------------|-----------------|
+| `prod`      | scanium-high-priority | 10s        | 1h              |
+| `stage`     | scanium-low-priority  | 1m         | 8h              |
+| `dev`       | scanium-low-priority  | 2m         | 24h             |
 
 ***REMOVED******REMOVED******REMOVED*** Alert Thresholds
 
 Thresholds are configured in `grafana/provisioning/alerting/rules.yaml`. Default values:
 
-| Alert | Prod | Stage | Dev |
-|-------|------|-------|-----|
-| Error rate (errors/10min) | 50 | 100 | 200 |
-| Telemetry drop (min events) | 1 | N/A | N/A |
-| Inference latency p95 (ms) | 2000 | 3000 | N/A |
+| Alert                       | Prod | Stage | Dev |
+|-----------------------------|------|-------|-----|
+| Error rate (errors/10min)   | 50   | 100   | 200 |
+| Telemetry drop (min events) | 1    | N/A   | N/A |
+| Inference latency p95 (ms)  | 2000 | 3000  | N/A |
 
 To adjust thresholds, edit the `params` values in the rules file.
 
@@ -837,14 +889,15 @@ Crash spike monitoring should be configured directly in Sentry:
 
 1. **Create a Sentry project** for Scanium (if not already done)
 2. **Configure alert rules** in Sentry:
-   - Go to **Alerts → Create Alert Rule**
-   - Select **Issue Alert** for crash grouping
-   - Condition: "Number of events is more than X in Y minutes"
-   - Recommended: > 10 crashes in 10 minutes for production
+    - Go to **Alerts → Create Alert Rule**
+    - Select **Issue Alert** for crash grouping
+    - Condition: "Number of events is more than X in Y minutes"
+    - Recommended: > 10 crashes in 10 minutes for production
 3. **Set up integrations** (Slack, PagerDuty, email) in Sentry settings
 4. **Add Sentry DSN** to the Android app configuration
 
 This approach is preferred because:
+
 - Sentry has richer crash symbolication and grouping
 - Native crash data isn't always forwarded to Grafana
 - Sentry provides better crash-specific context
@@ -949,6 +1002,7 @@ echo "✓ Sent high-latency histogram. Check Mimir for metric, then alert status
 ```
 
 Verify:
+
 ```bash
 ***REMOVED*** Check if metric is ingested
 curl -s 'http://localhost:9009/prometheus/api/v1/query' \
@@ -974,17 +1028,20 @@ To temporarily silence alerts during maintenance:
 ***REMOVED******REMOVED******REMOVED*** Alert Troubleshooting
 
 **Alerts show "Error" state:**
+
 - Check Grafana logs: `docker compose logs grafana | grep -i alert`
 - Verify datasource connectivity in Grafana UI
 - Ensure queries return data in Explore view
 
 **Alerts never fire:**
+
 - Verify alert rule is enabled (not paused)
 - Check "for" duration hasn't been met yet
 - Use Explore to test the query manually
 - Check that labels match notification policy routes
 
 **No notifications received:**
+
 - Verify contact point configuration in UI
 - Check webhook endpoint is accessible from container
 - For email, verify SMTP settings are correct
@@ -992,7 +1049,8 @@ To temporarily silence alerts during maintenance:
 
 ***REMOVED******REMOVED*** Pipeline Self-Observability
 
-The observability stack monitors itself using Prometheus-style metrics scraped by Alloy. This enables dashboards and alerts for the pipeline health.
+The observability stack monitors itself using Prometheus-style metrics scraped by Alloy. This
+enables dashboards and alerts for the pipeline health.
 
 ***REMOVED******REMOVED******REMOVED*** Architecture
 
@@ -1028,14 +1086,15 @@ The observability stack monitors itself using Prometheus-style metrics scraped b
 
 All metrics are available via Prometheus `/metrics` endpoints:
 
-| Service | Endpoint | Binding | Purpose |
-|---------|----------|---------|---------|
-| Alloy | `localhost:12345/metrics` | localhost only | Collector metrics |
-| Loki | `localhost:3100/metrics` | localhost only | Log storage metrics |
-| Tempo | `localhost:3200/metrics` | localhost only | Trace storage metrics |
-| Mimir | `localhost:9009/metrics` | localhost only | Metrics storage metrics |
+| Service | Endpoint                  | Binding        | Purpose                 |
+|---------|---------------------------|----------------|-------------------------|
+| Alloy   | `localhost:12345/metrics` | localhost only | Collector metrics       |
+| Loki    | `localhost:3100/metrics`  | localhost only | Log storage metrics     |
+| Tempo   | `localhost:3200/metrics`  | localhost only | Trace storage metrics   |
+| Mimir   | `localhost:9009/metrics`  | localhost only | Metrics storage metrics |
 
-**Note:** Debug ports are bound to localhost (127.0.0.1) for security. Access from within Docker network uses internal hostnames.
+**Note:** Debug ports are bound to localhost (127.0.0.1) for security. Access from within Docker
+network uses internal hostnames.
 
 ***REMOVED******REMOVED******REMOVED*** Verify Metrics Collection
 
@@ -1080,6 +1139,7 @@ curl -s 'http://localhost:9009/prometheus/api/v1/query' \
 ```
 
 In Grafana Explore (http://localhost:3000/explore):
+
 1. Select **Mimir** datasource
 2. Query: `up{source="pipeline"}`
 3. Should show 4 time series for each service
@@ -1090,48 +1150,49 @@ Pipeline metrics are labeled with `source="pipeline"` to distinguish from app te
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Alloy Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `up{job="alloy"}` | 1 if Alloy is up, 0 if down |
-| `alloy_build_info` | Version and build information |
-| `process_start_time_seconds` | Unix timestamp when Alloy started |
-| `otelcol_receiver_accepted_log_records` | Logs accepted by OTLP receiver |
-| `otelcol_receiver_accepted_metric_points` | Metrics accepted by OTLP receiver |
-| `otelcol_receiver_accepted_spans` | Spans accepted by OTLP receiver |
-| `otelcol_receiver_refused_*` | Records refused (indicates errors) |
-| `otelcol_exporter_sent_*` | Records successfully exported |
-| `otelcol_exporter_send_failed_*` | Export failures (backend issues) |
-| `otelcol_exporter_queue_size` | Current queue size |
-| `otelcol_exporter_queue_capacity` | Maximum queue capacity |
+| Metric                                    | Description                        |
+|-------------------------------------------|------------------------------------|
+| `up{job="alloy"}`                         | 1 if Alloy is up, 0 if down        |
+| `alloy_build_info`                        | Version and build information      |
+| `process_start_time_seconds`              | Unix timestamp when Alloy started  |
+| `otelcol_receiver_accepted_log_records`   | Logs accepted by OTLP receiver     |
+| `otelcol_receiver_accepted_metric_points` | Metrics accepted by OTLP receiver  |
+| `otelcol_receiver_accepted_spans`         | Spans accepted by OTLP receiver    |
+| `otelcol_receiver_refused_*`              | Records refused (indicates errors) |
+| `otelcol_exporter_sent_*`                 | Records successfully exported      |
+| `otelcol_exporter_send_failed_*`          | Export failures (backend issues)   |
+| `otelcol_exporter_queue_size`             | Current queue size                 |
+| `otelcol_exporter_queue_capacity`         | Maximum queue capacity             |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Loki Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `up{job="loki"}` | 1 if Loki is up, 0 if down |
-| `loki_ingester_memory_streams` | Active log streams in memory |
-| `loki_request_duration_seconds_*` | Request latency histogram |
-| `loki_distributor_bytes_received_total` | Total bytes received |
+| Metric                                  | Description                  |
+|-----------------------------------------|------------------------------|
+| `up{job="loki"}`                        | 1 if Loki is up, 0 if down   |
+| `loki_ingester_memory_streams`          | Active log streams in memory |
+| `loki_request_duration_seconds_*`       | Request latency histogram    |
+| `loki_distributor_bytes_received_total` | Total bytes received         |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Tempo Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `up{job="tempo"}` | 1 if Tempo is up, 0 if down |
-| `tempo_ingester_live_traces` | Active traces in ingester |
-| `tempo_request_duration_seconds_*` | Request latency histogram |
+| Metric                             | Description                 |
+|------------------------------------|-----------------------------|
+| `up{job="tempo"}`                  | 1 if Tempo is up, 0 if down |
+| `tempo_ingester_live_traces`       | Active traces in ingester   |
+| `tempo_request_duration_seconds_*` | Request latency histogram   |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Mimir Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `up{job="mimir"}` | 1 if Mimir is up, 0 if down |
-| `cortex_ingester_memory_series` | Active metric series in memory |
-| `cortex_request_duration_seconds_*` | Request latency histogram |
+| Metric                              | Description                    |
+|-------------------------------------|--------------------------------|
+| `up{job="mimir"}`                   | 1 if Mimir is up, 0 if down    |
+| `cortex_ingester_memory_series`     | Active metric series in memory |
+| `cortex_request_duration_seconds_*` | Request latency histogram      |
 
 ***REMOVED******REMOVED******REMOVED*** Pipeline Dashboard
 
-The **Pipeline Health** dashboard (http://localhost:3000/d/scanium-pipeline-health) includes a "Pipeline Self-Observability" section with panels for:
+The **Pipeline Health** dashboard (http://localhost:3000/d/scanium-pipeline-health) includes a "
+Pipeline Self-Observability" section with panels for:
 
 - **Service Status:** UP/DOWN status for all services
 - **Alloy Build Info:** Version information
@@ -1143,19 +1204,20 @@ The **Pipeline Health** dashboard (http://localhost:3000/d/scanium-pipeline-heal
 
 ***REMOVED******REMOVED******REMOVED*** Pipeline Alerts
 
-Alerts are defined in `grafana/provisioning/alerting/rules.yaml` under the "Scanium - Pipeline Health" group:
+Alerts are defined in `grafana/provisioning/alerting/rules.yaml` under the "Scanium - Pipeline
+Health" group:
 
-| Alert | Condition | Severity |
-|-------|-----------|----------|
-| Alloy Down | `up{job="alloy"} == 0` for 2m | Critical |
-| Loki Down | `up{job="loki"} == 0` for 2m | Critical |
-| Tempo Down | `up{job="tempo"} == 0` for 2m | Critical |
-| Mimir Down | `up{job="mimir"} == 0` for 2m | Critical |
-| Log Export Failures | Any failed log exports in 5m | Critical |
+| Alert                  | Condition                       | Severity |
+|------------------------|---------------------------------|----------|
+| Alloy Down             | `up{job="alloy"} == 0` for 2m   | Critical |
+| Loki Down              | `up{job="loki"} == 0` for 2m    | Critical |
+| Tempo Down             | `up{job="tempo"} == 0` for 2m   | Critical |
+| Mimir Down             | `up{job="mimir"} == 0` for 2m   | Critical |
+| Log Export Failures    | Any failed log exports in 5m    | Critical |
 | Metric Export Failures | Any failed metric exports in 5m | Critical |
-| Span Export Failures | Any failed span exports in 5m | Critical |
-| Receiver Refusing Data | Any refused records in 5m | Warning |
-| Queue Backpressure | Queue > 80% capacity for 5m | Warning |
+| Span Export Failures   | Any failed span exports in 5m   | Critical |
+| Receiver Refusing Data | Any refused records in 5m       | Warning  |
+| Queue Backpressure     | Queue > 80% capacity for 5m     | Warning  |
 
 ***REMOVED******REMOVED******REMOVED*** Pipeline Troubleshooting
 
@@ -1301,34 +1363,36 @@ docker compose up -d
 ***REMOVED******REMOVED*** Support
 
 For issues with this observability stack:
+
 1. Check logs: `docker compose logs`
 2. Verify health: Run smoke tests above
 3. Consult troubleshooting guide
 4. Check component docs:
-   - [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
-   - [Grafana Loki](https://grafana.com/docs/loki/latest/)
-   - [Grafana Tempo](https://grafana.com/docs/tempo/latest/)
-   - [Grafana Mimir](https://grafana.com/docs/mimir/latest/)
+    - [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
+    - [Grafana Loki](https://grafana.com/docs/loki/latest/)
+    - [Grafana Tempo](https://grafana.com/docs/tempo/latest/)
+    - [Grafana Mimir](https://grafana.com/docs/mimir/latest/)
 
 ---
 
 ***REMOVED******REMOVED*** Monitoring Stack - Single Source of Truth
 
-This section provides the canonical reference for the monitoring stack configuration. Trust these values when documentation conflicts arise.
+This section provides the canonical reference for the monitoring stack configuration. Trust these
+values when documentation conflicts arise.
 
 ***REMOVED******REMOVED******REMOVED*** Authoritative Configuration Files
 
-| Component | Configuration Source | Notes |
-|-----------|---------------------|-------|
-| **Stack Definition (Local)** | `monitoring/docker-compose.yml` | Local development |
-| **Stack Definition (NAS)** | `deploy/nas/compose/docker-compose.nas.monitoring.yml` | Production NAS |
-| **Alloy Config** | `monitoring/alloy/alloy.hcl` | OTLP receiver & routing |
-| **Loki Config** | `monitoring/loki/loki.yaml` | Log storage |
-| **Tempo Config** | `monitoring/tempo/tempo.yaml` | Trace storage |
-| **Mimir Config** | `monitoring/mimir/mimir.yaml` | Metrics storage |
-| **Grafana Datasources** | `monitoring/grafana/provisioning/datasources/datasources.yaml` | Datasource URLs |
-| **Grafana Dashboards** | `monitoring/grafana/dashboards/*.json` | Pre-built dashboards |
-| **Alert Rules** | `monitoring/grafana/provisioning/alerting/rules.yaml` | Alert definitions |
+| Component                    | Configuration Source                                           | Notes                   |
+|------------------------------|----------------------------------------------------------------|-------------------------|
+| **Stack Definition (Local)** | `monitoring/docker-compose.yml`                                | Local development       |
+| **Stack Definition (NAS)**   | `deploy/nas/compose/docker-compose.nas.monitoring.yml`         | Production NAS          |
+| **Alloy Config**             | `monitoring/alloy/alloy.hcl`                                   | OTLP receiver & routing |
+| **Loki Config**              | `monitoring/loki/loki.yaml`                                    | Log storage             |
+| **Tempo Config**             | `monitoring/tempo/tempo.yaml`                                  | Trace storage           |
+| **Mimir Config**             | `monitoring/mimir/mimir.yaml`                                  | Metrics storage         |
+| **Grafana Datasources**      | `monitoring/grafana/provisioning/datasources/datasources.yaml` | Datasource URLs         |
+| **Grafana Dashboards**       | `monitoring/grafana/dashboards/*.json`                         | Pre-built dashboards    |
+| **Alert Rules**              | `monitoring/grafana/provisioning/alerting/rules.yaml`          | Alert definitions       |
 
 ***REMOVED******REMOVED******REMOVED*** Canonical Service Configuration
 
@@ -1408,7 +1472,9 @@ retention:
 
 ***REMOVED******REMOVED******REMOVED*** Cloudflare Tunnel Note
 
-Cloudflare Tunnel is used **only for Grafana UI exposure** (secure external access to dashboards). It is **NOT** used for OTLP telemetry ingestion. Mobile apps should send telemetry directly to the NAS IP over LAN.
+Cloudflare Tunnel is used **only for Grafana UI exposure** (secure external access to dashboards).
+It is **NOT** used for OTLP telemetry ingestion. Mobile apps should send telemetry directly to the
+NAS IP over LAN.
 
 ***REMOVED******REMOVED******REMOVED*** Quick Verification Commands
 
@@ -1433,9 +1499,9 @@ curl -s 'http://localhost:9009/prometheus/api/v1/query' \
 
 ***REMOVED******REMOVED******REMOVED*** Related Documentation
 
-| Document | Purpose |
-|----------|---------|
-| [deploy/nas/README.md](../deploy/nas/README.md) | NAS deployment guide |
-| [grafana/DASHBOARDS.md](grafana/DASHBOARDS.md) | Dashboard inventory & metrics |
-| [docs/observability/TRIAGE_RUNBOOK.md](../docs/observability/TRIAGE_RUNBOOK.md) | Incident investigation |
-| [docs/observability/SENTRY_ALERTING.md](../docs/observability/SENTRY_ALERTING.md) | Crash reporting integration |
+| Document                                                                          | Purpose                       |
+|-----------------------------------------------------------------------------------|-------------------------------|
+| [deploy/nas/README.md](../deploy/nas/README.md)                                   | NAS deployment guide          |
+| [grafana/DASHBOARDS.md](grafana/DASHBOARDS.md)                                    | Dashboard inventory & metrics |
+| [docs/observability/TRIAGE_RUNBOOK.md](../docs/observability/TRIAGE_RUNBOOK.md)   | Incident investigation        |
+| [docs/observability/SENTRY_ALERTING.md](../docs/observability/SENTRY_ALERTING.md) | Crash reporting integration   |

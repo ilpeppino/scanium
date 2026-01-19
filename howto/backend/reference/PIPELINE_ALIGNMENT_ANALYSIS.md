@@ -2,27 +2,29 @@
 
 ***REMOVED******REMOVED*** Executive Summary
 
-Both pipelines share the SAME downstream processing (`addItemsWithVisionPrefill` → `VisionInsightsPrefiller`), but differ critically in:
+Both pipelines share the SAME downstream processing (`addItemsWithVisionPrefill` →
+`VisionInsightsPrefiller`), but differ critically in:
+
 1. **Frame selection timing** - scanning uses analysis frames, single-photo uses capture moment
 2. **Concurrent extraction limits** - scanning can hit MAX_CONCURRENT_EXTRACTIONS limit
 3. **Tracking pipeline bypass** - scanning mode NEVER uses the quality-gated tracking path
 
 ***REMOVED******REMOVED*** Phase A: Pipeline Comparison Table
 
-| Stage | Single-Photo (Short-Press) | Scanning (Long-Press) | Delta/Mismatch |
-|-------|---------------------------|----------------------|----------------|
-| **1. Trigger** | `onShutterTap` (CameraScreen:756) | `onShutterLongPress` (CameraScreen:856) | Same pattern |
-| **2. Camera Method** | `cameraManager.captureSingleFrame()` | `cameraManager.startScanning()` | Different entry points |
-| **3. Detection Call** | `processImageProxy(useStreamMode=false)` | `processImageProxy(useStreamMode=false)` | **SAME** - both use false! |
-| **4. Detection Path** | `objectDetector.detectObjects()` (lines 1492-1509) | `objectDetector.detectObjects()` (lines 1492-1509) | **SAME** - tracking path NEVER used |
-| **5. Tracking/ROI** | **NONE** | **NONE** (expected: `processObjectDetectionWithTracking`) | **MISSING** - tracking path bypassed |
-| **6. Quality Gating** | **NONE** | **NONE** (expected: LOCKED state requirement) | **MISSING** - no quality gating |
-| **7. High-Res Capture** | `captureHighResImage()` (line 789) | `captureHighResImage()` (line 865) | Same call, different timing |
-| **8. URI Attachment** | `items.map { it.copy(fullImageUri = highResUri) }` | Same | Same |
-| **9. Item Addition** | `addItemsWithVisionPrefill()` (line 823) | `addItemsWithVisionPrefill()` (line 895) | Same function |
-| **10. Vision Prefill** | `VisionInsightsPrefiller.extractAndApply()` | Same | Same |
-| **11. Concurrent Limit** | Rarely hit (single burst) | **OFTEN HIT** (rapid successive detections) | **CRITICAL DIFFERENCE** |
-| **12. Frame Throttling** | None (single frame) | 400-600ms motion-based throttle | Affects frame selection |
+| Stage                    | Single-Photo (Short-Press)                         | Scanning (Long-Press)                                     | Delta/Mismatch                       |
+|--------------------------|----------------------------------------------------|-----------------------------------------------------------|--------------------------------------|
+| **1. Trigger**           | `onShutterTap` (CameraScreen:756)                  | `onShutterLongPress` (CameraScreen:856)                   | Same pattern                         |
+| **2. Camera Method**     | `cameraManager.captureSingleFrame()`               | `cameraManager.startScanning()`                           | Different entry points               |
+| **3. Detection Call**    | `processImageProxy(useStreamMode=false)`           | `processImageProxy(useStreamMode=false)`                  | **SAME** - both use false!           |
+| **4. Detection Path**    | `objectDetector.detectObjects()` (lines 1492-1509) | `objectDetector.detectObjects()` (lines 1492-1509)        | **SAME** - tracking path NEVER used  |
+| **5. Tracking/ROI**      | **NONE**                                           | **NONE** (expected: `processObjectDetectionWithTracking`) | **MISSING** - tracking path bypassed |
+| **6. Quality Gating**    | **NONE**                                           | **NONE** (expected: LOCKED state requirement)             | **MISSING** - no quality gating      |
+| **7. High-Res Capture**  | `captureHighResImage()` (line 789)                 | `captureHighResImage()` (line 865)                        | Same call, different timing          |
+| **8. URI Attachment**    | `items.map { it.copy(fullImageUri = highResUri) }` | Same                                                      | Same                                 |
+| **9. Item Addition**     | `addItemsWithVisionPrefill()` (line 823)           | `addItemsWithVisionPrefill()` (line 895)                  | Same function                        |
+| **10. Vision Prefill**   | `VisionInsightsPrefiller.extractAndApply()`        | Same                                                      | Same                                 |
+| **11. Concurrent Limit** | Rarely hit (single burst)                          | **OFTEN HIT** (rapid successive detections)               | **CRITICAL DIFFERENCE**              |
+| **12. Frame Throttling** | None (single frame)                                | 400-600ms motion-based throttle                           | Affects frame selection              |
 
 ***REMOVED******REMOVED*** Phase B: Root Cause Analysis
 
@@ -31,6 +33,7 @@ Both pipelines share the SAME downstream processing (`addItemsWithVisionPrefill`
 **Location**: `CameraXManager.processImageProxy()` lines 1475-1510
 
 **Problem**: The condition for using the tracking pipeline is:
+
 ```kotlin
 if (useStreamMode && isScanning) {
     // TRACKING PATH - processObjectDetectionWithTracking()
@@ -40,6 +43,7 @@ if (useStreamMode && isScanning) {
 ```
 
 But `startScanning()` passes `useStreamMode = false` (line 837):
+
 ```kotlin
 val (items, detections) = processImageProxy(
     imageProxy = imageProxy,
@@ -50,6 +54,7 @@ val (items, detections) = processImageProxy(
 ```
 
 **Result**: Scanning NEVER uses `processObjectDetectionWithTracking()`, which means:
+
 - No `ObjectTracker.processFrameWithRoi()` for deduplication
 - No `ScanGuidanceManager` quality gating
 - No LOCKED state requirement for optimal capture conditions
@@ -65,7 +70,9 @@ val (items, detections) = processImageProxy(
 private const val MAX_CONCURRENT_EXTRACTIONS = 3
 ```
 
-**Problem**: In scanning mode, multiple items can be detected rapidly across successive frames. Each batch triggers `addItemsWithVisionPrefill()`, which calls `extractAndApply()` for each item. When concurrent extractions exceed 3:
+**Problem**: In scanning mode, multiple items can be detected rapidly across successive frames. Each
+batch triggers `addItemsWithVisionPrefill()`, which calls `extractAndApply()` for each item. When
+concurrent extractions exceed 3:
 
 ```kotlin
 if (inFlightExtractions.size >= MAX_CONCURRENT_EXTRACTIONS) {
@@ -75,6 +82,7 @@ if (inFlightExtractions.size >= MAX_CONCURRENT_EXTRACTIONS) {
 ```
 
 **Result**: Items detected beyond the concurrent limit get NO vision extraction:
+
 - No OCR text
 - No brand detection
 - No color extraction
@@ -87,6 +95,7 @@ if (inFlightExtractions.size >= MAX_CONCURRENT_EXTRACTIONS) {
 **Location**: `CameraScreen.kt` lines 864-895
 
 **Problem**: In scanning mode, each detection batch triggers `scope.launch`:
+
 ```kotlin
 onResult = { items ->
     if (items.isNotEmpty()) {
@@ -100,6 +109,7 @@ onResult = { items ->
 ```
 
 Multiple concurrent coroutines can:
+
 1. Race for `captureHighResImage()` (camera resource contention)
 2. Interleave their `addItemsWithVisionPrefill()` calls
 3. Exhaust the concurrent extraction limit
@@ -111,12 +121,14 @@ Multiple concurrent coroutines can:
 **Location**: `CameraXManager.startScanning()` lines 739-743
 
 **Problem**: Scanning uses motion-based throttling:
+
 ```kotlin
 val motionScore = computeMotionScore(imageProxy)
 val analysisIntervalMs = analysisIntervalMsForMotion(motionScore)
 ```
 
 This means:
+
 - Analysis happens on arbitrary frames meeting throttle criteria
 - Not necessarily the sharpest or best-composed frame
 - High-res capture happens AFTER detection (potentially different scene)
@@ -125,24 +137,26 @@ This means:
 
 ***REMOVED******REMOVED*** Summary of Misalignment
 
-| Issue | Type | Severity | Impact |
-|-------|------|----------|--------|
-| Tracking pipeline bypass | Control-flow | **HIGH** | Missing quality gating, dedup, ROI |
-| Concurrent extraction limit | Control-flow | **HIGH** | Vision prefill skipped for items |
-| Async capture race | UX timing | **MEDIUM** | Interleaved processing, resource contention |
-| Frame selection | Data | **LOW** | Suboptimal frame for detection |
+| Issue                       | Type         | Severity   | Impact                                      |
+|-----------------------------|--------------|------------|---------------------------------------------|
+| Tracking pipeline bypass    | Control-flow | **HIGH**   | Missing quality gating, dedup, ROI          |
+| Concurrent extraction limit | Control-flow | **HIGH**   | Vision prefill skipped for items            |
+| Async capture race          | UX timing    | **MEDIUM** | Interleaved processing, resource contention |
+| Frame selection             | Data         | **LOW**    | Suboptimal frame for detection              |
 
 ***REMOVED******REMOVED*** Phase C: Alignment Strategy
 
 ***REMOVED******REMOVED******REMOVED*** Problem Diagnosis
 
 The tracking pipeline (`processObjectDetectionWithTracking`) exists and implements:
+
 - Quality gating via LOCKED state
 - ROI-based filtering
 - Frame sharpness evaluation
 - Proper deduplication via ObjectTracker
 
 However, it was disabled because:
+
 1. The condition `useStreamMode && isScanning` requires `useStreamMode = true`
 2. `useStreamMode = true` causes ML Kit's STREAM_MODE to be used
 3. STREAM_MODE produces unstable tracking IDs causing blinking overlays
@@ -152,10 +166,12 @@ However, it was disabled because:
 ***REMOVED******REMOVED******REMOVED*** Root Conflict
 
 The variable `useStreamMode` conflates TWO separate concerns:
+
 1. **ML Kit detector mode**: STREAM_MODE vs SINGLE_IMAGE_MODE (affects bbox stability)
 2. **Pipeline selection**: Whether to use tracking pipeline (affects quality gating)
 
 Line 1590 hardcodes `useStreamMode = true` in `detectObjectsWithTracking()`:
+
 ```kotlin
 val trackingResponse = objectDetector.detectObjectsWithTracking(
     ...
@@ -172,6 +188,7 @@ val trackingResponse = objectDetector.detectObjectsWithTracking(
 2. **Detector change**: Use SINGLE_IMAGE_MODE in tracking path (avoid blinking)
 
 This achieves:
+
 - Scanning uses tracking pipeline (quality gating, dedup, ROI)
 - SINGLE_IMAGE_MODE detection (stable bbox, no blinking)
 - Single-capture uses direct detection (unchanged)
@@ -241,17 +258,20 @@ After alignment, the flow should be:
 **Question**: At what exact point should scanning hand off to the same logic used by single photo?
 
 **Answer**: At the **ITEM CREATION** stage. Both flows should:
+
 1. Use the same detection method (SINGLE_IMAGE_MODE)
 2. Produce identical `ScannedItem` objects
 3. Feed into the same `addItemsWithVisionPrefill()` pipeline
 
 The difference is scanning adds a **TRACKING PIPELINE** gate between detection and item creation:
+
 - Single-photo: Detection → Item Creation (immediate)
 - Scanning: Detection → Tracking → Quality Gate → Item Creation (gated)
 
 ***REMOVED******REMOVED******REMOVED*** Minimum Shared Contract
 
 **Input to shared pipeline** (`addItemsWithVisionPrefill`):
+
 ```kotlin
 data class ScannedItem(
     id: String,                    // Unique identifier
@@ -266,15 +286,17 @@ data class ScannedItem(
 ```
 
 **Required for vision extraction**:
+
 - `fullImageUri` MUST be non-null
 - Image should be high-quality (not analysis frame)
 
 **Output from shared pipeline**:
+
 - Item with populated `visionAttributes`:
-  - `ocrText`: Extracted text
-  - `colors`: Dominant colors
-  - `logos`/`brandCandidates`: Brand detection
-  - `itemType`: Product type classification
+    - `ocrText`: Extracted text
+    - `colors`: Dominant colors
+    - `logos`/`brandCandidates`: Brand detection
+    - `itemType`: Product type classification
 
 ***REMOVED******REMOVED*** Phase D: Implementation
 
@@ -308,24 +330,26 @@ useStreamMode = false, // CRITICAL: Use SINGLE_IMAGE_MODE for stable bboxes
 
 ***REMOVED******REMOVED******REMOVED*** Reasoning
 
-1. **Decoupled concerns**: ML Kit detector mode (SINGLE_IMAGE vs STREAM) is now separate from pipeline selection (tracking vs direct)
+1. **Decoupled concerns**: ML Kit detector mode (SINGLE_IMAGE vs STREAM) is now separate from
+   pipeline selection (tracking vs direct)
 
-2. **Preserved stability**: Using SINGLE_IMAGE_MODE in both paths ensures stable bounding boxes without blinking
+2. **Preserved stability**: Using SINGLE_IMAGE_MODE in both paths ensures stable bounding boxes
+   without blinking
 
 3. **Restored quality gating**: Scanning mode now uses ObjectTracker + ScanGuidanceManager for:
-   - LOCKED state requirement (optimal capture conditions)
-   - ROI filtering (center of frame)
-   - Deduplication across frames
-   - Frame sharpness evaluation
+    - LOCKED state requirement (optimal capture conditions)
+    - ROI filtering (center of frame)
+    - Deduplication across frames
+    - Frame sharpness evaluation
 
 4. **Minimal changes**: Only 2 lines changed in CameraXManager.kt
 
 ***REMOVED******REMOVED******REMOVED*** Files Changed
 
-| File | Line(s) | Change |
-|------|---------|--------|
-| `CameraXManager.kt` | 1474-1478 | Condition: `useStreamMode && isScanning` → `isScanning` |
-| `CameraXManager.kt` | 1594 | Detector mode: `useStreamMode = true` → `useStreamMode = false` |
+| File                | Line(s)   | Change                                                          |
+|---------------------|-----------|-----------------------------------------------------------------|
+| `CameraXManager.kt` | 1474-1478 | Condition: `useStreamMode && isScanning` → `isScanning`         |
+| `CameraXManager.kt` | 1594      | Detector mode: `useStreamMode = true` → `useStreamMode = false` |
 
 ***REMOVED******REMOVED*** Phase E: Validation
 
@@ -334,6 +358,7 @@ useStreamMode = false, // CRITICAL: Use SINGLE_IMAGE_MODE for stable bboxes
 Created: `PipelineAlignmentTest.kt`
 
 Tests verify:
+
 1. `pipelineSelectionLogic_shouldUseScanningStateAlone` - Scanning uses tracking path
 2. `detectorMode_shouldBeSingleImageModeInBothPaths` - Both paths use SINGLE_IMAGE_MODE
 3. `documentExpectedBehavior_singlePhotoVsScanning` - Expected feature differences
@@ -362,11 +387,14 @@ Regression tests for **SINGLE-PHOTO** (short-press):
 
 ***REMOVED******REMOVED******REMOVED*** What Was Misaligned
 
-1. **Pipeline bypass**: Scanning mode was NOT using the tracking pipeline due to incorrect condition `useStreamMode && isScanning` (always false because `useStreamMode = false`)
+1. **Pipeline bypass**: Scanning mode was NOT using the tracking pipeline due to incorrect condition
+   `useStreamMode && isScanning` (always false because `useStreamMode = false`)
 
-2. **Quality gating disabled**: Without the tracking pipeline, scanning had no LOCKED state requirement, no ROI filtering, and no deduplication
+2. **Quality gating disabled**: Without the tracking pipeline, scanning had no LOCKED state
+   requirement, no ROI filtering, and no deduplication
 
-3. **Concurrent extraction limits**: Rapid item addition in scanning could exhaust the MAX_CONCURRENT_EXTRACTIONS (3) limit, causing vision prefill to be skipped
+3. **Concurrent extraction limits**: Rapid item addition in scanning could exhaust the
+   MAX_CONCURRENT_EXTRACTIONS (3) limit, causing vision prefill to be skipped
 
 ***REMOVED******REMOVED******REMOVED*** What Was Unified
 
@@ -378,7 +406,8 @@ Regression tests for **SINGLE-PHOTO** (short-press):
 
 ***REMOVED******REMOVED******REMOVED*** What Remains Intentionally Different
 
-1. **Quality gating**: Scanning uses ObjectTracker + ScanGuidanceManager for quality filtering; single-photo adds items immediately
+1. **Quality gating**: Scanning uses ObjectTracker + ScanGuidanceManager for quality filtering;
+   single-photo adds items immediately
 
 2. **Deduplication**: Scanning deduplicates across frames; single-photo has no dedup (single frame)
 
@@ -386,9 +415,11 @@ Regression tests for **SINGLE-PHOTO** (short-press):
 
 ***REMOVED******REMOVED******REMOVED*** Future Improvements
 
-1. **Extraction queuing**: Instead of skipping when MAX_CONCURRENT_EXTRACTIONS is reached, queue items for later processing
+1. **Extraction queuing**: Instead of skipping when MAX_CONCURRENT_EXTRACTIONS is reached, queue
+   items for later processing
 
-2. **Batch extraction**: Consider batching vision extraction when scanning stops rather than per-item
+2. **Batch extraction**: Consider batching vision extraction when scanning stops rather than
+   per-item
 
 3. **Shared image**: Capture high-res image ONCE and share across all items in a batch
 

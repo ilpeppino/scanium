@@ -2,9 +2,11 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The Items API provides user-scoped storage and multi-device synchronization for scanned items. Items are owned by users and synchronized across devices using last-write-wins conflict resolution.
+The Items API provides user-scoped storage and multi-device synchronization for scanned items. Items
+are owned by users and synchronized across devices using last-write-wins conflict resolution.
 
 **Key Features:**
+
 - User-scoped ownership and access control
 - Offline-first with bidirectional sync
 - Optimistic locking with `syncVersion`
@@ -115,6 +117,7 @@ Photos are not stored on the server (Phase E). Only metadata is synchronized:
 ```
 
 **Benefits:**
+
 - Future deduplication (detect identical photos across items)
 - Integrity checking when photos uploaded to S3 later (Phase F)
 - Minimal overhead (hash computed once at capture time)
@@ -128,11 +131,13 @@ All endpoints require authentication via `Authorization: Bearer <token>` header.
 List user's items with optional filtering and pagination.
 
 **Query Parameters:**
+
 - `since` (optional): ISO 8601 timestamp - only return items updated after this time
 - `limit` (optional): Max items to return (default 100, max 500)
 - `includeDeleted` (optional): Include soft-deleted items (default true)
 
 **Response:**
+
 ```typescript
 {
   items: Array<Item>;
@@ -143,6 +148,7 @@ List user's items with optional filtering and pagination.
 ```
 
 **Example:**
+
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
   "https://api.scanium.dev/v1/items?since=2025-01-01T00:00:00Z&limit=50"
@@ -155,6 +161,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 Fetch single item by ID. Enforces user ownership.
 
 **Response:**
+
 ```typescript
 {
   item: Item;
@@ -163,6 +170,7 @@ Fetch single item by ID. Enforces user ownership.
 ```
 
 **Errors:**
+
 - `403 Forbidden` - Item belongs to another user
 - `404 Not Found` - Item doesn't exist
 
@@ -173,6 +181,7 @@ Fetch single item by ID. Enforces user ownership.
 Create new item for authenticated user.
 
 **Request:**
+
 ```typescript
 {
   localId: string;  // Client UUID for correlation
@@ -185,6 +194,7 @@ Create new item for authenticated user.
 ```
 
 **Response:**
+
 ```typescript
 {
   item: Item;           // Created item with server-generated id
@@ -194,6 +204,7 @@ Create new item for authenticated user.
 ```
 
 **Example:**
+
 ```bash
 curl -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -213,6 +224,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 Update item with optimistic locking.
 
 **Request:**
+
 ```typescript
 {
   title?: string;
@@ -224,6 +236,7 @@ Update item with optimistic locking.
 ```
 
 **Response:**
+
 ```typescript
 {
   item: Item;           // Updated item with incremented syncVersion
@@ -232,11 +245,13 @@ Update item with optimistic locking.
 ```
 
 **Errors:**
+
 - `409 Conflict` - syncVersion mismatch (conflict detected)
 - `403 Forbidden` - Item belongs to another user
 - `404 Not Found` - Item doesn't exist
 
 **Example:**
+
 ```bash
 curl -X PATCH -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -255,6 +270,7 @@ curl -X PATCH -H "Authorization: Bearer $TOKEN" \
 Soft delete item (sets `deletedAt`, increments `syncVersion`).
 
 **Response:**
+
 ```typescript
 {
   item: Item;           // Item with deletedAt timestamp
@@ -271,6 +287,7 @@ Soft delete item (sets `deletedAt`, increments `syncVersion`).
 Batch synchronization - push local changes and receive server changes.
 
 **Request:**
+
 ```typescript
 {
   clientTimestamp: string;         // ISO 8601
@@ -287,6 +304,7 @@ Batch synchronization - push local changes and receive server changes.
 ```
 
 **Response:**
+
 ```typescript
 {
   results: Array<{
@@ -304,6 +322,7 @@ Batch synchronization - push local changes and receive server changes.
 ```
 
 **Example:**
+
 ```bash
 curl -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -344,14 +363,14 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 When a conflict occurs (syncVersion mismatch), the service compares `clientUpdatedAt` values:
 
 1. **Client wins** if `client.clientUpdatedAt > server.clientUpdatedAt`
-   - Server overwrites with client data
-   - Increments `syncVersion`
-   - Returns `conflictResolution: 'CLIENT_WINS'`
+    - Server overwrites with client data
+    - Increments `syncVersion`
+    - Returns `conflictResolution: 'CLIENT_WINS'`
 
 2. **Server wins** if `server.clientUpdatedAt >= client.clientUpdatedAt`
-   - Server keeps its data
-   - Returns current server state
-   - Returns `conflictResolution: 'SERVER_WINS'`
+    - Server keeps its data
+    - Returns current server state
+    - Returns `conflictResolution: 'SERVER_WINS'`
 
 3. **Deterministic tie-breaker**: If timestamps are equal, server wins
 
@@ -381,6 +400,7 @@ if (!item) {
 ```
 
 **Security guarantees:**
+
 - Users can only access their own items
 - User ID comes from verified JWT token
 - Database queries always filter by `userId`
@@ -406,6 +426,7 @@ npm test -- --watch
 **Test file:** `src/modules/items/routes.test.ts`
 
 **Scenarios covered:**
+
 - ✓ Create item for authenticated user
 - ✓ Reject unauthenticated request
 - ✓ Validate required fields
@@ -453,6 +474,7 @@ ALTER TABLE "items" ADD CONSTRAINT "items_userId_fkey"
 ```
 
 **Run migration:**
+
 ```bash
 npx prisma migrate deploy  ***REMOVED*** Production
 npx prisma migrate dev     ***REMOVED*** Development
@@ -463,6 +485,7 @@ npx prisma migrate dev     ***REMOVED*** Development
 ***REMOVED******REMOVED******REMOVED*** Metrics
 
 All endpoints emit metrics:
+
 - `items_requests_total{method, endpoint, status}`
 - `items_request_duration_seconds{method, endpoint}`
 - `items_sync_conflicts_total{resolution}`
@@ -470,12 +493,14 @@ All endpoints emit metrics:
 ***REMOVED******REMOVED******REMOVED*** Logging
 
 Structured logs include:
+
 - Correlation ID (traces request across services)
 - User ID (for debugging user-specific issues)
 - Item ID (for debugging specific items)
 - Sync conflicts with resolution details
 
 **Example log:**
+
 ```json
 {
   "level": "info",
@@ -492,11 +517,13 @@ Structured logs include:
 ***REMOVED******REMOVED*** Rate Limiting
 
 **Per-user rate limits:**
+
 - GET endpoints: 100 req/min
 - POST/PATCH/DELETE: 30 req/min
 - Sync endpoint: 10 req/min
 
 **Implementation:**
+
 - Uses `@fastify/rate-limit` plugin
 - Keyed by user ID from JWT
 - Returns `429 Too Many Requests` when exceeded
@@ -568,9 +595,9 @@ Structured logs include:
    ```
 
 3. **Set up database indexes**
-   - `(userId)` - Fast user filtering
-   - `(userId, updatedAt)` - Incremental sync
-   - `(userId, deletedAt)` - Tombstone queries
+    - `(userId)` - Fast user filtering
+    - `(userId, updatedAt)` - Incremental sync
+    - `(userId, deletedAt)` - Tombstone queries
 
 4. **Configure connection pooling**
    ```
@@ -584,6 +611,7 @@ Structured logs include:
 **Cause:** Client not incrementing syncVersion or not fetching latest version
 
 **Fix:**
+
 ```typescript
 // Always fetch latest before update
 const latest = await GET('/v1/items/:id');
@@ -598,6 +626,7 @@ const updated = await PATCH('/v1/items/:id', {
 **Cause:** Client using wrong `since` timestamp
 
 **Fix:**
+
 ```typescript
 // Save syncTimestamp from response
 const response = await POST('/v1/items/sync', {
@@ -612,6 +641,7 @@ setLastSync(response.syncTimestamp); // ← Save for next sync
 **Cause:** Too many individual requests instead of batch sync
 
 **Fix:**
+
 ```typescript
 // BAD: Multiple individual requests
 for (const item of pendingItems) {

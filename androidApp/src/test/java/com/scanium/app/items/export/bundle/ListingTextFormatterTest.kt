@@ -2,7 +2,9 @@ package com.scanium.app.items.export.bundle
 
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.ml.ItemCategory
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -16,13 +18,13 @@ import org.junit.Test
  * - Photo count display
  */
 class ListingTextFormatterTest {
-
     @Test
     fun `formatSingle includes title and description`() {
-        val bundle = createTestBundle(
-            title = "Vintage Leather Jacket",
-            description = "Beautiful brown leather jacket in excellent condition",
-        )
+        val bundle =
+            createTestBundle(
+                title = "Vintage Leather Jacket",
+                description = "Beautiful brown leather jacket in excellent condition",
+            )
 
         val text = ListingTextFormatter.formatSingle(bundle)
 
@@ -32,11 +34,12 @@ class ListingTextFormatterTest {
 
     @Test
     fun `formatSingle includes bullets when present`() {
-        val bundle = createTestBundle(
-            title = "Nike Air Max",
-            description = "Classic sneakers",
-            bullets = listOf("Size 10", "Original box", "Never worn"),
-        )
+        val bundle =
+            createTestBundle(
+                title = "Nike Air Max",
+                description = "Classic sneakers",
+                bullets = listOf("Size 10", "Original box", "Never worn"),
+            )
 
         val text = ListingTextFormatter.formatSingle(bundle)
 
@@ -48,10 +51,11 @@ class ListingTextFormatterTest {
 
     @Test
     fun `formatSingle shows NEEDS_AI warning for items without export fields`() {
-        val bundle = createTestBundle(
-            title = "Unknown Item",
-            flags = setOf(ExportBundleFlag.NEEDS_AI),
-        )
+        val bundle =
+            createTestBundle(
+                title = "Unknown Item",
+                flags = setOf(ExportBundleFlag.NEEDS_AI),
+            )
 
         val text = ListingTextFormatter.formatSingle(bundle)
 
@@ -61,9 +65,10 @@ class ListingTextFormatterTest {
 
     @Test
     fun `formatSingle shows photo count`() {
-        val bundle = createTestBundle(
-            photoUris = listOf("/path/1.jpg", "/path/2.jpg", "/path/3.jpg"),
-        )
+        val bundle =
+            createTestBundle(
+                photoUris = listOf("/path/1.jpg", "/path/2.jpg", "/path/3.jpg"),
+            )
 
         val text = ListingTextFormatter.formatSingle(bundle)
 
@@ -72,11 +77,12 @@ class ListingTextFormatterTest {
 
     @Test
     fun `formatMultiple includes header with item count`() {
-        val bundles = listOf(
-            createTestBundle(title = "Item 1"),
-            createTestBundle(title = "Item 2"),
-            createTestBundle(title = "Item 3"),
-        )
+        val bundles =
+            listOf(
+                createTestBundle(title = "Item 1"),
+                createTestBundle(title = "Item 2"),
+                createTestBundle(title = "Item 3"),
+            )
 
         val text = ListingTextFormatter.formatMultiple(bundles)
 
@@ -85,10 +91,11 @@ class ListingTextFormatterTest {
 
     @Test
     fun `formatMultiple includes numbered items`() {
-        val bundles = listOf(
-            createTestBundle(title = "First Item"),
-            createTestBundle(title = "Second Item"),
-        )
+        val bundles =
+            listOf(
+                createTestBundle(title = "First Item"),
+                createTestBundle(title = "Second Item"),
+            )
 
         val text = ListingTextFormatter.formatMultiple(bundles)
 
@@ -107,16 +114,17 @@ class ListingTextFormatterTest {
 
     @Test
     fun `formatCompactList shows item list with one-line descriptions`() {
-        val bundles = listOf(
-            createTestBundle(
-                title = "Nike Shoes",
-                description = "Classic sneakers in great condition with original box included",
-            ),
-            createTestBundle(
-                title = "Adidas Jacket",
-                description = "Warm winter jacket",
-            ),
-        )
+        val bundles =
+            listOf(
+                createTestBundle(
+                    title = "Nike Shoes",
+                    description = "Classic sneakers in great condition with original box included",
+                ),
+                createTestBundle(
+                    title = "Adidas Jacket",
+                    description = "Warm winter jacket",
+                ),
+            )
 
         val text = ListingTextFormatter.formatCompactList(bundles)
 
@@ -129,10 +137,11 @@ class ListingTextFormatterTest {
 
     @Test
     fun `formatCompactList shows NEEDS_AI indicator`() {
-        val bundles = listOf(
-            createTestBundle(title = "Ready Item", flags = setOf(ExportBundleFlag.READY)),
-            createTestBundle(title = "Needs AI Item", flags = setOf(ExportBundleFlag.NEEDS_AI)),
-        )
+        val bundles =
+            listOf(
+                createTestBundle(title = "Ready Item", flags = setOf(ExportBundleFlag.READY)),
+                createTestBundle(title = "Needs AI Item", flags = setOf(ExportBundleFlag.NEEDS_AI)),
+            )
 
         val text = ListingTextFormatter.formatCompactList(bundles)
 
@@ -144,11 +153,12 @@ class ListingTextFormatterTest {
 
     @Test
     fun `formatSingle output is deterministic`() {
-        val bundle = createTestBundle(
-            title = "Test Item",
-            description = "Test description",
-            bullets = listOf("Bullet 1", "Bullet 2"),
-        )
+        val bundle =
+            createTestBundle(
+                title = "Test Item",
+                description = "Test description",
+                bullets = listOf("Bullet 1", "Bullet 2"),
+            )
 
         val text1 = ListingTextFormatter.formatSingle(bundle)
         val text2 = ListingTextFormatter.formatSingle(bundle)

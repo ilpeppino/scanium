@@ -22,7 +22,9 @@ import kotlin.math.max
  * - Background thread processing
  * - Detailed logging for verification
  */
-class ListingImagePreparer(private val context: Context) {
+class ListingImagePreparer(
+    private val context: Context,
+) {
     companion object {
         private const val TAG = "ListingImagePreparer"
 
@@ -61,7 +63,9 @@ class ListingImagePreparer(private val context: Context) {
             val source: String,
         ) : PrepareResult()
 
-        data class Failure(val reason: String) : PrepareResult()
+        data class Failure(
+            val reason: String,
+        ) : PrepareResult()
     }
 
     /**
@@ -143,8 +147,8 @@ class ListingImagePreparer(private val context: Context) {
     /**
      * Loads a bitmap from a Uri (content:// or file://).
      */
-    private fun loadBitmapFromUri(uri: Uri): Bitmap? {
-        return try {
+    private fun loadBitmapFromUri(uri: Uri): Bitmap? =
+        try {
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 BitmapFactory.decodeStream(stream)
             }
@@ -152,7 +156,6 @@ class ListingImagePreparer(private val context: Context) {
             Log.e(TAG, "Failed to load bitmap from URI: ${e.message}")
             null
         }
-    }
 
     /**
      * Scales up a bitmap to meet minimum dimensions.
@@ -237,11 +240,10 @@ class ListingImagePreparer(private val context: Context) {
         }
     }
 
-    private fun getCachedResult(itemId: String): PrepareResult.Success? {
-        return synchronized(memoryCache) {
+    private fun getCachedResult(itemId: String): PrepareResult.Success? =
+        synchronized(memoryCache) {
             memoryCache.get(itemId)
         }
-    }
 
     /**
      * Logs the result of image preparation for verification.
@@ -258,6 +260,7 @@ class ListingImagePreparer(private val context: Context) {
                 Log.i(TAG, "║   URI: ${result.uri}")
                 Log.i(TAG, "╚═══════════════════════════════════════════════════════════════")
             }
+
             is PrepareResult.Failure -> {
                 Log.e(TAG, "║ FAILURE: ${result.reason}")
                 Log.i(TAG, "╚═══════════════════════════════════════════════════════════════")

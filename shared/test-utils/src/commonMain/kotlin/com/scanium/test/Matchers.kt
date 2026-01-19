@@ -9,11 +9,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-/**
- * Custom assertion helpers for testing Scanium types.
- *
- * These matchers provide more readable test assertions and better error messages.
- */
+// Custom assertion helpers for testing Scanium types.
+//
+// These matchers provide more readable test assertions and better error messages.
 
 /**
  * Asserts that two NormalizedRect instances are approximately equal within a tolerance.
@@ -27,25 +25,33 @@ fun assertRectsEqual(
     expected: NormalizedRect,
     actual: NormalizedRect,
     tolerance: Float = 0.001f,
-    message: String? = null
+    message: String? = null,
 ) {
     val prefix = if (message != null) "$message: " else ""
 
     assertEquals(
-        expected.left, actual.left, tolerance,
-        "${prefix}Left coordinate mismatch"
+        expected.left,
+        actual.left,
+        tolerance,
+        "${prefix}Left coordinate mismatch",
     )
     assertEquals(
-        expected.top, actual.top, tolerance,
-        "${prefix}Top coordinate mismatch"
+        expected.top,
+        actual.top,
+        tolerance,
+        "${prefix}Top coordinate mismatch",
     )
     assertEquals(
-        expected.right, actual.right, tolerance,
-        "${prefix}Right coordinate mismatch"
+        expected.right,
+        actual.right,
+        tolerance,
+        "${prefix}Right coordinate mismatch",
     )
     assertEquals(
-        expected.bottom, actual.bottom, tolerance,
-        "${prefix}Bottom coordinate mismatch"
+        expected.bottom,
+        actual.bottom,
+        tolerance,
+        "${prefix}Bottom coordinate mismatch",
     )
 }
 
@@ -61,15 +67,19 @@ fun assertRectDimensions(
     rect: NormalizedRect,
     expectedWidth: Float,
     expectedHeight: Float,
-    tolerance: Float = 0.001f
+    tolerance: Float = 0.001f,
 ) {
     assertEquals(
-        expectedWidth, rect.width, tolerance,
-        "Width mismatch: expected $expectedWidth, got ${rect.width}"
+        expectedWidth,
+        rect.width,
+        tolerance,
+        "Width mismatch: expected $expectedWidth, got ${rect.width}",
     )
     assertEquals(
-        expectedHeight, rect.height, tolerance,
-        "Height mismatch: expected $expectedHeight, got ${rect.height}"
+        expectedHeight,
+        rect.height,
+        tolerance,
+        "Height mismatch: expected $expectedHeight, got ${rect.height}",
     )
 }
 
@@ -84,11 +94,13 @@ fun assertRectDimensions(
 fun assertRectArea(
     rect: NormalizedRect,
     expectedArea: Float,
-    tolerance: Float = 0.001f
+    tolerance: Float = 0.001f,
 ) {
     assertEquals(
-        expectedArea, rect.area, tolerance,
-        "Area mismatch: expected $expectedArea, got ${rect.area}"
+        expectedArea,
+        rect.area,
+        tolerance,
+        "Area mismatch: expected $expectedArea, got ${rect.area}",
     )
 }
 
@@ -107,33 +119,38 @@ fun assertDetectionMatches(
     checkBoundingBox: Boolean = true,
     checkCategory: Boolean = true,
     checkConfidence: Boolean = true,
-    confidenceTolerance: Float = 0.01f
+    confidenceTolerance: Float = 0.01f,
 ) {
     if (checkTrackingId) {
         assertEquals(
-            expected.trackingId, actual.trackingId,
-            "Tracking ID mismatch"
+            expected.trackingId,
+            actual.trackingId,
+            "Tracking ID mismatch",
         )
     }
 
     if (checkBoundingBox) {
         assertRectsEqual(
-            expected.boundingBox, actual.boundingBox,
-            message = "Bounding box mismatch"
+            expected.boundingBox,
+            actual.boundingBox,
+            message = "Bounding box mismatch",
         )
     }
 
     if (checkCategory) {
         assertEquals(
-            expected.category, actual.category,
-            "Category mismatch"
+            expected.category,
+            actual.category,
+            "Category mismatch",
         )
     }
 
     if (checkConfidence) {
         assertEquals(
-            expected.confidence, actual.confidence, confidenceTolerance,
-            "Confidence mismatch"
+            expected.confidence,
+            actual.confidence,
+            confidenceTolerance,
+            "Confidence mismatch",
         )
     }
 }
@@ -156,7 +173,7 @@ fun assertItemMatches(
     expectedCategory: ItemCategory? = null,
     expectedLabelText: String? = null,
     expectedMergeCount: Int? = null,
-    minConfidence: Float? = null
+    minConfidence: Float? = null,
 ) {
     expectedId?.let {
         assertEquals(it, item.aggregatedId, "Item ID mismatch")
@@ -177,7 +194,7 @@ fun assertItemMatches(
     minConfidence?.let {
         assertTrue(
             item.confidence >= it,
-            "Item confidence ${item.confidence} is below minimum $it"
+            "Item confidence ${item.confidence} is below minimum $it",
         )
     }
 }
@@ -198,26 +215,29 @@ fun assertTrackerStats(
     stats: TrackerStats,
     expectedActiveCandidates: Int? = null,
     expectedConfirmedCandidates: Int? = null,
-    expectedCurrentFrame: Long? = null
+    expectedCurrentFrame: Long? = null,
 ) {
     expectedActiveCandidates?.let {
         assertEquals(
-            it, stats.activeCandidates,
-            "Active candidates mismatch: expected $it, got ${stats.activeCandidates}"
+            it,
+            stats.activeCandidates,
+            "Active candidates mismatch: expected $it, got ${stats.activeCandidates}",
         )
     }
 
     expectedConfirmedCandidates?.let {
         assertEquals(
-            it, stats.confirmedCandidates,
-            "Confirmed candidates mismatch: expected $it, got ${stats.confirmedCandidates}"
+            it,
+            stats.confirmedCandidates,
+            "Confirmed candidates mismatch: expected $it, got ${stats.confirmedCandidates}",
         )
     }
 
     expectedCurrentFrame?.let {
         assertEquals(
-            it, stats.currentFrame,
-            "Current frame mismatch: expected $it, got ${stats.currentFrame}"
+            it,
+            stats.currentFrame,
+            "Current frame mismatch: expected $it, got ${stats.currentFrame}",
         )
     }
 }
@@ -233,11 +253,11 @@ fun assertTrackerStats(
 fun <T> assertContainsMatching(
     collection: Collection<T>,
     message: String = "No matching item found",
-    predicate: (T) -> Boolean
+    predicate: (T) -> Boolean,
 ) {
     assertTrue(
         collection.any(predicate),
-        "$message (collection size: ${collection.size})"
+        "$message (collection size: ${collection.size})",
     )
 }
 
@@ -252,7 +272,7 @@ fun <T> assertContainsMatching(
 fun <T> assertDoesNotContainMatching(
     collection: Collection<T>,
     message: String = "Found unexpected matching item",
-    predicate: (T) -> Boolean
+    predicate: (T) -> Boolean,
 ) {
     val found = collection.any(predicate)
     if (found) {
@@ -271,7 +291,7 @@ fun <T> assertDoesNotContainMatching(
 fun assertSameIds(
     expected: List<String>,
     actual: List<String>,
-    message: String = "ID lists don't match"
+    message: String = "ID lists don't match",
 ) {
     val expectedSet = expected.toSet()
     val actualSet = actual.toSet()
@@ -284,7 +304,7 @@ fun assertSameIds(
                 "Expected: $expected\n" +
                 "Actual: $actual\n" +
                 "Missing: $missing\n" +
-                "Extra: $extra"
+                "Extra: $extra",
         )
     }
 }
@@ -301,7 +321,7 @@ fun <T, R : Comparable<R>> assertOrdered(
     list: List<T>,
     descending: Boolean = false,
     message: String = "List is not ordered",
-    selector: (T) -> R
+    selector: (T) -> R,
 ) {
     if (list.size < 2) return // Single item or empty is always ordered
 
@@ -309,16 +329,17 @@ fun <T, R : Comparable<R>> assertOrdered(
         val current = selector(list[i])
         val next = selector(list[i + 1])
 
-        val isCorrectOrder = if (descending) {
-            current >= next
-        } else {
-            current <= next
-        }
+        val isCorrectOrder =
+            if (descending) {
+                current >= next
+            } else {
+                current <= next
+            }
 
         if (!isCorrectOrder) {
             fail(
                 "$message at index $i: " +
-                    "${list[i]} (${current}) vs ${list[i + 1]} (${next})"
+                    "${list[i]} ($current) vs ${list[i + 1]} ($next)",
             )
         }
     }
@@ -336,7 +357,7 @@ fun assertApproximately(
     expected: Float,
     actual: Float,
     relativeTolerance: Float = 0.01f,
-    message: String? = null
+    message: String? = null,
 ) {
     val absoluteTolerance = expected * relativeTolerance
     assertEquals(expected, actual, absoluteTolerance, message)
@@ -350,11 +371,15 @@ fun assertApproximately(
  * items.assertSize(3)
  * ```
  */
-fun <T> Collection<T>.assertSize(expectedSize: Int, message: String? = null) {
+fun <T> Collection<T>.assertSize(
+    expectedSize: Int,
+    message: String? = null,
+) {
     val prefix = if (message != null) "$message: " else ""
     assertEquals(
-        expectedSize, this.size,
-        "${prefix}Expected size $expectedSize but got ${this.size}"
+        expectedSize,
+        this.size,
+        "${prefix}Expected size $expectedSize but got ${this.size}",
     )
 }
 

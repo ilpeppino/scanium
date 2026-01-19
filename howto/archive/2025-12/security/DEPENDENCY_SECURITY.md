@@ -10,7 +10,8 @@
 
 ***REMOVED******REMOVED*** Overview
 
-This document describes the dependency security mechanisms implemented in Scanium to protect against supply chain attacks and enable vulnerability tracking.
+This document describes the dependency security mechanisms implemented in Scanium to protect against
+supply chain attacks and enable vulnerability tracking.
 
 ***REMOVED******REMOVED******REMOVED*** Security Mechanisms
 
@@ -24,7 +25,8 @@ This document describes the dependency security mechanisms implemented in Scaniu
 
 ***REMOVED******REMOVED******REMOVED*** What It Does
 
-Gradle dependency verification ensures that every dependency downloaded from Maven repositories matches expected cryptographic checksums (SHA-256). This protects against:
+Gradle dependency verification ensures that every dependency downloaded from Maven repositories
+matches expected cryptographic checksums (SHA-256). This protects against:
 
 - **Dependency Confusion Attacks** - Malicious packages with same name from different repositories
 - **Repository Compromise** - Tampered packages on compromised Maven servers
@@ -126,12 +128,14 @@ jobs:
 
 ***REMOVED******REMOVED******REMOVED*** What It Does
 
-A Software Bill of Materials (SBOM) is a comprehensive inventory of all dependencies used in the application. It enables:
+A Software Bill of Materials (SBOM) is a comprehensive inventory of all dependencies used in the
+application. It enables:
 
 - **CVE Tracking** - Identify which dependencies have known vulnerabilities
 - **License Compliance** - Track licenses of all dependencies
 - **Transparency** - Document exact dependency versions used in each release
-- **Incident Response** - Quickly determine if affected by supply chain compromises (e.g., Log4Shell)
+- **Incident Response** - Quickly determine if affected by supply chain compromises (e.g.,
+  Log4Shell)
 
 ***REMOVED******REMOVED******REMOVED*** Configuration
 
@@ -283,13 +287,13 @@ dependencyLocking {
 
 ***REMOVED******REMOVED******REMOVED*** Attack Mitigation
 
-| Attack Vector | Without Protection | With Protection |
-|---------------|-------------------|-----------------|
-| **Dependency Confusion** | Attacker uploads malicious package with same name | ✅ Build fails - checksum doesn't match |
-| **Repository Compromise** | Tampered package downloaded silently | ✅ Build fails - checksum mismatch detected |
-| **Transitive Dependency Attack** | Malicious indirect dependency sneaks in | ✅ Build fails - all transitive deps verified |
-| **Version Downgrade** | Attacker forces older vulnerable version | ✅ Verification metadata pins exact versions |
-| **Unknown Vulnerabilities** | CVE disclosed, unclear if app affected | ✅ SBOM lookup shows affected dependency |
+| Attack Vector                    | Without Protection                                | With Protection                              |
+|----------------------------------|---------------------------------------------------|----------------------------------------------|
+| **Dependency Confusion**         | Attacker uploads malicious package with same name | ✅ Build fails - checksum doesn't match       |
+| **Repository Compromise**        | Tampered package downloaded silently              | ✅ Build fails - checksum mismatch detected   |
+| **Transitive Dependency Attack** | Malicious indirect dependency sneaks in           | ✅ Build fails - all transitive deps verified |
+| **Version Downgrade**            | Attacker forces older vulnerable version          | ✅ Verification metadata pins exact versions  |
+| **Unknown Vulnerabilities**      | CVE disclosed, unclear if app affected            | ✅ SBOM lookup shows affected dependency      |
 
 ***REMOVED******REMOVED******REMOVED*** Compliance Benefits
 
@@ -412,7 +416,8 @@ ls -la app/build/reports/
 
 ***REMOVED******REMOVED******REMOVED*** Documentation
 
-- **Gradle Dependency Verification:** https://docs.gradle.org/current/userguide/dependency_verification.html
+- **Gradle Dependency Verification:
+  ** https://docs.gradle.org/current/userguide/dependency_verification.html
 - **CycloneDX SBOM:** https://cyclonedx.org/
 - **OWASP Dependency-Check:** https://owasp.org/www-project-dependency-check/
 - **SLSA Framework:** https://slsa.dev/

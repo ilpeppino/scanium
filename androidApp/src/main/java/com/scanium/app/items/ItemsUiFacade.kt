@@ -6,7 +6,7 @@ import android.util.Log
 import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.AggregationStats
 import com.scanium.app.camera.OverlayTrack
-import com.scanium.app.camera.detection.DetectionEvent
+import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.classification.ItemClassificationCoordinator
 import com.scanium.app.items.export.toExportPayload
 import com.scanium.app.items.listing.ListingStatusManager
@@ -20,7 +20,6 @@ import com.scanium.app.ml.VisionInsightsPrefiller
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
-import com.scanium.app.data.SettingsRepository
 import com.scanium.core.export.ExportPayload
 import com.scanium.core.models.scanning.ScanRoi
 import com.scanium.shared.core.models.items.ItemAttribute
@@ -35,7 +34,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * UI facade that encapsulates manager coordination for items operations.
@@ -215,7 +213,10 @@ class ItemsUiFacade(
     /**
      * Add items with vision insights extraction.
      */
-    fun addItemsWithVisionPrefill(context: Context, newItems: List<ScannedItem>) {
+    fun addItemsWithVisionPrefill(
+        context: Context,
+        newItems: List<ScannedItem>,
+    ) {
         Log.i(TAG, "addItemsWithVisionPrefill: ${newItems.size} items")
 
         val imageUriByOriginalId =
@@ -352,8 +353,7 @@ class ItemsUiFacade(
     /**
      * Check if there are detections outside the ROI.
      */
-    fun hasDetectionsOutsideRoiOnly(): Boolean =
-        overlayManager.hasDetectionsOutsideRoiOnly()
+    fun hasDetectionsOutsideRoiOnly(): Boolean = overlayManager.hasDetectionsOutsideRoiOnly()
 
     /**
      * Last ROI filter result for diagnostics.
@@ -408,8 +408,7 @@ class ItemsUiFacade(
     /**
      * Get listing status for an item.
      */
-    fun getListingStatus(itemId: String): ItemListingStatus? =
-        listingManager.getListingStatus(itemId)
+    fun getListingStatus(itemId: String): ItemListingStatus? = listingManager.getListingStatus(itemId)
 
     // ==================== Item Field Updates ====================
 
@@ -511,14 +510,12 @@ class ItemsUiFacade(
     /**
      * Get current similarity threshold.
      */
-    fun getCurrentSimilarityThreshold(): Float =
-        stateManager.getCurrentSimilarityThreshold()
+    fun getCurrentSimilarityThreshold(): Float = stateManager.getCurrentSimilarityThreshold()
 
     /**
      * Get aggregation statistics.
      */
-    fun getAggregationStats(): AggregationStats =
-        stateManager.getAggregationStats()
+    fun getAggregationStats(): AggregationStats = stateManager.getAggregationStats()
 
     /**
      * Remove stale items from the list.
@@ -546,8 +543,7 @@ class ItemsUiFacade(
     /**
      * Check if telemetry is enabled.
      */
-    fun isTelemetryEnabled(): Boolean =
-        stateManager.isTelemetryEnabled()
+    fun isTelemetryEnabled(): Boolean = stateManager.isTelemetryEnabled()
 
     // ==================== Private Helpers ====================
 

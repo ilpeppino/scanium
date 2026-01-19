@@ -1,11 +1,14 @@
-> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current state.
+> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
+> state.
+
 ***REMOVED*** Colima Setup Guide for Scanium Backend
 
 Quick reference for using Colima (Docker Desktop alternative) on macOS.
 
 ***REMOVED******REMOVED*** 🐳 Colima Overview
 
-Colima is a lightweight Docker runtime for macOS that's free and open-source. It uses Docker Compose V2, which means you'll use `docker compose` (with space) instead of `docker-compose` (with hyphen).
+Colima is a lightweight Docker runtime for macOS that's free and open-source. It uses Docker Compose
+V2, which means you'll use `docker compose` (with space) instead of `docker-compose` (with hyphen).
 
 ***REMOVED******REMOVED*** ✅ Prerequisites
 
@@ -41,6 +44,7 @@ colima status
 ```
 
 **Expected output:**
+
 ```
 INFO[0000] colima is running
 ```
@@ -74,6 +78,7 @@ docker ps
 ```
 
 **Expected output:**
+
 ```
 CONTAINER ID   IMAGE              COMMAND                  STATUS
 abc123def456   postgres:16-alpine "docker-entrypoint.s…"   Up 10 seconds
@@ -177,6 +182,7 @@ nano ~/.colima/default/colima.yaml
 **Problem:** Colima isn't running
 
 **Fix:**
+
 ```bash
 colima start
 ```
@@ -186,6 +192,7 @@ colima start
 **Problem:** Docker Compose V2 not installed
 
 **Fix:**
+
 ```bash
 ***REMOVED*** Install Docker Compose
 brew install docker-compose
@@ -200,6 +207,7 @@ ln -sfn /opt/homebrew/bin/docker-compose ~/.docker/cli-plugins/docker-compose
 **Problem:** Port 5432 or 8080 already bound
 
 **Fix:**
+
 ```bash
 ***REMOVED*** Find what's using the port
 lsof -i :5432
@@ -216,6 +224,7 @@ kill -9 PID
 **Problem:** Volume issues or previous data
 
 **Fix:**
+
 ```bash
 ***REMOVED*** Stop everything
 docker compose down
@@ -275,12 +284,12 @@ colima stop
 
 ***REMOVED******REMOVED*** 🎯 Quick Reference
 
-| Old Command | New Command (Colima) |
-|-------------|---------------------|
-| `docker-compose up` | `docker compose up` |
-| `docker-compose down` | `docker compose down` |
-| `docker-compose logs` | `docker compose logs` |
-| `docker-compose ps` | `docker compose ps` |
+| Old Command              | New Command (Colima)     |
+|--------------------------|--------------------------|
+| `docker-compose up`      | `docker compose up`      |
+| `docker-compose down`    | `docker compose down`    |
+| `docker-compose logs`    | `docker compose logs`    |
+| `docker-compose ps`      | `docker compose ps`      |
 | `docker-compose restart` | `docker compose restart` |
 
 **Key Difference:** Space instead of hyphen!

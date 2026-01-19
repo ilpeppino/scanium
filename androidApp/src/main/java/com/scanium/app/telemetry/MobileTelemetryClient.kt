@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class MobileTelemetryClient private constructor(
     private val context: Context,
     private val baseUrl: String,
-    private val enabled: Boolean
+    private val enabled: Boolean,
 ) {
     companion object {
         private const val TAG = "MobileTelemetry"
@@ -58,16 +58,18 @@ class MobileTelemetryClient private constructor(
         fun initialize(
             context: Context,
             baseUrl: String,
-            enabled: Boolean = true // Can be controlled by feature flag
+            // Can be controlled by feature flag
+            enabled: Boolean = true,
         ) {
             if (instance == null) {
                 synchronized(this) {
                     if (instance == null) {
-                        instance = MobileTelemetryClient(
-                            context.applicationContext,
-                            baseUrl,
-                            enabled
-                        )
+                        instance =
+                            MobileTelemetryClient(
+                                context.applicationContext,
+                                baseUrl,
+                                enabled,
+                            )
                         Log.i(TAG, "Telemetry initialized (enabled=$enabled, baseUrl=$baseUrl)")
                     }
                 }
@@ -77,11 +79,10 @@ class MobileTelemetryClient private constructor(
         /**
          * Get the singleton instance
          */
-        fun getInstance(): MobileTelemetryClient {
-            return instance ?: throw IllegalStateException(
-                "MobileTelemetryClient not initialized. Call initialize() first."
+        fun getInstance(): MobileTelemetryClient =
+            instance ?: throw IllegalStateException(
+                "MobileTelemetryClient not initialized. Call initialize() first.",
             )
-        }
     }
 
     // Session ID (random UUID per app launch)
@@ -97,18 +98,21 @@ class MobileTelemetryClient private constructor(
     private val isWorkerRunning = AtomicBoolean(false)
 
     // HTTP client with short timeouts (telemetry should not block app)
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(5, TimeUnit.SECONDS)
-        .writeTimeout(5, TimeUnit.SECONDS)
-        .callTimeout(10, TimeUnit.SECONDS)
-        .build()
+    private val httpClient =
+        OkHttpClient
+            .Builder()
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
+            .writeTimeout(5, TimeUnit.SECONDS)
+            .callTimeout(10, TimeUnit.SECONDS)
+            .build()
 
     // JSON serializer
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     init {
         if (enabled) {
@@ -124,21 +128,25 @@ class MobileTelemetryClient private constructor(
      * @param eventName Event identifier (e.g., "app_launch", "scan_started")
      * @param attributes Event-specific metadata (limited keys, no PII)
      */
-    fun send(eventName: String, attributes: Map<String, Any> = emptyMap()) {
+    fun send(
+        eventName: String,
+        attributes: Map<String, Any> = emptyMap(),
+    ) {
         if (!enabled) {
             Log.d(TAG, "Telemetry disabled, ignoring event: $eventName")
             return
         }
 
-        val event = TelemetryEvent(
-            event_name = eventName,
-            platform = "android",
-            app_version = BuildConfig.VERSION_NAME,
-            build_type = getBuildType(),
-            timestamp_ms = System.currentTimeMillis(),
-            session_id = sessionId,
-            attributes = sanitizeAttributes(attributes)
-        )
+        val event =
+            TelemetryEvent(
+                event_name = eventName,
+                platform = "android",
+                app_version = BuildConfig.VERSION_NAME,
+                build_type = getBuildType(),
+                timestamp_ms = System.currentTimeMillis(),
+                session_id = sessionId,
+                attributes = sanitizeAttributes(attributes),
+            )
 
         eventQueue.offer(event)
         Log.d(TAG, "Event queued: $eventName (queue size: ${eventQueue.size})")
@@ -163,32 +171,50 @@ class MobileTelemetryClient private constructor(
      * Sanitize attributes to remove PII and high-cardinality data
      */
     private fun sanitizeAttributes(attributes: Map<String, Any>): Map<String, Any> {
-        val disallowedKeys = setOf(
-            "user_id", "email", "phone", "device_id", "imei", "android_id",
-            "gps", "latitude", "longitude", "location", "ip_address", "city",
-            "item_name", "barcode", "receipt_text", "prompt", "photo",
-            "token", "password", "api_key", "secret"
-        )
+        val disallowedKeys =
+            setOf(
+                "user_id",
+                "email",
+                "phone",
+                "device_id",
+                "imei",
+                "android_id",
+                "gps",
+                "latitude",
+                "longitude",
+                "location",
+                "ip_address",
+                "city",
+                "item_name",
+                "barcode",
+                "receipt_text",
+                "prompt",
+                "photo",
+                "token",
+                "password",
+                "api_key",
+                "secret",
+            )
 
-        return attributes.filterKeys { key ->
-            !disallowedKeys.any { blocked -> key.lowercase().contains(blocked) }
-        }.filterValues { value ->
-            // Only allow primitives (String, Number, Boolean)
-            value is String || value is Number || value is Boolean
-        }
+        return attributes
+            .filterKeys { key ->
+                !disallowedKeys.any { blocked -> key.lowercase().contains(blocked) }
+            }.filterValues { value ->
+                // Only allow primitives (String, Number, Boolean)
+                value is String || value is Number || value is Boolean
+            }
     }
 
     /**
      * Get build type based on BuildConfig
      */
-    private fun getBuildType(): String {
-        return when {
+    private fun getBuildType(): String =
+        when {
             BuildConfig.DEBUG -> "dev"
             BuildConfig.BUILD_TYPE == "beta" -> "beta"
             BuildConfig.BUILD_TYPE == "release" -> "prod"
             else -> "dev"
         }
-    }
 
     /**
      * Start background worker that periodically sends batches
@@ -272,10 +298,12 @@ class MobileTelemetryClient private constructor(
         val jsonBody = json.encodeToString(event)
         val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
 
-        val request = Request.Builder()
-            .url("$baseUrl/v1/telemetry/mobile")
-            .post(requestBody)
-            .build()
+        val request =
+            Request
+                .Builder()
+                .url("$baseUrl/v1/telemetry/mobile")
+                .post(requestBody)
+                .build()
 
         httpClient.newCall(request).execute().use { response ->
             return response.isSuccessful
@@ -305,7 +333,11 @@ private data class TelemetryEvent(
     val build_type: String,
     val timestamp_ms: Long,
     val session_id: String,
-    val attributes: Map<String, @Serializable(with = PrimitiveValueSerializer::class) Any> = emptyMap()
+    val attributes: Map<
+        String,
+        @Serializable(with = PrimitiveValueSerializer::class)
+        Any,
+        > = emptyMap(),
 )
 
 /**
@@ -314,7 +346,10 @@ private data class TelemetryEvent(
 private object PrimitiveValueSerializer : kotlinx.serialization.KSerializer<Any> {
     override val descriptor = kotlinx.serialization.descriptors.buildClassSerialDescriptor("PrimitiveValue")
 
-    override fun serialize(encoder: kotlinx.serialization.encoding.Encoder, value: Any) {
+    override fun serialize(
+        encoder: kotlinx.serialization.encoding.Encoder,
+        value: Any,
+    ) {
         when (value) {
             is String -> encoder.encodeString(value)
             is Int -> encoder.encodeInt(value)
@@ -326,9 +361,8 @@ private object PrimitiveValueSerializer : kotlinx.serialization.KSerializer<Any>
         }
     }
 
-    override fun deserialize(decoder: kotlinx.serialization.encoding.Decoder): Any {
+    override fun deserialize(decoder: kotlinx.serialization.encoding.Decoder): Any =
         throw UnsupportedOperationException("Deserialization not supported")
-    }
 }
 
 /**
@@ -338,57 +372,65 @@ object TelemetryEvents {
     fun appLaunch(launchType: String = "cold_start") {
         MobileTelemetryClient.getInstance().send(
             "app_launch",
-            mapOf("launch_type" to launchType)
+            mapOf("launch_type" to launchType),
         )
     }
 
     fun scanStarted(scanSource: String = "camera") {
         MobileTelemetryClient.getInstance().send(
             "scan_started",
-            mapOf("scan_source" to scanSource)
+            mapOf("scan_source" to scanSource),
         )
     }
 
-    fun scanCompleted(durationMs: Long, itemCount: Int, hasNutritionData: Boolean) {
+    fun scanCompleted(
+        durationMs: Long,
+        itemCount: Int,
+        hasNutritionData: Boolean,
+    ) {
         MobileTelemetryClient.getInstance().send(
             "scan_completed",
             mapOf(
                 "duration_ms" to durationMs,
                 "item_count" to itemCount,
-                "has_nutrition_data" to hasNutritionData
-            )
+                "has_nutrition_data" to hasNutritionData,
+            ),
         )
     }
 
     fun assistClicked(context: String = "scan_result") {
         MobileTelemetryClient.getInstance().send(
             "assist_clicked",
-            mapOf("context" to context)
+            mapOf("context" to context),
         )
     }
 
     fun shareStarted(shareType: String = "receipt") {
         MobileTelemetryClient.getInstance().send(
             "share_started",
-            mapOf("share_type" to shareType)
+            mapOf("share_type" to shareType),
         )
     }
 
-    fun errorShown(errorCode: String, errorCategory: String, isRecoverable: Boolean) {
+    fun errorShown(
+        errorCode: String,
+        errorCategory: String,
+        isRecoverable: Boolean,
+    ) {
         MobileTelemetryClient.getInstance().send(
             "error_shown",
             mapOf(
                 "error_code" to errorCode,
                 "error_category" to errorCategory,
-                "is_recoverable" to isRecoverable
-            )
+                "is_recoverable" to isRecoverable,
+            ),
         )
     }
 
     fun crashMarker(crashType: String = "uncaught_exception") {
         MobileTelemetryClient.getInstance().send(
             "crash_marker",
-            mapOf("crash_type" to crashType)
+            mapOf("crash_type" to crashType),
         )
     }
 }

@@ -1,6 +1,7 @@
 ***REMOVED*** Privacy Technical Notes
 
-This document describes the technical implementation of privacy controls in Scanium, including where toggles are checked in code, where uploads occur, and what redaction is applied to logs.
+This document describes the technical implementation of privacy controls in Scanium, including where
+toggles are checked in code, where uploads occur, and what redaction is applied to logs.
 
 ***REMOVED******REMOVED*** Table of Contents
 
@@ -18,15 +19,19 @@ This document describes the technical implementation of privacy controls in Scan
 ***REMOVED******REMOVED******REMOVED*** Cloud Classification Toggle
 
 **User preference storage:**
+
 - `androidApp/.../data/SettingsRepository.kt:27` - `ALLOW_CLOUD_CLASSIFICATION_KEY`
 - Default: `true`
 
 **Where checked:**
-- `androidApp/.../data/AndroidFeatureFlagRepository.kt` - Combines user pref + remote config + entitlements
+
+- `androidApp/.../data/AndroidFeatureFlagRepository.kt` - Combines user pref + remote config +
+  entitlements
 - `androidApp/.../ml/classification/ClassificationOrchestrator.kt` - Decides cloud vs on-device
 - `androidApp/.../settings/ClassificationModeViewModel.kt` - UI state binding
 
 **Flow:**
+
 ```
 User toggle → SettingsRepository → FeatureFlagRepository → ClassificationOrchestrator → CloudClassifier
 ```
@@ -36,10 +41,12 @@ User toggle → SettingsRepository → FeatureFlagRepository → ClassificationO
 ***REMOVED******REMOVED******REMOVED*** Assistant Toggle
 
 **User preference storage:**
+
 - `androidApp/.../data/SettingsRepository.kt:28` - `ALLOW_ASSISTANT_KEY`
 - Default: `false`
 
 **Where checked:**
+
 - `androidApp/.../data/AndroidFeatureFlagRepository.kt` - Combines with entitlements (Pro+ only)
 - `androidApp/.../ui/settings/SettingsScreen.kt:208-210` - Gated by `UserEdition`
 - `androidApp/.../selling/assistant/AssistantScreen.kt` - ViewModel instantiation
@@ -49,14 +56,17 @@ User toggle → SettingsRepository → FeatureFlagRepository → ClassificationO
 ***REMOVED******REMOVED******REMOVED*** Assistant Images Toggle
 
 **User preference storage:**
+
 - `androidApp/.../data/SettingsRepository.kt:34` - `ALLOW_ASSISTANT_IMAGES_KEY`
 - Default: `false` (privacy-first)
 
 **Where checked:**
+
 - `androidApp/.../selling/assistant/AssistantViewModel.kt` - When building prompt request
 - `androidApp/.../ui/settings/SettingsScreen.kt:238-245` - UI toggle (requires assistant enabled)
 
 **Key code path:**
+
 ```kotlin
 // In AssistantViewModel - images only sent if toggle is ON
 val allowImages = settingsRepository.allowAssistantImagesFlow.first()
@@ -70,10 +80,12 @@ if (allowImages) {
 ***REMOVED******REMOVED******REMOVED*** Voice Mode Toggle
 
 **User preference storage:**
+
 - `androidApp/.../data/SettingsRepository.kt:44` - `VOICE_MODE_ENABLED_KEY`
 - Default: `false`
 
 **Where checked:**
+
 - `androidApp/.../selling/assistant/AssistantScreen.kt:123` - Controls mic button visibility
 - Mic button only rendered when `voiceModeEnabled == true`
 
@@ -82,10 +94,12 @@ if (allowImages) {
 ***REMOVED******REMOVED******REMOVED*** Speak Answers Toggle
 
 **User preference storage:**
+
 - `androidApp/.../data/SettingsRepository.kt:45` - `SPEAK_ANSWERS_KEY`
 - Default: `false`
 
 **Where checked:**
+
 - `androidApp/.../selling/assistant/AssistantScreen.kt:124` - Controls TTS initialization
 - `androidApp/.../selling/assistant/AssistantScreen.kt:159-167` - Auto-speak logic
 
@@ -94,10 +108,12 @@ if (allowImages) {
 ***REMOVED******REMOVED******REMOVED*** Share Diagnostics Toggle
 
 **User preference storage:**
+
 - `androidApp/.../data/SettingsRepository.kt:29` - `SHARE_DIAGNOSTICS_KEY`
 - Default: `false`
 
 **Where checked:**
+
 - `androidApp/.../ScaniumApplication.kt` - Sentry initialization
 - Crash reports only sent when this is `true`
 
@@ -112,6 +128,7 @@ if (allowImages) {
 **File:** `androidApp/.../ml/classification/CloudClassifier.kt:115`
 
 **Request format:**
+
 ```
 Content-Type: multipart/form-data
 - image: JPEG file (cropped item thumbnail)
@@ -127,6 +144,7 @@ Headers:
 ```
 
 **Privacy in upload:**
+
 - Only cropped thumbnail, not full frame
 - JPEG re-compression strips EXIF metadata
 - No location data included
@@ -140,6 +158,7 @@ Headers:
 **File:** `androidApp/.../assistant/AssistantRepository.kt:116`
 
 **Request format:**
+
 ```json
 {
   "question": "user question text",
@@ -166,6 +185,7 @@ Headers:
 ```
 
 **Privacy in upload:**
+
 - Device ID is hashed (SHA-256) before sending
 - Images only included if explicitly enabled
 - Raw prompts NOT logged on server
@@ -179,6 +199,7 @@ Headers:
 **File:** `androidApp/.../crash/AndroidCrashPortAdapter.kt`
 
 **What is sent:**
+
 - Stack trace
 - Device info (model, OS)
 - App version
@@ -186,6 +207,7 @@ Headers:
 - Diagnostics bundle (if available)
 
 **Privacy in upload:**
+
 - PII redaction via Sentry SDK
 - No raw prompts/OCR/images attached
 - Diagnostics bundle capped at 128KB
@@ -199,13 +221,14 @@ Headers:
 **File:** `androidApp/.../logging/ScaniumLog.kt`
 
 All logging goes through `ScaniumLog` which:
+
 - Respects release/debug build differences
 - Does NOT log:
-  - Raw user prompts
-  - OCR text content
-  - Audio transcripts
-  - API keys or tokens
-  - Full image data
+    - Raw user prompts
+    - OCR text content
+    - Audio transcripts
+    - API keys or tokens
+    - Full image data
 
 ***REMOVED******REMOVED******REMOVED*** What IS Logged (safely)
 
@@ -279,6 +302,7 @@ DisposableEffect(Unit) {
 ```
 
 The `shutdown()` method:
+
 - Stops any active listening
 - Stops any TTS playback
 - Destroys the SpeechRecognizer
@@ -355,13 +379,13 @@ suspend fun enablePrivacySafeMode() {
 
 ***REMOVED******REMOVED******REMOVED*** What It Disables
 
-| Feature | Disabled by Privacy Safe Mode |
-|---------|-------------------------------|
-| Cloud Classification | Yes |
-| Assistant Images | Yes |
-| Share Diagnostics | Yes |
-| Voice Mode | No (uses on-device STT) |
-| Assistant Text | No (but entitlements still apply) |
+| Feature              | Disabled by Privacy Safe Mode     |
+|----------------------|-----------------------------------|
+| Cloud Classification | Yes                               |
+| Assistant Images     | Yes                               |
+| Share Diagnostics    | Yes                               |
+| Voice Mode           | No (uses on-device STT)           |
+| Assistant Text       | No (but entitlements still apply) |
 
 ***REMOVED******REMOVED******REMOVED*** UI Location
 
@@ -389,6 +413,6 @@ adb logcat -s AndroidCrashPortAdapter Sentry | grep -E "diagnostics|opt"
 
 ***REMOVED******REMOVED*** Changelog
 
-| Date | Change |
-|------|--------|
+| Date       | Change                                     |
+|------------|--------------------------------------------|
 | 2025-12-25 | Initial version for PR7 pre-ship hardening |

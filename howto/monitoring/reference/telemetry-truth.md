@@ -1,6 +1,6 @@
 ***REMOVED*** Telemetry Truth Report
 
-Generated: Fri Jan  9 21:37:04 CET 2026
+Generated: Fri Jan 9 21:37:04 CET 2026
 
 ***REMOVED******REMOVED*** Summary
 
@@ -12,32 +12,30 @@ Generated: Fri Jan  9 21:37:04 CET 2026
 
 - **Series count**: 80
 - **Jobs found**:
-  - alloy
-  - loki
-  - mimir
-  - scanium-backend
-  - tempo
+    - alloy
+    - loki
+    - mimir
+    - scanium-backend
+    - tempo
 
 ***REMOVED******REMOVED*** Loki (Logs)
 
 - **Label count**: 5
 - **Has 'source' label**: true
 - **Labels found**:
-  - env
-  - exporter
-  - job
-  - level
-  - source
+    - env
+    - exporter
+    - job
+    - level
+    - source
 
 ***REMOVED******REMOVED*** Tempo (Traces)
 
 - **Service count**: 1
 - **Services found**:
-  - scanium-backend
+    - scanium-backend
 
 ***REMOVED******REMOVED*** Decision Gate
-
-
 
 ***REMOVED******REMOVED*** Raw Data
 

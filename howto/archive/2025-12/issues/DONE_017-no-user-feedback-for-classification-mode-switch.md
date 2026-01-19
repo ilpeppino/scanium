@@ -6,18 +6,22 @@
 
 ***REMOVED******REMOVED*** Problem
 
-Users can toggle between "On-Device" and "Cloud" classification modes, but there's **no visual or haptic feedback** indicating:
+Users can toggle between "On-Device" and "Cloud" classification modes, but there's **no visual or
+haptic feedback** indicating:
+
 - Which mode is currently active
 - That the mode switch was successful
 - What the difference between modes is
 
 ***REMOVED******REMOVED*** Location
 
-**ClassificationModeViewModel.kt** and wherever the toggle is displayed (likely in advanced camera controls)
+**ClassificationModeViewModel.kt** and wherever the toggle is displayed (likely in advanced camera
+controls)
 
 ***REMOVED******REMOVED*** Current Behavior
 
 User taps classification mode toggle:
+
 - Mode changes in ViewModel
 - No toast, snackbar, or visual confirmation
 - User doesn't know if tap registered
@@ -28,18 +32,18 @@ User taps classification mode toggle:
 ***REMOVED******REMOVED******REMOVED*** When User Toggles Mode:
 
 1. **Visual Feedback**:
-   - Toggle animates to new position
-   - Brief highlight/ripple effect
-   - Icon changes (cloud icon vs phone icon)
+    - Toggle animates to new position
+    - Brief highlight/ripple effect
+    - Icon changes (cloud icon vs phone icon)
 
 2. **Confirmation Message** (optional):
-   - Toast: "Switched to Cloud classification"
-   - Or Snackbar: "Using on-device classification"
+    - Toast: "Switched to Cloud classification"
+    - Or Snackbar: "Using on-device classification"
 
 3. **Persistent Indicator**:
-   - Badge showing current mode
-   - Different color for cloud vs on-device
-   - Icon in camera controls
+    - Badge showing current mode
+    - Different color for cloud vs on-device
+    - Icon in camera controls
 
 ***REMOVED******REMOVED******REMOVED*** First Time Toggle (Educational):
 
@@ -66,6 +70,7 @@ Show explanation dialog:
 ***REMOVED******REMOVED*** Impact
 
 **Severity**: Low
+
 - Feature works, just poor UX
 - Users might not know the feature exists
 - No understanding of trade-offs
@@ -83,14 +88,19 @@ Show explanation dialog:
 
 ***REMOVED******REMOVED*** Resolution
 
-- Added mode-specific iconography and brief descriptions to the Processing settings card so users can see whether they are on-device or cloud along with trade-offs.
-- Added a toast in `CameraScreen` that confirms the classification mode after the user switches it (initial value is skipped).
+- Added mode-specific iconography and brief descriptions to the Processing settings card so users
+  can see whether they are on-device or cloud along with trade-offs.
+- Added a toast in `CameraScreen` that confirms the classification mode after the user switches it (
+  initial value is skipped).
 - Persistence continues via `ClassificationPreferences` DataStore; no change needed.
 
 ***REMOVED******REMOVED*** Verification
 
-- Manual: Open the Camera settings panel → toggle Processing mode; observe icon/color/text change and toast confirmation. Reopen to confirm state persisted.
-- Automated: `./gradlew test` (fails in container: Android SDK not installed; unable to fetch via apt due to unsigned/blocked repositories). `./gradlew assembleDebug` (fails: Java 17 toolchain not available and repository download blocked).
+- Manual: Open the Camera settings panel → toggle Processing mode; observe icon/color/text change
+  and toast confirmation. Reopen to confirm state persisted.
+- Automated: `./gradlew test` (fails in container: Android SDK not installed; unable to fetch via
+  apt due to unsigned/blocked repositories). `./gradlew assembleDebug` (fails: Java 17 toolchain not
+  available and repository download blocked).
 
 ***REMOVED******REMOVED*** Suggested Implementation
 

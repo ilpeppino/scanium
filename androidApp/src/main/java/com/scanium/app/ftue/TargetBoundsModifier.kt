@@ -28,8 +28,7 @@ fun Modifier.tourTarget(
 
                 // Register with tour view model
                 tourViewModel.registerTargetBounds(key, bounds)
-            }
-            .also {
+            }.also {
                 // Clean up bounds when composable is disposed
                 DisposableEffect(key) {
                     onDispose {

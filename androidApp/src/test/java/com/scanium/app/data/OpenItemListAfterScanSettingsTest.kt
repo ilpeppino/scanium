@@ -38,80 +38,87 @@ class OpenItemListAfterScanSettingsTest {
     }
 
     @Test
-    fun openItemListAfterScan_defaults_to_false() = runTest {
-        // Verify default is false (disabled by default)
-        assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
-    }
+    fun openItemListAfterScan_defaults_to_false() =
+        runTest {
+            // Verify default is false (disabled by default)
+            assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
+        }
 
     @Test
-    fun openItemListAfterScan_can_be_set_to_true() = runTest {
-        // Set to true
-        repository.setOpenItemListAfterScan(true)
+    fun openItemListAfterScan_can_be_set_to_true() =
+        runTest {
+            // Set to true
+            repository.setOpenItemListAfterScan(true)
 
-        // Verify it's now true
-        assertThat(repository.openItemListAfterScanFlow.first()).isTrue()
-    }
-
-    @Test
-    fun openItemListAfterScan_can_be_set_to_false() = runTest {
-        // Set to false explicitly
-        repository.setOpenItemListAfterScan(false)
-
-        // Verify it's now false
-        assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
-    }
+            // Verify it's now true
+            assertThat(repository.openItemListAfterScanFlow.first()).isTrue()
+        }
 
     @Test
-    fun openItemListAfterScan_toggle_from_true_to_false_persists() = runTest {
-        // Set to true first
-        repository.setOpenItemListAfterScan(true)
-        assertThat(repository.openItemListAfterScanFlow.first()).isTrue()
+    fun openItemListAfterScan_can_be_set_to_false() =
+        runTest {
+            // Set to false explicitly
+            repository.setOpenItemListAfterScan(false)
 
-        // Toggle to false
-        repository.setOpenItemListAfterScan(false)
-
-        // Verify persisted as false
-        assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
-    }
+            // Verify it's now false
+            assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
+        }
 
     @Test
-    fun openItemListAfterScan_toggle_from_false_to_true_persists() = runTest {
-        // Set to false first (explicit set, even though default is false)
-        repository.setOpenItemListAfterScan(false)
-        assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
+    fun openItemListAfterScan_toggle_from_true_to_false_persists() =
+        runTest {
+            // Set to true first
+            repository.setOpenItemListAfterScan(true)
+            assertThat(repository.openItemListAfterScanFlow.first()).isTrue()
 
-        // Toggle to true
-        repository.setOpenItemListAfterScan(true)
+            // Toggle to false
+            repository.setOpenItemListAfterScan(false)
 
-        // Verify persisted as true
-        assertThat(repository.openItemListAfterScanFlow.first()).isTrue()
-    }
-
-    @Test
-    fun openItemListAfterScan_false_survives_repository_recreation() = runTest {
-        // Set to false
-        repository.setOpenItemListAfterScan(false)
-        assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
-
-        // Create a new repository instance (simulates app restart)
-        val newRepository = SettingsRepository(context)
-
-        // Verify the setting persisted across "restart"
-        assertThat(newRepository.openItemListAfterScanFlow.first()).isFalse()
-    }
+            // Verify persisted as false
+            assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
+        }
 
     @Test
-    fun openItemListAfterScan_true_survives_repository_recreation() = runTest {
-        // Set to true
-        repository.setOpenItemListAfterScan(true)
-        assertThat(repository.openItemListAfterScanFlow.first()).isTrue()
+    fun openItemListAfterScan_toggle_from_false_to_true_persists() =
+        runTest {
+            // Set to false first (explicit set, even though default is false)
+            repository.setOpenItemListAfterScan(false)
+            assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
 
-        // Create a new repository instance (simulates app restart)
-        val newRepository = SettingsRepository(context)
+            // Toggle to true
+            repository.setOpenItemListAfterScan(true)
 
-        // Verify the setting persisted across "restart"
-        assertThat(newRepository.openItemListAfterScanFlow.first()).isTrue()
-    }
+            // Verify persisted as true
+            assertThat(repository.openItemListAfterScanFlow.first()).isTrue()
+        }
+
+    @Test
+    fun openItemListAfterScan_false_survives_repository_recreation() =
+        runTest {
+            // Set to false
+            repository.setOpenItemListAfterScan(false)
+            assertThat(repository.openItemListAfterScanFlow.first()).isFalse()
+
+            // Create a new repository instance (simulates app restart)
+            val newRepository = SettingsRepository(context)
+
+            // Verify the setting persisted across "restart"
+            assertThat(newRepository.openItemListAfterScanFlow.first()).isFalse()
+        }
+
+    @Test
+    fun openItemListAfterScan_true_survives_repository_recreation() =
+        runTest {
+            // Set to true
+            repository.setOpenItemListAfterScan(true)
+            assertThat(repository.openItemListAfterScanFlow.first()).isTrue()
+
+            // Create a new repository instance (simulates app restart)
+            val newRepository = SettingsRepository(context)
+
+            // Verify the setting persisted across "restart"
+            assertThat(newRepository.openItemListAfterScanFlow.first()).isTrue()
+        }
 }
 
 private fun Context.clearDataStorePrefs() {

@@ -17,7 +17,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 /**
  * Result of saving images to the Gallery.
@@ -30,13 +31,12 @@ data class SaveResult(
     val totalCount: Int = successCount + failureCount
     val isSuccess: Boolean = failureCount == 0
 
-    fun getStatusMessage(): String {
-        return when {
+    fun getStatusMessage(): String =
+        when {
             failureCount == 0 -> "Saved $successCount ${if (successCount == 1) "image" else "images"} to Gallery"
             successCount == 0 -> "Failed to save $failureCount ${if (failureCount == 1) "image" else "images"}"
             else -> "Saved $successCount, failed $failureCount"
         }
-    }
 }
 
 /**

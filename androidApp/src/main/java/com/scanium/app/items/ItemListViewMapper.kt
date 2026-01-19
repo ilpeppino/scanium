@@ -3,8 +3,8 @@ package com.scanium.app.items
 import com.scanium.app.copy.CopyDisplayMode
 import com.scanium.app.copy.CustomerSafeCopyFormatter
 import com.scanium.app.copy.ItemInput
-import com.scanium.app.copy.PricingRange
 import com.scanium.app.copy.PricingDisplay
+import com.scanium.app.copy.PricingRange
 
 /**
  * Maps ScannedItem to display-ready UI copy using CustomerSafeCopyFormatter.
@@ -48,14 +48,15 @@ object ItemListViewMapper {
             ) ?: return null
 
         // Generate legacy price strings from structured pricing for backward compatibility
-        val (legacyPriceLine, legacyPriceContext) = if (customerSafeCopy.pricing != null) {
-            val pricing = customerSafeCopy.pricing
-            val priceLine = "Typical resale value: €${pricing.min}–€${pricing.max}"
-            val priceContext = "Based on current market conditions"
-            Pair(priceLine, priceContext)
-        } else {
-            Pair(null, null)
-        }
+        val (legacyPriceLine, legacyPriceContext) =
+            if (customerSafeCopy.pricing != null) {
+                val pricing = customerSafeCopy.pricing
+                val priceLine = "Typical resale value: €${pricing.min}–€${pricing.max}"
+                val priceContext = "Based on current market conditions"
+                Pair(priceLine, priceContext)
+            } else {
+                Pair(null, null)
+            }
 
         return ItemListDisplay(
             itemId = item.id,
@@ -76,9 +77,7 @@ object ItemListViewMapper {
     fun mapToListDisplayBatch(
         items: List<ScannedItem>,
         dropIfWeak: Boolean = false,
-    ): List<ItemListDisplay> {
-        return items.mapNotNull { mapToListDisplay(it, dropIfWeak) }
-    }
+    ): List<ItemListDisplay> = items.mapNotNull { mapToListDisplay(it, dropIfWeak) }
 
     /**
      * Extract ItemInput from ScannedItem fields.

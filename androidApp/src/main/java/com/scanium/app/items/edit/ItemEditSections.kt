@@ -1,10 +1,10 @@
 package com.scanium.app.items.edit
 
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,25 +44,25 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.geometry.Rect
 import com.scanium.app.R
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.AttributeDisplayFormatter
@@ -83,9 +83,10 @@ fun ItemEditSections(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
     ) {
         Spacer(Modifier.height(16.dp))
 
@@ -99,16 +100,18 @@ fun ItemEditSections(
         // Contextual Action Bar for Selection Mode
         if (state.isSelectionMode) {
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
                 color = MaterialTheme.colorScheme.secondaryContainer,
                 shape = RoundedCornerShape(8.dp),
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -131,11 +134,12 @@ fun ItemEditSections(
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = stringResource(R.string.common_delete),
-                                tint = if (state.selectedPhotoIds.isNotEmpty()) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f)
-                                }
+                                tint =
+                                    if (state.selectedPhotoIds.isNotEmpty()) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f)
+                                    },
                             )
                         }
                         IconButton(
@@ -178,15 +182,16 @@ fun ItemEditSections(
             }
 
             itemsIndexed(currentItem.additionalPhotos) { index, photo ->
-                val photoBitmap = remember(photo.uri) {
-                    photo.uri?.let { uri ->
-                        try {
-                            BitmapFactory.decodeFile(uri)
-                        } catch (e: Exception) {
-                            null
+                val photoBitmap =
+                    remember(photo.uri) {
+                        photo.uri?.let { uri ->
+                            try {
+                                BitmapFactory.decodeFile(uri)
+                            } catch (e: Exception) {
+                                null
+                            }
                         }
                     }
-                }
                 val isSelected = state.selectedPhotoIds.contains(photo.id)
                 PhotoThumbnailV3(
                     bitmap = photoBitmap?.asImageBitmap(),
@@ -194,11 +199,12 @@ fun ItemEditSections(
                     isPrimary = false,
                     onClick = {
                         if (state.isSelectionMode) {
-                            state.selectedPhotoIds = if (isSelected) {
-                                state.selectedPhotoIds - photo.id
-                            } else {
-                                state.selectedPhotoIds + photo.id
-                            }
+                            state.selectedPhotoIds =
+                                if (isSelected) {
+                                    state.selectedPhotoIds - photo.id
+                                } else {
+                                    state.selectedPhotoIds + photo.id
+                                }
                         } else {
                             state.galleryStartIndex = index + 1
                             state.showPhotoGallery = true
@@ -218,11 +224,12 @@ fun ItemEditSections(
             item {
                 AddPhotoButtonV3(
                     onClick = { onAddPhotos(state.itemId) },
-                    modifier = if (tourViewModel != null) {
-                        Modifier.tourTarget("edit_add_photo", tourViewModel)
-                    } else {
-                        Modifier
-                    }
+                    modifier =
+                        if (tourViewModel != null) {
+                            Modifier.tourTarget("edit_add_photo", tourViewModel)
+                        } else {
+                            Modifier
+                        },
                 )
             }
         }
@@ -243,11 +250,12 @@ fun ItemEditSections(
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
             onBoundsChanged = onFirstFieldBoundsChanged,
-            modifier = if (tourViewModel != null) {
-                Modifier.tourTarget("edit_brand_field", tourViewModel)
-            } else {
-                Modifier
-            }
+            modifier =
+                if (tourViewModel != null) {
+                    Modifier.tourTarget("edit_brand_field", tourViewModel)
+                } else {
+                    Modifier
+                },
         )
 
         Spacer(Modifier.height(12.dp))
@@ -328,17 +336,18 @@ fun ItemEditSections(
             onClear = { state.priceField = "" },
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Decimal,
-                imeAction = ImeAction.Next
-            ),
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next,
+                ),
         )
 
         if (state.pricingInsights?.status?.uppercase() == "OK") {
             Spacer(Modifier.height(8.dp))
             PriceInsightsCompactCard(
                 insights = state.pricingInsights!!,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
 
@@ -353,9 +362,10 @@ fun ItemEditSections(
         OutlinedTextField(
             value = state.notesField,
             onValueChange = { state.notesField = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
             placeholder = { Text(stringResource(R.string.edit_item_notes_placeholder)) },
             trailingIcon = {
                 if (state.notesField.isNotEmpty()) {
@@ -395,14 +405,15 @@ private fun LabeledTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    if (onBoundsChanged != null) {
-                        val bounds = coordinates.boundsInWindow()
-                        onBoundsChanged(bounds)
-                    }
-                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        if (onBoundsChanged != null) {
+                            val bounds = coordinates.boundsInWindow()
+                            onBoundsChanged(bounds)
+                        }
+                    },
             visualTransformation = visualTransformation,
             trailingIcon = {
                 if (value.isNotEmpty()) {
@@ -413,9 +424,10 @@ private fun LabeledTextField(
             },
             singleLine = true,
             keyboardOptions = keyboardOptions ?: KeyboardOptions(imeAction = imeAction),
-            keyboardActions = KeyboardActions(
-                onNext = { onNext() },
-            ),
+            keyboardActions =
+                KeyboardActions(
+                    onNext = { onNext() },
+                ),
         )
     }
 }
@@ -446,15 +458,16 @@ private fun LabeledConditionDropdown(
                 value = selectedCondition?.let { ItemLocalizer.getConditionName(it) } ?: "",
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor()
-                    .onGloballyPositioned { coordinates ->
-                        if (onBoundsChanged != null) {
-                            val bounds = coordinates.boundsInWindow()
-                            onBoundsChanged(bounds)
-                        }
-                    },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                        .onGloballyPositioned { coordinates ->
+                            if (onBoundsChanged != null) {
+                                val bounds = coordinates.boundsInWindow()
+                                onBoundsChanged(bounds)
+                            }
+                        },
                 trailingIcon = {
                     if (selectedCondition != null) {
                         IconButton(onClick = { onConditionSelected(null) }) {
@@ -502,39 +515,40 @@ private fun PhotoThumbnailV3(
     ) {
         Box {
             Card(
-                modifier = Modifier
-                    .size(100.dp)
-                    .then(
-                        if (onClick != null || onLongClick != null) {
-                            Modifier.combinedClickable(
-                                onClick = { onClick?.invoke() },
-                                onLongClick = { onLongClick?.invoke() }
-                            )
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .then(
-                        if (isPrimary) {
-                            Modifier.border(
-                                2.dp,
-                                MaterialTheme.colorScheme.primary,
-                                RoundedCornerShape(12.dp),
-                            )
-                        } else if (isSelected) {
-                            Modifier.border(
-                                3.dp,
-                                MaterialTheme.colorScheme.tertiary,
-                                RoundedCornerShape(12.dp),
-                            )
-                        } else {
-                            Modifier
-                        },
-                    ),
+                modifier =
+                    Modifier
+                        .size(100.dp)
+                        .then(
+                            if (onClick != null || onLongClick != null) {
+                                Modifier.combinedClickable(
+                                    onClick = { onClick?.invoke() },
+                                    onLongClick = { onLongClick?.invoke() },
+                                )
+                            } else {
+                                Modifier
+                            },
+                        ).then(
+                            if (isPrimary) {
+                                Modifier.border(
+                                    2.dp,
+                                    MaterialTheme.colorScheme.primary,
+                                    RoundedCornerShape(12.dp),
+                                )
+                            } else if (isSelected) {
+                                Modifier.border(
+                                    3.dp,
+                                    MaterialTheme.colorScheme.tertiary,
+                                    RoundedCornerShape(12.dp),
+                                )
+                            } else {
+                                Modifier
+                            },
+                        ),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
             ) {
                 if (bitmap != null) {
                     Image(
@@ -558,26 +572,27 @@ private fun PhotoThumbnailV3(
             }
             if (isSelected && isSelectionMode) {
                 Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(
-                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
-                            RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.TopEnd
+                    modifier =
+                        Modifier
+                            .size(100.dp)
+                            .background(
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
+                                RoundedCornerShape(12.dp),
+                            ),
+                    contentAlignment = Alignment.TopEnd,
                 ) {
                     Icon(
                         Icons.Default.Check,
                         contentDescription = "Selected",
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .size(24.dp)
-                            .background(
-                                MaterialTheme.colorScheme.tertiary,
-                                RoundedCornerShape(12.dp)
-                            )
-                            .padding(4.dp),
-                        tint = MaterialTheme.colorScheme.onTertiary
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .size(24.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.tertiary,
+                                    RoundedCornerShape(12.dp),
+                                ).padding(4.dp),
+                        tint = MaterialTheme.colorScheme.onTertiary,
                     )
                 }
             }
@@ -601,13 +616,15 @@ private fun AddPhotoButtonV3(
     val addPhotoText = stringResource(R.string.edit_item_add_photo)
     val addText = stringResource(R.string.common_add)
     Card(
-        modifier = modifier
-            .size(100.dp)
-            .clickable(onClick = onClick),
+        modifier =
+            modifier
+                .size(100.dp)
+                .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -638,59 +655,62 @@ private fun PriceInsightsCompactCard(
     modifier: Modifier = Modifier,
 ) {
     val range = insights.range ?: return
-    val marketplacesById = remember(insights.marketplacesUsed) {
-        insights.marketplacesUsed.associateBy { it.id }
-    }
+    val marketplacesById =
+        remember(insights.marketplacesUsed) {
+            insights.marketplacesUsed.associateBy { it.id }
+        }
 
     var showComparables by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
                     Text(
                         text = "AI Market Price",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                     Text(
                         text = "${range.currency} ${range.low.toInt()}-${range.high.toInt()}",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Text(
                     text = "Based on ${insights.results.size} listings",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             if (insights.results.isNotEmpty()) {
                 OutlinedButton(
                     onClick = { showComparables = !showComparables },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
                         if (showComparables) {
                             "Hide matches (${insights.results.size})"
                         } else {
                             "Show matches (${insights.results.size})"
-                        }
+                        },
                     )
                 }
 
@@ -698,29 +718,31 @@ private fun PriceInsightsCompactCard(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         insights.results.forEach { comparable ->
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = comparable.title,
                                         style = MaterialTheme.typography.bodySmall,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
-                                        text = marketplacesById[comparable.sourceMarketplaceId]?.name
-                                            ?: comparable.sourceMarketplaceId,
+                                        text =
+                                            marketplacesById[comparable.sourceMarketplaceId]?.name
+                                                ?: comparable.sourceMarketplaceId,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                                 Text(
                                     text = "${comparable.price.currency} ${comparable.price.amount.toInt()}",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.primary,
                                 )
                             }
                         }

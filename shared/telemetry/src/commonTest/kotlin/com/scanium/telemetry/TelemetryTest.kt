@@ -89,12 +89,14 @@ class TelemetryTest {
                 override fun setAttribute(
                     key: String,
                     value: String,
-                ) {}
+                ) {
+                }
 
                 override fun recordError(
                     error: String,
                     attributes: Map<String, String>,
-                ) {}
+                ) {
+                }
 
                 override fun getTraceId(): String = "00000000000000000000000000000001"
 
@@ -390,11 +392,12 @@ class TelemetryTest {
             telemetry.beginSpan(
                 name = "test.span",
                 userAttributes =
-                                            mapOf(
-                                                "operation" to "test",
-                                                // Should be redacted
-                                                "password" to "secret123",
-                                            ),            )
+                    mapOf(
+                        "operation" to "test",
+                        // Should be redacted
+                        "password" to "secret123",
+                    ),
+            )
 
         assertEquals(1, tracePort.spans.size)
         val (name, attrs) = tracePort.spans[0]

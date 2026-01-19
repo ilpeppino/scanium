@@ -117,7 +117,6 @@ data class SettingsInputs(
     val currentEdition: UserEdition,
     val entitlementState: EntitlementState,
     val soundsEnabled: Boolean,
-
     // Assistant
     val allowAssistant: Boolean,
     val allowAssistantImages: Boolean,
@@ -138,20 +137,16 @@ data class SettingsInputs(
     val effectiveAiOutputLanguage: String,
     val effectiveMarketplaceCountry: String,
     val effectiveTtsLanguage: String,
-
     // Camera
     val showDetectionBoxes: Boolean,
-
     // Storage
     val autoSaveEnabled: Boolean,
     val saveDirectoryUri: String?,
     val exportFormat: ExportFormat,
-
     // Privacy
     val allowCloud: Boolean,
     val shareDiagnostics: Boolean,
     val privacySafeModeActive: Boolean,
-
     // Developer / Build flags
     val isDeveloperModeEnabled: Boolean,
     val allowDeveloperMode: Boolean,
@@ -172,59 +167,66 @@ fun buildSettingsSectionsState(inputs: SettingsInputs): SettingsSectionsState {
     val showDeveloper = inputs.allowDeveloperMode && (inputs.isDebugBuild || inputs.isDeveloperModeEnabled)
 
     return SettingsSectionsState(
-        home = HomeSectionState(
-            showDeveloperCategory = showDeveloper,
-        ),
-        general = GeneralSectionState(
-            themeMode = inputs.themeMode,
-            primaryLanguage = inputs.primaryLanguage,
-            primaryRegionCountry = inputs.primaryRegionCountry,
-            currentEdition = inputs.currentEdition,
-            entitlementState = inputs.entitlementState,
-            soundsEnabled = inputs.soundsEnabled,
-        ),
-        assistant = AssistantSectionState(
-            enabled = inputs.allowAssistant,
-            allowImages = inputs.allowAssistantImages,
-            language = inputs.assistantLanguage,
-            tone = inputs.assistantTone,
-            countryCode = inputs.assistantCountryCode,
-            units = inputs.assistantUnits,
-            verbosity = inputs.assistantVerbosity,
-            voiceModeEnabled = inputs.voiceModeEnabled,
-            speakAnswersEnabled = inputs.speakAnswersEnabled,
-            autoSendTranscript = inputs.autoSendTranscript,
-            voiceLanguage = inputs.voiceLanguage,
-            hapticsEnabled = inputs.assistantHapticsEnabled,
-            prerequisiteState = inputs.assistantPrerequisiteState,
-            primaryLanguage = inputs.primaryLanguage,
-            primaryRegionCountry = inputs.primaryRegionCountry,
-            aiLanguageSetting = inputs.aiLanguageSetting,
-            marketplaceCountrySetting = inputs.marketplaceCountrySetting,
-            ttsLanguageSetting = inputs.ttsLanguageSetting,
-            effectiveAiOutputLanguage = inputs.effectiveAiOutputLanguage,
-            effectiveMarketplaceCountry = inputs.effectiveMarketplaceCountry,
-            effectiveTtsLanguage = inputs.effectiveTtsLanguage,
-        ),
-        camera = CameraSectionState(
-            showDetectionBoxes = inputs.showDetectionBoxes,
-        ),
-        storage = StorageSectionState(
-            autoSaveEnabled = inputs.autoSaveEnabled,
-            saveDirectoryUri = inputs.saveDirectoryUri,
-            exportFormat = inputs.exportFormat,
-        ),
-        privacy = PrivacySectionState(
-            allowCloud = inputs.allowCloud,
-            shareDiagnostics = inputs.shareDiagnostics,
-            privacySafeModeActive = inputs.privacySafeModeActive,
-        ),
-        developer = if (showDeveloper) {
-            DeveloperSectionState(
-                isDeveloperModeEnabled = inputs.isDeveloperModeEnabled,
-            )
-        } else {
-            null
-        },
+        home =
+            HomeSectionState(
+                showDeveloperCategory = showDeveloper,
+            ),
+        general =
+            GeneralSectionState(
+                themeMode = inputs.themeMode,
+                primaryLanguage = inputs.primaryLanguage,
+                primaryRegionCountry = inputs.primaryRegionCountry,
+                currentEdition = inputs.currentEdition,
+                entitlementState = inputs.entitlementState,
+                soundsEnabled = inputs.soundsEnabled,
+            ),
+        assistant =
+            AssistantSectionState(
+                enabled = inputs.allowAssistant,
+                allowImages = inputs.allowAssistantImages,
+                language = inputs.assistantLanguage,
+                tone = inputs.assistantTone,
+                countryCode = inputs.assistantCountryCode,
+                units = inputs.assistantUnits,
+                verbosity = inputs.assistantVerbosity,
+                voiceModeEnabled = inputs.voiceModeEnabled,
+                speakAnswersEnabled = inputs.speakAnswersEnabled,
+                autoSendTranscript = inputs.autoSendTranscript,
+                voiceLanguage = inputs.voiceLanguage,
+                hapticsEnabled = inputs.assistantHapticsEnabled,
+                prerequisiteState = inputs.assistantPrerequisiteState,
+                primaryLanguage = inputs.primaryLanguage,
+                primaryRegionCountry = inputs.primaryRegionCountry,
+                aiLanguageSetting = inputs.aiLanguageSetting,
+                marketplaceCountrySetting = inputs.marketplaceCountrySetting,
+                ttsLanguageSetting = inputs.ttsLanguageSetting,
+                effectiveAiOutputLanguage = inputs.effectiveAiOutputLanguage,
+                effectiveMarketplaceCountry = inputs.effectiveMarketplaceCountry,
+                effectiveTtsLanguage = inputs.effectiveTtsLanguage,
+            ),
+        camera =
+            CameraSectionState(
+                showDetectionBoxes = inputs.showDetectionBoxes,
+            ),
+        storage =
+            StorageSectionState(
+                autoSaveEnabled = inputs.autoSaveEnabled,
+                saveDirectoryUri = inputs.saveDirectoryUri,
+                exportFormat = inputs.exportFormat,
+            ),
+        privacy =
+            PrivacySectionState(
+                allowCloud = inputs.allowCloud,
+                shareDiagnostics = inputs.shareDiagnostics,
+                privacySafeModeActive = inputs.privacySafeModeActive,
+            ),
+        developer =
+            if (showDeveloper) {
+                DeveloperSectionState(
+                    isDeveloperModeEnabled = inputs.isDeveloperModeEnabled,
+                )
+            } else {
+                null
+            },
     )
 }

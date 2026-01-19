@@ -52,7 +52,6 @@ import com.scanium.app.R
 import com.scanium.shared.core.models.assistant.ConfidenceTier
 import com.scanium.shared.core.models.listing.GeneratedListing
 import com.scanium.shared.core.models.listing.GeneratedListingWarning
-import com.scanium.shared.core.models.listing.WarningType
 
 /**
  * Screen displaying generated marketplace listing content.
@@ -93,28 +92,33 @@ fun GeneratedListingScreen(
         },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (val currentState = state) {
                 is ListingGenerationState.Idle -> {
                     IdleContent()
                 }
+
                 is ListingGenerationState.Loading -> {
                     LoadingContent()
                 }
+
                 is ListingGenerationState.Success -> {
                     SuccessContent(
                         listing = currentState.listing,
                         onCopyTitle = { copyToClipboard(context, "Title", currentState.listing.title) },
                         onCopyDescription = { copyToClipboard(context, "Description", currentState.listing.description) },
                         onRegenerate = { viewModel.retry() },
-                        onUseListing = onUseListing?.let {
-                            { it(currentState.listing.title, currentState.listing.description) }
-                        },
+                        onUseListing =
+                            onUseListing?.let {
+                                { it(currentState.listing.title, currentState.listing.description) }
+                            },
                     )
                 }
+
                 is ListingGenerationState.Error -> {
                     ErrorContent(
                         message = currentState.message,
@@ -171,10 +175,11 @@ private fun SuccessContent(
     onUseListing: (() -> Unit)?,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Title section
@@ -250,21 +255,24 @@ private fun ListingFieldCard(
     onCopy: () -> Unit,
     isMultiline: Boolean = false,
 ) {
-    val confidenceColor = when (confidence) {
-        ConfidenceTier.HIGH -> MaterialTheme.colorScheme.primary
-        ConfidenceTier.MED -> MaterialTheme.colorScheme.tertiary
-        ConfidenceTier.LOW -> MaterialTheme.colorScheme.error
-    }
+    val confidenceColor =
+        when (confidence) {
+            ConfidenceTier.HIGH -> MaterialTheme.colorScheme.primary
+            ConfidenceTier.MED -> MaterialTheme.colorScheme.tertiary
+            ConfidenceTier.LOW -> MaterialTheme.colorScheme.error
+        }
 
     val accessibilityDescription = "$label: $value. Confidence: ${confidence.name}"
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics { contentDescription = accessibilityDescription },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = accessibilityDescription },
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -286,19 +294,20 @@ private fun ListingFieldCard(
 
                     // Confidence indicator
                     Box(
-                        modifier = Modifier
-                            .background(
-                                confidenceColor.copy(alpha = 0.1f),
-                                shape = MaterialTheme.shapes.small,
-                            )
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                        modifier =
+                            Modifier
+                                .background(
+                                    confidenceColor.copy(alpha = 0.1f),
+                                    shape = MaterialTheme.shapes.small,
+                                ).padding(horizontal = 6.dp, vertical = 2.dp),
                     ) {
                         Text(
-                            text = when (confidence) {
-                                ConfidenceTier.HIGH -> stringResource(R.string.export_assistant_confidence_high)
-                                ConfidenceTier.MED -> stringResource(R.string.export_assistant_confidence_medium)
-                                ConfidenceTier.LOW -> stringResource(R.string.export_assistant_confidence_low)
-                            },
+                            text =
+                                when (confidence) {
+                                    ConfidenceTier.HIGH -> stringResource(R.string.export_assistant_confidence_high)
+                                    ConfidenceTier.MED -> stringResource(R.string.export_assistant_confidence_medium)
+                                    ConfidenceTier.LOW -> stringResource(R.string.export_assistant_confidence_low)
+                                },
                             style = MaterialTheme.typography.labelSmall,
                             color = confidenceColor,
                         )
@@ -321,11 +330,12 @@ private fun ListingFieldCard(
 
             Text(
                 text = value,
-                style = if (isMultiline) {
-                    MaterialTheme.typography.bodyMedium
-                } else {
-                    MaterialTheme.typography.bodyLarge
-                },
+                style =
+                    if (isMultiline) {
+                        MaterialTheme.typography.bodyMedium
+                    } else {
+                        MaterialTheme.typography.bodyLarge
+                    },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -336,9 +346,10 @@ private fun ListingFieldCard(
 private fun WarningsSection(warnings: List<GeneratedListingWarning>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+            ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -387,9 +398,10 @@ private fun WarningsSection(warnings: List<GeneratedListingWarning>) {
 private fun SuggestedPhotoCard(suggestion: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+            ),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -426,9 +438,10 @@ private fun ErrorContent(
     onGoBack: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(32.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -479,7 +492,11 @@ private fun ErrorContent(
     }
 }
 
-private fun copyToClipboard(context: Context, label: String, text: String) {
+private fun copyToClipboard(
+    context: Context,
+    label: String,
+    text: String,
+) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val clip = ClipData.newPlainText(label, text)
     clipboard.setPrimaryClip(clip)

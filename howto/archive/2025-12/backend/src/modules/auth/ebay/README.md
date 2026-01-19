@@ -1,4 +1,6 @@
-> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current state.
+> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
+> state.
+
 ***REMOVED*** eBay OAuth Module
 
 Server-side eBay OAuth 2.0 implementation for Scanium backend.
@@ -10,12 +12,14 @@ Server-side eBay OAuth 2.0 implementation for Scanium backend.
 Initiates the eBay OAuth flow.
 
 **Request:**
+
 ```http
 POST /auth/ebay/start
 Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "authorizeUrl": "https://auth.sandbox.ebay.com/oauth2/authorize?client_id=...&state=..."
@@ -23,6 +27,7 @@ Content-Type: application/json
 ```
 
 **Behavior:**
+
 - Generates cryptographically secure state and nonce
 - Stores them in signed HTTP-only cookies
 - Returns eBay authorization URL
@@ -35,11 +40,13 @@ Content-Type: application/json
 OAuth callback endpoint - receives authorization code from eBay.
 
 **Request:**
+
 ```http
 GET /auth/ebay/callback?code=AUTHORIZATION_CODE&state=STATE_VALUE
 ```
 
 **Query Parameters:**
+
 - `code` (required): Authorization code from eBay
 - `state` (required): State parameter for CSRF protection
 
@@ -48,6 +55,7 @@ Returns a user-friendly HTML page confirming successful connection.
 
 **Response (JSON):**
 If `Accept: application/json` header is present:
+
 ```json
 {
   "success": true,
@@ -57,6 +65,7 @@ If `Accept: application/json` header is present:
 ```
 
 **Behavior:**
+
 1. Validates state parameter against signed cookie
 2. Exchanges authorization code for access/refresh tokens
 3. Stores tokens in database linked to user
@@ -64,6 +73,7 @@ If `Accept: application/json` header is present:
 5. Returns success page
 
 **Errors:**
+
 - 400: Missing code or state
 - 400: State mismatch (CSRF protection)
 - 502: Token exchange failed
@@ -75,11 +85,13 @@ If `Accept: application/json` header is present:
 Returns current eBay connection status.
 
 **Request:**
+
 ```http
 GET /auth/ebay/status
 ```
 
 **Response (Connected):**
+
 ```json
 {
   "connected": true,
@@ -90,6 +102,7 @@ GET /auth/ebay/status
 ```
 
 **Response (Not Connected):**
+
 ```json
 {
   "connected": false,
@@ -100,6 +113,7 @@ GET /auth/ebay/status
 ```
 
 **Behavior:**
+
 - Checks database for existing eBay connection
 - Returns connection metadata if exists
 - Mobile app polls this after OAuth callback to confirm connection

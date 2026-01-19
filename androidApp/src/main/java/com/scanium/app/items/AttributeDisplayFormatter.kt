@@ -8,29 +8,35 @@ import androidx.compose.ui.text.input.VisualTransformation
 import java.util.Locale
 
 object AttributeDisplayFormatter {
-    private val capitalizedKeys = setOf(
-        "brand",
-        "itemType",
-        "model",
-        "color",
-        "secondaryColor",
-        "material",
-        "size",
-        "condition",
-    )
+    private val capitalizedKeys =
+        setOf(
+            "brand",
+            "itemType",
+            "model",
+            "color",
+            "secondaryColor",
+            "material",
+            "size",
+            "condition",
+        )
 
-    fun shouldCapitalize(attributeKey: String?): Boolean {
-        return attributeKey != null && attributeKey in capitalizedKeys
-    }
+    fun shouldCapitalize(attributeKey: String?): Boolean = attributeKey != null && attributeKey in capitalizedKeys
 
-    fun formatForDisplay(context: Context, attributeKey: String?, value: String): String {
+    fun formatForDisplay(
+        context: Context,
+        attributeKey: String?,
+        value: String,
+    ): String {
         if (!shouldCapitalize(attributeKey)) {
             return value
         }
         return formatForDisplay(context, value)
     }
 
-    fun visualTransformation(context: Context, attributeKey: String?): VisualTransformation {
+    fun visualTransformation(
+        context: Context,
+        attributeKey: String?,
+    ): VisualTransformation {
         if (!shouldCapitalize(attributeKey)) {
             return VisualTransformation.None
         }
@@ -40,7 +46,10 @@ object AttributeDisplayFormatter {
         }
     }
 
-    private fun formatForDisplay(context: Context, value: String): String {
+    private fun formatForDisplay(
+        context: Context,
+        value: String,
+    ): String {
         if (value.isEmpty()) {
             return value
         }

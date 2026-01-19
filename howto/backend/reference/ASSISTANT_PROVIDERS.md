@@ -4,12 +4,12 @@ This document explains how to configure different AI providers for the Scanium a
 
 ***REMOVED******REMOVED*** Available Providers
 
-| Provider | Description | Status |
-|----------|-------------|--------|
-| `openai` | OpenAI GPT models (recommended) | Production-ready |
-| `claude` | Anthropic Claude models | Production-ready |
-| `mock` | Grounded mock responses | For testing only |
-| `disabled` | Disable assistant completely | - |
+| Provider   | Description                     | Status           |
+|------------|---------------------------------|------------------|
+| `openai`   | OpenAI GPT models (recommended) | Production-ready |
+| `claude`   | Anthropic Claude models         | Production-ready |
+| `mock`     | Grounded mock responses         | For testing only |
+| `disabled` | Disable assistant completely    | -                |
 
 ***REMOVED******REMOVED*** OpenAI Provider Configuration
 
@@ -38,11 +38,11 @@ ASSIST_PROVIDER_TIMEOUT_MS=30000
 
 ***REMOVED******REMOVED******REMOVED*** Supported OpenAI Models
 
-| Model | Description | Notes |
-|-------|-------------|-------|
+| Model         | Description                        | Notes                   |
+|---------------|------------------------------------|-------------------------|
 | `gpt-4o-mini` | Fast, cost-effective (recommended) | Best for most use cases |
-| `gpt-4o` | More capable, higher cost | For complex listings |
-| `gpt-4-turbo` | Previous generation | Still supported |
+| `gpt-4o`      | More capable, higher cost          | For complex listings    |
+| `gpt-4-turbo` | Previous generation                | Still supported         |
 
 ***REMOVED******REMOVED*** Claude Provider Configuration
 
@@ -66,12 +66,14 @@ CLAUDE_MODEL=claude-sonnet-4-20250514
 ***REMOVED******REMOVED******REMOVED*** Logging
 
 API keys are **never logged**. The provider only logs:
+
 - Request ID / Correlation ID
 - Provider type and model name
 - Response timing and status
 - Error types (without sensitive details)
 
 Enable verbose logging only in development:
+
 ```bash
 ASSIST_LOG_CONTENT=true  ***REMOVED*** Only for debugging - do not use in production
 ```
@@ -80,14 +82,15 @@ ASSIST_LOG_CONTENT=true  ***REMOVED*** Only for debugging - do not use in produc
 
 The OpenAI provider maps API errors to Scanium's standard error structure:
 
-| OpenAI Status | Error Type | Category | Retryable |
-|---------------|------------|----------|-----------|
-| 401 | `unauthorized` | `auth` | No |
-| 429 | `rate_limited` | `policy` | Yes (60s) |
-| 500/502/503 | `provider_unavailable` | `temporary` | Yes |
-| Timeout | `network_timeout` | `temporary` | Yes |
+| OpenAI Status | Error Type             | Category    | Retryable |
+|---------------|------------------------|-------------|-----------|
+| 401           | `unauthorized`         | `auth`      | No        |
+| 429           | `rate_limited`         | `policy`    | Yes (60s) |
+| 500/502/503   | `provider_unavailable` | `temporary` | Yes       |
+| Timeout       | `network_timeout`      | `temporary` | Yes       |
 
 Example error response:
+
 ```json
 {
   "reply": "I encountered an issue generating the listing...",
@@ -166,6 +169,7 @@ curl -X POST https://your-domain.com/v1/assist/chat \
 **Cause:** Invalid or expired API key
 
 **Fix:**
+
 1. Verify key at platform.openai.com
 2. Ensure key has correct permissions
 3. Regenerate if expired
@@ -175,6 +179,7 @@ curl -X POST https://your-domain.com/v1/assist/chat \
 **Cause:** Too many requests to OpenAI
 
 **Fix:**
+
 1. Implement backoff in client
 2. Check OpenAI usage limits
 3. Consider upgrading OpenAI plan
@@ -184,6 +189,7 @@ curl -X POST https://your-domain.com/v1/assist/chat \
 **Cause:** Request took too long
 
 **Fix:**
+
 1. Increase `ASSIST_PROVIDER_TIMEOUT_MS`
 2. Use a faster model (`gpt-4o-mini`)
 3. Check network connectivity
@@ -204,11 +210,11 @@ docker-compose restart backend
 
 The Scanium backend has its own rate limiting independent of OpenAI:
 
-| Limit Type | Default | Env Variable |
-|------------|---------|--------------|
-| Per API key/minute | 60 | `ASSIST_RATE_LIMIT_PER_MINUTE` |
-| Per IP/minute | 60 | `ASSIST_IP_RATE_LIMIT_PER_MINUTE` |
-| Per device/minute | 30 | `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` |
-| Daily quota | 200 | `ASSIST_DAILY_QUOTA` |
+| Limit Type         | Default | Env Variable                          |
+|--------------------|---------|---------------------------------------|
+| Per API key/minute | 60      | `ASSIST_RATE_LIMIT_PER_MINUTE`        |
+| Per IP/minute      | 60      | `ASSIST_IP_RATE_LIMIT_PER_MINUTE`     |
+| Per device/minute  | 30      | `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` |
+| Daily quota        | 200     | `ASSIST_DAILY_QUOTA`                  |
 
 These limits protect both your OpenAI budget and the backend resources.

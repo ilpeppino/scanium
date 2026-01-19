@@ -78,14 +78,12 @@ class ListingViewModel
                 assistedFactory: Factory,
                 selectedItems: List<ScannedItem>,
                 itemsViewModel: ItemsViewModel,
-            ): ViewModelProvider.Factory {
-                return object : ViewModelProvider.Factory {
+            ): ViewModelProvider.Factory =
+                object : ViewModelProvider.Factory {
                     @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        return assistedFactory.create(selectedItems, itemsViewModel) as T
-                    }
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                        assistedFactory.create(selectedItems, itemsViewModel) as T
                 }
-            }
         }
 
         private val _uiState =
@@ -176,6 +174,7 @@ class ListingViewModel
                                     listing = listing,
                                 )
                             }
+
                             is ListingCreationResult.Error -> {
                                 Log.e(TAG, "✗ Failed: ${result.error} - ${result.message}")
 

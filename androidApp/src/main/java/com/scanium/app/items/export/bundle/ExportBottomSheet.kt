@@ -1,7 +1,14 @@
 package com.scanium.app.items.export.bundle
 
-import android.content.Intent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
@@ -10,19 +17,27 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FolderZip
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import com.scanium.app.R
-import kotlinx.coroutines.launch
 import java.io.File
 
 /**
@@ -36,7 +51,11 @@ sealed class ExportState {
     object Preparing : ExportState()
 
     /** Creating ZIP file */
-    data class CreatingZip(val progress: Float, val currentItem: Int, val totalItems: Int) : ExportState()
+    data class CreatingZip(
+        val progress: Float,
+        val currentItem: Int,
+        val totalItems: Int,
+    ) : ExportState()
 
     /** Export ready to share */
     data class Ready(
@@ -46,7 +65,9 @@ sealed class ExportState {
     ) : ExportState()
 
     /** Export failed */
-    data class Error(val message: String) : ExportState()
+    data class Error(
+        val message: String,
+    ) : ExportState()
 }
 
 /**
@@ -78,10 +99,11 @@ fun ExportBottomSheet(
         modifier = modifier,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Title
@@ -127,9 +149,10 @@ fun ExportBottomSheet(
                     ) {
                         LinearProgressIndicator(
                             progress = { exportState.progress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp),
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -162,13 +185,14 @@ fun ExportBottomSheet(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Summary of what was exported
-                    val summary = buildString {
-                        append(stringResource(R.string.export_total_items, exportState.result.totalItems))
-                        if (exportState.result.needsAiCount > 0) {
-                            append(" ")
-                            append(stringResource(R.string.export_needs_ai_count, exportState.result.needsAiCount))
+                    val summary =
+                        buildString {
+                            append(stringResource(R.string.export_total_items, exportState.result.totalItems))
+                            if (exportState.result.needsAiCount > 0) {
+                                append(" ")
+                                append(stringResource(R.string.export_needs_ai_count, exportState.result.needsAiCount))
+                            }
                         }
-                    }
                     Text(
                         text = summary,
                         style = MaterialTheme.typography.bodySmall,
@@ -224,14 +248,16 @@ fun ExportBottomSheet(
 private fun ExportSummary(result: ExportBundleResult) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -349,9 +375,10 @@ private fun ExportOptions(
         // Share Text option
         OutlinedButton(
             onClick = onExportText,
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics { contentDescription = shareTextLabel },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = shareTextLabel },
         ) {
             Icon(
                 imageVector = Icons.Outlined.Description,
@@ -366,9 +393,10 @@ private fun ExportOptions(
         if (hasPhotos) {
             Button(
                 onClick = onExportZip,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { contentDescription = exportZipLabel },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = exportZipLabel },
             ) {
                 Icon(
                     imageVector = Icons.Outlined.FolderZip,
@@ -414,11 +442,12 @@ private fun ShareActions(
 
             // File size info
             val sizeKb = file.length() / 1024
-            val sizeText = if (sizeKb > 1024) {
-                "${sizeKb / 1024} MB"
-            } else {
-                "$sizeKb KB"
-            }
+            val sizeText =
+                if (sizeKb > 1024) {
+                    "${sizeKb / 1024} MB"
+                } else {
+                    "$sizeKb KB"
+                }
             Text(
                 text = stringResource(R.string.export_file_size, sizeText),
                 style = MaterialTheme.typography.bodySmall,

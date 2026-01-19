@@ -4,34 +4,39 @@
 
 ***REMOVED******REMOVED*** Root Cause Analysis
 
-The "Scanium - Backend API Performance" dashboard cannot show real data due to a **Prometheus scraping failure** in the Alloy telemetry pipeline. This is an infrastructure issue, not a dashboard configuration problem.
+The "Scanium - Backend API Performance" dashboard cannot show real data due to a **Prometheus
+scraping failure** in the Alloy telemetry pipeline. This is an infrastructure issue, not a dashboard
+configuration problem.
 
 ***REMOVED******REMOVED******REMOVED*** Evidence
 
 1. **Dashboard Configuration: CORRECT**
-   - Dashboard queries: `scanium_http_request_duration_ms_bucket` and `scanium_http_requests_total`
-   - Expected labels: `service_name`, `deployment_environment`, `route`, `method`, `status_code`
-   - Datasource: MIMIR (uid: "MIMIR")
+    - Dashboard queries: `scanium_http_request_duration_ms_bucket` and `scanium_http_requests_total`
+    - Expected labels: `service_name`, `deployment_environment`, `route`, `method`, `status_code`
+    - Datasource: MIMIR (uid: "MIMIR")
 
 2. **Backend Instrumentation: CORRECT**
-   - Backend exports correct metrics at `http://scanium-backend:8080/metrics`
-   - Metrics defined in `backend/src/infra/observability/metrics.ts`:
-     - `scanium_http_request_duration_ms` (histogram) with labels: `method`, `route`, `status_code`
-     - `scanium_http_requests_total` (counter) with labels: `method`, `route`, `status_code`
-   - Verified metrics exist on backend `/metrics` endpoint after traffic generation
+    - Backend exports correct metrics at `http://scanium-backend:8080/metrics`
+    - Metrics defined in `backend/src/infra/observability/metrics.ts`:
+        - `scanium_http_request_duration_ms` (histogram) with labels: `method`, `route`,
+          `status_code`
+        - `scanium_http_requests_total` (counter) with labels: `method`, `route`, `status_code`
+    - Verified metrics exist on backend `/metrics` endpoint after traffic generation
 
 3. **Alloy Configuration: CORRECT**
-   - External labels configured to add `service_name="scanium-backend"` and `deployment_environment="dev"`
-   - Remote write endpoint: `http://mimir:9009/api/v1/push`
+    - External labels configured to add `service_name="scanium-backend"` and
+      `deployment_environment="dev"`
+    - Remote write endpoint: `http://mimir:9009/api/v1/push`
 
 4. **Scraping: FAILING**
-   - Prometheus scrape target `up{job="scanium-backend"}` = **0** (target down)
-   - No metrics from backend reaching Mimir despite correct config
-   - Other scrape targets (alloy, loki, tempo, mimir) all work fine (up=1)
+    - Prometheus scrape target `up{job="scanium-backend"}` = **0** (target down)
+    - No metrics from backend reaching Mimir despite correct config
+    - Other scrape targets (alloy, loki, tempo, mimir) all work fine (up=1)
 
 ***REMOVED******REMOVED******REMOVED*** Investigation Summary
 
 **Verified Working:**
+
 - ✅ Backend container running and healthy
 - ✅ Backend accessible on network (tested TCP connection to 172.23.0.5:8080)
 - ✅ `/metrics` endpoint returns valid Prometheus metrics
@@ -42,6 +47,7 @@ The "Scanium - Backend API Performance" dashboard cannot show real data due to a
 - ✅ External labels correctly configured
 
 **Attempted Fixes (all failed):**
+
 1. Static hostname target (`scanium-backend:8080`)
 2. Static IP target (`172.23.0.5:8080`)
 3. Docker discovery target (`discovery.docker.backend.targets`)
@@ -49,6 +55,7 @@ The "Scanium - Backend API Performance" dashboard cannot show real data due to a
 5. Config file synchronization
 
 **Remaining Issues:**
+
 - Prometheus scraper in Alloy cannot reach backend `/metrics` endpoint
 - No error logs in Alloy explaining why scrape fails
 - `up=0` persists despite backend being accessible
@@ -56,6 +63,7 @@ The "Scanium - Backend API Performance" dashboard cannot show real data due to a
 ***REMOVED******REMOVED*** Hypothesis
 
 Possible causes (needs further investigation):
+
 1. **Network policy or firewall** blocking HTTP requests from Alloy to backend on port 8080
 2. **DNS resolution issue** specific to Prometheus scraper component
 3. **Bug in Alloy prometheus.scrape** component or version-specific issue
@@ -65,6 +73,7 @@ Possible causes (needs further investigation):
 ***REMOVED******REMOVED*** Required Fix
 
 **Immediate Action:**
+
 1. Verify backend is actually listening on `0.0.0.0:8080` not just `127.0.0.1:8080`
    ```bash
    docker exec scanium-backend netstat -tlnp | grep 8080
@@ -78,6 +87,7 @@ Possible causes (needs further investigation):
 3. Check for network policies or firewall rules blocking inter-container HTTP
 
 **Alternative Workarounds:**
+
 - Use sidecar metrics exporter if direct scraping continues to fail
 - Configure backend to push metrics to Alloy OTLP endpoint instead of pull-based scraping
 - Expose backend metrics on host network temporarily for debugging
@@ -85,10 +95,12 @@ Possible causes (needs further investigation):
 ***REMOVED******REMOVED*** Dashboard Impact
 
 **Current State:**
+
 - Dashboard shows NO DATA because metrics don't exist in Mimir
 - All panels will be empty until scraping is fixed
 
 **Expected State (once fixed):**
+
 - p50/p95/p99 latency panels show values in milliseconds
 - Throughput panel shows requests/second
 - Route and method breakdowns populate
@@ -115,10 +127,10 @@ Possible causes (needs further investigation):
    ```
 
 4. **Verify in Grafana:**
-   - Open "Scanium - Backend API Performance" dashboard
-   - Select "Last 15 minutes" time range
-   - Panels should show data
-   - Variables dropdowns should populate
+    - Open "Scanium - Backend API Performance" dashboard
+    - Select "Last 15 minutes" time range
+    - Panels should show data
+    - Variables dropdowns should populate
 
 ***REMOVED******REMOVED*** Traffic Generation (for testing)
 
@@ -139,8 +151,10 @@ Wait 90 seconds after traffic generation for scrape and ingestion.
 
 ***REMOVED******REMOVED*** Files Modified
 
-- `monitoring/grafana/dashboards/backend-api-performance.json` - Dashboard definition (NO CHANGES NEEDED)
-- `monitoring/alloy/config.alloy` - Alloy config (attempted fix with docker discovery, may need revert)
+- `monitoring/grafana/dashboards/backend-api-performance.json` - Dashboard definition (NO CHANGES
+  NEEDED)
+- `monitoring/alloy/config.alloy` - Alloy config (attempted fix with docker discovery, may need
+  revert)
 
 ***REMOVED******REMOVED*** Next Steps
 

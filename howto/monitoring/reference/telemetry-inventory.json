@@ -66,40 +66,74 @@
           "cortex_ingester_memory_series",
           "cortex_request_duration_seconds_count"
         ],
-        "jobs": ["alloy", "loki", "tempo", "mimir"]
+        "jobs": [
+          "alloy",
+          "loki",
+          "tempo",
+          "mimir"
+        ]
       },
       "mobile_app": {
         "description": "Metrics from Scanium mobile app via OTLP",
         "source_label": "scanium-mobile",
-        "expected_labels": ["source", "env", "platform", "app_version"],
+        "expected_labels": [
+          "source",
+          "env",
+          "platform",
+          "app_version"
+        ],
         "note": "Available when mobile app is connected and sending telemetry"
       }
     },
     "labels": {
-      "pipeline_metrics": ["__name__", "job", "instance", "source", "env"]
+      "pipeline_metrics": [
+        "__name__",
+        "job",
+        "instance",
+        "source",
+        "env"
+      ]
     }
   },
   "logs": {
     "available": true,
     "expected_labels": {
       "from_alloy_external_labels": {
-        "source": ["scanium-mobile", "scanium-backend"],
-        "env": ["dev", "stage", "prod"]
+        "source": [
+          "scanium-mobile",
+          "scanium-backend"
+        ],
+        "env": [
+          "dev",
+          "stage",
+          "prod"
+        ]
       },
       "from_otel_resource_attributes": {
         "service_name": "Service name from OTLP resource attributes",
         "deployment_environment": "Environment from OTLP resource attributes"
       },
       "expected_json_fields": {
-        "level": ["debug", "info", "warn", "error", "fatal"],
+        "level": [
+          "debug",
+          "info",
+          "warn",
+          "error",
+          "fatal"
+        ],
         "error_message": "Error message text for error logs",
         "trace_id": "Trace correlation ID",
         "event_name": "Event type (for mobile logs)"
       }
     },
     "label_values": {
-      "source": ["scanium-mobile", "scanium-backend"],
-      "env": ["dev"]
+      "source": [
+        "scanium-mobile",
+        "scanium-backend"
+      ],
+      "env": [
+        "dev"
+      ]
     }
   },
   "traces": {
@@ -124,7 +158,10 @@
     "metrics_generator": {
       "enabled": true,
       "exports_to": "http://mimir:9009/api/v1/push",
-      "processors": ["service_graphs", "span_metrics"],
+      "processors": [
+        "service_graphs",
+        "span_metrics"
+      ],
       "expected_metrics": [
         "traces_spanmetrics_latency",
         "traces_spanmetrics_calls_total"
@@ -135,57 +172,104 @@
     {
       "uid": "scanium-system-overview",
       "title": "Scanium - System Overview (RED)",
-      "tags": ["scanium", "red", "overview", "backend"]
+      "tags": [
+        "scanium",
+        "red",
+        "overview",
+        "backend"
+      ]
     },
     {
       "uid": "scanium-backend-api-perf",
       "title": "Scanium - Backend API Performance",
-      "tags": ["scanium", "backend", "api", "performance"]
+      "tags": [
+        "scanium",
+        "backend",
+        "api",
+        "performance"
+      ]
     },
     {
       "uid": "scanium-backend-errors",
       "title": "Scanium - Backend Errors",
-      "tags": ["scanium", "backend", "errors"]
+      "tags": [
+        "scanium",
+        "backend",
+        "errors"
+      ]
     },
     {
       "uid": "scanium-logs-explorer",
       "title": "Scanium - Logs Explorer",
-      "tags": ["scanium", "logs", "loki"]
+      "tags": [
+        "scanium",
+        "logs",
+        "loki"
+      ]
     },
     {
       "uid": "scanium-traces-drilldown",
       "title": "Scanium - Traces Drilldown",
-      "tags": ["scanium", "traces", "tempo"]
+      "tags": [
+        "scanium",
+        "traces",
+        "tempo"
+      ]
     },
     {
       "uid": "scanium-lgtm-health",
       "title": "Scanium - LGTM Stack Health",
-      "tags": ["scanium", "lgtm", "infrastructure", "health"]
+      "tags": [
+        "scanium",
+        "lgtm",
+        "infrastructure",
+        "health"
+      ]
     },
     {
       "uid": "scanium-ops-overview",
       "title": "Scanium - Ops Overview (Mobile)",
-      "tags": ["scanium", "mobile", "overview"]
+      "tags": [
+        "scanium",
+        "mobile",
+        "overview"
+      ]
     },
     {
       "uid": "scanium-app-health",
       "title": "Scanium - App Health (Mobile)",
-      "tags": ["scanium", "mobile", "health"]
+      "tags": [
+        "scanium",
+        "mobile",
+        "health"
+      ]
     },
     {
       "uid": "scanium-scan-performance",
       "title": "Scanium - Scan Performance (Mobile)",
-      "tags": ["scanium", "mobile", "performance"]
+      "tags": [
+        "scanium",
+        "mobile",
+        "performance"
+      ]
     },
     {
       "uid": "scanium-errors",
       "title": "Scanium - Errors (Mobile)",
-      "tags": ["scanium", "mobile", "errors"]
+      "tags": [
+        "scanium",
+        "mobile",
+        "errors"
+      ]
     },
     {
       "uid": "scanium-pipeline-health",
       "title": "Scanium - Pipeline Health",
-      "tags": ["scanium", "pipeline", "health"]
+      "tags": [
+        "scanium",
+        "pipeline",
+        "health"
+      ]
     }
   ]
 }

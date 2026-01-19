@@ -6,7 +6,8 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The Marketplaces Catalog API provides a read-only, API-key protected endpoint to retrieve marketplace information for EU countries. This is Phase 1 of the marketplace pricing integration.
+The Marketplaces Catalog API provides a read-only, API-key protected endpoint to retrieve
+marketplace information for EU countries. This is Phase 1 of the marketplace pricing integration.
 
 ***REMOVED******REMOVED******REMOVED*** Features
 
@@ -33,9 +34,11 @@ The Marketplaces Catalog API provides a read-only, API-key protected endpoint to
 Returns list of supported country codes.
 
 **Headers:**
+
 - `X-API-Key` (required): Valid API key
 
 **Response (200 OK):**
+
 ```json
 {
   "countries": ["AL", "AD", "AT", "BE", "BG", ...]
@@ -43,6 +46,7 @@ Returns list of supported country codes.
 ```
 
 **Errors:**
+
 - `401 UNAUTHORIZED`: Missing or invalid API key
 - `503 SERVICE_UNAVAILABLE`: Catalog failed to load
 
@@ -55,12 +59,15 @@ Returns list of supported country codes.
 Returns marketplaces for a specific country.
 
 **Parameters:**
+
 - `countryCode` (path): ISO 3166-1 alpha-2 country code (e.g., "NL", "DE")
 
 **Headers:**
+
 - `X-API-Key` (required): Valid API key
 
 **Response (200 OK):**
+
 ```json
 {
   "countryCode": "NL",
@@ -89,6 +96,7 @@ Returns marketplaces for a specific country.
 ```
 
 **Errors:**
+
 - `400 INVALID_COUNTRY_CODE`: Country code must be 2 letters
 - `401 UNAUTHORIZED`: Missing or invalid API key
 - `404 NOT_FOUND`: Country not supported
@@ -247,18 +255,21 @@ curl -s https://scanium.gtemp1.com/v1/marketplaces/USA \
 **Symptom:** Logs show "Marketplaces catalog failed to load"
 
 **Check:**
+
 ```bash
 ssh nas
 docker-compose logs backend | grep -i marketplace
 ```
 
 **Common causes:**
+
 1. JSON syntax error
-   - Fix: Validate JSON with `jq . < marketplaces.eu.json`
+    - Fix: Validate JSON with `jq . < marketplaces.eu.json`
 2. Schema validation failure
-   - Fix: Run local tests to see validation errors
+    - Fix: Run local tests to see validation errors
 3. File not found
-   - Fix: Verify file exists in container: `docker exec scanium-backend ls -la /app/backend/config/marketplaces/`
+    - Fix: Verify file exists in container:
+      `docker exec scanium-backend ls -la /app/backend/config/marketplaces/`
 
 ***REMOVED******REMOVED******REMOVED*** Endpoints return 503
 
@@ -267,6 +278,7 @@ docker-compose logs backend | grep -i marketplace
 **Cause:** Catalog failed validation at startup
 
 **Fix:**
+
 1. Check logs for validation error
 2. Fix the catalog JSON
 3. Restart backend container
@@ -274,6 +286,7 @@ docker-compose logs backend | grep -i marketplace
 ***REMOVED******REMOVED******REMOVED*** New country not appearing
 
 **Checklist:**
+
 - ✅ Country code is exactly 2 uppercase letters
 - ✅ Currency code is exactly 3 uppercase letters
 - ✅ At least one marketplace defined
@@ -313,12 +326,14 @@ Schema (schema.ts) - Zod validation
 ***REMOVED******REMOVED******REMOVED*** Monitoring
 
 Logs available via:
+
 ```bash
 ssh nas
 docker-compose logs -f backend | grep -E "(marketplace|Marketplace)"
 ```
 
 Startup log on success:
+
 ```
 Marketplaces catalog loaded successfully {
   catalogPath: 'backend/config/marketplaces/marketplaces.eu.json',

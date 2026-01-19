@@ -1,4 +1,6 @@
-> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current state.
+> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
+> state.
+
 ***REMOVED*** eBay Domain Pack Generator
 
 Auto-generate Scanium Domain Packs from eBay marketplace category trees.

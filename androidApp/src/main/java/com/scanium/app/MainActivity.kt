@@ -68,30 +68,32 @@ class MainActivity : AppCompatActivity() {
 
                     // Fade out the entire splash
                     val fadeOutAnimator =
-                        ObjectAnimator.ofFloat(
-                            splashScreenView.view,
-                            View.ALPHA,
-                            1f,
-                            0f,
-                        ).apply {
-                            duration = fadeOutDuration
-                            interpolator = AccelerateInterpolator()
-                            doOnEnd { splashScreenView.remove() }
-                        }
+                        ObjectAnimator
+                            .ofFloat(
+                                splashScreenView.view,
+                                View.ALPHA,
+                                1f,
+                                0f,
+                            ).apply {
+                                duration = fadeOutDuration
+                                interpolator = AccelerateInterpolator()
+                                doOnEnd { splashScreenView.remove() }
+                            }
 
                     // Only apply flash effect if iconView exists
                     if (iconView != null) {
                         val flashAnimator =
-                            ObjectAnimator.ofFloat(
-                                iconView,
-                                View.ALPHA,
-                                1f,
-                                1.2f,
-                                1f, // Subtle brightness pulse
-                            ).apply {
-                                duration = flashDuration
-                                interpolator = AccelerateInterpolator()
-                            }
+                            ObjectAnimator
+                                .ofFloat(
+                                    iconView,
+                                    View.ALPHA,
+                                    1f,
+                                    1.2f,
+                                    1f, // Subtle brightness pulse
+                                ).apply {
+                                    duration = flashDuration
+                                    interpolator = AccelerateInterpolator()
+                                }
 
                         // Chain animations: flash then fade
                         flashAnimator.doOnEnd { fadeOutAnimator.start() }

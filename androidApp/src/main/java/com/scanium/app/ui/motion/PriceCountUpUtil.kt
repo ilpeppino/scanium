@@ -102,18 +102,15 @@ object PriceCountUpUtil {
         highValue: Int,
         steps: Int = MotionConstants.PRICE_COUNT_UP_STEPS,
         totalDurationMs: Int = MotionConstants.PRICE_COUNT_UP_DURATION_MS,
-    ): Pair<List<PriceStep>, List<PriceStep>> {
-        return generateSteps(lowValue, steps, totalDurationMs) to
+    ): Pair<List<PriceStep>, List<PriceStep>> =
+        generateSteps(lowValue, steps, totalDurationMs) to
             generateSteps(highValue, steps, totalDurationMs)
-    }
 
     /**
      * Quadratic ease-out function.
      * Fast start, gradual slowdown at end.
      */
-    private fun easeOutQuad(t: Float): Float {
-        return 1 - (1 - t) * (1 - t)
-    }
+    private fun easeOutQuad(t: Float): Float = 1 - (1 - t) * (1 - t)
 
     /**
      * Format a price value with currency symbol.
@@ -125,9 +122,7 @@ object PriceCountUpUtil {
     fun formatPrice(
         value: Int,
         currencySymbol: String = "€",
-    ): String {
-        return "$currencySymbol$value"
-    }
+    ): String = "$currencySymbol$value"
 
     /**
      * Format a price range with currency symbol.
@@ -141,7 +136,5 @@ object PriceCountUpUtil {
         low: Int,
         high: Int,
         currencySymbol: String = "€",
-    ): String {
-        return "$currencySymbol$low–$currencySymbol$high"
-    }
+    ): String = "$currencySymbol$low–$currencySymbol$high"
 }

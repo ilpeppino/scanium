@@ -24,8 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.app.camera.CameraViewModel
-import com.scanium.app.config.FeatureFlags
 import com.scanium.app.camera.CaptureResolution
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.settings.ClassificationModeViewModel
@@ -45,9 +45,10 @@ fun SettingsCameraScreen(
     val showDetectionBoxes by settingsViewModel.showDetectionBoxes.collectAsState()
 
     // Filter resolution options: HIGH only available in dev builds
-    val availableResolutions = CaptureResolution.values().filter { resolution ->
-        resolution != CaptureResolution.HIGH || FeatureFlags.allowHighResolution
-    }
+    val availableResolutions =
+        CaptureResolution.values().filter { resolution ->
+            resolution != CaptureResolution.HIGH || FeatureFlags.allowHighResolution
+        }
     // Resolution options using SettingOption
     val captureOptions =
         availableResolutions.map { resolution ->
@@ -176,15 +177,15 @@ fun SettingsCameraScreen(
     }
 }
 
-private enum class AccuracyLevel(val threshold: Float) {
+private enum class AccuracyLevel(
+    val threshold: Float,
+) {
     LOW(0.45f),
     MEDIUM(0.55f),
     HIGH(0.7f),
     ;
 
     companion object {
-        fun fromThreshold(value: Float): AccuracyLevel {
-            return values().minBy { kotlin.math.abs(it.threshold - value) }
-        }
+        fun fromThreshold(value: Float): AccuracyLevel = values().minBy { kotlin.math.abs(it.threshold - value) }
     }
 }

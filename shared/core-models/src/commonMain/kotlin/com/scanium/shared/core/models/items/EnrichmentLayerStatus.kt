@@ -25,9 +25,10 @@ data class EnrichmentLayerStatus(
      * Whether any layer is currently in progress.
      */
     val isEnriching: Boolean
-        get() = layerA == LayerState.IN_PROGRESS ||
-            layerB == LayerState.IN_PROGRESS ||
-            layerC == LayerState.IN_PROGRESS
+        get() =
+            layerA == LayerState.IN_PROGRESS ||
+                layerB == LayerState.IN_PROGRESS ||
+                layerC == LayerState.IN_PROGRESS
 
     /**
      * Whether all layers have completed (successfully or with failure/skip).
@@ -39,20 +40,22 @@ data class EnrichmentLayerStatus(
      * Whether at least one layer has completed successfully.
      */
     val hasAnyResults: Boolean
-        get() = layerA == LayerState.COMPLETED ||
-            layerB == LayerState.COMPLETED ||
-            layerC == LayerState.COMPLETED
+        get() =
+            layerA == LayerState.COMPLETED ||
+                layerB == LayerState.COMPLETED ||
+                layerC == LayerState.COMPLETED
 
     /**
      * Human-readable summary of the enrichment status.
      */
     val statusSummary: String
-        get() = when {
-            isComplete && hasAnyResults -> "Enriched"
-            isEnriching -> "Enriching..."
-            layerA == LayerState.FAILED && layerB == LayerState.FAILED -> "Enrichment failed"
-            else -> "Pending"
-        }
+        get() =
+            when {
+                isComplete && hasAnyResults -> "Enriched"
+                isEnriching -> "Enriching..."
+                layerA == LayerState.FAILED && layerB == LayerState.FAILED -> "Enrichment failed"
+                else -> "Pending"
+            }
 
     companion object {
         /**
@@ -63,11 +66,12 @@ data class EnrichmentLayerStatus(
         /**
          * Status representing all layers completed successfully.
          */
-        val ALL_COMPLETE = EnrichmentLayerStatus(
-            layerA = LayerState.COMPLETED,
-            layerB = LayerState.COMPLETED,
-            layerC = LayerState.COMPLETED,
-        )
+        val ALL_COMPLETE =
+            EnrichmentLayerStatus(
+                layerA = LayerState.COMPLETED,
+                layerB = LayerState.COMPLETED,
+                layerC = LayerState.COMPLETED,
+            )
     }
 }
 
@@ -98,7 +102,9 @@ enum class LayerState {
     /**
      * Layer was skipped (e.g., cloud layers when offline).
      */
-    SKIPPED;
+    SKIPPED,
+
+    ;
 
     /**
      * Whether this state is terminal (no further transitions expected).

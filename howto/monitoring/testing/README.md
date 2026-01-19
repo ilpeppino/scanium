@@ -5,11 +5,13 @@ This directory contains scripts and tools for testing the monitoring infrastruct
 ***REMOVED******REMOVED*** Available Tools
 
 ***REMOVED******REMOVED******REMOVED*** [generate-openai-traffic.sh](./generate-openai-traffic.sh)
+
 **Purpose:** Generate controlled OpenAI/Assistant API traffic for dashboard testing
 **Generates:** 3 successful requests + 1 error over ~60 seconds
 **Tests:** Request rate, latency, token usage metrics
 
 **Usage:**
+
 ```bash
 ssh nas
 cd /volume1/docker/scanium/repo

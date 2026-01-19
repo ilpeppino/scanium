@@ -1,6 +1,7 @@
 ***REMOVED*** AI Assistant Fix Report
 
 ***REMOVED******REMOVED*** Summary
+
 Fixed 3 user-facing regressions on branch `refactoring` related to the AI Assistant feature.
 
 ---
@@ -8,24 +9,28 @@ Fixed 3 user-facing regressions on branch `refactoring` related to the AI Assist
 ***REMOVED******REMOVED*** ISSUE 1: Double Click to Trigger AI Assistant
 
 ***REMOVED******REMOVED******REMOVED*** Symptoms
+
 - User must click AI assistant button twice to trigger AI description generation
 - First click shows "AI disabled" inlay or does nothing
 - Second click works correctly
 
 ***REMOVED******REMOVED******REMOVED*** Root Cause
+
 **File:** `androidApp/src/main/java/com/scanium/app/items/edit/EditItemScreenV3.kt:87`
 
 ```kotlin
 val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = false)
 ```
 
-The `collectAsState()` uses `initial = false`, meaning on first composition (before the Flow emits), `aiAssistantEnabled` is `false`. When user clicks the AI button:
+The `collectAsState()` uses `initial = false`, meaning on first composition (before the Flow emits),
+`aiAssistantEnabled` is `false`. When user clicks the AI button:
 
 1. First click: `aiAssistantEnabled = false` (initial) → shows "AI disabled" inlay
 2. Flow emits actual value (`true`)
 3. Second click: `aiAssistantEnabled = true` → opens sheet correctly
 
 ***REMOVED******REMOVED******REMOVED*** Fix
+
 Changed initial value from `false` to `true`:
 
 ```kotlin
@@ -36,6 +41,7 @@ val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(i
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Manual Verification
+
 1. Open Items list
 2. Select any item
 3. Navigate to Edit Item screen
@@ -47,20 +53,25 @@ val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(i
 ***REMOVED******REMOVED*** ISSUE 2: Navigation Not Shown After Selecting 2 Items
 
 ***REMOVED******REMOVED******REMOVED*** Symptoms
+
 - After selecting 2 items and triggering AI, app stays on Edit page when AI completes
 - If user clicks again, AI response screen appears immediately
 
 ***REMOVED******REMOVED******REMOVED*** Root Cause
-**Same as ISSUE 1.** The first click appeared to do nothing because `aiAssistantEnabled` was `false` initially. However, the generation still started in the background. When user clicked again:
+
+**Same as ISSUE 1.** The first click appeared to do nothing because `aiAssistantEnabled` was `false`
+initially. However, the generation still started in the background. When user clicked again:
 
 1. First click: Blocked by `aiAssistantEnabled = false` check
 2. Generation completed in background, Success state cached in ViewModel
 3. Second click: Opens sheet, immediately shows cached Success state
 
 ***REMOVED******REMOVED******REMOVED*** Fix
+
 Same fix as ISSUE 1 - changing initial value to `true` ensures first click opens the sheet properly.
 
 ***REMOVED******REMOVED******REMOVED*** Manual Verification
+
 1. Open Items list
 2. Select 2 items
 3. Navigate to Edit Items
@@ -72,13 +83,16 @@ Same fix as ISSUE 1 - changing initial value to `true` ensures first click opens
 ***REMOVED******REMOVED*** ISSUE 3: Language/Country Not Applied
 
 ***REMOVED******REMOVED******REMOVED*** Symptoms
+
 - User sets Language=Italian and Country=Italy in Settings > General
 - AI generates description in English instead of Italian
 
 ***REMOVED******REMOVED******REMOVED*** Root Cause
+
 **File:** `androidApp/src/main/java/com/scanium/app/data/AssistantSettings.kt:51-54`
 
-The `assistantPrefsFlow` combined settings including `assistantLanguageFlow`, which read from a separate DataStore key (`ASSISTANT_LANGUAGE_KEY`) with default "EN":
+The `assistantPrefsFlow` combined settings including `assistantLanguageFlow`, which read from a
+separate DataStore key (`ASSISTANT_LANGUAGE_KEY`) with default "EN":
 
 ```kotlin
 val assistantLanguageFlow: Flow<String> =
@@ -87,12 +101,16 @@ val assistantLanguageFlow: Flow<String> =
     }
 ```
 
-But users set language in General settings, which updates `primaryLanguageFlow` → `effectiveAiOutputLanguageFlow` (unified settings). The assistant was reading from a different, unset setting.
+But users set language in General settings, which updates `primaryLanguageFlow` →
+`effectiveAiOutputLanguageFlow` (unified settings). The assistant was reading from a different,
+unset setting.
 
 ***REMOVED******REMOVED******REMOVED*** Fix
+
 **File:** `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt:153-160`
 
-Fixed at the source by overriding `assistantPrefsFlow` in `SettingsRepository` to combine base prefs with the unified language setting:
+Fixed at the source by overriding `assistantPrefsFlow` in `SettingsRepository` to combine base prefs
+with the unified language setting:
 
 ```kotlin
 // ISSUE-3 FIX: Combine base assistant prefs with unified language setting
@@ -105,9 +123,11 @@ val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
 }
 ```
 
-This approach fixes the language at the settings layer, so all consumers of `assistantPrefsFlow` automatically get the correct language without needing changes.
+This approach fixes the language at the settings layer, so all consumers of `assistantPrefsFlow`
+automatically get the correct language without needing changes.
 
 ***REMOVED******REMOVED******REMOVED*** Manual Verification
+
 1. Go to Settings > General
 2. Set Language to Italian, Country to Italy
 3. Return to Items list
@@ -119,9 +139,9 @@ This approach fixes the language at the settings layer, so all consumers of `ass
 
 ***REMOVED******REMOVED*** Files Changed
 
-| File | Changes |
-|------|---------|
-| `ItemEditState.kt:74` | Removed `item` from `remember` key to prevent ViewModel recreation |
+| File                            | Changes                                                                |
+|---------------------------------|------------------------------------------------------------------------|
+| `ItemEditState.kt:74`           | Removed `item` from `remember` key to prevent ViewModel recreation     |
 | `SettingsRepository.kt:153-160` | Override `assistantPrefsFlow` to combine with unified language setting |
 
 ---
@@ -129,13 +149,13 @@ This approach fixes the language at the settings layer, so all consumers of `ass
 ***REMOVED******REMOVED*** Commits
 
 1. **fix(ai): trigger assistant on first click (***REMOVED***ISSUE-1 ***REMOVED***ISSUE-2)**
-   - Removes `item` from `remember` key in `rememberItemEditState()`
-   - Prevents ViewModel recreation when item loads, fixing timing issues
+    - Removes `item` from `remember` key in `rememberItemEditState()`
+    - Prevents ViewModel recreation when item loads, fixing timing issues
 
 2. **fix(ai): propagate unified language setting to assistant (***REMOVED***ISSUE-3)**
-   - Overrides `assistantPrefsFlow` in `SettingsRepository` to combine with unified language
-   - Uses `effectiveAiOutputLanguageFlow` as the language source
-   - All assistant consumers automatically get the correct language
+    - Overrides `assistantPrefsFlow` in `SettingsRepository` to combine with unified language
+    - Uses `effectiveAiOutputLanguageFlow` as the language source
+    - All assistant consumers automatically get the correct language
 
 ---
 
@@ -148,13 +168,16 @@ This approach fixes the language at the settings layer, so all consumers of `ass
 
 ***REMOVED******REMOVED*** Risk Assessment
 
-| Fix | Risk Level | Notes |
-|-----|------------|-------|
-| ISSUE 1/2 | Low | Removes `item` from remember key; ViewModel fetches data internally, so no behavioral change |
-| ISSUE 3 | Low | Combines existing flows in SettingsRepository; no new code paths, just proper wiring |
+| Fix       | Risk Level | Notes                                                                                        |
+|-----------|------------|----------------------------------------------------------------------------------------------|
+| ISSUE 1/2 | Low        | Removes `item` from remember key; ViewModel fetches data internally, so no behavioral change |
+| ISSUE 3   | Low        | Combines existing flows in SettingsRepository; no new code paths, just proper wiring         |
 
 ---
 
 ***REMOVED******REMOVED*** Notes
 
-The key insight for ISSUE 3 was that overriding language at request time using `.copy()` caused "Invalid response format" errors from the backend. The correct fix was to override `assistantPrefsFlow` at the settings layer, so the language flows through naturally without modifying the `AssistantPrefs` object at request time.
+The key insight for ISSUE 3 was that overriding language at request time using `.copy()` caused "
+Invalid response format" errors from the backend. The correct fix was to override
+`assistantPrefsFlow` at the settings layer, so the language flows through naturally without
+modifying the `AssistantPrefs` object at request time.

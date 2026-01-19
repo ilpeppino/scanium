@@ -1,12 +1,46 @@
 package com.scanium.app.ui.settings.developer
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,11 +121,12 @@ fun AssistantDiagnosticsSection(
 
         // Overall status badge with debug detail and status message
         val connectionResult = state.connectionTestResult
-        val debugDetail = when (connectionResult) {
-            is ConnectionTestResult.Success -> "GET ${connectionResult.endpoint} -> ${connectionResult.httpStatus}"
-            is ConnectionTestResult.Failure -> connectionResult.debugDetail
-            null -> null
-        }
+        val debugDetail =
+            when (connectionResult) {
+                is ConnectionTestResult.Success -> "GET ${connectionResult.endpoint} -> ${connectionResult.httpStatus}"
+                is ConnectionTestResult.Failure -> connectionResult.debugDetail
+                null -> null
+            }
         // Use BackendStatusClassifier for accurate status messages with HTTP codes
         val statusMessage = connectionResult?.let { BackendStatusClassifier.getStatusMessage(it) }
         AssistantOverallStatusBadge(
@@ -129,15 +164,21 @@ fun AssistantDiagnosticsSection(
                         },
                     detail =
                         when (val result = state.connectionTestResult) {
-                            is ConnectionTestResult.Success ->
+                            is ConnectionTestResult.Success -> {
                                 stringResource(R.string.settings_dev_assistant_backend_connected, result.httpStatus)
-                            is ConnectionTestResult.Failure -> result.message
-                            null ->
+                            }
+
+                            is ConnectionTestResult.Failure -> {
+                                result.message
+                            }
+
+                            null -> {
                                 if (state.isChecking) {
                                     stringResource(R.string.settings_dev_assistant_checking)
                                 } else {
                                     stringResource(R.string.settings_dev_assistant_not_checked)
                                 }
+                            }
                         },
                 )
 
@@ -243,10 +284,11 @@ fun AssistantDiagnosticsSection(
                 if (state.lastChecked > 0) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
-                        text = stringResource(
-                            R.string.settings_dev_assistant_last_checked,
-                            formatTimestamp(state.lastChecked),
-                        ),
+                        text =
+                            stringResource(
+                                R.string.settings_dev_assistant_last_checked,
+                                formatTimestamp(state.lastChecked),
+                            ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth(),
@@ -270,77 +312,99 @@ private fun AssistantOverallStatusBadge(
 ) {
     val (color, defaultText, icon) =
         when (readiness) {
-            AssistantReadiness.READY ->
+            AssistantReadiness.READY -> {
                 Triple(
                     Color(0xFF4CAF50),
                     stringResource(R.string.settings_dev_assistant_status_ready),
                     Icons.Default.CheckCircle,
                 )
-            AssistantReadiness.CHECKING ->
+            }
+
+            AssistantReadiness.CHECKING -> {
                 Triple(
                     Color(0xFF2196F3),
                     stringResource(R.string.settings_dev_assistant_status_checking),
                     Icons.Default.Sync,
                 )
-            AssistantReadiness.NO_NETWORK ->
+            }
+
+            AssistantReadiness.NO_NETWORK -> {
                 Triple(
                     Color(0xFFF44336),
                     stringResource(R.string.settings_dev_assistant_status_no_network),
                     Icons.Default.WifiOff,
                 )
-            AssistantReadiness.BACKEND_UNREACHABLE ->
+            }
+
+            AssistantReadiness.BACKEND_UNREACHABLE -> {
                 Triple(
                     Color(0xFFF44336),
                     stringResource(R.string.settings_dev_assistant_status_backend_unreachable),
                     Icons.Default.CloudOff,
                 )
-            AssistantReadiness.BACKEND_UNAUTHORIZED ->
+            }
+
+            AssistantReadiness.BACKEND_UNAUTHORIZED -> {
                 Triple(
                     Color(0xFFFF9800),
                     stringResource(R.string.settings_dev_assistant_status_backend_unauthorized),
                     Icons.Default.Lock,
                 )
-            AssistantReadiness.BACKEND_SERVER_ERROR ->
+            }
+
+            AssistantReadiness.BACKEND_SERVER_ERROR -> {
                 Triple(
                     Color(0xFFFF9800),
                     stringResource(R.string.settings_dev_assistant_status_backend_server_error),
                     Icons.Default.Error,
                 )
-            AssistantReadiness.BACKEND_NOT_FOUND ->
+            }
+
+            AssistantReadiness.BACKEND_NOT_FOUND -> {
                 Triple(
                     Color(0xFFFF9800),
                     stringResource(R.string.settings_dev_assistant_status_backend_not_found),
                     Icons.Default.SearchOff,
                 )
-            AssistantReadiness.BACKEND_NOT_CONFIGURED ->
+            }
+
+            AssistantReadiness.BACKEND_NOT_CONFIGURED -> {
                 Triple(
                     Color(0xFF9E9E9E),
                     stringResource(R.string.settings_dev_assistant_status_backend_not_configured),
                     Icons.Default.Settings,
                 )
-            AssistantReadiness.PREREQUISITES_NOT_MET ->
+            }
+
+            AssistantReadiness.PREREQUISITES_NOT_MET -> {
                 Triple(
                     Color(0xFFFF9800),
                     stringResource(R.string.settings_dev_assistant_status_prerequisites_not_met),
                     Icons.Default.Warning,
                 )
-            AssistantReadiness.UNKNOWN ->
+            }
+
+            AssistantReadiness.UNKNOWN -> {
                 Triple(
                     Color(0xFF9E9E9E),
                     stringResource(R.string.settings_dev_assistant_status_unknown),
                     Icons.Filled.Help,
                 )
+            }
         }
 
     // Use statusMessage from BackendStatusClassifier for backend-related states (includes HTTP codes)
-    val text = when (readiness) {
-        AssistantReadiness.BACKEND_UNREACHABLE,
-        AssistantReadiness.BACKEND_UNAUTHORIZED,
-        AssistantReadiness.BACKEND_SERVER_ERROR,
-        AssistantReadiness.BACKEND_NOT_FOUND,
-        AssistantReadiness.BACKEND_NOT_CONFIGURED -> statusMessage ?: defaultText
-        else -> defaultText
-    }
+    val text =
+        when (readiness) {
+            AssistantReadiness.BACKEND_UNREACHABLE,
+            AssistantReadiness.BACKEND_UNAUTHORIZED,
+            AssistantReadiness.BACKEND_SERVER_ERROR,
+            AssistantReadiness.BACKEND_NOT_FOUND,
+            AssistantReadiness.BACKEND_NOT_CONFIGURED,
+            -> statusMessage ?: defaultText
+
+            else -> defaultText
+        }
 
     Surface(
         color = color.copy(alpha = 0.15f),
@@ -507,6 +571,4 @@ private fun PrerequisiteDetailRow(
 /**
  * Format timestamp to readable time.
  */
-private fun formatTimestamp(timestamp: Long): String {
-    return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
-}
+private fun formatTimestamp(timestamp: Long): String = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp))

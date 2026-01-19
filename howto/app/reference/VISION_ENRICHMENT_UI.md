@@ -2,20 +2,25 @@
 
 ***REMOVED******REMOVED*** Overview
 
-This document describes the UI enhancements made to the Edit Items screen to display and utilize vision attributes that are automatically extracted when items are scanned.
+This document describes the UI enhancements made to the Edit Items screen to display and utilize
+vision attributes that are automatically extracted when items are scanned.
 
 ***REMOVED******REMOVED*** Problem Statement
 
-After scanning an item (e.g., Labello lip balm), the app would show "Unknown classification + no prefilled attributes" even though:
+After scanning an item (e.g., Labello lip balm), the app would show "Unknown classification + no
+prefilled attributes" even though:
+
 - The backend was successfully extracting vision data (OCR text, logos, colors, labels)
 - The Android app was receiving enriched attributes from the classification endpoint
 - The data was being stored in the `ScannedItem` model
 
-**Root Cause:** The Edit Items UI was not displaying or utilizing the vision attributes that were already available in the data model.
+**Root Cause:** The Edit Items UI was not displaying or utilizing the vision attributes that were
+already available in the data model.
 
 ***REMOVED******REMOVED*** Solution
 
 Enhanced the Edit Items screen (`EditItemsScreen.kt`) to:
+
 1. **Pre-fill label/name** from detected brand and model
 2. **Display category as editable dropdown** instead of read-only text
 3. **Populate recognized text** from vision OCR data
@@ -46,11 +51,14 @@ Enhanced the Edit Items screen (`EditItemsScreen.kt`) to:
 ***REMOVED******REMOVED******REMOVED*** Data Flow
 
 **ScannedItem Model Fields:**
+
 - `attributes: Map<String, ItemAttribute>` - Enriched attributes (brand, model, color, material)
 - `visionAttributes: VisionAttributes` - Raw vision data (OCR, logos, colors, labels)
-- `detectedAttributes: Map<String, ItemAttribute>` - Original detected values (for showing "Detected: X")
+- `detectedAttributes: Map<String, ItemAttribute>` - Original detected values (for showing "
+  Detected: X")
 
 **VisionAttributes Structure:**
+
 ```kotlin
 data class VisionAttributes(
     val colors: List<VisionColor>,          // Detected colors with scores
@@ -69,6 +77,7 @@ data class VisionAttributes(
 ***REMOVED******REMOVED******REMOVED******REMOVED*** `/androidApp/src/main/java/com/scanium/app/items/EditItemsScreen.kt`
 
 **Added:**
+
 - `buildSuggestedLabel()` - Helper to construct label from brand + model
 - `CategoryDropdown()` - Dropdown for selecting/changing category
 - `VisionAttributesDisplay()` - Composable to show detected attributes as chips
@@ -76,6 +85,7 @@ data class VisionAttributes(
 - Pre-fill logic for label and recognizedText from vision attributes
 
 **Changes:**
+
 - Line 100-104: Pre-fill label from vision attributes if empty
 - Line 107: Pre-fill recognized text from `visionAttributes.ocrText`
 - Line 340-346: Replace read-only category text with editable dropdown
@@ -87,6 +97,7 @@ data class VisionAttributes(
 ***REMOVED******REMOVED******REMOVED******REMOVED*** `/androidApp/src/main/java/com/scanium/app/items/state/ItemsStateManager.kt`
 
 **Added:**
+
 - Line 707: `category` field to `ItemFieldUpdate` data class
 - Line 313: Apply category updates in `updateItemsFields()`
 
@@ -95,15 +106,18 @@ data class VisionAttributes(
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Pre-filled Fields
 
 **Label / Name:**
+
 - If `labelText` is blank, automatically fills from:
-  1. `brand + model` (e.g., "Labello Cherry")
-  2. `brand` only (e.g., "Labello")
-  3. Remains empty if no vision data
+    1. `brand + model` (e.g., "Labello Cherry")
+    2. `brand` only (e.g., "Labello")
+    3. Remains empty if no vision data
 
 **Recognized Text:**
+
 - Automatically populated from `visionAttributes.ocrText` if not already set
 
 **Category:**
+
 - Now editable via dropdown
 - Shows all available categories
 - Allows user to correct misclassifications
@@ -111,6 +125,7 @@ data class VisionAttributes(
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Vision Attributes Display
 
 Shows detected attributes as chips:
+
 - **Brand chip:** Displays detected brand (e.g., "Brand: Labello")
 - **Color chips:** Shows up to 3 detected colors (e.g., "Blue", "White", "Red")
 
@@ -121,8 +136,8 @@ The section only appears if vision data is available (not empty).
 ***REMOVED******REMOVED******REMOVED*** Scenario 1: Scan Item with Clear Brand Logo (e.g., Labello)
 
 1. **Setup:**
-   - Ensure backend is running and classification is enabled
-   - Have good lighting conditions
+    - Ensure backend is running and classification is enabled
+    - Have good lighting conditions
 
 2. **Steps:**
    ```
@@ -246,6 +261,7 @@ curl -X POST "http://localhost:3000/v1/classify?enrichAttributes=true" \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "requestId": "req_...",
@@ -277,40 +293,46 @@ curl -X POST "http://localhost:3000/v1/classify?enrichAttributes=true" \
 
 ***REMOVED******REMOVED*** Known Limitations
 
-1. **Backend Required:** Vision enrichment only works when backend is available and classification is enabled
+1. **Backend Required:** Vision enrichment only works when backend is available and classification
+   is enabled
 2. **Internet Required:** Google Vision API calls require internet connectivity
 3. **Cache Duration:** Vision facts are cached for 1 hour (configurable)
-4. **Category Mapping:** Currently no automatic category mapping from vision labels (future enhancement)
-5. **Attribute Editing:** Brand and color chips are informational only (editing support can be added)
+4. **Category Mapping:** Currently no automatic category mapping from vision labels (future
+   enhancement)
+5. **Attribute Editing:** Brand and color chips are informational only (editing support can be
+   added)
 
 ***REMOVED******REMOVED*** Future Enhancements
 
 1. **Category Mapping:** Use vision labels to improve category suggestions
-   - Map "lip balm" label → BEAUTY category
-   - Map "Furniture" label → FURNITURE category
+    - Map "lip balm" label → BEAUTY category
+    - Map "Furniture" label → FURNITURE category
 
 2. **Attribute Confidence UI:** Show confidence scores for detected attributes
-   - Green chip for high confidence (>0.8)
-   - Yellow chip for medium confidence (0.5-0.8)
-   - Gray chip for low confidence (<0.5)
+    - Green chip for high confidence (>0.8)
+    - Yellow chip for medium confidence (0.5-0.8)
+    - Gray chip for low confidence (<0.5)
 
 3. **Attribute Editing:** Allow users to edit/confirm detected attributes
-   - Tap brand chip to edit
-   - Add new attributes manually
-   - Mark as "user-confirmed" with higher confidence
+    - Tap brand chip to edit
+    - Add new attributes manually
+    - Mark as "user-confirmed" with higher confidence
 
 4. **Vision Preview:** Show visual indicators on image
-   - Highlight OCR text regions
-   - Show logo detection boxes
-   - Display color extraction areas
+    - Highlight OCR text regions
+    - Show logo detection boxes
+    - Display color extraction areas
 
 ***REMOVED******REMOVED*** References
 
 - Backend Vision Extractor: `/backend/src/modules/vision/extractor.ts`
 - Backend Classification Route: `/backend/src/modules/classifier/routes.ts`
-- Android Cloud Classifier: `/androidApp/src/main/java/com/scanium/app/ml/classification/CloudClassifier.kt`
-- Classification Coordinator: `/androidApp/src/main/java/com/scanium/app/items/classification/ItemClassificationCoordinator.kt`
-- ScannedItem Model: `/shared/core-models/src/commonMain/kotlin/com/scanium/shared/core/models/items/ScannedItem.kt`
+- Android Cloud Classifier:
+  `/androidApp/src/main/java/com/scanium/app/ml/classification/CloudClassifier.kt`
+- Classification Coordinator:
+  `/androidApp/src/main/java/com/scanium/app/items/classification/ItemClassificationCoordinator.kt`
+- ScannedItem Model:
+  `/shared/core-models/src/commonMain/kotlin/com/scanium/shared/core/models/items/ScannedItem.kt`
 
 ***REMOVED******REMOVED*** Testing Summary
 

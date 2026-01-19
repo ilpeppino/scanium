@@ -19,15 +19,16 @@ data class Country(
      * Get display name for this country using the current locale.
      * Falls back to the country code if display name cannot be determined.
      */
-    fun getDisplayName(languageCode: String = "en"): String {
-        return try {
-            java.util.Locale("", code).getDisplayCountry(java.util.Locale(languageCode))
+    fun getDisplayName(languageCode: String = "en"): String =
+        try {
+            java.util
+                .Locale("", code)
+                .getDisplayCountry(java.util.Locale(languageCode))
                 .takeIf { it.isNotBlank() }
                 ?: code
         } catch (e: Exception) {
             code
         }
-    }
 
     /**
      * Get flag emoji for this country code.
@@ -35,13 +36,20 @@ data class Country(
      * Handles special cases: UK -> GB flag, EU -> EU flag.
      */
     fun getFlagEmoji(): String {
-        val flagCode = when (code.uppercase()) {
-            "UK" -> "GB" // UK uses GB flag
-            else -> code.uppercase()
-        }
+        val flagCode =
+            when (code.uppercase()) {
+                "UK" -> "GB"
+
+                // UK uses GB flag
+                else -> code.uppercase()
+            }
 
         return when (flagCode) {
-            "EU" -> "\uD83C\uDDEA\uD83C\uDDFA" // EU flag
+            "EU" -> {
+                "\uD83C\uDDEA\uD83C\uDDFA"
+            }
+
+            // EU flag
             else -> {
                 if (flagCode.length == 2) {
                     // Convert to regional indicator symbols

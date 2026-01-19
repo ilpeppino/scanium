@@ -47,7 +47,8 @@ class OtlpHttpExporter(
         }
 
     private val client =
-        OkHttpClient.Builder()
+        OkHttpClient
+            .Builder()
             .connectTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
             .writeTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
             .readTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
@@ -132,7 +133,8 @@ class OtlpHttpExporter(
         while (attempt <= telemetryConfig.maxRetries) {
             try {
                 val httpRequest =
-                    Request.Builder()
+                    Request
+                        .Builder()
                         .url(url)
                         .post(payload.toRequestBody(jsonMediaType))
                         .header("Content-Type", "application/json")
@@ -146,11 +148,13 @@ class OtlpHttpExporter(
                             }
                             return // Success, exit retry loop
                         }
+
                         response.code in 400..499 -> {
                             // Client error, don't retry
                             Log.w(tag, "Failed to export $signalType: HTTP ${response.code} (client error, not retrying)")
                             return
                         }
+
                         else -> {
                             // Server error or other, retry
                             Log.w(
@@ -181,8 +185,8 @@ class OtlpHttpExporter(
     /**
      * Builds resource attributes common to all telemetry signals.
      */
-    fun buildResource(): Resource {
-        return Resource(
+    fun buildResource(): Resource =
+        Resource(
             attributes =
                 listOf(
                     KeyValue("service.name", AnyValue.string(otlpConfig.serviceName)),
@@ -193,7 +197,6 @@ class OtlpHttpExporter(
                     KeyValue("telemetry.sdk.version", AnyValue.string("1.0.0")),
                 ),
         )
-    }
 
     /**
      * Releases resources held by this exporter.

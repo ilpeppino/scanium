@@ -152,12 +152,13 @@ class SettingsRepository(
 
     // ISSUE-3 FIX: Combine base assistant prefs with unified language setting
     // Users set language in General settings (primaryLanguageFlow), which should drive AI output
-    val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
-        assistantSettings.assistantPrefsFlow,
-        unifiedSettings.effectiveAiOutputLanguageFlow,
-    ) { basePrefs, unifiedLanguage ->
-        basePrefs.copy(language = unifiedLanguage)
-    }
+    val assistantPrefsFlow: Flow<AssistantPrefs> =
+        combine(
+            assistantSettings.assistantPrefsFlow,
+            unifiedSettings.effectiveAiOutputLanguageFlow,
+        ) { basePrefs, unifiedLanguage ->
+            basePrefs.copy(language = unifiedLanguage)
+        }
 
     val voiceModeEnabledFlow: Flow<Boolean> = voiceSettings.voiceModeEnabledFlow
 
@@ -351,7 +352,5 @@ class SettingsRepository(
 
     val effectiveTtsLanguageFlow: Flow<String> = unifiedSettings.effectiveTtsLanguageFlow
 
-    fun mapLanguageToMarketplaceCountry(languageTag: String): String {
-        return unifiedSettings.mapLanguageToMarketplaceCountry(languageTag)
-    }
+    fun mapLanguageToMarketplaceCountry(languageTag: String): String = unifiedSettings.mapLanguageToMarketplaceCountry(languageTag)
 }

@@ -20,15 +20,16 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class AssistantResponseDeserializationTest {
-
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     @Test
     fun `deserializes response with reply field mapped to content`() {
-        val backendResponse = """
+        val backendResponse =
+            """
             {
                 "reply": "Here's help with your listing.",
                 "actions": [],
@@ -39,7 +40,7 @@ class AssistantResponseDeserializationTest {
                 "suggestedAttributes": [],
                 "suggestedDraftUpdates": []
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = json.decodeFromString<DeserTestChatResponse>(backendResponse)
 
@@ -50,7 +51,8 @@ class AssistantResponseDeserializationTest {
 
     @Test
     fun `deserializes response with fromCache true`() {
-        val backendResponse = """
+        val backendResponse =
+            """
             {
                 "reply": "Cached response.",
                 "actions": [],
@@ -58,7 +60,7 @@ class AssistantResponseDeserializationTest {
                 "fromCache": true,
                 "confidenceTier": "MEDIUM"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = json.decodeFromString<DeserTestChatResponse>(backendResponse)
 
@@ -68,7 +70,8 @@ class AssistantResponseDeserializationTest {
 
     @Test
     fun `ignores unknown fields like safety and correlationId`() {
-        val backendResponse = """
+        val backendResponse =
+            """
             {
                 "reply": "Response with extra fields.",
                 "actions": [],
@@ -82,7 +85,7 @@ class AssistantResponseDeserializationTest {
                 "correlationId": "corr-456",
                 "someNewField": "future field"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = json.decodeFromString<DeserTestChatResponse>(backendResponse)
 
@@ -92,11 +95,12 @@ class AssistantResponseDeserializationTest {
 
     @Test
     fun `handles missing optional fields with defaults`() {
-        val minimalResponse = """
+        val minimalResponse =
+            """
             {
                 "reply": "Minimal response."
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = json.decodeFromString<DeserTestChatResponse>(minimalResponse)
 
@@ -109,7 +113,8 @@ class AssistantResponseDeserializationTest {
 
     @Test
     fun `handles assistantError in response`() {
-        val errorResponse = """
+        val errorResponse =
+            """
             {
                 "reply": "Error occurred.",
                 "actions": [],
@@ -122,7 +127,7 @@ class AssistantResponseDeserializationTest {
                     "message": "Provider is down"
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = json.decodeFromString<DeserTestChatResponse>(errorResponse)
 
@@ -135,7 +140,8 @@ class AssistantResponseDeserializationTest {
     @Test
     fun `handles complex citationsMetadata including legacy fromCache string`() {
         // Legacy format: fromCache was a string in citationsMetadata
-        val legacyResponse = """
+        val legacyResponse =
+            """
             {
                 "reply": "Legacy response.",
                 "actions": [],
@@ -146,7 +152,7 @@ class AssistantResponseDeserializationTest {
                 },
                 "fromCache": true
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = json.decodeFromString<DeserTestChatResponse>(legacyResponse)
 
@@ -158,7 +164,8 @@ class AssistantResponseDeserializationTest {
 
     @Test
     fun `handles full backend response with all fields`() {
-        val fullResponse = """
+        val fullResponse =
+            """
             {
                 "reply": "I analyzed your vintage lamp. Based on the markings, this appears to be a mid-century piece.",
                 "actions": [
@@ -187,7 +194,7 @@ class AssistantResponseDeserializationTest {
                 "safety": {"blocked": false, "reasonCode": null, "requestId": "req-123"},
                 "correlationId": "corr-abc"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = json.decodeFromString<DeserTestChatResponse>(fullResponse)
 

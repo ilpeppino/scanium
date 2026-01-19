@@ -13,25 +13,26 @@ import org.junit.Test
  * VisionAttributes that can be applied to ScannedItems.
  */
 class VisionInsightsRepositoryTest {
-
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
 
     @Test
     fun `parseResponse extracts OCR snippets correctly`() {
-        val response = VisionInsightsResponse(
-            success = true,
-            requestId = "test-req-id",
-            correlationId = "test-corr-id",
-            ocrSnippets = listOf("Labello", "Lip Care", "Made in Germany"),
-            logoHints = emptyList(),
-            dominantColors = emptyList(),
-            labelHints = emptyList(),
-            suggestedLabel = null,
-            categoryHint = null,
-        )
+        val response =
+            VisionInsightsResponse(
+                success = true,
+                requestId = "test-req-id",
+                correlationId = "test-corr-id",
+                ocrSnippets = listOf("Labello", "Lip Care", "Made in Germany"),
+                logoHints = emptyList(),
+                dominantColors = emptyList(),
+                labelHints = emptyList(),
+                suggestedLabel = null,
+                categoryHint = null,
+            )
 
         // Parse response into VisionInsightsResult
         val result = parseResponse(response)
@@ -43,19 +44,21 @@ class VisionInsightsRepositoryTest {
 
     @Test
     fun `parseResponse extracts logos as brand candidates`() {
-        val response = VisionInsightsResponse(
-            success = true,
-            requestId = "test-req-id",
-            ocrSnippets = emptyList(),
-            logoHints = listOf(
-                LogoHintResponse("Labello", 0.95f),
-                LogoHintResponse("Beiersdorf", 0.8f),
-            ),
-            dominantColors = emptyList(),
-            labelHints = emptyList(),
-            suggestedLabel = "Labello",
-            categoryHint = "cosmetics",
-        )
+        val response =
+            VisionInsightsResponse(
+                success = true,
+                requestId = "test-req-id",
+                ocrSnippets = emptyList(),
+                logoHints =
+                    listOf(
+                        LogoHintResponse("Labello", 0.95f),
+                        LogoHintResponse("Beiersdorf", 0.8f),
+                    ),
+                dominantColors = emptyList(),
+                labelHints = emptyList(),
+                suggestedLabel = "Labello",
+                categoryHint = "cosmetics",
+            )
 
         val result = parseResponse(response)
 
@@ -67,19 +70,21 @@ class VisionInsightsRepositoryTest {
 
     @Test
     fun `parseResponse extracts dominant colors`() {
-        val response = VisionInsightsResponse(
-            success = true,
-            requestId = "test-req-id",
-            ocrSnippets = emptyList(),
-            logoHints = emptyList(),
-            dominantColors = listOf(
-                ColorResponse("blue", "***REMOVED***1E40AF", 45f),
-                ColorResponse("white", "***REMOVED***FFFFFF", 30f),
-            ),
-            labelHints = emptyList(),
-            suggestedLabel = null,
-            categoryHint = null,
-        )
+        val response =
+            VisionInsightsResponse(
+                success = true,
+                requestId = "test-req-id",
+                ocrSnippets = emptyList(),
+                logoHints = emptyList(),
+                dominantColors =
+                    listOf(
+                        ColorResponse("blue", "***REMOVED***1E40AF", 45f),
+                        ColorResponse("white", "***REMOVED***FFFFFF", 30f),
+                    ),
+                labelHints = emptyList(),
+                suggestedLabel = null,
+                categoryHint = null,
+            )
 
         val result = parseResponse(response)
 
@@ -91,16 +96,17 @@ class VisionInsightsRepositoryTest {
 
     @Test
     fun `parseResponse extracts label hints`() {
-        val response = VisionInsightsResponse(
-            success = true,
-            requestId = "test-req-id",
-            ocrSnippets = emptyList(),
-            logoHints = emptyList(),
-            dominantColors = emptyList(),
-            labelHints = listOf("cosmetics", "personal care", "lip care"),
-            suggestedLabel = null,
-            categoryHint = "cosmetics",
-        )
+        val response =
+            VisionInsightsResponse(
+                success = true,
+                requestId = "test-req-id",
+                ocrSnippets = emptyList(),
+                logoHints = emptyList(),
+                dominantColors = emptyList(),
+                labelHints = listOf("cosmetics", "personal care", "lip care"),
+                suggestedLabel = null,
+                categoryHint = "cosmetics",
+            )
 
         val result = parseResponse(response)
 
@@ -110,16 +116,17 @@ class VisionInsightsRepositoryTest {
 
     @Test
     fun `parseResponse preserves suggested label and category`() {
-        val response = VisionInsightsResponse(
-            success = true,
-            requestId = "test-req-id",
-            ocrSnippets = listOf("Labello Lip Care"),
-            logoHints = listOf(LogoHintResponse("Labello", 0.95f)),
-            dominantColors = emptyList(),
-            labelHints = emptyList(),
-            suggestedLabel = "Labello Lip Care",
-            categoryHint = "cosmetics",
-        )
+        val response =
+            VisionInsightsResponse(
+                success = true,
+                requestId = "test-req-id",
+                ocrSnippets = listOf("Labello Lip Care"),
+                logoHints = listOf(LogoHintResponse("Labello", 0.95f)),
+                dominantColors = emptyList(),
+                labelHints = emptyList(),
+                suggestedLabel = "Labello Lip Care",
+                categoryHint = "cosmetics",
+            )
 
         val result = parseResponse(response)
 
@@ -129,16 +136,17 @@ class VisionInsightsRepositoryTest {
 
     @Test
     fun `parseResponse handles empty response gracefully`() {
-        val response = VisionInsightsResponse(
-            success = true,
-            requestId = "test-req-id",
-            ocrSnippets = emptyList(),
-            logoHints = emptyList(),
-            dominantColors = emptyList(),
-            labelHints = emptyList(),
-            suggestedLabel = null,
-            categoryHint = null,
-        )
+        val response =
+            VisionInsightsResponse(
+                success = true,
+                requestId = "test-req-id",
+                ocrSnippets = emptyList(),
+                logoHints = emptyList(),
+                dominantColors = emptyList(),
+                labelHints = emptyList(),
+                suggestedLabel = null,
+                categoryHint = null,
+            )
 
         val result = parseResponse(response)
 
@@ -149,24 +157,25 @@ class VisionInsightsRepositoryTest {
 
     @Test
     fun `JSON deserialization handles complete response`() {
-        val jsonString = """
-        {
-            "success": true,
-            "requestId": "abc-123",
-            "correlationId": "def-456",
-            "ocrSnippets": ["Labello", "Lip Balm"],
-            "logoHints": [{"name": "Labello", "confidence": 0.92}],
-            "dominantColors": [{"name": "blue", "hex": "***REMOVED***1E40AF", "pct": 45.5}],
-            "labelHints": ["cosmetics", "lip care"],
-            "suggestedLabel": "Labello Lip Balm",
-            "categoryHint": "cosmetics",
-            "extractionMeta": {
-                "provider": "google-vision",
-                "timingsMs": {"total": 500},
-                "cacheHit": false
+        val jsonString =
+            """
+            {
+                "success": true,
+                "requestId": "abc-123",
+                "correlationId": "def-456",
+                "ocrSnippets": ["Labello", "Lip Balm"],
+                "logoHints": [{"name": "Labello", "confidence": 0.92}],
+                "dominantColors": [{"name": "blue", "hex": "***REMOVED***1E40AF", "pct": 45.5}],
+                "labelHints": ["cosmetics", "lip care"],
+                "suggestedLabel": "Labello Lip Balm",
+                "categoryHint": "cosmetics",
+                "extractionMeta": {
+                    "provider": "google-vision",
+                    "timingsMs": {"total": 500},
+                    "cacheHit": false
+                }
             }
-        }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<VisionInsightsResponse>(jsonString)
 
@@ -184,16 +193,17 @@ class VisionInsightsRepositoryTest {
 
     @Test
     fun `JSON deserialization handles error response`() {
-        val jsonString = """
-        {
-            "success": false,
-            "error": {
-                "code": "VISION_UNAVAILABLE",
-                "message": "Vision extraction failed",
-                "correlationId": "def-456"
+        val jsonString =
+            """
+            {
+                "success": false,
+                "error": {
+                    "code": "VISION_UNAVAILABLE",
+                    "message": "Vision extraction failed",
+                    "correlationId": "def-456"
+                }
             }
-        }
-        """.trimIndent()
+            """.trimIndent()
 
         val response = json.decodeFromString<VisionInsightsResponse>(jsonString)
 
@@ -205,31 +215,35 @@ class VisionInsightsRepositoryTest {
 
     // Helper to parse VisionInsightsResponse into VisionInsightsResult
     private fun parseResponse(response: VisionInsightsResponse): VisionInsightsResult {
-        val visionAttributes = com.scanium.shared.core.models.items.VisionAttributes(
-            colors = response.dominantColors.map { color ->
-                com.scanium.shared.core.models.items.VisionColor(
-                    name = color.name,
-                    hex = color.hex,
-                    score = color.pct / 100f,
-                )
-            },
-            ocrText = response.ocrSnippets.joinToString("\n").takeIf { it.isNotBlank() },
-            logos = response.logoHints.map { logo ->
-                com.scanium.shared.core.models.items.VisionLogo(
-                    name = logo.name,
-                    score = logo.confidence,
-                )
-            },
-            labels = response.labelHints.map { label ->
-                com.scanium.shared.core.models.items.VisionLabel(
-                    name = label,
-                    score = 1.0f,
-                )
-            },
-            brandCandidates = response.logoHints.map { it.name },
-            modelCandidates = emptyList(),
-            itemType = response.itemType,
-        )
+        val visionAttributes =
+            com.scanium.shared.core.models.items.VisionAttributes(
+                colors =
+                    response.dominantColors.map { color ->
+                        com.scanium.shared.core.models.items.VisionColor(
+                            name = color.name,
+                            hex = color.hex,
+                            score = color.pct / 100f,
+                        )
+                    },
+                ocrText = response.ocrSnippets.joinToString("\n").takeIf { it.isNotBlank() },
+                logos =
+                    response.logoHints.map { logo ->
+                        com.scanium.shared.core.models.items.VisionLogo(
+                            name = logo.name,
+                            score = logo.confidence,
+                        )
+                    },
+                labels =
+                    response.labelHints.map { label ->
+                        com.scanium.shared.core.models.items.VisionLabel(
+                            name = label,
+                            score = 1.0f,
+                        )
+                    },
+                brandCandidates = response.logoHints.map { it.name },
+                modelCandidates = emptyList(),
+                itemType = response.itemType,
+            )
 
         return VisionInsightsResult(
             visionAttributes = visionAttributes,

@@ -31,15 +31,24 @@ class TelemetryEventNamingTest {
     fun `isValidEventName rejects invalid names`() {
         val invalidNames =
             listOf(
-                "", // Empty
-                "scan", // No action
-                "SCAN.STARTED", // Uppercase
-                "scan-started", // Hyphen instead of dot
-                "scan started", // Space
-                "Scan.Started", // Mixed case
-                "   ", // Blank
-                "scan.", // Missing action
-                ".started", // Missing prefix
+                // Empty
+                "",
+                // No action
+                "scan",
+                // Uppercase
+                "SCAN.STARTED",
+                // Hyphen instead of dot
+                "scan-started",
+                // Space
+                "scan started",
+                // Mixed case
+                "Scan.Started",
+                // Blank
+                "   ",
+                // Missing action
+                "scan.",
+                // Missing prefix
+                ".started",
             )
 
         invalidNames.forEach { name ->

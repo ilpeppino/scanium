@@ -1,14 +1,23 @@
 package com.scanium.app.ftue
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -18,7 +27,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -56,45 +64,52 @@ private fun ItemsListFtueOverlayContent(
     val spotlightColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
 
     // Tooltip text based on hint type
-    val tooltipText = when (hintType) {
-        ListHintType.TAP_EDIT -> stringResource(R.string.ftue_list_tap_edit)
-        ListHintType.SWIPE_DELETE -> stringResource(R.string.ftue_list_swipe_delete)
-        ListHintType.LONG_PRESS_SELECT -> stringResource(R.string.ftue_list_long_press_select)
-        ListHintType.SHARE_SELL -> stringResource(R.string.ftue_list_share_sell)
-    }
+    val tooltipText =
+        when (hintType) {
+            ListHintType.TAP_EDIT -> stringResource(R.string.ftue_list_tap_edit)
+            ListHintType.SWIPE_DELETE -> stringResource(R.string.ftue_list_swipe_delete)
+            ListHintType.LONG_PRESS_SELECT -> stringResource(R.string.ftue_list_long_press_select)
+            ListHintType.SHARE_SELL -> stringResource(R.string.ftue_list_share_sell)
+        }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(dimColor)
-            .zIndex(999f)
-            .clickable(
-                interactionSource = MutableInteractionSource(),
-                indication = null,
-                onClick = onDismiss,
-            )
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(dimColor)
+                .zIndex(999f)
+                .clickable(
+                    interactionSource = MutableInteractionSource(),
+                    indication = null,
+                    onClick = onDismiss,
+                ),
     ) {
         // Draw spotlight hole and animated border
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .drawBehind {
-                    when (hintType) {
-                        ListHintType.TAP_EDIT,
-                        ListHintType.SWIPE_DELETE,
-                        ListHintType.LONG_PRESS_SELECT,
-                        -> drawItemSpotlight(
-                            itemRect = targetItemRect,
-                            spotlightColor = spotlightColor,
-                            nudgeProgress = if (hintType == ListHintType.SWIPE_DELETE) swipeNudgeProgress else 0f,
-                        )
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        when (hintType) {
+                            ListHintType.TAP_EDIT,
+                            ListHintType.SWIPE_DELETE,
+                            ListHintType.LONG_PRESS_SELECT,
+                            -> {
+                                drawItemSpotlight(
+                                    itemRect = targetItemRect,
+                                    spotlightColor = spotlightColor,
+                                    nudgeProgress = if (hintType == ListHintType.SWIPE_DELETE) swipeNudgeProgress else 0f,
+                                )
+                            }
 
-                        ListHintType.SHARE_SELL -> drawActionAreaSpotlight(
-                            actionRect = actionAreaRect,
-                            spotlightColor = spotlightColor,
-                        )
-                    }
-                }
+                            ListHintType.SHARE_SELL -> {
+                                drawActionAreaSpotlight(
+                                    actionRect = actionAreaRect,
+                                    spotlightColor = spotlightColor,
+                                )
+                            }
+                        }
+                    },
         )
 
         // Tooltip bubble
@@ -115,44 +130,53 @@ private fun TooltipBubbleList(
     actionAreaRect: Rect?,
 ) {
     // Determine tooltip position
-    val tooltipPosition = when (hintType) {
-        ListHintType.TAP_EDIT,
-        ListHintType.SWIPE_DELETE,
-        ListHintType.LONG_PRESS_SELECT,
-        -> targetItemRect?.let {
-            // Position above item
-            Offset(it.center.x, it.top - 80f)
-        } ?: return
+    val tooltipPosition =
+        when (hintType) {
+            ListHintType.TAP_EDIT,
+            ListHintType.SWIPE_DELETE,
+            ListHintType.LONG_PRESS_SELECT,
+            -> {
+                targetItemRect?.let {
+                    // Position above item
+                    Offset(it.center.x, it.top - 80f)
+                } ?: return
+            }
 
-        ListHintType.SHARE_SELL -> actionAreaRect?.let {
-            // Position above action area
-            Offset(it.center.x, it.top - 60f)
-        } ?: return
-    }
+            ListHintType.SHARE_SELL -> {
+                actionAreaRect?.let {
+                    // Position above action area
+                    Offset(it.center.x, it.top - 60f)
+                } ?: return
+            }
+        }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.TopStart)
-            .offset(
-                x = (tooltipPosition.x).dp,
-                y = (tooltipPosition.y).dp,
-            ),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .wrapContentSize(Alignment.TopStart)
+                .offset(
+                    x = (tooltipPosition.x).dp,
+                    y = (tooltipPosition.y).dp,
+                ),
     ) {
         Surface(
-            modifier = Modifier
-                .width(220.dp)
-                .wrapContentHeight()
-                .offset(x = -110.dp),  // Center horizontally
+            modifier =
+                Modifier
+                    .width(220.dp)
+                    .wrapContentHeight()
+                    .offset(x = -110.dp),
+            // Center horizontally
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surfaceVariant,
             tonalElevation = 8.dp,
         ) {
             Text(
                 text = text,
-                modifier = Modifier
-                    .padding(12.dp)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(12.dp)
+                        .fillMaxWidth(),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -169,33 +193,37 @@ private fun DrawScope.drawItemSpotlight(
     itemRect ?: return
 
     val padding = 8f
-    val offsetX = nudgeProgress * itemRect.width  // Move right based on progress
+    val offsetX = nudgeProgress * itemRect.width // Move right based on progress
 
     // Draw spotlight border around item (with nudge offset for swipe hint)
     drawRect(
         color = spotlightColor,
-        topLeft = itemRect.topLeft.copy(
-            x = itemRect.topLeft.x - padding + offsetX,
-            y = itemRect.topLeft.y - padding,
-        ),
-        size = itemRect.size.copy(
-            width = itemRect.size.width,
-            height = itemRect.size.height,
-        ),
+        topLeft =
+            itemRect.topLeft.copy(
+                x = itemRect.topLeft.x - padding + offsetX,
+                y = itemRect.topLeft.y - padding,
+            ),
+        size =
+            itemRect.size.copy(
+                width = itemRect.size.width,
+                height = itemRect.size.height,
+            ),
         style = Stroke(width = 2.5f),
     )
 
     // Draw outer glow
     drawRect(
         color = spotlightColor.copy(alpha = 0.3f),
-        topLeft = itemRect.topLeft.copy(
-            x = itemRect.topLeft.x - padding * 2 + offsetX,
-            y = itemRect.topLeft.y - padding * 2,
-        ),
-        size = itemRect.size.copy(
-            width = itemRect.size.width + padding * 2,
-            height = itemRect.size.height + padding * 2,
-        ),
+        topLeft =
+            itemRect.topLeft.copy(
+                x = itemRect.topLeft.x - padding * 2 + offsetX,
+                y = itemRect.topLeft.y - padding * 2,
+            ),
+        size =
+            itemRect.size.copy(
+                width = itemRect.size.width + padding * 2,
+                height = itemRect.size.height + padding * 2,
+            ),
         style = Stroke(width = 1.5f),
     )
 }
@@ -211,28 +239,32 @@ private fun DrawScope.drawActionAreaSpotlight(
     // Draw spotlight border around action area
     drawRect(
         color = spotlightColor,
-        topLeft = actionRect.topLeft.copy(
-            x = actionRect.topLeft.x - padding,
-            y = actionRect.topLeft.y - padding,
-        ),
-        size = actionRect.size.copy(
-            width = actionRect.size.width + padding * 2,
-            height = actionRect.size.height + padding * 2,
-        ),
+        topLeft =
+            actionRect.topLeft.copy(
+                x = actionRect.topLeft.x - padding,
+                y = actionRect.topLeft.y - padding,
+            ),
+        size =
+            actionRect.size.copy(
+                width = actionRect.size.width + padding * 2,
+                height = actionRect.size.height + padding * 2,
+            ),
         style = Stroke(width = 2.5f),
     )
 
     // Draw outer glow
     drawRect(
         color = spotlightColor.copy(alpha = 0.3f),
-        topLeft = actionRect.topLeft.copy(
-            x = actionRect.topLeft.x - padding * 2,
-            y = actionRect.topLeft.y - padding * 2,
-        ),
-        size = actionRect.size.copy(
-            width = actionRect.size.width + padding * 4,
-            height = actionRect.size.height + padding * 4,
-        ),
+        topLeft =
+            actionRect.topLeft.copy(
+                x = actionRect.topLeft.x - padding * 2,
+                y = actionRect.topLeft.y - padding * 2,
+            ),
+        size =
+            actionRect.size.copy(
+                width = actionRect.size.width + padding * 4,
+                height = actionRect.size.height + padding * 4,
+            ),
         style = Stroke(width = 1.5f),
     )
 }

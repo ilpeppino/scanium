@@ -1,8 +1,12 @@
 package com.scanium.app.auth
 
 import android.app.Activity
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.scanium.app.MainActivity
 import com.scanium.app.config.SecureApiKeyStore
@@ -117,8 +121,8 @@ class GoogleSignInE2ETest {
                             "pictureUrl": null
                         }
                     }
-                    """.trimIndent()
-                )
+                    """.trimIndent(),
+                ),
         )
 
         // Navigate to Settings
@@ -238,10 +242,11 @@ class GoogleSignInE2ETest {
             // Use the test's fakeAuthLauncher instance
             // Note: In a real test, you'd need to make this injectable
             // For now, we'll create a new FakeAuthLauncher here
-            val testLauncher = FakeAuthLauncher().apply {
-                shouldSucceed = true
-                fakeToken = "fake_google_id_token_12345"
-            }
+            val testLauncher =
+                FakeAuthLauncher().apply {
+                    shouldSucceed = true
+                    fakeToken = "fake_google_id_token_12345"
+                }
             return AuthRepository(context, apiKeyStore, authApi, testLauncher)
         }
 
@@ -278,9 +283,7 @@ class GoogleSignInE2ETest {
         @Provides
         @Singleton
         @com.scanium.app.di.AuthHttpClient
-        fun provideAuthHttpClient(
-            authTokenInterceptor: com.scanium.app.network.AuthTokenInterceptor,
-        ): okhttp3.OkHttpClient {
+        fun provideAuthHttpClient(authTokenInterceptor: com.scanium.app.network.AuthTokenInterceptor): okhttp3.OkHttpClient {
             return com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory.create(
                 config = com.scanium.app.selling.assistant.network.AssistantHttpConfig.DEFAULT,
                 additionalInterceptors = listOf(authTokenInterceptor),

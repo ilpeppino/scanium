@@ -9,7 +9,6 @@ package com.scanium.app.selling.assistant
  * This class computes derived state values without modifying any external state.
  */
 object AssistantStateReducer {
-
     /**
      * Computes the assistant mode based on online status and failure state.
      *
@@ -20,15 +19,14 @@ object AssistantStateReducer {
     fun resolveMode(
         isOnline: Boolean,
         failure: AssistantBackendFailure?,
-    ): AssistantMode {
-        return if (!isOnline) {
+    ): AssistantMode =
+        if (!isOnline) {
             AssistantMode.OFFLINE
         } else if (failure != null) {
             AssistantMode.LIMITED
         } else {
             AssistantMode.ONLINE
         }
-    }
 
     /**
      * Computes the explicit availability state from current conditions.
@@ -61,23 +59,35 @@ object AssistantStateReducer {
 
         // Map backend failures to availability
         if (failure != null) {
-            val (reason, canRetry, retryAfter) = when (failure.type) {
-                AssistantBackendErrorType.AUTH_REQUIRED,
-                AssistantBackendErrorType.AUTH_INVALID,
-                AssistantBackendErrorType.UNAUTHORIZED ->
-                    Triple(UnavailableReason.UNAUTHORIZED, false, null)
-                AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED ->
-                    Triple(UnavailableReason.NOT_CONFIGURED, false, null)
-                AssistantBackendErrorType.RATE_LIMITED ->
-                    Triple(UnavailableReason.RATE_LIMITED, true, failure.retryAfterSeconds)
-                AssistantBackendErrorType.VALIDATION_ERROR ->
-                    Triple(UnavailableReason.VALIDATION_ERROR, false, null)
-                AssistantBackendErrorType.NETWORK_TIMEOUT,
-                AssistantBackendErrorType.NETWORK_UNREACHABLE,
-                AssistantBackendErrorType.VISION_UNAVAILABLE,
-                AssistantBackendErrorType.PROVIDER_UNAVAILABLE ->
-                    Triple(UnavailableReason.BACKEND_ERROR, true, null)
-            }
+            val (reason, canRetry, retryAfter) =
+                when (failure.type) {
+                    AssistantBackendErrorType.AUTH_REQUIRED,
+                    AssistantBackendErrorType.AUTH_INVALID,
+                    AssistantBackendErrorType.UNAUTHORIZED,
+                    -> {
+                        Triple(UnavailableReason.UNAUTHORIZED, false, null)
+                    }
+
+                    AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED -> {
+                        Triple(UnavailableReason.NOT_CONFIGURED, false, null)
+                    }
+
+                    AssistantBackendErrorType.RATE_LIMITED -> {
+                        Triple(UnavailableReason.RATE_LIMITED, true, failure.retryAfterSeconds)
+                    }
+
+                    AssistantBackendErrorType.VALIDATION_ERROR -> {
+                        Triple(UnavailableReason.VALIDATION_ERROR, false, null)
+                    }
+
+                    AssistantBackendErrorType.NETWORK_TIMEOUT,
+                    AssistantBackendErrorType.NETWORK_UNREACHABLE,
+                    AssistantBackendErrorType.VISION_UNAVAILABLE,
+                    AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
+                    -> {
+                        Triple(UnavailableReason.BACKEND_ERROR, true, null)
+                    }
+                }
             return AssistantAvailability.Unavailable(
                 reason = reason,
                 canRetry = canRetry,
@@ -100,28 +110,46 @@ object AssistantStateReducer {
         val base = "Switched to Local Helper"
 
         return when (failure.type) {
-            AssistantBackendErrorType.AUTH_REQUIRED ->
+            AssistantBackendErrorType.AUTH_REQUIRED -> {
                 "$base: Sign in required. Tap Settings to sign in."
-            AssistantBackendErrorType.AUTH_INVALID ->
+            }
+
+            AssistantBackendErrorType.AUTH_INVALID -> {
                 "$base: Session expired. Sign in again in Settings."
-            AssistantBackendErrorType.UNAUTHORIZED ->
+            }
+
+            AssistantBackendErrorType.UNAUTHORIZED -> {
                 "$base: $statusLabel. Check your account."
-            AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED ->
+            }
+
+            AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED -> {
                 "$base: $statusLabel. Contact support."
+            }
+
             AssistantBackendErrorType.RATE_LIMITED -> {
                 val retryHint = failure.retryAfterSeconds?.let { " (wait ${it}s)" } ?: ""
                 "$base: $statusLabel$retryHint."
             }
-            AssistantBackendErrorType.NETWORK_TIMEOUT ->
+
+            AssistantBackendErrorType.NETWORK_TIMEOUT -> {
                 "$base: $statusLabel. Check your connection."
-            AssistantBackendErrorType.NETWORK_UNREACHABLE ->
+            }
+
+            AssistantBackendErrorType.NETWORK_UNREACHABLE -> {
                 "$base: $statusLabel. Connect to internet."
-            AssistantBackendErrorType.VISION_UNAVAILABLE ->
+            }
+
+            AssistantBackendErrorType.VISION_UNAVAILABLE -> {
                 "$base: Image analysis unavailable."
-            AssistantBackendErrorType.VALIDATION_ERROR ->
+            }
+
+            AssistantBackendErrorType.VALIDATION_ERROR -> {
                 "$base: Invalid request. Try rephrasing."
-            AssistantBackendErrorType.PROVIDER_UNAVAILABLE ->
+            }
+
+            AssistantBackendErrorType.PROVIDER_UNAVAILABLE -> {
                 "$base: Service temporarily unavailable."
+            }
         }
     }
 
@@ -131,14 +159,20 @@ object AssistantStateReducer {
      * @param availability The availability state to describe.
      * @return A debug string representation.
      */
-    fun availabilityDebugString(availability: AssistantAvailability): String {
-        return when (availability) {
-            is AssistantAvailability.Available -> "Available"
-            is AssistantAvailability.Checking -> "Checking"
-            is AssistantAvailability.Unavailable ->
+    fun availabilityDebugString(availability: AssistantAvailability): String =
+        when (availability) {
+            is AssistantAvailability.Available -> {
+                "Available"
+            }
+
+            is AssistantAvailability.Checking -> {
+                "Checking"
+            }
+
+            is AssistantAvailability.Unavailable -> {
                 "Unavailable(${availability.reason}, canRetry=${availability.canRetry}, retryAfter=${availability.retryAfterSeconds})"
+            }
         }
-    }
 
     /**
      * Returns the alternative key for an attribute when there's a conflict.
@@ -147,12 +181,11 @@ object AssistantStateReducer {
      * @param key The original attribute key.
      * @return The alternative key for conflict resolution.
      */
-    fun getAlternativeKey(key: String): String {
-        return when (key.lowercase()) {
+    fun getAlternativeKey(key: String): String =
+        when (key.lowercase()) {
             "color" -> "secondaryColor"
             "brand" -> "brand2"
             "model" -> "model2"
             else -> "${key}2"
         }
-    }
 }

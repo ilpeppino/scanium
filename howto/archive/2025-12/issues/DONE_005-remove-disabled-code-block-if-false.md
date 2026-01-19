@@ -6,7 +6,8 @@
 
 ***REMOVED******REMOVED*** Problem
 
-ObjectDetectorClient.kt has a permanently disabled code block using `if (false && ...)` which should either be removed entirely or properly handled with configuration.
+ObjectDetectorClient.kt has a permanently disabled code block using `if (false && ...)` which should
+either be removed entirely or properly handled with configuration.
 
 ***REMOVED******REMOVED*** Location
 
@@ -35,10 +36,13 @@ if (false && detectedObjects.isEmpty() && useStreamMode) {
 Choose ONE:
 
 ***REMOVED******REMOVED******REMOVED*** Option A: Delete Entirely (Recommended)
+
 If the ML Kit crash issue is resolved and this fallback is no longer needed.
 
 ***REMOVED******REMOVED******REMOVED*** Option B: Move to Feature Flag
+
 If this might be useful for debugging specific devices:
+
 ```kotlin
 if (BuildConfig.ENABLE_MODE_FALLBACK && detectedObjects.isEmpty() && useStreamMode) {
     // Fallback to SINGLE_IMAGE_MODE for debugging
@@ -46,7 +50,9 @@ if (BuildConfig.ENABLE_MODE_FALLBACK && detectedObjects.isEmpty() && useStreamMo
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Option C: Document Permanently
+
 If this must stay disabled, add a comprehensive comment:
+
 ```kotlin
 // PERMANENT FIX: Do not attempt SINGLE_IMAGE_MODE fallback.
 // Mixing STREAM and SINGLE_IMAGE modes causes ML Kit native crashes on Android <8.

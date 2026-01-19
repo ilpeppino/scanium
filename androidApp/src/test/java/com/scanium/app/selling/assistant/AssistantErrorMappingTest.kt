@@ -19,7 +19,8 @@ class AssistantErrorMappingTest {
 
     @Test
     fun `401 with AUTH_REQUIRED code maps to AUTH_REQUIRED error type`() {
-        val errorJson = """
+        val errorJson =
+            """
             {
                 "error": {
                     "code": "AUTH_REQUIRED",
@@ -27,7 +28,7 @@ class AssistantErrorMappingTest {
                     "correlationId": "test-123"
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         // This test simulates the error parsing logic in AssistantRepository
         val errorData =
@@ -46,7 +47,8 @@ class AssistantErrorMappingTest {
 
     @Test
     fun `401 with AUTH_INVALID code maps to AUTH_INVALID error type`() {
-        val errorJson = """
+        val errorJson =
+            """
             {
                 "error": {
                     "code": "AUTH_INVALID",
@@ -54,7 +56,7 @@ class AssistantErrorMappingTest {
                     "correlationId": "test-456"
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val errorData =
             runCatching {
@@ -70,7 +72,8 @@ class AssistantErrorMappingTest {
 
     @Test
     fun `429 with RATE_LIMITED code includes resetAt timestamp`() {
-        val errorJson = """
+        val errorJson =
+            """
             {
                 "error": {
                     "code": "RATE_LIMITED",
@@ -79,7 +82,7 @@ class AssistantErrorMappingTest {
                     "correlationId": "test-789"
                 }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val errorData =
             runCatching {

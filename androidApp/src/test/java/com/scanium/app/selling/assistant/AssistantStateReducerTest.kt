@@ -9,7 +9,6 @@ import org.junit.Test
  * Part of ARCH-001: Tests for extracted pure state reduction functions.
  */
 class AssistantStateReducerTest {
-
     // ==================== resolveMode tests ====================
 
     @Test
@@ -20,24 +19,26 @@ class AssistantStateReducerTest {
 
     @Test
     fun `resolveMode returns OFFLINE when offline even with failure`() {
-        val failure = AssistantBackendFailure(
-            type = AssistantBackendErrorType.NETWORK_TIMEOUT,
-            category = AssistantBackendErrorCategory.TEMPORARY,
-            retryable = true,
-            message = "Timeout",
-        )
+        val failure =
+            AssistantBackendFailure(
+                type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Timeout",
+            )
         val result = AssistantStateReducer.resolveMode(isOnline = false, failure = failure)
         assertThat(result).isEqualTo(AssistantMode.OFFLINE)
     }
 
     @Test
     fun `resolveMode returns LIMITED when online with failure`() {
-        val failure = AssistantBackendFailure(
-            type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
-            category = AssistantBackendErrorCategory.TEMPORARY,
-            retryable = true,
-            message = "Service unavailable",
-        )
+        val failure =
+            AssistantBackendFailure(
+                type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Service unavailable",
+            )
         val result = AssistantStateReducer.resolveMode(isOnline = true, failure = failure)
         assertThat(result).isEqualTo(AssistantMode.LIMITED)
     }
@@ -52,11 +53,12 @@ class AssistantStateReducerTest {
 
     @Test
     fun `computeAvailability returns Unavailable LOADING when isLoading true`() {
-        val result = AssistantStateReducer.computeAvailability(
-            isOnline = true,
-            isLoading = true,
-            failure = null,
-        )
+        val result =
+            AssistantStateReducer.computeAvailability(
+                isOnline = true,
+                isLoading = true,
+                failure = null,
+            )
         assertThat(result).isInstanceOf(AssistantAvailability.Unavailable::class.java)
         assertThat((result as AssistantAvailability.Unavailable).reason).isEqualTo(UnavailableReason.LOADING)
         assertThat(result.canRetry).isFalse()
@@ -64,11 +66,12 @@ class AssistantStateReducerTest {
 
     @Test
     fun `computeAvailability returns Unavailable OFFLINE when not online`() {
-        val result = AssistantStateReducer.computeAvailability(
-            isOnline = false,
-            isLoading = false,
-            failure = null,
-        )
+        val result =
+            AssistantStateReducer.computeAvailability(
+                isOnline = false,
+                isLoading = false,
+                failure = null,
+            )
         assertThat(result).isInstanceOf(AssistantAvailability.Unavailable::class.java)
         assertThat((result as AssistantAvailability.Unavailable).reason).isEqualTo(UnavailableReason.OFFLINE)
         assertThat(result.canRetry).isTrue()
@@ -76,17 +79,19 @@ class AssistantStateReducerTest {
 
     @Test
     fun `computeAvailability returns Unavailable UNAUTHORIZED for auth failures`() {
-        val failure = AssistantBackendFailure(
-            type = AssistantBackendErrorType.UNAUTHORIZED,
-            category = AssistantBackendErrorCategory.POLICY,
-            retryable = false,
-            message = "Not authorized",
-        )
-        val result = AssistantStateReducer.computeAvailability(
-            isOnline = true,
-            isLoading = false,
-            failure = failure,
-        )
+        val failure =
+            AssistantBackendFailure(
+                type = AssistantBackendErrorType.UNAUTHORIZED,
+                category = AssistantBackendErrorCategory.POLICY,
+                retryable = false,
+                message = "Not authorized",
+            )
+        val result =
+            AssistantStateReducer.computeAvailability(
+                isOnline = true,
+                isLoading = false,
+                failure = failure,
+            )
         assertThat(result).isInstanceOf(AssistantAvailability.Unavailable::class.java)
         assertThat((result as AssistantAvailability.Unavailable).reason).isEqualTo(UnavailableReason.UNAUTHORIZED)
         assertThat(result.canRetry).isFalse()
@@ -94,18 +99,20 @@ class AssistantStateReducerTest {
 
     @Test
     fun `computeAvailability returns Unavailable RATE_LIMITED with retryAfter`() {
-        val failure = AssistantBackendFailure(
-            type = AssistantBackendErrorType.RATE_LIMITED,
-            category = AssistantBackendErrorCategory.TEMPORARY,
-            retryable = true,
-            message = "Rate limited",
-            retryAfterSeconds = 30,
-        )
-        val result = AssistantStateReducer.computeAvailability(
-            isOnline = true,
-            isLoading = false,
-            failure = failure,
-        )
+        val failure =
+            AssistantBackendFailure(
+                type = AssistantBackendErrorType.RATE_LIMITED,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Rate limited",
+                retryAfterSeconds = 30,
+            )
+        val result =
+            AssistantStateReducer.computeAvailability(
+                isOnline = true,
+                isLoading = false,
+                failure = failure,
+            )
         assertThat(result).isInstanceOf(AssistantAvailability.Unavailable::class.java)
         assertThat((result as AssistantAvailability.Unavailable).reason).isEqualTo(UnavailableReason.RATE_LIMITED)
         assertThat(result.canRetry).isTrue()
@@ -114,17 +121,19 @@ class AssistantStateReducerTest {
 
     @Test
     fun `computeAvailability returns Unavailable BACKEND_ERROR for network failures`() {
-        val failure = AssistantBackendFailure(
-            type = AssistantBackendErrorType.NETWORK_TIMEOUT,
-            category = AssistantBackendErrorCategory.TEMPORARY,
-            retryable = true,
-            message = "Network timeout",
-        )
-        val result = AssistantStateReducer.computeAvailability(
-            isOnline = true,
-            isLoading = false,
-            failure = failure,
-        )
+        val failure =
+            AssistantBackendFailure(
+                type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Network timeout",
+            )
+        val result =
+            AssistantStateReducer.computeAvailability(
+                isOnline = true,
+                isLoading = false,
+                failure = failure,
+            )
         assertThat(result).isInstanceOf(AssistantAvailability.Unavailable::class.java)
         assertThat((result as AssistantAvailability.Unavailable).reason).isEqualTo(UnavailableReason.BACKEND_ERROR)
         assertThat(result.canRetry).isTrue()
@@ -132,11 +141,12 @@ class AssistantStateReducerTest {
 
     @Test
     fun `computeAvailability returns Available when all conditions good`() {
-        val result = AssistantStateReducer.computeAvailability(
-            isOnline = true,
-            isLoading = false,
-            failure = null,
-        )
+        val result =
+            AssistantStateReducer.computeAvailability(
+                isOnline = true,
+                isLoading = false,
+                failure = null,
+            )
         assertThat(result).isEqualTo(AssistantAvailability.Available)
     }
 
@@ -144,12 +154,13 @@ class AssistantStateReducerTest {
 
     @Test
     fun `buildFallbackSnackbarMessage handles auth required`() {
-        val failure = AssistantBackendFailure(
-            type = AssistantBackendErrorType.AUTH_REQUIRED,
-            category = AssistantBackendErrorCategory.POLICY,
-            retryable = false,
-            message = "Auth required",
-        )
+        val failure =
+            AssistantBackendFailure(
+                type = AssistantBackendErrorType.AUTH_REQUIRED,
+                category = AssistantBackendErrorCategory.POLICY,
+                retryable = false,
+                message = "Auth required",
+            )
         val message = AssistantStateReducer.buildFallbackSnackbarMessage(failure)
         assertThat(message).contains("Switched to Local Helper")
         assertThat(message).contains("Sign in required")
@@ -157,13 +168,14 @@ class AssistantStateReducerTest {
 
     @Test
     fun `buildFallbackSnackbarMessage handles rate limited with retry hint`() {
-        val failure = AssistantBackendFailure(
-            type = AssistantBackendErrorType.RATE_LIMITED,
-            category = AssistantBackendErrorCategory.TEMPORARY,
-            retryable = true,
-            message = "Rate limited",
-            retryAfterSeconds = 60,
-        )
+        val failure =
+            AssistantBackendFailure(
+                type = AssistantBackendErrorType.RATE_LIMITED,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Rate limited",
+                retryAfterSeconds = 60,
+            )
         val message = AssistantStateReducer.buildFallbackSnackbarMessage(failure)
         assertThat(message).contains("Switched to Local Helper")
         assertThat(message).contains("wait 60s")
@@ -171,12 +183,13 @@ class AssistantStateReducerTest {
 
     @Test
     fun `buildFallbackSnackbarMessage handles network timeout`() {
-        val failure = AssistantBackendFailure(
-            type = AssistantBackendErrorType.NETWORK_TIMEOUT,
-            category = AssistantBackendErrorCategory.TEMPORARY,
-            retryable = true,
-            message = "Timeout",
-        )
+        val failure =
+            AssistantBackendFailure(
+                type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Timeout",
+            )
         val message = AssistantStateReducer.buildFallbackSnackbarMessage(failure)
         assertThat(message).contains("Switched to Local Helper")
         assertThat(message).contains("Check your connection")
@@ -198,11 +211,12 @@ class AssistantStateReducerTest {
 
     @Test
     fun `availabilityDebugString formats Unavailable with details`() {
-        val unavailable = AssistantAvailability.Unavailable(
-            reason = UnavailableReason.RATE_LIMITED,
-            canRetry = true,
-            retryAfterSeconds = 30,
-        )
+        val unavailable =
+            AssistantAvailability.Unavailable(
+                reason = UnavailableReason.RATE_LIMITED,
+                canRetry = true,
+                retryAfterSeconds = 30,
+            )
         val result = AssistantStateReducer.availabilityDebugString(unavailable)
         assertThat(result).contains("RATE_LIMITED")
         assertThat(result).contains("canRetry=true")

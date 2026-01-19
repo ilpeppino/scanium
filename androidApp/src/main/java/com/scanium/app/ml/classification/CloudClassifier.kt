@@ -9,13 +9,9 @@ import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.ml.ItemCategory
 import com.scanium.shared.core.models.config.CloudClassifierConfig
+import com.scanium.shared.core.models.items.ItemAttribute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.scanium.shared.core.models.items.ItemAttribute
-import com.scanium.shared.core.models.items.VisionAttributes as SharedVisionAttributes
-import com.scanium.shared.core.models.items.VisionColor as SharedVisionColor
-import com.scanium.shared.core.models.items.VisionLabel as SharedVisionLabel
-import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
 import okhttp3.CertificatePinner
 import java.io.File
 import java.io.FileOutputStream
@@ -23,6 +19,10 @@ import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.scanium.shared.core.models.items.VisionAttributes as SharedVisionAttributes
+import com.scanium.shared.core.models.items.VisionColor as SharedVisionColor
+import com.scanium.shared.core.models.items.VisionLabel as SharedVisionLabel
+import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
 
 /**
  * Cloud-based classifier that uploads cropped item images to a backend API.
@@ -78,12 +78,15 @@ class CloudClassifier(
 
     // Phase 2: Use centralized timeout factory for consistency across assistant-related HTTP clients
     private val client =
-        com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory.create(
-            config = com.scanium.app.selling.assistant.network.AssistantHttpConfig.VISION,
-            logStartupPolicy = false
-        ).newBuilder()
-            .addInterceptor(com.scanium.app.telemetry.TraceContextInterceptor())
-            .apply {
+        com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
+            .create(
+                config = com.scanium.app.selling.assistant.network.AssistantHttpConfig.VISION,
+                logStartupPolicy = false,
+            ).newBuilder()
+            .addInterceptor(
+                com.scanium.app.telemetry
+                    .TraceContextInterceptor(),
+            ).apply {
                 // SEC-003: Add certificate pinning for MITM protection
                 val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
                 val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
@@ -97,7 +100,8 @@ class CloudClassifier(
                         }
                     if (host.isNotBlank()) {
                         val pinner =
-                            CertificatePinner.Builder()
+                            CertificatePinner
+                                .Builder()
                                 .add(host, certificatePin)
                                 .build()
                         certificatePinner(pinner)
@@ -106,8 +110,7 @@ class CloudClassifier(
                 } else if (certificatePin.isBlank() && baseUrl.isNotBlank()) {
                     Log.w(TAG, "Certificate pinning not configured - set SCANIUM_API_CERTIFICATE_PIN for production")
                 }
-            }
-            .build()
+            }.build()
 
     private val apiKeyStore = context?.applicationContext?.let { SecureApiKeyStore(it) }
 
@@ -182,6 +185,7 @@ class CloudClassifier(
                         ScaniumLog.i(TAG, "Classification success requestId=${response.requestId}")
                         return@withContext result
                     }
+
                     is ApiResult.Error -> {
                         val error = apiResult.error
                         val latencyMs = System.currentTimeMillis() - startTime
@@ -198,6 +202,7 @@ class CloudClassifier(
 
                         return@withContext failureResult(error.message, error.isOffline)
                     }
+
                     is ApiResult.ConfigError -> {
                         return@withContext failureResult(apiResult.message, offline = true)
                     }
@@ -290,9 +295,7 @@ class CloudClassifier(
     /**
      * Convert enriched attributes response to ItemAttribute map.
      */
-    private fun parseEnrichedAttributes(
-        enriched: EnrichedAttributesResponse?
-    ): Map<String, ItemAttribute> {
+    private fun parseEnrichedAttributes(enriched: EnrichedAttributesResponse?): Map<String, ItemAttribute> {
         if (enriched == null) return emptyMap()
 
         val result = mutableMapOf<String, ItemAttribute>()
@@ -333,32 +336,33 @@ class CloudClassifier(
     /**
      * Convert vision attributes response to shared VisionAttributes model.
      */
-    private fun parseVisionAttributes(
-        visionAttrs: VisionAttributesResponse?
-    ): SharedVisionAttributes {
+    private fun parseVisionAttributes(visionAttrs: VisionAttributesResponse?): SharedVisionAttributes {
         if (visionAttrs == null) return SharedVisionAttributes.EMPTY
 
         return SharedVisionAttributes(
-            colors = visionAttrs.colors.map { color ->
-                SharedVisionColor(
-                    name = color.name,
-                    hex = color.hex,
-                    score = color.score,
-                )
-            },
+            colors =
+                visionAttrs.colors.map { color ->
+                    SharedVisionColor(
+                        name = color.name,
+                        hex = color.hex,
+                        score = color.score,
+                    )
+                },
             ocrText = visionAttrs.ocrText,
-            logos = visionAttrs.logos.map { logo ->
-                SharedVisionLogo(
-                    name = logo.name,
-                    score = logo.score,
-                )
-            },
-            labels = visionAttrs.labels.map { label ->
-                SharedVisionLabel(
-                    name = label.name,
-                    score = label.score,
-                )
-            },
+            logos =
+                visionAttrs.logos.map { logo ->
+                    SharedVisionLogo(
+                        name = logo.name,
+                        score = logo.score,
+                    )
+                },
+            labels =
+                visionAttrs.labels.map { label ->
+                    SharedVisionLabel(
+                        name = label.name,
+                        score = label.score,
+                    )
+                },
             brandCandidates = visionAttrs.brandCandidates,
             modelCandidates = visionAttrs.modelCandidates,
         )

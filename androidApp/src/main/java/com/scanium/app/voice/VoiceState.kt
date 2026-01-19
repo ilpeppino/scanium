@@ -24,9 +24,15 @@ enum class VoiceState {
  * Result of a voice recognition attempt.
  */
 sealed class VoiceResult {
-    data class Success(val transcript: String, val confidence: Float) : VoiceResult()
+    data class Success(
+        val transcript: String,
+        val confidence: Float,
+    ) : VoiceResult()
 
-    data class Error(val message: String, val errorCode: Int) : VoiceResult()
+    data class Error(
+        val message: String,
+        val errorCode: Int,
+    ) : VoiceResult()
 
     data object Cancelled : VoiceResult()
 }

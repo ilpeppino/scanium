@@ -1,6 +1,7 @@
 ***REMOVED*** Developer Backend Connectivity Guide
 
-This guide explains how to configure the Scanium Android app to connect to your backend server during development.
+This guide explains how to configure the Scanium Android app to connect to your backend server
+during development.
 
 ***REMOVED******REMOVED*** Connect App to NAS Backend via Cloudflare
 
@@ -21,6 +22,7 @@ adb shell curl -s https://scanium.gtemp1.com/health
 ```
 
 The scripts will:
+
 - Write `scanium.api.base.url.debug=https://scanium.gtemp1.com` to `local.properties`
 - Write `scanium.api.key` if `SCANIUM_API_KEY` is set
 - Build and install the devDebug APK
@@ -43,8 +45,10 @@ The scripts will:
 
 ***REMOVED******REMOVED*** HTTPS Enforcement & Cloudflare Calls
 
-- Backend containers run with `NODE_ENV=production` by default and reject plain HTTP with `HTTPS_REQUIRED`. This keeps Cloudflare-facing endpoints TLS-only.
-- Cloudflare adds `X-Forwarded-Proto: https`, so the backend accepts public `https://scanium.gtemp1.com/v1/assist/chat` requests:
+- Backend containers run with `NODE_ENV=production` by default and reject plain HTTP with
+  `HTTPS_REQUIRED`. This keeps Cloudflare-facing endpoints TLS-only.
+- Cloudflare adds `X-Forwarded-Proto: https`, so the backend accepts public
+  `https://scanium.gtemp1.com/v1/assist/chat` requests:
 
 ```bash
 curl -X POST https://scanium.gtemp1.com/v1/assist/chat \
@@ -53,17 +57,23 @@ curl -X POST https://scanium.gtemp1.com/v1/assist/chat \
   --data '{"items":[],"message":"ping"}'
 ```
 
-- Mobile clients should first warm up the assistant to confirm that a provider is configured and reachable:
+- Mobile clients should first warm up the assistant to confirm that a provider is configured and
+  reachable:
 
 ```bash
 curl -X POST https://scanium.gtemp1.com/v1/assist/warmup \
   -H "x-api-key: $SCANIUM_API_KEY"
 ```
 
-  Successful responses return `{"status":"ok","provider":"claude","model":"claude-sonnet-4-20250514","ts":"..."}`. Missing keys or disabled providers return an error payload and non-200 status so the app can stay in offline mode.
+Successful responses return
+`{"status":"ok","provider":"claude","model":"claude-sonnet-4-20250514","ts":"..."}`. Missing keys or
+disabled providers return an error payload and non-200 status so the app can stay in offline mode.
 
-- For LAN smoke tests, set `ALLOW_INSECURE_HTTP=true` in the backend env file and call `http://localhost:8080/v1/assist/chat`. Only localhost/RFC1918 hosts are honored, and you still need `X-API-Key`.
-- Missing or invalid API keys return `401 UNAUTHORIZED`; TLS violations return `403 HTTPS_REQUIRED`. Check logs for `reason=HTTPS_REQUIRED` if your curl fails.
+- For LAN smoke tests, set `ALLOW_INSECURE_HTTP=true` in the backend env file and call
+  `http://localhost:8080/v1/assist/chat`. Only localhost/RFC1918 hosts are honored, and you still
+  need `X-API-Key`.
+- Missing or invalid API keys return `401 UNAUTHORIZED`; TLS violations return `403 HTTPS_REQUIRED`.
+  Check logs for `reason=HTTPS_REQUIRED` if your curl fails.
 
 ***REMOVED******REMOVED*** Configuration Methods
 
@@ -164,12 +174,12 @@ cloudflared tunnel run scanium-backend
 
 ***REMOVED******REMOVED*** URL Configuration Behavior
 
-| Build Type | URL Source | Fallback |
-|------------|------------|----------|
-| devDebug   | `scanium.api.base.url.debug` | `scanium.api.base.url` |
-| devRelease | `scanium.api.base.url` | - |
-| betaDebug  | `scanium.api.base.url.debug` | `scanium.api.base.url` |
-| betaRelease| `scanium.api.base.url` | - |
+| Build Type  | URL Source                   | Fallback               |
+|-------------|------------------------------|------------------------|
+| devDebug    | `scanium.api.base.url.debug` | `scanium.api.base.url` |
+| devRelease  | `scanium.api.base.url`       | -                      |
+| betaDebug   | `scanium.api.base.url.debug` | `scanium.api.base.url` |
+| betaRelease | `scanium.api.base.url`       | -                      |
 
 **Note:** Debug builds allow HTTP (cleartext) for LAN development. Release builds require HTTPS.
 
@@ -189,6 +199,7 @@ In debug builds, the base URL is resolved in this order:
 ***REMOVED******REMOVED******REMOVED*** Viewing Override Status
 
 In Developer Options → App Configuration:
+
 - `Base URL` - Shows the current effective URL
 - `Base URL (OVERRIDE)` - Shown when override is active (red text indicates potential issue)
 - `BuildConfig URL` - Shows the original BuildConfig value when overridden
@@ -240,6 +251,7 @@ The build system validates backend configuration:
 ```
 
 This checks:
+
 - Configuration values in `local.properties`
 - BuildConfig values in the compiled app
 - Network connectivity from the device
@@ -260,27 +272,30 @@ adb shell ping -c 3 scanium-api.your-domain.com
 
 ***REMOVED******REMOVED*** Diagnostics Status States
 
-The Developer Options → Assistant / AI Diagnostics section shows detailed backend status that distinguishes between different failure modes.
+The Developer Options → Assistant / AI Diagnostics section shows detailed backend status that
+distinguishes between different failure modes.
 
 ***REMOVED******REMOVED******REMOVED*** Status Classifications
 
-| Status | Color | Meaning | Action Required |
-|--------|-------|---------|-----------------|
-| **Assistant Ready** | 🟢 Green | Backend healthy, all prerequisites met | None |
-| **Backend Unreachable** | 🔴 Red | Network error (DNS, timeout, SSL, connection refused) | Check network, firewall, DNS, tunnel status |
-| **Backend Reachable — Invalid API Key** | 🟠 Orange | HTTP 401/403 - Backend IS reachable, but auth failed | Check/update API key |
-| **Backend Reachable — Server Error** | 🟠 Orange | HTTP 5xx - Backend IS reachable, but server having issues | Check backend logs, container health |
-| **Backend Reachable — Endpoint Not Found** | 🟠 Orange | HTTP 404 - Wrong URL or endpoint not deployed | Verify base URL and backend version |
-| **Backend Not Configured** | ⚪ Gray | No URL or API key configured | Configure in `local.properties` |
-| **No Network Connection** | 🔴 Red | Device not connected to internet | Enable WiFi/cellular |
+| Status                                     | Color     | Meaning                                                   | Action Required                             |
+|--------------------------------------------|-----------|-----------------------------------------------------------|---------------------------------------------|
+| **Assistant Ready**                        | 🟢 Green  | Backend healthy, all prerequisites met                    | None                                        |
+| **Backend Unreachable**                    | 🔴 Red    | Network error (DNS, timeout, SSL, connection refused)     | Check network, firewall, DNS, tunnel status |
+| **Backend Reachable — Invalid API Key**    | 🟠 Orange | HTTP 401/403 - Backend IS reachable, but auth failed      | Check/update API key                        |
+| **Backend Reachable — Server Error**       | 🟠 Orange | HTTP 5xx - Backend IS reachable, but server having issues | Check backend logs, container health        |
+| **Backend Reachable — Endpoint Not Found** | 🟠 Orange | HTTP 404 - Wrong URL or endpoint not deployed             | Verify base URL and backend version         |
+| **Backend Not Configured**                 | ⚪ Gray    | No URL or API key configured                              | Configure in `local.properties`             |
+| **No Network Connection**                  | 🔴 Red    | Device not connected to internet                          | Enable WiFi/cellular                        |
 
 ***REMOVED******REMOVED******REMOVED*** Debug Details
 
 When there's an error, the diagnostics display shows:
+
 - The HTTP method and endpoint tested (e.g., `GET /health`)
 - The HTTP status code if available (e.g., `-> 401`)
 
 Example debug strings:
+
 - `GET /health -> 200` - Success
 - `GET /health -> 401` - Unauthorized
 - `GET /health -> 502` - Cloudflare/proxy error
@@ -288,24 +303,27 @@ Example debug strings:
 
 ***REMOVED******REMOVED******REMOVED*** Endpoints Used by Scanium
 
-| Feature | Endpoint | Method | Auth Required |
-|---------|----------|--------|---------------|
-| Health check | `/health` | GET | Optional (API key improves diagnostics) |
-| Cloud classification | `/v1/classify` | POST | Yes |
-| AI Assistant | `/v1/assist/chat` | POST | Yes |
+| Feature              | Endpoint          | Method | Auth Required                           |
+|----------------------|-------------------|--------|-----------------------------------------|
+| Health check         | `/health`         | GET    | Optional (API key improves diagnostics) |
+| Cloud classification | `/v1/classify`    | POST   | Yes                                     |
+| AI Assistant         | `/v1/assist/chat` | POST   | Yes                                     |
 
 ***REMOVED******REMOVED******REMOVED*** Common Diagnostic Scenarios
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Health 200, but Assistant shows "Invalid API Key"
 
 **Symptoms:**
+
 - Backend card shows "Healthy OK (200)"
 - Banner shows "Backend Reachable — Invalid API Key"
 - Debug: `GET /health -> 401`
 
-**Cause:** The `/health` endpoint accepts requests without authentication, but the app sends the API key for better diagnostics. If the key is invalid or missing, you get 401.
+**Cause:** The `/health` endpoint accepts requests without authentication, but the app sends the API
+key for better diagnostics. If the key is invalid or missing, you get 401.
 
 **Fix:**
+
 1. Check API key is set in `local.properties`:
    ```bash
    grep scanium.api.key local.properties
@@ -319,12 +337,14 @@ Example debug strings:
 ***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Health 200, but classifier returns 404
 
 **Symptoms:**
+
 - Health check works
 - Classification fails with 404
 
 **Cause:** Base URL points to wrong server or backend version missing `/v1/classify` endpoint.
 
 **Fix:**
+
 1. Verify base URL:
    ```bash
    grep scanium.api.base.url local.properties
@@ -336,7 +356,8 @@ Example debug strings:
    ```
 3. Check backend version supports classification
 
-Example response payload (when `enrichAttributes=true`) includes structured image attributes so the app can decide whether the assistant is “online”:
+Example response payload (when `enrichAttributes=true`) includes structured image attributes so the
+app can decide whether the assistant is “online”:
 
 ```json
 {
@@ -356,24 +377,32 @@ Example response payload (when `enrichAttributes=true`) includes structured imag
 
 ***REMOVED******REMOVED******REMOVED*** Remote Config (`/v1/config`)
 
-- Default config file lives in `backend/config/remote-config.json`. Update the `version` and `ttlSeconds` fields when you change it so devices know when to invalidate cached values.
-- Both `backend/docker-compose.yml` and the NAS compose file mount `${REMOTE_CONFIG_PATH:-./config/remote-config.json}` into the container at `/app/config/remote-config.json`. This means you can edit the host file and simply restart the container—no image rebuild required.
-- **NAS override:** copy the template to `/volume1/docker/scanium/config/remote-config.json`, set `REMOTE_CONFIG_PATH=/volume1/docker/scanium/config/remote-config.json` in your `.env`, then run:
+- Default config file lives in `backend/config/remote-config.json`. Update the `version` and
+  `ttlSeconds` fields when you change it so devices know when to invalidate cached values.
+- Both `backend/docker-compose.yml` and the NAS compose file mount
+  `${REMOTE_CONFIG_PATH:-./config/remote-config.json}` into the container at
+  `/app/config/remote-config.json`. This means you can edit the host file and simply restart the
+  container—no image rebuild required.
+- **NAS override:** copy the template to `/volume1/docker/scanium/config/remote-config.json`, set
+  `REMOTE_CONFIG_PATH=/volume1/docker/scanium/config/remote-config.json` in your `.env`, then run:
   ```bash
   cd /volume1/docker/scanium/backend
   docker compose --project-name scanium up -d api
   ```
-  The API will log a warning if the file is missing and fall back to safe defaults so you can still access `/v1/config`.
+  The API will log a warning if the file is missing and fall back to safe defaults so you can still
+  access `/v1/config`.
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Health returns 502/530 (Cloudflare errors)
 
 **Symptoms:**
+
 - Banner shows "Backend Reachable — Server Error"
 - Debug: `GET /health -> 502` or `-> 530`
 
 **Cause:** Cloudflare Tunnel is working but backend container is down or not responding.
 
 **Fix:**
+
 1. Check backend container:
    ```bash
    docker logs scanium-backend
@@ -391,12 +420,14 @@ Example response payload (when `enrichAttributes=true`) includes structured imag
 ***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Complete network failure
 
 **Symptoms:**
+
 - Banner shows "Backend Unreachable"
 - Debug shows endpoint but no status code
 
 **Cause:** DNS failure, SSL error, connection refused, or timeout.
 
 **Fix:**
+
 1. Test from device:
    ```bash
    adb shell curl -v https://scanium.gtemp1.com/health
@@ -492,6 +523,7 @@ Android blocks cleartext (HTTP) traffic by default. For debug builds:
 ***REMOVED******REMOVED******REMOVED*** Environment variables not being read
 
 Gradle may cache configuration. Try:
+
 ```bash
 ./gradlew --stop
 ./gradlew :androidApp:assembleDevDebug
@@ -528,13 +560,13 @@ This can happen if a runtime override was set previously (e.g., old ngrok URL):
 
 ***REMOVED******REMOVED*** Scripts Reference
 
-| Script | Purpose |
-|--------|---------|
-| `scripts/android/set-backend-cloudflare-dev.sh` | Configure for Cloudflare NAS backend |
-| `scripts/android/build-install-devdebug.sh` | Build, install, and smoke test |
-| `scripts/android-configure-backend-dev.sh` | Configure backend URL and API key (generic) |
-| `scripts/android-build-install-dev.sh` | Build and install devDebug |
-| `scripts/dev/verify-backend-config.sh` | Verify configuration and connectivity |
+| Script                                          | Purpose                                     |
+|-------------------------------------------------|---------------------------------------------|
+| `scripts/android/set-backend-cloudflare-dev.sh` | Configure for Cloudflare NAS backend        |
+| `scripts/android/build-install-devdebug.sh`     | Build, install, and smoke test              |
+| `scripts/android-configure-backend-dev.sh`      | Configure backend URL and API key (generic) |
+| `scripts/android-build-install-dev.sh`          | Build and install devDebug                  |
+| `scripts/dev/verify-backend-config.sh`          | Verify configuration and connectivity       |
 
 ***REMOVED******REMOVED*** See Also
 

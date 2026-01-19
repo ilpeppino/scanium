@@ -1,11 +1,13 @@
 ***REMOVED*** Dataset Version Pinning
 
 ***REMOVED******REMOVED*** Why Scanium pins a commit
+
 - Reproducibility: CI and local runs use the exact same dataset content.
 - Auditability: provenance changes are reviewed as explicit diffs.
 - Safety: license changes or removals do not silently alter test inputs.
 
 ***REMOVED******REMOVED*** How to bump the dataset version
+
 1. Update the submodule pointer:
    ```bash
    ./scripts/golden-tests/update-submodule.sh <tag-or-commit>
@@ -21,6 +23,7 @@
    ```
 
 ***REMOVED******REMOVED*** How to roll back quickly
+
 1. Find the previous submodule commit in git history.
 2. Check out that commit in Scanium:
    ```bash

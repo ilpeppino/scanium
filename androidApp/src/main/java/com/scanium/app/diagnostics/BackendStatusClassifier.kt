@@ -12,7 +12,6 @@ import com.scanium.app.model.config.ConnectionTestResult
  * This classification is critical for providing accurate, actionable diagnostics to users.
  */
 object BackendStatusClassifier {
-
     /**
      * Maps a [ConnectionTestResult] to a [BackendReachabilityStatus].
      *
@@ -32,11 +31,14 @@ object BackendStatusClassifier {
         when (errorType) {
             // Network-level failures - backend truly unreachable
             ConnectionTestErrorType.NETWORK_UNREACHABLE -> BackendReachabilityStatus.UNREACHABLE
+
             ConnectionTestErrorType.TIMEOUT -> BackendReachabilityStatus.UNREACHABLE
 
             // HTTP-level failures - backend IS reachable, but returning errors
             ConnectionTestErrorType.UNAUTHORIZED -> BackendReachabilityStatus.UNAUTHORIZED
+
             ConnectionTestErrorType.SERVER_ERROR -> BackendReachabilityStatus.SERVER_ERROR
+
             ConnectionTestErrorType.NOT_FOUND -> BackendReachabilityStatus.NOT_FOUND
 
             // Configuration issues
@@ -49,17 +51,23 @@ object BackendStatusClassifier {
      */
     fun isBackendReachable(result: ConnectionTestResult): Boolean =
         when (result) {
-            is ConnectionTestResult.Success -> true
-            is ConnectionTestResult.Failure ->
+            is ConnectionTestResult.Success -> {
+                true
+            }
+
+            is ConnectionTestResult.Failure -> {
                 when (result.errorType) {
                     ConnectionTestErrorType.UNAUTHORIZED,
                     ConnectionTestErrorType.SERVER_ERROR,
-                    ConnectionTestErrorType.NOT_FOUND -> true
+                    ConnectionTestErrorType.NOT_FOUND,
+                    -> true
 
                     ConnectionTestErrorType.NETWORK_UNREACHABLE,
                     ConnectionTestErrorType.TIMEOUT,
-                    ConnectionTestErrorType.NOT_CONFIGURED -> false
+                    ConnectionTestErrorType.NOT_CONFIGURED,
+                    -> false
                 }
+            }
         }
 
     /**
@@ -69,21 +77,39 @@ object BackendStatusClassifier {
      */
     fun getStatusMessage(result: ConnectionTestResult): String =
         when (result) {
-            is ConnectionTestResult.Success -> "Backend Healthy"
-            is ConnectionTestResult.Failure ->
+            is ConnectionTestResult.Success -> {
+                "Backend Healthy"
+            }
+
+            is ConnectionTestResult.Failure -> {
                 when (result.errorType) {
-                    ConnectionTestErrorType.NETWORK_UNREACHABLE -> "Backend Unreachable"
-                    ConnectionTestErrorType.TIMEOUT -> "Backend Unreachable (Timeout)"
-                    ConnectionTestErrorType.UNAUTHORIZED ->
+                    ConnectionTestErrorType.NETWORK_UNREACHABLE -> {
+                        "Backend Unreachable"
+                    }
+
+                    ConnectionTestErrorType.TIMEOUT -> {
+                        "Backend Unreachable (Timeout)"
+                    }
+
+                    ConnectionTestErrorType.UNAUTHORIZED -> {
                         result.httpStatus?.let { "Backend Reachable — Unauthorized ($it)" }
                             ?: "Backend Reachable — Invalid API Key"
-                    ConnectionTestErrorType.SERVER_ERROR ->
+                    }
+
+                    ConnectionTestErrorType.SERVER_ERROR -> {
                         result.httpStatus?.let { "Backend Reachable — Server Error ($it)" }
                             ?: "Backend Reachable — Server Error"
-                    ConnectionTestErrorType.NOT_FOUND ->
+                    }
+
+                    ConnectionTestErrorType.NOT_FOUND -> {
                         result.httpStatus?.let { "Backend Reachable — Endpoint Not Found ($it)" }
                             ?: "Backend Reachable — Endpoint Not Found"
-                    ConnectionTestErrorType.NOT_CONFIGURED -> "Backend Not Configured"
+                    }
+
+                    ConnectionTestErrorType.NOT_CONFIGURED -> {
+                        "Backend Not Configured"
+                    }
                 }
+            }
         }
 }

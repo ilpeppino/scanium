@@ -1,30 +1,35 @@
 ***REMOVED*** Dashboard Troubleshooting Guides
 
-Detailed guides for fixing "No data" issues and troubleshooting Grafana dashboards in the Scanium monitoring stack.
+Detailed guides for fixing "No data" issues and troubleshooting Grafana dashboards in the Scanium
+monitoring stack.
 
 ***REMOVED******REMOVED*** Recently Fixed Dashboards
 
 ***REMOVED******REMOVED******REMOVED*** [OpenAI Runtime Dashboard](./openai-runtime-dashboard.md) ✅
+
 - **Dashboard:** Scanium - OpenAI Runtime
 - **File:** `monitoring/grafana/dashboards/openai-runtime.json`
 - **Metrics:** Request rate, latency, token usage (input/output/total)
 - **Issues Fixed:**
-  - HTTP 403 blocking /metrics endpoint (added `/metrics` to HTTPS exempt paths)
-  - Token tracking implementation for Prometheus metrics
-  - Backend metrics scraping via Alloy
+    - HTTP 403 blocking /metrics endpoint (added `/metrics` to HTTPS exempt paths)
+    - Token tracking implementation for Prometheus metrics
+    - Backend metrics scraping via Alloy
 - **Status:** Fully operational with all panels showing data
 
 ***REMOVED******REMOVED******REMOVED*** [Backend API Performance Dashboard](./backend-api-performance-dashboard.md)
+
 - **Dashboard:** Scanium - Backend API Performance
 - **File:** `monitoring/grafana/dashboards/backend-api-performance.json`
 - **Metrics:** HTTP request rate, latency, error rate by endpoint
 
 ***REMOVED******REMOVED******REMOVED*** [Backend Errors Dashboard](./backend-errors-dashboard.md)
+
 - **Dashboard:** Scanium - Backend Errors
 - **File:** `monitoring/grafana/dashboards/backend-errors.json`
 - **Metrics:** Error rate, error types, error distribution
 
 ***REMOVED******REMOVED******REMOVED*** [Errors and Failures Dashboard](./errors-and-failures-dashboard.md)
+
 - **Dashboard:** Scanium - Errors & Failures
 - **File:** `monitoring/grafana/dashboards/errors.json`
 - **Metrics:** System-wide error tracking across mobile and backend
@@ -43,8 +48,8 @@ Detailed guides for fixing "No data" issues and troubleshooting Grafana dashboar
    ```
 
 2. **Check datasource UID in dashboard JSON:**
-   - Expected UIDs: `LOKI`, `TEMPO`, `MIMIR`
-   - Defined in: `monitoring/grafana/provisioning/datasources/datasources.yaml`
+    - Expected UIDs: `LOKI`, `TEMPO`, `MIMIR`
+    - Defined in: `monitoring/grafana/provisioning/datasources/datasources.yaml`
 
 3. **Verify label names match queries:**
    ```bash
@@ -64,17 +69,20 @@ Detailed guides for fixing "No data" issues and troubleshooting Grafana dashboar
 
 1. **Verify scrape interval:** Check `monitoring/alloy/config.alloy` for `scrape_interval` settings
 2. **Check retention:** See `monitoring/mimir/mimir.yaml` for retention period
-3. **Validate time range:** Dashboard time picker must match data availability (default is last 6 hours)
+3. **Validate time range:** Dashboard time picker must match data availability (default is last 6
+   hours)
 
 ***REMOVED******REMOVED******REMOVED*** Variables not populating
 
 **Common causes:**
+
 - Variable query syntax errors (PromQL/LogQL)
 - Label names don't exist on metrics
 - Regex filters too restrictive
 - No data in selected time range
 
 **Debug variable queries:**
+
 1. Copy variable query from dashboard JSON
 2. Test in Grafana Explore with same datasource
 3. Check for errors in browser console (F12)

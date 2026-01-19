@@ -15,13 +15,12 @@ object DeviceIdProvider {
      * Get the raw Android device ID.
      * Returns empty string if unavailable.
      */
-    fun getRawDeviceId(context: Context): String {
-        return try {
+    fun getRawDeviceId(context: Context): String =
+        try {
             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: ""
         } catch (e: Exception) {
             ""
         }
-    }
 
     /**
      * Get the hashed device ID for sending to backend.
@@ -39,13 +38,12 @@ object DeviceIdProvider {
     /**
      * Hash a device ID using SHA-256.
      */
-    private fun hashDeviceId(deviceId: String): String {
-        return try {
+    private fun hashDeviceId(deviceId: String): String =
+        try {
             val digest = MessageDigest.getInstance("SHA-256")
             val hash = digest.digest(deviceId.toByteArray())
             hash.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
             deviceId // Fallback to original if hashing fails
         }
-    }
 }

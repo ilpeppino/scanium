@@ -5,7 +5,9 @@
 
 ***REMOVED******REMOVED*** Overview
 
-Mobile telemetry is sent directly from the Scanium Android app to Grafana Alloy using **OTLP (OpenTelemetry Protocol) over HTTP**. This is the structural fix (Option 2) that replaces the previous backend-mediated approach (Option C).
+Mobile telemetry is sent directly from the Scanium Android app to Grafana Alloy using **OTLP (
+OpenTelemetry Protocol) over HTTP**. This is the structural fix (Option 2) that replaces the
+previous backend-mediated approach (Option C).
 
 **Flow**: `Mobile App` → `OTLP HTTP` → `Alloy:4318` → `Loki` → `Grafana Dashboards`
 
@@ -14,22 +16,22 @@ Mobile telemetry is sent directly from the Scanium Android app to Grafana Alloy 
 ***REMOVED******REMOVED******REMOVED*** Components
 
 1. **Mobile App (Android)**
-   - Uses `AndroidLogPortOtlp` to export telemetry events
-   - Sends OTLP HTTP requests to `http://REDACTED_INTERNAL_IP:4318/v1/logs`
-   - Configured via `local.properties` (`scanium.otlp.endpoint`, `scanium.otlp.enabled`)
-   - Batching: 100 events or 5s timeout
-   - Queue: 500 max, drop oldest on overflow
-   - Retry: 3 attempts with exponential backoff
+    - Uses `AndroidLogPortOtlp` to export telemetry events
+    - Sends OTLP HTTP requests to `http://REDACTED_INTERNAL_IP:4318/v1/logs`
+    - Configured via `local.properties` (`scanium.otlp.endpoint`, `scanium.otlp.enabled`)
+    - Batching: 100 events or 5s timeout
+    - Queue: 500 max, drop oldest on overflow
+    - Retry: 3 attempts with exponential backoff
 
 2. **Grafana Alloy (NAS)**
-   - OTLP HTTP receiver on `0.0.0.0:4318`
-   - Attribute processor extracts key attributes as Loki labels
-   - Batch processor reduces network overhead
-   - Loki exporter forwards to Loki
+    - OTLP HTTP receiver on `0.0.0.0:4318`
+    - Attribute processor extracts key attributes as Loki labels
+    - Batch processor reduces network overhead
+    - Loki exporter forwards to Loki
 
 3. **Loki (NAS)**
-   - Stores mobile logs with source=`scanium-mobile`
-   - Queryable via LogQL in Grafana dashboards
+    - Stores mobile logs with source=`scanium-mobile`
+    - Queryable via LogQL in Grafana dashboards
 
 ***REMOVED******REMOVED*** Event Schema
 
@@ -37,22 +39,23 @@ Mobile telemetry is sent directly from the Scanium Android app to Grafana Alloy 
 
 Every event includes these attributes as Loki labels:
 
-| Attribute    | Example           | Description                       |
-|--------------|-------------------|-----------------------------------|
-| `platform`   | `"android"`       | Mobile platform                   |
-| `app_version`| `"1.0.0"`         | Semantic version                  |
-| `build`      | `"42"`            | Build number                      |
-| `env`        | `"dev"` / `"prod"`| Environment                       |
-| `build_type` | `"dev"` / `"beta"` / `"prod"` | Build flavor          |
-| `session_id` | `"uuid-123..."`   | Random UUID per app launch        |
-| `data_region`| `"US"` / `"EU"`   | Data residency region             |
-| `event_name` | `"scan.started"`  | Event identifier                  |
+| Attribute     | Example                       | Description                |
+|---------------|-------------------------------|----------------------------|
+| `platform`    | `"android"`                   | Mobile platform            |
+| `app_version` | `"1.0.0"`                     | Semantic version           |
+| `build`       | `"42"`                        | Build number               |
+| `env`         | `"dev"` / `"prod"`            | Environment                |
+| `build_type`  | `"dev"` / `"beta"` / `"prod"` | Build flavor               |
+| `session_id`  | `"uuid-123..."`               | Random UUID per app launch |
+| `data_region` | `"US"` / `"EU"`               | Data residency region      |
+| `event_name`  | `"scan.started"`              | Event identifier           |
 
 ***REMOVED******REMOVED******REMOVED*** Event Naming Convention
 
 Events follow the pattern: `<domain>.<action>`
 
 **Domains:**
+
 - `app.*` - Application lifecycle (e.g., `app.started`)
 - `scan.*` - Scanning workflow (e.g., `scan.started`, `scan.confirmed`)
 - `share.*` - Export/sharing (e.g., `share.export_zip`)
@@ -62,18 +65,18 @@ Events follow the pattern: `<domain>.<action>`
 
 ***REMOVED******REMOVED******REMOVED*** Event Catalog
 
-| Event Name                 | Attributes                          | Description                          |
-|----------------------------|-------------------------------------|--------------------------------------|
-| `app.started`              | `launch_type`                       | App launched                         |
-| `scan.started`             | `scan_source`                       | User started scanning                |
-| `scan.created_item`        | `item_type`, `has_barcode`, `has_nutrition` | Item detected/created   |
-| `scan.confirmed`           | `items_detected`, `scan_duration_ms`| User saved scan                      |
-| `scan.cancelled`           | `reason`                            | User cancelled scan                  |
-| `share.opened`             | `context`                           | Share sheet opened                   |
-| `share.export_zip`         | `item_count`, `include_images`      | ZIP export created                   |
-| `ai.generate_clicked`      | `context`, `ai_enabled`, `send_pictures_to_ai` | AI assistant triggered  |
-| `error.exception`          | `error_code`, `error_category`, `is_recoverable` | Error occurred         |
-| `ml.classification_completed` | `classification_mode`, `duration_ms`, `success` | Item classified     |
+| Event Name                    | Attributes                                       | Description            |
+|-------------------------------|--------------------------------------------------|------------------------|
+| `app.started`                 | `launch_type`                                    | App launched           |
+| `scan.started`                | `scan_source`                                    | User started scanning  |
+| `scan.created_item`           | `item_type`, `has_barcode`, `has_nutrition`      | Item detected/created  |
+| `scan.confirmed`              | `items_detected`, `scan_duration_ms`             | User saved scan        |
+| `scan.cancelled`              | `reason`                                         | User cancelled scan    |
+| `share.opened`                | `context`                                        | Share sheet opened     |
+| `share.export_zip`            | `item_count`, `include_images`                   | ZIP export created     |
+| `ai.generate_clicked`         | `context`, `ai_enabled`, `send_pictures_to_ai`   | AI assistant triggered |
+| `error.exception`             | `error_code`, `error_category`, `is_recoverable` | Error occurred         |
+| `ml.classification_completed` | `classification_mode`, `duration_ms`, `success`  | Item classified        |
 
 ***REMOVED******REMOVED*** Privacy & PII Redaction
 
@@ -86,6 +89,7 @@ Events follow the pattern: `<domain>.<action>`
 - ❌ **NO personal identifiers**: email, phone, user IDs
 
 **Allowed:**
+
 - ✅ Session IDs (random UUID per launch, not linked to user)
 - ✅ App version, build number, platform
 - ✅ Numeric metrics (counts, durations)
@@ -93,6 +97,7 @@ Events follow the pattern: `<domain>.<action>`
 - ✅ Low-cardinality categories (scan source, build type)
 
 **Attribute Sanitization:**
+
 - Attributes matching blocked patterns are dropped
 - Values > 200 chars are truncated
 - Validation happens in `TelemetryEvent` before OTLP export
@@ -213,6 +218,7 @@ ssh nas 'curl -G "http://127.0.0.1:3100/loki/api/v1/query_range" \
 ***REMOVED******REMOVED******REMOVED*** 4. Verify Dashboard
 
 Open http://REDACTED_INTERNAL_IP:3000 and check:
+
 - **Event Rate by Type**: Shows `app.started`, `scan.started`, etc.
 - **Platform Distribution**: Shows `android` (and `ios` when implemented)
 - **Active Sessions**: Counts unique `session_id` values
@@ -233,8 +239,8 @@ Open http://REDACTED_INTERNAL_IP:3000 and check:
    ```
 
 3. **Verify device can reach Alloy:**
-   - Emulator: Use `http://10.0.2.2:4318` (not `localhost`)
-   - Physical device: Use `http://REDACTED_INTERNAL_IP:4318` (same LAN)
+    - Emulator: Use `http://10.0.2.2:4318` (not `localhost`)
+    - Physical device: Use `http://REDACTED_INTERNAL_IP:4318` (same LAN)
 
 4. **Check mobile app logs:**
    ```bash
@@ -246,7 +252,8 @@ Open http://REDACTED_INTERNAL_IP:3000 and check:
 If logs appear but `event_name` is in the JSON body instead of labels:
 
 1. Verify `otelcol.processor.attributes` is configured in Alloy
-2. Restart Alloy: `ssh nas "cd /volume1/docker/scanium/repo/monitoring && docker-compose restart alloy"`
+2. Restart Alloy:
+   `ssh nas "cd /volume1/docker/scanium/repo/monitoring && docker-compose restart alloy"`
 3. Re-send test log and verify labels
 
 ***REMOVED******REMOVED******REMOVED*** Dashboard panels empty
@@ -267,22 +274,26 @@ If logs appear but `event_name` is in the JSON body instead of labels:
 ***REMOVED******REMOVED*** Migration from Option C
 
 **Old flow (Option C):**
+
 ```
 Mobile App → Backend API (/v1/telemetry/mobile) → Backend logs → Alloy → Loki
 ```
 
 **New flow (Option 2):**
+
 ```
 Mobile App → Alloy (OTLP HTTP :4318) → Loki
 ```
 
 **Benefits:**
+
 - ✅ **Resilient**: No dependency on backend availability
 - ✅ **Lower latency**: Direct to Alloy (no backend hop)
 - ✅ **Standard protocol**: OTLP is vendor-neutral
 - ✅ **Simpler**: Fewer moving parts
 
 **Migration steps:**
+
 1. ✅ Configure Alloy OTLP receiver
 2. ✅ Update mobile app to use OTLP telemetry
 3. ✅ Deprecate `MobileTelemetryClient` (backend API approach)
@@ -293,5 +304,6 @@ Mobile App → Alloy (OTLP HTTP :4318) → Loki
 
 - [Telemetry Facade](../../howto/app/TELEMETRY_FACADE.md) - Shared telemetry API
 - [Alloy Configuration](../../../monitoring/alloy/config.alloy) - OTLP receiver setup
-- [Mobile App Health Dashboard](../../../monitoring/grafana/dashboards/mobile-app-health.json) - Grafana dashboard
+- [Mobile App Health Dashboard](../../../monitoring/grafana/dashboards/mobile-app-health.json) -
+  Grafana dashboard
 - [Proof Script](../../../howto/monitoring/scripts/verify-monitoring.sh) - Verification tool

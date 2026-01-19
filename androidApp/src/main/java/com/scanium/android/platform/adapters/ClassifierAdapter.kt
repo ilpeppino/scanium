@@ -83,8 +83,8 @@ class ClassifierAdapter(
     /**
      * Convert Android ClassificationResult to shared ClassificationResult.
      */
-    private fun convertAndroidResult(androidResult: com.scanium.app.ml.classification.ClassificationResult): ClassificationResult {
-        return ClassificationResult(
+    private fun convertAndroidResult(androidResult: com.scanium.app.ml.classification.ClassificationResult): ClassificationResult =
+        ClassificationResult(
             domainCategoryId = androidResult.domainCategoryId,
             confidence = androidResult.confidence,
             source = androidResult.mode.toSharedSource(),
@@ -96,7 +96,6 @@ class ClassifierAdapter(
             status = androidResult.status.toSharedStatus(),
             errorMessage = androidResult.errorMessage,
         )
-    }
 }
 
 /**
@@ -113,8 +112,11 @@ private fun AndroidClassificationMode.toSharedSource(): ClassificationSource =
  */
 private fun AndroidClassificationStatus.toSharedStatus(): ClassificationStatus =
     when (this) {
-        AndroidClassificationStatus.PENDING -> ClassificationStatus.SUCCESS // Map PENDING to SUCCESS for now
+        AndroidClassificationStatus.PENDING -> ClassificationStatus.SUCCESS
+
+        // Map PENDING to SUCCESS for now
         AndroidClassificationStatus.SUCCESS -> ClassificationStatus.SUCCESS
+
         AndroidClassificationStatus.FAILED -> ClassificationStatus.FAILED
     }
 

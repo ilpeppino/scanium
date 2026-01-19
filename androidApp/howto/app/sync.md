@@ -2,9 +2,11 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The Scanium Android app implements offline-first synchronization with the backend Items API. Items are created and edited locally, then synchronized to the cloud when online.
+The Scanium Android app implements offline-first synchronization with the backend Items API. Items
+are created and edited locally, then synchronized to the cloud when online.
 
 **Key Features:**
+
 - Offline-first: Create/edit items without network
 - Automatic background sync every 15 minutes
 - First sign-in auto-sync for existing items
@@ -130,6 +132,7 @@ class FirstSyncManager @Inject constructor(
 ```
 
 **Usage:**
+
 ```kotlin
 // In ViewModel after successful sign-in
 viewModelScope.launch {
@@ -199,6 +202,7 @@ class PeriodicSyncInitializer(private val workManager: WorkManager) {
 ```
 
 **Call in Application.onCreate():**
+
 ```kotlin
 class ScaniumApp : Application(), HiltWorkManagerConfiguration {
     @Inject lateinit var periodicSyncInitializer: PeriodicSyncInitializer
@@ -618,6 +622,7 @@ fun testMigration9To10() {
 **Symptoms:** Items created offline don't appear on other devices
 
 **Debug:**
+
 ```kotlin
 // Check pending sync count
 val pending = itemDao.getPendingSync()
@@ -634,6 +639,7 @@ Log.d("Sync", "Signed in: $isSignedIn")
 ```
 
 **Common Fixes:**
+
 1. Sign in: Sync requires authentication
 2. Enable network: Check airplane mode, WiFi
 3. Check battery: WorkManager skips if battery low
@@ -646,6 +652,7 @@ Log.d("Sync", "Signed in: $isSignedIn")
 **Cause:** Local `clientUpdatedAt` not being updated
 
 **Fix:**
+
 ```kotlin
 // Always update clientUpdatedAt when modifying item
 val updated = item.copy(
@@ -663,6 +670,7 @@ dao.upsertAll(listOf(updated))
 **Cause:** Local database cleared but server still has items
 
 **Fix:**
+
 ```kotlin
 // On first sync after reinstall, map by title/timestamp
 val serverItems = itemsApi.getItems()
@@ -744,9 +752,9 @@ interface ScannedItemDao {
    ```
 
 4. **Use WorkManager for background tasks**
-   - Respects battery optimization
-   - Survives app kills
-   - Exponential backoff on failure
+    - Respects battery optimization
+    - Survives app kills
+    - Exponential backoff on failure
 
 5. **Test with mock server**
    ```kotlin

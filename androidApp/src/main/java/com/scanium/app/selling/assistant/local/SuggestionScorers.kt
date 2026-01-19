@@ -6,17 +6,22 @@ internal enum class PhotoSuggestionTier {
 }
 
 internal object SuggestionScorers {
-    fun isTitleShort(title: String?, minLength: Int): Boolean {
+    fun isTitleShort(
+        title: String?,
+        minLength: Int,
+    ): Boolean {
         val trimmed = title?.trim().orEmpty()
         return trimmed.isBlank() || trimmed.length < minLength
     }
 
-    fun shouldSuggestTitle(title: String?, minLength: Int): Boolean {
+    fun shouldSuggestTitle(
+        title: String?,
+        minLength: Int,
+    ): Boolean {
         val trimmed = title?.trim().orEmpty()
         return trimmed.isBlank() || trimmed.length < minLength
     }
 
-    fun photoSuggestionTier(photoCount: Int): PhotoSuggestionTier {
-        return if (photoCount < 2) PhotoSuggestionTier.ESSENTIAL else PhotoSuggestionTier.DETAIL
-    }
+    fun photoSuggestionTier(photoCount: Int): PhotoSuggestionTier =
+        if (photoCount < 2) PhotoSuggestionTier.ESSENTIAL else PhotoSuggestionTier.DETAIL
 }

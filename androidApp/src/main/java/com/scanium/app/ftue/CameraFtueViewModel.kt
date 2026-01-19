@@ -1,6 +1,5 @@
 package com.scanium.app.ftue
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,14 +33,16 @@ import kotlinx.coroutines.launch
  * - SHUTTER_HINT_SHOWN: Shutter hint displayed
  * - COMPLETED: All hints shown or user captured first item
  */
-class CameraFtueViewModel(private val ftueRepository: FtueRepository) : ViewModel() {
+class CameraFtueViewModel(
+    private val ftueRepository: FtueRepository,
+) : ViewModel() {
     companion object {
         private const val TAG = "CameraFtueViewModel"
 
         // Timing constants (in milliseconds)
         private const val ROI_PULSE_DURATION_MS = 1200L
-        private const val ROI_HINT_INITIAL_DELAY_MS = 800L  // Delay before showing first hint
-        private const val BBOX_DETECTION_TIMEOUT_MS = 3000L  // Wait for first detection
+        private const val ROI_HINT_INITIAL_DELAY_MS = 800L // Delay before showing first hint
+        private const val BBOX_DETECTION_TIMEOUT_MS = 3000L // Wait for first detection
         private const val BBOX_GLOW_DURATION_MS = 800L
         private const val SHUTTER_HINT_DELAY_MS = 500L
     }
@@ -83,7 +84,10 @@ class CameraFtueViewModel(private val ftueRepository: FtueRepository) : ViewMode
      * @param shouldStartFtue: True if FTUE should start (check based on completion status)
      * @param hasExistingItems: True if user already has items (skip FTUE if true)
      */
-    fun initialize(shouldStartFtue: Boolean, hasExistingItems: Boolean = false) {
+    fun initialize(
+        shouldStartFtue: Boolean,
+        hasExistingItems: Boolean = false,
+    ) {
         viewModelScope.launch {
             if (com.scanium.app.config.FeatureFlags.isDevBuild) {
                 Log.d(TAG, "initialize: shouldStartFtue=$shouldStartFtue, hasExistingItems=$hasExistingItems")
@@ -134,10 +138,11 @@ class CameraFtueViewModel(private val ftueRepository: FtueRepository) : ViewMode
      */
     fun onShutterTapped() {
         viewModelScope.launch {
-            if (_currentStep.value in setOf(
+            if (_currentStep.value in
+                setOf(
                     CameraFtueStep.BBOX_HINT_SHOWN,
                     CameraFtueStep.WAITING_SHUTTER,
-                    CameraFtueStep.SHUTTER_HINT_SHOWN
+                    CameraFtueStep.SHUTTER_HINT_SHOWN,
                 )
             ) {
                 completeSequence()
@@ -250,15 +255,16 @@ class CameraFtueViewModel(private val ftueRepository: FtueRepository) : ViewMode
 
     private fun scheduleDetectionTimeout() {
         cancelTimeouts()
-        stepTimeoutJob = viewModelScope.launch {
-            delay(BBOX_DETECTION_TIMEOUT_MS)
+        stepTimeoutJob =
+            viewModelScope.launch {
+                delay(BBOX_DETECTION_TIMEOUT_MS)
 
-            // If no detection appeared, show the BBox hint anyway
-            if (_currentStep.value == CameraFtueStep.WAITING_BBOX) {
-                Log.d(TAG, "No detection within timeout, showing BBox hint anyway")
-                showBboxHint()
+                // If no detection appeared, show the BBox hint anyway
+                if (_currentStep.value == CameraFtueStep.WAITING_BBOX) {
+                    Log.d(TAG, "No detection within timeout, showing BBox hint anyway")
+                    showBboxHint()
+                }
             }
-        }
     }
 
     private suspend fun completeSequence() {

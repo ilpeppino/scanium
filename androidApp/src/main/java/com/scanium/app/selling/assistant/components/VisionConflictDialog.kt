@@ -75,9 +75,10 @@ fun VisionConflictDialog(
                     // Current value card
                     Card(
                         modifier = Modifier.weight(1f),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            ),
                     ) {
                         Column(
                             modifier = Modifier.padding(12.dp),
@@ -98,9 +99,10 @@ fun VisionConflictDialog(
                     // Detected value card
                     Card(
                         modifier = Modifier.weight(1f),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        ),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            ),
                     ) {
                         Column(
                             modifier = Modifier.padding(12.dp),
@@ -124,9 +126,10 @@ fun VisionConflictDialog(
         confirmButton = {
             TextButton(
                 onClick = onReplace,
-                modifier = Modifier.semantics {
-                    contentDescription = "Replace $displayKey with ${attribute.value}"
-                },
+                modifier =
+                    Modifier.semantics {
+                        contentDescription = "Replace $displayKey with ${attribute.value}"
+                    },
             ) {
                 Text("Replace")
             }
@@ -137,17 +140,19 @@ fun VisionConflictDialog(
             ) {
                 TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.semantics {
-                        contentDescription = "Cancel and keep current value"
-                    },
+                    modifier =
+                        Modifier.semantics {
+                            contentDescription = "Cancel and keep current value"
+                        },
                 ) {
                     Text("Cancel")
                 }
                 TextButton(
                     onClick = onAddAlternative,
-                    modifier = Modifier.semantics {
-                        contentDescription = "Add ${attribute.value} as $displayAltKey"
-                    },
+                    modifier =
+                        Modifier.semantics {
+                            contentDescription = "Add ${attribute.value} as $displayAltKey"
+                        },
                 ) {
                     Text("Add as $displayAltKey")
                 }

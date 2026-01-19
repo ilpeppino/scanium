@@ -6,7 +6,9 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import com.scanium.app.BuildConfig
 
-class SecureApiKeyStore(context: Context) {
+class SecureApiKeyStore(
+    context: Context,
+) {
     private val appContext = context.applicationContext
     private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
     private val sharedPreferences =
@@ -40,7 +42,8 @@ class SecureApiKeyStore(context: Context) {
             // DIAG: Log BuildConfig key info
             Log.d(TAG, "getApiKey: using BuildConfig key len=${buildConfigKey.length} prefix=${buildConfigKey.take(6)}...")
             // Seed encrypted storage so subsequent reads don't rely on BuildConfig.
-            sharedPreferences.edit()
+            sharedPreferences
+                .edit()
                 .putString(KEY_API_KEY, buildConfigKey)
                 .apply()
         } else {
@@ -52,31 +55,34 @@ class SecureApiKeyStore(context: Context) {
     }
 
     fun setApiKey(apiKey: String?) {
-        sharedPreferences.edit().apply {
-            if (apiKey.isNullOrBlank()) {
-                remove(KEY_API_KEY)
-            } else {
-                putString(KEY_API_KEY, apiKey)
-            }
-        }.apply()
+        sharedPreferences
+            .edit()
+            .apply {
+                if (apiKey.isNullOrBlank()) {
+                    remove(KEY_API_KEY)
+                } else {
+                    putString(KEY_API_KEY, apiKey)
+                }
+            }.apply()
     }
 
     // Auth token methods
-    fun getAuthToken(): String? {
-        return sharedPreferences
+    fun getAuthToken(): String? =
+        sharedPreferences
             .getString(KEY_AUTH_TOKEN, null)
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
-    }
 
     fun setAuthToken(token: String?) {
-        sharedPreferences.edit().apply {
-            if (token.isNullOrBlank()) {
-                remove(KEY_AUTH_TOKEN)
-            } else {
-                putString(KEY_AUTH_TOKEN, token)
-            }
-        }.apply()
+        sharedPreferences
+            .edit()
+            .apply {
+                if (token.isNullOrBlank()) {
+                    remove(KEY_AUTH_TOKEN)
+                } else {
+                    putString(KEY_AUTH_TOKEN, token)
+                }
+            }.apply()
     }
 
     fun clearAuthToken() {
@@ -84,21 +90,22 @@ class SecureApiKeyStore(context: Context) {
     }
 
     // Phase C: Refresh token methods
-    fun getRefreshToken(): String? {
-        return sharedPreferences
+    fun getRefreshToken(): String? =
+        sharedPreferences
             .getString(KEY_REFRESH_TOKEN, null)
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
-    }
 
     fun setRefreshToken(token: String?) {
-        sharedPreferences.edit().apply {
-            if (token.isNullOrBlank()) {
-                remove(KEY_REFRESH_TOKEN)
-            } else {
-                putString(KEY_REFRESH_TOKEN, token)
-            }
-        }.apply()
+        sharedPreferences
+            .edit()
+            .apply {
+                if (token.isNullOrBlank()) {
+                    remove(KEY_REFRESH_TOKEN)
+                } else {
+                    putString(KEY_REFRESH_TOKEN, token)
+                }
+            }.apply()
     }
 
     // Phase C: Session expiry methods (stores milliseconds since epoch)
@@ -108,13 +115,15 @@ class SecureApiKeyStore(context: Context) {
     }
 
     fun setAccessTokenExpiresAt(timestampMs: Long?) {
-        sharedPreferences.edit().apply {
-            if (timestampMs == null) {
-                remove(KEY_ACCESS_TOKEN_EXPIRES_AT)
-            } else {
-                putLong(KEY_ACCESS_TOKEN_EXPIRES_AT, timestampMs)
-            }
-        }.apply()
+        sharedPreferences
+            .edit()
+            .apply {
+                if (timestampMs == null) {
+                    remove(KEY_ACCESS_TOKEN_EXPIRES_AT)
+                } else {
+                    putLong(KEY_ACCESS_TOKEN_EXPIRES_AT, timestampMs)
+                }
+            }.apply()
     }
 
     fun getRefreshTokenExpiresAt(): Long? {
@@ -123,13 +132,15 @@ class SecureApiKeyStore(context: Context) {
     }
 
     fun setRefreshTokenExpiresAt(timestampMs: Long?) {
-        sharedPreferences.edit().apply {
-            if (timestampMs == null) {
-                remove(KEY_REFRESH_TOKEN_EXPIRES_AT)
-            } else {
-                putLong(KEY_REFRESH_TOKEN_EXPIRES_AT, timestampMs)
-            }
-        }.apply()
+        sharedPreferences
+            .edit()
+            .apply {
+                if (timestampMs == null) {
+                    remove(KEY_REFRESH_TOKEN_EXPIRES_AT)
+                } else {
+                    putLong(KEY_REFRESH_TOKEN_EXPIRES_AT, timestampMs)
+                }
+            }.apply()
     }
 
     // User info methods
@@ -143,19 +154,21 @@ class SecureApiKeyStore(context: Context) {
     }
 
     fun setUserInfo(userInfo: UserInfo?) {
-        sharedPreferences.edit().apply {
-            if (userInfo == null) {
-                remove(KEY_USER_ID)
-                remove(KEY_USER_EMAIL)
-                remove(KEY_USER_DISPLAY_NAME)
-                remove(KEY_USER_PICTURE_URL)
-            } else {
-                putString(KEY_USER_ID, userInfo.id)
-                putString(KEY_USER_EMAIL, userInfo.email)
-                putString(KEY_USER_DISPLAY_NAME, userInfo.displayName)
-                putString(KEY_USER_PICTURE_URL, userInfo.pictureUrl)
-            }
-        }.apply()
+        sharedPreferences
+            .edit()
+            .apply {
+                if (userInfo == null) {
+                    remove(KEY_USER_ID)
+                    remove(KEY_USER_EMAIL)
+                    remove(KEY_USER_DISPLAY_NAME)
+                    remove(KEY_USER_PICTURE_URL)
+                } else {
+                    putString(KEY_USER_ID, userInfo.id)
+                    putString(KEY_USER_EMAIL, userInfo.email)
+                    putString(KEY_USER_DISPLAY_NAME, userInfo.displayName)
+                    putString(KEY_USER_PICTURE_URL, userInfo.pictureUrl)
+                }
+            }.apply()
     }
 
     data class UserInfo(

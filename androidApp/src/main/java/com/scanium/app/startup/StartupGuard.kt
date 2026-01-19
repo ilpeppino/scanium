@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import com.scanium.app.startup.StartupGuard.Companion.CRASH_THRESHOLD
+import com.scanium.app.startup.StartupGuard.Companion.CRASH_WINDOW_MS
 
 /**
  * Crash-loop detection and safe mode guard for app startup.
@@ -55,6 +57,7 @@ class StartupGuard private constructor(
         private const val KEY_CONSECUTIVE_CRASHES = "consecutive_crashes"
 
         // Crash detection thresholds
+
         /** Time window for crash detection (30 seconds) */
         const val CRASH_WINDOW_MS = 30_000L
 
@@ -73,13 +76,12 @@ class StartupGuard private constructor(
          * Uses SharedPreferences directly (not DataStore) for maximum reliability
          * since this needs to work even when DataStore is corrupted.
          */
-        fun getInstance(context: Context): StartupGuard {
-            return instance ?: synchronized(this) {
+        fun getInstance(context: Context): StartupGuard =
+            instance ?: synchronized(this) {
                 instance ?: StartupGuard(
                     context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
                 ).also { instance = it }
             }
-        }
 
         /**
          * Reset the singleton instance (for testing only).
@@ -132,28 +134,32 @@ class StartupGuard private constructor(
         val lastTimestamp = timestamps.lastOrNull() ?: 0L
         val lastSuccess = lastSuccessfulStartup
 
-        val wasQuickCrash = lastTimestamp > 0 &&
-            lastTimestamp > lastSuccess &&
-            (now - lastTimestamp) < CRASH_WINDOW_MS
+        val wasQuickCrash =
+            lastTimestamp > 0 &&
+                lastTimestamp > lastSuccess &&
+                (now - lastTimestamp) < CRASH_WINDOW_MS
 
-        val newCrashCount = if (wasQuickCrash) {
-            val count = consecutiveCrashes + 1
-            Log.w(TAG, "Quick crash detected. Consecutive crashes: $count")
-            count
-        } else {
-            // Reset if enough time passed (not a crash loop)
-            0
-        }
+        val newCrashCount =
+            if (wasQuickCrash) {
+                val count = consecutiveCrashes + 1
+                Log.w(TAG, "Quick crash detected. Consecutive crashes: $count")
+                count
+            } else {
+                // Reset if enough time passed (not a crash loop)
+                0
+            }
 
         // Update crash counter
-        prefs.edit()
+        prefs
+            .edit()
             .putInt(KEY_CONSECUTIVE_CRASHES, newCrashCount)
             .apply()
 
         // Enable safe mode if threshold reached
         if (newCrashCount >= CRASH_THRESHOLD) {
             Log.e(TAG, "Crash loop detected ($newCrashCount crashes). Enabling safe mode.")
-            prefs.edit()
+            prefs
+                .edit()
                 .putBoolean(KEY_SAFE_MODE_ENABLED, true)
                 .apply()
         }
@@ -177,7 +183,8 @@ class StartupGuard private constructor(
     fun recordStartupSuccess() {
         val now = System.currentTimeMillis()
 
-        prefs.edit()
+        prefs
+            .edit()
             .putLong(KEY_LAST_SUCCESSFUL_STARTUP, now)
             .putInt(KEY_CONSECUTIVE_CRASHES, 0)
             .putBoolean(KEY_SAFE_MODE_ENABLED, false)
@@ -192,7 +199,8 @@ class StartupGuard private constructor(
      * Note: This takes effect on the next app launch, not immediately.
      */
     fun requestExitSafeMode() {
-        prefs.edit()
+        prefs
+            .edit()
             .putBoolean(KEY_SAFE_MODE_ENABLED, false)
             .putInt(KEY_CONSECUTIVE_CRASHES, 0)
             .apply()
@@ -205,14 +213,13 @@ class StartupGuard private constructor(
      *
      * @return A map of diagnostic key-value pairs (safe to log, no secrets)
      */
-    fun getDiagnostics(): Map<String, String> {
-        return mapOf(
+    fun getDiagnostics(): Map<String, String> =
+        mapOf(
             "safe_mode" to isSafeMode.toString(),
             "consecutive_crashes" to consecutiveCrashes.toString(),
             "last_successful_startup" to lastSuccessfulStartup.toString(),
             "startup_timestamps" to getStartupTimestamps().joinToString(","),
         )
-    }
 
     /**
      * Clear all startup guard state (for testing or manual reset).
@@ -225,13 +232,15 @@ class StartupGuard private constructor(
 
     private fun getStartupTimestamps(): List<Long> {
         val raw = prefs.getString(KEY_STARTUP_TIMESTAMPS, "") ?: ""
-        return raw.split(",")
+        return raw
+            .split(",")
             .filter { it.isNotBlank() }
             .mapNotNull { it.toLongOrNull() }
     }
 
     private fun saveStartupTimestamps(timestamps: List<Long>) {
-        prefs.edit()
+        prefs
+            .edit()
             .putString(KEY_STARTUP_TIMESTAMPS, timestamps.joinToString(","))
             .apply()
     }

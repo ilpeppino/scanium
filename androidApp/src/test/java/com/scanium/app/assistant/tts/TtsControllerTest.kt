@@ -14,16 +14,16 @@ import org.junit.Test
  * - Whitespace is handled correctly
  */
 class TtsControllerTest {
-
     @Test
     fun `buildSpeakableText with all fields returns combined text`() {
         val title = "Vintage Nike Sneakers"
         val description = "Classic Nike Air Max 90 in excellent condition. Original box included."
-        val bullets = listOf(
-            "Size 10 US",
-            "Authentic Nike product",
-            "No visible wear",
-        )
+        val bullets =
+            listOf(
+                "Size 10 US",
+                "Authentic Nike product",
+                "No visible wear",
+            )
 
         val result = buildSpeakableText(title, description, bullets)
 

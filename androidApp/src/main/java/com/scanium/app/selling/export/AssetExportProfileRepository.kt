@@ -20,17 +20,11 @@ class AssetExportProfileRepository(
     @Volatile
     private var cachedDefaultId: ExportProfileId? = null
 
-    override suspend fun getProfiles(): List<ExportProfileDefinition> {
-        return loadProfiles().first
-    }
+    override suspend fun getProfiles(): List<ExportProfileDefinition> = loadProfiles().first
 
-    override suspend fun getProfile(id: ExportProfileId): ExportProfileDefinition? {
-        return loadProfiles().first.firstOrNull { it.id == id }
-    }
+    override suspend fun getProfile(id: ExportProfileId): ExportProfileDefinition? = loadProfiles().first.firstOrNull { it.id == id }
 
-    override suspend fun getDefaultProfileId(): ExportProfileId {
-        return loadProfiles().second
-    }
+    override suspend fun getDefaultProfileId(): ExportProfileId = loadProfiles().second
 
     private suspend fun loadProfiles(): Pair<List<ExportProfileDefinition>, ExportProfileId> {
         cachedProfiles?.let { profiles ->
@@ -45,12 +39,13 @@ class AssetExportProfileRepository(
                     val indexJson = readAssetText(INDEX_PATH)
                     val index = json.decodeFromString<ExportProfilesIndex>(indexJson)
                     val definitions =
-                        index.profiles.mapNotNull { fileName ->
-                            runCatching {
-                                val content = readAssetText("export_profiles/$fileName")
-                                json.decodeFromString<ExportProfileDefinition>(content)
-                            }.getOrNull()
-                        }.ifEmpty { fallback }
+                        index.profiles
+                            .mapNotNull { fileName ->
+                                runCatching {
+                                    val content = readAssetText("export_profiles/$fileName")
+                                    json.decodeFromString<ExportProfileDefinition>(content)
+                                }.getOrNull()
+                            }.ifEmpty { fallback }
                     val defaultProfileId =
                         index.defaultProfileId
                             .takeIf { it.isNotBlank() }
@@ -65,9 +60,11 @@ class AssetExportProfileRepository(
         }
     }
 
-    private fun readAssetText(path: String): String {
-        return context.assets.open(path).bufferedReader().use { it.readText() }
-    }
+    private fun readAssetText(path: String): String =
+        context.assets
+            .open(path)
+            .bufferedReader()
+            .use { it.readText() }
 
     companion object {
         private const val INDEX_PATH = "export_profiles/index.json"

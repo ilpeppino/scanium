@@ -32,8 +32,9 @@ data class VisionAttributes(
      * Primary brand from logos (highest score) if available.
      */
     val primaryBrand: String?
-        get() = logos.maxByOrNull { it.score }?.name
-            ?: brandCandidates.firstOrNull()
+        get() =
+            logos.maxByOrNull { it.score }?.name
+                ?: brandCandidates.firstOrNull()
 
     /**
      * Primary model from candidates if available.
@@ -45,13 +46,14 @@ data class VisionAttributes(
      * Whether any meaningful vision data was extracted.
      */
     val isEmpty: Boolean
-        get() = colors.isEmpty() &&
-            ocrText.isNullOrBlank() &&
-            logos.isEmpty() &&
-            labels.isEmpty() &&
-            brandCandidates.isEmpty() &&
-            modelCandidates.isEmpty() &&
-            itemType.isNullOrBlank()
+        get() =
+            colors.isEmpty() &&
+                ocrText.isNullOrBlank() &&
+                logos.isEmpty() &&
+                labels.isEmpty() &&
+                brandCandidates.isEmpty() &&
+                modelCandidates.isEmpty() &&
+                itemType.isNullOrBlank()
 
     companion object {
         val EMPTY = VisionAttributes()

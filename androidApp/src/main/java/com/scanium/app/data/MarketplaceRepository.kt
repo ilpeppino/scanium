@@ -63,9 +63,7 @@ class MarketplaceRepository(
      * @param code ISO country code (e.g., "NL", "DE", "GB")
      * @return Country if found, null otherwise
      */
-    fun getCountryByCode(code: String): Country? {
-        return loadCountries().find { it.code.equals(code, ignoreCase = true) }
-    }
+    fun getCountryByCode(code: String): Country? = loadCountries().find { it.code.equals(code, ignoreCase = true) }
 
     /**
      * Clear cached countries (useful for testing).

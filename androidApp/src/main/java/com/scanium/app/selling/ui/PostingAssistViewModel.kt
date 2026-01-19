@@ -160,7 +160,8 @@ class PostingAssistViewModel
             viewModelScope.launch {
                 val savedDraft = draftStore.getByItemId(currentId)
                 val draft =
-                    savedDraft ?: itemsViewModel.items.value.firstOrNull { it.id == currentId }
+                    savedDraft ?: itemsViewModel.items.value
+                        .firstOrNull { it.id == currentId }
                         ?.let { ListingDraftBuilder.build(it) }
                 draft?.let { draftCache[currentId] = it }
                 draft?.let {
@@ -199,9 +200,7 @@ class PostingAssistViewModel
             }
         }
 
-        fun copyNextStepId(): PostingStepId? {
-            return _uiState.value.plan?.let { PostingAssistPlanBuilder.selectNextStep(it).id }
-        }
+        fun copyNextStepId(): PostingStepId? = _uiState.value.plan?.let { PostingAssistPlanBuilder.selectNextStep(it).id }
 
         fun currentTarget(): PostingTarget? {
             val state = _uiState.value
@@ -226,13 +225,11 @@ class PostingAssistViewModel
                 itemIds: List<String>,
                 startIndex: Int,
                 itemsViewModel: ItemsViewModel,
-            ): ViewModelProvider.Factory {
-                return object : ViewModelProvider.Factory {
+            ): ViewModelProvider.Factory =
+                object : ViewModelProvider.Factory {
                     @Suppress("UNCHECKED_CAST")
-                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        return assistedFactory.create(itemIds, startIndex, itemsViewModel) as T
-                    }
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                        assistedFactory.create(itemIds, startIndex, itemsViewModel) as T
                 }
-            }
         }
     }

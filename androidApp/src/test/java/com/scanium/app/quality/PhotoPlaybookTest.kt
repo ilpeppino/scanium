@@ -1,7 +1,11 @@
 package com.scanium.app.quality
 
 import com.scanium.shared.core.models.ml.ItemCategory
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -14,7 +18,6 @@ import org.junit.Test
  * - Shot type inference from extracted attributes
  */
 class PhotoPlaybookTest {
-
     @Test
     fun `fashion category has brand and size shots`() {
         val playbook = PhotoPlaybook.getPlaybookForCategory(ItemCategory.FASHION)
@@ -33,58 +36,68 @@ class PhotoPlaybookTest {
 
     @Test
     fun `guidance filters by missing attributes`() {
-        val guidance = PhotoPlaybook.getGuidance(
-            category = ItemCategory.FASHION,
-            missingAttributes = listOf("brand"),
-            currentPhotoCount = 0,
-            takenShotTypes = emptySet(),
-        )
+        val guidance =
+            PhotoPlaybook.getGuidance(
+                category = ItemCategory.FASHION,
+                missingAttributes = listOf("brand"),
+                currentPhotoCount = 0,
+                takenShotTypes = emptySet(),
+            )
 
         // Should recommend brand label shot
-        assertTrue(guidance.recommendedShots.any {
-            it.shotType == PhotoPlaybook.ShotType.BRAND_LABEL
-        })
+        assertTrue(
+            guidance.recommendedShots.any {
+                it.shotType == PhotoPlaybook.ShotType.BRAND_LABEL
+            },
+        )
     }
 
     @Test
     fun `guidance excludes already taken shots`() {
         val takenShots = setOf(PhotoPlaybook.ShotType.FULL_ITEM, PhotoPlaybook.ShotType.BRAND_LABEL)
 
-        val guidance = PhotoPlaybook.getGuidance(
-            category = ItemCategory.FASHION,
-            missingAttributes = listOf("brand", "size", "condition"),
-            currentPhotoCount = 2,
-            takenShotTypes = takenShots,
-        )
+        val guidance =
+            PhotoPlaybook.getGuidance(
+                category = ItemCategory.FASHION,
+                missingAttributes = listOf("brand", "size", "condition"),
+                currentPhotoCount = 2,
+                takenShotTypes = takenShots,
+            )
 
         // Should not recommend already taken shots
-        assertFalse(guidance.recommendedShots.any {
-            it.shotType == PhotoPlaybook.ShotType.FULL_ITEM
-        })
-        assertFalse(guidance.recommendedShots.any {
-            it.shotType == PhotoPlaybook.ShotType.BRAND_LABEL
-        })
+        assertFalse(
+            guidance.recommendedShots.any {
+                it.shotType == PhotoPlaybook.ShotType.FULL_ITEM
+            },
+        )
+        assertFalse(
+            guidance.recommendedShots.any {
+                it.shotType == PhotoPlaybook.ShotType.BRAND_LABEL
+            },
+        )
     }
 
     @Test
     fun `guidance returns primary instruction`() {
-        val guidance = PhotoPlaybook.getGuidance(
-            category = ItemCategory.FASHION,
-            missingAttributes = listOf("brand"),
-            currentPhotoCount = 0,
-            takenShotTypes = emptySet(),
-        )
+        val guidance =
+            PhotoPlaybook.getGuidance(
+                category = ItemCategory.FASHION,
+                missingAttributes = listOf("brand"),
+                currentPhotoCount = 0,
+                takenShotTypes = emptySet(),
+            )
 
         assertTrue(guidance.primaryGuidance.isNotBlank())
     }
 
     @Test
     fun `getNextPhotoHint returns first available hint`() {
-        val hint = PhotoPlaybook.getNextPhotoHint(
-            category = ItemCategory.FASHION,
-            missingAttributes = listOf("brand", "size"),
-            takenShotTypes = emptySet(),
-        )
+        val hint =
+            PhotoPlaybook.getNextPhotoHint(
+                category = ItemCategory.FASHION,
+                missingAttributes = listOf("brand", "size"),
+                takenShotTypes = emptySet(),
+            )
 
         assertNotNull(hint)
         assertTrue(hint!!.isNotBlank())
@@ -94,11 +107,12 @@ class PhotoPlaybookTest {
     fun `getNextPhotoHint returns null when all shots taken`() {
         val allShotTypes = PhotoPlaybook.ShotType.entries.toSet()
 
-        val hint = PhotoPlaybook.getNextPhotoHint(
-            category = ItemCategory.FASHION,
-            missingAttributes = listOf("brand"),
-            takenShotTypes = allShotTypes,
-        )
+        val hint =
+            PhotoPlaybook.getNextPhotoHint(
+                category = ItemCategory.FASHION,
+                missingAttributes = listOf("brand"),
+                takenShotTypes = allShotTypes,
+            )
 
         assertNull(hint)
     }
@@ -107,10 +121,11 @@ class PhotoPlaybookTest {
     fun `inferShotType detects brand label from extracted attributes`() {
         val extractedAttrs = setOf("brand")
 
-        val shotType = PhotoPlaybook.inferShotType(
-            category = ItemCategory.FASHION,
-            extractedAttributes = extractedAttrs,
-        )
+        val shotType =
+            PhotoPlaybook.inferShotType(
+                category = ItemCategory.FASHION,
+                extractedAttributes = extractedAttrs,
+            )
 
         assertEquals(PhotoPlaybook.ShotType.BRAND_LABEL, shotType)
     }
@@ -119,10 +134,11 @@ class PhotoPlaybookTest {
     fun `inferShotType detects full item from multiple attributes`() {
         val extractedAttrs = setOf("itemType", "color", "style")
 
-        val shotType = PhotoPlaybook.inferShotType(
-            category = ItemCategory.FASHION,
-            extractedAttributes = extractedAttrs,
-        )
+        val shotType =
+            PhotoPlaybook.inferShotType(
+                category = ItemCategory.FASHION,
+                extractedAttributes = extractedAttrs,
+            )
 
         assertEquals(PhotoPlaybook.ShotType.FULL_ITEM, shotType)
     }
@@ -131,10 +147,11 @@ class PhotoPlaybookTest {
     fun `inferShotType returns null for no matches`() {
         val extractedAttrs = setOf("unknownAttr")
 
-        val shotType = PhotoPlaybook.inferShotType(
-            category = ItemCategory.FASHION,
-            extractedAttributes = extractedAttrs,
-        )
+        val shotType =
+            PhotoPlaybook.inferShotType(
+                category = ItemCategory.FASHION,
+                extractedAttributes = extractedAttrs,
+            )
 
         assertNull(shotType)
     }
@@ -163,12 +180,13 @@ class PhotoPlaybookTest {
 
     @Test
     fun `guidance hasMoreRecommendations when shots available`() {
-        val guidance = PhotoPlaybook.getGuidance(
-            category = ItemCategory.FASHION,
-            missingAttributes = listOf("brand", "size"),
-            currentPhotoCount = 0,
-            takenShotTypes = emptySet(),
-        )
+        val guidance =
+            PhotoPlaybook.getGuidance(
+                category = ItemCategory.FASHION,
+                missingAttributes = listOf("brand", "size"),
+                currentPhotoCount = 0,
+                takenShotTypes = emptySet(),
+            )
 
         assertTrue(guidance.hasMoreRecommendations)
         assertNotNull(guidance.nextShot)

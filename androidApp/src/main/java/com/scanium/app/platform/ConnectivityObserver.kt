@@ -19,7 +19,9 @@ interface ConnectivityStatusProvider {
     val statusFlow: Flow<ConnectivityStatus>
 }
 
-class ConnectivityObserver(context: Context) : ConnectivityStatusProvider {
+class ConnectivityObserver(
+    context: Context,
+) : ConnectivityStatusProvider {
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
@@ -45,7 +47,8 @@ class ConnectivityObserver(context: Context) : ConnectivityStatusProvider {
                 }
 
             val request =
-                NetworkRequest.Builder()
+                NetworkRequest
+                    .Builder()
                     .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                     .build()
 

@@ -40,74 +40,80 @@ class DetectionBoxesSettingsTest {
     }
 
     @Test
-    fun showDetectionBoxes_can_be_set_to_true() = runTest {
-        // Set to true
-        repository.setShowDetectionBoxes(true)
+    fun showDetectionBoxes_can_be_set_to_true() =
+        runTest {
+            // Set to true
+            repository.setShowDetectionBoxes(true)
 
-        // Verify it's now true
-        assertThat(repository.showDetectionBoxesFlow.first()).isTrue()
-    }
-
-    @Test
-    fun showDetectionBoxes_can_be_set_to_false() = runTest {
-        // Set to false
-        repository.setShowDetectionBoxes(false)
-
-        // Verify it's now false
-        assertThat(repository.showDetectionBoxesFlow.first()).isFalse()
-    }
+            // Verify it's now true
+            assertThat(repository.showDetectionBoxesFlow.first()).isTrue()
+        }
 
     @Test
-    fun showDetectionBoxes_toggle_from_true_to_false_persists() = runTest {
-        // Set to true first
-        repository.setShowDetectionBoxes(true)
-        assertThat(repository.showDetectionBoxesFlow.first()).isTrue()
+    fun showDetectionBoxes_can_be_set_to_false() =
+        runTest {
+            // Set to false
+            repository.setShowDetectionBoxes(false)
 
-        // Toggle to false
-        repository.setShowDetectionBoxes(false)
-
-        // Verify persisted as false
-        assertThat(repository.showDetectionBoxesFlow.first()).isFalse()
-    }
+            // Verify it's now false
+            assertThat(repository.showDetectionBoxesFlow.first()).isFalse()
+        }
 
     @Test
-    fun showDetectionBoxes_toggle_from_false_to_true_persists() = runTest {
-        // Set to false first
-        repository.setShowDetectionBoxes(false)
-        assertThat(repository.showDetectionBoxesFlow.first()).isFalse()
+    fun showDetectionBoxes_toggle_from_true_to_false_persists() =
+        runTest {
+            // Set to true first
+            repository.setShowDetectionBoxes(true)
+            assertThat(repository.showDetectionBoxesFlow.first()).isTrue()
 
-        // Toggle to true
-        repository.setShowDetectionBoxes(true)
+            // Toggle to false
+            repository.setShowDetectionBoxes(false)
 
-        // Verify persisted as true
-        assertThat(repository.showDetectionBoxesFlow.first()).isTrue()
-    }
-
-    @Test
-    fun showDetectionBoxes_survives_repository_recreation() = runTest {
-        // Set to false
-        repository.setShowDetectionBoxes(false)
-        assertThat(repository.showDetectionBoxesFlow.first()).isFalse()
-
-        // Create a new repository instance (simulates app restart)
-        val newRepository = SettingsRepository(context)
-
-        // Verify the setting persisted across "restart"
-        assertThat(newRepository.showDetectionBoxesFlow.first()).isFalse()
-    }
+            // Verify persisted as false
+            assertThat(repository.showDetectionBoxesFlow.first()).isFalse()
+        }
 
     @Test
-    fun showDetectionBoxes_true_survives_repository_recreation() = runTest {
-        // Set to true
-        repository.setShowDetectionBoxes(true)
-        assertThat(repository.showDetectionBoxesFlow.first()).isTrue()
+    fun showDetectionBoxes_toggle_from_false_to_true_persists() =
+        runTest {
+            // Set to false first
+            repository.setShowDetectionBoxes(false)
+            assertThat(repository.showDetectionBoxesFlow.first()).isFalse()
 
-        // Create a new repository instance (simulates app restart)
-        val newRepository = SettingsRepository(context)
+            // Toggle to true
+            repository.setShowDetectionBoxes(true)
 
-        // Verify the setting persisted across "restart"
-        assertThat(newRepository.showDetectionBoxesFlow.first()).isTrue()
-    }
+            // Verify persisted as true
+            assertThat(repository.showDetectionBoxesFlow.first()).isTrue()
+        }
+
+    @Test
+    fun showDetectionBoxes_survives_repository_recreation() =
+        runTest {
+            // Set to false
+            repository.setShowDetectionBoxes(false)
+            assertThat(repository.showDetectionBoxesFlow.first()).isFalse()
+
+            // Create a new repository instance (simulates app restart)
+            val newRepository = SettingsRepository(context)
+
+            // Verify the setting persisted across "restart"
+            assertThat(newRepository.showDetectionBoxesFlow.first()).isFalse()
+        }
+
+    @Test
+    fun showDetectionBoxes_true_survives_repository_recreation() =
+        runTest {
+            // Set to true
+            repository.setShowDetectionBoxes(true)
+            assertThat(repository.showDetectionBoxesFlow.first()).isTrue()
+
+            // Create a new repository instance (simulates app restart)
+            val newRepository = SettingsRepository(context)
+
+            // Verify the setting persisted across "restart"
+            assertThat(newRepository.showDetectionBoxesFlow.first()).isTrue()
+        }
 }
 
 private fun Context.clearDataStorePrefs() {

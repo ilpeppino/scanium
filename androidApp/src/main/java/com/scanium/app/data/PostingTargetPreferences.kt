@@ -13,7 +13,9 @@ private val Context.postingTargetDataStore: DataStore<Preferences> by preference
     name = "posting_target_preferences",
 )
 
-class PostingTargetPreferences(private val context: Context) {
+class PostingTargetPreferences(
+    private val context: Context,
+) {
     companion object {
         private val LAST_TARGET_ID = stringPreferencesKey("last_posting_target_id")
         private val CUSTOM_TARGET_URL = stringPreferencesKey("custom_posting_target_url")
@@ -33,12 +35,11 @@ class PostingTargetPreferences(private val context: Context) {
         }
     }
 
-    suspend fun getCustomUrl(): String? {
-        return context.postingTargetDataStore.data
+    suspend fun getCustomUrl(): String? =
+        context.postingTargetDataStore.data
             .map { preferences -> preferences[CUSTOM_TARGET_URL] }
             .first()
             ?.takeIf { it.isNotBlank() }
-    }
 
     suspend fun setCustomUrl(url: String) {
         context.postingTargetDataStore.edit { preferences ->

@@ -43,7 +43,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -83,8 +82,7 @@ fun SettingSwitchRow(
                 enabled = enabled,
                 role = Role.Switch,
                 onValueChange = onCheckedChange,
-            )
-            .alpha(if (enabled) 1f else 0.5f)
+            ).alpha(if (enabled) 1f else 0.5f)
 
     ListItem(
         headlineContent = { Text(title) },
@@ -506,8 +504,7 @@ fun <T> ValuePickerSettingRow(
                                         }
                                     },
                                     role = Role.RadioButton,
-                                )
-                                .padding(horizontal = 24.dp, vertical = 12.dp),
+                                ).padding(horizontal = 24.dp, vertical = 12.dp),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),

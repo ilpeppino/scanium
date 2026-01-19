@@ -1,62 +1,46 @@
 package com.scanium.app.camera
 
 import android.Manifest
-import androidx.annotation.VisibleForTesting
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
-import android.view.WindowManager
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material.icons.filled.Cameraswitch
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -66,7 +50,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.shouldShowRationale
 import com.scanium.app.BuildConfig
 import com.scanium.app.R
 import com.scanium.app.audio.AppSound
@@ -76,7 +59,6 @@ import com.scanium.app.ftue.CameraFtueOverlay
 import com.scanium.app.ftue.CameraFtueViewModel
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.HintType
-import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.media.StorageHelper
 import com.scanium.app.ml.classification.ClassificationMetrics
@@ -119,8 +101,16 @@ fun CameraScreen(
     val settingsRepository = remember { SettingsRepository(context) }
     val ftueRepository = remember { FtueRepository(context) }
     val cameraFtueViewModel = remember { CameraFtueViewModel(ftueRepository) }
-    val cameraUiFtueViewModel = remember { com.scanium.app.ftue.CameraUiFtueViewModel(ftueRepository) }
-    val cameraUiFtueRegistry = remember { com.scanium.app.ftue.CameraUiFtueAnchorRegistry() }
+    val cameraUiFtueViewModel =
+        remember {
+            com.scanium.app.ftue
+                .CameraUiFtueViewModel(ftueRepository)
+        }
+    val cameraUiFtueRegistry =
+        remember {
+            com.scanium.app.ftue
+                .CameraUiFtueAnchorRegistry()
+        }
     val autoSaveEnabled by settingsRepository.autoSaveEnabledFlow.collectAsState(initial = false)
     val saveDirectoryUri by settingsRepository.saveDirectoryUriFlow.collectAsState(initial = null)
 
@@ -285,11 +275,12 @@ fun CameraScreen(
             if (cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.IDLE &&
                 cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.COMPLETED
             ) {
-                android.widget.Toast.makeText(
-                    context,
-                    "FTUE Camera step=${cameraFtueCurrentStep.name}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                android.widget.Toast
+                    .makeText(
+                        context,
+                        "FTUE Camera step=${cameraFtueCurrentStep.name}",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
             }
         }
 
@@ -298,11 +289,12 @@ fun CameraScreen(
             if (cameraUiFtueStep != com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.IDLE &&
                 cameraUiFtueStep != com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.COMPLETED
             ) {
-                android.widget.Toast.makeText(
-                    context,
-                    "Camera UI FTUE: ${cameraUiFtueStep.name}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                android.widget.Toast
+                    .makeText(
+                        context,
+                        "Camera UI FTUE: ${cameraUiFtueStep.name}",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
             }
         }
     }
@@ -311,25 +303,29 @@ fun CameraScreen(
     // Triggers when: permission granted, preview ready, anchors registered
     // NO LONGER requires old Camera FTUE to complete (divergence removed)
     LaunchedEffect(hasCameraPermission, previewSize, cameraUiFtueAnchors) {
-        val allAnchorsRegistered = cameraUiFtueRegistry.hasAllAnchors(
-            com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS
-        )
+        val allAnchorsRegistered =
+            cameraUiFtueRegistry.hasAllAnchors(
+                com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS,
+            )
         val previewVisible = previewSize.width > 0 && previewSize.height > 0
 
         // DEV-ONLY: Enhanced logging to track initialization conditions
         if (BuildConfig.FLAVOR == "dev") {
-            Log.d("FTUE_CAMERA_UI", "Init check: " +
-                "permission=$hasCameraPermission, " +
-                "preview=${previewSize.width}x${previewSize.height}, " +
-                "allAnchors=$allAnchorsRegistered " +
-                "(${cameraUiFtueAnchors.size}/${com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.size})"
+            Log.d(
+                "FTUE_CAMERA_UI",
+                "Init check: " +
+                    "permission=$hasCameraPermission, " +
+                    "preview=${previewSize.width}x${previewSize.height}, " +
+                    "allAnchors=$allAnchorsRegistered " +
+                    "(${cameraUiFtueAnchors.size}/${com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.size})",
             )
 
             // Log which anchors are missing
             if (!allAnchorsRegistered) {
-                val missing = com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.filter {
-                    !cameraUiFtueAnchors.containsKey(it)
-                }
+                val missing =
+                    com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.filter {
+                        !cameraUiFtueAnchors.containsKey(it)
+                    }
                 Log.d("FTUE_CAMERA_UI", "Missing anchors: ${missing.joinToString(", ")}")
             }
         }
@@ -349,7 +345,8 @@ fun CameraScreen(
             val previewHeight = previewSize.height
 
             if (previewWidth == 0 || previewHeight == 0) {
-                androidx.compose.ui.geometry.Rect(0f, 0f, 0f, 0f)
+                androidx.compose.ui.geometry
+                    .Rect(0f, 0f, 0f, 0f)
             } else {
                 androidx.compose.ui.geometry.Rect(
                     left = roi.left * previewWidth.toFloat(),
@@ -417,6 +414,7 @@ fun CameraScreen(
                         lifecycleResumeCount++
                         Log.d("CameraScreen", "ON_RESUME: started session, lifecycleResumeCount=$lifecycleResumeCount")
                     }
+
                     Lifecycle.Event.ON_PAUSE -> {
                         // Stop camera session - cancels scope and clears analyzer
                         cameraManager.stopCameraSession()
@@ -424,7 +422,9 @@ fun CameraScreen(
                         itemsViewModel.updateOverlayDetections(emptyList())
                         Log.d("CameraScreen", "ON_PAUSE: stopped session, cleared overlays")
                     }
-                    else -> { /* Other events handled elsewhere */ }
+
+                    else -> { // Other events handled elsewhere
+                    }
                 }
             }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -446,6 +446,7 @@ fun CameraScreen(
                         cameraManager.stopCameraSession()
                         itemsViewModel.updateOverlayDetections(emptyList())
                     }
+
                     Lifecycle.Event.ON_START -> {
                         // App coming to foreground
                         // Only restart if we're still the active screen (lifecycleOwner is RESUMED)
@@ -455,7 +456,9 @@ fun CameraScreen(
                             lifecycleResumeCount++
                         }
                     }
-                    else -> { /* Ignore other events */ }
+
+                    else -> { // Ignore other events
+                    }
                 }
             }
         processLifecycle.addObserver(processObserver)
@@ -615,11 +618,12 @@ fun CameraScreen(
     LaunchedEffect(classificationMode) {
         val previousMode = previousClassificationMode
         if (previousMode != null && previousMode != classificationMode) {
-            Toast.makeText(
-                context,
-                "Using ${classificationMode.displayName} classification",
-                Toast.LENGTH_SHORT,
-            ).show()
+            Toast
+                .makeText(
+                    context,
+                    "Using ${classificationMode.displayName} classification",
+                    Toast.LENGTH_SHORT,
+                ).show()
         }
         previousClassificationMode = classificationMode
     }
@@ -649,6 +653,7 @@ fun CameraScreen(
                     onViewItems = onNavigateToItems,
                 )
             }
+
             hasCameraPermission -> {
                 // Camera preview
                 CameraPreview(
@@ -670,11 +675,12 @@ fun CameraScreen(
                         }
                         if (lensFacing != resolvedLens) {
                             lensFacing = resolvedLens
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.camera_lens_unavailable),
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                            Toast
+                                .makeText(
+                                    context,
+                                    context.getString(R.string.camera_lens_unavailable),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                         }
                     },
                     onBindingFailed = { error ->
@@ -688,11 +694,12 @@ fun CameraScreen(
                                     message = it.message ?: context.getString(R.string.camera_unable_start_message),
                                     canRetry = true,
                                 )
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.camera_unable_start_message),
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                            Toast
+                                .makeText(
+                                    context,
+                                    context.getString(R.string.camera_unable_start_message),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                             Log.e("CameraScreen", "Failed to bind camera", it)
                         }
                     },
@@ -705,6 +712,7 @@ fun CameraScreen(
                     -> {
                         ModelLoadingOverlay(state = state)
                     }
+
                     is ModelDownloadState.Error -> {
                         ModelErrorDialog(
                             error = state.message,
@@ -731,6 +739,7 @@ fun CameraScreen(
                             },
                         )
                     }
+
                     ModelDownloadState.Ready -> {
                         // No overlay, camera fully functional
                     }
@@ -800,14 +809,15 @@ fun CameraScreen(
                     CameraFtueOverlay(
                         isVisible = true,
                         hintType = HintType.BBOX_HINT,
-                        targetRect = overlayTracks.firstOrNull()?.let { track ->
-                            androidx.compose.ui.geometry.Rect(
-                                left = track.bboxNorm.left * previewSize.width.toFloat(),
-                                top = track.bboxNorm.top * previewSize.height.toFloat(),
-                                right = track.bboxNorm.right * previewSize.width.toFloat(),
-                                bottom = track.bboxNorm.bottom * previewSize.height.toFloat(),
-                            )
-                        },
+                        targetRect =
+                            overlayTracks.firstOrNull()?.let { track ->
+                                androidx.compose.ui.geometry.Rect(
+                                    left = track.bboxNorm.left * previewSize.width.toFloat(),
+                                    top = track.bboxNorm.top * previewSize.height.toFloat(),
+                                    right = track.bboxNorm.right * previewSize.width.toFloat(),
+                                    bottom = track.bboxNorm.bottom * previewSize.height.toFloat(),
+                                )
+                            },
                         onDismiss = { cameraFtueViewModel.dismiss() },
                     )
                 }
@@ -823,31 +833,53 @@ fun CameraScreen(
 
                 // Camera UI FTUE overlay (Phase 5: Render)
                 if (cameraUiFtueActive) {
-                    val currentAnchorId = when (cameraUiFtueStep) {
-                        com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER ->
-                            com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_SHUTTER
-                        com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA ->
-                            com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_FLIP
-                        com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST ->
-                            com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_ITEMS
-                        com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS ->
-                            com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_SETTINGS
-                        else -> null
-                    }
+                    val currentAnchorId =
+                        when (cameraUiFtueStep) {
+                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER -> {
+                                com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_SHUTTER
+                            }
+
+                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA -> {
+                                com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_FLIP
+                            }
+
+                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST -> {
+                                com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_ITEMS
+                            }
+
+                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS -> {
+                                com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_SETTINGS
+                            }
+
+                            else -> {
+                                null
+                            }
+                        }
 
                     val currentAnchorRect = currentAnchorId?.let { cameraUiFtueRegistry.getAnchor(it) }
 
-                    val tooltipText = when (cameraUiFtueStep) {
-                        com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER ->
-                            stringResource(R.string.ftue_camera_ui_shutter)
-                        com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA ->
-                            stringResource(R.string.ftue_camera_ui_flip)
-                        com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST ->
-                            stringResource(R.string.ftue_camera_ui_items)
-                        com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS ->
-                            stringResource(R.string.ftue_camera_ui_settings)
-                        else -> ""
-                    }
+                    val tooltipText =
+                        when (cameraUiFtueStep) {
+                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER -> {
+                                stringResource(R.string.ftue_camera_ui_shutter)
+                            }
+
+                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA -> {
+                                stringResource(R.string.ftue_camera_ui_flip)
+                            }
+
+                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST -> {
+                                stringResource(R.string.ftue_camera_ui_items)
+                            }
+
+                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS -> {
+                                stringResource(R.string.ftue_camera_ui_settings)
+                            }
+
+                            else -> {
+                                ""
+                            }
+                        }
 
                     com.scanium.app.ftue.CameraUiFtueOverlay(
                         step = cameraUiFtueStep,
@@ -963,32 +995,38 @@ fun CameraScreen(
                                         is CameraXManager.DocumentScanResult.Success -> {
                                             // Add the scanned document to items
                                             itemsViewModel.addItem(result.item)
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.camera_document_scan_success),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    context.getString(R.string.camera_document_scan_success),
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         }
+
                                         is CameraXManager.DocumentScanResult.NoTextDetected -> {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.camera_document_scan_no_text),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    context.getString(R.string.camera_document_scan_no_text),
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         }
+
                                         is CameraXManager.DocumentScanResult.Cancelled -> {
                                             // User cancelled - do nothing
                                         }
+
                                         is CameraXManager.DocumentScanResult.Error -> {
                                             Log.e("CameraScreen", "Document scan error: ${result.message}", result.exception)
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(
-                                                    R.string.camera_document_scan_failed,
-                                                    result.message,
-                                                ),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    context.getString(
+                                                        R.string.camera_document_scan_failed,
+                                                        result.message,
+                                                    ),
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         }
                                     }
                                     documentScanState = DocumentScanState.Idle
@@ -1034,11 +1072,12 @@ fun CameraScreen(
 
                             // Show hint if capturing without eligible bbox but allow capture anyway
                             if (!hasEligibleBbox && hasOutsideRoiOnly) {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.camera_hint_center_object),
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                Toast
+                                    .makeText(
+                                        context,
+                                        context.getString(R.string.camera_hint_center_object),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
                             }
 
                             cameraState = CameraState.CAPTURING
@@ -1095,11 +1134,12 @@ fun CameraScreen(
                                                     items
                                                 }
                                             itemsViewModel.addItemsWithVisionPrefill(context, itemsWithHighRes)
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.camera_detected_items, items.size),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    context.getString(R.string.camera_detected_items, items.size),
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         }
                                     }
                                 },
@@ -1226,6 +1266,7 @@ fun CameraScreen(
                                 onSkip = { tourViewModel?.skipTour() },
                             )
                         }
+
                         com.scanium.app.ftue.TourStepKey.TAKE_FIRST_PHOTO,
                         com.scanium.app.ftue.TourStepKey.OPEN_ITEM_LIST,
                         -> {
@@ -1242,10 +1283,13 @@ fun CameraScreen(
                                 }
                             }
                         }
-                        else -> { /* Other steps handled in ItemsListScreen or EditItemScreen */ }
+
+                        else -> { // Other steps handled in ItemsListScreen or EditItemScreen
+                        }
                     }
                 }
             }
+
             else -> {
                 // Permission denied UI with educative content
                 PermissionDeniedContent(
@@ -1289,10 +1333,18 @@ fun CameraScreen(
                         // Update app locale (this triggers Activity recreation)
                         val localeList =
                             when (selectedLanguage) {
-                                com.scanium.app.model.AppLanguage.SYSTEM -> androidx.core.os.LocaleListCompat.getEmptyLocaleList()
-                                else -> androidx.core.os.LocaleListCompat.forLanguageTags(selectedLanguage.code)
+                                com.scanium.app.model.AppLanguage.SYSTEM -> {
+                                    androidx.core.os.LocaleListCompat
+                                        .getEmptyLocaleList()
+                                }
+
+                                else -> {
+                                    androidx.core.os.LocaleListCompat
+                                        .forLanguageTags(selectedLanguage.code)
+                                }
                             }
-                        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList)
+                        androidx.appcompat.app.AppCompatDelegate
+                            .setApplicationLocales(localeList)
                     }
                 },
             )
@@ -1318,11 +1370,12 @@ private fun CameraPreview(
 
     AndroidView(
         factory = { context ->
-            PreviewView(context).apply {
-                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-            }.also { createdView ->
-                previewView = createdView
-            }
+            PreviewView(context)
+                .apply {
+                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                }.also { createdView ->
+                    previewView = createdView
+                }
         },
         modifier =
             Modifier

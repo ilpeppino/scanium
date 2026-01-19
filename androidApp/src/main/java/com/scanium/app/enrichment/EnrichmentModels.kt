@@ -13,7 +13,8 @@ enum class EnrichmentStage {
     ATTRIBUTES_DONE,
     DRAFT_STARTED,
     DRAFT_DONE,
-    FAILED;
+    FAILED,
+    ;
 
     val isComplete: Boolean
         get() = this == DRAFT_DONE || this == FAILED
@@ -37,7 +38,7 @@ enum class EnrichmentStage {
 enum class EnrichmentConfidence {
     HIGH,
     MED,
-    LOW
+    LOW,
 }
 
 /**
@@ -49,7 +50,7 @@ enum class EnrichmentSource {
     VISION_LABEL,
     VISION_COLOR,
     LLM_INFERRED,
-    USER
+    USER,
 }
 
 /**
@@ -143,11 +144,12 @@ data class EnrichmentStatus(
     val timings: EnrichmentTimings? = null,
 ) {
     val stageEnum: EnrichmentStage
-        get() = try {
-            EnrichmentStage.valueOf(stage)
-        } catch (e: Exception) {
-            EnrichmentStage.FAILED
-        }
+        get() =
+            try {
+                EnrichmentStage.valueOf(stage)
+            } catch (e: Exception) {
+                EnrichmentStage.FAILED
+            }
 
     val isComplete: Boolean
         get() = stageEnum.isComplete
@@ -189,11 +191,12 @@ data class StructuredAttributeDto(
         get() = source.uppercase() == "DETECTED"
 
     val confidenceLevel: EnrichmentConfidence
-        get() = when (confidence.uppercase()) {
-            "HIGH" -> EnrichmentConfidence.HIGH
-            "MED", "MEDIUM" -> EnrichmentConfidence.MED
-            else -> EnrichmentConfidence.LOW
-        }
+        get() =
+            when (confidence.uppercase()) {
+                "HIGH" -> EnrichmentConfidence.HIGH
+                "MED", "MEDIUM" -> EnrichmentConfidence.MED
+                else -> EnrichmentConfidence.LOW
+            }
 }
 
 /**

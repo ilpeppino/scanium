@@ -5,6 +5,13 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateRotation
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,19 +43,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.calculateCentroid
-import androidx.compose.foundation.gestures.calculatePan
-import androidx.compose.foundation.gestures.calculateRotation
-import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
-import kotlin.math.PI
-import kotlin.math.abs
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
@@ -59,6 +56,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.scanium.app.R
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.shared.core.models.model.ImageRef
+import kotlin.math.PI
+import kotlin.math.abs
 
 /**
  * Represents a photo reference that can be displayed in the gallery.
@@ -68,12 +67,16 @@ sealed class GalleryPhotoRef {
     /**
      * Photo from an ImageRef (primary thumbnail).
      */
-    data class FromImageRef(val imageRef: ImageRef) : GalleryPhotoRef()
+    data class FromImageRef(
+        val imageRef: ImageRef,
+    ) : GalleryPhotoRef()
 
     /**
      * Photo from a file path (additional photos).
      */
-    data class FromFilePath(val path: String) : GalleryPhotoRef()
+    data class FromFilePath(
+        val path: String,
+    ) : GalleryPhotoRef()
 }
 
 /**
@@ -104,11 +107,12 @@ fun PhotoGalleryDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false,
-        ),
+        properties =
+            DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+            ),
     ) {
         PhotoGalleryContent(
             photos = photos,
@@ -125,10 +129,11 @@ private fun PhotoGalleryContent(
     initialIndex: Int,
     onClose: () -> Unit,
 ) {
-    val pagerState = rememberPagerState(
-        initialPage = initialIndex,
-        pageCount = { photos.size },
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = initialIndex,
+            pageCount = { photos.size },
+        )
 
     // Track whether current page is zoomed (scale > 1f)
     var isZoomed by remember { mutableStateOf(false) }
@@ -143,9 +148,10 @@ private fun PhotoGalleryContent(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black),
     ) {
         // Main photo pager
         HorizontalPager(
@@ -156,22 +162,24 @@ private fun PhotoGalleryContent(
         ) { page ->
             PhotoPage(
                 photoRef = photos[page],
-                contentDescription = stringResource(
-                    R.string.photo_gallery_image_description,
-                    page + 1,
-                    photos.size,
-                ),
+                contentDescription =
+                    stringResource(
+                        R.string.photo_gallery_image_description,
+                        page + 1,
+                        photos.size,
+                    ),
                 onZoomChanged = { zoomed -> isZoomed = zoomed },
             )
         }
 
         // Top bar with close button and page indicator
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .background(Color.Black.copy(alpha = 0.5f))
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -187,11 +195,12 @@ private fun PhotoGalleryContent(
 
             // Page indicator
             Text(
-                text = stringResource(
-                    R.string.photo_gallery_page_indicator,
-                    pagerState.currentPage + 1,
-                    photos.size,
-                ),
+                text =
+                    stringResource(
+                        R.string.photo_gallery_page_indicator,
+                        pagerState.currentPage + 1,
+                        photos.size,
+                    ),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
             )
@@ -208,20 +217,22 @@ private fun PhotoPage(
     contentDescription: String,
     onZoomChanged: (Boolean) -> Unit,
 ) {
-    val bitmap: ImageBitmap? = remember(photoRef) {
-        when (photoRef) {
-            is GalleryPhotoRef.FromImageRef -> {
-                photoRef.imageRef.toBitmap()?.asImageBitmap()
-            }
-            is GalleryPhotoRef.FromFilePath -> {
-                try {
-                    BitmapFactory.decodeFile(photoRef.path)?.asImageBitmap()
-                } catch (e: Exception) {
-                    null
+    val bitmap: ImageBitmap? =
+        remember(photoRef) {
+            when (photoRef) {
+                is GalleryPhotoRef.FromImageRef -> {
+                    photoRef.imageRef.toBitmap()?.asImageBitmap()
+                }
+
+                is GalleryPhotoRef.FromFilePath -> {
+                    try {
+                        BitmapFactory.decodeFile(photoRef.path)?.asImageBitmap()
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
             }
         }
-    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -285,76 +296,81 @@ private fun ZoomableImage(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .onSizeChanged { containerSize = it }
-            .pointerInput(bitmap) {
-                detectPagerFriendlyTransformGestures(
-                    isZoomed = { scale > 1f },
-                    onGesture = { _, pan, zoom, _ ->
-                        // Apply zoom
-                        val newScale = (scale * zoom).coerceIn(minScale, maxScale)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .onSizeChanged { containerSize = it }
+                .pointerInput(bitmap) {
+                    detectPagerFriendlyTransformGestures(
+                        isZoomed = { scale > 1f },
+                        onGesture = { _, pan, zoom, _ ->
+                            // Apply zoom
+                            val newScale = (scale * zoom).coerceIn(minScale, maxScale)
 
-                        // Calculate max offset based on current scale
-                        val maxX = if (newScale > 1f) {
-                            (containerSize.width * (newScale - 1f)) / 2f
-                        } else {
-                            0f
-                        }
-                        val maxY = if (newScale > 1f) {
-                            (containerSize.height * (newScale - 1f)) / 2f
-                        } else {
-                            0f
-                        }
+                            // Calculate max offset based on current scale
+                            val maxX =
+                                if (newScale > 1f) {
+                                    (containerSize.width * (newScale - 1f)) / 2f
+                                } else {
+                                    0f
+                                }
+                            val maxY =
+                                if (newScale > 1f) {
+                                    (containerSize.height * (newScale - 1f)) / 2f
+                                } else {
+                                    0f
+                                }
 
-                        // Apply pan with constraints
-                        val newOffset = if (newScale > 1f) {
-                            Offset(
-                                x = (offset.x + pan.x * newScale).coerceIn(-maxX, maxX),
-                                y = (offset.y + pan.y * newScale).coerceIn(-maxY, maxY),
-                            )
-                        } else {
-                            Offset.Zero
-                        }
+                            // Apply pan with constraints
+                            val newOffset =
+                                if (newScale > 1f) {
+                                    Offset(
+                                        x = (offset.x + pan.x * newScale).coerceIn(-maxX, maxX),
+                                        y = (offset.y + pan.y * newScale).coerceIn(-maxY, maxY),
+                                    )
+                                } else {
+                                    Offset.Zero
+                                }
 
-                        scale = newScale
-                        offset = newOffset
-                    }
-                )
-            }
-            .pointerInput(bitmap) {
-                detectTapGestures(
-                    onDoubleTap = { tapOffset ->
-                        // Toggle between 1x and 2x zoom on double-tap
-                        if (scale > 1.5f) {
-                            scale = 1f
-                            offset = Offset.Zero
-                        } else {
-                            scale = 2f
-                            // Center zoom on tap position
-                            val centerX = containerSize.width / 2f
-                            val centerY = containerSize.height / 2f
-                            offset = Offset(
-                                x = (centerX - tapOffset.x),
-                                y = (centerY - tapOffset.y),
-                            )
-                        }
-                    },
-                )
-            },
+                            scale = newScale
+                            offset = newOffset
+                        },
+                    )
+                }.pointerInput(bitmap) {
+                    detectTapGestures(
+                        onDoubleTap = { tapOffset ->
+                            // Toggle between 1x and 2x zoom on double-tap
+                            if (scale > 1.5f) {
+                                scale = 1f
+                                offset = Offset.Zero
+                            } else {
+                                scale = 2f
+                                // Center zoom on tap position
+                                val centerX = containerSize.width / 2f
+                                val centerY = containerSize.height / 2f
+                                offset =
+                                    Offset(
+                                        x = (centerX - tapOffset.x),
+                                        y = (centerY - tapOffset.y),
+                                    )
+                            }
+                        },
+                    )
+                },
         contentAlignment = Alignment.Center,
     ) {
         Image(
             bitmap = bitmap,
             contentDescription = contentDescription,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    translationX = offset.x
-                    translationY = offset.y
-                },
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = offset.x
+                        translationY = offset.y
+                    },
             contentScale = ContentScale.Fit,
         )
     }
@@ -364,8 +380,8 @@ private fun ZoomableImage(
  * Extension function to convert ImageRef to Bitmap.
  * Handles both Bytes and CacheKey variants.
  */
-private fun ImageRef.toBitmap(): Bitmap? {
-    return when (this) {
+private fun ImageRef.toBitmap(): Bitmap? =
+    when (this) {
         is ImageRef.Bytes -> {
             try {
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
@@ -373,6 +389,7 @@ private fun ImageRef.toBitmap(): Bitmap? {
                 null
             }
         }
+
         is ImageRef.CacheKey -> {
             // Try to get from thumbnail cache
             ThumbnailCache.get(key)?.let { cached ->
@@ -384,7 +401,6 @@ private fun ImageRef.toBitmap(): Bitmap? {
             }
         }
     }
-}
 
 /**
  * Custom gesture detector that plays nicely with Pagers.
@@ -393,7 +409,7 @@ private fun ImageRef.toBitmap(): Bitmap? {
  */
 private suspend fun PointerInputScope.detectPagerFriendlyTransformGestures(
     isZoomed: () -> Boolean,
-    onGesture: (centroid: Offset, pan: Offset, zoom: Float, rotation: Float) -> Unit
+    onGesture: (centroid: Offset, pan: Offset, zoom: Float, rotation: Float) -> Unit,
 ) {
     awaitEachGesture {
         var rotation = 0f

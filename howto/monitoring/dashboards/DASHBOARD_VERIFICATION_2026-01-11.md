@@ -8,7 +8,8 @@
 
 ***REMOVED******REMOVED*** Executive Summary
 
-The backend-errors dashboard is now **fully functional** after fixing Grafana variable expansion issues. All panels that have data available are rendering correctly.
+The backend-errors dashboard is now **fully functional** after fixing Grafana variable expansion
+issues. All panels that have data available are rendering correctly.
 
 **Dashboard URL**: http://REDACTED_INTERNAL_IP:3000/d/scanium-backend-errors
 
@@ -24,6 +25,7 @@ Last Updated: 2026-01-11T09:44:08Z
 ```
 
 **Variables with allValue properties** (the fix):
+
 - `env`: allValue = `.*` (matches any environment)
 - `status_code`: allValue = `4..|5..` (matches both 4xx and 5xx)
 
@@ -31,14 +33,14 @@ Last Updated: 2026-01-11T09:44:08Z
 
 All panels queried successfully via Mimir backend:
 
-| Panel | Status | Value |
-|-------|--------|-------|
-| **Total Errors (1h)** | ✅ Working | 56.6 errors |
-| **4xx Client Errors (1h)** | ✅ Working | 56.6 errors |
+| Panel                      | Status    | Value                 |
+|----------------------------|-----------|-----------------------|
+| **Total Errors (1h)**      | ✅ Working | 56.6 errors           |
+| **4xx Client Errors (1h)** | ✅ Working | 56.6 errors           |
 | **5xx Server Errors (1h)** | ✅ Working | 0.0 errors (expected) |
-| **Errors by Status Code** | ✅ Working | 404: 47, 401: 9 |
-| **Top Error Routes** | ✅ Working | 5 routes displayed |
-| **Error Details Table** | ✅ Working | 6 rows |
+| **Errors by Status Code**  | ✅ Working | 404: 47, 401: 9       |
+| **Top Error Routes**       | ✅ Working | 5 routes displayed    |
+| **Error Details Table**    | ✅ Working | 6 rows                |
 
 ***REMOVED******REMOVED******REMOVED*** 3. Status Code Breakdown (Pie Chart)
 
@@ -60,6 +62,7 @@ All panels queried successfully via Mimir backend:
 ***REMOVED******REMOVED******REMOVED*** 5. Error Details Table
 
 6 rows showing breakdown by:
+
 - Route
 - Service Name
 - Status Code
@@ -92,6 +95,7 @@ These panels are **correctly showing no data** (data doesn't exist):
 5. ⚠️ **Error Traces** - No traces with error status in Tempo
 
 **This is expected and correct behavior** - the backend is not generating:
+
 - 5xx server errors
 - Error-level log entries
 - Error traces
@@ -103,6 +107,7 @@ These panels are **correctly showing no data** (data doesn't exist):
 ***REMOVED******REMOVED******REMOVED*** Variable Expansion Before Fix
 
 When `$status_code` was set to "All" (`$__all`), queries expanded to:
+
 ```promql
 status_code=~"$__all"  ***REMOVED*** ❌ Literal string, matches nothing
 ```
@@ -110,6 +115,7 @@ status_code=~"$__all"  ***REMOVED*** ❌ Literal string, matches nothing
 ***REMOVED******REMOVED******REMOVED*** Variable Expansion After Fix
 
 With `allValue: "4..|5.."` property added, queries now expand to:
+
 ```promql
 status_code=~"4..|5.."  ***REMOVED*** ✅ Regex pattern, matches 4xx and 5xx
 ```
@@ -147,13 +153,13 @@ Result: 6 series
 ***REMOVED******REMOVED*** Files Modified
 
 1. **monitoring/grafana/dashboards/backend-errors.json**
-   - Added `"allValue": "4..|5.."` to `status_code` variable (line 58)
-   - Added `"allValue": ".*"` to `env` variable (line 33)
-   - Commit: `dd609c8`
+    - Added `"allValue": "4..|5.."` to `status_code` variable (line 58)
+    - Added `"allValue": ".*"` to `env` variable (line 33)
+    - Commit: `dd609c8`
 
 2. **monitoring/grafana/ERROR_METRICS_ROOT_CAUSE.md**
-   - Documented root cause and fix
-   - Commit: `e4f9f66`
+    - Documented root cause and fix
+    - Commit: `e4f9f66`
 
 ---
 
@@ -194,6 +200,7 @@ absent_over_time(scanium_http_requests_total[10m])
 ***REMOVED******REMOVED******REMOVED*** 3. Add Dashboard Annotations
 
 Consider adding text annotations to panels explaining:
+
 - "Zero errors is healthy state"
 - "5xx panel will show 0 unless server errors occur"
 - "Error logs require error-level log entries"
@@ -216,12 +223,14 @@ Consider adding text annotations to panels explaining:
 ***REMOVED******REMOVED*** Verification Commands
 
 ***REMOVED******REMOVED******REMOVED*** Check Dashboard Variables
+
 ```bash
 curl -s "http://REDACTED_INTERNAL_IP:3000/api/dashboards/uid/scanium-backend-errors" \
   | jq '.dashboard.templating.list[] | select(.name == "status_code" or .name == "env") | {name, allValue}'
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Test Panel Queries Directly
+
 ```bash
 ***REMOVED*** From NAS
 MIMIR="http://127.0.0.1:9009/prometheus"
@@ -239,9 +248,11 @@ curl -s "${MIMIR}/api/v1/query?query=sum+by+(status_code)+(increase(scanium_http
 
 ✅ **Dashboard is fully operational**
 
-All panels that have data available are rendering correctly. Panels showing "No data" are correctly reflecting the absence of 5xx errors, error logs, and error traces in the system.
+All panels that have data available are rendering correctly. Panels showing "No data" are correctly
+reflecting the absence of 5xx errors, error logs, and error traces in the system.
 
-The fix was simple but critical: adding `allValue` properties to Grafana variables ensures proper regex pattern expansion when "All" is selected, allowing queries to match the intended metrics.
+The fix was simple but critical: adding `allValue` properties to Grafana variables ensures proper
+regex pattern expansion when "All" is selected, allowing queries to match the intended metrics.
 
 **Dashboard URL**: http://REDACTED_INTERNAL_IP:3000/d/scanium-backend-errors
 

@@ -1,9 +1,9 @@
 package com.scanium.app.data
 
-import io.mockk.every
-import io.mockk.mockk
 import android.content.Context
 import android.content.res.AssetManager
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull

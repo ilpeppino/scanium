@@ -1,5 +1,6 @@
 package com.scanium.app.ui.settings
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,8 +33,6 @@ import androidx.compose.ui.unit.dp
 import com.scanium.app.BuildConfig
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
-
-import androidx.annotation.StringRes
 
 data class SettingsCategory(
     @StringRes val title: Int,

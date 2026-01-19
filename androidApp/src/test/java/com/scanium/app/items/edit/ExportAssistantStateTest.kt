@@ -8,7 +8,6 @@ import org.junit.Test
  * Tests for ExportAssistantState helper methods and properties.
  */
 class ExportAssistantStateTest {
-
     @Test
     fun `Idle state has correct properties`() {
         val state: ExportAssistantState = ExportAssistantState.Idle
@@ -46,14 +45,15 @@ class ExportAssistantStateTest {
 
     @Test
     fun `Success state does not show message`() {
-        val state = ExportAssistantState.Success(
-            title = "Test Title",
-            description = "Test Description",
-            bullets = listOf("Point 1", "Point 2"),
-            confidenceTier = ConfidenceTier.HIGH,
-            fromCache = false,
-            model = "gpt-4o-mini"
-        )
+        val state =
+            ExportAssistantState.Success(
+                title = "Test Title",
+                description = "Test Description",
+                bullets = listOf("Point 1", "Point 2"),
+                confidenceTier = ConfidenceTier.HIGH,
+                fromCache = false,
+                model = "gpt-4o-mini",
+            )
 
         assertThat(state.isSuccess).isTrue()
         assertThat(state.isLoading).isFalse()
@@ -64,10 +64,11 @@ class ExportAssistantStateTest {
 
     @Test
     fun `Error state shows error message`() {
-        val state = ExportAssistantState.Error(
-            message = "Network error",
-            isRetryable = true
-        )
+        val state =
+            ExportAssistantState.Error(
+                message = "Network error",
+                isRetryable = true,
+            )
 
         assertThat(state.isError).isTrue()
         assertThat(state.isLoading).isFalse()
@@ -97,14 +98,15 @@ class ExportAssistantStateTest {
     @Test
     fun `Success state records timestamp`() {
         val before = System.currentTimeMillis()
-        val state = ExportAssistantState.Success(
-            title = "Test",
-            description = "Test",
-            bullets = emptyList(),
-            confidenceTier = null,
-            fromCache = false,
-            model = null
-        )
+        val state =
+            ExportAssistantState.Success(
+                title = "Test",
+                description = "Test",
+                bullets = emptyList(),
+                confidenceTier = null,
+                fromCache = false,
+                model = null,
+            )
         val after = System.currentTimeMillis()
 
         assertThat(state.generatedAt).isAtLeast(before)
@@ -123,14 +125,15 @@ class ExportAssistantStateTest {
 
     @Test
     fun `Success state stores all export content`() {
-        val state = ExportAssistantState.Success(
-            title = "Nike Air Max Sneakers - Size 10",
-            description = "Comfortable and stylish sneakers...",
-            bullets = listOf("Brand: Nike", "Size: 10", "Color: Black"),
-            confidenceTier = ConfidenceTier.HIGH,
-            fromCache = false,
-            model = "gpt-4o-mini"
-        )
+        val state =
+            ExportAssistantState.Success(
+                title = "Nike Air Max Sneakers - Size 10",
+                description = "Comfortable and stylish sneakers...",
+                bullets = listOf("Brand: Nike", "Size: 10", "Color: Black"),
+                confidenceTier = ConfidenceTier.HIGH,
+                fromCache = false,
+                model = "gpt-4o-mini",
+            )
 
         assertThat(state.title).isEqualTo("Nike Air Max Sneakers - Size 10")
         assertThat(state.description).isEqualTo("Comfortable and stylish sneakers...")
@@ -143,14 +146,15 @@ class ExportAssistantStateTest {
 
     @Test
     fun `Success state can have null title and description`() {
-        val state = ExportAssistantState.Success(
-            title = null,
-            description = null,
-            bullets = emptyList(),
-            confidenceTier = null,
-            fromCache = false,
-            model = null
-        )
+        val state =
+            ExportAssistantState.Success(
+                title = null,
+                description = null,
+                bullets = emptyList(),
+                confidenceTier = null,
+                fromCache = false,
+                model = null,
+            )
 
         assertThat(state.title).isNull()
         assertThat(state.description).isNull()

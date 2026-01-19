@@ -17,7 +17,5 @@ object CorrelationIds {
 
     fun newDraftRequestId(): String = newSessionId("draft")
 
-    private fun newSessionId(prefix: String): String {
-        return "$prefix-${UUID.randomUUID()}"
-    }
+    private fun newSessionId(prefix: String): String = "$prefix-${UUID.randomUUID()}"
 }

@@ -22,7 +22,6 @@ import org.junit.Test
  * See: docs/PIPELINE_ALIGNMENT_ANALYSIS.md for full analysis
  */
 class PipelineAlignmentTest {
-
     /**
      * Test that verifies the pipeline selection logic.
      *
@@ -54,7 +53,7 @@ class PipelineAlignmentTest {
     fun detectorMode_shouldBeSingleImageModeInBothPaths() {
         // Both paths should use useStreamMode = false (SINGLE_IMAGE_MODE)
         val singlePhotoUseStreamMode = false // As passed to detectObjects
-        val scanningUseStreamMode = false    // As passed to detectObjectsWithTracking (FIXED)
+        val scanningUseStreamMode = false // As passed to detectObjectsWithTracking (FIXED)
 
         // Single-photo should use SINGLE_IMAGE_MODE
         assertThat(singlePhotoUseStreamMode).isFalse()
@@ -87,19 +86,25 @@ class PipelineAlignmentTest {
             val usesTracking: Boolean,
         )
 
-        val singlePhotoBehavior = PathBehavior(
-            hasQualityGating = false,
-            hasDeduplication = false,
-            hasRoiFiltering = false,
-            usesTracking = false,
-        )
+        val singlePhotoBehavior =
+            PathBehavior(
+                hasQualityGating = false,
+                hasDeduplication = false,
+                hasRoiFiltering = false,
+                usesTracking = false,
+            )
 
-        val scanningBehavior = PathBehavior(
-            hasQualityGating = true,  // Via LOCKED state requirement
-            hasDeduplication = true,  // Via ObjectTracker
-            hasRoiFiltering = true,   // Via processFrameWithRoi
-            usesTracking = true,      // Via processObjectDetectionWithTracking
-        )
+        val scanningBehavior =
+            PathBehavior(
+                // Via LOCKED state requirement
+                hasQualityGating = true,
+                // Via ObjectTracker
+                hasDeduplication = true,
+                // Via processFrameWithRoi
+                hasRoiFiltering = true,
+                // Via processObjectDetectionWithTracking
+                usesTracking = true,
+            )
 
         // Single-photo should be simple direct path
         assertThat(singlePhotoBehavior.hasQualityGating).isFalse()

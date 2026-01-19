@@ -186,21 +186,14 @@ object DetectionLogger {
 
     // Helper formatting functions
 
-    private fun formatConfidence(confidence: Float?): String {
-        return confidence?.let { String.format("%.2f", it) } ?: "N/A"
-    }
+    private fun formatConfidence(confidence: Float?): String = confidence?.let { String.format("%.2f", it) } ?: "N/A"
 
-    private fun formatBox(box: NormalizedRect?): String {
-        return box?.let {
+    private fun formatBox(box: NormalizedRect?): String =
+        box?.let {
             "[l=${formatCoord(it.left)}, t=${formatCoord(it.top)}, r=${formatCoord(it.right)}, b=${formatCoord(it.bottom)}]"
         } ?: "[none]"
-    }
 
-    private fun formatArea(area: Float): String {
-        return String.format("%.3f", area)
-    }
+    private fun formatArea(area: Float): String = String.format("%.3f", area)
 
-    private fun formatCoord(value: Float): String {
-        return String.format("%.3f", value)
-    }
+    private fun formatCoord(value: Float): String = String.format("%.3f", value)
 }

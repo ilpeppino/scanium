@@ -1,12 +1,14 @@
 ***REMOVED*** Edit Item V3 Testing Guide
 
-This guide provides step-by-step instructions for testing the new structured fields Edit Item UI (V3) and verifying that the AI assistant export correctly uses structured attributes and images.
+This guide provides step-by-step instructions for testing the new structured fields Edit Item UI (
+V3) and verifying that the AI assistant export correctly uses structured attributes and images.
 
 ***REMOVED******REMOVED*** What Was Changed
 
 ***REMOVED******REMOVED******REMOVED*** 1. New Edit Item Screen (EditItemScreenV3.kt)
 
 **Features:**
+
 - **Labeled Fields:** Brand, Product/Type, Model, Color, Size, Material, Condition, Notes
 - **Inline Clear:** Each field has an "X" button to clear it
 - **Focus Navigation:** "Next" button moves between fields; Notes allows newlines
@@ -14,6 +16,7 @@ This guide provides step-by-step instructions for testing the new structured fie
 - **AI Button:** Saves current field values to attributes before calling AI
 
 **Key Behavior:**
+
 - Fields are prefilled from `item.attributes[]`
 - Clicking "AI" or "Save" updates attributes with USER source
 - Blank fields are not sent (no empty strings)
@@ -22,6 +25,7 @@ This guide provides step-by-step instructions for testing the new structured fie
 ***REMOVED******REMOVED******REMOVED*** 2. Backend Contract (Already Correct)
 
 The existing `AssistantRepository.kt` and backend are already correct:
+
 - **Headers:** `X-API-Key`, `X-Scanium-Device-Id`
 - **Multipart:** `payload` field (JSON), `itemImages[<itemId>]` (images)
 - **Payload:** `items[]` with `itemId`, `message` non-empty, optional `history`
@@ -47,6 +51,7 @@ cd /Users/family/dev/scanium
 ```
 
 **What These Tests Verify:**
+
 - ✅ `itemId` is present in items array
 - ✅ `message` is non-empty
 - ✅ Attributes don't contain blank/null values
@@ -63,17 +68,17 @@ cd /Users/family/dev/scanium
 1. **Open the app** and navigate to an item
 2. **Edit the item** using EditItemScreenV3
 3. **Fill in fields:**
-   - Brand: "Nike"
-   - Product/Type: "Sneakers"
-   - Model: "Air Max 90"
-   - Color: "Black"
-   - Size: "US 10"
-   - Condition: "Used - Good"
-   - Notes: "Comfortable shoes, barely worn"
+    - Brand: "Nike"
+    - Product/Type: "Sneakers"
+    - Model: "Air Max 90"
+    - Color: "Black"
+    - Size: "US 10"
+    - Condition: "Used - Good"
+    - Notes: "Comfortable shoes, barely worn"
 4. **Click "Save"**
 5. **Re-open the item** and verify:
-   - All fields are pre-filled with the values you entered
-   - No data was lost
+    - All fields are pre-filled with the values you entered
+    - No data was lost
 
 **Expected Result:** ✅ Fields persist and are loaded correctly
 
@@ -85,11 +90,11 @@ cd /Users/family/dev/scanium
 
 1. **Open an item** with a photo
 2. **Fill in structured fields:**
-   - Brand: "Adidas"
-   - Product/Type: "T-Shirt"
-   - Color: "Red"
-   - Size: "M"
-   - Condition: "New"
+    - Brand: "Adidas"
+    - Product/Type: "T-Shirt"
+    - Color: "Red"
+    - Size: "M"
+    - Condition: "New"
 3. **Click "AI" button** (AutoAwesome icon)
 4. **Check Android logs** for the request:
    ```bash
@@ -103,6 +108,7 @@ cd /Users/family/dev/scanium
    ```
 
 **Expected Result:** ✅ Request includes:
+
 - `items[0].itemId` = item's ID
 - `items[0].attributes[]` contains your filled fields with `source: "USER"`
 - `message` is the export prompt (non-empty)
@@ -165,7 +171,8 @@ cd /Users/family/dev/scanium
 3. **Press "Next"** on keyboard
 4. **Verify:** Focus moves to Product/Type field
 5. **Keep pressing "Next"** through all fields
-6. **Verify:** Focus moves through: Brand → Product/Type → Model → Color → Size → Material → Condition → Notes
+6. **Verify:** Focus moves through: Brand → Product/Type → Model → Color → Size → Material →
+   Condition → Notes
 7. **In Notes field, press "Return"**
 8. **Verify:** A newline is inserted (doesn't move to next field)
 
@@ -180,9 +187,9 @@ cd /Users/family/dev/scanium
 1. **Open an item** with a primary photo and additional photos
 2. **Edit the item**
 3. **Verify:**
-   - Primary photo is shown with a blue border and "Primary" label
-   - Additional photos are shown in the row
-   - "Add" button is visible at the end
+    - Primary photo is shown with a blue border and "Primary" label
+    - Additional photos are shown in the row
+    - "Add" button is visible at the end
 
 **Expected Result:** ✅ Photos row displays correctly
 
@@ -206,27 +213,29 @@ cat docs/assistant/CURL_VERIFICATION_EXAMPLE.md
 **Common Validation Errors:**
 
 1. **Missing itemId:**
-   - **Cause:** Items array doesn't include itemId
-   - **Fix:** Verified in code - itemId is set at line 296 of ExportAssistantViewModel.kt
+    - **Cause:** Items array doesn't include itemId
+    - **Fix:** Verified in code - itemId is set at line 296 of ExportAssistantViewModel.kt
 
 2. **Empty message:**
-   - **Cause:** Message is blank
-   - **Fix:** Verified in code - EXPORT_PROMPT is non-empty constant at line 35
+    - **Cause:** Message is blank
+    - **Fix:** Verified in code - EXPORT_PROMPT is non-empty constant at line 35
 
 3. **Wrong header name:**
-   - **Cause:** Header is `X-Device-Id` instead of `X-Scanium-Device-Id`
-   - **Fix:** Verified in code - correct header at line 350 of AssistantRepository.kt
+    - **Cause:** Header is `X-Device-Id` instead of `X-Scanium-Device-Id`
+    - **Fix:** Verified in code - correct header at line 350 of AssistantRepository.kt
 
 ***REMOVED******REMOVED*** Troubleshooting
 
 ***REMOVED******REMOVED******REMOVED*** Issue: Fields not saving
 
 **Debug:**
+
 ```bash
 adb logcat -s ItemsViewModel:D ItemsStateManager:D
 ```
 
 **Look for:**
+
 ```
 updateItemAttribute: itemId=<id> key=brand value=Nike
 ```
@@ -238,6 +247,7 @@ updateItemAttribute: itemId=<id> key=brand value=Nike
 ***REMOVED******REMOVED******REMOVED*** Issue: AI export fails with VALIDATION_ERROR
 
 **Debug:**
+
 ```bash
 ***REMOVED*** Check Android logs for request shape
 adb logcat -s ScaniumAssist:I
@@ -247,11 +257,13 @@ ssh nas "docker logs -f --tail 100 scanium-backend-prod | grep -A 10 'Validation
 ```
 
 **Look for:**
+
 - `Request: items=1` - should be at least 1
 - `message.length=123` - should be > 0
 - `zodErrors` in backend logs - shows exact validation failure
 
 **Fix:** Check that:
+
 1. Item has `itemId` set
 2. Message is non-empty
 3. Attributes have both `key` and `value`
@@ -261,16 +273,19 @@ ssh nas "docker logs -f --tail 100 scanium-backend-prod | grep -A 10 'Validation
 ***REMOVED******REMOVED******REMOVED*** Issue: Images not included
 
 **Debug:**
+
 ```bash
 adb logcat -s ScaniumAssist:I | grep -i image
 ```
 
 **Look for:**
+
 ```
 Multipart request: imageCount=1 totalBytes=12345
 ```
 
 **Fix:** Ensure item has thumbnail:
+
 - `item.thumbnail` or `item.thumbnailRef` is not null
 - Thumbnail cache is populated
 
@@ -279,11 +294,13 @@ Multipart request: imageCount=1 totalBytes=12345
 ***REMOVED******REMOVED******REMOVED*** Issue: Backend rejects with 400
 
 **Check backend logs:**
+
 ```bash
 ssh nas "docker logs --tail 200 scanium-backend-prod | grep -E '(VALIDATION|zodErrors|requestShape)'"
 ```
 
 **Common issues:**
+
 - Missing `itemId` in items[0]
 - `message` is empty or missing
 - Invalid `role` in history (must be USER, ASSISTANT, or SYSTEM)
@@ -321,6 +338,7 @@ After verifying all tests pass:
 ***REMOVED******REMOVED*** Contact
 
 If you encounter issues not covered by this guide:
+
 1. Check the curl examples in `docs/assistant/CURL_VERIFICATION_EXAMPLE.md`
 2. Review backend logs for validation error details
 3. Check Android logs for request building issues

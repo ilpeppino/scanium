@@ -98,14 +98,13 @@ object StorageHelper {
     fun hasAccess(
         context: Context,
         uri: Uri,
-    ): Boolean {
-        return try {
+    ): Boolean =
+        try {
             val dir = DocumentFile.fromTreeUri(context, uri)
             dir?.isDirectory == true && dir.canWrite()
         } catch (e: Exception) {
             false
         }
-    }
 
     /**
      * Gets a display name for the folder URI.
@@ -113,11 +112,10 @@ object StorageHelper {
     fun getFolderDisplayName(
         context: Context,
         uri: Uri,
-    ): String {
-        return try {
+    ): String =
+        try {
             DocumentFile.fromTreeUri(context, uri)?.name ?: uri.lastPathSegment ?: uri.toString()
         } catch (e: Exception) {
             uri.lastPathSegment ?: uri.toString()
         }
-    }
 }

@@ -4,16 +4,17 @@ Repository conventions, workflows, and contributor documentation.
 
 ***REMOVED******REMOVED*** Subfolders
 
-| Folder | Contents |
-|--------|----------|
+| Folder                   | Contents                                     |
+|--------------------------|----------------------------------------------|
 | [reference/](reference/) | Architecture, dev guides, coding conventions |
-| [reports/](reports/) | Review reports, cleanup summaries |
-| [scripts/](scripts/) | Build, CI, and development scripts |
-| [workflows/](workflows/) | CI/CD, GitHub Actions, release workflows |
+| [reports/](reports/)     | Review reports, cleanup summaries            |
+| [scripts/](scripts/)     | Build, CI, and development scripts           |
+| [workflows/](workflows/) | CI/CD, GitHub Actions, release workflows     |
 
 ***REMOVED******REMOVED*** Quick Links
 
 ***REMOVED******REMOVED******REMOVED*** Reference
+
 - [Architecture](reference/ARCHITECTURE.md)
 - [Dev Guide](reference/DEV_GUIDE.md)
 - [Product Overview](reference/PRODUCT.md)
@@ -21,10 +22,12 @@ Repository conventions, workflows, and contributor documentation.
 - [Agents Configuration](reference/AGENTS.md)
 
 ***REMOVED******REMOVED******REMOVED*** Workflows
+
 - [CI/CD](workflows/CI_CD.md)
 - [GitHub Issue Templates](workflows/GITHUB_ISSUES_TEMPLATES.md)
 
 ***REMOVED******REMOVED******REMOVED*** Scripts
+
 - `build.sh` - Main build script
 - `ci/local-ci.sh` - Run CI locally
 - `dev/run_tests.sh` - Run test suite

@@ -66,8 +66,8 @@ fun Bitmap.toImageRefJpeg(quality: Int = 85): ImageRef.Bytes {
     )
 }
 
-fun ImageRef.Bytes.toBitmap(): Bitmap {
-    return PerformanceMonitor.measureBitmapDecode("${width}x$height") {
+fun ImageRef.Bytes.toBitmap(): Bitmap =
+    PerformanceMonitor.measureBitmapDecode("${width}x$height") {
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             ?: Bitmap.createBitmap(
                 width.coerceAtLeast(1),
@@ -75,4 +75,3 @@ fun ImageRef.Bytes.toBitmap(): Bitmap {
                 Bitmap.Config.ARGB_8888,
             )
     }
-}

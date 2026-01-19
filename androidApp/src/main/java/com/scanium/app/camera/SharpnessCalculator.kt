@@ -56,9 +56,7 @@ object SharpnessCalculator {
     fun isBlurry(
         bitmap: Bitmap,
         minSharpness: Float = DEFAULT_MIN_SHARPNESS,
-    ): Boolean {
-        return calculateSharpness(bitmap) < minSharpness
-    }
+    ): Boolean = calculateSharpness(bitmap) < minSharpness
 
     /**
      * Compute the variance of Laplacian approximation.

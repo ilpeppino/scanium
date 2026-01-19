@@ -19,7 +19,9 @@ import kotlinx.coroutines.flow.map
  */
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "threshold_preferences")
 
-class ThresholdPreferences(private val context: Context) {
+class ThresholdPreferences(
+    private val context: Context,
+) {
     companion object {
         private val SIMILARITY_THRESHOLD_KEY = floatPreferencesKey("similarity_threshold")
         private val DEFAULT_THRESHOLD = AggregationPresets.REALTIME.similarityThreshold

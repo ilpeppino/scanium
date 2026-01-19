@@ -130,22 +130,30 @@ object DetectionMapping {
         // Apply inverse rotation to get sensor-space normalized coordinates
         val (sensorNormLeft, sensorNormTop, sensorNormRight, sensorNormBottom) =
             when (rotationDegrees) {
-                0 -> listOf(normLeft, normTop, normRight, normBottom)
+                0 -> {
+                    listOf(normLeft, normTop, normRight, normBottom)
+                }
+
                 90 -> {
                     // Inverse of 90° clockwise rotation
                     // Upright (x, y) -> Sensor (y, 1-x)
                     listOf(normTop, 1f - normRight, normBottom, 1f - normLeft)
                 }
+
                 180 -> {
                     // Inverse of 180° is 180°
                     listOf(1f - normRight, 1f - normBottom, 1f - normLeft, 1f - normTop)
                 }
+
                 270 -> {
                     // Inverse of 270° clockwise rotation
                     // Upright (x, y) -> Sensor (1-y, x)
                     listOf(1f - normBottom, normLeft, 1f - normTop, normRight)
                 }
-                else -> listOf(normLeft, normTop, normRight, normBottom)
+
+                else -> {
+                    listOf(normLeft, normTop, normRight, normBottom)
+                }
             }
 
         // Convert back to pixel coordinates in sensor space
@@ -192,8 +200,8 @@ object DetectionMapping {
         uprightWidth: Int,
         uprightHeight: Int,
         onRawDetection: (RawDetection) -> Unit = {},
-    ): DetectionInfo? {
-        return try {
+    ): DetectionInfo? =
+        try {
             // Extract tracking ID (may be null)
             val trackingId = detectedObject.trackingId?.toString()
 
@@ -248,7 +256,9 @@ object DetectionMapping {
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, sensorBbox, imageRotationDegrees) }
             val thumbnailQuality =
                 if (thumbnail != null) {
-                    com.scanium.app.camera.ImageUtils.calculateSharpness(thumbnail).toFloat()
+                    com.scanium.app.camera.ImageUtils
+                        .calculateSharpness(thumbnail)
+                        .toFloat()
                 } else {
                     0f
                 }
@@ -288,7 +298,6 @@ object DetectionMapping {
             Log.e(TAG, "Error extracting detection info", e)
             null
         }
-    }
 
     /**
      * Converts a DetectedObject from ML Kit to a ScannedItem.
@@ -305,12 +314,14 @@ object DetectionMapping {
         imageRotationDegrees: Int,
         uprightWidth: Int,
         uprightHeight: Int,
-    ): ScannedItem? {
-        return try {
+    ): ScannedItem? =
+        try {
             // Extract tracking ID (null if not available)
             val trackingId =
                 detectedObject.trackingId?.toString()
-                    ?: java.util.UUID.randomUUID().toString()
+                    ?: java.util.UUID
+                        .randomUUID()
+                        .toString()
 
             // Get bounding box (in InputImage/upright coordinate space)
             val uprightBbox = detectedObject.boundingBox
@@ -329,7 +340,9 @@ object DetectionMapping {
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, sensorBbox, imageRotationDegrees) }
             val thumbnailQuality =
                 if (thumbnail != null) {
-                    com.scanium.app.camera.ImageUtils.calculateSharpness(thumbnail).toFloat()
+                    com.scanium.app.camera.ImageUtils
+                        .calculateSharpness(thumbnail)
+                        .toFloat()
                 } else {
                     0f
                 }
@@ -371,7 +384,6 @@ object DetectionMapping {
             // If cropping or processing fails, skip this object
             null
         }
-    }
 
     /**
      * Converts a DetectedObject from ML Kit to a DetectionResult for overlay rendering.
@@ -380,8 +392,8 @@ object DetectionMapping {
         detectedObject: DetectedObject,
         imageWidth: Int,
         imageHeight: Int,
-    ): DetectionResult? {
-        return try {
+    ): DetectionResult? =
+        try {
             val boundingBox = detectedObject.boundingBox
             val category = extractCategory(detectedObject)
 
@@ -399,7 +411,6 @@ object DetectionMapping {
             Log.e(TAG, "Error converting to DetectionResult", e)
             null
         }
-    }
 
     /**
      * Crops a thumbnail from the source bitmap using the bounding box.
@@ -412,8 +423,8 @@ object DetectionMapping {
         source: Bitmap,
         boundingBox: Rect,
         rotationDegrees: Int = 0,
-    ): Bitmap? {
-        return PerformanceMonitor.measure(
+    ): Bitmap? =
+        PerformanceMonitor.measure(
             metricName = PerformanceMonitor.Metrics.THUMBNAIL_CROP_LATENCY_MS,
             spanName = PerformanceMonitor.Spans.THUMBNAIL_CROP,
             attributes = mapOf("source_size" to "${source.width}x${source.height}"),
@@ -476,7 +487,6 @@ object DetectionMapping {
                 null
             }
         }
-    }
 
     /**
      * Converts a confirmed ObjectCandidate to a ScannedItem.
@@ -484,8 +494,8 @@ object DetectionMapping {
      * This is used by the tracking pipeline to create final items from
      * candidates that have met the confirmation threshold.
      */
-    fun candidateToScannedItem(candidate: com.scanium.app.tracking.ObjectCandidate): ScannedItem {
-        return ScannedItem(
+    fun candidateToScannedItem(candidate: com.scanium.app.tracking.ObjectCandidate): ScannedItem =
+        ScannedItem(
             id = candidate.internalId,
             thumbnail = candidate.thumbnail,
             thumbnailRef = candidate.thumbnail,
@@ -498,7 +508,6 @@ object DetectionMapping {
             boundingBox = candidate.boundingBox,
             labelText = candidate.labelText.takeIf { it.isNotBlank() },
         )
-    }
 }
 
 /**
@@ -530,10 +539,18 @@ fun Rect.tighten(
     // Reduced adaptive boost values - previous values were too aggressive
     val adaptiveBoost =
         when {
-            dominantRatio > 0.65f -> 0.04f // Large objects: was 0.08f
-            dominantRatio > 0.45f -> 0.02f // Medium objects: was 0.05f
-            dominantRatio > 0.30f -> 0.01f // Small objects: was 0.03f
-            dominantRatio < 0.12f -> -0.02f // Very small: was -0.04f
+            dominantRatio > 0.65f -> 0.04f
+
+            // Large objects: was 0.08f
+            dominantRatio > 0.45f -> 0.02f
+
+            // Medium objects: was 0.05f
+            dominantRatio > 0.30f -> 0.01f
+
+            // Small objects: was 0.03f
+            dominantRatio < 0.12f -> -0.02f
+
+            // Very small: was -0.04f
             else -> 0f
         }
     // Max effective ratio reduced from 0.35 to 0.15 to prevent over-cropping

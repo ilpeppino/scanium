@@ -25,10 +25,12 @@ All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Temp
 ***REMOVED******REMOVED******REMOVED*** Available Metrics
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** HTTP Metrics
+
 - `scanium_http_requests_total` - Total HTTP requests by method, route, status code
 - `scanium_http_request_duration_ms` - HTTP request duration histogram
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Enrichment Pipeline
+
 - `scanium_enrich_requests_total` - Enrichment requests by status and error type
 - `scanium_enrich_stage_transitions_total` - Stage transitions (vision → attributes → draft)
 - `scanium_enrich_stage_latency_seconds` - Latency for each enrichment stage
@@ -38,6 +40,7 @@ All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Temp
 - `scanium_enrich_total_latency_seconds` - End-to-end enrichment latency
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Assistant/LLM
+
 - `scanium_assistant_requests_total` - Assistant requests by provider, status, cache hit
 - `scanium_assistant_request_latency_ms` - Assistant request latency
 - `scanium_assistant_errors_total` - Assistant errors by provider, error type, reason code
@@ -45,17 +48,20 @@ All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Temp
 - `scanium_assistant_cache_hit_rate` - Cache hit rate gauge (0-1)
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Classification
+
 - `scanium_classifier_requests_total` - Classification requests by provider, status, category
 - `scanium_classifier_request_latency_ms` - Classification latency
 - `scanium_classifier_confidence` - Confidence score distribution
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Vision Extraction
+
 - `scanium_vision_requests_total` - Vision API requests by provider and status
 - `scanium_vision_extraction_latency_ms` - Vision extraction latency by feature
 - `scanium_vision_cost_estimate_millicents` - Estimated API cost tracking
 - `scanium_vision_cache_size` - Current vision cache entries
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Business Metrics
+
 - `scanium_items_by_category_total` - Items processed by eBay category
 - `scanium_api_quota_usage_total` - API quota usage by key, endpoint, status
 - `scanium_api_quota_remaining` - Remaining quota per API key
@@ -63,20 +69,24 @@ All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Temp
 - `scanium_business_errors_total` - Business logic errors by type, operation, severity
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Database
+
 - `scanium_database_queries_total` - Database queries by operation, table, status
 - `scanium_database_query_duration_ms` - Query duration histogram
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** External APIs
+
 - `scanium_external_api_calls_total` - External API calls by service, operation, status
 - `scanium_external_api_duration_ms` - External API call duration
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Infrastructure
+
 - `scanium_rate_limit_hits_total` - Rate limit hits by limiter type and endpoint
 - `scanium_quota_exhausted_total` - Daily quota exhaustions by type
 - `scanium_circuit_breaker_state` - Circuit breaker state (0=closed, 1=half-open, 2=open)
 - `scanium_circuit_breaker_transitions_total` - Circuit breaker state transitions
 
-All Node.js process metrics are also collected with the `scanium_` prefix (memory, CPU, event loop, etc.).
+All Node.js process metrics are also collected with the `scanium_` prefix (memory, CPU, event loop,
+etc.).
 
 ***REMOVED******REMOVED******REMOVED*** Using Metrics
 
@@ -118,7 +128,8 @@ recordExternalApiCall('openai', 'chat.completions', Date.now() - apiStart, 'succ
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Recording Enrichment Metrics
 
-Enrichment metrics are automatically recorded by the enrichment manager, but you can also record them manually:
+Enrichment metrics are automatically recorded by the enrichment manager, but you can also record
+them manually:
 
 ```typescript
 import {
@@ -278,6 +289,7 @@ const completion = await traceExternalApi(
 ***REMOVED******REMOVED******REMOVED*** Trace Context Propagation
 
 Traces automatically propagate through:
+
 - HTTP requests (via headers)
 - Async operations (via context API)
 - Child spans (via parent context)
@@ -326,6 +338,7 @@ app.log.error({
 ***REMOVED******REMOVED******REMOVED*** Automatic Redaction
 
 The following headers are automatically redacted:
+
 - `authorization`
 - `cookie`
 - `x-api-key`
@@ -359,8 +372,8 @@ Logs are automatically sent to OpenTelemetry via `pino-opentelemetry-transport`:
 ***REMOVED******REMOVED******REMOVED*** Metrics
 
 1. **Use Labels Wisely**: Keep label cardinality low (< 1000 unique combinations)
-   - ✅ Good: `category_name="Electronics"`
-   - ❌ Bad: `user_email="user@example.com"` (high cardinality)
+    - ✅ Good: `category_name="Electronics"`
+    - ❌ Bad: `user_email="user@example.com"` (high cardinality)
 
 2. **Increment Counters at Business Events**:
    ```typescript
@@ -435,10 +448,10 @@ Logs are automatically sent to OpenTelemetry via `pino-opentelemetry-transport`:
    ```
 
 3. **Use Appropriate Levels**:
-   - `error` for errors that need attention
-   - `warn` for warnings that don't require immediate action
-   - `info` for significant business events
-   - `debug` for detailed debugging information
+    - `error` for errors that need attention
+    - `warn` for warnings that don't require immediate action
+    - `info` for significant business events
+    - `debug` for detailed debugging information
 
 4. **Avoid Sensitive Data**:
    ```typescript

@@ -45,9 +45,10 @@ class TourViewModel
 
         // Derived current step
         val currentStep: StateFlow<TourStep?> =
-            currentStepIndex.map { index ->
-                if (index in TOUR_STEPS.indices) TOUR_STEPS[index] else null
-            }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+            currentStepIndex
+                .map { index ->
+                    if (index in TOUR_STEPS.indices) TOUR_STEPS[index] else null
+                }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
         // Tour active flag (true when force enabled OR not completed)
         val isTourActive: StateFlow<Boolean> =

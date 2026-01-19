@@ -22,31 +22,32 @@ import com.scanium.shared.core.models.ml.ItemCategory
  * ```
  */
 object AttributeSummaryGenerator {
+    private val ATTRIBUTE_ORDER =
+        listOf(
+            "category",
+            "brand",
+            "color",
+            "condition",
+            "material",
+            "size",
+            "model",
+            "itemType",
+            "notes",
+        )
 
-    private val ATTRIBUTE_ORDER = listOf(
-        "category",
-        "brand",
-        "color",
-        "condition",
-        "material",
-        "size",
-        "model",
-        "itemType",
-        "notes",
-    )
-
-    private val ATTRIBUTE_DISPLAY_NAMES = mapOf(
-        "category" to "Category",
-        "brand" to "Brand",
-        "color" to "Color",
-        "condition" to "Condition",
-        "material" to "Material",
-        "size" to "Size",
-        "model" to "Model",
-        "itemType" to "Type",
-        "notes" to "Notes",
-        "secondaryColor" to "Secondary Color",
-    )
+    private val ATTRIBUTE_DISPLAY_NAMES =
+        mapOf(
+            "category" to "Category",
+            "brand" to "Brand",
+            "color" to "Color",
+            "condition" to "Condition",
+            "material" to "Material",
+            "size" to "Size",
+            "model" to "Model",
+            "itemType" to "Type",
+            "notes" to "Notes",
+            "secondaryColor" to "Secondary Color",
+        )
 
     /**
      * Generate summary text from structured attributes.
@@ -62,8 +63,8 @@ object AttributeSummaryGenerator {
         category: ItemCategory? = null,
         condition: ItemCondition? = null,
         includeEmptyFields: Boolean = true,
-    ): String {
-        return buildString {
+    ): String =
+        buildString {
             // Category
             val categoryPath = category?.let { buildCategoryPath(it) }
             appendField("Category", categoryPath, includeEmptyFields)
@@ -98,7 +99,6 @@ object AttributeSummaryGenerator {
             // Notes at the end (always include even if empty)
             appendField("Notes", attributes["notes"]?.value, includeEmptyFields = true)
         }.trimEnd()
-    }
 
     /**
      * Generate a concise summary for display in lists.
@@ -115,8 +115,9 @@ object AttributeSummaryGenerator {
         }
 
         // Item type or category
-        val itemType = attributes["itemType"]?.value?.takeIf { it.isNotBlank() }
-            ?: category?.displayName
+        val itemType =
+            attributes["itemType"]?.value?.takeIf { it.isNotBlank() }
+                ?: category?.displayName
         itemType?.let { parts.add(it) }
 
         // Color
@@ -140,9 +141,10 @@ object AttributeSummaryGenerator {
         var notes: String? = null
 
         // Build reverse lookup for display names
-        val displayNameToKey = ATTRIBUTE_DISPLAY_NAMES.entries
-            .associate { (k, v) -> v.lowercase() to k }
-            .toMutableMap()
+        val displayNameToKey =
+            ATTRIBUTE_DISPLAY_NAMES.entries
+                .associate { (k, v) -> v.lowercase() to k }
+                .toMutableMap()
         displayNameToKey["type"] = "itemType"
         displayNameToKey["secondary color"] = "secondaryColor"
 
@@ -211,13 +213,20 @@ object AttributeSummaryGenerator {
         onSpecial: (category: String?, condition: String?) -> Unit,
     ) {
         when (fieldName) {
-            "category" -> onSpecial(value, null)
-            "condition" -> onSpecial(null, value)
+            "category" -> {
+                onSpecial(value, null)
+            }
+
+            "condition" -> {
+                onSpecial(null, value)
+            }
+
             else -> {
                 // Map display name to key
-                val displayNameToKey = ATTRIBUTE_DISPLAY_NAMES.entries
-                    .associate { (k, v) -> v.lowercase() to k }
-                    .toMutableMap()
+                val displayNameToKey =
+                    ATTRIBUTE_DISPLAY_NAMES.entries
+                        .associate { (k, v) -> v.lowercase() to k }
+                        .toMutableMap()
                 displayNameToKey["type"] = "itemType"
                 displayNameToKey["secondary color"] = "secondaryColor"
 
@@ -297,11 +306,12 @@ object AttributeSummaryGenerator {
 
         for ((key, value) in parsed.attributes) {
             val existing = result[key]
-            result[key] = ItemAttribute(
-                value = value,
-                confidence = 1.0f, // User-provided = high confidence
-                source = "user",
-            )
+            result[key] =
+                ItemAttribute(
+                    value = value,
+                    confidence = 1.0f, // User-provided = high confidence
+                    source = "user",
+                )
         }
 
         return result

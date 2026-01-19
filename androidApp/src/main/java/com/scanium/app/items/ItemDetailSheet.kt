@@ -61,11 +61,12 @@ fun ItemDetailSheet(
         sheetState = sheetState,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 32.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Header with thumbnail and basic info
@@ -77,11 +78,12 @@ fun ItemDetailSheet(
             item.barcodeValue?.let { barcode ->
                 BarcodeSection(
                     barcodeValue = barcode,
-                    onAskAi = if (FeatureFlags.allowAiAssistant && onGenerateListing != null) {
-                        onGenerateListing
-                    } else {
-                        null
-                    },
+                    onAskAi =
+                        if (FeatureFlags.allowAiAssistant && onGenerateListing != null) {
+                            onGenerateListing
+                        } else {
+                            null
+                        },
                 )
 
                 HorizontalDivider()
@@ -119,7 +121,8 @@ fun ItemDetailSheet(
                 // Generate listing button (if attributes available)
                 // Only show here if barcode section didn't already show the AI button
                 if (item.attributes.isNotEmpty() && onGenerateListing != null &&
-                    FeatureFlags.allowAiAssistant && item.barcodeValue == null) {
+                    FeatureFlags.allowAiAssistant && item.barcodeValue == null
+                ) {
                     Button(
                         onClick = onGenerateListing,
                         modifier = Modifier.fillMaxWidth(),
@@ -134,10 +137,11 @@ fun ItemDetailSheet(
                     Button(
                         onClick = onRefreshAttributes,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            ),
                     ) {
                         Text(stringResource(R.string.items_refresh_attributes))
                     }

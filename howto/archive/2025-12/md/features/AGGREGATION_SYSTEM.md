@@ -2,15 +2,20 @@
 
 ***REMOVED******REMOVED*** Overview
 
-The **Real-Time Item Aggregation System** is a robust solution for merging similar object detections during scanning mode. It replaces the previous strict deduplication logic that failed due to frequent ML Kit trackingId changes and overly strict spatial matching thresholds.
+The **Real-Time Item Aggregation System** is a robust solution for merging similar object detections
+during scanning mode. It replaces the previous strict deduplication logic that failed due to
+frequent ML Kit trackingId changes and overly strict spatial matching thresholds.
 
 ***REMOVED******REMOVED*** Problem Statement
 
 ***REMOVED******REMOVED******REMOVED*** Previous System Issues
 
-1. **trackingId Instability**: ML Kit's trackingId changed frequently during real-world scanning, breaking the deduplication logic.
-2. **Strict Thresholds**: IoU and spatial matching thresholds were too strict, preventing legitimate matches.
-3. **No Items Promoted**: The strict logic resulted in no items being promoted during scanning, forcing fallback to "loose identification."
+1. **trackingId Instability**: ML Kit's trackingId changed frequently during real-world scanning,
+   breaking the deduplication logic.
+2. **Strict Thresholds**: IoU and spatial matching thresholds were too strict, preventing legitimate
+   matches.
+3. **No Items Promoted**: The strict logic resulted in no items being promoted during scanning,
+   forcing fallback to "loose identification."
 4. **Duplicate Overload**: Loose mode created too many duplicates when users panned around objects.
 
 ***REMOVED******REMOVED******REMOVED*** Solution Requirements
@@ -72,12 +77,14 @@ The **Real-Time Item Aggregation System** is a robust solution for merging simil
 Represents a unique physical object aggregated from multiple detections.
 
 **Key Features:**
+
 - Stable identity across trackingId changes
 - Tracks merge statistics (count, confidence history)
 - Maintains "best" detection data for UI display
 - Timestamps for staleness detection
 
 **Key Properties:**
+
 - `aggregatedId`: Stable unique identifier (UUID-based)
 - `category`: Item category (must match for merging)
 - `labelText`: Primary label from highest confidence detection
@@ -88,6 +95,7 @@ Represents a unique physical object aggregated from multiple detections.
 - `sourceDetectionIds`: Set of original detection IDs
 
 **Key Methods:**
+
 - `merge(detection)`: Merge new detection into this item
 - `toScannedItem()`: Convert to ScannedItem for UI compatibility
 - `isStale(maxAgeMs)`: Check if item hasn't been seen recently
@@ -98,6 +106,7 @@ Represents a unique physical object aggregated from multiple detections.
 The core aggregation engine that processes detections and maintains aggregated items.
 
 **Responsibilities:**
+
 - Maintain collection of AggregatedItems
 - Compare new detections using weighted similarity scoring
 - Merge similar detections or create new items
@@ -105,6 +114,7 @@ The core aggregation engine that processes detections and maintains aggregated i
 - Comprehensive logging for debugging
 
 **Key Methods:**
+
 - `processDetection(detection)`: Process single detection
 - `processDetections(detections)`: Batch processing
 - `getAllItems()`: Get all aggregated items
@@ -118,6 +128,7 @@ The core aggregation engine that processes detections and maintains aggregated i
 Configuration parameters for aggregation behavior.
 
 **Parameters:**
+
 - `similarityThreshold` (0-1): Minimum similarity for merging (default: 0.6)
 - `maxCenterDistanceRatio` (0-1): Maximum normalized center distance (default: 0.25)
 - `maxSizeDifferenceRatio` (0-1): Maximum size difference (default: 0.5)
@@ -130,6 +141,7 @@ Configuration parameters for aggregation behavior.
 Weights for combining similarity factors.
 
 **Weights:**
+
 - `categoryWeight`: 0.3 (30%) - Category match importance
 - `labelWeight`: 0.25 (25%) - Label similarity importance
 - `sizeWeight`: 0.20 (20%) - Bounding box size importance
@@ -189,6 +201,7 @@ The `ItemsViewModel` has been updated to use `ItemAggregator` instead of `Sessio
 ***REMOVED******REMOVED******REMOVED*** Changes
 
 **Before:**
+
 ```kotlin
 private val sessionDeduplicator = SessionDeduplicator()
 
@@ -206,6 +219,7 @@ fun addItem(item: ScannedItem) {
 ```
 
 **After:**
+
 ```kotlin
 private val itemAggregator = ItemAggregator(config)
 
@@ -373,6 +387,7 @@ Two comprehensive test suites verify correctness:
 ***REMOVED******REMOVED******REMOVED*** Log Levels
 
 **INFO**: Key operations
+
 ```
 ItemAggregator: >>> processDetection: id=det_1, category=FASHION, confidence=0.8
 ItemAggregator: ✓ MERGE: detection det_2 → aggregated agg_123 (similarity=0.85)
@@ -380,6 +395,7 @@ ItemAggregator: ✗ CREATE NEW: similarity too low (0.45 < 0.6)
 ```
 
 **DEBUG**: Detailed similarity breakdown
+
 ```
 ItemAggregator: Similarity breakdown:
 ItemAggregator:   - Category match: true (FASHION vs FASHION)
@@ -411,15 +427,15 @@ Log.i(TAG, "  Avg merges/item: ${stats.averageMergesPerItem}")
 ***REMOVED******REMOVED******REMOVED*** For Testers
 
 1. **Behavioral Changes**:
-   - Items with similar appearance merge automatically
-   - Fewer duplicate items in list
-   - Item IDs now start with `agg_` instead of `mlkit_` or `gen_`
+    - Items with similar appearance merge automatically
+    - Fewer duplicate items in list
+    - Item IDs now start with `agg_` instead of `mlkit_` or `gen_`
 
 2. **Testing Focus**:
-   - Verify distinct objects remain separate
-   - Verify similar objects merge correctly
-   - Test with camera movement (panning, rotation)
-   - Test with varying lighting conditions
+    - Verify distinct objects remain separate
+    - Verify similar objects merge correctly
+    - Test with camera movement (panning, rotation)
+    - Test with varying lighting conditions
 
 ***REMOVED******REMOVED*** Future Enhancements
 
@@ -458,6 +474,7 @@ class ItemAggregator {
 **Symptoms**: Same object appears multiple times in list
 
 **Solutions**:
+
 - Decrease `similarityThreshold` (e.g., 0.5 instead of 0.6)
 - Increase `maxCenterDistanceRatio` (e.g., 0.35 instead of 0.25)
 - Increase `maxSizeDifferenceRatio` (e.g., 0.7 instead of 0.5)
@@ -468,6 +485,7 @@ class ItemAggregator {
 **Symptoms**: Similar objects remain separate
 
 **Solutions**:
+
 - Increase `similarityThreshold` (e.g., 0.7 instead of 0.6)
 - Check category matching: Verify categories are consistent
 - Check label matching: If `labelMatchRequired = true`, ensure labels are present
@@ -478,6 +496,7 @@ class ItemAggregator {
 **Symptoms**: Slow frame processing, UI lag
 
 **Solutions**:
+
 - Call `removeStaleItems()` periodically to limit growth
 - Reduce thumbnail size in detection pipeline
 - Consider spatial indexing for large item counts (>100)

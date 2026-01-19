@@ -1,10 +1,12 @@
 ***REMOVED*** Vision Insights Feature
 
-Displays vision-derived attributes (colors, brands, logos, OCR text, label hints) in the assistant UI and allows users to apply them as item attributes.
+Displays vision-derived attributes (colors, brands, logos, OCR text, label hints) in the assistant
+UI and allows users to apply them as item attributes.
 
 ***REMOVED******REMOVED*** Overview
 
-When the backend analyzes item images, it returns `suggestedAttributes` in the assistant response. These are displayed as interactive chips that users can tap to apply to their items.
+When the backend analyzes item images, it returns `suggestedAttributes` in the assistant response.
+These are displayed as interactive chips that users can tap to apply to their items.
 
 ***REMOVED******REMOVED*** Feature Flag
 
@@ -17,24 +19,25 @@ data class FeatureFlags(
 
 ***REMOVED******REMOVED*** Attribute Key Mapping
 
-The following table shows how vision sources map to attribute keys and their alternatives (used when there's a conflict):
+The following table shows how vision sources map to attribute keys and their alternatives (used when
+there's a conflict):
 
-| Source | Attribute Key | Display Name | Alternative Key |
-|--------|---------------|--------------|-----------------|
-| color  | color         | Color        | secondaryColor  |
-| logo   | brand         | Brand        | brand2          |
-| brand  | brand         | Brand        | brand2          |
-| ocr    | model         | Model        | model2          |
-| label  | category      | Category     | subcategory     |
-| *      | (as-is)       | (capitalized)| key + "2"       |
+| Source | Attribute Key | Display Name  | Alternative Key |
+|--------|---------------|---------------|-----------------|
+| color  | color         | Color         | secondaryColor  |
+| logo   | brand         | Brand         | brand2          |
+| brand  | brand         | Brand         | brand2          |
+| ocr    | model         | Model         | model2          |
+| label  | category      | Category      | subcategory     |
+| *      | (as-is)       | (capitalized) | key + "2"       |
 
 ***REMOVED******REMOVED*** Confidence Tier Mapping
 
-| Tier | Float Value | Chip Color |
-|------|-------------|------------|
-| HIGH | 0.9         | primaryContainer (green) |
+| Tier | Float Value | Chip Color                |
+|------|-------------|---------------------------|
+| HIGH | 0.9         | primaryContainer (green)  |
 | MED  | 0.6         | tertiaryContainer (amber) |
-| LOW  | 0.3         | surfaceVariant (gray) |
+| LOW  | 0.3         | surfaceVariant (gray)     |
 
 ***REMOVED******REMOVED*** Conflict Handling
 
@@ -42,9 +45,10 @@ When a user taps a chip for an attribute they've already set:
 
 1. A dialog appears showing "Current" vs "Detected" values
 2. User can choose:
-   - **Replace**: Overwrites the existing value
-   - **Add as Alternative**: Creates a secondary attribute (e.g., `secondaryColor` instead of `color`)
-   - **Cancel**: Dismisses without changes
+    - **Replace**: Overwrites the existing value
+    - **Add as Alternative**: Creates a secondary attribute (e.g., `secondaryColor` instead of
+      `color`)
+    - **Cancel**: Dismisses without changes
 
 User must explicitly confirm - no auto-apply.
 
@@ -102,17 +106,18 @@ curl -X POST "https://your-backend/v1/assist/chat" \
 2. Tap "Get AI Help" to open the Assistant screen
 3. Send a message like "What can you tell from the photos?"
 4. Observe the "Vision Insights" section below the assistant response:
-   - Chips grouped by type: Colors, Brands, Labels, OCR Text
-   - Each chip shows `Key: value` with a `+` icon
-   - Confidence indicated by chip color
+    - Chips grouped by type: Colors, Brands, Labels, OCR Text
+    - Each chip shows `Key: value` with a `+` icon
+    - Confidence indicated by chip color
 5. Tap a chip to apply the attribute:
-   - If no conflict: Attribute is applied, snackbar confirms
-   - If conflict: Dialog appears with Replace/Add as Alternative/Cancel options
+    - If no conflict: Attribute is applied, snackbar confirms
+    - If conflict: Dialog appears with Replace/Add as Alternative/Cancel options
 6. Verify the attribute appears in item details
 
 ***REMOVED******REMOVED*** Files
 
-- `AssistantViewModel.kt` - `applyVisionAttribute()`, `getExistingAttribute()`, `getAlternativeKey()`
+- `AssistantViewModel.kt` - `applyVisionAttribute()`, `getExistingAttribute()`,
+  `getAlternativeKey()`
 - `AssistantScreen.kt` - Vision conflict dialog state and MessageBubble integration
 - `VisionInsightsSection.kt` - Main UI component with grouped chips
 - `VisionConflictDialog.kt` - Conflict resolution dialog

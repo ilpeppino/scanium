@@ -40,16 +40,19 @@ class ItemSyncWorker
                         )
                         Result.success()
                     }
+
                     is SyncResult.NotAuthenticated -> {
                         Log.w(TAG, "Sync skipped: User not authenticated")
                         // Don't retry - user needs to sign in
                         Result.failure()
                     }
+
                     is SyncResult.NetworkError -> {
                         Log.w(TAG, "Sync failed: Network error", result.error)
                         // Retry with exponential backoff
                         Result.retry()
                     }
+
                     is SyncResult.ServerError -> {
                         Log.e(TAG, "Sync failed: Server error", result.error)
                         // Retry with exponential backoff

@@ -25,7 +25,8 @@ class RemoteConfigParsingTest {
     @Test
     fun `backend remote config JSON parses correctly into Android model`() {
         // This is the exact format that backend/config/remote-config.json should use
-        val backendJson = """
+        val backendJson =
+            """
             {
               "version": "2025-01-04",
               "ttlSeconds": 3600,
@@ -43,7 +44,7 @@ class RemoteConfigParsingTest {
               },
               "experiments": {}
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val config = json.decodeFromString<RemoteConfig>(backendJson)
 
@@ -72,7 +73,8 @@ class RemoteConfigParsingTest {
     @Test
     fun `wrong field names fall back to defaults - documents previous bug`() {
         // OLD BROKEN FORMAT - DO NOT USE
-        val brokenBackendJson = """
+        val brokenBackendJson =
+            """
             {
               "version": "2025-01-01",
               "ttlSeconds": 3600,
@@ -86,7 +88,7 @@ class RemoteConfigParsingTest {
               },
               "experiments": {}
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val config = json.decodeFromString<RemoteConfig>(brokenBackendJson)
 
@@ -111,11 +113,12 @@ class RemoteConfigParsingTest {
      */
     @Test
     fun `empty config uses safe defaults`() {
-        val minimalJson = """
+        val minimalJson =
+            """
             {
               "version": "0.0.0"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val config = json.decodeFromString<RemoteConfig>(minimalJson)
 

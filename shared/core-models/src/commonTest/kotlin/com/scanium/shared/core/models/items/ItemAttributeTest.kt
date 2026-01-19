@@ -16,7 +16,6 @@ import kotlin.test.assertTrue
  * - Boundary conditions
  */
 class ItemAttributeTest {
-
     // ==========================================================================
     // Confidence Tier Tests
     // ==========================================================================
@@ -217,16 +216,17 @@ class ItemAttributeTest {
 
     @Test
     fun whenBoundaryTestingAllThresholds_thenCorrectClassification() {
-        val testCases = mapOf(
-            0.0f to AttributeConfidenceTier.LOW,
-            0.49f to AttributeConfidenceTier.LOW,
-            0.5f to AttributeConfidenceTier.MEDIUM,
-            0.51f to AttributeConfidenceTier.MEDIUM,
-            0.79f to AttributeConfidenceTier.MEDIUM,
-            0.8f to AttributeConfidenceTier.HIGH,
-            0.81f to AttributeConfidenceTier.HIGH,
-            1.0f to AttributeConfidenceTier.HIGH,
-        )
+        val testCases =
+            mapOf(
+                0.0f to AttributeConfidenceTier.LOW,
+                0.49f to AttributeConfidenceTier.LOW,
+                0.5f to AttributeConfidenceTier.MEDIUM,
+                0.51f to AttributeConfidenceTier.MEDIUM,
+                0.79f to AttributeConfidenceTier.MEDIUM,
+                0.8f to AttributeConfidenceTier.HIGH,
+                0.81f to AttributeConfidenceTier.HIGH,
+                1.0f to AttributeConfidenceTier.HIGH,
+            )
 
         testCases.forEach { (confidence, expectedTier) ->
             val attr = ItemAttribute(value = "test", confidence = confidence)
@@ -240,14 +240,15 @@ class ItemAttributeTest {
 
     @Test
     fun whenBoundaryTestingVerified_thenCorrectStatus() {
-        val testCases = mapOf(
-            0.0f to false,
-            0.49f to false,
-            0.5f to true,
-            0.51f to true,
-            0.99f to true,
-            1.0f to true,
-        )
+        val testCases =
+            mapOf(
+                0.0f to false,
+                0.49f to false,
+                0.5f to true,
+                0.51f to true,
+                0.99f to true,
+                1.0f to true,
+            )
 
         testCases.forEach { (confidence, expectedVerified) ->
             val attr = ItemAttribute(value = "test", confidence = confidence)
@@ -265,11 +266,12 @@ class ItemAttributeTest {
 
     @Test
     fun whenBrandAttributeFromLogo_thenHighConfidenceAndVerified() {
-        val brand = ItemAttribute(
-            value = "Nike",
-            confidence = 0.92f,
-            source = "logo",
-        )
+        val brand =
+            ItemAttribute(
+                value = "Nike",
+                confidence = 0.92f,
+                source = "logo",
+            )
 
         assertEquals(AttributeConfidenceTier.HIGH, brand.confidenceTier)
         assertTrue(brand.isVerified)
@@ -278,11 +280,12 @@ class ItemAttributeTest {
 
     @Test
     fun whenColorAttributeFromVision_thenMediumConfidence() {
-        val color = ItemAttribute(
-            value = "blue",
-            confidence = 0.65f,
-            source = "color",
-        )
+        val color =
+            ItemAttribute(
+                value = "blue",
+                confidence = 0.65f,
+                source = "color",
+            )
 
         assertEquals(AttributeConfidenceTier.MEDIUM, color.confidenceTier)
         assertTrue(color.isVerified)
@@ -290,11 +293,12 @@ class ItemAttributeTest {
 
     @Test
     fun whenModelAttributeFromOcr_thenLowConfidence() {
-        val model = ItemAttribute(
-            value = "XK-9000",
-            confidence = 0.35f,
-            source = "ocr",
-        )
+        val model =
+            ItemAttribute(
+                value = "XK-9000",
+                confidence = 0.35f,
+                source = "ocr",
+            )
 
         assertEquals(AttributeConfidenceTier.LOW, model.confidenceTier)
         assertFalse(model.isVerified)
@@ -302,11 +306,12 @@ class ItemAttributeTest {
 
     @Test
     fun whenMaterialAttributeFromLabel_thenMediumConfidence() {
-        val material = ItemAttribute(
-            value = "wood",
-            confidence = 0.7f,
-            source = "label",
-        )
+        val material =
+            ItemAttribute(
+                value = "wood",
+                confidence = 0.7f,
+                source = "label",
+            )
 
         assertEquals(AttributeConfidenceTier.MEDIUM, material.confidenceTier)
         assertTrue(material.isVerified)

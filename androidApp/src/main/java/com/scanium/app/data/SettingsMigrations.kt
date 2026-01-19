@@ -32,19 +32,27 @@ internal class SettingsMigrations(
 
     private fun migrateToUnifiedSettings(preferences: MutablePreferences) {
         val existingMarketplaceCountry = preferences[SettingsKeys.Assistant.ASSISTANT_REGION_KEY]
-        val primaryCountry = SettingsLocaleHelpers.normalizeCountryCode(
-            existingMarketplaceCountry ?: SettingsLocaleHelpers.detectCountryCodeFromLocale(),
-        )
+        val primaryCountry =
+            SettingsLocaleHelpers.normalizeCountryCode(
+                existingMarketplaceCountry ?: SettingsLocaleHelpers.detectCountryCodeFromLocale(),
+            )
         preferences[SettingsKeys.Unified.PRIMARY_REGION_COUNTRY_KEY] = primaryCountry
 
         val existingAppLanguage = preferences[SettingsKeys.General.APP_LANGUAGE_KEY]
-        val primaryLanguage = when {
-            existingAppLanguage != null && existingAppLanguage != "system" -> existingAppLanguage
-            else -> {
-                val systemLang = java.util.Locale.getDefault().language
-                if (systemLang.isNotEmpty()) systemLang else "en"
+        val primaryLanguage =
+            when {
+                existingAppLanguage != null && existingAppLanguage != "system" -> {
+                    existingAppLanguage
+                }
+
+                else -> {
+                    val systemLang =
+                        java.util.Locale
+                            .getDefault()
+                            .language
+                    if (systemLang.isNotEmpty()) systemLang else "en"
+                }
             }
-        }
         preferences[SettingsKeys.Unified.PRIMARY_LANGUAGE_KEY] = primaryLanguage
 
         if (existingAppLanguage != null && existingAppLanguage != "system") {

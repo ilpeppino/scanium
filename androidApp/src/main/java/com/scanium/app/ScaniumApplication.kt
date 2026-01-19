@@ -8,7 +8,11 @@ import com.scanium.app.data.SettingsRepository
 import com.scanium.app.model.AppLanguage
 import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.startup.StartupGuard
-import com.scanium.app.telemetry.*
+import com.scanium.app.telemetry.AndroidDefaultAttributesProvider
+import com.scanium.app.telemetry.AndroidLogPortOtlp
+import com.scanium.app.telemetry.AndroidMetricPortOtlp
+import com.scanium.app.telemetry.AndroidTracePortOtlp
+import com.scanium.app.telemetry.OtlpConfiguration
 import com.scanium.diagnostics.DefaultDiagnosticsPort
 import com.scanium.diagnostics.DiagnosticsPort
 import com.scanium.telemetry.facade.Telemetry
@@ -79,7 +83,9 @@ class ScaniumApplication : Application() {
         )
 
         val settingsRepository = SettingsRepository(this)
-        val classificationPreferences = com.scanium.app.data.ClassificationPreferences(this)
+        val classificationPreferences =
+            com.scanium.app.data
+                .ClassificationPreferences(this)
 
         // Apply saved locale SYNCHRONOUSLY before any Activity starts
         // This ensures the correct locale is set before the first UI renders
@@ -111,7 +117,9 @@ class ScaniumApplication : Application() {
                         "app_version" to BuildConfig.VERSION_NAME,
                         "build" to BuildConfig.VERSION_CODE.toString(),
                         "env" to if (BuildConfig.DEBUG) "dev" else "prod",
-                        "session_id" to com.scanium.app.logging.CorrelationIds.currentClassificationSessionId(),
+                        "session_id" to
+                            com.scanium.app.logging.CorrelationIds
+                                .currentClassificationSessionId(),
                     )
                 },
                 maxEvents = 200,
@@ -159,7 +167,11 @@ class ScaniumApplication : Application() {
 
             // Set initial session and classification tags
             crashPort.setTag("build_type", if (BuildConfig.DEBUG) "debug" else "release")
-            crashPort.setTag("session_id", com.scanium.app.logging.CorrelationIds.currentClassificationSessionId())
+            crashPort.setTag(
+                "session_id",
+                com.scanium.app.logging.CorrelationIds
+                    .currentClassificationSessionId(),
+            )
 
             // Placeholder for future domain pack version
             crashPort.setTag("domain_pack_version", "unknown")
@@ -186,7 +198,6 @@ class ScaniumApplication : Application() {
                     crashPort.setTag("cloud_allowed", allowed.toString())
                 }
             }
-
         } else {
             // Use NoOp adapter when Sentry is not configured
             crashPort = com.scanium.telemetry.ports.NoOpCrashPort
@@ -195,7 +206,9 @@ class ScaniumApplication : Application() {
         // Clear stale dev config overrides on startup (debug only)
         if (BuildConfig.DEBUG) {
             applicationScope.launch {
-                val devConfig = com.scanium.app.config.DevConfigOverride(this@ScaniumApplication)
+                val devConfig =
+                    com.scanium.app.config
+                        .DevConfigOverride(this@ScaniumApplication)
                 devConfig.clearStaleOverrides()
             }
         }
@@ -206,16 +219,19 @@ class ScaniumApplication : Application() {
         } catch (e: Exception) {
             android.util.Log.e("ScaniumApplication", "Failed to initialize telemetry", e)
             // Create minimal no-op telemetry to prevent NPE later
-            val fallbackConfig = com.scanium.telemetry.TelemetryConfig.development()
-            telemetry = com.scanium.telemetry.facade.Telemetry(
-                config = fallbackConfig,
-                defaultAttributesProvider = AndroidDefaultAttributesProvider(fallbackConfig.dataRegion),
-                logPort = com.scanium.telemetry.ports.NoOpLogPort,
-                metricPort = com.scanium.telemetry.ports.NoOpMetricPort,
-                tracePort = com.scanium.telemetry.ports.NoOpTracePort,
-                crashPort = crashPort,
-                diagnosticsPort = diagnosticsPort,
-            )
+            val fallbackConfig =
+                com.scanium.telemetry.TelemetryConfig
+                    .development()
+            telemetry =
+                com.scanium.telemetry.facade.Telemetry(
+                    config = fallbackConfig,
+                    defaultAttributesProvider = AndroidDefaultAttributesProvider(fallbackConfig.dataRegion),
+                    logPort = com.scanium.telemetry.ports.NoOpLogPort,
+                    metricPort = com.scanium.telemetry.ports.NoOpMetricPort,
+                    tracePort = com.scanium.telemetry.ports.NoOpTracePort,
+                    crashPort = crashPort,
+                    diagnosticsPort = diagnosticsPort,
+                )
         }
     }
 
@@ -223,9 +239,11 @@ class ScaniumApplication : Application() {
         // Build TelemetryConfig based on build type
         val telemetryConfig =
             if (BuildConfig.DEBUG) {
-                com.scanium.telemetry.TelemetryConfig.development()
+                com.scanium.telemetry.TelemetryConfig
+                    .development()
             } else {
-                com.scanium.telemetry.TelemetryConfig.production()
+                com.scanium.telemetry.TelemetryConfig
+                    .production()
             }.copy(dataRegion = BuildConfig.TELEMETRY_DATA_REGION)
 
         // Build OTLP configuration from BuildConfig
@@ -294,9 +312,10 @@ class ScaniumApplication : Application() {
         try {
             telemetry.info(
                 name = "app.started",
-                userAttributes = mapOf(
-                    "launch_type" to "cold_start"
-                )
+                userAttributes =
+                    mapOf(
+                        "launch_type" to "cold_start",
+                    ),
             )
             android.util.Log.i("ScaniumApplication", "Sent app.started event via OTLP telemetry")
         } catch (e: Exception) {

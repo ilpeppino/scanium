@@ -130,18 +130,16 @@ object RoiDetectionFilter {
         detections: List<DetectionResult>,
         scanRoi: ScanRoi,
         maxCount: Int,
-    ): List<DetectionResult> {
-        return detections
+    ): List<DetectionResult> =
+        detections
             .map { detection ->
                 val centerScore = calculateCenterScore(detection, scanRoi)
                 // Combined score: 60% center, 40% confidence
                 val combinedScore = centerScore * 0.6f + detection.confidence * 0.4f
                 detection to combinedScore
-            }
-            .sortedByDescending { it.second }
+            }.sortedByDescending { it.second }
             .take(maxCount)
             .map { it.first }
-    }
 
     // Maximum number of preview boxes to show at once
     private const val MAX_PREVIEW_BOXES = 2

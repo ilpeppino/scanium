@@ -51,9 +51,10 @@ fun MotionEnhancedOverlay(
 ) {
     // Apply confidence-based filtering if enabled (developer debug feature)
     // This filters ONLY what is rendered - does NOT affect detection or aggregation logic
-    val filteredDetections = remember(detections, overlayAccuracyStep) {
-        ConfidenceTiers.filterDetections(detections, overlayAccuracyStep)
-    }
+    val filteredDetections =
+        remember(detections, overlayAccuracyStep) {
+            ConfidenceTiers.filterDetections(detections, overlayAccuracyStep)
+        }
     // Track if we have any detections (for scan frame appear)
     val hasDetections by remember(detections) {
         derivedStateOf { detections.isNotEmpty() }
@@ -190,9 +191,7 @@ class MotionOverlayState {
      * @param aggregatedId The item's aggregated ID
      * @return true if animation should run (first time seeing this ID)
      */
-    fun shouldAnimatePrice(aggregatedId: String): Boolean {
-        return !animatedPrices.contains(aggregatedId)
-    }
+    fun shouldAnimatePrice(aggregatedId: String): Boolean = !animatedPrices.contains(aggregatedId)
 
     /**
      * Mark price as animated for this item.
@@ -234,6 +233,4 @@ class MotionOverlayState {
  * Remember a [MotionOverlayState] instance scoped to the composition.
  */
 @Composable
-fun rememberMotionOverlayState(): MotionOverlayState {
-    return remember { MotionOverlayState() }
-}
+fun rememberMotionOverlayState(): MotionOverlayState = remember { MotionOverlayState() }

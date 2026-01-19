@@ -1,9 +1,11 @@
 ***REMOVED*** GitHub Issue Templates for Review Findings
 
 **Note:** GitHub CLI authentication expired. Create these issues manually or run:
+
 ```bash
 gh auth login -h github.com
 ```
+
 Then execute the commands below.
 
 ---

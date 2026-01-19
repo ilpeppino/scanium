@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.map
 
 private val Context.itemsActionDataStore: DataStore<Preferences> by preferencesDataStore(name = "items_action_preferences")
 
-class ItemsActionPreferences(private val context: Context) {
+class ItemsActionPreferences(
+    private val context: Context,
+) {
     companion object {
         private val LAST_PRIMARY_ACTION_KEY = stringPreferencesKey("last_primary_action")
     }

@@ -7,7 +7,6 @@ import org.junit.Test
  * Tests for VisionEnrichmentState transitions and helper methods.
  */
 class VisionEnrichmentStateTest {
-
     @Test
     fun `initial state is Idle`() {
         val state: VisionEnrichmentState = VisionEnrichmentState.Idle
@@ -42,11 +41,12 @@ class VisionEnrichmentStateTest {
 
     @Test
     fun `Failed state has correct properties`() {
-        val state = VisionEnrichmentState.Failed(
-            itemId = "item-789",
-            error = "Network error",
-            isRetryable = true
-        )
+        val state =
+            VisionEnrichmentState.Failed(
+                itemId = "item-789",
+                error = "Network error",
+                isRetryable = true,
+            )
 
         assertThat(state.isFailed).isTrue()
         assertThat(state.isEnriching).isFalse()
@@ -79,11 +79,12 @@ class VisionEnrichmentStateTest {
     @Test
     fun `valid transition from Enriching to Failed`() {
         val enriching = VisionEnrichmentState.Enriching("item-1")
-        val failed = VisionEnrichmentState.Failed(
-            itemId = "item-1",
-            error = "Timeout",
-            isRetryable = true
-        )
+        val failed =
+            VisionEnrichmentState.Failed(
+                itemId = "item-1",
+                error = "Timeout",
+                isRetryable = true,
+            )
 
         val newState = enriching.transitionTo(failed)
 
@@ -104,11 +105,12 @@ class VisionEnrichmentStateTest {
 
     @Test
     fun `valid transition from Failed to Enriching for retry`() {
-        val failed = VisionEnrichmentState.Failed(
-            itemId = "item-1",
-            error = "Timeout",
-            isRetryable = true
-        )
+        val failed =
+            VisionEnrichmentState.Failed(
+                itemId = "item-1",
+                error = "Timeout",
+                isRetryable = true,
+            )
         val enriching = VisionEnrichmentState.Enriching("item-1")
 
         val newState = failed.transitionTo(enriching)

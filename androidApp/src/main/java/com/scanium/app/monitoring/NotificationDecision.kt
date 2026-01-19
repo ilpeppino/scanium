@@ -7,7 +7,6 @@ package com.scanium.app.monitoring
  * DEV-only: Used by the background health monitor.
  */
 object NotificationDecision {
-
     /**
      * Decision result for notification logic.
      */
@@ -16,7 +15,9 @@ object NotificationDecision {
         data object NoNotification : Decision()
 
         /** Send a failure notification */
-        data class NotifyFailure(val reason: String) : Decision()
+        data class NotifyFailure(
+            val reason: String,
+        ) : Decision()
 
         /** Send a recovery notification */
         data object NotifyRecovery : Decision()
@@ -94,7 +95,9 @@ object NotificationDecision {
             }
 
             // OK -> OK: No notification needed
-            else -> Decision.NoNotification
+            else -> {
+                Decision.NoNotification
+            }
         }
     }
 

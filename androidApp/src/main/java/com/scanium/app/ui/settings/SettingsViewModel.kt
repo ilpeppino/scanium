@@ -5,12 +5,13 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.BuildConfig
 import com.scanium.app.auth.AuthRepository
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
-import dagger.hilt.android.qualifiers.ApplicationContext
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.model.AiLanguageChoice
 import com.scanium.app.model.AppLanguage
@@ -33,8 +34,7 @@ import com.scanium.telemetry.TelemetrySeverity
 import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.ports.CrashPort
 import dagger.hilt.android.lifecycle.HiltViewModel
-import com.scanium.app.BuildConfig
-import com.scanium.app.config.FeatureFlags
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +43,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.io.File
 import javax.inject.Inject
 
 /**
@@ -116,8 +115,7 @@ class SettingsViewModel
                         "JSON" -> ExportFormat.JSON
                         else -> ExportFormat.ZIP
                     }
-                }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExportFormat.ZIP)
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExportFormat.ZIP)
 
         val allowAssistantImages: StateFlow<Boolean> =
             settingsRepository.allowAssistantImagesFlow
@@ -464,117 +462,119 @@ class SettingsViewModel
          * Built from individual flows using [buildSettingsSectionsState].
          * Preserves existing individual flows for backward compatibility.
          */
-        val sectionsState: StateFlow<SettingsSectionsState> = combine(
-            // Group 1: General section inputs
+        val sectionsState: StateFlow<SettingsSectionsState> =
             combine(
-                themeMode,
-                primaryLanguage,
-                primaryRegionCountry,
-                currentEdition,
-                entitlementState,
-            ) { theme, lang, region, edition, entitlement ->
-                GeneralInputs(theme, lang, region, edition, entitlement)
-            },
-            // Group 2: Assistant section inputs (part 1)
-            combine(
-                allowAssistant,
-                allowAssistantImages,
-                assistantLanguage,
-                assistantTone,
-                assistantCountryCode,
-            ) { allow, images, lang, tone, country ->
-                AssistantInputs1(allow, images, lang, tone, country)
-            },
-            // Group 3: Assistant section inputs (part 2)
-            combine(
-                assistantUnits,
-                assistantVerbosity,
-                voiceModeEnabled,
-                speakAnswersEnabled,
-                autoSendTranscript,
-            ) { units, verbosity, voice, speak, autoSend ->
-                AssistantInputs2(units, verbosity, voice, speak, autoSend)
-            },
-            // Group 4: Assistant section inputs (part 3) + Camera/Storage/Privacy
-            combine(
-                voiceLanguage,
-                assistantHapticsEnabled,
-                assistantPrerequisiteState,
-                showDetectionBoxes,
-                autoSaveEnabled,
-            ) { voiceLang, haptics, prereq, boxes, autoSave ->
-                MixedInputs1(voiceLang, haptics, prereq, boxes, autoSave)
-            },
-            // Group 5: Storage/Privacy/Developer
-            combine(
-                saveDirectoryUri,
-                exportFormat,
-                allowCloud,
-                shareDiagnostics,
-                isPrivacySafeModeActive,
-            ) { saveDir, format, cloud, diagnostics, privacySafe ->
-                MixedInputs2(saveDir, format, cloud, diagnostics, privacySafe)
-            },
-        ) { general, assistant1, assistant2, mixed1, mixed2 ->
-            // Additional inputs needed: sounds, developer mode, unified settings
-            val soundsVal = soundsEnabled.value
-            val devMode = isDeveloperMode.value
-            val aiLangSetting = aiLanguageSetting.value
-            val marketplaceSetting = marketplaceCountrySetting.value
-            val ttsSetting = ttsLanguageSetting.value
-            val effectiveAi = effectiveAiOutputLanguage.value
-            val effectiveMarket = effectiveMarketplaceCountry.value
-            val effectiveTts = effectiveTtsLanguage.value
+                // Group 1: General section inputs
+                combine(
+                    themeMode,
+                    primaryLanguage,
+                    primaryRegionCountry,
+                    currentEdition,
+                    entitlementState,
+                ) { theme, lang, region, edition, entitlement ->
+                    GeneralInputs(theme, lang, region, edition, entitlement)
+                },
+                // Group 2: Assistant section inputs (part 1)
+                combine(
+                    allowAssistant,
+                    allowAssistantImages,
+                    assistantLanguage,
+                    assistantTone,
+                    assistantCountryCode,
+                ) { allow, images, lang, tone, country ->
+                    AssistantInputs1(allow, images, lang, tone, country)
+                },
+                // Group 3: Assistant section inputs (part 2)
+                combine(
+                    assistantUnits,
+                    assistantVerbosity,
+                    voiceModeEnabled,
+                    speakAnswersEnabled,
+                    autoSendTranscript,
+                ) { units, verbosity, voice, speak, autoSend ->
+                    AssistantInputs2(units, verbosity, voice, speak, autoSend)
+                },
+                // Group 4: Assistant section inputs (part 3) + Camera/Storage/Privacy
+                combine(
+                    voiceLanguage,
+                    assistantHapticsEnabled,
+                    assistantPrerequisiteState,
+                    showDetectionBoxes,
+                    autoSaveEnabled,
+                ) { voiceLang, haptics, prereq, boxes, autoSave ->
+                    MixedInputs1(voiceLang, haptics, prereq, boxes, autoSave)
+                },
+                // Group 5: Storage/Privacy/Developer
+                combine(
+                    saveDirectoryUri,
+                    exportFormat,
+                    allowCloud,
+                    shareDiagnostics,
+                    isPrivacySafeModeActive,
+                ) { saveDir, format, cloud, diagnostics, privacySafe ->
+                    MixedInputs2(saveDir, format, cloud, diagnostics, privacySafe)
+                },
+            ) { general, assistant1, assistant2, mixed1, mixed2 ->
+                // Additional inputs needed: sounds, developer mode, unified settings
+                val soundsVal = soundsEnabled.value
+                val devMode = isDeveloperMode.value
+                val aiLangSetting = aiLanguageSetting.value
+                val marketplaceSetting = marketplaceCountrySetting.value
+                val ttsSetting = ttsLanguageSetting.value
+                val effectiveAi = effectiveAiOutputLanguage.value
+                val effectiveMarket = effectiveMarketplaceCountry.value
+                val effectiveTts = effectiveTtsLanguage.value
 
-            val inputs = SettingsInputs(
-                // General
-                themeMode = general.themeMode,
-                primaryLanguage = general.primaryLanguage,
-                primaryRegionCountry = general.primaryRegionCountry,
-                currentEdition = general.currentEdition,
-                entitlementState = general.entitlementState,
-                soundsEnabled = soundsVal,
-                // Assistant
-                allowAssistant = assistant1.allowAssistant,
-                allowAssistantImages = assistant1.allowAssistantImages,
-                assistantLanguage = assistant1.assistantLanguage,
-                assistantTone = assistant1.assistantTone,
-                assistantCountryCode = assistant1.assistantCountryCode,
-                assistantUnits = assistant2.assistantUnits,
-                assistantVerbosity = assistant2.assistantVerbosity,
-                voiceModeEnabled = assistant2.voiceModeEnabled,
-                speakAnswersEnabled = assistant2.speakAnswersEnabled,
-                autoSendTranscript = assistant2.autoSendTranscript,
-                voiceLanguage = mixed1.voiceLanguage,
-                assistantHapticsEnabled = mixed1.assistantHapticsEnabled,
-                assistantPrerequisiteState = mixed1.assistantPrerequisiteState,
-                aiLanguageSetting = aiLangSetting,
-                marketplaceCountrySetting = marketplaceSetting,
-                ttsLanguageSetting = ttsSetting,
-                effectiveAiOutputLanguage = effectiveAi,
-                effectiveMarketplaceCountry = effectiveMarket,
-                effectiveTtsLanguage = effectiveTts,
-                // Camera
-                showDetectionBoxes = mixed1.showDetectionBoxes,
-                // Storage
-                autoSaveEnabled = mixed1.autoSaveEnabled,
-                saveDirectoryUri = mixed2.saveDirectoryUri,
-                exportFormat = mixed2.exportFormat,
-                // Privacy
-                allowCloud = mixed2.allowCloud,
-                shareDiagnostics = mixed2.shareDiagnostics,
-                privacySafeModeActive = mixed2.privacySafeModeActive,
-                // Developer / Build flags
-                isDeveloperModeEnabled = devMode,
-                allowDeveloperMode = FeatureFlags.allowDeveloperMode,
-                isDebugBuild = BuildConfig.DEBUG,
+                val inputs =
+                    SettingsInputs(
+                        // General
+                        themeMode = general.themeMode,
+                        primaryLanguage = general.primaryLanguage,
+                        primaryRegionCountry = general.primaryRegionCountry,
+                        currentEdition = general.currentEdition,
+                        entitlementState = general.entitlementState,
+                        soundsEnabled = soundsVal,
+                        // Assistant
+                        allowAssistant = assistant1.allowAssistant,
+                        allowAssistantImages = assistant1.allowAssistantImages,
+                        assistantLanguage = assistant1.assistantLanguage,
+                        assistantTone = assistant1.assistantTone,
+                        assistantCountryCode = assistant1.assistantCountryCode,
+                        assistantUnits = assistant2.assistantUnits,
+                        assistantVerbosity = assistant2.assistantVerbosity,
+                        voiceModeEnabled = assistant2.voiceModeEnabled,
+                        speakAnswersEnabled = assistant2.speakAnswersEnabled,
+                        autoSendTranscript = assistant2.autoSendTranscript,
+                        voiceLanguage = mixed1.voiceLanguage,
+                        assistantHapticsEnabled = mixed1.assistantHapticsEnabled,
+                        assistantPrerequisiteState = mixed1.assistantPrerequisiteState,
+                        aiLanguageSetting = aiLangSetting,
+                        marketplaceCountrySetting = marketplaceSetting,
+                        ttsLanguageSetting = ttsSetting,
+                        effectiveAiOutputLanguage = effectiveAi,
+                        effectiveMarketplaceCountry = effectiveMarket,
+                        effectiveTtsLanguage = effectiveTts,
+                        // Camera
+                        showDetectionBoxes = mixed1.showDetectionBoxes,
+                        // Storage
+                        autoSaveEnabled = mixed1.autoSaveEnabled,
+                        saveDirectoryUri = mixed2.saveDirectoryUri,
+                        exportFormat = mixed2.exportFormat,
+                        // Privacy
+                        allowCloud = mixed2.allowCloud,
+                        shareDiagnostics = mixed2.shareDiagnostics,
+                        privacySafeModeActive = mixed2.privacySafeModeActive,
+                        // Developer / Build flags
+                        isDeveloperModeEnabled = devMode,
+                        allowDeveloperMode = FeatureFlags.allowDeveloperMode,
+                        isDebugBuild = BuildConfig.DEBUG,
+                    )
+                buildSettingsSectionsState(inputs)
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                buildSettingsSectionsState(defaultSettingsInputs()),
             )
-            buildSettingsSectionsState(inputs)
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            buildSettingsSectionsState(defaultSettingsInputs()),
-        )
 
         // Setters for Primary Settings
         fun setPrimaryRegionCountry(countryCode: String) {
@@ -776,9 +776,7 @@ class SettingsViewModel
          * @param activity The Activity context required for showing the Google Sign-In UI
          * @return Result indicating success or failure
          */
-        suspend fun signInWithGoogle(activity: android.app.Activity): Result<Unit> {
-            return authRepository.signInWithGoogle(activity)
-        }
+        suspend fun signInWithGoogle(activity: android.app.Activity): Result<Unit> = authRepository.signInWithGoogle(activity)
 
         /**
          * Phase C: Signs out the current user by calling backend logout and clearing local state.
@@ -810,9 +808,7 @@ class SettingsViewModel
          * Phase D: Delete the user's account (permanently deletes all data).
          * Returns Result indicating success or failure.
          */
-        suspend fun deleteAccount(): Result<Unit> {
-            return authRepository.deleteAccount()
-        }
+        suspend fun deleteAccount(): Result<Unit> = authRepository.deleteAccount()
 
         /**
          * Returns the currently signed-in user's info, or null if not signed in.
@@ -835,7 +831,9 @@ sealed class ConnectionTestState {
 
     object Success : ConnectionTestState()
 
-    data class Failed(val message: String) : ConnectionTestState()
+    data class Failed(
+        val message: String,
+    ) : ConnectionTestState()
 }
 
 // =========================================================================
@@ -886,46 +884,47 @@ internal data class MixedInputs2(
  * Creates default [SettingsInputs] for initial state.
  * Uses the same defaults as the individual StateFlow properties.
  */
-internal fun defaultSettingsInputs(): SettingsInputs = SettingsInputs(
-    // General
-    themeMode = ThemeMode.SYSTEM,
-    primaryLanguage = "en",
-    primaryRegionCountry = "NL",
-    currentEdition = UserEdition.FREE,
-    entitlementState = EntitlementState.DEFAULT,
-    soundsEnabled = true,
-    // Assistant
-    allowAssistant = false,
-    allowAssistantImages = false,
-    assistantLanguage = "EN",
-    assistantTone = AssistantTone.NEUTRAL,
-    assistantCountryCode = "NL",
-    assistantUnits = AssistantUnits.METRIC,
-    assistantVerbosity = AssistantVerbosity.NORMAL,
-    voiceModeEnabled = false,
-    speakAnswersEnabled = false,
-    autoSendTranscript = false,
-    voiceLanguage = "",
-    assistantHapticsEnabled = false,
-    assistantPrerequisiteState = AssistantPrerequisiteState.LOADING,
-    aiLanguageSetting = FollowOrCustom.followPrimary(),
-    marketplaceCountrySetting = FollowOrCustom.followPrimary(),
-    ttsLanguageSetting = TtsLanguageChoice.FollowAiLanguage,
-    effectiveAiOutputLanguage = "en",
-    effectiveMarketplaceCountry = "NL",
-    effectiveTtsLanguage = "en",
-    // Camera
-    showDetectionBoxes = true,
-    // Storage
-    autoSaveEnabled = false,
-    saveDirectoryUri = null,
-    exportFormat = ExportFormat.ZIP,
-    // Privacy
-    allowCloud = true,
-    shareDiagnostics = false,
-    privacySafeModeActive = false,
-    // Developer / Build flags
-    isDeveloperModeEnabled = false,
-    allowDeveloperMode = FeatureFlags.allowDeveloperMode,
-    isDebugBuild = BuildConfig.DEBUG,
-)
+internal fun defaultSettingsInputs(): SettingsInputs =
+    SettingsInputs(
+        // General
+        themeMode = ThemeMode.SYSTEM,
+        primaryLanguage = "en",
+        primaryRegionCountry = "NL",
+        currentEdition = UserEdition.FREE,
+        entitlementState = EntitlementState.DEFAULT,
+        soundsEnabled = true,
+        // Assistant
+        allowAssistant = false,
+        allowAssistantImages = false,
+        assistantLanguage = "EN",
+        assistantTone = AssistantTone.NEUTRAL,
+        assistantCountryCode = "NL",
+        assistantUnits = AssistantUnits.METRIC,
+        assistantVerbosity = AssistantVerbosity.NORMAL,
+        voiceModeEnabled = false,
+        speakAnswersEnabled = false,
+        autoSendTranscript = false,
+        voiceLanguage = "",
+        assistantHapticsEnabled = false,
+        assistantPrerequisiteState = AssistantPrerequisiteState.LOADING,
+        aiLanguageSetting = FollowOrCustom.followPrimary(),
+        marketplaceCountrySetting = FollowOrCustom.followPrimary(),
+        ttsLanguageSetting = TtsLanguageChoice.FollowAiLanguage,
+        effectiveAiOutputLanguage = "en",
+        effectiveMarketplaceCountry = "NL",
+        effectiveTtsLanguage = "en",
+        // Camera
+        showDetectionBoxes = true,
+        // Storage
+        autoSaveEnabled = false,
+        saveDirectoryUri = null,
+        exportFormat = ExportFormat.ZIP,
+        // Privacy
+        allowCloud = true,
+        shareDiagnostics = false,
+        privacySafeModeActive = false,
+        // Developer / Build flags
+        isDeveloperModeEnabled = false,
+        allowDeveloperMode = FeatureFlags.allowDeveloperMode,
+        isDebugBuild = BuildConfig.DEBUG,
+    )

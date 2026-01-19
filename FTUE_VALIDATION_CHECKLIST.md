@@ -1,6 +1,7 @@
 ***REMOVED*** FTUE Validation Checklist
 
-This checklist provides deterministic testing protocol to verify FTUE (First-Time User Experience) visibility and functionality.
+This checklist provides deterministic testing protocol to verify FTUE (First-Time User Experience)
+visibility and functionality.
 
 ***REMOVED******REMOVED*** Prerequisites
 
@@ -15,6 +16,7 @@ This checklist provides deterministic testing protocol to verify FTUE (First-Tim
 ***REMOVED******REMOVED******REMOVED*** Test 1: First Launch (No Items)
 
 **Steps:**
+
 1. Grant camera permission when prompted
 2. Wait 1 second for camera initialization
 3. **Expected:** ROI pulse hint appears in center of camera view
@@ -23,6 +25,7 @@ This checklist provides deterministic testing protocol to verify FTUE (First-Tim
 6. **Expected:** Tap shutter button → FTUE completes
 
 **Logs to verify:**
+
 ```
 FTUE: initialize: shouldStartFtue=true, hasExistingItems=false
 FTUE: FTUE starting: step=WAITING_ROI
@@ -32,6 +35,7 @@ FTUE: Camera FTUE sequence completed
 ```
 
 **Toast notifications (DEV build):**
+
 - "FTUE Camera step=WAITING_ROI"
 - "FTUE Camera step=ROI_HINT_SHOWN"
 - "FTUE Camera step=SHUTTER_HINT_SHOWN"
@@ -39,6 +43,7 @@ FTUE: Camera FTUE sequence completed
 ***REMOVED******REMOVED******REMOVED*** Test 2: Force FTUE (With Items)
 
 **Steps:**
+
 1. Complete Camera FTUE and capture at least 1 item
 2. Enable "Force First-Time Tour" in Developer Options
 3. Navigate back to camera
@@ -46,18 +51,21 @@ FTUE: Camera FTUE sequence completed
 5. **Expected:** Can dismiss with tap outside overlay
 
 **Verification:**
+
 - Force flag overrides completion status
 - FTUE triggers despite having items
 
 ***REMOVED******REMOVED******REMOVED*** Test 3: Reset FTUE
 
 **Steps:**
+
 1. Complete Camera FTUE normally
 2. Go to Developer Options → Reset Tour Progress
 3. Return to camera screen
 4. **Expected:** FTUE shows again from beginning (ROI → Shutter)
 
 **Logs to verify:**
+
 ```
 FTUE: initialize: shouldStartFtue=true, hasExistingItems=...
 FTUE: FTUE starting: step=WAITING_ROI
@@ -66,6 +74,7 @@ FTUE: FTUE starting: step=WAITING_ROI
 ***REMOVED******REMOVED******REMOVED*** Test 4: Early Flag Setting Fixed (Regression Test)
 
 **Steps:**
+
 1. Install clean build
 2. Open camera WITHOUT granting permission
 3. Check logs
@@ -75,6 +84,7 @@ FTUE: FTUE starting: step=WAITING_ROI
 7. **Expected:** FTUE now shows
 
 **Critical verification:**
+
 - Completion flag is NOT set when preconditions fail
 - FTUE appears after preconditions are met
 
@@ -85,16 +95,18 @@ FTUE: FTUE starting: step=WAITING_ROI
 ***REMOVED******REMOVED******REMOVED*** Test 1: First Visit With Items
 
 **Steps:**
+
 1. Capture at least 1 item from camera
 2. Navigate to Items List screen
 3. **Expected:** Tap hint appears on first item row
 4. **Expected:** Auto-advances through all 4 steps:
-   - Tap to edit
-   - Swipe right to delete (with nudge animation)
-   - Long-press to select
-   - Share/export goal
+    - Tap to edit
+    - Swipe right to delete (with nudge animation)
+    - Long-press to select
+    - Share/export goal
 
 **Logs to verify:**
+
 ```
 FTUE: initialize: shouldStartFtue=true, itemCount=1
 FTUE: FTUE starting: step=WAITING_TAP_HINT
@@ -107,6 +119,7 @@ FTUE: Step transition: SHARE_GOAL_SHOWN, overlayVisible=true
 ***REMOVED******REMOVED******REMOVED*** Test 2: Empty List (No FTUE)
 
 **Steps:**
+
 1. Reset FTUE
 2. Delete all items from list
 3. Navigate to Items List screen
@@ -114,6 +127,7 @@ FTUE: Step transition: SHARE_GOAL_SHOWN, overlayVisible=true
 5. **Expected:** Log shows "FTUE not starting (preconditions not met)"
 
 **Verification:**
+
 - FTUE correctly skips when no items exist
 - No completion flag set
 
@@ -124,6 +138,7 @@ FTUE: Step transition: SHARE_GOAL_SHOWN, overlayVisible=true
 ***REMOVED******REMOVED******REMOVED*** Test 1: First Edit
 
 **Steps:**
+
 1. Reset FTUE
 2. Tap on an item to open edit screen
 3. **Expected:** Details improvement hint appears on first editable field
@@ -131,6 +146,7 @@ FTUE: Step transition: SHARE_GOAL_SHOWN, overlayVisible=true
 5. **Expected:** Completes automatically after showing both hints
 
 **Logs to verify:**
+
 ```
 FTUE: initialize: shouldStartFtue=true, isDevBuild=true
 FTUE: FTUE starting: step=WAITING_DETAILS_HINT
@@ -146,6 +162,7 @@ FTUE: Edit Item FTUE sequence completed
 ***REMOVED******REMOVED******REMOVED*** Test 1: First Settings Visit
 
 **Steps:**
+
 1. Reset FTUE
 2. Navigate to Settings screen
 3. **Expected:** Language hint appears on "Region & language" row
@@ -153,6 +170,7 @@ FTUE: Edit Item FTUE sequence completed
 5. **Expected:** Completes automatically
 
 **Logs to verify:**
+
 ```
 FTUE: initialize: shouldStartFtue=true
 FTUE: FTUE starting: step=WAITING_LANGUAGE_HINT
@@ -167,6 +185,7 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 ***REMOVED******REMOVED******REMOVED*** Test 1: FTUE Debug State Display
 
 **Steps:**
+
 1. Enable FTUE (reset or force)
 2. Navigate to Developer Options
 3. Scroll to "FTUE Debug Info" section
@@ -177,35 +196,41 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 8. **Expected:** "Overlay Rendered" shows "Yes" when FTUE is active
 
 **Verification:**
+
 - Debug state updates in real-time
 - All fields display accurate information
 
 ***REMOVED******REMOVED******REMOVED*** Test 2: Debug Bounds Visualization
 
 **Steps:**
+
 1. Enable "Show FTUE Debug Bounds" in Developer Options
 2. Trigger any FTUE sequence
 3. **Expected:** White outline rectangle visible around spotlight target
 4. **Expected:** Logs show target bounds, screen size, geometry calculations
 
 **Verification:**
+
 - Debug visualization helps identify misaligned overlays
 - Bounds are accurate (not offscreen or zero-sized)
 
 ***REMOVED******REMOVED******REMOVED*** Test 3: Toast Notifications (DEV Build Only)
 
 **Steps:**
+
 1. Trigger any FTUE sequence in DEV build
 2. **Expected:** Toast appears when step starts: "FTUE [Screen] step=[STEP_NAME]"
 3. **Expected:** Toast updates on each step transition
 
 **Example toasts:**
+
 - "FTUE Camera step=WAITING_ROI"
 - "FTUE ItemsList step=TAP_HINT_SHOWN"
 - "FTUE EditItem step=DETAILS_HINT_SHOWN"
 - "FTUE Settings step=LANGUAGE_HINT_SHOWN"
 
 **Verification:**
+
 - Toasts confirm FTUE is triggering
 - Removes ambiguity about invisible FTUE
 
@@ -218,6 +243,7 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 **Critical test to verify the primary bug fix.**
 
 **Steps:**
+
 1. Install clean build
 2. Open camera with `hasCameraPermission=false`
 3. Check logs
@@ -227,17 +253,20 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 7. **Expected:** FTUE now shows
 
 **Similar tests for other screens:**
+
 - Items List: Open with 0 items → no flag set
 - Edit Item: Open with `shouldStartFtue=false` → no flag set
 - Settings: Open with `shouldStartFtue=false` → no flag set
 
 **Verification:**
+
 - Completion flags ONLY set after actual completion or dismissal
 - Flags NOT set when preconditions fail
 
 ***REMOVED******REMOVED******REMOVED*** Test 2: Flags Set on Actual Completion
 
 **Steps:**
+
 1. Complete any FTUE sequence normally (all steps)
 2. Check logs
 3. **Expected:** "[Screen] FTUE sequence completed" logged
@@ -246,12 +275,14 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 6. **Expected:** FTUE doesn't show again
 
 **Verification:**
+
 - Flags correctly mark tour as seen after completion
 - FTUE doesn't repeat unnecessarily
 
 ***REMOVED******REMOVED******REMOVED*** Test 3: Flags Set on Dismiss
 
 **Steps:**
+
 1. Start any FTUE sequence
 2. Tap "Skip" or dismiss overlay
 3. Check logs
@@ -260,6 +291,7 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 6. **Expected:** FTUE doesn't show
 
 **Verification:**
+
 - User can permanently dismiss FTUE
 - Dismissal is respected across sessions
 

@@ -60,20 +60,21 @@ class ClassificationOrchestrator(
 
     // Map Android ClassificationMode to shared ClassificationMode
     private val portableModeFlow: StateFlow<com.scanium.shared.core.models.classification.ClassificationMode> =
-        modeFlow.map { androidMode ->
-            when (androidMode) {
-                ClassificationMode.CLOUD -> com.scanium.shared.core.models.classification.ClassificationMode.CLOUD
-                ClassificationMode.ON_DEVICE -> com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
-            }
-        }.stateIn(
-            scope = scope,
-            started = SharingStarted.Lazily,
-            initialValue =
-                when (modeFlow.value) {
+        modeFlow
+            .map { androidMode ->
+                when (androidMode) {
                     ClassificationMode.CLOUD -> com.scanium.shared.core.models.classification.ClassificationMode.CLOUD
                     ClassificationMode.ON_DEVICE -> com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
-                },
-        )
+                }
+            }.stateIn(
+                scope = scope,
+                started = SharingStarted.Lazily,
+                initialValue =
+                    when (modeFlow.value) {
+                        ClassificationMode.CLOUD -> com.scanium.shared.core.models.classification.ClassificationMode.CLOUD
+                        ClassificationMode.ON_DEVICE -> com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
+                    },
+            )
 
     // Delegate to shared orchestrator
     private val sharedOrchestrator =
@@ -114,7 +115,8 @@ class ClassificationOrchestrator(
         items: List<AggregatedItem>,
         onResult: (AggregatedItem, ClassificationResult) -> Unit,
     ) {
-        items.filter { it.thumbnail != null && shouldClassify(it.aggregatedId) }
+        items
+            .filter { it.thumbnail != null && shouldClassify(it.aggregatedId) }
             .forEach { item ->
                 val thumbnail = item.thumbnail ?: return@forEach
 
@@ -190,8 +192,8 @@ class ClassificationOrchestrator(
      */
     private fun convertToAndroidResult(
         sharedResult: com.scanium.shared.core.models.classification.ClassificationResult,
-    ): ClassificationResult {
-        return ClassificationResult(
+    ): ClassificationResult =
+        ClassificationResult(
             label = sharedResult.label,
             confidence = sharedResult.confidence,
             category = convertToAndroidCategory(sharedResult.itemCategory),
@@ -202,36 +204,32 @@ class ClassificationOrchestrator(
             errorMessage = sharedResult.errorMessage,
             requestId = sharedResult.requestId,
         )
-    }
 
     /**
      * Convert shared ItemCategory to Android ItemCategory.
      * Since com.scanium.app.ml.ItemCategory is a typealias for SharedItemCategory, they're the same type.
      */
-    private fun convertToAndroidCategory(sharedCategory: com.scanium.shared.core.models.ml.ItemCategory): com.scanium.app.ml.ItemCategory {
-        return sharedCategory
-    }
+    private fun convertToAndroidCategory(sharedCategory: com.scanium.shared.core.models.ml.ItemCategory): com.scanium.app.ml.ItemCategory =
+        sharedCategory
 
     /**
      * Convert shared ClassificationSource to Android ClassificationMode.
      */
-    private fun convertToAndroidMode(source: ClassificationSource): ClassificationMode {
-        return when (source) {
+    private fun convertToAndroidMode(source: ClassificationSource): ClassificationMode =
+        when (source) {
             ClassificationSource.CLOUD -> ClassificationMode.CLOUD
             ClassificationSource.ON_DEVICE, ClassificationSource.FALLBACK -> ClassificationMode.ON_DEVICE
         }
-    }
 
     /**
      * Convert shared ClassificationStatus to Android ClassificationStatus.
      */
     private fun convertToAndroidStatus(
         sharedStatus: com.scanium.shared.core.models.classification.ClassificationStatus,
-    ): ClassificationStatus {
-        return when (sharedStatus) {
+    ): ClassificationStatus =
+        when (sharedStatus) {
             com.scanium.shared.core.models.classification.ClassificationStatus.SUCCESS -> ClassificationStatus.SUCCESS
             com.scanium.shared.core.models.classification.ClassificationStatus.FAILED -> ClassificationStatus.FAILED
             com.scanium.shared.core.models.classification.ClassificationStatus.SKIPPED -> ClassificationStatus.FAILED
         }
-    }
 }

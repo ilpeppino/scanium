@@ -13,7 +13,6 @@ import org.robolectric.annotation.Config
  */
 @RunWith(RobolectricTestRunner::class)
 class NotificationPermissionLogicTest {
-
     /**
      * Decision logic for whether notification permission should be requested.
      */
@@ -41,40 +40,44 @@ class NotificationPermissionLogicTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.TIRAMISU]) // Android 13
     fun `Android 13+ without permission - should request`() {
-        val result = shouldRequestNotificationPermission(
-            sdkVersion = Build.VERSION_CODES.TIRAMISU,
-            hasPermission = false,
-        )
+        val result =
+            shouldRequestNotificationPermission(
+                sdkVersion = Build.VERSION_CODES.TIRAMISU,
+                hasPermission = false,
+            )
         assertThat(result).isTrue()
     }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.TIRAMISU]) // Android 13
     fun `Android 13+ with permission - should not request`() {
-        val result = shouldRequestNotificationPermission(
-            sdkVersion = Build.VERSION_CODES.TIRAMISU,
-            hasPermission = true,
-        )
+        val result =
+            shouldRequestNotificationPermission(
+                sdkVersion = Build.VERSION_CODES.TIRAMISU,
+                hasPermission = true,
+            )
         assertThat(result).isFalse()
     }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.S]) // Android 12
     fun `Android 12 without permission - should not request`() {
-        val result = shouldRequestNotificationPermission(
-            sdkVersion = Build.VERSION_CODES.S,
-            hasPermission = false,
-        )
+        val result =
+            shouldRequestNotificationPermission(
+                sdkVersion = Build.VERSION_CODES.S,
+                hasPermission = false,
+            )
         assertThat(result).isFalse()
     }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE]) // Android 14
     fun `Android 14 without permission - should request`() {
-        val result = shouldRequestNotificationPermission(
-            sdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-            hasPermission = false,
-        )
+        val result =
+            shouldRequestNotificationPermission(
+                sdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
+                hasPermission = false,
+            )
         assertThat(result).isTrue()
     }
 
@@ -84,37 +87,41 @@ class NotificationPermissionLogicTest {
 
     @Test
     fun `no permission - should show settings CTA`() {
-        val result = shouldShowSettingsCTA(
-            hasPermission = false,
-            areNotificationsEnabled = true,
-        )
+        val result =
+            shouldShowSettingsCTA(
+                hasPermission = false,
+                areNotificationsEnabled = true,
+            )
         assertThat(result).isTrue()
     }
 
     @Test
     fun `notifications disabled at system level - should show settings CTA`() {
-        val result = shouldShowSettingsCTA(
-            hasPermission = true,
-            areNotificationsEnabled = false,
-        )
+        val result =
+            shouldShowSettingsCTA(
+                hasPermission = true,
+                areNotificationsEnabled = false,
+            )
         assertThat(result).isTrue()
     }
 
     @Test
     fun `both permission denied and notifications disabled - should show settings CTA`() {
-        val result = shouldShowSettingsCTA(
-            hasPermission = false,
-            areNotificationsEnabled = false,
-        )
+        val result =
+            shouldShowSettingsCTA(
+                hasPermission = false,
+                areNotificationsEnabled = false,
+            )
         assertThat(result).isTrue()
     }
 
     @Test
     fun `permission granted and notifications enabled - should not show settings CTA`() {
-        val result = shouldShowSettingsCTA(
-            hasPermission = true,
-            areNotificationsEnabled = true,
-        )
+        val result =
+            shouldShowSettingsCTA(
+                hasPermission = true,
+                areNotificationsEnabled = true,
+            )
         assertThat(result).isFalse()
     }
 

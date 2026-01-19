@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -52,9 +51,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.app.items.state.ItemFieldUpdate
 import com.scanium.app.model.toImageBitmap
@@ -92,43 +91,47 @@ fun EditItemsScreen(
     itemsViewModel: ItemsViewModel,
 ) {
     val allItems by itemsViewModel.items.collectAsState()
-    val selectedItems = remember(allItems, itemIds) {
-        allItems.filter { it.id in itemIds }
-    }
+    val selectedItems =
+        remember(allItems, itemIds) {
+            allItems.filter { it.id in itemIds }
+        }
 
     // Draft state for each item (keyed by item ID)
-    val drafts = remember(selectedItems) {
-        mutableStateMapOf<String, ItemDraft>().apply {
-            selectedItems.forEach { item ->
-                // Pre-fill label from vision attributes if empty
-                val suggestedLabel = if (item.labelText.isNullOrBlank()) {
-                    buildSuggestedLabel(item)
-                } else {
-                    item.labelText
+    val drafts =
+        remember(selectedItems) {
+            mutableStateMapOf<String, ItemDraft>().apply {
+                selectedItems.forEach { item ->
+                    // Pre-fill label from vision attributes if empty
+                    val suggestedLabel =
+                        if (item.labelText.isNullOrBlank()) {
+                            buildSuggestedLabel(item)
+                        } else {
+                            item.labelText
+                        }
+
+                    // Pre-fill recognized text from vision attributes if empty
+                    val suggestedRecognizedText = item.recognizedText ?: item.visionAttributes.ocrText ?: ""
+
+                    put(
+                        item.id,
+                        ItemDraft(
+                            labelText = suggestedLabel.orEmpty(),
+                            recognizedText = suggestedRecognizedText,
+                            barcodeValue = item.barcodeValue.orEmpty(),
+                            priceText = item.userPriceCents?.let { formatCentsToPrice(it) } ?: "",
+                            condition = item.condition,
+                            category = item.category,
+                        ),
+                    )
                 }
-
-                // Pre-fill recognized text from vision attributes if empty
-                val suggestedRecognizedText = item.recognizedText ?: item.visionAttributes.ocrText ?: ""
-
-                put(
-                    item.id,
-                    ItemDraft(
-                        labelText = suggestedLabel.orEmpty(),
-                        recognizedText = suggestedRecognizedText,
-                        barcodeValue = item.barcodeValue.orEmpty(),
-                        priceText = item.userPriceCents?.let { formatCentsToPrice(it) } ?: "",
-                        condition = item.condition,
-                        category = item.category,
-                    ),
-                )
             }
         }
-    }
 
-    val pagerState = rememberPagerState(
-        initialPage = 0,
-        pageCount = { selectedItems.size },
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = 0,
+            pageCount = { selectedItems.size },
+        )
 
     Scaffold(
         topBar = {
@@ -175,16 +178,18 @@ fun EditItemsScreen(
         },
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             if (selectedItems.isEmpty()) {
                 // Empty state
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -197,19 +202,21 @@ fun EditItemsScreen(
                 // Pager for swiping between items
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                 ) { page ->
                     val item = selectedItems[page]
-                    val draft = drafts[item.id] ?: ItemDraft(
-                        labelText = "",
-                        recognizedText = "",
-                        barcodeValue = "",
-                        priceText = "",
-                        condition = null,
-                        category = item.category,
-                    )
+                    val draft =
+                        drafts[item.id] ?: ItemDraft(
+                            labelText = "",
+                            recognizedText = "",
+                            barcodeValue = "",
+                            priceText = "",
+                            condition = null,
+                            category = item.category,
+                        )
 
                     ItemEditPage(
                         item = item,
@@ -223,25 +230,28 @@ fun EditItemsScreen(
                 // Page indicator for multiple items
                 if (selectedItems.size > 1) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
                         horizontalArrangement = Arrangement.Center,
                     ) {
                         repeat(selectedItems.size) { index ->
                             val isSelected = pagerState.currentPage == index
                             Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 4.dp)
-                                    .size(if (isSelected) 10.dp else 8.dp)
-                                    .background(
-                                        color = if (isSelected) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                                        },
-                                        shape = MaterialTheme.shapes.small,
-                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 4.dp)
+                                        .size(if (isSelected) 10.dp else 8.dp)
+                                        .background(
+                                            color =
+                                                if (isSelected) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                                },
+                                            shape = MaterialTheme.shapes.small,
+                                        ),
                             )
                         }
                     }
@@ -254,10 +264,11 @@ fun EditItemsScreen(
                 shadowElevation = 8.dp,
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     OutlinedButton(
@@ -270,24 +281,25 @@ fun EditItemsScreen(
                     Button(
                         onClick = {
                             // Apply all drafts
-                            val updates = drafts.mapValues { (itemId, draft) ->
-                                val originalItem = selectedItems.find { it.id == itemId }
-                                val priceCents = parsePriceToCents(draft.priceText)
-                                val originalPriceCents = originalItem?.userPriceCents
-                                val originalCondition = originalItem?.condition
+                            val updates =
+                                drafts.mapValues { (itemId, draft) ->
+                                    val originalItem = selectedItems.find { it.id == itemId }
+                                    val priceCents = parsePriceToCents(draft.priceText)
+                                    val originalPriceCents = originalItem?.userPriceCents
+                                    val originalCondition = originalItem?.condition
 
-                                val originalCategory = originalItem?.category
-                                ItemFieldUpdate(
-                                    labelText = draft.labelText.ifBlank { null },
-                                    recognizedText = draft.recognizedText.ifBlank { null },
-                                    barcodeValue = draft.barcodeValue.ifBlank { null },
-                                    userPriceCents = priceCents,
-                                    clearUserPriceCents = priceCents == null && originalPriceCents != null,
-                                    condition = draft.condition,
-                                    clearCondition = draft.condition == null && originalCondition != null,
-                                    category = if (draft.category != originalCategory) draft.category else null,
-                                )
-                            }
+                                    val originalCategory = originalItem?.category
+                                    ItemFieldUpdate(
+                                        labelText = draft.labelText.ifBlank { null },
+                                        recognizedText = draft.recognizedText.ifBlank { null },
+                                        barcodeValue = draft.barcodeValue.ifBlank { null },
+                                        userPriceCents = priceCents,
+                                        clearUserPriceCents = priceCents == null && originalPriceCents != null,
+                                        condition = draft.condition,
+                                        clearCondition = draft.condition == null && originalCondition != null,
+                                        category = if (draft.category != originalCategory) draft.category else null,
+                                    )
+                                }
                             itemsViewModel.updateItemsFields(updates)
                             onBack()
                         },
@@ -316,35 +328,39 @@ private fun ItemEditPage(
     val scrollState = rememberScrollState()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Item thumbnail - constrained height for compact layout
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         ) {
             val thumbnailBitmap = (item.thumbnailRef ?: item.thumbnail).toImageBitmap()
             if (thumbnailBitmap != null) {
                 Image(
                     bitmap = thumbnailBitmap,
                     contentDescription = stringResource(R.string.items_thumbnail),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp)
-                        .clip(MaterialTheme.shapes.medium),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .clip(MaterialTheme.shapes.medium),
                     contentScale = ContentScale.Fit,
                 )
             } else {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(160.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -408,9 +424,10 @@ private fun ItemEditPage(
             value = draft.recognizedText,
             onValueChange = { onDraftChange(draft.copy(recognizedText = it)) },
             label = { Text(stringResource(R.string.edit_item_recognized_text_label)) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 56.dp, max = 120.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp, max = 120.dp),
             singleLine = false,
             maxLines = 4,
         )
@@ -453,9 +470,10 @@ private fun ConditionDropdown(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
             singleLine = true,
         )
 
@@ -561,9 +579,10 @@ private fun CategoryDropdown(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
             singleLine = true,
         )
 

@@ -96,7 +96,8 @@ class ObjectTracker(
             if (config.enableVerboseLogging) {
                 logger.i(
                     TAG,
-                    ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}, sharpness=$frameSharpness",
+                    ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, " +
+                        "existingCandidates=${candidates.size}, sharpness=$frameSharpness",
                 )
             }
 
@@ -163,7 +164,9 @@ class ObjectTracker(
                 if (config.enableVerboseLogging) {
                     logger.i(
                         TAG,
-                        "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}",
+                        "    Processing detection $index: trackingId=${detection.trackingId}, " +
+                            "category=${detection.category}, confidence=${detection.confidence}, " +
+                            "area=${detection.normalizedBoxArea}",
                     )
                 }
 
@@ -206,7 +209,9 @@ class ObjectTracker(
                     if (config.enableVerboseLogging) {
                         logger.i(
                             TAG,
-                            "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}",
+                            "    MATCHED existing candidate ${matchedCandidate.internalId}: " +
+                                "seenCount=${matchedCandidate.seenCount}, " +
+                                "maxConfidence=${matchedCandidate.maxConfidence}",
                         )
                     }
 
@@ -226,7 +231,9 @@ class ObjectTracker(
                             if (config.enableVerboseLogging) {
                                 logger.i(
                                     TAG,
-                                    "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames",
+                                    "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: " +
+                                        "${matchedCandidate.category} (${matchedCandidate.labelText}) " +
+                                        "after ${matchedCandidate.seenCount} frames",
                                 )
                             }
                             telemetry?.event(
@@ -471,7 +478,8 @@ class ObjectTracker(
                                 logger.i(
                                     TAG,
                                     "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: " +
-                                        "${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames",
+                                        "${matchedCandidate.category} (${matchedCandidate.labelText}) " +
+                                        "after ${matchedCandidate.seenCount} frames",
                                 )
                             }
                             telemetry?.event(

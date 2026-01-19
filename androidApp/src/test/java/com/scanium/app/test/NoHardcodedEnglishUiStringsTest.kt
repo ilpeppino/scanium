@@ -1,7 +1,7 @@
 package com.scanium.app.test
 
-import org.junit.Test
 import org.junit.Assert.fail
+import org.junit.Test
 import java.io.File
 
 /**
@@ -14,7 +14,6 @@ import java.io.File
  * or internal string operations.
  */
 class NoHardcodedEnglishUiStringsTest {
-
     @Test
     fun `no hardcoded Text() strings in selling UI`() {
         val sourceDir = File("androidApp/src/main/java/com/scanium/app/selling")
@@ -44,26 +43,27 @@ class NoHardcodedEnglishUiStringsTest {
                     }
 
                     // Check for common hardcoded strings that should be resources
-                    val hardcodedPatterns = listOf(
-                        "Text(\"Copy" to "button_copy",
-                        "Text(\"Apply" to "button_apply",
-                        "Text(\"Cancel" to "button_cancel",
-                        "Text(\"Retry" to "button_retry",
-                        "Text(\"Dismiss" to "button_dismiss",
-                        "Text(\"Delete" to "common_delete",
-                        "Text(\"Save" to "button_save",
-                        "Text(\"Export" to "ebay_export",
-                        "Text(\"Posting Assist" to "posting_assist",
-                        "Text(\"Draft review" to "dialog_title_draft_review",
-                        "Text(\"Completeness" to "label_completeness",
-                        "Text(\"Required" to "posting_assist_required",
-                        "Text(\"Category" to "form_label_category",
-                        "Text(\"Title" to "form_label_title",
-                        "Text(\"Price" to "ebay_export_price",
-                        "Text(\"Description" to "form_label_description",
-                        "Text(\"Condition" to "form_label_condition",
-                        "Text(\"No draft" to "draft_review_no_draft"
-                    )
+                    val hardcodedPatterns =
+                        listOf(
+                            "Text(\"Copy" to "button_copy",
+                            "Text(\"Apply" to "button_apply",
+                            "Text(\"Cancel" to "button_cancel",
+                            "Text(\"Retry" to "button_retry",
+                            "Text(\"Dismiss" to "button_dismiss",
+                            "Text(\"Delete" to "common_delete",
+                            "Text(\"Save" to "button_save",
+                            "Text(\"Export" to "ebay_export",
+                            "Text(\"Posting Assist" to "posting_assist",
+                            "Text(\"Draft review" to "dialog_title_draft_review",
+                            "Text(\"Completeness" to "label_completeness",
+                            "Text(\"Required" to "posting_assist_required",
+                            "Text(\"Category" to "form_label_category",
+                            "Text(\"Title" to "form_label_title",
+                            "Text(\"Price" to "ebay_export_price",
+                            "Text(\"Description" to "form_label_description",
+                            "Text(\"Condition" to "form_label_condition",
+                            "Text(\"No draft" to "draft_review_no_draft",
+                        )
 
                     hardcodedPatterns.forEach { (pattern, resourceKey) ->
                         if (line.contains(pattern) &&
@@ -79,14 +79,15 @@ class NoHardcodedEnglishUiStringsTest {
         }
 
         if (violations.isNotEmpty()) {
-            val message = buildString {
-                appendLine("Found ${violations.size} hardcoded English UI string(s) that should use string resources:")
-                appendLine()
-                violations.forEach { appendLine("  $it") }
-                appendLine()
-                appendLine("Action: Replace hardcoded strings with stringResource(R.string.*) calls")
-                appendLine("Reference: androidApp/src/main/res/values/strings.xml")
-            }
+            val message =
+                buildString {
+                    appendLine("Found ${violations.size} hardcoded English UI string(s) that should use string resources:")
+                    appendLine()
+                    violations.forEach { appendLine("  $it") }
+                    appendLine()
+                    appendLine("Action: Replace hardcoded strings with stringResource(R.string.*) calls")
+                    appendLine("Reference: androidApp/src/main/res/values/strings.xml")
+                }
             fail(message)
         }
     }
@@ -114,7 +115,7 @@ class NoHardcodedEnglishUiStringsTest {
             if (violations.isNotEmpty()) {
                 fail(
                     "Found hardcoded pricing strings in CustomerSafeCopyFormatter:\n" +
-                        violations.joinToString("\n")
+                        violations.joinToString("\n"),
                 )
             }
         }
@@ -129,7 +130,7 @@ class NoHardcodedEnglishUiStringsTest {
             if (content.contains("\"Based on \$contextHint\"") && !content.contains("stringResource")) {
                 fail(
                     "Found hardcoded 'Based on' string in CustomerSafeCopyPolicy that should use " +
-                        "stringResource(R.string.pricing_based_on_conditions)"
+                        "stringResource(R.string.pricing_based_on_conditions)",
                 )
             }
         }
@@ -145,14 +146,14 @@ class NoHardcodedEnglishUiStringsTest {
      */
     private fun isValidException(line: String): Boolean {
         return line.trim().startsWith("//") ||
-                line.contains("contentDescription") ||
-                line.contains("BuildConfig") ||
-                line.contains("\"\$") ||  // Template strings in logging
-                line.contains("// ") ||   // Inline comments
-                line.contains("tag = ") || // Logging tags
-                line.contains("message = ") ||  // Error/log messages
-                line.contains("BuildConfig") ||
-                line.contains("\"Mock\"") || // Mock/debug specific strings
-                line.contains("TAG")  // Logging TAG variables
+            line.contains("contentDescription") ||
+            line.contains("BuildConfig") ||
+            line.contains("\"\$") || // Template strings in logging
+            line.contains("// ") || // Inline comments
+            line.contains("tag = ") || // Logging tags
+            line.contains("message = ") || // Error/log messages
+            line.contains("BuildConfig") ||
+            line.contains("\"Mock\"") || // Mock/debug specific strings
+            line.contains("TAG") // Logging TAG variables
     }
 }

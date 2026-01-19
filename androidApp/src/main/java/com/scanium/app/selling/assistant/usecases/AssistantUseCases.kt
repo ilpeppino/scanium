@@ -19,7 +19,6 @@ import com.scanium.shared.core.models.assistant.AttributeSource
  * explicitly noted for Context-dependent localization.
  */
 object AssistantUseCases {
-
     /**
      * Compute context-aware suggested questions based on item category.
      *
@@ -43,20 +42,28 @@ object AssistantUseCases {
 
         // Category-specific suggestions
         when {
-            category.contains("electronic") || category.contains("phone") || category.contains("computer") || category.contains("camera") -> {
+            category.contains(
+                "electronic",
+            ) || category.contains("phone") || category.contains("computer") || category.contains("camera") -> {
                 if (!hasBrand) suggestions.add("What brand and model is this?")
                 suggestions.add("What's the storage capacity?")
                 suggestions.add("Does it power on? Any screen issues?")
                 suggestions.add("Are all accessories included?")
                 suggestions.add("Any scratches or dents?")
             }
-            category.contains("furniture") || category.contains("home") || category.contains("decor") || category.contains("chair") || category.contains("table") -> {
+
+            category.contains("furniture") || category.contains("home") || category.contains("decor") || category.contains("chair") ||
+                category.contains(
+                    "table",
+                )
+            -> {
                 suggestions.add("What are the dimensions (H x W x D)?")
                 suggestions.add("What material is it made of?")
                 suggestions.add("Any scratches, stains, or wear?")
                 suggestions.add("Is assembly required?")
                 if (!hasColor) suggestions.add("What color/finish is it?")
             }
+
             category.contains("fashion") || category.contains("clothing") || category.contains("shoes") || category.contains("apparel") -> {
                 if (!hasBrand) suggestions.add("What brand is this?")
                 suggestions.add("What size is this?")
@@ -64,24 +71,28 @@ object AssistantUseCases {
                 suggestions.add("What's the fabric/material?")
                 suggestions.add("Any signs of wear or defects?")
             }
+
             category.contains("toy") || category.contains("game") || category.contains("puzzle") -> {
                 suggestions.add("Is it complete with all pieces?")
                 suggestions.add("What age range is it for?")
                 suggestions.add("Does it require batteries?")
                 if (!hasBrand) suggestions.add("What brand is this?")
             }
+
             category.contains("book") || category.contains("media") || category.contains("dvd") || category.contains("vinyl") -> {
                 suggestions.add("Who is the author/artist?")
                 suggestions.add("Is this a first edition?")
                 suggestions.add("Condition of binding/pages?")
                 suggestions.add("Any markings or highlights?")
             }
+
             category.contains("sport") || category.contains("fitness") || category.contains("outdoor") || category.contains("bike") -> {
                 if (!hasBrand) suggestions.add("What brand is this?")
                 suggestions.add("What size is it?")
                 suggestions.add("Any damage or wear?")
                 suggestions.add("Does it include accessories?")
             }
+
             else -> {
                 // General fallback suggestions
                 if (!hasBrand) suggestions.add("What brand is this?")
@@ -188,6 +199,7 @@ object AssistantUseCases {
         val merged = linkedMapOf<String, ItemAttributeSnapshot>()
 
         fun keyFor(attributeKey: String) = attributeKey.lowercase()
+
         fun addIfMissing(attribute: ItemAttributeSnapshot) {
             val key = keyFor(attribute.key)
             if (key !in merged) {
@@ -197,12 +209,13 @@ object AssistantUseCases {
 
         item.attributes.forEach { (key, attr) ->
             val source = if (attr.source == "user") AttributeSource.USER else AttributeSource.DETECTED
-            merged[keyFor(key)] = ItemAttributeSnapshot(
-                key = key,
-                value = attr.value,
-                confidence = attr.confidence,
-                source = source,
-            )
+            merged[keyFor(key)] =
+                ItemAttributeSnapshot(
+                    key = key,
+                    value = attr.value,
+                    confidence = attr.confidence,
+                    source = source,
+                )
         }
 
         // Add localized condition
@@ -254,7 +267,11 @@ object AssistantUseCases {
             )
         }
 
-        val labelHints = vision.labels.map { it.name }.distinct().take(3)
+        val labelHints =
+            vision.labels
+                .map { it.name }
+                .distinct()
+                .take(3)
         if (labelHints.isNotEmpty()) {
             addIfMissing(
                 ItemAttributeSnapshot(
@@ -266,8 +283,9 @@ object AssistantUseCases {
             )
         }
 
-        val ocrText = item.recognizedText?.takeIf { it.isNotBlank() }
-            ?: vision.ocrText?.takeIf { it.isNotBlank() }
+        val ocrText =
+            item.recognizedText?.takeIf { it.isNotBlank() }
+                ?: vision.ocrText?.takeIf { it.isNotBlank() }
         ocrText?.let { text ->
             addIfMissing(
                 ItemAttributeSnapshot(

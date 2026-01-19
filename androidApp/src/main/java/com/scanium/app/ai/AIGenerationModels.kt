@@ -55,17 +55,21 @@ sealed class AIGenerationStatus {
     data object Loading : AIGenerationStatus()
 
     /** Generation completed successfully */
-    data class Success(val response: AIGenerationResponse) : AIGenerationStatus()
+    data class Success(
+        val response: AIGenerationResponse,
+    ) : AIGenerationStatus()
 
     /** Generation failed */
-    data class Error(val message: String) : AIGenerationStatus()
+    data class Error(
+        val message: String,
+    ) : AIGenerationStatus()
 }
 
 /**
  * Extension to convert ScannedItem to AIGenerationRequest.
  */
-fun com.scanium.app.items.ScannedItem.toAIGenerationRequest(): AIGenerationRequest {
-    return AIGenerationRequest(
+fun com.scanium.app.items.ScannedItem.toAIGenerationRequest(): AIGenerationRequest =
+    AIGenerationRequest(
         attributesStructured = attributes,
         attributesSummaryText = attributesSummaryText,
         summaryTextUserEdited = summaryTextUserEdited,
@@ -74,4 +78,3 @@ fun com.scanium.app.items.ScannedItem.toAIGenerationRequest(): AIGenerationReque
         category = category.displayName,
         condition = null, // Populated by caller if available
     )
-}

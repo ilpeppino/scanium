@@ -92,44 +92,32 @@ class ListingStatusManager(
     /**
      * Gets the listing status for a specific item.
      */
-    fun getListingStatus(itemId: String): ItemListingStatus? {
-        return _items.value.find { it.id == itemId }?.listingStatus
-    }
+    fun getListingStatus(itemId: String): ItemListingStatus? = _items.value.find { it.id == itemId }?.listingStatus
 
     /**
      * Gets items with a specific listing status.
      */
-    fun getItemsByStatus(status: ItemListingStatus): List<ScannedItem> {
-        return _items.value.filter { it.listingStatus == status }
-    }
+    fun getItemsByStatus(status: ItemListingStatus): List<ScannedItem> = _items.value.filter { it.listingStatus == status }
 
     /**
      * Gets all items that have been listed.
      */
-    fun getListedItems(): List<ScannedItem> {
-        return _items.value.filter { it.listingStatus == ItemListingStatus.LISTED_ACTIVE }
-    }
+    fun getListedItems(): List<ScannedItem> = _items.value.filter { it.listingStatus == ItemListingStatus.LISTED_ACTIVE }
 
     /**
      * Gets all items that are pending listing.
      */
-    fun getPendingItems(): List<ScannedItem> {
-        return _items.value.filter { it.listingStatus == ItemListingStatus.LISTING_IN_PROGRESS }
-    }
+    fun getPendingItems(): List<ScannedItem> = _items.value.filter { it.listingStatus == ItemListingStatus.LISTING_IN_PROGRESS }
 
     /**
      * Gets all items that failed to list.
      */
-    fun getFailedItems(): List<ScannedItem> {
-        return _items.value.filter { it.listingStatus == ItemListingStatus.LISTING_FAILED }
-    }
+    fun getFailedItems(): List<ScannedItem> = _items.value.filter { it.listingStatus == ItemListingStatus.LISTING_FAILED }
 
     /**
      * Marks an item as listing in progress.
      */
-    fun markListingInProgress(itemId: String): List<ScannedItem> {
-        return updateListingStatus(itemId, ItemListingStatus.LISTING_IN_PROGRESS)
-    }
+    fun markListingInProgress(itemId: String): List<ScannedItem> = updateListingStatus(itemId, ItemListingStatus.LISTING_IN_PROGRESS)
 
     /**
      * Marks an item as successfully listed.
@@ -138,28 +126,23 @@ class ListingStatusManager(
         itemId: String,
         listingId: String,
         listingUrl: String? = null,
-    ): List<ScannedItem> {
-        return updateListingStatus(
+    ): List<ScannedItem> =
+        updateListingStatus(
             itemId = itemId,
             status = ItemListingStatus.LISTED_ACTIVE,
             listingId = listingId,
             listingUrl = listingUrl,
         )
-    }
 
     /**
      * Marks an item as failed to list.
      */
-    fun markListingFailed(itemId: String): List<ScannedItem> {
-        return updateListingStatus(itemId, ItemListingStatus.LISTING_FAILED)
-    }
+    fun markListingFailed(itemId: String): List<ScannedItem> = updateListingStatus(itemId, ItemListingStatus.LISTING_FAILED)
 
     /**
      * Resets the listing status for an item.
      */
-    fun resetListingStatus(itemId: String): List<ScannedItem> {
-        return updateListingStatus(itemId, ItemListingStatus.NOT_LISTED)
-    }
+    fun resetListingStatus(itemId: String): List<ScannedItem> = updateListingStatus(itemId, ItemListingStatus.NOT_LISTED)
 
     // ==================== Internal Methods ====================
 

@@ -4,7 +4,8 @@
 
 **File**: `/home/user/scanium/core-domainpack/src/main/res/raw/home_resale_domain_pack.json`
 
-This is THE single source of truth for all domain-pack categories (subtypes) used by the Scanium app at runtime.
+This is THE single source of truth for all domain-pack categories (subtypes) used by the Scanium app
+at runtime.
 
 ***REMOVED******REMOVED*** Schema Structure
 
@@ -39,13 +40,14 @@ This is THE single source of truth for all domain-pack categories (subtypes) use
 
 ***REMOVED******REMOVED*** Runtime Access
 
-| Component | File | Role |
-|-----------|------|------|
-| **Repository** | `core-domainpack/.../LocalDomainPackRepository.kt` | Loads JSON, parses, caches |
-| **Provider** | `core-domainpack/.../DomainPackProvider.kt` | Singleton accessor |
-| **Engine** | `core-domainpack/.../BasicCategoryEngine.kt` | Selects best category via substring + priority |
+| Component      | File                                               | Role                                           |
+|----------------|----------------------------------------------------|------------------------------------------------|
+| **Repository** | `core-domainpack/.../LocalDomainPackRepository.kt` | Loads JSON, parses, caches                     |
+| **Provider**   | `core-domainpack/.../DomainPackProvider.kt`        | Singleton accessor                             |
+| **Engine**     | `core-domainpack/.../BasicCategoryEngine.kt`       | Selects best category via substring + priority |
 
-**Flow**: ML Kit detection → `BasicCategoryEngine` → `domainCategoryId` → `ClassificationResult` → `ScannedItem`
+**Flow**: ML Kit detection → `BasicCategoryEngine` → `domainCategoryId` → `ClassificationResult` →
+`ScannedItem`
 
 ***REMOVED******REMOVED*** Related Data Models
 
@@ -62,14 +64,17 @@ This is THE single source of truth for all domain-pack categories (subtypes) use
 
 ***REMOVED******REMOVED*** Key Constraints
 
-1. **ID Format**: Snake_case, typically `{parent}_{item}` (e.g., `furniture_sofa`, `electronics_laptop`)
+1. **ID Format**: Snake_case, typically `{parent}_{item}` (e.g., `furniture_sofa`,
+   `electronics_laptop`)
 2. **Hierarchical**: Optional `parentId` for grouping (e.g., "furniture" parent)
-3. **ItemCategory Mapping**: Each category maps to an ItemCategory enum value (HOME_GOOD, ELECTRONICS, FASHION, PLANT, UNKNOWN)
-4. **Attributes**: Brand extraction is OCR-based; applicable to select categories via `appliesToCategoryIds`
+3. **ItemCategory Mapping**: Each category maps to an ItemCategory enum value (HOME_GOOD,
+   ELECTRONICS, FASHION, PLANT, UNKNOWN)
+4. **Attributes**: Brand extraction is OCR-based; applicable to select categories via
+   `appliesToCategoryIds`
 
 ***REMOVED******REMOVED*** Validation
 
 - `LocalDomainPackRepository` validates:
-  - All category IDs are unique
-  - All `itemCategoryName` values match ItemCategory enum
-  - No duplicate IDs across categories
+    - All category IDs are unique
+    - All `itemCategoryName` values match ItemCategory enum
+    - No duplicate IDs across categories

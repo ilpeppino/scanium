@@ -39,37 +39,40 @@ class TtsController(
     init {
         // Initialize TextToSpeech lazily
         try {
-            tts = TextToSpeech(context.applicationContext) { status ->
-                if (status == TextToSpeech.SUCCESS) {
-                    isInitialized = true
-                    Log.d(TAG, "TTS initialized successfully")
+            tts =
+                TextToSpeech(context.applicationContext) { status ->
+                    if (status == TextToSpeech.SUCCESS) {
+                        isInitialized = true
+                        Log.d(TAG, "TTS initialized successfully")
 
-                    // Set up utterance listener for state tracking
-                    tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                        override fun onStart(utteranceId: String?) {
-                            currentlySpeaking = true
+                        // Set up utterance listener for state tracking
+                        tts?.setOnUtteranceProgressListener(
+                            object : UtteranceProgressListener() {
+                                override fun onStart(utteranceId: String?) {
+                                    currentlySpeaking = true
+                                }
+
+                                override fun onDone(utteranceId: String?) {
+                                    currentlySpeaking = false
+                                }
+
+                                override fun onError(utteranceId: String?) {
+                                    currentlySpeaking = false
+                                    Log.w(TAG, "TTS error for utterance: $utteranceId")
+                                }
+                            },
+                        )
+
+                        // Speak pending text if queued during initialization
+                        pendingText?.let { text ->
+                            speakNow(text)
+                            pendingText = null
                         }
-
-                        override fun onDone(utteranceId: String?) {
-                            currentlySpeaking = false
-                        }
-
-                        override fun onError(utteranceId: String?) {
-                            currentlySpeaking = false
-                            Log.w(TAG, "TTS error for utterance: $utteranceId")
-                        }
-                    })
-
-                    // Speak pending text if queued during initialization
-                    pendingText?.let { text ->
-                        speakNow(text)
-                        pendingText = null
+                    } else {
+                        initializationFailed = true
+                        Log.w(TAG, "TTS initialization failed with status: $status")
                     }
-                } else {
-                    initializationFailed = true
-                    Log.w(TAG, "TTS initialization failed with status: $status")
                 }
-            }
         } catch (e: Exception) {
             initializationFailed = true
             Log.e(TAG, "Failed to create TextToSpeech instance", e)
@@ -96,10 +99,13 @@ class TtsController(
                     // Try device default
                     tts?.setLanguage(Locale.getDefault())
                 }
+
                 TextToSpeech.LANG_AVAILABLE, TextToSpeech.LANG_COUNTRY_AVAILABLE,
-                TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE -> {
+                TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE,
+                -> {
                     Log.d(TAG, "TTS language set to: $locale")
                 }
+
                 else -> {
                     Log.w(TAG, "Unknown language result: $result for locale $locale")
                 }
@@ -128,10 +134,12 @@ class TtsController(
             initializationFailed -> {
                 Log.w(TAG, "Cannot speak: TTS initialization failed")
             }
+
             !isInitialized -> {
                 Log.d(TAG, "TTS not ready yet, queuing text")
                 pendingText = text
             }
+
             else -> {
                 speakNow(text)
             }

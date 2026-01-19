@@ -14,8 +14,9 @@ internal class UnifiedSettings(
 ) {
     val primaryRegionCountryFlow: Flow<String> =
         dataStore.data.safeMap(SettingsLocaleHelpers.detectCountryCodeFromLocale()) { preferences ->
-            val raw = preferences[SettingsKeys.Unified.PRIMARY_REGION_COUNTRY_KEY]
-                ?: SettingsLocaleHelpers.detectCountryCodeFromLocale()
+            val raw =
+                preferences[SettingsKeys.Unified.PRIMARY_REGION_COUNTRY_KEY]
+                    ?: SettingsLocaleHelpers.detectCountryCodeFromLocale()
             SettingsLocaleHelpers.normalizeCountryCode(raw)
         }
 
@@ -116,40 +117,47 @@ internal class UnifiedSettings(
 
     val effectiveTtsLanguageFlow: Flow<String> = effectiveAppLanguageFlow
 
-    fun mapLanguageToMarketplaceCountry(languageTag: String): String {
-        return SettingsLocaleHelpers.mapLanguageToMarketplaceCountry(languageTag)
-    }
+    fun mapLanguageToMarketplaceCountry(languageTag: String): String = SettingsLocaleHelpers.mapLanguageToMarketplaceCountry(languageTag)
 
-    private fun parseFollowOrCustom(raw: String?): FollowOrCustom<String> {
-        return when {
+    private fun parseFollowOrCustom(raw: String?): FollowOrCustom<String> =
+        when {
             raw == null || raw == "follow" -> FollowOrCustom.followPrimary()
             raw.startsWith("custom:") -> FollowOrCustom.custom(raw.removePrefix("custom:"))
             else -> FollowOrCustom.followPrimary()
         }
-    }
 
-    private fun serializeFollowOrCustom(setting: FollowOrCustom<String>): String {
-        return when (setting) {
+    private fun serializeFollowOrCustom(setting: FollowOrCustom<String>): String =
+        when (setting) {
             is FollowOrCustom.FollowPrimary -> "follow"
             is FollowOrCustom.Custom -> "custom:${setting.value}"
         }
-    }
 
-    private fun parseFollowOrCustomAiLanguage(raw: String?): FollowOrCustom<AiLanguageChoice> {
-        return when {
-            raw == null || raw == "follow" -> FollowOrCustom.followPrimary()
-            raw == "custom:auto_detect" -> FollowOrCustom.custom(AiLanguageChoice.AutoDetect)
+    private fun parseFollowOrCustomAiLanguage(raw: String?): FollowOrCustom<AiLanguageChoice> =
+        when {
+            raw == null || raw == "follow" -> {
+                FollowOrCustom.followPrimary()
+            }
+
+            raw == "custom:auto_detect" -> {
+                FollowOrCustom.custom(AiLanguageChoice.AutoDetect)
+            }
+
             raw.startsWith("custom:") -> {
                 val tag = raw.removePrefix("custom:")
                 FollowOrCustom.custom(AiLanguageChoice.LanguageTag(tag))
             }
-            else -> FollowOrCustom.followPrimary()
-        }
-    }
 
-    private fun serializeFollowOrCustomAiLanguage(setting: FollowOrCustom<AiLanguageChoice>): String {
-        return when (setting) {
-            is FollowOrCustom.FollowPrimary -> "follow"
+            else -> {
+                FollowOrCustom.followPrimary()
+            }
+        }
+
+    private fun serializeFollowOrCustomAiLanguage(setting: FollowOrCustom<AiLanguageChoice>): String =
+        when (setting) {
+            is FollowOrCustom.FollowPrimary -> {
+                "follow"
+            }
+
             is FollowOrCustom.Custom -> {
                 when (val choice = setting.value) {
                     is AiLanguageChoice.AutoDetect -> "custom:auto_detect"
@@ -157,22 +165,19 @@ internal class UnifiedSettings(
                 }
             }
         }
-    }
 
-    private fun parseTtsLanguageChoice(raw: String?): TtsLanguageChoice {
-        return when {
+    private fun parseTtsLanguageChoice(raw: String?): TtsLanguageChoice =
+        when {
             raw == null || raw == "follow_ai" -> TtsLanguageChoice.FollowAiLanguage
             raw == "follow_primary" -> TtsLanguageChoice.FollowPrimary
             raw.startsWith("custom:") -> TtsLanguageChoice.Custom(raw.removePrefix("custom:"))
             else -> TtsLanguageChoice.FollowAiLanguage
         }
-    }
 
-    private fun serializeTtsLanguageChoice(setting: TtsLanguageChoice): String {
-        return when (setting) {
+    private fun serializeTtsLanguageChoice(setting: TtsLanguageChoice): String =
+        when (setting) {
             is TtsLanguageChoice.FollowAiLanguage -> "follow_ai"
             is TtsLanguageChoice.FollowPrimary -> "follow_primary"
             is TtsLanguageChoice.Custom -> "custom:${setting.languageTag}"
         }
-    }
 }

@@ -5,20 +5,20 @@ This guide covers deploying and rolling back the Scanium backend and monitoring 
 ***REMOVED******REMOVED*** Table of Contents
 
 - [Backend Releases](***REMOVED***backend-releases)
-  - [Overview](***REMOVED***backend-overview)
-  - [Why dist/ Changes Don't Deploy](***REMOVED***why-dist-changes-dont-deploy)
-  - [Image Tagging Strategy](***REMOVED***backend-tagging-strategy)
-  - [Deploying a New Version](***REMOVED***deploying-backend)
-  - [Rolling Back](***REMOVED***rolling-back-backend)
-  - [Managing Image Storage](***REMOVED***managing-image-storage)
-  - [Troubleshooting](***REMOVED***backend-troubleshooting)
+    - [Overview](***REMOVED***backend-overview)
+    - [Why dist/ Changes Don't Deploy](***REMOVED***why-dist-changes-dont-deploy)
+    - [Image Tagging Strategy](***REMOVED***backend-tagging-strategy)
+    - [Deploying a New Version](***REMOVED***deploying-backend)
+    - [Rolling Back](***REMOVED***rolling-back-backend)
+    - [Managing Image Storage](***REMOVED***managing-image-storage)
+    - [Troubleshooting](***REMOVED***backend-troubleshooting)
 - [Monitoring Releases](***REMOVED***monitoring-releases)
-  - [Overview](***REMOVED***monitoring-overview)
-  - [Git Tag Strategy](***REMOVED***monitoring-tagging-strategy)
-  - [Deploying Monitoring Changes](***REMOVED***deploying-monitoring)
-  - [Rolling Back Monitoring](***REMOVED***rolling-back-monitoring)
-  - [Verification Gates](***REMOVED***monitoring-verification)
-  - [Troubleshooting](***REMOVED***monitoring-troubleshooting)
+    - [Overview](***REMOVED***monitoring-overview)
+    - [Git Tag Strategy](***REMOVED***monitoring-tagging-strategy)
+    - [Deploying Monitoring Changes](***REMOVED***deploying-monitoring)
+    - [Rolling Back Monitoring](***REMOVED***rolling-back-monitoring)
+    - [Verification Gates](***REMOVED***monitoring-verification)
+    - [Troubleshooting](***REMOVED***monitoring-troubleshooting)
 
 ---
 
@@ -26,7 +26,8 @@ This guide covers deploying and rolling back the Scanium backend and monitoring 
 
 ***REMOVED******REMOVED*** Backend Overview
 
-The Scanium backend deployment system uses **NAS-local Docker image tagging** for version control and rollback capability. This approach:
+The Scanium backend deployment system uses **NAS-local Docker image tagging** for version control
+and rollback capability. This approach:
 
 - Builds uniquely tagged images on each deploy
 - Keeps images locally on NAS (no external registry)
@@ -37,15 +38,18 @@ The Scanium backend deployment system uses **NAS-local Docker image tagging** fo
 
 **Important:** Changes to `backend/dist/` do NOT automatically deploy to production.
 
-The backend Docker image is built **from source code** inside the Docker build process. The `dist/` directory is generated during the Docker build, not used as input.
+The backend Docker image is built **from source code** inside the Docker build process. The `dist/`
+directory is generated during the Docker build, not used as input.
 
 **Deployment workflow:**
+
 1. Code changes are committed to `main` branch
 2. Deploy script pulls latest `main`
 3. Docker builds the backend from source (runs `npm run build` inside container)
 4. Tagged image is created and deployed
 
-**TL;DR:** Commit source changes to `main`, then run the deploy script. The `dist/` directory is an artifact, not a deployment input.
+**TL;DR:** Commit source changes to `main`, then run the deploy script. The `dist/` directory is an
+artifact, not a deployment input.
 
 ***REMOVED******REMOVED*** Backend Tagging Strategy
 
@@ -57,6 +61,7 @@ Images are tagged with: `YYYY.MM.DD-<shortSHA>`
 - `shortSHA` - 7-character git commit hash
 
 This provides:
+
 - Human-readable chronological ordering
 - Traceability back to exact git commit
 - Uniqueness (no tag collisions)
@@ -231,6 +236,7 @@ ssh nas "docker images scanium-backend --format '{{.Tag}}' | grep -v 'latest' | 
 ```
 
 This keeps:
+
 - `latest` tag (always)
 - Most recent 10 dated tags
 - Removes older tags
@@ -274,6 +280,7 @@ ssh nas "docker logs scanium-backend --tail 100"
 ```
 
 **Common issues:**
+
 - Database migration pending
 - Environment variable missing
 - Port conflict
@@ -366,13 +373,15 @@ ssh nas "cd /volume1/docker/scanium/repo && bash scripts/app/rollback-backend-na
 
 ***REMOVED******REMOVED*** Monitoring Overview
 
-The Scanium monitoring stack (Grafana, Mimir, Loki, Tempo, Alloy) uses **git tags** for version control instead of Docker image tags. This is because:
+The Scanium monitoring stack (Grafana, Mimir, Loki, Tempo, Alloy) uses **git tags** for version
+control instead of Docker image tags. This is because:
 
 - Monitoring services use upstream images (Grafana Labs official images)
 - Configuration changes (compose, Alloy config, dashboards) are tracked in git
 - Rollback means checking out a previous git tag, not swapping Docker images
 
 **Key differences from backend:**
+
 - Backend: Docker image tags (e.g., `scanium-backend:2026.01.10-abc123`)
 - Monitoring: Git tags (e.g., `monitoring-2026.01.10-abc123`)
 
@@ -387,6 +396,7 @@ Tags follow the format: `monitoring-YYYY.MM.DD-<shortSHA>`
 - `shortSHA` - 7-character git commit hash
 
 **When to create a tag:**
+
 - After successful monitoring stack deployment
 - After configuration changes (Alloy, Grafana datasources, dashboards)
 - Before risky changes (for easy rollback)
@@ -417,28 +427,28 @@ bash scripts/monitoring/deploy-monitoring-nas.sh
 ***REMOVED******REMOVED******REMOVED*** What the Deploy Script Does
 
 1. **Preflight checks:**
-   - Detects orphan/duplicate containers (prevents DNS poisoning)
-   - Warns about exited containers
+    - Detects orphan/duplicate containers (prevents DNS poisoning)
+    - Warns about exited containers
 
 2. **Repository update:**
-   - Pulls latest `main` branch
-   - Computes deployment tag
+    - Pulls latest `main` branch
+    - Computes deployment tag
 
 3. **Stack deployment:**
-   - Runs `docker-compose down --remove-orphans`
-   - Runs `docker-compose up -d`
-   - Waits for all containers to become healthy
+    - Runs `docker-compose down --remove-orphans`
+    - Runs `docker-compose up -d`
+    - Waits for all containers to become healthy
 
 4. **Verification:**
-   - Runs `verify-monitoring.sh` to check:
-     - Grafana API and datasources
-     - Mimir metrics queries
-     - Tempo traces API
-     - Loki logs API
+    - Runs `verify-monitoring.sh` to check:
+        - Grafana API and datasources
+        - Mimir metrics queries
+        - Tempo traces API
+        - Loki logs API
 
 5. **Tag suggestion:**
-   - Prints suggested tag for this deployment
-   - Instructions for creating the tag
+    - Prints suggested tag for this deployment
+    - Instructions for creating the tag
 
 ***REMOVED******REMOVED******REMOVED*** Expected Output
 
@@ -609,20 +619,24 @@ The `verify-monitoring.sh` script checks critical monitoring components:
 ***REMOVED******REMOVED******REMOVED*** What It Checks
 
 **1. Grafana:**
+
 - API health endpoint
 - Datasources configured (Mimir, Loki, Tempo)
 
 **2. Mimir (Metrics):**
+
 - Ready endpoint
 - Pipeline metrics: `up{source="pipeline"}`
 - Backend metrics: `up{job="scanium-backend"}`
 
 **3. Tempo (Traces):**
+
 - Ready endpoint
 - API responding
 - (Note: Empty trace store is normal if no traffic)
 
 **4. Loki (Logs):**
+
 - Ready endpoint
 - Labels present
 - (Warning: Logs ingestion may be optional/not yet working)
@@ -722,9 +736,9 @@ ssh nas "docker exec scanium-mimir wget -q -O- 'http://localhost:9009/prometheus
    ```
 
 2. Check datasource UIDs match dashboard JSON:
-   - Mimir UID: `MIMIR`
-   - Loki UID: `LOKI`
-   - Tempo UID: `TEMPO`
+    - Mimir UID: `MIMIR`
+    - Loki UID: `LOKI`
+    - Tempo UID: `TEMPO`
 
 3. Restart Grafana:
    ```bash
@@ -744,6 +758,7 @@ ssh nas "docker logs scanium-alloy --tail 50"
 ```
 
 **Common causes:**
+
 - Config file syntax errors
 - Port conflicts
 - Permission issues on data volumes

@@ -3,7 +3,6 @@ package com.scanium.app.ftue
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -155,10 +154,23 @@ class CameraUiFtueViewModel(
                         Log.w(TAG, "nextStep called from IDLE, ignoring")
                         return@launch
                     }
-                    CameraUiFtueStep.SHUTTER -> CameraUiFtueStep.FLIP_CAMERA
-                    CameraUiFtueStep.FLIP_CAMERA -> CameraUiFtueStep.ITEM_LIST
-                    CameraUiFtueStep.ITEM_LIST -> CameraUiFtueStep.SETTINGS
-                    CameraUiFtueStep.SETTINGS -> CameraUiFtueStep.COMPLETED
+
+                    CameraUiFtueStep.SHUTTER -> {
+                        CameraUiFtueStep.FLIP_CAMERA
+                    }
+
+                    CameraUiFtueStep.FLIP_CAMERA -> {
+                        CameraUiFtueStep.ITEM_LIST
+                    }
+
+                    CameraUiFtueStep.ITEM_LIST -> {
+                        CameraUiFtueStep.SETTINGS
+                    }
+
+                    CameraUiFtueStep.SETTINGS -> {
+                        CameraUiFtueStep.COMPLETED
+                    }
+
                     CameraUiFtueStep.COMPLETED -> {
                         Log.w(TAG, "nextStep called from COMPLETED, ignoring")
                         return@launch
@@ -252,4 +264,3 @@ class CameraUiFtueViewModel(
         }
     }
 }
-

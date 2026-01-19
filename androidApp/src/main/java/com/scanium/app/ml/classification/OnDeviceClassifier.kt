@@ -66,7 +66,8 @@ class OnDeviceClassifier(
     ) : ImageLabelerClient {
         private val labeler =
             ImageLabeling.getClient(
-                ImageLabelerOptions.Builder()
+                ImageLabelerOptions
+                    .Builder()
                     .setConfidenceThreshold(confidenceThreshold)
                     .build(),
             )

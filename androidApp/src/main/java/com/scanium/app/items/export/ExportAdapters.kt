@@ -25,20 +25,21 @@ fun ScannedItem.toExportItem(): ExportItem {
     val hasExplicitPrice = estimatedPriceRange != null || priceRange.first != 0.0 || priceRange.second != 0.0
 
     // Gather all image references in deterministic order
-    val imageRefs = buildList {
-        // 1. Primary thumbnail (if available)
-        val primaryRef = thumbnailRef ?: thumbnail
-        if (primaryRef != null) {
-            add(primaryRef)
-        }
-
-        // 2. Additional photos
-        additionalPhotos
-            .sortedWith(compareBy<ItemPhoto> { it.capturedAt }.thenBy { it.id })
-            .forEach { photo ->
-                resolvePhotoRef(photo)?.let { add(it) }
+    val imageRefs =
+        buildList {
+            // 1. Primary thumbnail (if available)
+            val primaryRef = thumbnailRef ?: thumbnail
+            if (primaryRef != null) {
+                add(primaryRef)
             }
-    }
+
+            // 2. Additional photos
+            additionalPhotos
+                .sortedWith(compareBy<ItemPhoto> { it.capturedAt }.thenBy { it.id })
+                .forEach { photo ->
+                    resolvePhotoRef(photo)?.let { add(it) }
+                }
+        }
 
     return ExportItem(
         id = id,
@@ -68,11 +69,12 @@ private fun resolvePhotoRef(photo: ItemPhoto): ImageRef? {
     if (!file.exists()) {
         return null
     }
-    val mimeType = when (file.extension.lowercase()) {
-        "png" -> "image/png"
-        "jpg", "jpeg" -> "image/jpeg"
-        else -> photo.mimeType
-    }
+    val mimeType =
+        when (file.extension.lowercase()) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            else -> photo.mimeType
+        }
     return runCatching {
         ImageRef.Bytes(
             bytes = file.readBytes(),

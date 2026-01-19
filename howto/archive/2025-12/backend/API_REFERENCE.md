@@ -1,4 +1,6 @@
-> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current state.
+> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
+> state.
+
 ***REMOVED*** Scanium Backend API Reference
 
 Quick reference for all available endpoints.
@@ -14,6 +16,7 @@ Quick reference for all available endpoints.
 Liveness probe - returns 200 if process is running.
 
 **Response 200:**
+
 ```json
 {
   "status": "ok",
@@ -28,6 +31,7 @@ Liveness probe - returns 200 if process is running.
 Readiness probe - returns 200 only if database is reachable.
 
 **Response 200 (Ready):**
+
 ```json
 {
   "status": "ok",
@@ -37,6 +41,7 @@ Readiness probe - returns 200 only if database is reachable.
 ```
 
 **Response 503 (Not Ready):**
+
 ```json
 {
   "status": "error",
@@ -52,6 +57,7 @@ Readiness probe - returns 200 only if database is reachable.
 API information and endpoint listing.
 
 **Response 200:**
+
 ```json
 {
   "name": "Scanium Backend API",
@@ -78,6 +84,7 @@ API information and endpoint listing.
 Initiates eBay OAuth flow. Returns authorization URL for user to visit.
 
 **Request:**
+
 ```http
 POST /auth/ebay/start HTTP/1.1
 Host: api.yourdomain.com
@@ -85,6 +92,7 @@ Content-Type: application/json
 ```
 
 **Response 200:**
+
 ```json
 {
   "authorizeUrl": "https://auth.sandbox.ebay.com/oauth2/authorize?client_id=...&state=..."
@@ -92,12 +100,14 @@ Content-Type: application/json
 ```
 
 **Usage:**
+
 1. Call this endpoint
 2. Open `authorizeUrl` in browser/Custom Tab
 3. User authorizes on eBay
 4. User is redirected to callback (handled by backend)
 
 **Sets Cookies:**
+
 - `oauth_state` (signed, HttpOnly)
 - `oauth_nonce` (signed, HttpOnly)
 
@@ -110,6 +120,7 @@ OAuth callback endpoint - receives authorization code from eBay.
 **⚠️ Not called directly by app** - eBay redirects here after authorization.
 
 **Request (from eBay):**
+
 ```http
 GET /auth/ebay/callback?code=v2-abc123&state=xyz789 HTTP/1.1
 Host: api.yourdomain.com
@@ -119,6 +130,7 @@ Cookie: oauth_state=...; oauth_nonce=...
 **Response 200 (HTML):**
 
 User-friendly success page:
+
 ```html
 <!DOCTYPE html>
 <html>
@@ -130,6 +142,7 @@ User-friendly success page:
 ```
 
 **Response 200 (JSON - if Accept: application/json):**
+
 ```json
 {
   "success": true,
@@ -139,6 +152,7 @@ User-friendly success page:
 ```
 
 **Response 400 (Validation Error):**
+
 ```json
 {
   "error": {
@@ -149,6 +163,7 @@ User-friendly success page:
 ```
 
 **Response 400 (State Mismatch):**
+
 ```json
 {
   "error": {
@@ -159,6 +174,7 @@ User-friendly success page:
 ```
 
 **Response 502 (Token Exchange Failed):**
+
 ```json
 {
   "error": {
@@ -173,6 +189,7 @@ User-friendly success page:
 ```
 
 **Behavior:**
+
 1. Validates state parameter against signed cookie
 2. Exchanges authorization code for access/refresh tokens
 3. Stores tokens in database
@@ -186,12 +203,14 @@ User-friendly success page:
 Returns current eBay connection status.
 
 **Request:**
+
 ```http
 GET /auth/ebay/status HTTP/1.1
 Host: api.yourdomain.com
 ```
 
 **Response 200 (Connected):**
+
 ```json
 {
   "connected": true,
@@ -202,6 +221,7 @@ Host: api.yourdomain.com
 ```
 
 **Response 200 (Not Connected):**
+
 ```json
 {
   "connected": false,
@@ -212,6 +232,7 @@ Host: api.yourdomain.com
 ```
 
 **Usage:**
+
 - Call before showing "Connect eBay" button to check if already connected
 - Poll after OAuth callback to confirm successful authorization
 
@@ -226,6 +247,7 @@ Placeholder endpoints - not yet implemented.
 Create a new eBay listing.
 
 **Request:**
+
 ```json
 {
   "title": "Vintage Camera",
@@ -237,6 +259,7 @@ Create a new eBay listing.
 ```
 
 **Response 201:**
+
 ```json
 {
   "listingId": "uuid",
@@ -257,6 +280,7 @@ Placeholder endpoints - not yet implemented.
 Upload image for listing.
 
 **Request (multipart/form-data):**
+
 ```
 POST /media/upload
 Content-Type: multipart/form-data
@@ -265,6 +289,7 @@ file: <binary image data>
 ```
 
 **Response 200:**
+
 ```json
 {
   "url": "https://...",
@@ -295,16 +320,16 @@ All errors follow this format:
 
 ***REMOVED******REMOVED******REMOVED*** Common Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `INTERNAL_ERROR` | 500 | Unexpected server error |
-| `VALIDATION_ERROR` | 400 | Request validation failed |
-| `NOT_FOUND` | 404 | Resource not found |
-| `UNAUTHORIZED` | 401 | Authentication required |
-| `OAUTH_STATE_MISMATCH` | 400 | Invalid OAuth state (CSRF protection) |
-| `OAUTH_TOKEN_EXCHANGE_FAILED` | 502 | eBay token exchange failed |
-| `DATABASE_ERROR` | 500 | Database operation failed |
-| `EBAY_API_ERROR` | 502 | eBay API returned error |
+| Code                          | HTTP Status | Description                           |
+|-------------------------------|-------------|---------------------------------------|
+| `INTERNAL_ERROR`              | 500         | Unexpected server error               |
+| `VALIDATION_ERROR`            | 400         | Request validation failed             |
+| `NOT_FOUND`                   | 404         | Resource not found                    |
+| `UNAUTHORIZED`                | 401         | Authentication required               |
+| `OAUTH_STATE_MISMATCH`        | 400         | Invalid OAuth state (CSRF protection) |
+| `OAUTH_TOKEN_EXCHANGE_FAILED` | 502         | eBay token exchange failed            |
+| `DATABASE_ERROR`              | 500         | Database operation failed             |
+| `EBAY_API_ERROR`              | 502         | eBay API returned error               |
 
 ---
 
@@ -323,21 +348,25 @@ Set-Cookie: ...; HttpOnly; Secure; SameSite=Lax
 ***REMOVED******REMOVED*** 📝 Request Examples (curl)
 
 ***REMOVED******REMOVED******REMOVED*** Health Check
+
 ```bash
 curl https://api.yourdomain.com/healthz
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Start OAuth
+
 ```bash
 curl -X POST https://api.yourdomain.com/auth/ebay/start
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Check Connection Status
+
 ```bash
 curl https://api.yourdomain.com/auth/ebay/status
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Test with Accept: application/json
+
 ```bash
 curl -H "Accept: application/json" \
      'https://api.yourdomain.com/auth/ebay/callback?code=test&state=test'
@@ -413,6 +442,7 @@ Rate limiting not yet implemented. Future plans:
 - Burst allowance: 20 requests
 
 Headers will include:
+
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95

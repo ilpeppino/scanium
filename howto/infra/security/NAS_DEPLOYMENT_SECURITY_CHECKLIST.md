@@ -38,13 +38,13 @@
   ```
 
 - [ ] **Never commit actual secrets**
-  - `backend.env` contains real credentials
-  - `monitoring.env` contains Grafana password
-  - Check with `git status` before every commit
+    - `backend.env` contains real credentials
+    - `monitoring.env` contains Grafana password
+    - Check with `git status` before every commit
 
 - [ ] **Store secrets securely** (outside Docker volumes)
-  - Google Vision SA key: `/volume1/docker/scanium/secrets/vision-sa.json`
-  - Set restrictive permissions: `chmod 600 secrets/*`
+    - Google Vision SA key: `/volume1/docker/scanium/secrets/vision-sa.json`
+    - Set restrictive permissions: `chmod 600 secrets/*`
 
 ---
 
@@ -53,7 +53,7 @@
 - [ ] **Block external access to internal services**
 
   | Port | Service | Should Be | Action |
-  |------|---------|-----------|--------|
+    |------|---------|-----------|--------|
   | 3000 | Grafana | LAN only OR Cloudflare Tunnel | Block from WAN |
   | 3100 | Loki | Internal only | Block all external |
   | 3200 | Tempo | Internal only | Block all external |
@@ -65,12 +65,12 @@
   | 12345 | Alloy UI | Internal only | Block all external |
 
 - [ ] **Configure Synology Firewall**
-  1. Control Panel → Security → Firewall
-  2. Create profile "Scanium"
-  3. Rules:
-     - Allow LAN (192.168.x.x) to ports 3000, 4317, 4318, 8080
-     - Deny all other sources to these ports
-     - Allow all to Cloudflare Tunnel port (if used)
+    1. Control Panel → Security → Firewall
+    2. Create profile "Scanium"
+    3. Rules:
+        - Allow LAN (192.168.x.x) to ports 3000, 4317, 4318, 8080
+        - Deny all other sources to these ports
+        - Allow all to Cloudflare Tunnel port (if used)
 
 - [ ] **Verify port bindings in docker-compose**
   ```yaml
@@ -100,9 +100,9 @@
   ```
 
 - [ ] **Root user only where necessary**
-  - Monitoring containers use `user: "0"` for NAS volume permissions (acceptable)
-  - Backend API should NOT run as root
-  - Verify: `docker exec scanium-api whoami` (should not be root)
+    - Monitoring containers use `user: "0"` for NAS volume permissions (acceptable)
+    - Backend API should NOT run as root
+    - Verify: `docker exec scanium-api whoami` (should not be root)
 
 - [ ] **Read-only config mounts**
   ```yaml
@@ -124,9 +124,9 @@
 ***REMOVED******REMOVED******REMOVED*** 4. Database Security
 
 - [ ] **Strong PostgreSQL password**
-  - NOT the default `scanium`
-  - At least 32 random characters
-  - Stored only in `backend.env`
+    - NOT the default `scanium`
+    - At least 32 random characters
+    - Stored only in `backend.env`
 
 - [ ] **TLS enabled for database connections**
   ```
@@ -139,8 +139,8 @@
   ```
 
 - [ ] **Database not exposed externally**
-  - Port 5432 bound to Docker network only
-  - No port mapping to host
+    - Port 5432 bound to Docker network only
+    - No port mapping to host
 
 - [ ] **Regular backups configured**
   ```bash
@@ -168,8 +168,8 @@
   ```
 
 - [ ] **Default admin password changed**
-  - First login: Change from env password
-  - Or: `docker exec scanium-grafana grafana-cli admin reset-admin-password <newpassword>`
+    - First login: Change from env password
+    - Or: `docker exec scanium-grafana grafana-cli admin reset-admin-password <newpassword>`
 
 - [ ] **Viewers cannot edit dashboards**
   ```env
@@ -181,58 +181,58 @@
 ***REMOVED******REMOVED******REMOVED*** 6. Cloudflare Tunnel Security
 
 - [ ] **Tunnel token stored securely**
-  - In `backend.env` only
-  - NOT in docker-compose.yml
-  - NOT in git history
+    - In `backend.env` only
+    - NOT in docker-compose.yml
+    - NOT in git history
 
 - [ ] **Origin services not publicly exposed**
-  - Backend API accessible ONLY via tunnel
-  - No direct port forwarding to WAN
+    - Backend API accessible ONLY via tunnel
+    - No direct port forwarding to WAN
 
 - [ ] **Cloudflare Access configured** (if needed)
-  - Require authentication for Grafana access
-  - IP allowlist for admin endpoints
+    - Require authentication for Grafana access
+    - IP allowlist for admin endpoints
 
 - [ ] **Tunnel routes configured correctly**
-  - Public hostname → `http://localhost:8080` (backend)
-  - NOT exposing monitoring stack publicly
+    - Public hostname → `http://localhost:8080` (backend)
+    - NOT exposing monitoring stack publicly
 
 ---
 
 ***REMOVED******REMOVED******REMOVED*** 7. Monitoring Stack Security
 
 - [ ] **Loki not exposed externally**
-  - Port 3100 bound to 127.0.0.1 only
-  - Contains application logs (potentially sensitive)
+    - Port 3100 bound to 127.0.0.1 only
+    - Contains application logs (potentially sensitive)
 
 - [ ] **Tempo not exposed externally**
-  - Port 3200 bound to 127.0.0.1 only
-  - Contains trace data
+    - Port 3200 bound to 127.0.0.1 only
+    - Contains trace data
 
 - [ ] **Mimir not exposed externally**
-  - Port 9009 bound to 127.0.0.1 only
-  - Contains metrics data
+    - Port 9009 bound to 127.0.0.1 only
+    - Contains metrics data
 
 - [ ] **OTLP endpoints access controlled**
-  - Consider API key authentication for Alloy
-  - Or restrict to known source IPs
+    - Consider API key authentication for Alloy
+    - Or restrict to known source IPs
 
 - [ ] **Log retention appropriate**
-  - Reduce if logs contain sensitive data
-  - Default 14 days may be excessive
+    - Reduce if logs contain sensitive data
+    - Default 14 days may be excessive
 
 - [ ] **PII not logged**
-  - User data redacted from logs
-  - API keys masked in logs
-  - No image data in logs
+    - User data redacted from logs
+    - API keys masked in logs
+    - No image data in logs
 
 ---
 
 ***REMOVED******REMOVED******REMOVED*** 8. System Updates
 
 - [ ] **DSM up to date**
-  - Control Panel → Update & Restore
-  - Enable auto-update for security patches
+    - Control Panel → Update & Restore
+    - Enable auto-update for security patches
 
 - [ ] **Docker images pinned to specific versions**
   ```yaml
@@ -248,9 +248,9 @@
   ```
 
 - [ ] **Security advisories monitored**
-  - Subscribe to Grafana security advisories
-  - Subscribe to Node.js security advisories
-  - Subscribe to PostgreSQL security advisories
+    - Subscribe to Grafana security advisories
+    - Subscribe to Node.js security advisories
+    - Subscribe to PostgreSQL security advisories
 
 ---
 
@@ -266,38 +266,38 @@
   ```
 
 - [ ] **Configuration backed up**
-  - `deploy/nas/env/*.env` (encrypted!)
-  - `monitoring/` directory
-  - Docker compose files
+    - `deploy/nas/env/*.env` (encrypted!)
+    - `monitoring/` directory
+    - Docker compose files
 
 - [ ] **Backup location secure**
-  - Encrypted volume or external encrypted drive
-  - NOT on same NAS volume as data
+    - Encrypted volume or external encrypted drive
+    - NOT on same NAS volume as data
 
 - [ ] **Recovery tested**
-  - Test restore procedure quarterly
-  - Document recovery steps
+    - Test restore procedure quarterly
+    - Document recovery steps
 
 ---
 
 ***REMOVED******REMOVED******REMOVED*** 10. Monitoring & Alerting
 
 - [ ] **Disk usage alerts configured**
-  - Alert at 80% capacity
-  - Synology: Control Panel → Notifications
+    - Alert at 80% capacity
+    - Synology: Control Panel → Notifications
 
 - [ ] **Container health monitored**
-  - All containers have healthchecks
-  - Synology Container Manager shows health status
+    - All containers have healthchecks
+    - Synology Container Manager shows health status
 
 - [ ] **Failed login alerts**
-  - Grafana: Configure alerting for failed logins
-  - Backend: Log failed API key attempts
+    - Grafana: Configure alerting for failed logins
+    - Backend: Log failed API key attempts
 
 - [ ] **Resource exhaustion alerts**
-  - CPU > 90% for 5 minutes
-  - Memory > 85%
-  - Disk I/O saturation
+    - CPU > 90% for 5 minutes
+    - Memory > 85%
+    - Disk I/O saturation
 
 ---
 
@@ -339,9 +339,9 @@ nc -zv NAS_IP 5432
   ```
 
 - [ ] **API fuzzing**
-  - Test rate limiting works
-  - Test input validation
-  - Test authentication bypass attempts
+    - Test rate limiting works
+    - Test input validation
+    - Test authentication bypass attempts
 
 ---
 
@@ -368,18 +368,18 @@ nc -zv NAS_IP 5432
 
 ***REMOVED******REMOVED*** Checklist Summary
 
-| Category | Items | Critical |
-|----------|-------|----------|
-| Secrets Management | 5 | Yes |
-| Firewall | 3 | Yes |
-| Docker Security | 5 | Yes |
-| Database | 5 | Yes |
-| Grafana | 5 | Yes |
-| Cloudflare Tunnel | 4 | Yes |
-| Monitoring Stack | 6 | Medium |
-| System Updates | 4 | Medium |
-| Backup & Recovery | 4 | Medium |
-| Monitoring & Alerting | 4 | Medium |
+| Category              | Items | Critical |
+|-----------------------|-------|----------|
+| Secrets Management    | 5     | Yes      |
+| Firewall              | 3     | Yes      |
+| Docker Security       | 5     | Yes      |
+| Database              | 5     | Yes      |
+| Grafana               | 5     | Yes      |
+| Cloudflare Tunnel     | 4     | Yes      |
+| Monitoring Stack      | 6     | Medium   |
+| System Updates        | 4     | Medium   |
+| Backup & Recovery     | 4     | Medium   |
+| Monitoring & Alerting | 4     | Medium   |
 
 **Total: 45 items**
 
@@ -394,13 +394,13 @@ nc -zv NAS_IP 5432
 
 The following issues were identified and should be addressed:
 
-| Issue | Priority | Description |
-|-------|----------|-------------|
-| ***REMOVED***361 | P1 | NAS monitoring containers use `restart: "no"` - change to `unless-stopped` |
-| ***REMOVED***362 | P2 | Alloy admin UI port 12345 exposed - bind to localhost |
-| ***REMOVED***363 | P2 | Tempo max_workers=100 too high - reduce to 4 |
-| ***REMOVED***364 | P2 | Prometheus scrape interval 15s - increase to 60s |
-| ***REMOVED***367 | P2 | NAS Grafana auth not explicitly enforced |
-| ***REMOVED***368 | P3 | Create NAS-specific config overlays |
+| Issue | Priority | Description                                                                |
+|-------|----------|----------------------------------------------------------------------------|
+| ***REMOVED***361  | P1       | NAS monitoring containers use `restart: "no"` - change to `unless-stopped` |
+| ***REMOVED***362  | P2       | Alloy admin UI port 12345 exposed - bind to localhost                      |
+| ***REMOVED***363  | P2       | Tempo max_workers=100 too high - reduce to 4                               |
+| ***REMOVED***364  | P2       | Prometheus scrape interval 15s - increase to 60s                           |
+| ***REMOVED***367  | P2       | NAS Grafana auth not explicitly enforced                                   |
+| ***REMOVED***368  | P3       | Create NAS-specific config overlays                                        |
 
 See [REPO_REVIEW_ACTION_BACKLOG.md](REPO_REVIEW_ACTION_BACKLOG.md) for full details.

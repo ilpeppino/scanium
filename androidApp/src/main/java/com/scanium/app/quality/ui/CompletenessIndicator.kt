@@ -51,11 +51,16 @@ fun CompletenessIndicator(
         label = "progress",
     )
     val progressColor by animateColorAsState(
-        targetValue = when {
-            score >= AttributeCompletenessEvaluator.READY_THRESHOLD -> Color(0xFF4CAF50) // Green
-            score >= 50 -> Color(0xFFFFC107) // Amber
-            else -> Color(0xFFFF5722) // Deep Orange
-        },
+        targetValue =
+            when {
+                score >= AttributeCompletenessEvaluator.READY_THRESHOLD -> Color(0xFF4CAF50)
+
+                // Green
+                score >= 50 -> Color(0xFFFFC107)
+
+                // Amber
+                else -> Color(0xFFFF5722) // Deep Orange
+            },
         label = "progressColor",
     )
 
@@ -91,10 +96,11 @@ fun CompletenessIndicator(
         }
         LinearProgressIndicator(
             progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
             color = progressColor,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
@@ -111,29 +117,31 @@ fun CompletenessBadge(
     modifier: Modifier = Modifier,
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = when {
-            isReady -> Color(0xFF4CAF50).copy(alpha = 0.15f)
-            score >= 50 -> Color(0xFFFFC107).copy(alpha = 0.15f)
-            else -> Color(0xFFFF5722).copy(alpha = 0.15f)
-        },
+        targetValue =
+            when {
+                isReady -> Color(0xFF4CAF50).copy(alpha = 0.15f)
+                score >= 50 -> Color(0xFFFFC107).copy(alpha = 0.15f)
+                else -> Color(0xFFFF5722).copy(alpha = 0.15f)
+            },
         label = "backgroundColor",
     )
     val textColor by animateColorAsState(
-        targetValue = when {
-            isReady -> Color(0xFF2E7D32)
-            score >= 50 -> Color(0xFFF57F17)
-            else -> Color(0xFFBF360C)
-        },
+        targetValue =
+            when {
+                isReady -> Color(0xFF2E7D32)
+                score >= 50 -> Color(0xFFF57F17)
+                else -> Color(0xFFBF360C)
+            },
         label = "textColor",
     )
 
     Box(
-        modifier = modifier
-            .background(
-                color = backgroundColor,
-                shape = RoundedCornerShape(12.dp),
-            )
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier =
+            modifier
+                .background(
+                    color = backgroundColor,
+                    shape = RoundedCornerShape(12.dp),
+                ).padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -169,9 +177,10 @@ fun MissingAttributesCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -197,11 +206,12 @@ fun MissingAttributesCard(
             missingAttributes.take(3).forEach { attr ->
                 MissingAttributeRow(
                     attribute = attr,
-                    onPhotoHintClick = if (attr.photoHint != null && onAddPhotoClick != null) {
-                        { onAddPhotoClick(attr.photoHint) }
-                    } else {
-                        null
-                    },
+                    onPhotoHintClick =
+                        if (attr.photoHint != null && onAddPhotoClick != null) {
+                            { onAddPhotoClick(attr.photoHint) }
+                        } else {
+                            null
+                        },
                 )
             }
 
@@ -224,9 +234,10 @@ private fun MissingAttributeRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -236,16 +247,18 @@ private fun MissingAttributeRow(
         ) {
             // Importance indicator
             Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .background(
-                        color = when {
-                            attribute.importance >= 8 -> Color(0xFFFF5722)
-                            attribute.importance >= 5 -> Color(0xFFFFC107)
-                            else -> Color(0xFF9E9E9E)
-                        },
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(6.dp)
+                        .background(
+                            color =
+                                when {
+                                    attribute.importance >= 8 -> Color(0xFFFF5722)
+                                    attribute.importance >= 5 -> Color(0xFFFFC107)
+                                    else -> Color(0xFF9E9E9E)
+                                },
+                            shape = CircleShape,
+                        ),
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
@@ -276,9 +289,10 @@ fun PhotoGuidanceCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            ),
         onClick = onTakePhoto,
     ) {
         Row(

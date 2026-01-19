@@ -14,7 +14,9 @@ private val Context.exportProfileDataStore: DataStore<Preferences> by preference
     name = "export_profile_preferences",
 )
 
-class ExportProfilePreferences(private val context: Context) {
+class ExportProfilePreferences(
+    private val context: Context,
+) {
     companion object {
         private val LAST_EXPORT_PROFILE_ID = stringPreferencesKey("last_export_profile_id")
     }

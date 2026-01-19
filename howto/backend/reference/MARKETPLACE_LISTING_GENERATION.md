@@ -1,17 +1,20 @@
 ***REMOVED*** Marketplace Listing Generation (PR4)
 
-This document explains the marketplace-ready title and description generation feature in the `/v1/assist/chat` endpoint.
+This document explains the marketplace-ready title and description generation feature in the
+`/v1/assist/chat` endpoint.
 
 ***REMOVED******REMOVED*** Overview
 
 The assistant endpoint generates marketplace-ready listings using:
+
 1. **User-provided attributes** (authoritative - used as-is)
 2. **Detected attributes** from vision analysis (with confidence levels)
 3. **Visual evidence** from images (OCR, logos, colors)
 
 ***REMOVED******REMOVED*** Key Concept: User Overrides
 
-When a user manually edits an attribute (brand, model, color, condition), that value becomes **authoritative**. The system will:
+When a user manually edits an attribute (brand, model, color, condition), that value becomes *
+*authoritative**. The system will:
 
 - Mark it with `[USER]` tag in the prompt
 - Treat it as `HIGH` confidence regardless of the original confidence
@@ -70,12 +73,12 @@ This ensures the final listing reflects the seller's knowledge of the item.
 
 ***REMOVED******REMOVED******REMOVED*** Attribute Source Values
 
-| Source | Description | Handling |
-|--------|-------------|----------|
-| `USER` | User manually entered/edited | Authoritative, HIGH confidence, use as-is |
-| `DETECTED` | ML/vision system detected | Use with confidence tier (HIGH/MED/LOW) |
-| `DEFAULT` | System default value | Use with context |
-| `UNKNOWN` | Source not specified | Treat as DETECTED for safety |
+| Source     | Description                  | Handling                                  |
+|------------|------------------------------|-------------------------------------------|
+| `USER`     | User manually entered/edited | Authoritative, HIGH confidence, use as-is |
+| `DETECTED` | ML/vision system detected    | Use with confidence tier (HIGH/MED/LOW)   |
+| `DEFAULT`  | System default value         | Use with context                          |
+| `UNKNOWN`  | Source not specified         | Treat as DETECTED for safety              |
 
 ***REMOVED******REMOVED*** Response Format
 
@@ -143,6 +146,7 @@ Titles are generated following these rules:
 - Include brand (if known) + model/type + key differentiator
 
 **Examples:**
+
 - `Dell XPS 15 Laptop - 16GB RAM, Excellent Condition` (55 chars)
 - `IKEA KALLAX Bookshelf - White, 4x4 Cube Storage` (47 chars)
 - `Sony WH-1000XM4 Headphones - Wireless, Noise Canceling` (54 chars)
@@ -157,6 +161,7 @@ Descriptions follow a structured format:
 4. **Additional Notes:** Shipping, pickup, etc.
 
 **Example:**
+
 ```
 Premium Dell XPS 15 laptop in like-new condition. Powerful performance for professionals.
 
@@ -171,11 +176,11 @@ Includes original charger. Local pickup preferred, shipping available.
 
 ***REMOVED******REMOVED*** Confidence Levels
 
-| Confidence | Meaning | Handling |
-|------------|---------|----------|
-| `HIGH` | User-provided OR strong visual evidence | Use with confidence |
-| `MED` | Moderate evidence | Include "Please verify" warning |
-| `LOW` | Insufficient evidence | Mark as "Possibly" or omit |
+| Confidence | Meaning                                 | Handling                        |
+|------------|-----------------------------------------|---------------------------------|
+| `HIGH`     | User-provided OR strong visual evidence | Use with confidence             |
+| `MED`      | Moderate evidence                       | Include "Please verify" warning |
+| `LOW`      | Insufficient evidence                   | Mark as "Possibly" or omit      |
 
 ***REMOVED******REMOVED*** Prompt Template
 
@@ -229,6 +234,7 @@ cd backend && npm test -- --run src/modules/assistant/prompts/listing-generation
 ```
 
 Key test scenarios:
+
 - User-provided attributes marked with `[USER]` tag
 - User attributes treated as HIGH confidence
 - User attributes shown before detected attributes
@@ -251,6 +257,7 @@ draft = draft.copy(
 ```
 
 `ItemContextSnapshotBuilder.fromDraft()` converts `DraftProvenance` to `AttributeSource`:
+
 - `USER_EDITED` → `USER` (authoritative)
 - `DETECTED` → `DETECTED`
 - `DEFAULT` → `DEFAULT`
@@ -258,7 +265,8 @@ draft = draft.copy(
 
 ***REMOVED******REMOVED*** Configuration
 
-No additional configuration is required. The feature is enabled by default when using the assistant endpoint.
+No additional configuration is required. The feature is enabled by default when using the assistant
+endpoint.
 
 ***REMOVED******REMOVED*** Troubleshooting
 

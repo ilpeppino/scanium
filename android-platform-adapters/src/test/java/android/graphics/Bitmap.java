@@ -6,8 +6,13 @@ public class Bitmap {
     private int mWidth;
     private int mHeight;
 
-    public int getWidth() { return mWidth; }
-    public int getHeight() { return mHeight; }
+    public int getWidth() {
+        return mWidth;
+    }
+
+    public int getHeight() {
+        return mHeight;
+    }
 
     // Fake fields for field access if Kotlin properties use them? 
     // Kotlin properties 'width' and 'height' usually map to getWidth()/getHeight().

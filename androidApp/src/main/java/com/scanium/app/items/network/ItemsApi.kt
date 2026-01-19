@@ -415,7 +415,10 @@ class ItemsApi(
 
                 // Parse response which contains deleted item
                 @Serializable
-                data class DeleteResponse(val item: ItemDto, val correlationId: String)
+                data class DeleteResponse(
+                    val item: ItemDto,
+                    val correlationId: String,
+                )
 
                 val deleteResponse =
                     json.decodeFromString(

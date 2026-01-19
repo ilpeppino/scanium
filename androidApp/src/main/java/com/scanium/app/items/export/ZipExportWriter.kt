@@ -111,6 +111,8 @@ class ZipExportWriter(
         }.getOrNull()
     }
 
-    internal fun imageEntryName(itemId: String, index: Int): String =
-        "$IMAGES_DIR/item_${itemId}_${String.format("%03d", index + 1)}.jpg"
+    internal fun imageEntryName(
+        itemId: String,
+        index: Int,
+    ): String = "$IMAGES_DIR/item_${itemId}_${String.format("%03d", index + 1)}.jpg"
 }

@@ -2,7 +2,10 @@
 
 ***REMOVED******REMOVED*** 1. Overview
 
-The backend is a Node.js + TypeScript Fastify service that provides cloud classification, assistant chat, vision insights, enrichment, pricing APIs, and remote config. It runs behind Docker (and Cloudflare Tunnel on NAS) and persists data in PostgreSQL for auth tokens. Telemetry is exported via OpenTelemetry (OTLP) to the monitoring stack.
+The backend is a Node.js + TypeScript Fastify service that provides cloud classification, assistant
+chat, vision insights, enrichment, pricing APIs, and remote config. It runs behind Docker (and
+Cloudflare Tunnel on NAS) and persists data in PostgreSQL for auth tokens. Telemetry is exported via
+OpenTelemetry (OTLP) to the monitoring stack.
 
 Primary responsibilities for the Android app:
 
@@ -29,7 +32,8 @@ Request flow (simplified):
 
 Key modules:
 
-- Classifier: `backend/src/modules/classifier/` (cloud classification + vision attribute enrichment).
+- Classifier: `backend/src/modules/classifier/` (cloud classification + vision attribute
+  enrichment).
 - Assistant: `backend/src/modules/assistant/` (LLM providers, safety filters, caching).
 - Vision insights: `backend/src/modules/vision/` (fast OCR/logo/color extraction).
 - Enrichment: `backend/src/modules/enrich/` (vision + attribute + draft pipeline).
@@ -44,38 +48,38 @@ Key modules:
 Public endpoints (current implementation in `backend/src/app.ts`):
 
 - Health:
-  - `GET /health`, `GET /healthz`, `GET /readyz`, `GET /metrics`
+    - `GET /health`, `GET /healthz`, `GET /readyz`, `GET /metrics`
 - Auth (eBay OAuth):
-  - `POST /auth/ebay/start`, `GET /auth/ebay/callback`, `GET /auth/ebay/status`
+    - `POST /auth/ebay/start`, `GET /auth/ebay/callback`, `GET /auth/ebay/status`
 - Classification:
-  - `POST /v1/classify` (multipart image, optional `domainPackId`, `enrichAttributes`)
+    - `POST /v1/classify` (multipart image, optional `domainPackId`, `enrichAttributes`)
 - Vision insights:
-  - `POST /v1/vision/insights` (multipart image, optional `itemId`)
+    - `POST /v1/vision/insights` (multipart image, optional `itemId`)
 - Enrichment:
-  - `POST /v1/items/enrich` (multipart image + JSON fields)
-  - `GET /v1/items/enrich/status/:requestId`
-  - `GET /v1/items/enrich/metrics`
+    - `POST /v1/items/enrich` (multipart image + JSON fields)
+    - `GET /v1/items/enrich/status/:requestId`
+    - `GET /v1/items/enrich/metrics`
 - Assistant:
-  - `POST /v1/assist/chat`
-  - `POST /v1/assist/warmup`
-  - `GET /v1/assist/chat/status/:requestId`
-  - `GET /v1/assist/cache/stats`
+    - `POST /v1/assist/chat`
+    - `POST /v1/assist/warmup`
+    - `GET /v1/assist/chat/status/:requestId`
+    - `GET /v1/assist/cache/stats`
 - Pricing:
-  - `POST /v1/pricing/estimate`
-  - `POST /v1/pricing/estimate/v2`
-  - `GET /v1/pricing/categories`
-  - `GET /v1/pricing/brands/:brand`
-  - `GET /v1/pricing/conditions`
-  - `GET /v1/pricing/regions`
+    - `POST /v1/pricing/estimate`
+    - `POST /v1/pricing/estimate/v2`
+    - `GET /v1/pricing/categories`
+    - `GET /v1/pricing/brands/:brand`
+    - `GET /v1/pricing/conditions`
+    - `GET /v1/pricing/regions`
 - Remote config:
-  - `GET /v1/config`
+    - `GET /v1/config`
 - Billing (stub):
-  - `POST /v1/billing/verify/google`
+    - `POST /v1/billing/verify/google`
 - Admin (gated):
-  - `GET /v1/admin/usage`
-  - `GET /v1/admin/debug/auth`
+    - `GET /v1/admin/usage`
+    - `GET /v1/admin/debug/auth`
 - Mobile telemetry ingestion:
-  - `POST /v1/telemetry/mobile`
+    - `POST /v1/telemetry/mobile`
 
 Authentication model:
 
@@ -85,19 +89,22 @@ Authentication model:
 
 Rate limiting:
 
-- Classifier and assistant use sliding-window limiters with optional Redis for shared state (`backend/src/infra/rate-limit/`).
+- Classifier and assistant use sliding-window limiters with optional Redis for shared state (
+  `backend/src/infra/rate-limit/`).
 - Per-IP, per-API key, and per-device limits are enforced at the route level.
 
 ***REMOVED******REMOVED*** 4. Business Logic
 
 Classification (cloud mode):
 
-- `ClassifierService` maps provider responses to domain categories via `backend/src/modules/classifier/domain/`.
+- `ClassifierService` maps provider responses to domain categories via
+  `backend/src/modules/classifier/domain/`.
 - Attribute enrichment (OCR, logos, colors) is optional and uses `VisionExtractor` when enabled.
 
 Pricing:
 
-- Pricing logic lives in `backend/src/modules/pricing/` and includes baseline and V2 market-aware estimators.
+- Pricing logic lives in `backend/src/modules/pricing/` and includes baseline and V2 market-aware
+  estimators.
 - Category and brand tier lookups are handled via `category-pricing.ts` and `brand-tiers.ts`.
 
 Assistant:
@@ -110,18 +117,22 @@ Assistant:
 
 Storage layers:
 
-- PostgreSQL (Prisma): primarily used for eBay OAuth token storage (`backend/src/modules/auth/ebay/token-storage.ts`).
+- PostgreSQL (Prisma): primarily used for eBay OAuth token storage (
+  `backend/src/modules/auth/ebay/token-storage.ts`).
 - In-memory caches: classification cache, vision facts cache, assistant cache.
 - Usage counters: in-memory `UsageStore` (`backend/src/modules/usage/usage-store.ts`).
 
 File system usage:
 
-- Images are sanitized in-memory; classifier utilities explicitly avoid disk writes (`backend/src/modules/classifier/utils/image.ts`).
-- Docker volumes mount Postgres data and optional secrets/config files (see `backend/docker-compose.yml`).
+- Images are sanitized in-memory; classifier utilities explicitly avoid disk writes (
+  `backend/src/modules/classifier/utils/image.ts`).
+- Docker volumes mount Postgres data and optional secrets/config files (see
+  `backend/docker-compose.yml`).
 
 Retention policies:
 
-- Backend retention is primarily governed by DB and cache TTLs; no explicit long-term file retention is implemented for uploads.
+- Backend retention is primarily governed by DB and cache TTLs; no explicit long-term file retention
+  is implemented for uploads.
 - For app data retention policies, see `howto/infra/security/SECURITY.md`.
 
 ***REMOVED******REMOVED*** 6. Security Model
@@ -133,7 +144,8 @@ Authentication and authorization:
 
 Transport and headers:
 
-- HTTPS enforcement and security headers via `securityPlugin` (`backend/src/infra/http/plugins/security.ts`).
+- HTTPS enforcement and security headers via `securityPlugin` (
+  `backend/src/infra/http/plugins/security.ts`).
 - CORS enforced by `corsPlugin` using `CORS_ORIGINS` (`backend/src/infra/http/plugins/cors.ts`).
 
 Input validation:
@@ -148,11 +160,13 @@ PII/logging:
 
 Limitations:
 
-- Android `RequestSigner` headers are not currently validated by backend routes. Treat signature headers as best-effort until server-side validation exists.
+- Android `RequestSigner` headers are not currently validated by backend routes. Treat signature
+  headers as best-effort until server-side validation exists.
 
 ***REMOVED******REMOVED*** 7. Performance Considerations
 
-- Classifier concurrency and rate limits are configurable (`CLASSIFIER_CONCURRENCY_LIMIT`, `CLASSIFIER_RATE_LIMIT_PER_MINUTE`).
+- Classifier concurrency and rate limits are configurable (`CLASSIFIER_CONCURRENCY_LIMIT`,
+  `CLASSIFIER_RATE_LIMIT_PER_MINUTE`).
 - Assistant provider timeouts and quota limits are configurable in `config/index.ts`.
 - OTLP metrics export runs on a 30s interval (`infra/telemetry/index.ts`).
 - NAS deployments tune CPU/memory limits in `deploy/nas/compose/` files.
@@ -161,7 +175,8 @@ Limitations:
 
 Expected contracts (as used in Android):
 
-- `/v1/classify`: multipart image + `domainPackId` -> classification result with `domainCategoryId`, `confidence`, `label`, `attributes`, `requestId`.
+- `/v1/classify`: multipart image + `domainPackId` -> classification result with `domainCategoryId`,
+  `confidence`, `label`, `attributes`, `requestId`.
 - `/v1/vision/insights`: multipart image -> OCR/labels/logos/colors + category hint.
 - `/v1/items/enrich`: multipart image + `itemId` -> async requestId, then `/status` to fetch result.
 - `/v1/assist/chat`: JSON or multipart -> assistant response + optional `assistantError`.
@@ -170,11 +185,14 @@ Expected contracts (as used in Android):
 
 Known gaps:
 
-- Android health checks mention `/v1/preflight` and `/v1/assist/status`, but backend does not implement these routes. The backend implements `/v1/assist/warmup` and `/v1/assist/chat/status/:requestId` instead.
+- Android health checks mention `/v1/preflight` and `/v1/assist/status`, but backend does not
+  implement these routes. The backend implements `/v1/assist/warmup` and
+  `/v1/assist/chat/status/:requestId` instead.
 
 Versioning strategy:
 
-- API routes use `/v1` prefixes but no explicit version negotiation. Android and backend are expected to move in lockstep.
+- API routes use `/v1` prefixes but no explicit version negotiation. Android and backend are
+  expected to move in lockstep.
 
 ***REMOVED******REMOVED*** 9. Interaction With Monitoring
 
@@ -195,9 +213,9 @@ NAS deployment:
 
 - Compose files under `deploy/nas/compose/` define backend + monitoring stacks.
 - Key mounts:
-  - Postgres data: `/volume1/docker/scanium/postgres`.
-  - Secrets: `/volume1/docker/scanium/secrets/vision-sa.json` for Google Vision.
-  - Remote config file mounted to `/app/config/remote-config.json`.
+    - Postgres data: `/volume1/docker/scanium/postgres`.
+    - Secrets: `/volume1/docker/scanium/secrets/vision-sa.json` for Google Vision.
+    - Remote config file mounted to `/app/config/remote-config.json`.
 - OTLP endpoint points to `scanium-alloy` on the monitoring network.
 
 Assumptions:

@@ -93,19 +93,25 @@ object DetectionGeometryMapper {
         // Apply inverse rotation to get sensor-space normalized coordinates
         val (sensorNormLeft, sensorNormTop, sensorNormRight, sensorNormBottom) =
             when (rotationDegrees) {
-                0 -> listOf(normLeft, normTop, normRight, normBottom)
+                0 -> {
+                    listOf(normLeft, normTop, normRight, normBottom)
+                }
+
                 90 -> {
                     // Inverse of 90° clockwise rotation
                     listOf(normTop, 1f - normRight, normBottom, 1f - normLeft)
                 }
+
                 180 -> {
                     // Inverse of 180° is 180°
                     listOf(1f - normRight, 1f - normBottom, 1f - normLeft, 1f - normTop)
                 }
+
                 270 -> {
                     // Inverse of 270° clockwise rotation
                     listOf(1f - normBottom, normLeft, 1f - normTop, normRight)
                 }
+
                 else -> {
                     Log.w(TAG, "Unexpected rotation: $rotationDegrees, using identity")
                     listOf(normLeft, normTop, normRight, normBottom)
@@ -316,8 +322,8 @@ object DetectionGeometryMapper {
         transform: BboxMappingTransform,
         topDetectionNorm: NormalizedRect?,
         topDetectionScreen: RectF?,
-    ): GeometryDebugInfo {
-        return GeometryDebugInfo(
+    ): GeometryDebugInfo =
+        GeometryDebugInfo(
             sensorSize = Size(context.sensorWidth, context.sensorHeight),
             rotationDegrees = context.rotationDegrees,
             previewSize = Size(context.previewWidth.toInt(), context.previewHeight.toInt()),
@@ -329,7 +335,6 @@ object DetectionGeometryMapper {
             topDetectionRaw = topDetectionNorm,
             topDetectionMapped = topDetectionScreen,
         )
-    }
 
     /**
      * Validates that a mapped rect is within reasonable bounds of the preview.

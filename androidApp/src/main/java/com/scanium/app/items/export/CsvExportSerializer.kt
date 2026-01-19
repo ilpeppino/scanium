@@ -70,7 +70,11 @@ class CsvExportSerializer(
         }
     }
 
-    private fun imageFilename(itemId: String, imageRef: ImageRef?, index: Int): String =
+    private fun imageFilename(
+        itemId: String,
+        imageRef: ImageRef?,
+        index: Int,
+    ): String =
         when (imageRef) {
             is ImageRef.CacheKey -> imageRef.key
             is ImageRef.Bytes -> "item_${itemId}_${String.format("%03d", index + 1)}.jpg"

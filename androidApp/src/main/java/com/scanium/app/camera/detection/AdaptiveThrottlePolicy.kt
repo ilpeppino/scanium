@@ -122,9 +122,11 @@ class AdaptiveThrottlePolicy(
                     throttledFrames.incrementAndGet()
                     Log.i(
                         TAG,
-                        "[LOW_POWER] Increasing throttle: avg=${rollingAvgMs}ms > threshold=${config.highLoadThresholdMs}ms, multiplier=${"%.2f".format(
-                            currentMultiplier,
-                        )} -> ${"%.2f".format(newMultiplier)}",
+                        "[LOW_POWER] Increasing throttle: avg=${rollingAvgMs}ms > threshold=${config.highLoadThresholdMs}ms, multiplier=${
+                            "%.2f".format(
+                                currentMultiplier,
+                            )
+                        } -> ${"%.2f".format(newMultiplier)}",
                     )
                 }
             }
@@ -137,9 +139,11 @@ class AdaptiveThrottlePolicy(
                 if (newMultiplier < currentMultiplier) {
                     Log.i(
                         TAG,
-                        "[LOW_POWER] Decreasing throttle: avg=${rollingAvgMs}ms < threshold=${config.lowLoadThresholdMs}ms, multiplier=${"%.2f".format(
-                            currentMultiplier,
-                        )} -> ${"%.2f".format(newMultiplier)}",
+                        "[LOW_POWER] Decreasing throttle: avg=${rollingAvgMs}ms < threshold=${config.lowLoadThresholdMs}ms, multiplier=${
+                            "%.2f".format(
+                                currentMultiplier,
+                            )
+                        } -> ${"%.2f".format(newMultiplier)}",
                     )
                     if (newMultiplier <= 1.05f) {
                         _isThrottling.value = false
@@ -149,7 +153,9 @@ class AdaptiveThrottlePolicy(
                 }
             }
 
-            else -> return // No adjustment needed
+            else -> {
+                return
+            } // No adjustment needed
         }
 
         _adaptiveMultiplier.value = newMultiplier

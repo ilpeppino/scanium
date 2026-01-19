@@ -4,7 +4,14 @@ import android.app.Activity
 import android.view.WindowManager
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -12,8 +19,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material3.*
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -55,10 +76,11 @@ fun SellOnEbayScreen(
     val context = LocalContext.current
     val assistedFactory =
         remember(context) {
-            EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                ListingViewModelFactoryEntryPoint::class.java,
-            ).listingViewModelFactory()
+            EntryPointAccessors
+                .fromApplication(
+                    context.applicationContext,
+                    ListingViewModelFactoryEntryPoint::class.java,
+                ).listingViewModelFactory()
         }
     val viewModel: ListingViewModel =
         viewModel(
@@ -237,19 +259,26 @@ private fun PostingStatusRow(draftState: ListingDraftState) {
     ) {
         Text(text = "Status: ${draftState.status.name}")
         when (draftState.status) {
-            PostingStatus.POSTING -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            PostingStatus.SUCCESS ->
+            PostingStatus.POSTING -> {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            }
+
+            PostingStatus.SUCCESS -> {
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = stringResource(R.string.cd_posting_success),
                     tint = MaterialTheme.colorScheme.primary,
                 )
-            PostingStatus.FAILURE ->
+            }
+
+            PostingStatus.FAILURE -> {
                 Icon(
                     Icons.Default.Error,
                     contentDescription = stringResource(R.string.cd_posting_failed),
                     tint = MaterialTheme.colorScheme.error,
                 )
+            }
+
             else -> {}
         }
     }

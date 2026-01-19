@@ -9,7 +9,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,9 +30,16 @@ private const val TAG = "AddPhotoHandler"
  */
 sealed class AddPhotoState {
     data object Idle : AddPhotoState()
-    data class Pending(val itemId: String) : AddPhotoState()
+
+    data class Pending(
+        val itemId: String,
+    ) : AddPhotoState()
+
     data object Completed : AddPhotoState()
-    data class Error(val message: String) : AddPhotoState()
+
+    data class Error(
+        val message: String,
+    ) : AddPhotoState()
 }
 
 /**
@@ -41,7 +47,9 @@ sealed class AddPhotoState {
  */
 interface AddPhotoCallback {
     fun onPhotoAdded(itemId: String)
+
     fun onCancelled()
+
     fun onError(message: String)
 }
 
@@ -72,88 +80,91 @@ fun rememberAddPhotoHandler(
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
 
     // Camera launcher
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        val itemId = pendingItemId
-        val uri = pendingCameraUri
+    val cameraLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicture(),
+        ) { success ->
+            val itemId = pendingItemId
+            val uri = pendingCameraUri
 
-        if (success && itemId != null && uri != null) {
-            Log.i(TAG, "Camera captured photo for item $itemId")
-            scope.launch {
-                try {
-                    itemsViewModel.addPhotoToItem(context, itemId, uri)
-                    state = AddPhotoState.Completed
-                    onPhotoAdded(itemId)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to add photo", e)
-                    state = AddPhotoState.Error(e.message ?: "Failed to add photo")
-                    onError(e.message ?: "Failed to add photo")
+            if (success && itemId != null && uri != null) {
+                Log.i(TAG, "Camera captured photo for item $itemId")
+                scope.launch {
+                    try {
+                        itemsViewModel.addPhotoToItem(context, itemId, uri)
+                        state = AddPhotoState.Completed
+                        onPhotoAdded(itemId)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to add photo", e)
+                        state = AddPhotoState.Error(e.message ?: "Failed to add photo")
+                        onError(e.message ?: "Failed to add photo")
+                    }
                 }
+            } else {
+                Log.d(TAG, "Camera capture cancelled or failed for item $itemId")
+                state = AddPhotoState.Idle
             }
-        } else {
-            Log.d(TAG, "Camera capture cancelled or failed for item $itemId")
-            state = AddPhotoState.Idle
-        }
 
-        pendingItemId = null
-        pendingCameraUri = null
-    }
+            pendingItemId = null
+            pendingCameraUri = null
+        }
 
     // Gallery launcher (fallback)
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        val itemId = pendingItemId
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            val itemId = pendingItemId
 
-        if (uri != null && itemId != null) {
-            Log.i(TAG, "Gallery selected photo for item $itemId")
-            scope.launch {
-                try {
-                    itemsViewModel.addPhotoToItem(context, itemId, uri)
-                    state = AddPhotoState.Completed
-                    onPhotoAdded(itemId)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to add photo from gallery", e)
-                    state = AddPhotoState.Error(e.message ?: "Failed to add photo")
-                    onError(e.message ?: "Failed to add photo")
+            if (uri != null && itemId != null) {
+                Log.i(TAG, "Gallery selected photo for item $itemId")
+                scope.launch {
+                    try {
+                        itemsViewModel.addPhotoToItem(context, itemId, uri)
+                        state = AddPhotoState.Completed
+                        onPhotoAdded(itemId)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to add photo from gallery", e)
+                        state = AddPhotoState.Error(e.message ?: "Failed to add photo")
+                        onError(e.message ?: "Failed to add photo")
+                    }
                 }
+            } else {
+                Log.d(TAG, "Gallery selection cancelled for item $itemId")
+                state = AddPhotoState.Idle
             }
-        } else {
-            Log.d(TAG, "Gallery selection cancelled for item $itemId")
-            state = AddPhotoState.Idle
-        }
 
-        pendingItemId = null
-    }
+            pendingItemId = null
+        }
 
     // Permission launcher
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        val itemId = pendingItemId
-        if (granted && itemId != null) {
-            Log.i(TAG, "Camera permission granted, launching camera for item $itemId")
-            // Create URI and launch camera
-            val uri = createCameraUri(context)
-            if (uri != null) {
-                pendingCameraUri = uri
-                cameraLauncher.launch(uri)
-            } else {
-                Log.e(TAG, "Failed to create camera URI, falling back to gallery")
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            val itemId = pendingItemId
+            if (granted && itemId != null) {
+                Log.i(TAG, "Camera permission granted, launching camera for item $itemId")
+                // Create URI and launch camera
+                val uri = createCameraUri(context)
+                if (uri != null) {
+                    pendingCameraUri = uri
+                    cameraLauncher.launch(uri)
+                } else {
+                    Log.e(TAG, "Failed to create camera URI, falling back to gallery")
+                    galleryLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                    )
+                }
+            } else if (itemId != null) {
+                Log.w(TAG, "Camera permission denied, falling back to gallery")
                 galleryLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                 )
+            } else {
+                state = AddPhotoState.Idle
             }
-        } else if (itemId != null) {
-            Log.w(TAG, "Camera permission denied, falling back to gallery")
-            galleryLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
-        } else {
-            state = AddPhotoState.Idle
         }
-    }
 
     return remember(cameraLauncher, galleryLauncher, permissionLauncher) {
         object : AddPhotoTrigger {
@@ -166,7 +177,7 @@ fun rememberAddPhotoHandler(
                 if (!isCameraAvailable(context)) {
                     Log.w(TAG, "Camera not available, using gallery")
                     galleryLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                     )
                     return
                 }
@@ -174,7 +185,7 @@ fun rememberAddPhotoHandler(
                 // Check camera permission
                 if (ContextCompat.checkSelfPermission(
                         context,
-                        Manifest.permission.CAMERA
+                        Manifest.permission.CAMERA,
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     Log.d(TAG, "Camera permission already granted, launching camera")
@@ -185,7 +196,7 @@ fun rememberAddPhotoHandler(
                     } else {
                         Log.e(TAG, "Failed to create camera URI, falling back to gallery")
                         galleryLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                         )
                     }
                 } else {
@@ -205,21 +216,20 @@ fun rememberAddPhotoHandler(
  */
 interface AddPhotoTrigger {
     fun triggerAddPhoto(itemId: String)
+
     val currentState: AddPhotoState
 }
 
 /**
  * Check if device has a camera.
  */
-private fun isCameraAvailable(context: Context): Boolean {
-    return context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
-}
+private fun isCameraAvailable(context: Context): Boolean = context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
 
 /**
  * Create a content URI for camera capture using FileProvider.
  */
-private fun createCameraUri(context: Context): Uri? {
-    return try {
+private fun createCameraUri(context: Context): Uri? =
+    try {
         // Create the captures directory
         val capturesDir = File(context.cacheDir, "camera_captures")
         capturesDir.mkdirs()
@@ -231,10 +241,9 @@ private fun createCameraUri(context: Context): Uri? {
         FileProvider.getUriForFile(
             context,
             "${BuildConfig.APPLICATION_ID}.fileprovider",
-            photoFile
+            photoFile,
         )
     } catch (e: Exception) {
         Log.e(TAG, "Failed to create camera URI: ${e.message}", e)
         null
     }
-}

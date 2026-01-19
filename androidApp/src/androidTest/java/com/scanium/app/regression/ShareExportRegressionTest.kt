@@ -361,11 +361,12 @@ class ShareExportRegressionTest {
             // Root cause: ImageRef.CacheKey was not being persisted, only ImageRef.Bytes should be saved
 
             // Arrange - Create items with thumbnails
-            val itemsWithThumbnails = listOf(
-                createTestItem(id = "persist_test_1", label = "Item 1"),
-                createTestItem(id = "persist_test_2", label = "Item 2"),
-                createTestItem(id = "persist_test_3", label = "Item 3"),
-            )
+            val itemsWithThumbnails =
+                listOf(
+                    createTestItem(id = "persist_test_1", label = "Item 1"),
+                    createTestItem(id = "persist_test_2", label = "Item 2"),
+                    createTestItem(id = "persist_test_3", label = "Item 3"),
+                )
 
             // Verify items have valid thumbnail bytes
             itemsWithThumbnails.forEach { item ->
@@ -414,14 +415,16 @@ class ShareExportRegressionTest {
             com.scanium.app.items.ThumbnailCache.put("cache_key_test", originalItem.thumbnail as ImageRef.Bytes)
 
             // Create item with CacheKey reference (simulating UI state)
-            val cachedItem = originalItem.copy(
-                thumbnail = ImageRef.CacheKey(
-                    key = "cache_key_test",
-                    mimeType = "image/jpeg",
-                    width = 200,
-                    height = 200,
+            val cachedItem =
+                originalItem.copy(
+                    thumbnail =
+                        ImageRef.CacheKey(
+                            key = "cache_key_test",
+                            mimeType = "image/jpeg",
+                            width = 200,
+                            height = 200,
+                        ),
                 )
-            )
 
             // Act - Persist item with CacheKey thumbnail
             val entity = cachedItem.toEntity()

@@ -2,7 +2,9 @@
 
 ***REMOVED******REMOVED*** Overview
 
-This guide documents the multilingual AI output enforcement system implemented to ensure AI-generated content (ready-to-sell descriptions, titles, etc.) is fully language-consistent with the user's selected app language.
+This guide documents the multilingual AI output enforcement system implemented to ensure
+AI-generated content (ready-to-sell descriptions, titles, etc.) is fully language-consistent with
+the user's selected app language.
 
 ***REMOVED******REMOVED*** Architecture
 
@@ -46,31 +48,31 @@ This guide documents the multilingual AI output enforcement system implemented t
 
 ***REMOVED******REMOVED******REMOVED*** Backend
 
-| File | Purpose |
-|------|---------|
+| File                                                           | Purpose                                             |
+|----------------------------------------------------------------|-----------------------------------------------------|
 | `backend/src/modules/assistant/prompts/prompt-localization.ts` | Complete localized prompt templates for 7 languages |
-| `backend/src/modules/assistant/prompts/listing-generation.ts` | Prompt building with localization |
-| `backend/src/modules/assistant/language-consistency.ts` | Stopword-based language detection |
-| `backend/src/modules/assistant/openai-provider.ts` | OpenAI integration with language verification |
-| `backend/src/modules/assistant/claude-provider.ts` | Claude integration with language verification |
+| `backend/src/modules/assistant/prompts/listing-generation.ts`  | Prompt building with localization                   |
+| `backend/src/modules/assistant/language-consistency.ts`        | Stopword-based language detection                   |
+| `backend/src/modules/assistant/openai-provider.ts`             | OpenAI integration with language verification       |
+| `backend/src/modules/assistant/claude-provider.ts`             | Claude integration with language verification       |
 
 ***REMOVED******REMOVED******REMOVED*** Android
 
-| File | Purpose |
-|------|---------|
+| File                                                                  | Purpose                                              |
+|-----------------------------------------------------------------------|------------------------------------------------------|
 | `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt` | `assistantLanguageFlow` - user's language preference |
-| `androidApp/src/main/res/values-{lang}/strings.xml` | Localized UI strings |
+| `androidApp/src/main/res/values-{lang}/strings.xml`                   | Localized UI strings                                 |
 
 ***REMOVED******REMOVED*** Supported Languages
 
-| Code | Language | Native Name |
-|------|----------|-------------|
-| EN | English | English |
-| NL | Dutch | Nederlands |
-| DE | German | Deutsch |
-| FR | French | Français |
-| IT | Italian | Italiano |
-| ES | Spanish | Español |
+| Code  | Language            | Native Name          |
+|-------|---------------------|----------------------|
+| EN    | English             | English              |
+| NL    | Dutch               | Nederlands           |
+| DE    | German              | Deutsch              |
+| FR    | French              | Français             |
+| IT    | Italian             | Italiano             |
+| ES    | Spanish             | Español              |
 | PT_BR | Portuguese (Brazil) | Português Brasileiro |
 
 ***REMOVED******REMOVED*** Debugging
@@ -93,6 +95,7 @@ grep -E "(LANG_MISMATCH|RESPONSE_LANG_MISMATCH)" backend.log
 ```
 
 Log format:
+
 ```json
 {
   "correlationId": "abc-123",
@@ -130,25 +133,25 @@ const metrics = getLanguageMetrics();
 ***REMOVED******REMOVED******REMOVED*** Test Case 1: Italian Language
 
 1. **Setup**
-   - Open Settings > General > Language
-   - Select "Italiano"
-   - Open Settings > AI Assistant > Language
-   - Confirm it's set to "Italiano"
+    - Open Settings > General > Language
+    - Select "Italiano"
+    - Open Settings > AI Assistant > Language
+    - Confirm it's set to "Italiano"
 
 2. **Test**
-   - Navigate to camera screen
-   - Scan an item (e.g., a book or electronic device)
-   - Tap "Ask AI" or navigate to assistant
-   - Type: "Genera una descrizione pronta per la vendita"
-   - OR tap the ready-to-sell quick action
+    - Navigate to camera screen
+    - Scan an item (e.g., a book or electronic device)
+    - Tap "Ask AI" or navigate to assistant
+    - Type: "Genera una descrizione pronta per la vendita"
+    - OR tap the ready-to-sell quick action
 
 3. **Verify**
-   - [ ] System prompt shown in logs should be in Italian
-   - [ ] Attribute labels in prompt are Italian (Marca, Modello, Colore)
-   - [ ] AI response is ENTIRELY in Italian
-   - [ ] No English words in title or description
-   - [ ] Title format is correct (max 80 chars)
-   - [ ] Bullet points in description are in Italian
+    - [ ] System prompt shown in logs should be in Italian
+    - [ ] Attribute labels in prompt are Italian (Marca, Modello, Colore)
+    - [ ] AI response is ENTIRELY in Italian
+    - [ ] No English words in title or description
+    - [ ] Title format is correct (max 80 chars)
+    - [ ] Bullet points in description are in Italian
 
 4. **Expected Response Example**
    ```
@@ -167,43 +170,43 @@ const metrics = getLanguageMetrics();
 ***REMOVED******REMOVED******REMOVED*** Test Case 2: German Language
 
 1. **Setup**
-   - Set app language to "Deutsch"
-   - Set assistant language to "Deutsch"
+    - Set app language to "Deutsch"
+    - Set assistant language to "Deutsch"
 
 2. **Test**
-   - Scan an item
-   - Request: "Erstelle eine Produktbeschreibung"
+    - Scan an item
+    - Request: "Erstelle eine Produktbeschreibung"
 
 3. **Verify**
-   - [ ] Response is entirely in German
-   - [ ] Attribute labels are German (Marke, Modell, Farbe)
-   - [ ] No English leakage
+    - [ ] Response is entirely in German
+    - [ ] Attribute labels are German (Marke, Modell, Farbe)
+    - [ ] No English leakage
 
 ***REMOVED******REMOVED******REMOVED*** Test Case 3: Language Switching
 
 1. **Test**
-   - Generate a listing in Italian
-   - Change language to French
-   - Generate another listing for the same item
+    - Generate a listing in Italian
+    - Change language to French
+    - Generate another listing for the same item
 
 2. **Verify**
-   - [ ] First response is in Italian
-   - [ ] Second response is in French
-   - [ ] No mixing of languages
+    - [ ] First response is in Italian
+    - [ ] Second response is in French
+    - [ ] No mixing of languages
 
 ***REMOVED******REMOVED******REMOVED*** Test Case 4: Edge Cases
 
 1. **Very Short Input**
-   - Send just "OK" or "Si"
-   - Verify response is still in selected language
+    - Send just "OK" or "Si"
+    - Verify response is still in selected language
 
 2. **Technical Terms**
-   - Item with technical specs (RAM, CPU, etc.)
-   - Verify technical terms are not translated incorrectly
+    - Item with technical specs (RAM, CPU, etc.)
+    - Verify technical terms are not translated incorrectly
 
 3. **Brand Names**
-   - Item with brand name (Nike, Apple, IKEA)
-   - Verify brand names are preserved as-is
+    - Item with brand name (Nike, Apple, IKEA)
+    - Verify brand names are preserved as-is
 
 ***REMOVED******REMOVED*** Adding a New Language
 
@@ -241,8 +244,8 @@ To add support for a new language:
 
 5. **Tests**
    Add tests for the new language in:
-   - `listing-generation.test.ts`
-   - `language-consistency.test.ts`
+    - `listing-generation.test.ts`
+    - `language-consistency.test.ts`
 
 ***REMOVED******REMOVED*** Troubleshooting
 
@@ -251,6 +254,7 @@ To add support for a new language:
 **Cause**: System prompt or user prompt may have leaked English content.
 
 **Debug**:
+
 1. Check backend logs for the actual prompt sent
 2. Verify `assistantPrefs.language` is correct in request
 3. Check if attribute values are being sent in English
@@ -262,6 +266,7 @@ To add support for a new language:
 **Cause**: Language parameter not being passed to `buildListingUserPrompt`.
 
 **Debug**:
+
 1. Check provider code passes language to prompt builder
 2. Verify `getLocalizedAttributeLabel` is being called
 
@@ -269,7 +274,8 @@ To add support for a new language:
 
 **Cause**: Short text or mixed content.
 
-**Note**: Language detection is best-effort for logging/metrics. The prompt localization ensures correct output regardless of detection accuracy.
+**Note**: Language detection is best-effort for logging/metrics. The prompt localization ensures
+correct output regardless of detection accuracy.
 
 ***REMOVED******REMOVED*** Performance Considerations
 

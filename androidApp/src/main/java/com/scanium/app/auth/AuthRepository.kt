@@ -65,12 +65,13 @@ class AuthRepository(
                     }
                 }
 
-                val userInfo = SecureApiKeyStore.UserInfo(
-                    id = authResponse.user.id,
-                    email = authResponse.user.email,
-                    displayName = authResponse.user.displayName,
-                    pictureUrl = authResponse.user.pictureUrl,
-                )
+                val userInfo =
+                    SecureApiKeyStore.UserInfo(
+                        id = authResponse.user.id,
+                        email = authResponse.user.email,
+                        displayName = authResponse.user.displayName,
+                        pictureUrl = authResponse.user.pictureUrl,
+                    )
                 apiKeyStore.setUserInfo(userInfo)
                 _userInfoFlow.value = userInfo
 
@@ -91,7 +92,8 @@ class AuthRepository(
                 // Call backend logout if we have an access token
                 val accessToken = apiKeyStore.getAuthToken()
                 if (accessToken != null) {
-                    authApi.logout(accessToken)
+                    authApi
+                        .logout(accessToken)
                         .onFailure { e ->
                             // Log but don't fail - we'll clear local state anyway
                             android.util.Log.w("AuthRepository", "Backend logout failed, clearing local state anyway", e)
@@ -112,13 +114,9 @@ class AuthRepository(
             }
         }
 
-    fun isSignedIn(): Boolean {
-        return apiKeyStore.getAuthToken() != null
-    }
+    fun isSignedIn(): Boolean = apiKeyStore.getAuthToken() != null
 
-    fun getUserInfo(): SecureApiKeyStore.UserInfo? {
-        return apiKeyStore.getUserInfo()
-    }
+    fun getUserInfo(): SecureApiKeyStore.UserInfo? = apiKeyStore.getUserInfo()
 
     /**
      * Phase C: Refresh the access token using the refresh token
@@ -126,8 +124,9 @@ class AuthRepository(
     suspend fun refreshSession(): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {
-                val refreshToken = apiKeyStore.getRefreshToken()
-                    ?: return@withContext Result.failure(Exception("No refresh token available"))
+                val refreshToken =
+                    apiKeyStore.getRefreshToken()
+                        ?: return@withContext Result.failure(Exception("No refresh token available"))
 
                 // Call backend refresh endpoint
                 val refreshResponse = authApi.refreshSession(refreshToken).getOrThrow()
@@ -161,9 +160,7 @@ class AuthRepository(
     /**
      * Phase C: Get access token expiry timestamp (milliseconds since epoch)
      */
-    fun getAccessTokenExpiresAt(): Long? {
-        return apiKeyStore.getAccessTokenExpiresAt()
-    }
+    fun getAccessTokenExpiresAt(): Long? = apiKeyStore.getAccessTokenExpiresAt()
 
     /**
      * Phase C: Check if access token needs refresh (< 7 days from expiry)
@@ -183,8 +180,9 @@ class AuthRepository(
         withContext(Dispatchers.IO) {
             try {
                 // Get access token
-                val accessToken = apiKeyStore.getAuthToken()
-                    ?: return@withContext Result.failure(Exception("Not signed in"))
+                val accessToken =
+                    apiKeyStore.getAuthToken()
+                        ?: return@withContext Result.failure(Exception("Not signed in"))
 
                 // Call backend delete endpoint
                 authApi.deleteAccount(accessToken).getOrThrow()

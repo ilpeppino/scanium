@@ -38,31 +38,23 @@ object ViewModelModule {
     @Singleton
     fun provideExportProfilePreferences(
         @ApplicationContext context: Context,
-    ): ExportProfilePreferences {
-        return ExportProfilePreferences(context)
-    }
+    ): ExportProfilePreferences = ExportProfilePreferences(context)
 
     @Provides
     @Singleton
     fun providePostingTargetPreferences(
         @ApplicationContext context: Context,
-    ): PostingTargetPreferences {
-        return PostingTargetPreferences(context)
-    }
+    ): PostingTargetPreferences = PostingTargetPreferences(context)
 
     @Provides
     @Singleton
     fun provideExportProfileRepository(
         @ApplicationContext context: Context,
-    ): ExportProfileRepository {
-        return AssetExportProfileRepository(context)
-    }
+    ): ExportProfileRepository = AssetExportProfileRepository(context)
 
     @Provides
     @Singleton
-    fun provideListingDraftStore(listingDraftRepository: ListingDraftRepository): ListingDraftStore {
-        return listingDraftRepository
-    }
+    fun provideListingDraftStore(listingDraftRepository: ListingDraftRepository): ListingDraftStore = listingDraftRepository
 
     /**
      * Provides the AssistantRepository for AI-powered listing assistance.
@@ -72,50 +64,36 @@ object ViewModelModule {
     @Singleton
     fun provideAssistantRepository(
         @ApplicationContext context: Context,
-    ): AssistantRepository {
-        return AssistantRepositoryFactory(context).create()
-    }
+    ): AssistantRepository = AssistantRepositoryFactory(context).create()
 
     @Provides
     @Singleton
-    fun provideLocalAssistantHelper(): LocalAssistantHelper {
-        return LocalAssistantHelper()
-    }
+    fun provideLocalAssistantHelper(): LocalAssistantHelper = LocalAssistantHelper()
 
     @Provides
     @Singleton
-    fun provideLocalSuggestionEngine(): LocalSuggestionEngine {
-        return LocalSuggestionEngine()
-    }
+    fun provideLocalSuggestionEngine(): LocalSuggestionEngine = LocalSuggestionEngine()
 
     @Provides
     @Singleton
     fun provideDiagnosticsRepository(
         @ApplicationContext context: Context,
-    ): DiagnosticsRepository {
-        return DiagnosticsRepository(context)
-    }
+    ): DiagnosticsRepository = DiagnosticsRepository(context)
 
     @Provides
     @Singleton
-    fun provideEbayApi(): EbayApi {
-        return MockEbayApi()
-    }
+    fun provideEbayApi(): EbayApi = MockEbayApi()
 
     @Provides
     @Singleton
     fun provideEbayMarketplaceService(
         @ApplicationContext context: Context,
         ebayApi: EbayApi,
-    ): EbayMarketplaceService {
-        return EbayMarketplaceService(context, ebayApi)
-    }
+    ): EbayMarketplaceService = EbayMarketplaceService(context, ebayApi)
 
     @Provides
     @Singleton
     fun provideAssistantPreflightManager(
         @ApplicationContext context: Context,
-    ): AssistantPreflightManager {
-        return AssistantPreflightManagerImpl(context)
-    }
+    ): AssistantPreflightManager = AssistantPreflightManagerImpl(context)
 }

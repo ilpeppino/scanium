@@ -13,16 +13,16 @@ import org.junit.Test
  * - Index coercion logic (for out-of-bounds values)
  */
 class PhotoGalleryDialogTest {
-
     @Test
     fun `GalleryPhotoRef FromImageRef creates correct type`() {
         // Arrange
-        val imageRef = ImageRef.Bytes(
-            bytes = byteArrayOf(1, 2, 3),
-            mimeType = "image/jpeg",
-            width = 100,
-            height = 100,
-        )
+        val imageRef =
+            ImageRef.Bytes(
+                bytes = byteArrayOf(1, 2, 3),
+                mimeType = "image/jpeg",
+                width = 100,
+                height = 100,
+            )
 
         // Act
         val photoRef = GalleryPhotoRef.FromImageRef(imageRef)

@@ -24,7 +24,9 @@ private val Context.devHealthMonitorDataStore: DataStore<Preferences> by prefere
  *
  * DEV-only: This class should only be used when FeatureFlags.isDevBuild is true.
  */
-class DevHealthMonitorStateStore(private val context: Context) {
+class DevHealthMonitorStateStore(
+    private val context: Context,
+) {
     companion object {
         // State keys
         private val KEY_LAST_STATUS = stringPreferencesKey("last_status")
@@ -49,28 +51,31 @@ class DevHealthMonitorStateStore(private val context: Context) {
     /**
      * Flow of the current monitor state.
      */
-    val stateFlow: Flow<MonitorState> = context.devHealthMonitorDataStore.data.map { prefs ->
-        MonitorState(
-            lastStatus = prefs[KEY_LAST_STATUS]?.let {
-                runCatching { MonitorHealthStatus.valueOf(it) }.getOrNull()
-            },
-            lastCheckedAt = prefs[KEY_LAST_CHECKED_AT],
-            lastNotifiedAt = prefs[KEY_LAST_NOTIFIED_AT],
-            lastFailureSignature = prefs[KEY_LAST_FAILURE_SIGNATURE],
-            lastFailureSummary = prefs[KEY_LAST_FAILURE_SUMMARY],
-        )
-    }
+    val stateFlow: Flow<MonitorState> =
+        context.devHealthMonitorDataStore.data.map { prefs ->
+            MonitorState(
+                lastStatus =
+                    prefs[KEY_LAST_STATUS]?.let {
+                        runCatching { MonitorHealthStatus.valueOf(it) }.getOrNull()
+                    },
+                lastCheckedAt = prefs[KEY_LAST_CHECKED_AT],
+                lastNotifiedAt = prefs[KEY_LAST_NOTIFIED_AT],
+                lastFailureSignature = prefs[KEY_LAST_FAILURE_SIGNATURE],
+                lastFailureSummary = prefs[KEY_LAST_FAILURE_SUMMARY],
+            )
+        }
 
     /**
      * Flow of the current configuration.
      */
-    val configFlow: Flow<MonitorConfig> = context.devHealthMonitorDataStore.data.map { prefs ->
-        MonitorConfig(
-            enabled = prefs[KEY_ENABLED] ?: FeatureFlags.isDevBuild,
-            baseUrlOverride = prefs[KEY_BASE_URL_OVERRIDE],
-            notifyOnRecovery = prefs[KEY_NOTIFY_ON_RECOVERY] ?: true,
-        )
-    }
+    val configFlow: Flow<MonitorConfig> =
+        context.devHealthMonitorDataStore.data.map { prefs ->
+            MonitorConfig(
+                enabled = prefs[KEY_ENABLED] ?: FeatureFlags.isDevBuild,
+                baseUrlOverride = prefs[KEY_BASE_URL_OVERRIDE],
+                notifyOnRecovery = prefs[KEY_NOTIFY_ON_RECOVERY] ?: true,
+            )
+        }
 
     /**
      * Get the current state synchronously.
@@ -159,10 +164,9 @@ class DevHealthMonitorStateStore(private val context: Context) {
     /**
      * Get the effective base URL (override or BuildConfig default).
      */
-    fun getEffectiveBaseUrl(config: MonitorConfig): String {
-        return config.baseUrlOverride?.takeIf { it.isNotBlank() }
+    fun getEffectiveBaseUrl(config: MonitorConfig): String =
+        config.baseUrlOverride?.takeIf { it.isNotBlank() }
             ?: BuildConfig.SCANIUM_API_BASE_URL
-    }
 
     // =========================================================================
     // Data Classes

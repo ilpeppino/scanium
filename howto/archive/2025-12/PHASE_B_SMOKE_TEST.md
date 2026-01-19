@@ -60,6 +60,7 @@ curl -s https://scanium.gtemp1.com/health | jq
 ```
 
 **Expected Output:**
+
 ```json
 {
   "status": "ok",
@@ -86,6 +87,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
 ```
 
 **Expected Output (Phase B):**
+
 ```json
 {
   "error": {
@@ -112,6 +114,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
 ```
 
 **Expected Output (Phase B):**
+
 ```json
 {
   "error": {
@@ -177,6 +180,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
 ```
 
 **Expected Output (Phase B - Success):**
+
 ```json
 {
   "reply": "This appears to be a vintage camera...",
@@ -219,10 +223,12 @@ done
 ```
 
 **Expected Output:**
+
 - First 20 requests: Success responses (200)
 - Requests 21+: Rate limit error (429)
 
 **Rate Limit Response (Phase B):**
+
 ```json
 {
   "error": {
@@ -237,6 +243,7 @@ done
 **HTTP Status**: 429
 
 **Validation:**
+
 - `resetAt` is a valid ISO timestamp
 - `resetAt` is in the future
 - Request with same token after `resetAt` succeeds
@@ -259,6 +266,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 ```
 
 **Expected Output (with auth):**
+
 ```json
 {
   "status": "ok",
@@ -291,21 +299,22 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 
 1. Make 20+ assistant requests rapidly
 2. **Expected**: After 20 requests, see message:
-   - "Switched to Local Helper: Rate Limited (wait XXs)."
-   - Assistant continues working in local mode
+    - "Switched to Local Helper: Rate Limited (wait XXs)."
+    - Assistant continues working in local mode
 
 ***REMOVED******REMOVED******REMOVED*** 4. Session Expiry UX
 
 1. Sign out from Settings
 2. Try to use Assistant
 3. **Expected**: Message appears:
-   - "Switched to Local Helper: Sign in required. Tap Settings to sign in."
+    - "Switched to Local Helper: Sign in required. Tap Settings to sign in."
 
 ---
 
 ***REMOVED******REMOVED*** Verification Checklist
 
 ***REMOVED******REMOVED******REMOVED*** Backend
+
 - [ ] Prisma migration applied successfully
 - [ ] `User` and `UserSession` tables exist in database
 - [ ] Backend starts without errors
@@ -317,6 +326,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 - [ ] Test 6 (Warmup) requires auth
 
 ***REMOVED******REMOVED******REMOVED*** Android
+
 - [ ] App builds successfully (`./gradlew :androidApp:assembleDevDebug`)
 - [ ] Sign-in flow works (Google Credential Manager)
 - [ ] Assistant works when signed in
@@ -325,6 +335,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 - [ ] No "You're offline" shown for auth/rate limit errors
 
 ***REMOVED******REMOVED******REMOVED*** Error Contract
+
 - [ ] All errors include `correlationId`
 - [ ] `AUTH_REQUIRED` has code `"AUTH_REQUIRED"`
 - [ ] `AUTH_INVALID` has code `"AUTH_INVALID"`
@@ -384,20 +395,20 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 
 ***REMOVED******REMOVED******REMOVED*** Default Rate Limits (Phase B)
 
-| Limit Type | Default | Config Variable |
-|------------|---------|-----------------|
-| Per-user rate limit | 20/min | `ASSIST_USER_RATE_LIMIT_PER_MINUTE` |
-| Per-user daily quota | 100/day | `ASSIST_USER_DAILY_QUOTA` |
-| Per-IP rate limit | 60/min | `ASSIST_IP_RATE_LIMIT_PER_MINUTE` |
-| Per-device rate limit | 30/min | `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` |
+| Limit Type            | Default | Config Variable                       |
+|-----------------------|---------|---------------------------------------|
+| Per-user rate limit   | 20/min  | `ASSIST_USER_RATE_LIMIT_PER_MINUTE`   |
+| Per-user daily quota  | 100/day | `ASSIST_USER_DAILY_QUOTA`             |
+| Per-IP rate limit     | 60/min  | `ASSIST_IP_RATE_LIMIT_PER_MINUTE`     |
+| Per-device rate limit | 30/min  | `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` |
 
 ***REMOVED******REMOVED******REMOVED*** Error Codes (Phase B)
 
-| Code | HTTP Status | Meaning | Retryable |
-|------|-------------|---------|-----------|
-| `AUTH_REQUIRED` | 401 | No auth provided | No (sign in first) |
-| `AUTH_INVALID` | 401 | Token expired/invalid | No (sign in again) |
-| `RATE_LIMITED` | 429 | Rate limit exceeded | Yes (wait for `resetAt`) |
+| Code            | HTTP Status | Meaning               | Retryable                |
+|-----------------|-------------|-----------------------|--------------------------|
+| `AUTH_REQUIRED` | 401         | No auth provided      | No (sign in first)       |
+| `AUTH_INVALID`  | 401         | Token expired/invalid | No (sign in again)       |
+| `RATE_LIMITED`  | 429         | Rate limit exceeded   | Yes (wait for `resetAt`) |
 
 ---
 

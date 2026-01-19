@@ -16,7 +16,7 @@ services:
       - tempo
       - mimir
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q '\"database\"'"]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q '\"database\"'" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -27,7 +27,7 @@ services:
     image: grafana/loki:3.2.1
     container_name: scanium-loki
     restart: unless-stopped
-    command: ["-config.file=/etc/loki/loki.yaml"]
+    command: [ "-config.file=/etc/loki/loki.yaml" ]
     volumes:
       - /volume1/docker/scanium/monitoring/loki:/loki
       - ${REPO_ROOT}/monitoring/loki/loki.yaml:/etc/loki/loki.yaml:ro
@@ -39,7 +39,7 @@ services:
     container_name: scanium-tempo
     restart: unless-stopped
     user: "0:0"  ***REMOVED*** Run as root to fix permission denied errors during compaction (GH-409)
-    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    command: [ "-config.file=/etc/tempo/tempo.yaml" ]
     volumes:
       - /volume1/docker/scanium/monitoring/tempo:/var/tempo
       - ${REPO_ROOT}/monitoring/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
@@ -50,7 +50,7 @@ services:
     image: grafana/mimir:2.17.4
     container_name: scanium-mimir
     restart: unless-stopped
-    command: ["-config.file=/etc/mimir/mimir.yaml"]
+    command: [ "-config.file=/etc/mimir/mimir.yaml" ]
     volumes:
       - /volume1/docker/scanium/monitoring/mimir:/data
       - ${REPO_ROOT}/monitoring/mimir/mimir.yaml:/etc/mimir/mimir.yaml:ro

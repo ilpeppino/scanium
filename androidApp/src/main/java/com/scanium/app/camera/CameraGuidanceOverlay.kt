@@ -100,37 +100,57 @@ fun CameraGuidanceOverlay(
     val (borderColor, glowColor, borderWidth) =
         remember(guidanceState.state, guidanceState.distanceConfidence) {
             when (guidanceState.state) {
-                GuidanceState.SEARCHING -> Triple(ScaniumBlue.copy(alpha = 0.5f), CyanGlow.copy(alpha = 0.2f), 2f)
-                GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR ->
+                GuidanceState.SEARCHING -> {
+                    Triple(ScaniumBlue.copy(alpha = 0.5f), CyanGlow.copy(alpha = 0.2f), 2f)
+                }
+
+                GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR -> {
                     Triple(
                         distanceWarningColor,
                         distanceWarningColor.copy(alpha = 0.3f),
                         2.5f,
                     )
-                GuidanceState.OFF_CENTER -> Triple(distanceWarningColor, distanceWarningColor.copy(alpha = 0.3f), 2.5f)
-                GuidanceState.UNSTABLE, GuidanceState.FOCUSING -> Triple(ScaniumBlue.copy(alpha = 0.7f), CyanGlow.copy(alpha = 0.3f), 2f)
+                }
+
+                GuidanceState.OFF_CENTER -> {
+                    Triple(distanceWarningColor, distanceWarningColor.copy(alpha = 0.3f), 2.5f)
+                }
+
+                GuidanceState.UNSTABLE, GuidanceState.FOCUSING -> {
+                    Triple(ScaniumBlue.copy(alpha = 0.7f), CyanGlow.copy(alpha = 0.3f), 2f)
+                }
+
                 GuidanceState.GOOD -> {
                     // PHASE 2: Subtle distance feedback in GOOD state
                     // Show slight warning tint if distance is not optimal
                     when (guidanceState.distanceConfidence) {
-                        DistanceConfidence.TOO_CLOSE ->
+                        DistanceConfidence.TOO_CLOSE -> {
                             Triple(
                                 Color(0xFF7CB342),
 // Yellow-green (leaning toward warning)
                                 Color(0xFF7CB342).copy(alpha = 0.4f),
                                 3f,
                             )
-                        DistanceConfidence.TOO_FAR ->
+                        }
+
+                        DistanceConfidence.TOO_FAR -> {
                             Triple(
                                 Color(0xFF7CB342),
 // Yellow-green (leaning toward warning)
                                 Color(0xFF7CB342).copy(alpha = 0.4f),
                                 3f,
                             )
-                        else -> Triple(optimalColor, optimalColor.copy(alpha = 0.4f), 3f)
+                        }
+
+                        else -> {
+                            Triple(optimalColor, optimalColor.copy(alpha = 0.4f), 3f)
+                        }
                     }
                 }
-                GuidanceState.LOCKED -> Triple(optimalColor, optimalColor.copy(alpha = 0.5f), 4f)
+
+                GuidanceState.LOCKED -> {
+                    Triple(optimalColor, optimalColor.copy(alpha = 0.5f), 4f)
+                }
             }
         }
 
@@ -369,16 +389,25 @@ private fun GuidanceHintChip(
 ) {
     val backgroundColor =
         when (state) {
-            GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR, GuidanceState.OFF_CENTER ->
+            GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR, GuidanceState.OFF_CENTER -> {
                 Color(0xFFFF9800).copy(alpha = 0.9f)
-            GuidanceState.UNSTABLE ->
+            }
+
+            GuidanceState.UNSTABLE -> {
                 Color(0xFFFF5722).copy(alpha = 0.9f)
-            GuidanceState.FOCUSING ->
+            }
+
+            GuidanceState.FOCUSING -> {
                 ScaniumBlue.copy(alpha = 0.9f)
-            GuidanceState.GOOD ->
+            }
+
+            GuidanceState.GOOD -> {
                 Color(0xFF1DB954).copy(alpha = 0.9f)
-            else ->
+            }
+
+            else -> {
                 Color.Black.copy(alpha = 0.7f)
+            }
         }
 
     Text(
@@ -390,8 +419,7 @@ private fun GuidanceHintChip(
                 .background(
                     color = backgroundColor,
                     shape = RoundedCornerShape(16.dp),
-                )
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                ).padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
 
@@ -459,8 +487,7 @@ private fun ScanDebugInfo(
                 .background(
                     color = Color.Black.copy(alpha = 0.7f),
                     shape = RoundedCornerShape(8.dp),
-                )
-                .padding(8.dp),
+                ).padding(8.dp),
     )
 }
 
@@ -516,8 +543,7 @@ fun RoiCenteringHint(modifier: Modifier = Modifier) {
                     .background(
                         color = Color(0xFFFF9800).copy(alpha = 0.9f),
                         shape = RoundedCornerShape(16.dp),
-                    )
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    ).padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
 }

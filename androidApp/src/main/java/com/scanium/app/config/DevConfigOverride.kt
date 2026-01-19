@@ -54,7 +54,9 @@ private val Context.devConfigDataStore: DataStore<Preferences> by preferencesDat
  * adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
  * ```
  */
-class DevConfigOverride(private val context: Context) {
+class DevConfigOverride(
+    private val context: Context,
+) {
     companion object {
         private const val TAG = "DevConfigOverride"
 
@@ -69,30 +71,34 @@ class DevConfigOverride(private val context: Context) {
     /**
      * Flow of the current base URL override status.
      */
-    val overrideStatusFlow: Flow<OverrideStatus> = context.devConfigDataStore.data.map { prefs ->
-        if (!BuildConfig.DEBUG) {
-            return@map OverrideStatus.Disabled
-        }
+    val overrideStatusFlow: Flow<OverrideStatus> =
+        context.devConfigDataStore.data.map { prefs ->
+            if (!BuildConfig.DEBUG) {
+                return@map OverrideStatus.Disabled
+            }
 
-        val overrideUrl = prefs[KEY_BASE_URL_OVERRIDE]
-        val setAt = prefs[KEY_OVERRIDE_SET_AT] ?: 0L
-        val appVersion = prefs[KEY_OVERRIDE_APP_VERSION]
+            val overrideUrl = prefs[KEY_BASE_URL_OVERRIDE]
+            val setAt = prefs[KEY_OVERRIDE_SET_AT] ?: 0L
+            val appVersion = prefs[KEY_OVERRIDE_APP_VERSION]
 
-        when {
-            overrideUrl.isNullOrBlank() -> OverrideStatus.UsingDefault(BuildConfig.SCANIUM_API_BASE_URL)
-            else -> {
-                val isStale = isOverrideStale(setAt)
-                val isVersionMismatch = appVersion != BuildConfig.VERSION_NAME
-                OverrideStatus.Overridden(
-                    url = overrideUrl,
-                    defaultUrl = BuildConfig.SCANIUM_API_BASE_URL,
-                    setAt = setAt,
-                    isStale = isStale,
-                    isVersionMismatch = isVersionMismatch,
-                )
+            when {
+                overrideUrl.isNullOrBlank() -> {
+                    OverrideStatus.UsingDefault(BuildConfig.SCANIUM_API_BASE_URL)
+                }
+
+                else -> {
+                    val isStale = isOverrideStale(setAt)
+                    val isVersionMismatch = appVersion != BuildConfig.VERSION_NAME
+                    OverrideStatus.Overridden(
+                        url = overrideUrl,
+                        defaultUrl = BuildConfig.SCANIUM_API_BASE_URL,
+                        setAt = setAt,
+                        isStale = isStale,
+                        isVersionMismatch = isVersionMismatch,
+                    )
+                }
             }
         }
-    }
 
     /**
      * Get the effective base URL (override if set, otherwise BuildConfig).
@@ -197,9 +203,7 @@ class DevConfigOverride(private val context: Context) {
         }
     }
 
-    private fun isOverrideStale(setAt: Long): Boolean {
-        return System.currentTimeMillis() - setAt > STALE_THRESHOLD_MS
-    }
+    private fun isOverrideStale(setAt: Long): Boolean = System.currentTimeMillis() - setAt > STALE_THRESHOLD_MS
 
     /**
      * Status of the base URL override.
@@ -209,7 +213,9 @@ class DevConfigOverride(private val context: Context) {
         data object Disabled : OverrideStatus()
 
         /** Using BuildConfig default */
-        data class UsingDefault(val url: String) : OverrideStatus()
+        data class UsingDefault(
+            val url: String,
+        ) : OverrideStatus()
 
         /** Override is active */
         data class Overridden(

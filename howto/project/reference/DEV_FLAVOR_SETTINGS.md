@@ -9,26 +9,30 @@ In DEV builds, Developer Mode is **always enabled** and cannot be disabled by th
 ***REMOVED******REMOVED******REMOVED*** Behavior
 
 | Flavor | Developer Mode | Toggle in UI | `developerModeFlow` | `setDeveloperMode()` |
-|--------|---------------|--------------|---------------------|----------------------|
-| DEV    | Always ON     | Not shown    | Always `true`       | No-op (ignored)      |
-| BETA   | Always OFF    | Not shown    | Always `false`      | No-op (ignored)      |
-| PROD   | Always OFF    | Not shown    | Always `false`      | No-op (ignored)      |
+|--------|----------------|--------------|---------------------|----------------------|
+| DEV    | Always ON      | Not shown    | Always `true`       | No-op (ignored)      |
+| BETA   | Always OFF     | Not shown    | Always `false`      | No-op (ignored)      |
+| PROD   | Always OFF     | Not shown    | Always `false`      | No-op (ignored)      |
 
 ***REMOVED******REMOVED******REMOVED*** Why?
 
-1. **Consistency**: Developers always have access to debug features without having to remember to enable them
+1. **Consistency**: Developers always have access to debug features without having to remember to
+   enable them
 2. **Determinism**: DEV builds behave identically for all developers
 3. **Simplicity**: One less toggle to manage during development
 
 ***REMOVED******REMOVED******REMOVED*** UI Changes
 
 In the Developer Options screen:
+
 - **Before**: A toggle switch for "Developer Mode" with subtitle "Unlock all features for testing"
-- **After**: A static row showing "Developer Mode" with subtitle "Always enabled in DEV builds" (highlighted in primary color)
+- **After**: A static row showing "Developer Mode" with subtitle "Always enabled in DEV builds" (
+  highlighted in primary color)
 
 ***REMOVED******REMOVED******REMOVED*** Implementation
 
 See `SettingsRepository.kt`:
+
 ```kotlin
 val developerModeFlow: Flow<Boolean> =
     context.settingsDataStore.data.map { preferences ->
@@ -60,13 +64,15 @@ In DEV builds, an informational card is shown at the top of the Developer Option
 
 ***REMOVED******REMOVED******REMOVED*** Purpose
 
-Helps developers understand what the diagnostics sections (System Health, Assistant Diagnostics, Preflight Health Check, Background Health Monitor) are for.
+Helps developers understand what the diagnostics sections (System Health, Assistant Diagnostics,
+Preflight Health Check, Background Health Monitor) are for.
 
 ***REMOVED******REMOVED******REMOVED*** Text
 
 > **Diagnostics & Checks**
 >
-> Diagnostics & checks help verify connectivity to your backend services (health, config, preflight, assistant) and alert you when something breaks. Use them while testing to quickly spot disruptions.
+> Diagnostics & checks help verify connectivity to your backend services (health, config, preflight,
+> assistant) and alert you when something breaks. Use them while testing to quickly spot disruptions.
 
 ***REMOVED******REMOVED******REMOVED*** UI
 
@@ -78,6 +84,7 @@ Helps developers understand what the diagnostics sections (System Health, Assist
 ***REMOVED******REMOVED******REMOVED*** Implementation
 
 See `DeveloperOptionsScreen.kt`:
+
 ```kotlin
 @Composable
 private fun DiagnosticsDescriptionCard() {
@@ -96,6 +103,7 @@ private fun DiagnosticsDescriptionCard() {
 ***REMOVED******REMOVED******REMOVED*** Unit Tests
 
 See `DeveloperModeSettingsTest.kt` for comprehensive tests covering:
+
 - DEV flavor always returns `true` for developer mode
 - DEV flavor setter is a no-op
 - BETA/PROD always returns `false`
@@ -104,11 +112,13 @@ See `DeveloperModeSettingsTest.kt` for comprehensive tests covering:
 ***REMOVED******REMOVED******REMOVED*** Manual Verification
 
 **DEV build:**
+
 1. Open Settings → Developer Options
 2. Verify "Developer Mode" shows "Always enabled in DEV builds" (no toggle)
 3. Verify "Diagnostics & Checks" description card is visible at the top
 
 **BETA/PROD build:**
+
 1. Verify Developer Options is not accessible (no entry in Settings)
 
 ***REMOVED******REMOVED*** Related Documentation

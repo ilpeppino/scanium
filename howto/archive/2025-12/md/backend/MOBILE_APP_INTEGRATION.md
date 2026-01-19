@@ -1,6 +1,7 @@
 ***REMOVED*** Mobile App Backend Integration Guide
 
-This guide explains how to integrate the Scanium Android app with the backend API for eBay OAuth and future listing features.
+This guide explains how to integrate the Scanium Android app with the backend API for eBay OAuth and
+future listing features.
 
 ***REMOVED******REMOVED*** 📡 Backend Endpoints
 

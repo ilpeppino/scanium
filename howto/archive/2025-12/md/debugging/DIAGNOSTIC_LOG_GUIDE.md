@@ -1,20 +1,24 @@
 ***REMOVED*** ML Kit Detection Diagnostic Log Guide
 
-This guide helps interpret the enhanced diagnostic logs to identify why ML Kit might return zero detections.
+This guide helps interpret the enhanced diagnostic logs to identify why ML Kit might return zero
+detections.
 
 ***REMOVED******REMOVED*** How to View Logs
 
 ***REMOVED******REMOVED******REMOVED*** Method 1: Using the test script
+
 ```bash
 ./test_ml_kit_detection.sh
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Method 2: Manual logcat
+
 ```bash
 adb logcat -s ObjectDetectorClient:* CameraXManager:*
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Method 3: Android Studio Logcat
+
 1. Open Logcat panel
 2. Filter by "ObjectDetectorClient" or "CameraXManager"
 3. Look for lines containing ">>>" for critical info
@@ -24,6 +28,7 @@ adb logcat -s ObjectDetectorClient:* CameraXManager:*
 ***REMOVED******REMOVED******REMOVED*** 1. Successful Model Initialization
 
 **Look for:**
+
 ```
 I ObjectDetectorClient: ========================================
 I ObjectDetectorClient: Checking ML Kit Object Detection model download status...
@@ -32,12 +37,14 @@ I ObjectDetectorClient: ML Kit Object Detection model initialization complete
 ```
 
 **Meaning:**
+
 - ML Kit models are being downloaded/initialized
 - This happens on first app launch or after reinstalling
 - Should only take a few seconds with network
 - If you don't see this, model might already be cached
 
 **Action:**
+
 - Wait for initialization to complete
 - Ensure device has network connection for first run
 - If stuck, check Google Play Services version
@@ -47,6 +54,7 @@ I ObjectDetectorClient: ML Kit Object Detection model initialization complete
 ***REMOVED******REMOVED******REMOVED*** 2. Successful Detection
 
 **Look for:**
+
 ```
 I ObjectDetectorClient: >>> detectObjectsWithTracking START
 I ObjectDetectorClient: >>> Mode: STREAM
@@ -59,11 +67,13 @@ I ObjectDetectorClient: >>> ML Kit returned 3 raw objects from original image
 ```
 
 **Meaning:**
+
 - Image is valid (good variance, not blank)
 - Detection succeeded on first attempt
 - Found 3 objects in the scene
 
 **Action:**
+
 - Everything working correctly
 - No action needed
 
@@ -72,6 +82,7 @@ I ObjectDetectorClient: >>> ML Kit returned 3 raw objects from original image
 ***REMOVED******REMOVED******REMOVED*** 3. Zero Detections - Using Fallback Strategies
 
 **Look for:**
+
 ```
 I ObjectDetectorClient: >>> ML Kit returned 0 raw objects from original image
 W ObjectDetectorClient: >>> Zero objects detected, trying with bitmap-based InputImage...
@@ -80,11 +91,13 @@ I ObjectDetectorClient: >>> SUCCESS: Alternative InputImage detected objects!
 ```
 
 **Meaning:**
+
 - Original InputImage (MediaImage-based) returned zero
 - Fallback to bitmap-based InputImage succeeded
 - Found 2 objects using alternative approach
 
 **Action:**
+
 - This indicates InputImage format incompatibility
 - Objects ARE in scene, just need different input format
 - Consider filing issue about MediaImage format on this device
@@ -92,6 +105,7 @@ I ObjectDetectorClient: >>> SUCCESS: Alternative InputImage detected objects!
 ---
 
 **Look for:**
+
 ```
 W ObjectDetectorClient: >>> Zero objects in STREAM mode, trying SINGLE_IMAGE_MODE...
 I ObjectDetectorClient: >>> SINGLE_IMAGE_MODE returned 2 objects
@@ -99,11 +113,13 @@ I ObjectDetectorClient: >>> SUCCESS: SINGLE_IMAGE_MODE detected objects!
 ```
 
 **Meaning:**
+
 - STREAM_MODE returned zero
 - SINGLE_IMAGE_MODE detected objects successfully
 - STREAM_MODE may be too conservative for this scene
 
 **Action:**
+
 - Objects ARE detectable, just need different detector mode
 - May want to use SINGLE_IMAGE_MODE for continuous scanning
 - File feedback about STREAM_MODE sensitivity
@@ -113,6 +129,7 @@ I ObjectDetectorClient: >>> SUCCESS: SINGLE_IMAGE_MODE detected objects!
 ***REMOVED******REMOVED******REMOVED*** 4. Zero Detections - All Strategies Failed
 
 **Look for:**
+
 ```
 E ObjectDetectorClient: ========================================
 E ObjectDetectorClient: >>> CRITICAL: ZERO OBJECTS DETECTED AFTER ALL ATTEMPTS
@@ -129,6 +146,7 @@ E ObjectDetectorClient: >>>   5. ML Kit's detection thresholds too strict
 ```
 
 **Meaning:**
+
 - All detection strategies failed
 - Either scene issue or model issue
 - Need to diagnose further
@@ -141,16 +159,19 @@ Check the bitmap analysis for clues:
 ***REMOVED******REMOVED******REMOVED*** 5. Bitmap Analysis Diagnostics
 
 **Low Variance (Likely Blank):**
+
 ```
 I ObjectDetectorClient: >>> Bitmap Analysis: size=1280x720, variance=12, isLikelyBlank=true, samplePixels=[0xff000000, 0xff000000, 0xff000000]
 ```
 
 **Meaning:**
+
 - Image has very low color variance (12 < 30)
 - All sampled pixels are same/similar (all black in this case)
 - Image is likely blank, corrupted, or camera malfunction
 
 **Action:**
+
 1. Check if camera preview is showing actual image
 2. Try restarting the app
 3. Check camera permission granted
@@ -159,16 +180,19 @@ I ObjectDetectorClient: >>> Bitmap Analysis: size=1280x720, variance=12, isLikel
 ---
 
 **Good Variance (Valid Image):**
+
 ```
 I ObjectDetectorClient: >>> Bitmap Analysis: size=1280x720, variance=145, isLikelyBlank=false, samplePixels=[0xffaa8866, 0xff6644cc, 0xffddbb99]
 ```
 
 **Meaning:**
+
 - Image has good color variance (145 >> 30)
 - Different colors in different regions
 - Image is valid and contains actual scene data
 
 **Action:**
+
 - If still zero detections, issue is with scene content or ML Kit model
 - Try pointing at clearer, more distinct objects
 - Ensure good lighting
@@ -180,31 +204,37 @@ I ObjectDetectorClient: >>> Bitmap Analysis: size=1280x720, variance=145, isLike
 When zero detections occur with valid image, check:
 
 **Object Size:**
+
 ```
 E ObjectDetectorClient: >>>   4. Objects too small or too large in frame
 ```
 
 **Action:**
+
 - Objects should fill 10-50% of frame
 - Not too close (objects cropped) or too far (objects tiny)
 - Try adjusting distance from objects
 
 **Lighting/Contrast:**
+
 ```
 E ObjectDetectorClient: >>>   3. Image too dark, blurry, or low contrast
 ```
 
 **Action:**
+
 - Test in well-lit environment
 - Avoid pointing at uniform surfaces (blank walls)
 - Try objects with distinct colors/shapes
 
 **Object Type:**
+
 ```
 E ObjectDetectorClient: >>>   2. Scene doesn't contain detectable objects
 ```
 
 **Action:**
+
 - ML Kit works best with distinct physical objects
 - Try: bottles, books, boxes, furniture, devices
 - Avoid: flat surfaces, abstract patterns, posters
@@ -215,16 +245,19 @@ E ObjectDetectorClient: >>>   2. Scene doesn't contain detectable objects
 ***REMOVED******REMOVED******REMOVED*** 7. Model Download Issues
 
 **Look for:**
+
 ```
 E ObjectDetectorClient: Error checking/downloading model
 E ObjectDetectorClient: [Exception details...]
 ```
 
 **Meaning:**
+
 - Failed to initialize/download ML Kit model
 - Network issue or storage issue
 
 **Action:**
+
 1. Check device has network connection
 2. Check device has sufficient storage space
 3. Update Google Play Services
@@ -236,6 +269,7 @@ E ObjectDetectorClient: [Exception details...]
 ***REMOVED******REMOVED******REMOVED*** 8. Tracker Statistics (Normal Flow)
 
 **Look for:**
+
 ```
 I CameraXManager: >>> processObjectDetectionWithTracking: Got 3 raw DetectionInfo objects from ObjectDetectorClient
 I CameraXManager: >>> processObjectDetectionWithTracking: ObjectTracker returned 2 newly confirmed candidates
@@ -243,11 +277,13 @@ I CameraXManager: >>> Tracker stats: active=1, confirmed=2, frame=5
 ```
 
 **Meaning:**
+
 - Detection found 3 raw objects
 - Tracker confirmed 2 as valid (1 still being tracked)
 - Tracking is working to deduplicate across frames
 
 **Action:**
+
 - Normal operation, no issues
 - If "Got X raw" is always 0, refer to zero detection diagnostics above
 
@@ -258,40 +294,41 @@ I CameraXManager: >>> Tracker stats: active=1, confirmed=2, frame=5
 When troubleshooting zero detections, check logs for:
 
 1. **Did model initialize?**
-   - [ ] See "ML Kit Object Detection model initialization complete"
-   - If NO: Check network, Google Play Services
+    - [ ] See "ML Kit Object Detection model initialization complete"
+    - If NO: Check network, Google Play Services
 
 2. **Is image valid?**
-   - [ ] Bitmap Analysis shows variance > 30
-   - [ ] isLikelyBlank=false
-   - If NO: Check camera functionality
+    - [ ] Bitmap Analysis shows variance > 30
+    - [ ] isLikelyBlank=false
+    - If NO: Check camera functionality
 
 3. **Did any strategy work?**
-   - [ ] Original InputImage returned > 0 objects
-   - [ ] Alternative InputImage returned > 0 objects
-   - [ ] SINGLE_IMAGE_MODE returned > 0 objects
-   - If YES to any: Optimize to use that strategy
-   - If NO to all: Check scene/lighting
+    - [ ] Original InputImage returned > 0 objects
+    - [ ] Alternative InputImage returned > 0 objects
+    - [ ] SINGLE_IMAGE_MODE returned > 0 objects
+    - If YES to any: Optimize to use that strategy
+    - If NO to all: Check scene/lighting
 
 4. **Are objects appropriate?**
-   - [ ] Objects fill 10-50% of frame
-   - [ ] Good lighting and contrast
-   - [ ] Distinct physical objects (not flat surfaces)
-   - If NO: Adjust scene
+    - [ ] Objects fill 10-50% of frame
+    - [ ] Good lighting and contrast
+    - [ ] Distinct physical objects (not flat surfaces)
+    - If NO: Adjust scene
 
 ***REMOVED******REMOVED*** Common Issues & Solutions
 
-| Symptom | Log Pattern | Solution |
-|---------|-------------|----------|
-| Model not ready | No "model initialization complete" | Wait, check network |
-| Blank image | variance < 30, isLikelyBlank=true | Restart app, check camera permission |
-| Zero always | All strategies return 0, valid image | Improve lighting, try different objects |
-| Works with fallback | Alternative/SINGLE_IMAGE works | Use that strategy by default |
-| Inconsistent | Sometimes works, sometimes doesn't | Lighting/angle dependent, guide user |
+| Symptom             | Log Pattern                          | Solution                                |
+|---------------------|--------------------------------------|-----------------------------------------|
+| Model not ready     | No "model initialization complete"   | Wait, check network                     |
+| Blank image         | variance < 30, isLikelyBlank=true    | Restart app, check camera permission    |
+| Zero always         | All strategies return 0, valid image | Improve lighting, try different objects |
+| Works with fallback | Alternative/SINGLE_IMAGE works       | Use that strategy by default            |
+| Inconsistent        | Sometimes works, sometimes doesn't   | Lighting/angle dependent, guide user    |
 
 ***REMOVED******REMOVED*** Testing Different Scenarios
 
 ***REMOVED******REMOVED******REMOVED*** Scenario 1: Fresh Install (Test Model Download)
+
 ```bash
 adb uninstall com.scanium.app
 ./gradlew :app:installDebug
@@ -299,12 +336,14 @@ adb uninstall com.scanium.app
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Scenario 2: No Network (Test Cached Model)
+
 ```bash
 ***REMOVED*** Install with network first, then disable network
 ***REMOVED*** Reopen app, should still detect (model cached)
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Scenario 3: Various Objects (Test Detection Quality)
+
 ```bash
 ***REMOVED*** Test with: bottle, book, box, phone, laptop, cup
 ***REMOVED*** Compare detection counts for each
@@ -312,6 +351,7 @@ adb uninstall com.scanium.app
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Scenario 4: Lighting Conditions (Test Robustness)
+
 ```bash
 ***REMOVED*** Test in: bright light, dim light, mixed lighting
 ***REMOVED*** Check variance values correlate with lighting
@@ -321,6 +361,7 @@ adb uninstall com.scanium.app
 ***REMOVED******REMOVED*** Success Criteria
 
 Detection is working correctly when:
+
 - Model initializes on first run (see init logs)
 - Valid images have variance > 30
 - At least one detection strategy returns objects for appropriate scenes

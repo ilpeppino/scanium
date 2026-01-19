@@ -5,21 +5,24 @@ This document describes the user-editable fields added to the Edit Items feature
 ***REMOVED******REMOVED*** Overview
 
 The EditItemsScreen now supports two additional user-editable fields per item:
+
 - **Price** - User-specified price in EUR
 - **Condition** - Physical condition of the item
 
 ***REMOVED******REMOVED*** Fields
 
 ***REMOVED******REMOVED******REMOVED*** Price (`userPriceCents`)
+
 - **Storage**: Integer cents (e.g., 1250 = €12.50)
 - **Validation**:
-  - Empty allowed (null)
-  - Negative values not allowed
-  - Maximum value: €1,000,000
+    - Empty allowed (null)
+    - Negative values not allowed
+    - Maximum value: €1,000,000
 - **Display**: Currency formatted with € prefix (e.g., "€12.50")
 - **Input**: Decimal numeric keyboard with comma/period support
 
 ***REMOVED******REMOVED******REMOVED*** Condition (`condition`)
+
 - **Type**: Enum (`ItemCondition`)
 - **Values**:
   | Enum Value | Display Name |
@@ -34,6 +37,7 @@ The EditItemsScreen now supports two additional user-editable fields per item:
 ***REMOVED******REMOVED*** Data Model
 
 ***REMOVED******REMOVED******REMOVED*** ScannedItem (shared/core-models)
+
 ```kotlin
 data class ScannedItem<FullImageUri>(
     // ... existing fields ...
@@ -43,6 +47,7 @@ data class ScannedItem<FullImageUri>(
 ```
 
 ***REMOVED******REMOVED******REMOVED*** ItemCondition Enum (shared/core-models)
+
 ```kotlin
 enum class ItemCondition(
     val displayName: String,
@@ -58,21 +63,25 @@ enum class ItemCondition(
 ***REMOVED******REMOVED*** Persistence
 
 ***REMOVED******REMOVED******REMOVED*** Database Columns (ScannedItemEntity)
+
 - `userPriceCents` - INTEGER NULL
 - `condition` - TEXT NULL (stores enum name)
 
 ***REMOVED******REMOVED******REMOVED*** Migration
+
 - Version 3 → 4 adds both columns to `scanned_items` and `scanned_item_history` tables
 - Uses ALTER TABLE ADD COLUMN (safe for existing data)
 
 ***REMOVED******REMOVED*** UI Components
 
 ***REMOVED******REMOVED******REMOVED*** EditItemsScreen
+
 - Price input: OutlinedTextField with numeric keyboard and € prefix
 - Condition dropdown: ExposedDropdownMenuBox with 4 options + "Not set"
 - Compact layout: Fields arranged side-by-side in a Row
 
 ***REMOVED******REMOVED******REMOVED*** ItemsListScreen
+
 - Price display: Shows user price if set, otherwise estimated range
 - User price uses tertiary color to differentiate from estimates
 - Condition badge: Colored chip next to price
@@ -100,7 +109,8 @@ data class ItemFieldUpdate(
 )
 ```
 
-The `clear*` flags allow explicitly setting fields to null (distinguishing from "keep existing value").
+The `clear*` flags allow explicitly setting fields to null (distinguishing from "keep existing
+value").
 
 ***REMOVED******REMOVED*** Files Changed
 

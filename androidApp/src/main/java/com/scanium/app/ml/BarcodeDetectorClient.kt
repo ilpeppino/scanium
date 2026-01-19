@@ -27,7 +27,8 @@ class BarcodeDetectorClient {
     // ML Kit barcode scanner configured to detect all formats
     private val scanner: BarcodeScanner by lazy {
         val options =
-            BarcodeScannerOptions.Builder()
+            BarcodeScannerOptions
+                .Builder()
                 .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
                 .build()
 
@@ -45,8 +46,8 @@ class BarcodeDetectorClient {
     suspend fun scanBarcodes(
         image: InputImage,
         sourceBitmap: () -> Bitmap?,
-    ): List<ScannedItem> {
-        return try {
+    ): List<ScannedItem> =
+        try {
             Log.d(TAG, "Starting barcode scan on image ${image.width}x${image.height}, rotation=${image.rotationDegrees}")
 
             // Run barcode scanning
@@ -83,7 +84,6 @@ class BarcodeDetectorClient {
             Log.e(TAG, "Error scanning barcodes", e)
             emptyList()
         }
-    }
 
     /**
      * Converts a Barcode from ML Kit to a ScannedItem.
@@ -110,7 +110,8 @@ class BarcodeDetectorClient {
                 barcode.boundingBox?.toNormalizedRect(
                     frameWidth = frameWidth,
                     frameHeight = frameHeight,
-                ) ?: com.scanium.app.model.NormalizedRect(0f, 0f, 0.1f, 0.1f)
+                ) ?: com.scanium.app.model
+                    .NormalizedRect(0f, 0f, 0.1f, 0.1f)
 
             // For cropping, convert back to pixel coordinates temporarily
             val boundingBoxPixels = barcode.boundingBox ?: Rect(0, 0, 100, 100)
@@ -146,8 +147,8 @@ class BarcodeDetectorClient {
     /**
      * Returns a human-readable format label for the barcode format.
      */
-    private fun formatLabel(format: Int): String {
-        return when (format) {
+    private fun formatLabel(format: Int): String =
+        when (format) {
             Barcode.FORMAT_QR_CODE -> "QR Code"
             Barcode.FORMAT_EAN_13 -> "EAN-13"
             Barcode.FORMAT_EAN_8 -> "EAN-8"
@@ -163,18 +164,18 @@ class BarcodeDetectorClient {
             Barcode.FORMAT_PDF417 -> "PDF417"
             else -> "Barcode"
         }
-    }
 
     /**
      * Determines the item category based on barcode type.
      * Returns BARCODE for linear barcodes, QR_CODE for QR codes.
      */
-    private fun determineCategoryFromBarcode(barcode: Barcode): ItemCategory {
-        return when (barcode.format) {
+    private fun determineCategoryFromBarcode(barcode: Barcode): ItemCategory =
+        when (barcode.format) {
             Barcode.FORMAT_QR_CODE -> {
                 Log.d(TAG, "QR code detected: ${barcode.rawValue}")
                 ItemCategory.QR_CODE
             }
+
             Barcode.FORMAT_EAN_13,
             Barcode.FORMAT_EAN_8,
             Barcode.FORMAT_UPC_A,
@@ -188,13 +189,13 @@ class BarcodeDetectorClient {
                 Log.d(TAG, "Barcode detected: format=${barcode.format}, value=${barcode.rawValue}")
                 ItemCategory.BARCODE
             }
+
             else -> {
                 // Other 2D codes (Data Matrix, Aztec, PDF417) categorized as BARCODE
                 Log.d(TAG, "Other barcode format: ${barcode.format}, value=${barcode.rawValue}")
                 ItemCategory.BARCODE
             }
         }
-    }
 
     /**
      * Crops a thumbnail from the source bitmap using the bounding box.
@@ -202,8 +203,8 @@ class BarcodeDetectorClient {
     private fun cropThumbnail(
         source: Bitmap,
         boundingBox: Rect,
-    ): Bitmap? {
-        return try {
+    ): Bitmap? =
+        try {
             // Ensure bounding box is within bitmap bounds
             val left = boundingBox.left.coerceIn(0, source.width - 1)
             val top = boundingBox.top.coerceIn(0, source.height - 1)
@@ -227,7 +228,6 @@ class BarcodeDetectorClient {
             Log.w(TAG, "Failed to crop thumbnail", e)
             null
         }
-    }
 
     /**
      * Cleanup resources when done.

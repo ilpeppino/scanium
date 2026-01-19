@@ -3,14 +3,17 @@
 **Last Updated:** 2026-01-13
 **Prepared for:** Google Play Console Data Safety Declaration
 
-This document provides accurate answers for the Play Console Data Safety form based on Scanium's actual code behavior and data flows. All statements reflect the current implementation in Phase D (production-ready with Google OAuth and account deletion).
+This document provides accurate answers for the Play Console Data Safety form based on Scanium's
+actual code behavior and data flows. All statements reflect the current implementation in Phase D (
+production-ready with Google OAuth and account deletion).
 
 ---
 
 ***REMOVED******REMOVED*** Quick Reference Links
 
 - **Privacy Policy URL:** `https://scanium-site-url/PRIVACY.html` (update with actual deployed URL)
-- **Account Deletion URL:** `https://scanium-site-url/account-deletion.html` (for Play Console field)
+- **Account Deletion URL:** `https://scanium-site-url/account-deletion.html` (for Play Console
+  field)
 - **Support Email:** `contact@scanium.app` (update if different)
 
 ---
@@ -18,9 +21,11 @@ This document provides accurate answers for the Play Console Data Safety form ba
 ***REMOVED******REMOVED*** Section 1: Data Collection and Security
 
 ***REMOVED******REMOVED******REMOVED*** Does your app collect or share any of the required user data types?
+
 **Answer:** ✅ **Yes**
 
 Scanium collects:
+
 1. Account information (when using Google Sign-In)
 2. Photos and videos (camera for scanning)
 3. App activity data
@@ -33,12 +38,13 @@ Scanium collects:
 ***REMOVED******REMOVED******REMOVED*** Personal Information
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Account Info
+
 - **Collected:** ✅ Yes
 - **Data Type:** Email address, name, user account ID
 - **Required/Optional:** Optional (only if user signs in with Google)
 - **Collection Purpose:**
-  - App functionality (authentication, data sync)
-  - Account management
+    - App functionality (authentication, data sync)
+    - Account management
 - **Shared with third parties:** ❌ No
 - **Encrypted in transit:** ✅ Yes (HTTPS)
 - **Encryption at rest:** ✅ Yes (tokens encrypted with AES-256-GCM)
@@ -47,28 +53,31 @@ Scanium collects:
 ***REMOVED******REMOVED******REMOVED*** Photos and Videos
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Photos
+
 - **Collected:** ✅ Yes
 - **Data Type:** Photos (captured via camera for item scanning)
 - **Required/Optional:** Required for core functionality
 - **Collection Purpose:**
-  - App functionality (item recognition and classification)
+    - App functionality (item recognition and classification)
 - **Shared with third parties:** ✅ Yes
-  - **Third parties:** Google Cloud Vision API, OpenAI (depending on feature used)
-  - **Purpose:** Image analysis and classification
-  - **Data processing agreement:** Yes (cloud service providers with DPAs)
+    - **Third parties:** Google Cloud Vision API, OpenAI (depending on feature used)
+    - **Purpose:** Image analysis and classification
+    - **Data processing agreement:** Yes (cloud service providers with DPAs)
 - **Encrypted in transit:** ✅ Yes (HTTPS)
 - **Ephemeral:** ✅ Yes (images not stored long-term on backend; processed and discarded)
-- **User can request deletion:** ✅ Yes (local images in app can be deleted; backend images not retained)
+- **User can request deletion:** ✅ Yes (local images in app can be deleted; backend images not
+  retained)
 
 ***REMOVED******REMOVED******REMOVED*** App Activity
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** App interactions
+
 - **Collected:** ✅ Yes
 - **Data Type:** User actions within app, usage data
 - **Required/Optional:** Required
 - **Collection Purpose:**
-  - Analytics (app performance and stability)
-  - Product personalization (e.g., assistant responses)
+    - Analytics (app performance and stability)
+    - Product personalization (e.g., assistant responses)
 - **Shared with third parties:** ❌ No
 - **Encrypted in transit:** ✅ Yes
 - **User can request deletion:** ✅ Yes
@@ -76,37 +85,42 @@ Scanium collects:
 ***REMOVED******REMOVED******REMOVED*** Device or other IDs
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Device or other IDs
+
 - **Collected:** ✅ Yes
 - **Data Type:** IP address, device identifiers
 - **Required/Optional:** Required
 - **Collection Purpose:**
-  - Fraud prevention, security, and compliance (rate limiting, abuse prevention)
+    - Fraud prevention, security, and compliance (rate limiting, abuse prevention)
 - **Shared with third parties:** ❌ No
 - **Encrypted in transit:** ✅ Yes
-- **User can request deletion:** ⚠️ Partial (anonymized logs may be retained for security/legal compliance)
+- **User can request deletion:** ⚠️ Partial (anonymized logs may be retained for security/legal
+  compliance)
 
 ---
 
 ***REMOVED******REMOVED*** Section 3: Data Sharing
 
 ***REMOVED******REMOVED******REMOVED*** Do you share user data with third parties?
+
 **Answer:** ✅ **Yes** (for core app functionality only)
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Third Party Services Used:
+
 1. **Google Cloud Vision API**
-   - **Purpose:** Image classification and OCR
-   - **Data shared:** Photos (temporarily, for processing)
-   - **Privacy Policy:** https://cloud.google.com/terms/cloud-privacy-notice
+    - **Purpose:** Image classification and OCR
+    - **Data shared:** Photos (temporarily, for processing)
+    - **Privacy Policy:** https://cloud.google.com/terms/cloud-privacy-notice
 
 2. **OpenAI API** (if assistant enabled)
-   - **Purpose:** AI-powered item descriptions and insights
-   - **Data shared:** Item attributes, user prompts (no images)
-   - **Privacy Policy:** https://openai.com/policies/privacy-policy
+    - **Purpose:** AI-powered item descriptions and insights
+    - **Data shared:** Item attributes, user prompts (no images)
+    - **Privacy Policy:** https://openai.com/policies/privacy-policy
 
 3. **eBay OAuth** (if user connects eBay)
-   - **Purpose:** Marketplace integration for listing items
-   - **Data shared:** OAuth tokens (stored encrypted), listing data
-   - **Privacy Policy:** https://www.ebay.com/help/policies/member-behaviour-policies/user-privacy-notice-privacy-policy
+    - **Purpose:** Marketplace integration for listing items
+    - **Data shared:** OAuth tokens (stored encrypted), listing data
+    - **Privacy Policy:
+      ** https://www.ebay.com/help/policies/member-behaviour-policies/user-privacy-notice-privacy-policy
 
 **Note:** We do NOT share data for advertising or marketing purposes.
 
@@ -115,13 +129,17 @@ Scanium collects:
 ***REMOVED******REMOVED*** Section 4: Data Security Practices
 
 ***REMOVED******REMOVED******REMOVED*** Encryption in transit
+
 ✅ **Yes** - All data transmitted between app and backend uses HTTPS (TLS 1.2+)
 
 ***REMOVED******REMOVED******REMOVED*** Encryption at rest
+
 ✅ **Yes** - Sensitive data (OAuth tokens, session tokens) encrypted with AES-256-GCM
 
 ***REMOVED******REMOVED******REMOVED*** Data deletion
+
 ✅ **Yes** - Users can delete their data through:
+
 1. In-app Settings → Account → Delete Account
 2. Web form: https://scanium-site-url/account-deletion.html
 
@@ -132,12 +150,14 @@ Scanium collects:
 ***REMOVED******REMOVED*** Section 5: Data Retention and Deletion
 
 ***REMOVED******REMOVED******REMOVED*** Data Retention Policy
+
 - **Account data:** Retained until user deletes account
 - **Images:** Not retained long-term; processed and discarded immediately after analysis
 - **Session tokens:** Retained until expiry or logout (30-90 days)
 - **Usage logs:** Aggregated/anonymized logs retained up to 90 days for security and compliance
 
 ***REMOVED******REMOVED******REMOVED*** What gets deleted when user deletes account:
+
 ✅ Account profile (email, name, picture)
 ✅ All authentication sessions and tokens
 ✅ eBay marketplace connections (OAuth tokens)
@@ -145,6 +165,7 @@ Scanium collects:
 ✅ Scan history and item data
 
 ***REMOVED******REMOVED******REMOVED*** What may be retained (anonymized):
+
 ⚠️ Aggregated usage statistics (not linked to identity)
 ⚠️ Security logs (IP addresses, anonymized identifiers) for fraud prevention
 ⚠️ Transaction records required by law
@@ -156,11 +177,14 @@ Scanium collects:
 ***REMOVED******REMOVED*** Section 6: App Access for Review (if applicable)
 
 ***REMOVED******REMOVED******REMOVED*** Does your app restrict access that would prevent review?
+
 **Answer:** ❌ **No**
 
-Scanium's core features (camera scanning, item classification) are available without sign-in. Google Sign-In is **optional** for data sync and personalized features.
+Scanium's core features (camera scanning, item classification) are available without sign-in. Google
+Sign-In is **optional** for data sync and personalized features.
 
 If reviewer needs to test signed-in features:
+
 - **Approach:** Use any Google account (no special credentials needed)
 - **Alternative:** Provide test Google account if needed (coordinate with review team)
 
@@ -171,11 +195,14 @@ If reviewer needs to test signed-in features:
 ***REMOVED******REMOVED*** Section 7: Advertising ID
 
 ***REMOVED******REMOVED******REMOVED*** Does your app use the Advertising ID?
+
 **Answer:** ❌ **No**
 
-Scanium does NOT use `com.google.android.gms.permission.AD_ID` permission and does not collect advertising identifiers.
+Scanium does NOT use `com.google.android.gms.permission.AD_ID` permission and does not collect
+advertising identifiers.
 
 **Verification:**
+
 - Check `androidApp/src/main/AndroidManifest.xml` - no AD_ID permission declared
 - No advertising SDKs integrated (no AdMob, no Meta Ads, etc.)
 - If adding ads in future, must update Data Safety form
@@ -203,15 +230,18 @@ Before submitting to Play Console:
 1. ❌ **Don't claim "no data collected" if using Google Sign-In** - account info must be declared
 2. ❌ **Don't forget to provide account deletion URL** - mandatory for apps with user accounts
 3. ❌ **Don't share data for ads/marketing** without declaring it explicitly
-4. ❌ **Don't use test OAuth clients in production** - see `howto/project/oauth-production-readiness.md`
+4. ❌ **Don't use test OAuth clients in production** - see
+   `howto/project/oauth-production-readiness.md`
 5. ❌ **Don't claim encryption if not implemented** - verify AES-256-GCM for sensitive tokens
 
 ---
 
 ***REMOVED******REMOVED*** References
 
-- **Play Console Data Safety Help:** https://support.google.com/googleplay/android-developer/answer/10787469
-- **Account Deletion Requirements:** https://support.google.com/googleplay/android-developer/answer/13316080
+- **Play Console Data Safety Help:
+  ** https://support.google.com/googleplay/android-developer/answer/10787469
+- **Account Deletion Requirements:
+  ** https://support.google.com/googleplay/android-developer/answer/13316080
 - **Scanium Privacy Policy:** `../scanium-site/PRIVACY.html`
 - **Scanium Deletion Flow:** `../scanium-site/account-deletion.html`
 
@@ -220,6 +250,7 @@ Before submitting to Play Console:
 ***REMOVED******REMOVED*** Updates and Maintenance
 
 This document should be updated whenever:
+
 - New data types are collected (e.g., location, contacts)
 - New third-party services are added
 - Data retention policies change

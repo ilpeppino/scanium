@@ -20,7 +20,7 @@ compactor:
 
 ***REMOVED*** Optional (safe). Useful only if you later introduce memberlist-based KV/rings.
 memberlist:
-  join_members: []
+  join_members: [ ]
 
 ingester:
   ring:

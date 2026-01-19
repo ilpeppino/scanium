@@ -1,6 +1,7 @@
 ***REMOVED*** Redeploying Scanium Backend on NAS
 
-This document provides step-by-step instructions for redeploying the Scanium backend on the Synology NAS.
+This document provides step-by-step instructions for redeploying the Scanium backend on the Synology
+NAS.
 
 ***REMOVED******REMOVED*** Quick Redeploy (Most Common)
 
@@ -57,6 +58,7 @@ curl -X POST http://localhost:8080/v1/assist/warmup \
 ```
 
 Expected output:
+
 ```json
 {"status":"ok","provider":"claude","model":"...","ts":"...","correlationId":"..."}
 ```
@@ -96,11 +98,13 @@ docker compose ps
 ***REMOVED******REMOVED******REMOVED*** Container Won't Start
 
 Check logs:
+
 ```bash
 docker logs scanium-api --tail 100
 ```
 
 Common issues:
+
 - Missing environment variables in `.env`
 - Database not reachable
 - Port conflicts
@@ -118,6 +122,7 @@ curl http://localhost:8080/health
 ***REMOVED******REMOVED******REMOVED*** Old Image Still Running
 
 Force rebuild:
+
 ```bash
 docker compose down api
 docker rmi scanium-backend_api:latest 2>/dev/null || true
@@ -197,5 +202,6 @@ After deploying:
 1. [ ] Container is running: `docker ps | grep scanium-api`
 2. [ ] Health check passes: `curl http://localhost:8080/health`
 3. [ ] Warmup returns 200: `curl -X POST http://localhost:8080/v1/assist/warmup -H "X-API-Key: KEY"`
-4. [ ] External access works: `curl -X POST https://scanium.gtemp1.com/v1/assist/warmup -H "X-API-Key: KEY"`
+4. [ ] External access works:
+   `curl -X POST https://scanium.gtemp1.com/v1/assist/warmup -H "X-API-Key: KEY"`
 5. [ ] Logs show no errors: `docker logs scanium-api --tail 50`

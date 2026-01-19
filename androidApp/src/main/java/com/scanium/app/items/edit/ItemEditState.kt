@@ -3,10 +3,10 @@ package com.scanium.app.items.edit
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ScannedItem
@@ -38,22 +38,22 @@ class ItemEditState(
     var colorField by mutableStateOf(
         item?.attributes?.get("color")?.value?.takeIf { it.isNotEmpty() }?.let { rawColor ->
             ItemAttributeLocalizer.localizeColor(context, rawColor)
-        } ?: ""
+        } ?: "",
     )
     var sizeField by mutableStateOf(item?.attributes?.get("size")?.value ?: "")
     var materialField by mutableStateOf(
         item?.attributes?.get("material")?.value?.takeIf { it.isNotEmpty() }?.let { rawMaterial ->
             ItemAttributeLocalizer.localizeMaterial(context, rawMaterial)
-        } ?: ""
+        } ?: "",
     )
     var conditionField by mutableStateOf(
         item?.attributes?.get("condition")?.value?.takeIf { it.isNotEmpty() }?.let { rawCondition ->
             runCatching { ItemCondition.valueOf(rawCondition.uppercase()) }.getOrNull()
-        } ?: item?.condition
+        } ?: item?.condition,
     )
     var notesField by mutableStateOf(item?.attributesSummaryText ?: "")
     var priceField by mutableStateOf(
-        item?.userPriceCents?.let { cents -> "%.2f".format(cents / 100.0) } ?: ""
+        item?.userPriceCents?.let { cents -> "%.2f".format(cents / 100.0) } ?: "",
     )
 
     var pricingInsights by mutableStateOf<PricingInsights?>(null)

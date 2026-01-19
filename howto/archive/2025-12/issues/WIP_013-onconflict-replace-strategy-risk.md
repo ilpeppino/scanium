@@ -6,7 +6,8 @@
 
 ***REMOVED******REMOVED*** Problem
 
-`ItemsDao.kt` uses `OnConflictStrategy.REPLACE` for inserts, which will **overwrite entire rows** on ID collision. This could cause data loss if the schema grows and old code tries to insert items.
+`ItemsDao.kt` uses `OnConflictStrategy.REPLACE` for inserts, which will **overwrite entire rows** on
+ID collision. This could cause data loss if the schema grows and old code tries to insert items.
 
 ***REMOVED******REMOVED*** Location
 

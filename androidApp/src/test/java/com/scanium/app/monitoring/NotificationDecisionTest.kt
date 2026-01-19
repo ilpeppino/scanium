@@ -8,7 +8,6 @@ import org.junit.Test
  * Tests all state transitions and rate limiting behavior.
  */
 class NotificationDecisionTest {
-
     private val currentTimeMs = 1_000_000_000L
     private val sixHoursMs = 6L * 60 * 60 * 1000
 
@@ -20,14 +19,15 @@ class NotificationDecisionTest {
     fun `OK to FAIL - should notify immediately`() {
         val result = makeFailResult("health timeout")
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = MonitorHealthStatus.OK,
-            currentResult = result,
-            previousFailureSignature = null,
-            lastNotifiedAt = null,
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = MonitorHealthStatus.OK,
+                currentResult = result,
+                previousFailureSignature = null,
+                lastNotifiedAt = null,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isInstanceOf(NotificationDecision.Decision.NotifyFailure::class.java)
         assertThat((decision as NotificationDecision.Decision.NotifyFailure).reason)
@@ -38,14 +38,16 @@ class NotificationDecisionTest {
     fun `first run with FAIL - should notify`() {
         val result = makeFailResult("config unauthorized (401)")
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = null, // First run
-            currentResult = result,
-            previousFailureSignature = null,
-            lastNotifiedAt = null,
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                // First run
+                previousStatus = null,
+                currentResult = result,
+                previousFailureSignature = null,
+                lastNotifiedAt = null,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isInstanceOf(NotificationDecision.Decision.NotifyFailure::class.java)
     }
@@ -54,14 +56,15 @@ class NotificationDecisionTest {
     fun `first run with OK - should not notify`() {
         val result = makeOkResult()
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = null,
-            currentResult = result,
-            previousFailureSignature = null,
-            lastNotifiedAt = null,
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = null,
+                currentResult = result,
+                previousFailureSignature = null,
+                lastNotifiedAt = null,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isEqualTo(NotificationDecision.Decision.NoNotification)
     }
@@ -75,14 +78,15 @@ class NotificationDecisionTest {
         val result = makeFailResult("health timeout", signature = "timeout_health")
         val recentNotifyTime = currentTimeMs - (sixHoursMs / 2) // 3 hours ago
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = MonitorHealthStatus.FAIL,
-            currentResult = result,
-            previousFailureSignature = "timeout_health",
-            lastNotifiedAt = recentNotifyTime,
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = MonitorHealthStatus.FAIL,
+                currentResult = result,
+                previousFailureSignature = "timeout_health",
+                lastNotifiedAt = recentNotifyTime,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isEqualTo(NotificationDecision.Decision.NoNotification)
     }
@@ -92,14 +96,15 @@ class NotificationDecisionTest {
         val result = makeFailResult("health timeout", signature = "timeout_health")
         val oldNotifyTime = currentTimeMs - (sixHoursMs + 1000) // Just over 6 hours ago
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = MonitorHealthStatus.FAIL,
-            currentResult = result,
-            previousFailureSignature = "timeout_health",
-            lastNotifiedAt = oldNotifyTime,
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = MonitorHealthStatus.FAIL,
+                currentResult = result,
+                previousFailureSignature = "timeout_health",
+                lastNotifiedAt = oldNotifyTime,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isInstanceOf(NotificationDecision.Decision.NotifyFailure::class.java)
     }
@@ -108,14 +113,17 @@ class NotificationDecisionTest {
     fun `FAIL to FAIL with different signature - should notify immediately`() {
         val result = makeFailResult("config unauthorized (401)", signature = "401_v1_config")
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = MonitorHealthStatus.FAIL,
-            currentResult = result,
-            previousFailureSignature = "timeout_health", // Different signature
-            lastNotifiedAt = currentTimeMs - 1000, // Very recent
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = MonitorHealthStatus.FAIL,
+                currentResult = result,
+                // Different signature
+                previousFailureSignature = "timeout_health",
+                // Very recent
+                lastNotifiedAt = currentTimeMs - 1000,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isInstanceOf(NotificationDecision.Decision.NotifyFailure::class.java)
     }
@@ -124,14 +132,16 @@ class NotificationDecisionTest {
     fun `FAIL to FAIL with no previous notification - should notify`() {
         val result = makeFailResult("health timeout", signature = "timeout_health")
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = MonitorHealthStatus.FAIL,
-            currentResult = result,
-            previousFailureSignature = "timeout_health",
-            lastNotifiedAt = null, // Never notified
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = MonitorHealthStatus.FAIL,
+                currentResult = result,
+                previousFailureSignature = "timeout_health",
+                // Never notified
+                lastNotifiedAt = null,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isInstanceOf(NotificationDecision.Decision.NotifyFailure::class.java)
     }
@@ -144,14 +154,15 @@ class NotificationDecisionTest {
     fun `FAIL to OK with notifyOnRecovery true - should notify recovery`() {
         val result = makeOkResult()
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = MonitorHealthStatus.FAIL,
-            currentResult = result,
-            previousFailureSignature = "timeout_health",
-            lastNotifiedAt = null,
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = MonitorHealthStatus.FAIL,
+                currentResult = result,
+                previousFailureSignature = "timeout_health",
+                lastNotifiedAt = null,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isEqualTo(NotificationDecision.Decision.NotifyRecovery)
     }
@@ -160,14 +171,15 @@ class NotificationDecisionTest {
     fun `FAIL to OK with notifyOnRecovery false - should not notify`() {
         val result = makeOkResult()
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = MonitorHealthStatus.FAIL,
-            currentResult = result,
-            previousFailureSignature = "timeout_health",
-            lastNotifiedAt = null,
-            notifyOnRecovery = false,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = MonitorHealthStatus.FAIL,
+                currentResult = result,
+                previousFailureSignature = "timeout_health",
+                lastNotifiedAt = null,
+                notifyOnRecovery = false,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isEqualTo(NotificationDecision.Decision.NoNotification)
     }
@@ -180,14 +192,15 @@ class NotificationDecisionTest {
     fun `OK to OK - should not notify`() {
         val result = makeOkResult()
 
-        val decision = NotificationDecision.shouldNotify(
-            previousStatus = MonitorHealthStatus.OK,
-            currentResult = result,
-            previousFailureSignature = null,
-            lastNotifiedAt = null,
-            notifyOnRecovery = true,
-            currentTimeMs = currentTimeMs,
-        )
+        val decision =
+            NotificationDecision.shouldNotify(
+                previousStatus = MonitorHealthStatus.OK,
+                currentResult = result,
+                previousFailureSignature = null,
+                lastNotifiedAt = null,
+                notifyOnRecovery = true,
+                currentTimeMs = currentTimeMs,
+            )
 
         assertThat(decision).isEqualTo(NotificationDecision.Decision.NoNotification)
     }
@@ -209,54 +222,62 @@ class NotificationDecisionTest {
         failureReason: String,
         signature: String? = null,
     ): HealthCheckResult {
-        val failures = listOf(
-            EndpointCheckResult(
-                endpoint = "/health",
-                passed = false,
-                httpCode = null,
-                failureReason = failureReason,
-            ),
-        )
+        val failures =
+            listOf(
+                EndpointCheckResult(
+                    endpoint = "/health",
+                    passed = false,
+                    httpCode = null,
+                    failureReason = failureReason,
+                ),
+            )
 
         // Create a result with a predictable signature if specified
-        val result = HealthCheckResult(
-            status = MonitorHealthStatus.FAIL,
-            checkedAt = currentTimeMs,
-            detailsSummary = "1/4 endpoints failed",
-            failures = failures,
-        )
+        val result =
+            HealthCheckResult(
+                status = MonitorHealthStatus.FAIL,
+                checkedAt = currentTimeMs,
+                detailsSummary = "1/4 endpoints failed",
+                failures = failures,
+            )
 
         // Verify signature if expected
         if (signature != null) {
             // The signature is computed from failures, so we need to construct failures
             // that produce the expected signature
             return when (signature) {
-                "timeout_health" -> HealthCheckResult(
-                    status = MonitorHealthStatus.FAIL,
-                    checkedAt = currentTimeMs,
-                    detailsSummary = "1/4 endpoints failed",
-                    failures = listOf(
-                        EndpointCheckResult(
-                            endpoint = "/health",
-                            passed = false,
-                            httpCode = null,
-                            failureReason = failureReason,
-                        ),
-                    ),
-                )
-                "401_v1_config" -> HealthCheckResult(
-                    status = MonitorHealthStatus.FAIL,
-                    checkedAt = currentTimeMs,
-                    detailsSummary = "1/4 endpoints failed",
-                    failures = listOf(
-                        EndpointCheckResult(
-                            endpoint = "/v1/config",
-                            passed = false,
-                            httpCode = 401,
-                            failureReason = failureReason,
-                        ),
-                    ),
-                )
+                "timeout_health" ->
+                    HealthCheckResult(
+                        status = MonitorHealthStatus.FAIL,
+                        checkedAt = currentTimeMs,
+                        detailsSummary = "1/4 endpoints failed",
+                        failures =
+                            listOf(
+                                EndpointCheckResult(
+                                    endpoint = "/health",
+                                    passed = false,
+                                    httpCode = null,
+                                    failureReason = failureReason,
+                                ),
+                            ),
+                    )
+
+                "401_v1_config" ->
+                    HealthCheckResult(
+                        status = MonitorHealthStatus.FAIL,
+                        checkedAt = currentTimeMs,
+                        detailsSummary = "1/4 endpoints failed",
+                        failures =
+                            listOf(
+                                EndpointCheckResult(
+                                    endpoint = "/v1/config",
+                                    passed = false,
+                                    httpCode = 401,
+                                    failureReason = failureReason,
+                                ),
+                            ),
+                    )
+
                 else -> result
             }
         }

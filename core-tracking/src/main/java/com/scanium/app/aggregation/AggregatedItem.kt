@@ -80,7 +80,6 @@ data class AggregatedItem(
      * can show "Detected: X" alongside the user's override.
      */
     var detectedAttributes: Map<String, ItemAttribute> = emptyMap(),
-    // Multi-object scanning fields (v7)
     /** User-editable attribute summary text */
     var attributesSummaryText: String = "",
     /** Flag indicating user has manually edited the summary text */
@@ -91,7 +90,6 @@ data class AggregatedItem(
     var sourcePhotoId: String? = null,
     /** Status of each enrichment layer */
     var enrichmentStatus: EnrichmentLayerStatus = EnrichmentLayerStatus(),
-    // Export Assistant fields (v8)
     /** AI-generated marketplace-ready title */
     var exportTitle: String? = null,
     /** AI-generated marketplace-ready description */
@@ -106,7 +104,6 @@ data class AggregatedItem(
     var exportModel: String? = null,
     /** Confidence tier of the AI-generated export */
     var exportConfidenceTier: String? = null,
-    // Quality Loop fields (v9)
     /** Completeness score (0-100) based on category-specific required attributes */
     var completenessScore: Int = 0,
     /** List of missing attribute keys ordered by importance */

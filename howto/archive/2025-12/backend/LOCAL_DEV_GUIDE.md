@@ -1,7 +1,10 @@
-> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current state.
+> Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
+> state.
+
 ***REMOVED*** Local Development & Mobile Testing Guide
 
-**Complete, tested guide for running the backend locally and testing eBay OAuth with your Android device.**
+**Complete, tested guide for running the backend locally and testing eBay OAuth with your Android
+device.**
 
 Last updated: 2025-12-12 (Tested on macOS with Colima)
 
@@ -19,9 +22,11 @@ Last updated: 2025-12-12 (Tested on macOS with Colima)
 ***REMOVED******REMOVED*** 📋 Prerequisites
 
 ✅ You need:
+
 - **Node.js 20** installed (`node --version`)
 - **Colima** or Docker Desktop (`colima version` or `docker version`)
-- **eBay sandbox credentials** (Client ID + Client Secret from [developer.ebay.com](https://developer.ebay.com/my/keys))
+- **eBay sandbox credentials** (Client ID + Client Secret
+  from [developer.ebay.com](https://developer.ebay.com/my/keys))
 - **Android device** or emulator
 - **Mac** with ports 8080 and 5432 available
 
@@ -63,6 +68,7 @@ npm install
 ```
 
 **Expected output:**
+
 ```
 added 271 packages, and audited 271 packages in 3s
 ```
@@ -102,6 +108,7 @@ docker compose up -d postgres
 ```
 
 **Expected output:**
+
 ```
  Container scanium-postgres Created
  Container scanium-postgres Started
@@ -114,6 +121,7 @@ docker ps --filter name=scanium-postgres
 ```
 
 **Expected:**
+
 ```
 CONTAINER ID   IMAGE                PORTS                    NAMES
 abc123def456   postgres:16-alpine   0.0.0.0:5432->5432/tcp   scanium-postgres
@@ -174,8 +182,11 @@ CLOUDFLARED_TOKEN=
 ```
 
 **Critical Notes:**
-- `DATABASE_URL` uses **`localhost`** (not `postgres`) because we're running migrations from host machine
-- eBay credentials come from [eBay Developer Portal - Sandbox Keys](https://developer.ebay.com/my/keys)
+
+- `DATABASE_URL` uses **`localhost`** (not `postgres`) because we're running migrations from host
+  machine
+- eBay credentials come
+  from [eBay Developer Portal - Sandbox Keys](https://developer.ebay.com/my/keys)
 - `SESSION_SIGNING_SECRET` must be at least 64 characters
 
 ***REMOVED******REMOVED******REMOVED*** Step 6: Generate Prisma Client
@@ -185,6 +196,7 @@ npm run prisma:generate
 ```
 
 **Expected output:**
+
 ```
 ✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 25ms
 ```
@@ -202,6 +214,7 @@ npx prisma migrate dev --name init
 ```
 
 **Expected output:**
+
 ```
 Applying migration `20251212155540_init`
 
@@ -238,6 +251,7 @@ npm run dev
 ```
 
 **Expected output:**
+
 ```
 📝 Loading configuration...
 ✅ Configuration loaded (env: development)
@@ -283,7 +297,8 @@ curl http://localhost:8080/auth/ebay/status
 
 ***REMOVED******REMOVED*** Part 3: Expose Backend via ngrok
 
-Your Android device can't access `localhost:8080` on your Mac. We need to expose it publicly using ngrok.
+Your Android device can't access `localhost:8080` on your Mac. We need to expose it publicly using
+ngrok.
 
 ***REMOVED******REMOVED******REMOVED*** Step 10: Install and Configure ngrok
 
@@ -297,7 +312,8 @@ brew install ngrok/ngrok/ngrok
 
 1. Go to [ngrok.com/signup](https://ngrok.com/signup)
 2. Create free account
-3. Get your authtoken from [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
+3. Get your authtoken
+   from [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
 
 **Authenticate ngrok:**
 
@@ -307,6 +323,7 @@ ngrok config add-authtoken YOUR_AUTHTOKEN_HERE
 ```
 
 **Expected output:**
+
 ```
 Authtoken saved to configuration file: /Users/family/Library/Application Support/ngrok/ngrok.yml
 ```
@@ -320,6 +337,7 @@ ngrok http 8080
 ```
 
 **Expected output:**
+
 ```
 ngrok
 
@@ -378,6 +396,7 @@ curl -X POST https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/sta
 ```
 
 **Expected response:**
+
 ```json
 {
   "authorizeUrl": "https://auth.sandbox.ebay.com/oauth2/authorize?client_id=REDACTED_EBAY_CLIENT_ID&redirect_uri=https%3A%2F%2Fbrayan-vizarded-undomestically.ngrok-free.dev%2Fauth%2Febay%2Fcallback&response_type=code&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope..."
@@ -399,12 +418,14 @@ curl -X POST https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/sta
 5. Click **Add RuName** button
 
 **Fill in RuName form:**
+
 - **Your Privacy Policy URL**: `https://google.com/privacy` (any valid URL)
-- **Your Auth Accepted URL**: `https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/callback`
-  - ⚠️ **CRITICAL:** Use YOUR actual ngrok URL
-  - Must end with `/auth/ebay/callback`
-  - Must be HTTPS (ngrok provides this)
-  - No trailing slash
+- **Your Auth Accepted URL**:
+  `https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/callback`
+    - ⚠️ **CRITICAL:** Use YOUR actual ngrok URL
+    - Must end with `/auth/ebay/callback`
+    - Must be HTTPS (ngrok provides this)
+    - No trailing slash
 
 Click **Save**
 
@@ -414,7 +435,8 @@ Click **Save**
 2. Select your newly created RuName from dropdown
 3. Click **Sign in to Sandbox**
 4. Log in with your eBay **sandbox test user** (not your developer account)
-   - Don't have a sandbox user? Create one at [developer.ebay.com/sandbox](https://developer.ebay.com/sandbox)
+    - Don't have a sandbox user? Create one
+      at [developer.ebay.com/sandbox](https://developer.ebay.com/sandbox)
 5. Authorize the application
 6. You'll receive a token (you can ignore it - we'll get tokens via OAuth)
 
@@ -460,6 +482,7 @@ curl https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/status
 ```
 
 **Expected response:**
+
 ```json
 {
   "connected": true,
@@ -490,13 +513,14 @@ npm run prisma:studio
 Browser opens at `http://localhost:5555`
 
 Navigate to:
+
 - **User** table → should have 1 user (id: "default-user")
 - **EbayConnection** table → should have 1 connection with:
-  - `accessToken`
-  - `refreshToken`
-  - `environment`: "sandbox"
-  - `scopes`
-  - `expiresAt`
+    - `accessToken`
+    - `refreshToken`
+    - `environment`: "sandbox"
+    - `scopes`
+    - `expiresAt`
 
 ---
 
@@ -861,6 +885,7 @@ npm run prisma:studio
 ```
 
 Navigate to **EbayConnection** table:
+
 - Should show 1 connection
 - `environment`: "sandbox"
 - `accessToken`: "v^1.1***REMOVED***i^1***REMOVED***..."
@@ -960,6 +985,7 @@ ngrok http 8080
 **Problem:** Routes registered with prefix but handlers also include prefix (double prefix)
 
 **Fix:** Routes in `src/modules/auth/ebay/routes.ts` should use:
+
 - `/start` (not `/auth/ebay/start`)
 - `/callback` (not `/auth/ebay/callback`)
 - `/status` (not `/auth/ebay/status`)
@@ -1025,6 +1051,7 @@ await app.register(fastifyCookie, {
 **Error:** `OAuth state mismatch - possible CSRF attack`
 
 **Causes:**
+
 - Cookies blocked or cleared mid-flow
 - Multiple OAuth attempts with stale cookies
 - `SESSION_SIGNING_SECRET` changed after starting flow
@@ -1160,6 +1187,7 @@ Once local testing is complete:
 ***REMOVED******REMOVED*** ✅ You're Ready!
 
 Follow Steps 1-29 and you'll have:
+
 - ✅ Backend running locally
 - ✅ PostgreSQL database configured
 - ✅ ngrok tunnel exposing backend
