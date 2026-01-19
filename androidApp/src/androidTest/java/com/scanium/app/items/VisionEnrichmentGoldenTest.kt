@@ -7,14 +7,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.scanium.app.ItemCategory
+import com.scanium.app.NormalizedRect
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.items.VisionColor
 import com.scanium.shared.core.models.items.VisionLabel
 import com.scanium.shared.core.models.items.VisionLogo
-import com.scanium.app.ItemCategory
-import com.scanium.app.NormalizedRect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

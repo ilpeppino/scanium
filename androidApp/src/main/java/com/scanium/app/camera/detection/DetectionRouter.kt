@@ -3,8 +3,8 @@ package com.scanium.app.camera.detection
 import android.os.SystemClock
 import android.util.Log
 import com.scanium.app.BuildConfig
-import com.scanium.app.camera.ScanMode
 import com.scanium.app.ScannedItem
+import com.scanium.app.camera.ScanMode
 import com.scanium.app.ml.DetectionResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

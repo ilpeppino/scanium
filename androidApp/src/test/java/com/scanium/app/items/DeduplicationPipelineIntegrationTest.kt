@@ -4,12 +4,12 @@ import android.graphics.RectF
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.google.common.truth.Truth.assertThat
 import com.scanium.android.platform.adapters.toNormalizedRect
+import com.scanium.app.ObjectTracker
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.tracking.DetectionInfo
 import com.scanium.core.tracking.ObjectCandidate
-import com.scanium.app.ObjectTracker
 import com.scanium.core.tracking.TrackerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

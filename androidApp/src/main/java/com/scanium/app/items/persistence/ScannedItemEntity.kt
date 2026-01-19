@@ -3,11 +3,12 @@ package com.scanium.app.items.persistence
 import android.net.Uri
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.scanium.app.ItemCategory
+import com.scanium.app.NormalizedRect
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.ItemCondition
 import com.scanium.app.items.ItemListingStatus
-import com.scanium.app.ScannedItem
 import com.scanium.app.items.ThumbnailCache
-import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.items.EnrichmentLayerStatus
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemPhoto
@@ -18,7 +19,6 @@ import com.scanium.shared.core.models.items.VisionColor
 import com.scanium.shared.core.models.items.VisionLabel
 import com.scanium.shared.core.models.items.VisionLogo
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.app.NormalizedRect
 import com.scanium.shared.core.models.pricing.Money
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceRange

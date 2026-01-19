@@ -4,9 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.ItemListingStatus
 import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.ScannedItem
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.data.ListingCreationResult
 import com.scanium.app.selling.domain.Listing

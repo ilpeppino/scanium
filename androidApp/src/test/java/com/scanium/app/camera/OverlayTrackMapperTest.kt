@@ -2,9 +2,9 @@ package com.scanium.app.camera
 
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.AggregatedItem
-import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ItemCategory
 import com.scanium.app.NormalizedRect
+import com.scanium.app.ml.DetectionResult
 import com.scanium.shared.core.models.pricing.Money
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceRange

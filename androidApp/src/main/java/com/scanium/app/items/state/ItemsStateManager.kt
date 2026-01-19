@@ -6,13 +6,13 @@ import com.scanium.app.AggregationConfig
 import com.scanium.app.AggregationPresets
 import com.scanium.app.AggregationStats
 import com.scanium.app.ItemAggregator
+import com.scanium.app.ItemCategory
 import com.scanium.app.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.VisionAttributes
-import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceRange

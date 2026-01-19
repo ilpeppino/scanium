@@ -379,7 +379,6 @@ class DeveloperOptionsViewModel
             }
         }
 
-
         fun setAllowScreenshots(allowed: Boolean) {
             viewModelScope.launch {
                 settingsRepository.setDevAllowScreenshots(allowed)
@@ -400,7 +399,6 @@ class DeveloperOptionsViewModel
                 diagnosticsRepository.refreshAll()
             }
         }
-
 
         // Detection settings
         fun setBarcodeDetectionEnabled(enabled: Boolean) {

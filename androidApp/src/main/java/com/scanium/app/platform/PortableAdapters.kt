@@ -4,9 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.graphics.RectF
+import com.scanium.app.NormalizedRect
 import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.app.NormalizedRect
 import java.io.ByteArrayOutputStream
 
 fun Rect.toNormalizedRect(

@@ -7,8 +7,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.ScannedItem
+import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.items.summary.AttributeSummaryGenerator
 import com.scanium.app.ml.VisionInsightsPrefiller

@@ -5,8 +5,8 @@ import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
-import com.scanium.app.camera.geom.GeometryMapper.uprightToSensor
 import com.scanium.app.NormalizedRect
+import com.scanium.app.camera.geom.GeometryMapper.uprightToSensor
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

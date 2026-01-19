@@ -51,12 +51,12 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.ScannedItem
 import com.scanium.app.ftue.CameraUiFtueAnchorRegistry
 import com.scanium.app.ftue.CameraUiFtueViewModel
 import com.scanium.app.ftue.ftueAnchor
 import com.scanium.app.ftue.ftuePulse
 import com.scanium.app.ftue.tourTarget
-import com.scanium.app.ScannedItem
 import com.scanium.app.ui.common.DonationContent
 import kotlinx.coroutines.delay
 

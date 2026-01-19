@@ -8,8 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.ScannedItem
+import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.shared.core.models.assistant.PricingInsights
 import com.scanium.shared.core.models.items.ItemCondition
 

@@ -1,7 +1,7 @@
 package com.scanium.app.quality
 
-import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.app.ItemCategory
+import com.scanium.shared.core.models.items.ItemAttribute
 
 /**
  * Evaluates attribute completeness for scanned items based on category-specific requirements.

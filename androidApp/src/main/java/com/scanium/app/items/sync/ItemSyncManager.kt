@@ -3,8 +3,8 @@ package com.scanium.app.items.sync
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import com.scanium.app.auth.AuthRepository
 import com.scanium.app.ScannedItem
+import com.scanium.app.auth.AuthRepository
 import com.scanium.app.items.network.CreateItemRequest
 import com.scanium.app.items.network.ItemDto
 import com.scanium.app.items.network.ItemsApi

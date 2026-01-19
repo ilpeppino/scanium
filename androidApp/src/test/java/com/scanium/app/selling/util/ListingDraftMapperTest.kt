@@ -3,8 +3,8 @@ package com.scanium.app.selling.util
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.ScannedItem
+import com.scanium.app.domain.DomainPackProvider
 import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory
 import org.junit.After

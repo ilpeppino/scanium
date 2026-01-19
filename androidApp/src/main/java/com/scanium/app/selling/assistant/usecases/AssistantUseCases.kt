@@ -1,8 +1,8 @@
 package com.scanium.app.selling.assistant.usecases
 
 import android.content.Context
-import com.scanium.app.items.ItemLocalizer
 import com.scanium.app.ScannedItem
+import com.scanium.app.items.ItemLocalizer
 import com.scanium.app.listing.DraftField
 import com.scanium.app.listing.DraftFieldKey
 import com.scanium.app.listing.DraftProvenance

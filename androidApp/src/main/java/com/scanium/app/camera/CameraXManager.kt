@@ -26,6 +26,8 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.mlkit.vision.common.InputImage
 import com.scanium.app.BuildConfig
+import com.scanium.app.ObjectTracker
+import com.scanium.app.ScannedItem
 import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DetectionRouterConfig
@@ -33,12 +35,10 @@ import com.scanium.app.camera.detection.DetectorType
 import com.scanium.app.camera.detection.DocumentCandidateDetector
 import com.scanium.app.camera.detection.DocumentCandidateState
 import com.scanium.app.camera.detection.ScanPipelineDiagnostics
-import com.scanium.app.ScannedItem
 import com.scanium.app.ml.BarcodeDetectorClient
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.DocumentTextRecognitionClient
 import com.scanium.app.ml.ObjectDetectorClient
-import com.scanium.app.ObjectTracker
 import com.scanium.app.tracking.TrackerConfig
 import com.scanium.core.models.scanning.ScanGuidanceState
 import com.scanium.core.models.scanning.ScanRoi

@@ -3,8 +3,8 @@ package com.scanium.app.assistant
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ScannedItem
+import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.shared.core.models.assistant.AssistantAction
 import com.scanium.shared.core.models.assistant.AssistantActionType

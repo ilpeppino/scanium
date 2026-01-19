@@ -1,15 +1,15 @@
 package com.scanium.app.items.classification
 
 import android.util.Log
-import com.scanium.app.BuildConfig
 import com.scanium.app.AggregatedItem
-import com.scanium.app.items.CloudClassificationAlert
+import com.scanium.app.BuildConfig
+import com.scanium.app.ItemCategory
 import com.scanium.app.ScannedItem
+import com.scanium.app.items.CloudClassificationAlert
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
-import com.scanium.app.ItemCategory
 import com.scanium.app.ml.PricingEngine
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator

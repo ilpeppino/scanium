@@ -3,8 +3,8 @@ package com.scanium.app.ml.classification
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.AggregatedItem
 import com.scanium.app.ItemCategory
-import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.app.NormalizedRect
+import com.scanium.shared.core.models.model.ImageRef
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

@@ -1,7 +1,7 @@
 package com.scanium.app.selling.domain
 
-import com.scanium.app.ScannedItem
 import com.scanium.app.ItemCategory
+import com.scanium.app.ScannedItem
 
 data class Listing(
     val listingId: ListingId,

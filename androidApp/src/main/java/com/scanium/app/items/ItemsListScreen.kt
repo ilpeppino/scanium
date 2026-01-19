@@ -49,7 +49,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -64,10 +63,6 @@ import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
-import com.scanium.app.ftue.FtueRepository
-import com.scanium.app.ftue.ItemsListFtueOverlay
-import com.scanium.app.ftue.ItemsListFtueViewModel
-import com.scanium.app.ftue.ListHintType
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.components.AttributeEditDialog
 import com.scanium.app.items.export.CsvExportWriter

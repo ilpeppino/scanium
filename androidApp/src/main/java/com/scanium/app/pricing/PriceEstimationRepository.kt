@@ -1,8 +1,8 @@
 package com.scanium.app.pricing
 
 import android.util.Log
-import com.scanium.app.ScannedItem
 import com.scanium.app.ItemCategory
+import com.scanium.app.ScannedItem
 import com.scanium.shared.core.models.pricing.PriceEstimationOrchestrator
 import com.scanium.shared.core.models.pricing.PriceEstimationRequest
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus

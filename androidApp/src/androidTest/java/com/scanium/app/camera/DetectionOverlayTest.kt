@@ -6,8 +6,8 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ItemCategory
+import com.scanium.app.ml.DetectionResult
 import com.scanium.app.platform.toNormalizedRect
 import org.junit.Rule
 import org.junit.Test

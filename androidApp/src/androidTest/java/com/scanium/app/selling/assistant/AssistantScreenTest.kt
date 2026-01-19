@@ -4,11 +4,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.scanium.app.ItemCategory
 import com.scanium.app.ScannedItem
 import com.scanium.app.items.createAndroidTestItemsViewModel
 import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftBuilder
-import com.scanium.app.ItemCategory
 import com.scanium.app.selling.persistence.ListingDraftStore
 import kotlinx.coroutines.Dispatchers
 import org.junit.Rule

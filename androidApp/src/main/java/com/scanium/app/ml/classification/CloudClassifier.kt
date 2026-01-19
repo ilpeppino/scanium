@@ -4,10 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.scanium.app.BuildConfig
+import com.scanium.app.ItemCategory
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.logging.ScaniumLog
-import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.config.CloudClassifierConfig
 import com.scanium.shared.core.models.items.ItemAttribute
 import kotlinx.coroutines.Dispatchers

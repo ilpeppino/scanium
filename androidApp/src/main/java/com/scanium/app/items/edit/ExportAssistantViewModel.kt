@@ -5,10 +5,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.BuildConfig
+import com.scanium.app.ScannedItem
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.ScannedItem
 import com.scanium.app.listing.ExportProfileRepository
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.model.ItemAttributeSnapshot

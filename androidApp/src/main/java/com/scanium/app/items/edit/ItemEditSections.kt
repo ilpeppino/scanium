@@ -64,10 +64,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.ScannedItem
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemLocalizer
-import com.scanium.app.ScannedItem
 import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.ItemCondition
 

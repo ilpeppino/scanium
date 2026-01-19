@@ -1,8 +1,8 @@
 package com.scanium.app.selling.util
 
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.ScannedItem
 import com.scanium.app.ItemCategory
+import com.scanium.app.ScannedItem
 import org.junit.Test
 
 class ListingTitleBuilderTest {
