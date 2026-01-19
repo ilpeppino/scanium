@@ -11,7 +11,7 @@ class ScanRoiTest {
     // =========================================================================
 
     @Test
-    fun `DEFAULT is centered with 65% size`() {
+    fun `DEFAULT is centered with 65 percent size`() {
         val roi = ScanRoi.DEFAULT
 
         assertEquals(0.5f, roi.centerXNorm)
