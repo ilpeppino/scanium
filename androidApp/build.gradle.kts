@@ -275,11 +275,11 @@ android {
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
 
-            // Google OAuth Client ID for dev (keep existing working client)
+            // Google OAuth Client ID for dev (shared with beta/prod)
             buildConfigField(
                 "String",
                 "GOOGLE_SERVER_CLIENT_ID",
-                "\"480326569434-9cje4dkffu16ol5126q7pt6oihshtn5k.apps.googleusercontent.com\""
+                "\"REDACTED_GOOGLE_OAUTH_CLIENT_ID\""
             )
         }
         create("beta") {
