@@ -14,6 +14,7 @@
       "Philips",
       "Russell Hobbs",
       "Saeco",
+      "Sage",
       "Sensio"
     ],
     "appliance_microwave": [
@@ -21,11 +22,14 @@
       "Bauknecht",
       "Bosch",
       "Candy",
+      "DeLonghi",
       "Electrolux",
       "LG",
       "Miele",
+      "Nespresso",
       "Panasonic",
       "Philips",
+      "Sage",
       "Samsung",
       "Sharp",
       "Siemens",
@@ -36,6 +40,7 @@
       "AEG",
       "Bissell",
       "Bosch",
+      "DeLonghi",
       "Dyson",
       "Einhell",
       "Electrolux",
@@ -43,7 +48,9 @@
       "Karcher",
       "LG",
       "Miele",
+      "Nespresso",
       "Philips",
+      "Sage",
       "Samsung",
       "Shark",
       "Siemens",
@@ -235,18 +242,22 @@
       "Beats",
       "Bose",
       "Corsair",
+      "Google",
       "HyperX",
       "Jabra",
       "JBL",
+      "OnePlus",
       "Philips",
       "Plantronics",
       "Rode",
+      "Samsung",
       "Sennheiser",
       "Shure",
       "Skullcandy",
       "Sony",
       "Steelseries",
-      "Turtle Beach"
+      "Turtle Beach",
+      "Xiaomi"
     ],
     "electronics_laptop": [
       "Acer",
@@ -385,6 +396,7 @@
       "Portable",
       "Sonos",
       "Sony",
+      "UE Boom",
       "Ultimate Ears",
       "Yamaha"
     ],
@@ -462,17 +474,20 @@
     ],
     "furniture_chair": [
       "AKRacing",
+      "Argos",
       "Brunner",
       "Corsair",
       "DXRacer",
       "Eames",
       "Gaming Chair Brands",
+      "Habitat",
       "Haworth",
       "Herman Miller",
       "Humanscale",
       "Ikea",
       "Kinnarps",
       "Knoll",
+      "Next",
       "Noblechairs",
       "Recaro",
       "Secretlab",
@@ -480,9 +495,11 @@
       "Steelcase",
       "Vario",
       "Vitra",
+      "Wayfair",
       "Wilkhahn"
     ],
     "furniture_sofa": [
+      "Argos",
       "Arne Jacobsen",
       "Artek",
       "B&B Italia",
@@ -494,15 +511,18 @@
       "Hay",
       "Herman Miller",
       "Ikea",
+      "John Lewis",
       "Knoll",
       "Muuto",
+      "Next",
       "Normann Copenhagen",
       "Papadatos",
       "Sits",
       "Sofacompany",
       "Sofology",
       "USM",
-      "Vitra"
+      "Vitra",
+      "Wayfair"
     ],
     "furniture_table": [
       "Andreu World",
@@ -530,7 +550,9 @@
       "Alienware",
       "ASUS",
       "Corsair",
-      "MSI"
+      "Logitech",
+      "MSI",
+      "Razer"
     ],
     "gaming_headset": [
       "Corsair",
@@ -539,14 +561,22 @@
       "Turtle Beach"
     ],
     "gaming_keyboard": [
+      "Alienware",
+      "ASUS",
       "Corsair",
       "Logitech",
+      "MSI",
       "Razer",
       "SteelSeries"
     ],
     "gaming_laptop": [
+      "Acer",
       "Alienware",
+      "Apple",
       "ASUS",
+      "Dell",
+      "HP",
+      "Lenovo",
       "MSI",
       "Razer"
     ],
@@ -557,8 +587,11 @@
       "MSI"
     ],
     "gaming_mouse": [
+      "Alienware",
+      "ASUS",
       "Corsair",
       "Logitech",
+      "MSI",
       "Razer",
       "SteelSeries"
     ],
@@ -652,6 +685,14 @@
       "Secretlab",
       "Uplift"
     ],
+    "office_monitor_stand": [
+      "Acer",
+      "ASUS",
+      "BenQ",
+      "Dell",
+      "LG",
+      "ViewSonic"
+    ],
     "small_app_air_fryer": [
       "Cosori",
       "Instant Pot",
@@ -668,15 +709,26 @@
       "KitchenAid"
     ],
     "smart_security_camera": [
+      "Canon",
+      "Fujifilm",
       "Logitech",
       "Nest",
+      "Nikon",
+      "Olympus",
       "Ring",
+      "Sony",
       "Wyze"
     ],
     "smart_speaker": [
       "Amazon",
+      "Anker",
       "Apple",
-      "Google"
+      "Bose",
+      "Google",
+      "JBL",
+      "Marshall",
+      "Sony",
+      "UE Boom"
     ],
     "smart_thermostat": [
       "Ecobee",
@@ -693,9 +745,60 @@
       "Coleman",
       "REI"
     ],
-    "tools_drill": [
+    "tools_angle_grinder": [
+      "Black+Decker",
       "Bosch",
       "DeWalt",
+      "Festool",
+      "Makita"
+    ],
+    "tools_circular_saw": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita"
+    ],
+    "tools_drill": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita"
+    ],
+    "tools_impact_driver": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita"
+    ],
+    "tools_measuring_tape": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita"
+    ],
+    "tools_nail_gun": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita"
+    ],
+    "tools_power_washer": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita"
+    ],
+    "tools_rotary_tool": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
       "Makita"
     ]
   },
