@@ -133,6 +133,12 @@ fun AssistantScreen(
             com.scanium.app.data
                 .SettingsRepository(context)
         }
+    val apiKeyStore =
+        remember {
+            com.scanium.app.config.SecureApiKeyStore(context)
+        }
+    val isSignedIn = apiKeyStore.getUserInfo() != null
+
     val assistedFactory =
         remember(context) {
             EntryPointAccessors
@@ -541,9 +547,11 @@ fun AssistantScreen(
             if (preflightWarning != null && availabilityBanner is AssistantAvailability.Available) {
                 PreflightWarningBanner(
                     warning = preflightWarning,
+                    isSignedIn = isSignedIn,
                     onDismiss = {
                         viewModel.clearPreflightWarning()
                     },
+                    onNavigateToSettingsGeneral = onNavigateToSettingsGeneral,
                 )
             }
 
@@ -1542,7 +1550,9 @@ private fun AssistantUnavailableBanner(
 @Composable
 private fun PreflightWarningBanner(
     warning: PreflightWarning,
+    isSignedIn: Boolean,
     onDismiss: () -> Unit,
+    onNavigateToSettingsGeneral: () -> Unit = {},
 ) {
     val (title, detail) =
         when (warning.status) {
@@ -1554,10 +1564,18 @@ private fun PreflightWarningBanner(
             }
 
             PreflightStatus.UNAUTHORIZED -> {
-                Pair(
-                    "API key may be invalid",
-                    "Check your API key in Developer Settings. You can still try sending messages. (${warning.reasonCode})",
-                )
+                // Show different message based on sign-in status
+                if (!isSignedIn) {
+                    Pair(
+                        "Google Sign-In required",
+                        "The AI assistant requires you to sign in with your Google account.",
+                    )
+                } else {
+                    Pair(
+                        "API key may be invalid",
+                        "Check your API key in Developer Settings. You can still try sending messages. (${warning.reasonCode})",
+                    )
+                }
             }
 
             PreflightStatus.TEMPORARILY_UNAVAILABLE -> {
@@ -1612,10 +1630,20 @@ private fun PreflightWarningBanner(
                     color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
                 )
             }
-            TextButton(
-                onClick = onDismiss,
-            ) {
-                Text("Dismiss")
+            // Show "Go to Settings" button if user is not signed in and status is UNAUTHORIZED
+            if (warning.status == PreflightStatus.UNAUTHORIZED && !isSignedIn) {
+                Button(
+                    onClick = onNavigateToSettingsGeneral,
+                    modifier = Modifier.semantics { contentDescription = "Go to Settings to sign in" },
+                ) {
+                    Text("Go to Settings")
+                }
+            } else {
+                TextButton(
+                    onClick = onDismiss,
+                ) {
+                    Text("Dismiss")
+                }
             }
         }
     }
