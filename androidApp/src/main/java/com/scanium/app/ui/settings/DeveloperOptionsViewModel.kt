@@ -91,36 +91,9 @@ class DeveloperOptionsViewModel
             settingsRepository.developerModeFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-        val forceFtueTour: StateFlow<Boolean> =
-            ftueRepository.forceEnabledFlow
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-        val forceCameraUiFtueTour: StateFlow<Boolean> =
-            ftueRepository.cameraUiFtueForceShowFlow
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
         val allowScreenshots: StateFlow<Boolean> =
             settingsRepository.devAllowScreenshotsFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-        val showFtueDebugBounds: StateFlow<Boolean> =
-            settingsRepository.devShowFtueBoundsFlow
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-        val showCameraUiFtueBounds: StateFlow<Boolean> =
-            settingsRepository.devShowCameraUiFtueBoundsFlow
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-        // FTUE Debug State (DEV-only)
-        private val _ftueDebugState = MutableStateFlow(FtueDebugState())
-        val ftueDebugState: StateFlow<FtueDebugState> = _ftueDebugState.asStateFlow()
-
-        data class FtueDebugState(
-            val currentScreen: String = "None",
-            val currentStep: String = "IDLE",
-            val lastAnchorRect: String = "Not captured",
-            val overlayRendered: Boolean = false,
-        )
 
         // Detection settings (default ON for beta)
         val barcodeDetectionEnabled: StateFlow<Boolean> =
@@ -406,17 +379,6 @@ class DeveloperOptionsViewModel
             }
         }
 
-        fun setForceFtueTour(enabled: Boolean) {
-            viewModelScope.launch {
-                ftueRepository.setForceEnabled(enabled)
-            }
-        }
-
-        fun setForceCameraUiFtueTour(enabled: Boolean) {
-            viewModelScope.launch {
-                ftueRepository.setCameraUiFtueForceShow(enabled)
-            }
-        }
 
         fun setAllowScreenshots(allowed: Boolean) {
             viewModelScope.launch {
@@ -439,17 +401,6 @@ class DeveloperOptionsViewModel
             }
         }
 
-        fun setShowFtueDebugBounds(enabled: Boolean) {
-            viewModelScope.launch {
-                settingsRepository.setDevShowFtueBounds(enabled)
-            }
-        }
-
-        fun setShowCameraUiFtueBounds(enabled: Boolean) {
-            viewModelScope.launch {
-                settingsRepository.setDevShowCameraUiFtueBounds(enabled)
-            }
-        }
 
         // Detection settings
         fun setBarcodeDetectionEnabled(enabled: Boolean) {
@@ -578,30 +529,6 @@ class DeveloperOptionsViewModel
                 delay(2000)
                 _copyResult.value = null
             }
-        }
-
-        /**
-         * Update FTUE debug state (DEV-only).
-         * Called from FTUE ViewModels to report current state.
-         */
-        fun updateFtueDebugState(
-            screen: String,
-            step: String,
-            anchorRect: androidx.compose.ui.geometry.Rect?,
-            overlayRendered: Boolean,
-        ) {
-            if (!FeatureFlags.isDevBuild) return
-
-            _ftueDebugState.value =
-                FtueDebugState(
-                    currentScreen = screen,
-                    currentStep = step,
-                    lastAnchorRect =
-                        anchorRect?.let {
-                            "x=%.0f, y=%.0f, w=%.0f, h=%.0f".format(it.left, it.top, it.width, it.height)
-                        } ?: "Not captured",
-                    overlayRendered = overlayRendered,
-                )
         }
 
         fun triggerCrashTest(throwCrash: Boolean = false) {

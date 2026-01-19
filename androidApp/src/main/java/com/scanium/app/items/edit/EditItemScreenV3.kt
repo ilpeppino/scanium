@@ -108,23 +108,6 @@ fun EditItemScreenV3(
     val editFtueShowDetailsHint by editItemFtueViewModel.showDetailsHint.collectAsState()
     val editFtueShowConditionPriceHint by editItemFtueViewModel.showConditionPriceHint.collectAsState()
 
-    // FTUE debug toast (DEV-only)
-    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
-        val toastContext = androidx.compose.ui.platform.LocalContext.current
-        LaunchedEffect(editFtueCurrentStep) {
-            if (editFtueCurrentStep != com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.IDLE &&
-                editFtueCurrentStep != com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.COMPLETED
-            ) {
-                android.widget.Toast
-                    .makeText(
-                        toastContext,
-                        "FTUE EditItem step=${editFtueCurrentStep.name}",
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
-            }
-        }
-    }
-
     var firstFieldRect by remember { mutableStateOf<Rect?>(null) }
     var conditionPriceFieldRect by remember { mutableStateOf<Rect?>(null) }
 
@@ -157,13 +140,7 @@ fun EditItemScreenV3(
 
     // Initialize Edit Item FTUE when screen is first shown
     LaunchedEffect(editFtueCompleted) {
-        if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
-            android.util.Log.d("FTUE", "EditItem: editFtueCompleted=$editFtueCompleted")
-        }
         if (!editFtueCompleted) {
-            if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
-                android.util.Log.d("FTUE", "EditItem: Initializing FTUE (first time)")
-            }
             editItemFtueViewModel.initialize(shouldStartFtue = true, isDevBuild = com.scanium.app.BuildConfig.FLAVOR == "dev")
         }
     }

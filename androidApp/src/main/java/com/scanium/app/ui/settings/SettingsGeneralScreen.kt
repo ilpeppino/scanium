@@ -86,34 +86,12 @@ fun SettingsGeneralScreen(
     val settingsFtueShowLanguageHint by settingsFtueViewModel.showLanguageHint.collectAsState()
     val settingsFtueShowReplayHint by settingsFtueViewModel.showReplayHint.collectAsState()
 
-    // FTUE debug toast (DEV-only)
-    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
-        LaunchedEffect(settingsFtueCurrentStep) {
-            if (settingsFtueCurrentStep != com.scanium.app.ftue.SettingsFtueViewModel.SettingsFtueStep.IDLE &&
-                settingsFtueCurrentStep != com.scanium.app.ftue.SettingsFtueViewModel.SettingsFtueStep.COMPLETED
-            ) {
-                android.widget.Toast
-                    .makeText(
-                        context,
-                        "FTUE Settings step=${settingsFtueCurrentStep.name}",
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
-            }
-        }
-    }
-
     var languageOptionRect by remember { mutableStateOf<Rect?>(null) }
     var replayOptionRect by remember { mutableStateOf<Rect?>(null) }
 
     // Initialize Settings FTUE when screen is first shown
     LaunchedEffect(settingsFtueCompleted) {
-        if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
-            android.util.Log.d("FTUE", "Settings: settingsFtueCompleted=$settingsFtueCompleted")
-        }
         if (!settingsFtueCompleted) {
-            if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
-                android.util.Log.d("FTUE", "Settings: Initializing FTUE (first time)")
-            }
             settingsFtueViewModel.initialize(shouldStartFtue = true)
         }
     }

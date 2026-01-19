@@ -268,37 +268,6 @@ fun CameraScreen(
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
 
-    // FTUE debug toast (DEV-only)
-    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
-        val context = androidx.compose.ui.platform.LocalContext.current
-        LaunchedEffect(cameraFtueCurrentStep) {
-            if (cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.IDLE &&
-                cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.COMPLETED
-            ) {
-                android.widget.Toast
-                    .makeText(
-                        context,
-                        "FTUE Camera step=${cameraFtueCurrentStep.name}",
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
-            }
-        }
-
-        // Camera UI FTUE debug toast (DEV-only)
-        LaunchedEffect(cameraUiFtueStep) {
-            if (cameraUiFtueStep != com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.IDLE &&
-                cameraUiFtueStep != com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.COMPLETED
-            ) {
-                android.widget.Toast
-                    .makeText(
-                        context,
-                        "Camera UI FTUE: ${cameraUiFtueStep.name}",
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
-            }
-        }
-    }
-
     // Camera UI FTUE initialization (Phase 5: Trigger)
     // Triggers when: permission granted, preview ready, anchors registered, AND tour is not active
     // Camera UI FTUE only starts AFTER the tour is completed or skipped
@@ -309,28 +278,6 @@ fun CameraScreen(
             )
         val previewVisible = previewSize.width > 0 && previewSize.height > 0
 
-        // DEV-ONLY: Enhanced logging to track initialization conditions
-        if (BuildConfig.FLAVOR == "dev") {
-            Log.d(
-                "FTUE_CAMERA_UI",
-                "Init check: " +
-                    "permission=$hasCameraPermission, " +
-                    "preview=${previewSize.width}x${previewSize.height}, " +
-                    "allAnchors=$allAnchorsRegistered " +
-                    "(${cameraUiFtueAnchors.size}/${com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.size}), " +
-                    "isTourActive=$isTourActive",
-            )
-
-            // Log which anchors are missing
-            if (!allAnchorsRegistered) {
-                val missing =
-                    com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.filter {
-                        !cameraUiFtueAnchors.containsKey(it)
-                    }
-                Log.d("FTUE_CAMERA_UI", "Missing anchors: ${missing.joinToString(", ")}")
-            }
-        }
-
         // Only initialize Camera UI FTUE when tour is NOT active
         if (!isTourActive) {
             cameraUiFtueViewModel.initialize(
@@ -338,10 +285,6 @@ fun CameraScreen(
                 previewVisible = previewVisible,
                 allAnchorsRegistered = allAnchorsRegistered,
             )
-        } else {
-            if (BuildConfig.FLAVOR == "dev") {
-                Log.d("FTUE_CAMERA_UI", "Tour is active, deferring Camera UI FTUE initialization")
-            }
         }
     }
 
@@ -526,13 +469,7 @@ fun CameraScreen(
 
     // Initialize Camera FTUE when permission is granted and camera is ready
     LaunchedEffect(hasCameraPermission, cameraFtueCompleted) {
-        if (BuildConfig.FLAVOR == "dev") {
-            Log.d("FTUE", "Camera: hasCameraPermission=$hasCameraPermission, cameraFtueCompleted=$cameraFtueCompleted")
-        }
         if (hasCameraPermission && !cameraFtueCompleted) {
-            if (BuildConfig.FLAVOR == "dev") {
-                Log.d("FTUE", "Camera: Initializing FTUE (first time)")
-            }
             delay(1000) // Wait for camera to fully initialize
             val hasExistingItems = itemsCount.isNotEmpty()
             cameraFtueViewModel.initialize(shouldStartFtue = true, hasExistingItems = hasExistingItems)

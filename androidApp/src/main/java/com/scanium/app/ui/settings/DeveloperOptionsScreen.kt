@@ -110,8 +110,6 @@ fun DeveloperOptionsScreen(
     val assistantDiagnosticsState by viewModel.assistantDiagnosticsState.collectAsState()
     val preflightState by viewModel.preflightState.collectAsState()
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
-    val forceFtueTour by viewModel.forceFtueTour.collectAsState()
-    val showFtueDebugBounds by viewModel.showFtueDebugBounds.collectAsState()
     val autoRefreshEnabled by viewModel.autoRefreshEnabled.collectAsState()
     val copyResult by viewModel.copyResult.collectAsState()
     val allowScreenshots by viewModel.allowScreenshots.collectAsState()
@@ -461,50 +459,11 @@ fun DeveloperOptionsScreen(
             // First-Time Experience Section
             SettingsSectionHeader(stringResource(R.string.settings_developer_options_section_first_time_experience))
 
-            SettingSwitchRow(
-                title = stringResource(R.string.settings_developer_options_force_first_time_tour_title),
-                subtitle = stringResource(R.string.settings_developer_options_force_first_time_tour_subtitle),
-                icon = Icons.Default.Info,
-                checked = forceFtueTour,
-                onCheckedChange = { viewModel.setForceFtueTour(it) },
-            )
-
-            SettingSwitchRow(
-                title = stringResource(R.string.settings_developer_options_show_ftue_debug_bounds_title),
-                subtitle = stringResource(R.string.settings_developer_options_show_ftue_debug_bounds_subtitle),
-                icon = Icons.Default.CenterFocusStrong,
-                checked = showFtueDebugBounds,
-                onCheckedChange = { viewModel.setShowFtueDebugBounds(it) },
-            )
-
             SettingActionRow(
                 title = stringResource(R.string.settings_developer_options_reset_tour_progress_title),
                 subtitle = stringResource(R.string.settings_developer_options_reset_tour_progress_subtitle),
                 icon = Icons.Default.Refresh,
                 onClick = { viewModel.resetFtueTour() },
-            )
-
-            // Camera UI FTUE controls
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            SettingsSectionHeader("Camera UI FTUE")
-
-            val forceCameraUiFtueTour by viewModel.forceCameraUiFtueTour.collectAsState()
-            SettingSwitchRow(
-                title = "Force Camera UI FTUE",
-                subtitle = "Always show button navigation tutorial",
-                icon = Icons.Default.Info,
-                checked = forceCameraUiFtueTour,
-                onCheckedChange = { viewModel.setForceCameraUiFtueTour(it) },
-            )
-
-            val showCameraUiFtueBounds by viewModel.showCameraUiFtueBounds.collectAsState()
-            SettingSwitchRow(
-                title = "Show Camera UI FTUE Bounds",
-                subtitle = "Draw magenta borders around button anchors",
-                icon = Icons.Default.CenterFocusStrong,
-                checked = showCameraUiFtueBounds,
-                onCheckedChange = { viewModel.setShowCameraUiFtueBounds(it) },
             )
 
             SettingActionRow(
@@ -513,8 +472,6 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.Refresh,
                 onClick = { viewModel.resetCameraUiFtue() },
             )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             SettingActionRow(
                 title = "Reset All FTUE Flags",
@@ -529,39 +486,6 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.DeleteSweep,
                 onClick = { viewModel.clearOnboardingDataSoft() },
             )
-
-            // FTUE Debug Info (DEV-only)
-            if (FeatureFlags.isDevBuild) {
-                val ftueDebugState by viewModel.ftueDebugState.collectAsState()
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                SettingsSectionHeader("FTUE Debug Info")
-
-                SettingReadOnlyRow(
-                    title = "Current Screen",
-                    subtitle = ftueDebugState.currentScreen,
-                    icon = Icons.Default.Visibility,
-                )
-
-                SettingReadOnlyRow(
-                    title = "Current Step",
-                    subtitle = ftueDebugState.currentStep,
-                    icon = Icons.Default.Timeline,
-                )
-
-                SettingReadOnlyRow(
-                    title = "Last Anchor Rect",
-                    subtitle = ftueDebugState.lastAnchorRect,
-                    icon = Icons.Default.CropFree,
-                )
-
-                SettingReadOnlyRow(
-                    title = "Overlay Rendered",
-                    subtitle = if (ftueDebugState.overlayRendered) "Yes" else "No",
-                    icon = Icons.Default.Layers,
-                )
-            }
 
             Spacer(modifier = Modifier.height(32.dp))
         }

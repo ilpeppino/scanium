@@ -120,22 +120,6 @@ fun ItemsListScreen(
     val listFtueShowShareHint by listFtueViewModel.showShareGoalHint.collectAsState()
     val listFtueSwipeNudge by listFtueViewModel.swipeNudgeProgress.collectAsState()
 
-    // FTUE debug toast (DEV-only)
-    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
-        LaunchedEffect(listFtueCurrentStep) {
-            if (listFtueCurrentStep != com.scanium.app.ftue.ItemsListFtueViewModel.ItemsListFtueStep.IDLE &&
-                listFtueCurrentStep != com.scanium.app.ftue.ItemsListFtueViewModel.ItemsListFtueStep.COMPLETED
-            ) {
-                android.widget.Toast
-                    .makeText(
-                        context,
-                        "FTUE ItemsList step=${listFtueCurrentStep.name}",
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
-            }
-        }
-    }
-
     var firstItemRect by remember { mutableStateOf<Rect?>(null) }
     var actionAreaRect by remember { mutableStateOf<Rect?>(null) }
 
@@ -311,13 +295,7 @@ fun ItemsListScreen(
 
     // Initialize Items List FTUE when screen is first shown with items
     LaunchedEffect(items, listFtueCompleted) {
-        if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
-            android.util.Log.d("FTUE", "ItemsList: items.size=${items.size}, listFtueCompleted=$listFtueCompleted")
-        }
         if (items.isNotEmpty() && !listFtueCompleted) {
-            if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
-                android.util.Log.d("FTUE", "ItemsList: Initializing FTUE (first time)")
-            }
             listFtueViewModel.initialize(shouldStartFtue = true, itemCount = items.size)
         }
     }
