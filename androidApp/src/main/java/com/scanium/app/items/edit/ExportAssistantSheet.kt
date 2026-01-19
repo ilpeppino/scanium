@@ -86,7 +86,8 @@ fun ExportAssistantSheet(
     ttsManager: TtsManager,
     onDismiss: () -> Unit,
     onApply: (title: String?, description: String?, bullets: List<String>) -> Unit,
-    onNavigateToSettings: () -> Unit = {},
+    onNavigateToSettingsAssistant: () -> Unit = {},
+    onNavigateToSettingsGeneral: () -> Unit = {},
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
 ) {
     val state by viewModel.state.collectAsState()
@@ -138,7 +139,8 @@ fun ExportAssistantSheet(
                 }
             },
             onDismiss = onDismiss,
-            onNavigateToSettings = onNavigateToSettings,
+            onNavigateToSettingsAssistant = onNavigateToSettingsAssistant,
+            onNavigateToSettingsGeneral = onNavigateToSettingsGeneral,
         )
     }
 }
@@ -159,7 +161,8 @@ internal fun ExportAssistantContent(
     onRetry: () -> Unit,
     onApplyResult: (title: String?, description: String?, bullets: List<String>) -> Unit,
     onDismiss: () -> Unit,
-    onNavigateToSettings: () -> Unit = {},
+    onNavigateToSettingsAssistant: () -> Unit = {},
+    onNavigateToSettingsGeneral: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -251,7 +254,8 @@ internal fun ExportAssistantContent(
                         isRetryable = currentState.isRetryable,
                         onRetry = onRetry,
                         onDismiss = onDismiss,
-                        onNavigateToSettings = onNavigateToSettings,
+                        onNavigateToSettingsAssistant = onNavigateToSettingsAssistant,
+                        onNavigateToSettingsGeneral = onNavigateToSettingsGeneral,
                     )
                 }
             }
@@ -690,10 +694,16 @@ private fun ExportErrorContent(
     isRetryable: Boolean,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
-    onNavigateToSettings: () -> Unit = {},
+    onNavigateToSettingsAssistant: () -> Unit = {},
+    onNavigateToSettingsGeneral: () -> Unit = {},
 ) {
-    // Check if error is about AI assistant being disabled
+    // Detect error type to navigate to the correct settings page
     val isAiDisabledError = message.contains("AI assistant is disabled", ignoreCase = true)
+    val isUnauthorizedError = message.contains("Authentication required", ignoreCase = true) ||
+        message.contains("unauthorized", ignoreCase = true) ||
+        message.contains("sign in", ignoreCase = true)
+
+    val showSettingsButton = isAiDisabledError || isUnauthorizedError
 
     Column(
         modifier =
@@ -714,12 +724,17 @@ private fun ExportErrorContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        // Show "Go to Settings" button if AI is disabled
-        if (isAiDisabledError) {
+        // Show "Go to Settings" button if AI is disabled or user is unauthorized
+        if (showSettingsButton) {
             Button(
                 onClick = {
                     onDismiss()
-                    onNavigateToSettings()
+                    // Navigate to the appropriate settings page based on error type
+                    if (isUnauthorizedError) {
+                        onNavigateToSettingsGeneral() // Go to Settings > General (for Google sign-in)
+                    } else {
+                        onNavigateToSettingsAssistant() // Go to Settings > AI Assistant
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {

@@ -80,6 +80,7 @@ fun EditItemScreenV3(
     exportAssistantViewModelFactory: ExportAssistantViewModel.Factory? = null,
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToSettingsGeneral: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val allItems by itemsViewModel.items.collectAsState()
@@ -450,7 +451,8 @@ fun EditItemScreenV3(
                 }
                 editState.notesField = builder.toString().trim()
             },
-            onNavigateToSettings = onNavigateToSettings,
+            onNavigateToSettingsAssistant = onNavigateToSettings,
+            onNavigateToSettingsGeneral = onNavigateToSettingsGeneral,
         )
     }
 

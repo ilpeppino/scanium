@@ -325,6 +325,9 @@ fun ScaniumNavGraph(
                     onNavigateToSettings = {
                         navController.navigate(Routes.SETTINGS_ASSISTANT)
                     },
+                    onNavigateToSettingsGeneral = {
+                        navController.navigate(Routes.SETTINGS_GENERAL)
+                    },
                 )
             } else {
                 // No item to edit, go back
