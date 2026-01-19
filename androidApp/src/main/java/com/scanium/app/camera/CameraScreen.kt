@@ -300,9 +300,9 @@ fun CameraScreen(
     }
 
     // Camera UI FTUE initialization (Phase 5: Trigger)
-    // Triggers when: permission granted, preview ready, anchors registered
-    // NO LONGER requires old Camera FTUE to complete (divergence removed)
-    LaunchedEffect(hasCameraPermission, previewSize, cameraUiFtueAnchors) {
+    // Triggers when: permission granted, preview ready, anchors registered, AND tour is not active
+    // Camera UI FTUE only starts AFTER the tour is completed or skipped
+    LaunchedEffect(hasCameraPermission, previewSize, cameraUiFtueAnchors, isTourActive) {
         val allAnchorsRegistered =
             cameraUiFtueRegistry.hasAllAnchors(
                 com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS,
@@ -317,7 +317,8 @@ fun CameraScreen(
                     "permission=$hasCameraPermission, " +
                     "preview=${previewSize.width}x${previewSize.height}, " +
                     "allAnchors=$allAnchorsRegistered " +
-                    "(${cameraUiFtueAnchors.size}/${com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.size})",
+                    "(${cameraUiFtueAnchors.size}/${com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.size}), " +
+                    "isTourActive=$isTourActive",
             )
 
             // Log which anchors are missing
@@ -330,11 +331,18 @@ fun CameraScreen(
             }
         }
 
-        cameraUiFtueViewModel.initialize(
-            cameraPermissionGranted = hasCameraPermission,
-            previewVisible = previewVisible,
-            allAnchorsRegistered = allAnchorsRegistered,
-        )
+        // Only initialize Camera UI FTUE when tour is NOT active
+        if (!isTourActive) {
+            cameraUiFtueViewModel.initialize(
+                cameraPermissionGranted = hasCameraPermission,
+                previewVisible = previewVisible,
+                allAnchorsRegistered = allAnchorsRegistered,
+            )
+        } else {
+            if (BuildConfig.FLAVOR == "dev") {
+                Log.d("FTUE_CAMERA_UI", "Tour is active, deferring Camera UI FTUE initialization")
+            }
+        }
     }
 
     // Compute ROI rect from scanGuidanceState
