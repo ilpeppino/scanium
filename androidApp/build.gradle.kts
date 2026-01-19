@@ -256,7 +256,7 @@ android {
             buildConfigField(
                 "String",
                 "GOOGLE_SERVER_CLIENT_ID",
-                "\"480326569434-1par10hbiuq2juhrhl85usialkl4pp31.apps.googleusercontent.com\""
+                "\"REDACTED_GOOGLE_OAUTH_CLIENT_ID\""
             )
         }
         create("dev") {
@@ -302,7 +302,7 @@ android {
             buildConfigField(
                 "String",
                 "GOOGLE_SERVER_CLIENT_ID",
-                "\"480326569434-1par10hbiuq2juhrhl85usialkl4pp31.apps.googleusercontent.com\""
+                "\"REDACTED_GOOGLE_OAUTH_CLIENT_ID\""
             )
         }
     }
