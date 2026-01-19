@@ -8,6 +8,7 @@ import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.scanium.app.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -27,7 +28,7 @@ class CredentialManagerAuthLauncher : AuthLauncher {
                     GetGoogleIdOption
                         .Builder()
                         .setFilterByAuthorizedAccounts(false)
-                        .setServerClientId(GOOGLE_SERVER_CLIENT_ID)
+                        .setServerClientId(BuildConfig.GOOGLE_SERVER_CLIENT_ID)
                         .build()
 
                 val request =
@@ -59,7 +60,7 @@ class CredentialManagerAuthLauncher : AuthLauncher {
     companion object {
         private const val TAG = "CredentialManagerAuthLauncher"
 
-        // This must match GOOGLE_OAUTH_CLIENT_ID in backend .env
-        private const val GOOGLE_SERVER_CLIENT_ID = "480326569434-9cje4dkffu16ol5126q7pt6oihshtn5k.apps.googleusercontent.com"
+        // OAuth Client ID is flavor-specific, injected via BuildConfig
+        // Must match GOOGLE_OAUTH_CLIENT_ID in backend .env for the target environment
     }
 }

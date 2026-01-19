@@ -251,6 +251,13 @@ android {
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
+
+            // Google OAuth Client ID for production
+            buildConfigField(
+                "String",
+                "GOOGLE_SERVER_CLIENT_ID",
+                "\"480326569434-1par10hbiuq2juhrhl85usialkl4pp31.apps.googleusercontent.com\""
+            )
         }
         create("dev") {
             dimension = "distribution"
@@ -267,6 +274,13 @@ android {
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
+
+            // Google OAuth Client ID for dev (keep existing working client)
+            buildConfigField(
+                "String",
+                "GOOGLE_SERVER_CLIENT_ID",
+                "\"480326569434-9cje4dkffu16ol5126q7pt6oihshtn5k.apps.googleusercontent.com\""
+            )
         }
         create("beta") {
             dimension = "distribution"
@@ -283,6 +297,13 @@ android {
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
+
+            // Google OAuth Client ID for beta (shared with prod)
+            buildConfigField(
+                "String",
+                "GOOGLE_SERVER_CLIENT_ID",
+                "\"480326569434-1par10hbiuq2juhrhl85usialkl4pp31.apps.googleusercontent.com\""
+            )
         }
     }
 
