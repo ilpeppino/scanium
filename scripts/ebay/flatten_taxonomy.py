@@ -16,36 +16,72 @@ def flatten_category_tree(tree_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Flatten category tree recursively."""
     flat_categories = []
 
-    def traverse(category: Dict[str, Any], path: List[str]) -> None:
-        """Recursively traverse category tree building paths."""
+    def traverse_node(node: Dict[str, Any], path: List[str], parent_id: str = None) -> None:
+        """Recursively traverse category tree node building paths."""
+        ***REMOVED*** Extract category info from node structure
+        category = node.get("category", {})
         cat_id = category.get("categoryId")
         cat_name = category.get("categoryName", "")
 
+        ***REMOVED*** Skip root node (categoryId "0")
+        if cat_id == "0":
+            ***REMOVED*** Process children without adding root to path
+            for child_node in node.get("childCategoryTreeNodes", []):
+                traverse_node(child_node, [], cat_id)
+            return
+
         ***REMOVED*** Build current path
         current_path = path + [cat_name] if cat_name else path
+
+        ***REMOVED*** Check if this is a leaf node
+        child_nodes = node.get("childCategoryTreeNodes", [])
+        is_leaf = node.get("leafCategoryTreeNode", False) or len(child_nodes) == 0
 
         ***REMOVED*** Create flat entry
         flat_entry = {
             "ebayCategoryId": cat_id,
             "name": cat_name,
             "path": current_path,
-            "parentId": category.get("parentCategoryId"),
-            "leafFlag": len(category.get("subcategories", [])) == 0,
+            "parentId": parent_id,
+            "leafFlag": is_leaf,
+            "level": node.get("categoryTreeNodeLevel", len(current_path)),
         }
         flat_categories.append(flat_entry)
 
-        ***REMOVED*** Recursively process subcategories
-        for sub_cat in category.get("subcategories", []):
-            traverse(sub_cat, current_path)
+        ***REMOVED*** Recursively process child nodes
+        for child_node in child_nodes:
+            traverse_node(child_node, current_path, cat_id)
 
-    ***REMOVED*** Handle both direct categories and nested structure
-    categories = tree_data.get("categoryTree", {}).get("categories", [])
-    if not categories:
-        ***REMOVED*** Try alternate structure (if tree_data is directly the categories list)
-        categories = tree_data.get("categories", [])
+    ***REMOVED*** Handle real eBay API structure with rootCategoryNode
+    category_tree = tree_data.get("categoryTree", {})
+    root_node = category_tree.get("rootCategoryNode")
 
-    for cat in categories:
-        traverse(cat, [])
+    if root_node:
+        ***REMOVED*** Real eBay API structure
+        traverse_node(root_node, [])
+    else:
+        ***REMOVED*** Fallback to mock data structure
+        def traverse_old(category: Dict[str, Any], path: List[str]) -> None:
+            """Legacy traversal for mock data structure."""
+            cat_id = category.get("categoryId")
+            cat_name = category.get("categoryName", "")
+            current_path = path + [cat_name] if cat_name else path
+            flat_entry = {
+                "ebayCategoryId": cat_id,
+                "name": cat_name,
+                "path": current_path,
+                "parentId": category.get("parentCategoryId"),
+                "leafFlag": len(category.get("subcategories", [])) == 0,
+            }
+            flat_categories.append(flat_entry)
+            for sub_cat in category.get("subcategories", []):
+                traverse_old(sub_cat, current_path)
+
+        categories = category_tree.get("categories", [])
+        if not categories:
+            categories = tree_data.get("categories", [])
+        for cat in categories:
+            traverse_old(cat, [])
 
     return flat_categories
 
