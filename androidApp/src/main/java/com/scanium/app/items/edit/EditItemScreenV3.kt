@@ -450,6 +450,7 @@ fun EditItemScreenV3(
                 }
                 editState.notesField = builder.toString().trim()
             },
+            onNavigateToSettings = onNavigateToSettings,
         )
     }
 

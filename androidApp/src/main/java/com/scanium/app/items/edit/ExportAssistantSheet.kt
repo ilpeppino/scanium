@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -85,6 +86,7 @@ fun ExportAssistantSheet(
     ttsManager: TtsManager,
     onDismiss: () -> Unit,
     onApply: (title: String?, description: String?, bullets: List<String>) -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
 ) {
     val state by viewModel.state.collectAsState()
@@ -136,6 +138,7 @@ fun ExportAssistantSheet(
                 }
             },
             onDismiss = onDismiss,
+            onNavigateToSettings = onNavigateToSettings,
         )
     }
 }
@@ -156,6 +159,7 @@ internal fun ExportAssistantContent(
     onRetry: () -> Unit,
     onApplyResult: (title: String?, description: String?, bullets: List<String>) -> Unit,
     onDismiss: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -247,6 +251,7 @@ internal fun ExportAssistantContent(
                         isRetryable = currentState.isRetryable,
                         onRetry = onRetry,
                         onDismiss = onDismiss,
+                        onNavigateToSettings = onNavigateToSettings,
                     )
                 }
             }
@@ -685,7 +690,11 @@ private fun ExportErrorContent(
     isRetryable: Boolean,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
 ) {
+    // Check if error is about AI assistant being disabled
+    val isAiDisabledError = message.contains("AI assistant is disabled", ignoreCase = true)
+
     Column(
         modifier =
             Modifier
@@ -705,29 +714,53 @@ private fun ExportErrorContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        // Show "Go to Settings" button if AI is disabled
+        if (isAiDisabledError) {
+            Button(
+                onClick = {
+                    onDismiss()
+                    onNavigateToSettings()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.assistant_auth_go_to_settings))
+            }
             TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.weight(1f),
             ) {
                 Text(stringResource(R.string.common_cancel))
             }
-
-            if (isRetryable) {
-                Button(
-                    onClick = onRetry,
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TextButton(
+                    onClick = onDismiss,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.common_retry))
+                    Text(stringResource(R.string.common_cancel))
+                }
+
+                if (isRetryable) {
+                    Button(
+                        onClick = onRetry,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.common_retry))
+                    }
                 }
             }
         }
