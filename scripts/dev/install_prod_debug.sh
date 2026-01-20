@@ -1,10 +1,10 @@
 ***REMOVED***!/usr/bin/env bash
 
-***REMOVED*** Deterministic build + install + verify script for betaDebug variant
+***REMOVED*** Deterministic build + install + verify script for prodDebug variant
 ***REMOVED*** Ensures the installed APK always matches the current git HEAD SHA
 ***REMOVED***
 ***REMOVED*** Usage:
-***REMOVED***   ./scripts/dev/install_beta_debug.sh [--uninstall]
+***REMOVED***   ./scripts/dev/install_prod_debug.sh [--uninstall]
 ***REMOVED***
 ***REMOVED*** Options:
 ***REMOVED***   --uninstall    Uninstall existing app before installing
@@ -28,13 +28,13 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 APP_MODULE="androidApp"
-VARIANT="betaDebug"
-FLAVOR="beta"
+VARIANT="prodDebug"
+FLAVOR="prod"
 BUILD_TYPE="debug"
-APPLICATION_ID="com.scanium.app.beta"
+APPLICATION_ID="com.scanium.app"
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}Scanium Beta Build + Install + Verify${NC}"
+echo -e "${BLUE}Scanium Prod Build + Install + Verify${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 ***REMOVED*** Step 1: Compute expected SHA
@@ -135,7 +135,7 @@ fi
 echo -e "${GREEN}Received build info from device${NC}"
 
 ***REMOVED*** Parse the build log
-***REMOVED*** Format: versionName=X.X.X versionCode=XXX flavor=beta buildType=debug git=XXXXXXX time=YYYY-MM-DDTHH:MM:SSZ
+***REMOVED*** Format: versionName=X.X.X versionCode=XXX flavor=prod buildType=debug git=XXXXXXX time=YYYY-MM-DDTHH:MM:SSZ
 ***REMOVED*** Using sed for macOS compatibility (grep -P not available on macOS)
 INSTALLED_VERSION_NAME=$(echo "$BUILD_LOG" | sed -n 's/.*versionName=\([^ ]*\).*/\1/p')
 INSTALLED_VERSION_CODE=$(echo "$BUILD_LOG" | sed -n 's/.*versionCode=\([^ ]*\).*/\1/p')
