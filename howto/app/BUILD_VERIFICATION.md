@@ -67,7 +67,7 @@ adb shell am broadcast -n com.scanium.app.dev/com.scanium.app.debug.BuildInfoRec
 
 ***REMOVED*** Read from logcat
 adb logcat -d -s BuildInfoReceiver:I | grep "BUILD_INFO|"
-***REMOVED*** Output: BUILD_INFO|com.scanium.app.dev|1.3.1-dev|13|dev|debug|a46ffeca|2026-01-19T22:41:27Z
+***REMOVED*** Output: BUILD_INFO|com.scanium.app.dev|1.6.0-dev|100016|dev|debug|27f919f6|2026-01-20T19:15:00Z
 ```
 
 **Location**: `androidApp/src/dev/java/com/scanium/app/debug/BuildInfoReceiver.kt`
@@ -81,7 +81,7 @@ All flavors log build info at app startup for manual verification:
 
 ```bash
 adb logcat -s APP_BUILD:I
-***REMOVED*** Output: versionName=1.3.1-dev versionCode=13 flavor=dev buildType=debug git=a46ffeca time=2026-01-19T22:41:27Z
+***REMOVED*** Output: versionName=1.6.0-dev versionCode=100016 flavor=dev buildType=debug git=27f919f6 time=2026-01-20T19:15:00Z
 ```
 
 **Location**: `androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt:76-83`
@@ -135,12 +135,12 @@ Received build info from device
 Verification Results
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Package:      com.scanium.app.dev
-Version:      1.3.1-dev (13)
+Version:      1.6.0-dev (100016)
 Flavor:       dev
 Build Type:   debug
-Build Time:   2026-01-19T22:41:27Z
-Expected SHA: a46ffeca
-Installed SHA: a46ffeca
+Build Time:   2026-01-20T19:15:00Z
+Expected SHA: 27f919f6
+Installed SHA: 27f919f6
 
 ✓ SUCCESS: Installed SHA matches expected SHA
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -244,7 +244,7 @@ adb shell am start -n com.scanium.app.dev/com.scanium.app.MainActivity
 
 ***REMOVED*** Read startup log
 adb logcat -d -s APP_BUILD:I | tail -1
-***REMOVED*** Output: versionName=1.3.1-dev versionCode=13 flavor=dev buildType=debug git=a46ffeca time=2026-01-19T22:41:27Z
+***REMOVED*** Output: versionName=1.6.0-dev versionCode=100016 flavor=dev buildType=debug git=27f919f6 time=2026-01-20T19:15:00Z
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Compare with Local HEAD

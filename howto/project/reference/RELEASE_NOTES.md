@@ -1,54 +1,54 @@
-***REMOVED*** Release v1.3.1 (Build 13)
+***REMOVED*** Release v1.6.0 (Build 100016)
 
-**Release Date:** January 17, 2026
-**Commit:** 3c80d81
-**Previous Release:** v1.3.0
+**Release Date:** January 20, 2026
+**Commit:** 27f919f6
+**Previous Release:** v1.3.1
 
 ***REMOVED******REMOVED*** Summary
 
-This release stabilizes the localization infrastructure and fixes camera issues introduced in
-v1.3.0. It marks the last-known-good state of main before freezing for production release.
+This release introduces automated build tooling, improved developer workflows, and enhanced
+build verification. It includes critical bug fixes for export assistant routing and FTUE overlays.
 
 ***REMOVED******REMOVED*** Key Changes
 
-***REMOVED******REMOVED******REMOVED*** Localization & Internationalization
+***REMOVED******REMOVED******REMOVED*** Build & Release Automation
 
-- Structured pricing fields for proper localization (no hardcoded currency/format strings)
-- Placeholder locale resources generated for all supported languages
-- Storage & Export settings fully localized
-- Customer-safe copy formatter for display text
+- Automated AAB build script with version management (`build_release_aab.sh`)
+- Production flavor install script with SHA verification (`install_prod_debug.sh`)
+- Version tracking via `version.properties` file
+- Force rebuild in all install scripts to prevent SHA mismatch
+- Deterministic build+install+verify system enhancements
 
-***REMOVED******REMOVED******REMOVED*** Camera & Vision
+***REMOVED******REMOVED******REMOVED*** Export & AI Assistant
 
-- WYSIWYG structural fix for camera overlay alignment
-- Portrait mode bbox normalization corrected
-- Preview and ImageAnalysis aspect ratios aligned
-- YUV to Bitmap conversion stride handling fixed (regression from v1.1.0)
+- Fixed export assistant routing to correct Settings page based on error type
+- Added Settings deep link when AI is disabled
+- Added Settings deep link to preflight unauthorized warning
+- Improved unauthorized banner with actionable navigation
 
-***REMOVED******REMOVED******REMOVED*** AI Assistant
+***REMOVED******REMOVED******REMOVED*** Developer Experience
 
-- First-click trigger reliability improved
-- Unified language setting propagation
-- Customer-safe response shaping
-- Assist mode for structured listing sections
+- Added jvmTest dependencies to test-utils module
+- KtLint auto-fixes and manual violation resolution
+- Import migration to KMP modules
+- Comprehensive FTUE flows reference documentation
 
-***REMOVED******REMOVED******REMOVED*** Authentication
+***REMOVED******REMOVED******REMOVED*** Bug Fixes
 
-- Reactive auth state management
-- UNAUTHORIZED error dialog
-- Settings deep link for AI gate
+- Fixed FTUE overlays on Items List after tour completion
+- Prevented Camera UI FTUE from overlaying welcome screen
+- Removed estimated price from items list display
+- Corrected Alloy spanmetrics connector output configuration
+- Resolved ktlint and iOS test compatibility issues
 
-***REMOVED******REMOVED******REMOVED*** Stability
+***REMOVED******REMOVED******REMOVED*** Code Quality
 
-- Release blocker camera fix merged
-- Debug instrumentation disabled for release builds
-- Camera filename collision bug guarded
-- Golden dataset regression tests added
+- Removed all debug elements and force flags from FTUE
+- Removed debug instrumentation for cleaner production builds
 
 ***REMOVED******REMOVED*** Known Limitations
 
-- 182 pre-existing lint warnings (no baseline configured)
-- Legacy pricing test format deprecated (now uses structured PricingDisplay)
+- Build verification examples in documentation reference old version numbers
 
 ***REMOVED******REMOVED*** Rollback Instructions
 
@@ -58,12 +58,12 @@ If issues are discovered after deployment:
 ***REMOVED*** Halt rollout in Play Console immediately
 
 ***REMOVED*** To rollback to previous version:
-git checkout v1.3.0
+git checkout v1.3.1
 ./gradlew bundleRelease
 ***REMOVED*** Upload previous AAB to Play Console and promote
 
 ***REMOVED*** For hotfix (do NOT commit directly to main):
-git checkout -b hotfix/v1.3.2 v1.3.1
+git checkout -b hotfix/v1.6.1 v1.6.0
 ***REMOVED*** Make fix
 ***REMOVED*** Create PR for review
 ```
@@ -71,11 +71,15 @@ git checkout -b hotfix/v1.3.2 v1.3.1
 ***REMOVED******REMOVED*** Build Reproduction
 
 ```bash
-***REMOVED*** Ensure local.properties has:
-***REMOVED*** scanium.version.code=13
-***REMOVED*** scanium.version.name=1.3.1
+***REMOVED*** Option 1: Using automated build script (recommended)
+./scripts/dev/build_release_aab.sh prod --version-name 1.6.0 --skip-increment
 
-git checkout v1.3.1
+***REMOVED*** Option 2: Manual build with Gradle
+***REMOVED*** Ensure local.properties has:
+***REMOVED*** scanium.version.code=100016
+***REMOVED*** scanium.version.name=1.6.0
+
+git checkout v1.6.0
 ./gradlew clean test bundleRelease
 
 ***REMOVED*** Output: androidApp/build/outputs/bundle/prodRelease/androidApp-prod-release.aab
