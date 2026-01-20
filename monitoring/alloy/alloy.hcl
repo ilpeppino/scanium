@@ -58,7 +58,7 @@ otelcol.processor.batch "mobile" {
   output {
     logs    = [otelcol.processor.attributes.mobile.input]
     metrics = [otelcol.exporter.prometheus.mobile.input]
-    traces  = [otelcol.connector.spanmetrics.default.input]
+    traces  = [otelcol.connector.spanmetrics.default.input, otelcol.exporter.otlp.tempo.input]
   }
 }
 
@@ -100,7 +100,7 @@ otelcol.processor.batch "backend" {
   output {
     logs    = [otelcol.processor.attributes.backend_logs.input]
     metrics = [otelcol.exporter.prometheus.backend.input]
-    traces  = [otelcol.connector.spanmetrics.default.input]
+    traces  = [otelcol.connector.spanmetrics.default.input, otelcol.exporter.otlp.tempo.input]
   }
 }
 
@@ -253,10 +253,9 @@ otelcol.connector.spanmetrics "default" {
     name = "status.code"
   }
 
-  // Output: metrics to Mimir, traces continue to Tempo
+  // Output: metrics to Mimir
   output {
     metrics = [otelcol.exporter.prometheus.spanmetrics.input]
-    traces  = [otelcol.exporter.otlp.tempo.input]
   }
 }
 
