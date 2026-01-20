@@ -66,9 +66,10 @@ if [[ -z "$DEVICE_ABI" ]]; then
 fi
 echo -e "Device ABI: ${GREEN}$DEVICE_ABI${NC}"
 
-***REMOVED*** Step 4: Build the APK
+***REMOVED*** Step 4: Build the APK (force rebuild to ensure current git SHA)
 echo -e "\n${BLUE}[4/7] Building $VARIANT variant...${NC}"
-./gradlew ":$APP_MODULE:assemble$VARIANT" --no-daemon --console=plain
+echo -e "${YELLOW}Note: Using --rerun-tasks to ensure git SHA matches current HEAD${NC}"
+./gradlew ":$APP_MODULE:assemble$VARIANT" --no-daemon --console=plain --rerun-tasks
 
 ***REMOVED*** Step 5: Locate the APK deterministically
 echo -e "\n${BLUE}[5/7] Locating APK...${NC}"
