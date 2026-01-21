@@ -2,6 +2,7 @@ package com.scanium.app.di
 
 import android.content.Context
 import com.scanium.app.auth.AuthRepository
+import com.scanium.app.classification.persistence.ClassificationCorrectionDao
 import com.scanium.app.items.network.ItemsApi
 import com.scanium.app.items.persistence.ScannedItemDao
 import com.scanium.app.items.persistence.ScannedItemDatabase
@@ -38,6 +39,11 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideListingDraftDao(database: ScannedItemDatabase): ListingDraftDao = database.listingDraftDao()
+
+    @Provides
+    @Singleton
+    fun provideClassificationCorrectionDao(database: ScannedItemDatabase): ClassificationCorrectionDao =
+        database.classificationCorrectionDao()
 
     /**
      * Phase E: ItemSyncManager for multi-device sync.

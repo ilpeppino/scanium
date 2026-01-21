@@ -42,6 +42,7 @@ import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
  * - Request: multipart/form-data
  *   - `image`: JPEG file (cropped item)
  *   - `domainPackId`: string (default: "home_resale")
+ *   - `recentCorrections`: JSON array of recent user corrections (optional)
  * - Response: JSON (see CloudClassificationResponse in CloudClassifierApi)
  *
  * ***REMOVED******REMOVED*** Error Handling
@@ -57,6 +58,7 @@ import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
  * ```
  *
  * @property context Android context (nullable) for debug crop saving
+ * @property correctionDao DAO for accessing recent classification corrections (nullable)
  * @property domainPackId Domain pack to use for classification (default: "home_resale")
  * @property maxAttempts Maximum number of retry attempts
  * @property baseDelayMs Base delay for exponential backoff
@@ -65,6 +67,7 @@ import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
  */
 class CloudClassifier(
     private val context: Context? = null,
+    private val correctionDao: com.scanium.app.classification.persistence.ClassificationCorrectionDao? = null,
     private val domainPackId: String = "home_resale",
     maxAttempts: Int = 3,
     baseDelayMs: Long = 1_000L,
@@ -143,6 +146,17 @@ class CloudClassifier(
 
             maybeSaveDebugCrop(input)
 
+            // Fetch recent corrections for local learning overlay
+            val recentCorrectionsJson = correctionDao?.let { dao ->
+                try {
+                    val corrections = dao.getRecentCorrections(limit = 20)
+                    com.scanium.app.classification.persistence.CorrectionHistoryHelper.toBackendJson(corrections)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to fetch recent corrections", e)
+                    null
+                }
+            }
+
             // Begin telemetry span
             val classifySpan = telemetryHelper.beginClassificationSpan()
             val startTime = System.currentTimeMillis()
@@ -153,6 +167,7 @@ class CloudClassifier(
                     api.classify(
                         bitmap = input.bitmap,
                         config = config,
+                        recentCorrections = recentCorrectionsJson,
                     ) { attempt, error ->
                         // Callback for each attempt
                         if (error != null) {

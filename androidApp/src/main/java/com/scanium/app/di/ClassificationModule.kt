@@ -1,7 +1,9 @@
 package com.scanium.app.di
 
 import android.content.Context
+import com.scanium.app.classification.persistence.ClassificationCorrectionDao
 import com.scanium.app.data.ClassificationPreferences
+import com.scanium.app.items.persistence.ScannedItemDatabase
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.CloudClassifier
@@ -38,7 +40,8 @@ object ClassificationModule {
     @Named("cloud")
     fun provideCloudClassifier(
         @ApplicationContext context: Context,
-    ): ItemClassifier = CloudClassifier(context = context)
+        correctionDao: ClassificationCorrectionDao,
+    ): ItemClassifier = CloudClassifier(context = context, correctionDao = correctionDao)
 
     @Provides
     @Singleton
