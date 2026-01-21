@@ -174,8 +174,10 @@ echo -e "\n${BLUE}[2/3] Building release AAB(s)...${NC}"
 
 BUILD_TASKS=()
 for flavor in "${FLAVORS[@]}"; do
-    ***REMOVED*** Capitalize first letter for Gradle task name (portable syntax for bash 3.x)
-    VARIANT="$(echo "${flavor}" | sed 's/^./\U&/')Release"
+    ***REMOVED*** Capitalize first letter for Gradle task name (portable for macOS/Linux)
+    first_char=$(echo "${flavor}" | cut -c1 | tr '[:lower:]' '[:upper:]')
+    rest_chars=$(echo "${flavor}" | cut -c2-)
+    VARIANT="${first_char}${rest_chars}Release"
     BUILD_TASKS+=(":$APP_MODULE:bundle$VARIANT")
 done
 
@@ -194,7 +196,9 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 AAB_DIR="$PROJECT_ROOT/$APP_MODULE/build/outputs/bundle"
 for flavor in "${FLAVORS[@]}"; do
     AAB_FILE="$AAB_DIR/${flavor}Release/$APP_MODULE-$flavor-release.aab"
-    FLAVOR_CAP="$(echo "${flavor}" | sed 's/^./\U&/')"
+    first_char=$(echo "${flavor}" | cut -c1 | tr '[:lower:]' '[:upper:]')
+    rest_chars=$(echo "${flavor}" | cut -c2-)
+    FLAVOR_CAP="${first_char}${rest_chars}"
 
     if [[ -f "$AAB_FILE" ]]; then
         AAB_SIZE=$(du -h "$AAB_FILE" | awk '{print $1}')
