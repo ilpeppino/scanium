@@ -323,11 +323,12 @@ internal fun ItemRow(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(if (FeatureFlags.showItemDiagnostics) 12.dp else 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (FeatureFlags.showItemDiagnostics) 12.dp else 16.dp),
         ) {
-            // Thumbnail
+            // Thumbnail (larger in beta/prod for better visual impact)
             val thumbnailBitmap = (item.thumbnailRef ?: item.thumbnail).toImageBitmap()
+            val thumbnailSize = if (FeatureFlags.showItemDiagnostics) 80.dp else 96.dp
 
             thumbnailBitmap?.let { bitmap ->
                 Image(
@@ -335,7 +336,7 @@ internal fun ItemRow(
                     contentDescription = stringResource(R.string.items_thumbnail),
                     modifier =
                         Modifier
-                            .size(80.dp)
+                            .size(thumbnailSize)
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant,
                                 shape = MaterialTheme.shapes.small,
@@ -347,30 +348,41 @@ internal fun ItemRow(
                 Box(
                     modifier =
                         Modifier
-                            .size(80.dp)
+                            .size(thumbnailSize)
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant,
                                 shape = MaterialTheme.shapes.small,
                             ).shimmerEffect(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(stringResource(R.string.common_question_mark), style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        stringResource(R.string.common_question_mark),
+                        style = if (FeatureFlags.showItemDiagnostics) {
+                            MaterialTheme.typography.headlineMedium
+                        } else {
+                            MaterialTheme.typography.headlineLarge
+                        },
+                    )
                 }
             }
 
             // Item info
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // Category with confidence badge and classification status
+                // Category with diagnostic badges and enrichment status
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         text = displayTitle,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = if (FeatureFlags.showItemDiagnostics) {
+                            MaterialTheme.typography.titleMedium
+                        } else {
+                            MaterialTheme.typography.titleLarge
+                        },
                     )
                     // Diagnostic badges only shown in dev builds
                     if (FeatureFlags.showItemDiagnostics) {
@@ -381,32 +393,30 @@ internal fun ItemRow(
                     EnrichmentStatusBadge(status = item.enrichmentStatus)
                 }
 
-                // Show condition badge if set
+                // Condition badge (more prominent in beta/prod)
                 item.condition?.let { condition ->
                     ConditionBadge(condition = condition)
                 }
 
-                // Attribute chips (show up to 3 attributes)
+                // Attribute chips (show more in beta/prod with additional space)
                 if (item.attributes.isNotEmpty()) {
                     AttributeChipsRow(
                         attributes = item.attributes,
-                        maxVisible = 3,
+                        maxVisible = if (FeatureFlags.showItemDiagnostics) 3 else 5,
                         compact = true,
-                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
 
-                // Timestamp (and confidence percentage in dev builds)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = formatTimestamp(item.timestamp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    // Confidence percentage only shown in dev builds
-                    if (FeatureFlags.showItemDiagnostics) {
+                // Timestamp and confidence percentage (only shown in dev builds)
+                if (FeatureFlags.showItemDiagnostics) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = formatTimestamp(item.timestamp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         Text(
                             text = stringResource(R.string.common_bullet),
                             style = MaterialTheme.typography.bodySmall,
