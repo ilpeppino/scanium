@@ -42,10 +42,23 @@
     <string name="settings_theme_light_desc">Immer helles Design verwenden</string>
     <string name="settings_theme_dark">Dunkel</string>
     <string name="settings_theme_dark_desc">Immer dunkles Design verwenden</string>
+    <string name="settings_recommended">Empfohlen</string>
     <string name="settings_section_language">Sprache</string>
+
+    <!-- Unified Settings: Primary Region & Language -->
+    <string name="settings_primary_region_language_title">Region &amp; Sprache</string>
+    <string name="settings_primary_region_language_subtitle">Standard für App, KI, Marktplatz und Sprache</string>
+    <string name="settings_primary_country_label">Marktplatzland</string>
+    <string name="settings_primary_language_label">Sprache</string>
+
     <string name="settings_language_system_title">App-Sprache</string>
     <string name="settings_language_system_desc">Wähle die Sprache, die in der App verwendet wird</string>
     <string name="settings_language_system_default">Systemstandard</string>
+    <string name="settings_language_follow_primary">Primärsprache folgen (%1$s)</string>
+    <string name="settings_language_custom">Benutzerdefinierte Sprache</string>
+    <string name="settings_section_preferences">Einstellungen</string>
+    <string name="settings_replay_guide_title">Einführung wiederholen</string>
+    <string name="settings_replay_guide_subtitle">Zeige die Tour erneut, um die App-Funktionen zu überprüfen</string>
     <string name="settings_section_account">Konto &amp; Edition</string>
     <string name="settings_current_edition_title">Aktuelle Edition</string>
     <string name="settings_edition_free">Kostenlos</string>
@@ -55,12 +68,28 @@
     <string name="settings_upgrade_cta">Upgrade</string>
     <string name="settings_manage_subscription">Verwalten</string>
 
-    <!-- Google Sign-In -->
+    <!-- Authentication -->
     <string name="settings_sign_in_google">Mit Google fortfahren</string>
     <string name="settings_sign_in_google_desc">Melde dich an, um deine Daten zu synchronisieren und personalisierte Funktionen zu aktivieren</string>
+    <string name="settings_sign_out">Abmelden</string>
+    <string name="settings_refresh_session">Sitzung aktualisieren</string>
+    <string name="settings_session_expires_in_days">Läuft ab in %d Tagen</string>
+    <string name="settings_session_expires_in_day">Läuft ab in 1 Tag</string>
+    <string name="settings_session_expires_soon">Läuft bald ab</string>
+    <string name="settings_signed_in_as">Angemeldet als %1$s</string>
     <string name="settings_signing_in">Anmeldung läuft…</string>
+    <string name="settings_signing_in_desc">Bitte warten Sie, während wir Sie anmelden</string>
     <string name="settings_sign_in_error_template">Anmeldung fehlgeschlagen: %1$s</string>
     <string name="settings_sign_in_error_unknown">Unbekannter Fehler</string>
+
+    <!-- Phase D: Account deletion -->
+    <string name="settings_delete_account">Konto löschen</string>
+    <string name="settings_delete_account_title">Dein Konto löschen?</string>
+    <string name="settings_delete_account_message">Dies wird dein Konto und alle zugehörigen Daten dauerhaft löschen, einschließlich:\n\n• Kontoprofil\n• Alle Sitzungen\n• eBay-Marktplatzverbindungen\n• Alle Listings und Entwürfe\n• Scanverlauf\n\nDiese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="settings_delete_account_confirm">Konto löschen</string>
+    <string name="settings_delete_account_cancel">Abbrechen</string>
+    <string name="settings_delete_account_success">Dein Konto wurde erfolgreich gelöscht.</string>
+    <string name="settings_delete_account_error">Konto konnte nicht gelöscht werden: %1$s</string>
 
     <!-- Assistant Auth Dialog -->
     <string name="assistant_auth_required_title">Anmeldung erforderlich</string>
@@ -101,6 +130,8 @@
     <string name="settings_accuracy_medium_desc">Ausgewogene Genauigkeit</string>
     <string name="settings_accuracy_high">Hoch</string>
     <string name="settings_accuracy_high_desc">Strengere Übereinstimmung; behält nur sichere Items</string>
+    <string name="settings_open_item_list_after_scan_title">Artikelliste nach Scan öffnen</string>
+    <string name="settings_open_item_list_after_scan_subtitle">Öffne automatisch die Artikelliste nach einem Scan, wenn Artikel gefunden wurden</string>
 
     <!-- Storage & Export -->
     <string name="settings_storage_title">Speicher &amp; Export</string>
@@ -108,11 +139,23 @@
     <string name="settings_category_storage_desc">Speicherorte, Exportformate und Cache-Verwaltung</string>
     <string name="settings_section_storage_options">Speicheroptionen</string>
     <string name="settings_section_export">Export</string>
-    <string name="settings_export_format_title">Default export format</string>
-    <string name="settings_export_format_subtitle">Format used when exporting items</string>
+    <string name="settings_export_format_title">Standard-Exportformat</string>
+    <string name="settings_export_format_subtitle">Format beim Exportieren von Artikeln</string>
+    <string name="settings_export_format_zip">ZIP-Paket</string>
+    <string name="settings_export_format_zip_desc">Bilder und Daten zusammen verpackt</string>
+    <string name="settings_export_format_csv">CSV-Tabelle</string>
+    <string name="settings_export_format_csv_desc">Textdatei mit Artikeldetails</string>
+    <string name="settings_export_format_json">JSON-Daten</string>
+    <string name="settings_export_format_json_desc">Strukturiertes Datenformat</string>
     <string name="settings_section_cache">Cache &amp; Daten</string>
-    <string name="settings_clear_cache_title">Clear cached data</string>
-    <string name="settings_clear_cache_subtitle">Remove temporary files and thumbnails</string>
+    <string name="settings_clear_cache_title">Zwischengespeicherte Daten löschen</string>
+    <string name="settings_clear_cache_subtitle">Temporäre Dateien und Miniaturansichten entfernen</string>
+    <string name="settings_cache_cleared">Cache erfolgreich gelöscht</string>
+
+    <!-- Overlay -->
+    <string name="settings_section_overlay">Overlay</string>
+    <string name="settings_detection_boxes_title">Erkennungsrahmen anzeigen</string>
+    <string name="settings_detection_boxes_subtitle">Begrenzungsrahmen um erkannte Objekte anzeigen</string>
 
     <!-- Assistant -->
     <string name="settings_assistant_title">KI-Assistent</string>
@@ -129,6 +172,9 @@
     <string name="settings_section_personalization">Personalisierung</string>
     <string name="settings_assistant_language_title">Sprache</string>
     <string name="settings_assistant_language_subtitle">Antwortsprache des Assistenten</string>
+    <string name="settings_assistant_language_follow_primary">Primärsprache folgen (%1$s)</string>
+    <string name="settings_assistant_language_auto_detect">Automatisch erkennen (aus Spracheingabe)</string>
+    <string name="settings_assistant_language_custom">Benutzerdefinierte Sprache</string>
     <string name="settings_language_en">Englisch</string>
     <string name="settings_language_nl">Niederländisch</string>
     <string name="settings_language_de">Deutsch</string>
@@ -141,8 +187,11 @@
     <string name="settings_tone_neutral">Neutral</string>
     <string name="settings_tone_friendly">Freundlich</string>
     <string name="settings_tone_professional">Professionell</string>
+    <string name="settings_tone_marketplace">Marktplatz (prägnant)</string>
     <string name="settings_assistant_country_title">Land</string>
     <string name="settings_assistant_country_subtitle">Beeinflusst Währung und Marktplatz-Vorschläge</string>
+    <string name="settings_assistant_country_follow_primary">Primärland folgen (%1$s)</string>
+    <string name="settings_assistant_country_custom">Benutzerdefiniertes Land</string>
     <string name="settings_assistant_units_title">Einheiten</string>
     <string name="settings_assistant_units_subtitle">Maßeinheiten für Berechnungen</string>
     <string name="settings_units_metric">Metrisch (cm, kg)</string>
@@ -153,6 +202,7 @@
     <string name="settings_verbosity_normal">Normal</string>
     <string name="settings_verbosity_detailed">Detailliert</string>
     <string name="settings_section_voice_mode">Sprache &amp; Eingabe</string>
+    <string name="settings_section_voice">Sprache</string>
     <string name="settings_voice_mode_title">Spracheingabe (Mikrofon)</string>
     <string name="settings_voice_mode_subtitle">Mikrofonbutton für freihändige Fragen verwenden</string>
     <string name="settings_voice_mode_permission_denied">Mikrofonberechtigung verweigert</string>
@@ -163,6 +213,14 @@
     <string name="settings_voice_language_title">Sprachsprache</string>
     <string name="settings_voice_language_subtitle">Sprache für Spracherkennung und TTS</string>
     <string name="settings_voice_language_follow_assistant">Assistentensprache übernehmen (%1$s)</string>
+
+    <!-- TTS Voice Language (Unified Settings) -->
+    <string name="settings_tts_language_title">Sprachausgabesprache (TTS)</string>
+    <string name="settings_tts_language_subtitle">Sprache für gesprochene Assistentenantworten</string>
+    <string name="settings_tts_language_follow_ai">KI-Sprache folgen (%1$s)</string>
+    <string name="settings_tts_language_follow_primary">Primärsprache folgen (%1$s)</string>
+    <string name="settings_tts_language_custom">Benutzerdefinierte Sprache</string>
+    <string name="settings_tts_language_not_supported">Stimme für %1$s nicht installiert. Verwende %2$s.</string>
     <string name="settings_assistant_prereq_title">Assistenten-Voraussetzungen</string>
     <string name="settings_assistant_connection_test">Verbindung testen</string>
     <string name="settings_dialog_close">Schließen</string>
@@ -200,6 +258,7 @@
     <!-- Accessibility: Icon content descriptions -->
     <string name="cd_navigate_forward">Vorwärts navigieren</string>
     <string name="cd_expand_menu">Menü erweitern</string>
+    <string name="cd_selected">Ausgewählt</string>
     <string name="cd_feature_scan_items">Funktion: Objekte scannen</string>
     <string name="cd_feature_view_items">Funktion: gescannte Objekte ansehen</string>
     <string name="cd_feature_export_items">Funktion: Objekte exportieren</string>
@@ -242,6 +301,7 @@
     <string name="common_ok">OK</string>
     <string name="common_cancel">Abbrechen</string>
     <string name="common_close">Schließen</string>
+    <string name="common_delete">Löschen</string>
     <string name="common_back">Zurück</string>
     <string name="common_skip">Überspringen</string>
     <string name="common_continue">Weiter</string>
@@ -318,6 +378,12 @@
     <string name="ftue_tour_camera_items_desc">Gescannte Artikel ansehen und verwalten.</string>
     <string name="ftue_tour_camera_settings_title">Einstellungen</string>
     <string name="ftue_tour_camera_settings_desc">Anpassen, wie Scanium funktioniert.</string>
+
+    <!-- Camera UI FTUE (button navigation tutorial) -->
+    <string name="ftue_camera_ui_shutter">Tippe hier, um einen Artikel zu erfassen.</string>
+    <string name="ftue_camera_ui_flip">Wechsle zwischen vorderer und hinterer Kamera.</string>
+    <string name="ftue_camera_ui_items">Gescannte Artikel ansehen und verwalten.</string>
+    <string name="ftue_camera_ui_settings">Anpassen, wie Scanium funktioniert.</string>
     <!-- Legacy Tour Steps (Deprecated - kept for backward compatibility) -->
     <string name="ftue_tour_take_photo_title">Erfasse deinen ersten Artikel</string>
     <string name="ftue_tour_take_photo_desc">Tippe auf den Auslöser, um ein Foto von deinem ersten Artikel zu machen. Richte deine Kamera auf ein beliebiges Objekt, das du katalogisieren möchtest.</string>
@@ -387,6 +453,10 @@
     <string name="assistant_voice_unavailable_message">Du kannst weiter tippen, während wir den Mikrofonbutton deaktivieren.</string>
     <string name="assistant_context_item_fallback">Objekt</string>
     <string name="assistant_ai_assistant">KI-Assistent</string>
+    <string name="assistant_disabled_title">KI-Assistent ist deaktiviert</string>
+    <string name="assistant_disabled_message">Aktiviere ihn in den Einstellungen, um marktplatzfertige Beschreibungen zu erstellen.</string>
+    <string name="assistant_disabled_error_message">KI-Assistent ist deaktiviert. Aktiviere ihn in den Einstellungen, um fortzufahren.</string>
+    <string name="assistant_disabled_open_settings">Einstellungen öffnen</string>
 
     <!-- Items -->
     <string name="items_snackbar_item_deleted">Artikel gelöscht</string>
@@ -406,6 +476,7 @@
     <string name="items_export_csv_failed">CSV-Export fehlgeschlagen</string>
     <string name="items_export_zip_ready">ZIP bereit zum Teilen</string>
     <string name="items_export_zip_failed">ZIP-Export fehlgeschlagen</string>
+    <string name="items_export_zip_partial">ZIP bereit zum Teilen (%1$d/%2$d Fotos exportiert)</string>
     <string name="items_share_csv_title">CSV teilen</string>
     <string name="items_share_csv_failed">CSV konnte nicht geteilt werden</string>
     <string name="items_share_zip_title">ZIP teilen</string>
@@ -438,6 +509,9 @@
     <string name="items_status_enriched">Angereichert</string>
     <string name="items_list_header_ready_for_resale">%1$d Artikel bereit zum Weiterverkauf</string>
     <string name="items_list_cta">Artikel überprüfen oder Angebote erstellen</string>
+    <string name="items_list_gesture_hint">Tippen zum Bearbeiten · Lange drücken zum Auswählen · Wischen zum Löschen</string>
+    <string name="post_scan_guidance">Überprüfe deine gescannten Artikel. Tippe auf einen, um ihn zu bearbeiten, oder halte gedrückt, um mehrere zu verwalten.</string>
+    <string name="got_it">Alles klar</string>
     <string name="items_confidence_label">Konfidenz: %1$s</string>
     <string name="items_detected_attributes_title">Erkannte Attribute</string>
     <string name="items_no_attributes">Noch keine Attribute erkannt. Attribute werden bei der Cloud-Klassifizierung extrahiert.</string>
@@ -559,6 +633,7 @@
 
     <!-- Camera -->
     <string name="cd_view_items">Artikel ansehen</string>
+    <string name="cd_view_scanned_items">Gescannte Artikel ansehen</string>
     <string name="cd_flip_camera">Kamera wechseln</string>
     <string name="cd_camera_permission_required">Kameraberechtigung erforderlich</string>
     <string name="cd_configuration_warning">Konfigurationswarnung</string>
@@ -621,6 +696,9 @@
     <string name="edit_item_photos">Fotos</string>
     <string name="edit_item_photo_primary">Primär</string>
     <string name="edit_item_add_photo">Foto hinzufügen</string>
+    <string name="edit_item_photos_selected">%1$d ausgewählt</string>
+    <string name="edit_item_delete_photos_title">Ausgewählte Fotos löschen?</string>
+    <string name="edit_item_delete_photos_message">Dies wird %1$d Foto(s) dauerhaft löschen</string>
     <string name="edit_item_analyzing">Foto wird analysiert…</string>
     <string name="edit_item_analyze_failed">Foto konnte nicht analysiert werden</string>
     <string name="edit_item_analyzed">Foto analysiert</string>
@@ -635,6 +713,7 @@
     <string name="edit_item_field_size">Größe</string>
     <string name="edit_item_field_material">Material</string>
     <string name="edit_item_field_condition">Zustand</string>
+    <string name="edit_item_field_price">Preis</string>
     <string name="edit_item_field_notes">Notizen</string>
     <string name="edit_item_notes_placeholder">Zusätzliche Details…</string>
 
@@ -947,4 +1026,129 @@
     <string name="settings_dev_health_monitor_status_last_ok">Aktiviert - letzte Prüfung OK</string>
     <string name="settings_dev_health_monitor_status_last_fail">Aktiviert - letzte Prüfung FEHLER</string>
     <string name="settings_dev_health_monitor_status_waiting">Aktiviert - warte auf erste Prüfung</string>
+
+    <!-- Selling UI: Form Labels and Fields -->
+    <string name="form_label_category">Kategorie</string>
+    <string name="form_label_title">Titel</string>
+    <string name="form_label_price">Preis</string>
+    <string name="form_label_condition">Zustand</string>
+    <string name="form_label_description">Beschreibung</string>
+    <string name="form_label_edit_description">Beschreibung bearbeiten</string>
+    <string name="form_label_custom_url">Benutzerdefinierte URL</string>
+
+    <!-- eBay Export Screen -->
+    <string name="ebay_export_title">Nach eBay exportieren (Mock)</string>
+    <string name="ebay_export_price_label">Preis (%1$s)</string>
+    <string name="ebay_export_price_currency_eur">Preis (EUR)</string>
+
+    <!-- Dialog Titles -->
+    <string name="dialog_title_draft_review">Entwurfsüberprüfung</string>
+    <string name="dialog_title_posting_target">Veröffentlichungsziel</string>
+    <string name="dialog_title_confirm_action">Aktion bestätigen</string>
+    <string name="dialog_title_mock_debug_settings">Mock eBay Debug-Einstellungen</string>
+    <string name="dialog_title_export_assistant">Export-Assistent</string>
+    <string name="dialog_message_low_confidence_warning">Dieser Vorschlag hat eine geringere Zuverlässigkeit. Möchtest du ihn trotzdem anwenden?</string>
+
+    <!-- Business Domain: Pricing and Key Fields -->
+    <string name="label_key_fields">Schlüsselfelder</string>
+    <string name="label_field_category">Kategorie: %1$s</string>
+    <string name="label_field_brand">Marke: %1$s</string>
+    <string name="label_field_model">Modell: %1$s</string>
+    <string name="label_field_color">Farbe: %1$s</string>
+    <string name="label_completeness">Vollständigkeit</string>
+    <string name="label_completeness_percent">%1$d%% vollständig</string>
+    <string name="label_missing_fields">Fehlend: %1$s</string>
+    <string name="label_status_saved">Gespeichert</string>
+
+    <!-- Button Labels and Actions -->
+    <string name="button_prev">Zurück</string>
+    <string name="button_next">Weiter</string>
+    <string name="button_copy">Kopieren</string>
+    <string name="button_copy_all">Alles kopieren</string>
+    <string name="button_copy_next">Nächstes kopieren</string>
+    <string name="button_copy_checklist">Checkliste kopieren</string>
+    <string name="button_apply">Anwenden</string>
+    <string name="button_replace">Ersetzen</string>
+    <string name="button_cancel">Abbrechen</string>
+    <string name="button_retry">Erneut versuchen</string>
+    <string name="button_retry_online">Online erneut versuchen</string>
+    <string name="button_dismiss">Schließen</string>
+    <string name="button_save">Speichern</string>
+    <string name="button_open_target">Ziel öffnen</string>
+    <string name="button_share">Teilen</string>
+    <string name="button_add_as">Als %1$s hinzufügen</string>
+    <string name="button_use_title">Titel verwenden</string>
+    <string name="button_change_target">Ziel ändern</string>
+
+    <!-- Posting Assist Screen -->
+    <string name="posting_assist_title_screen">Veröffentlichungs-Assistent</string>
+    <string name="posting_assist_no_draft_available">Kein Entwurf verfügbar</string>
+    <string name="posting_assist_pagination">%1$d/%2$d</string>
+
+    <!-- Draft Review Screen -->
+    <string name="draft_review_title_screen">Entwurfsüberprüfung</string>
+    <string name="draft_review_posting_assist">Veröffentlichungs-Assistent</string>
+    <string name="draft_review_ask_assistant">Assistenten fragen</string>
+    <string name="draft_review_no_draft_available">Kein Entwurf für diesen Artikel verfügbar</string>
+
+    <!-- Assistant Screen -->
+    <string name="assistant_speaking_status">Spricht...</string>
+    <string name="assistant_confidence_high">Hohe Zuverlässigkeit</string>
+    <string name="assistant_confidence_likely">Wahrscheinlich</string>
+    <string name="assistant_confidence_uncertain">Unsicher</string>
+    <string name="assistant_evidence_header">Basierend auf:</string>
+
+    <!-- Pricing & Market Domain -->
+    <string name="pricing_ai_market_price">KI-Marktpreis</string>
+    <string name="pricing_based_on_listings">Basierend auf %1$d Angeboten</string>
+    <string name="pricing_market_price">Marktpreis</string>
+    <string name="pricing_based_on_count">Basierend auf %1$d Angebot%2$s%3$s</string>
+    <string name="pricing_top_results">Top-Ergebnisse</string>
+    <string name="pricing_typical_resale_value">Typischer Wiederverkaufswert: %1$s</string>
+    <string name="pricing_based_on_conditions">Basierend auf aktuellen Marktbedingungen</string>
+    <string name="pricing_hide_matches">Übereinstimmungen ausblenden (%1$d)</string>
+    <string name="pricing_show_matches">Übereinstimmungen anzeigen (%1$d)</string>
+
+    <!-- Pricing Display (localized rendering of structured PricingDisplay) -->
+    <string name="pricing_range_value">€%1$d–€%2$d</string>
+    <string name="pricing_context_current_market">Basierend auf aktuellen Marktbedingungen</string>
+
+    <!-- Copy Labels and Categories -->
+    <string name="copy_label_title">Titel</string>
+    <string name="copy_label_description">Beschreibung</string>
+    <string name="copy_label_price">Preis</string>
+    <string name="copy_label_checklist">Checkliste</string>
+
+    <!-- Settings Debug Options -->
+    <string name="debug_simulate_network_delay">Netzwerkverzögerung simulieren</string>
+    <string name="debug_failure_mode">Fehlermodus</string>
+    <string name="debug_failure_rate">Fehlerrate: %1$d%%</string>
+    <string name="debug_apply">Anwenden</string>
+    <string name="debug_reset">Zurücksetzen</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_copied_to_clipboard">%1$s in die Zwischenablage kopiert</string>
+    <string name="toast_all_checks_passing">Alle Prüfungen erfolgreich</string>
+
+    <!-- Generated Listing Screen Additions -->
+    <string name="generated_listing_section_title">Generiertes Angebot</string>
+
+    <!-- Status and Feedback Messages -->
+    <string name="status_bullet">•</string>
+    <string name="status_pagination_item_count">%1$d/%2$d</string>
+
+    <!-- Copy Action Labels (with field name) -->
+    <string name="action_copy_title">Titel kopieren</string>
+    <string name="action_copy_description">Beschreibung kopieren</string>
+    <string name="action_copy_price">Preis kopieren</string>
+
+    <!-- Quota Exceeded Dialog -->
+    <string name="quota_exceeded_title">Tageslimit erreicht</string>
+    <string name="quota_exceeded_message">Du hast dein Tageslimit von %1$d Vision API-Anfragen erreicht. Dies hilft, die Betriebskosten nachhaltig zu halten.</string>
+    <string name="quota_exceeded_message_generic">Du hast dein Tageslimit für Vision API-Anfragen erreicht. Dies hilft, die Betriebskosten nachhaltig zu halten.</string>
+    <string name="quota_exceeded_reset">Dein Kontingent wird um %1$s zurückgesetzt (Mitternacht UTC).</string>
+    <string name="quota_exceeded_support">Liebst du Scanium? Unterstütze die App, um sie reibungslos zu betreiben!</string>
+
+    <!-- app_name is defined per-flavor via resValue in build.gradle.kts -->
+
 </resources>
