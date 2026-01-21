@@ -213,10 +213,16 @@ echo -e "\n${GREEN}Build Summary:${NC}"
 echo -e "  Version:     ${GREEN}$NEW_VERSION_NAME ($NEW_VERSION_CODE)${NC}"
 echo -e "  Git SHA:     ${GREEN}$GIT_SHA${NC}"
 echo -e "  Flavors:     ${GREEN}${FLAVORS[*]}${NC}"
+
+***REMOVED*** Commit and push version.properties
+echo -e "\n${BLUE}Committing and pushing version.properties...${NC}"
+git add version.properties
+git commit -m "chore: bump version to $NEW_VERSION_NAME ($NEW_VERSION_CODE)"
+git push
+
+echo -e "\n${GREEN}✓ Version committed and pushed${NC}"
+
 echo -e "\n${CYAN}Next steps:${NC}"
 echo -e "  1. Test the AAB(s) using bundletool or internal testing track"
 echo -e "  2. Upload to Google Play Console for release"
-echo -e "  3. Commit version.properties:"
-echo -e "     ${CYAN}git add version.properties${NC}"
-echo -e "     ${CYAN}git commit -m \"chore: bump version to $NEW_VERSION_NAME ($NEW_VERSION_CODE)\"${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
