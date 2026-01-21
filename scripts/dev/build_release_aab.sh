@@ -187,7 +187,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
 fi
 
 ***REMOVED*** Update version file
-echo -e "\n${BLUE}[1/3] Updating version file...${NC}"
+echo -e "\n${BLUE}[1/4] Updating version file...${NC}"
 cat > "$VERSION_FILE" << EOF
 ***REMOVED*** Scanium Version Configuration
 ***REMOVED*** This file tracks versionCode and versionName for release builds
@@ -198,8 +198,40 @@ versionName=$NEW_VERSION_NAME
 EOF
 echo -e "${GREEN}Updated $VERSION_FILE${NC}"
 
+***REMOVED*** Update local.properties with new version values
+echo -e "\n${BLUE}[2/4] Updating local.properties...${NC}"
+LOCAL_PROPERTIES="$PROJECT_ROOT/local.properties"
+
+if [[ -f "$LOCAL_PROPERTIES" ]]; then
+    ***REMOVED*** Create a temporary file for atomic update
+    TEMP_FILE="${LOCAL_PROPERTIES}.tmp"
+
+    ***REMOVED*** Check if version properties exist in local.properties
+    if grep -q "^scanium.version.code=" "$LOCAL_PROPERTIES" 2>/dev/null; then
+        ***REMOVED*** Update existing scanium.version.code
+        sed "s/^scanium\.version\.code=.*/scanium.version.code=$NEW_VERSION_CODE/" "$LOCAL_PROPERTIES" > "$TEMP_FILE"
+        mv "$TEMP_FILE" "$LOCAL_PROPERTIES"
+    else
+        ***REMOVED*** Add scanium.version.code if it doesn't exist
+        echo "scanium.version.code=$NEW_VERSION_CODE" >> "$LOCAL_PROPERTIES"
+    fi
+
+    if grep -q "^scanium.version.name=" "$LOCAL_PROPERTIES" 2>/dev/null; then
+        ***REMOVED*** Update existing scanium.version.name
+        sed "s/^scanium\.version\.name=.*/scanium.version.name=$NEW_VERSION_NAME/" "$LOCAL_PROPERTIES" > "$TEMP_FILE"
+        mv "$TEMP_FILE" "$LOCAL_PROPERTIES"
+    else
+        ***REMOVED*** Add scanium.version.name if it doesn't exist
+        echo "scanium.version.name=$NEW_VERSION_NAME" >> "$LOCAL_PROPERTIES"
+    fi
+
+    echo -e "${GREEN}Updated $LOCAL_PROPERTIES with version code $NEW_VERSION_CODE and version name $NEW_VERSION_NAME${NC}"
+else
+    echo -e "${YELLOW}Warning: $LOCAL_PROPERTIES not found, skipping update${NC}"
+fi
+
 ***REMOVED*** Build AABs for each flavor
-echo -e "\n${BLUE}[2/3] Building release AAB(s)...${NC}"
+echo -e "\n${BLUE}[3/4] Building release AAB(s)...${NC}"
 
 BUILD_TASKS=()
 for flavor in "${FLAVORS[@]}"; do
@@ -219,7 +251,7 @@ echo -e "${CYAN}Running: ./gradlew ${BUILD_TASKS[*]} -Pscanium.version.code=$NEW
     --console=plain
 
 ***REMOVED*** Display AAB locations and sizes
-echo -e "\n${BLUE}[3/3] Build complete! AAB files:${NC}"
+echo -e "\n${BLUE}[4/4] Build complete! AAB files:${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 AAB_DIR="$PROJECT_ROOT/$APP_MODULE/build/outputs/bundle"
