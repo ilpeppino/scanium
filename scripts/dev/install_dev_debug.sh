@@ -38,7 +38,7 @@ echo -e "${BLUE}Scanium Dev Build + Install + Verify${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 ***REMOVED*** Step 1: Compute expected SHA
-echo -e "\n${BLUE}[1/7] Computing expected git SHA...${NC}"
+echo -e "\n${BLUE}[1/8] Computing expected git SHA...${NC}"
 EXPECTED_SHA=$(git rev-parse --short HEAD)
 if [[ -z "$EXPECTED_SHA" ]]; then
     echo -e "${RED}ERROR: Failed to get git SHA${NC}"
@@ -47,7 +47,7 @@ fi
 echo -e "Expected SHA: ${GREEN}$EXPECTED_SHA${NC}"
 
 ***REMOVED*** Step 2: Check for connected device
-echo -e "\n${BLUE}[2/7] Checking for connected device...${NC}"
+echo -e "\n${BLUE}[2/8] Checking for connected device...${NC}"
 if ! adb devices | grep -q 'device$'; then
     echo -e "${RED}ERROR: No device connected. Connect a device and enable USB debugging.${NC}"
     adb devices -l
@@ -58,7 +58,7 @@ DEVICE_SERIAL=$(adb devices | grep 'device$' | head -1 | awk '{print $1}')
 echo -e "Device: ${GREEN}$DEVICE_SERIAL${NC}"
 
 ***REMOVED*** Step 3: Detect device ABI
-echo -e "\n${BLUE}[3/7] Detecting device ABI...${NC}"
+echo -e "\n${BLUE}[3/8] Detecting device ABI...${NC}"
 DEVICE_ABI=$(adb shell getprop ro.product.cpu.abi | tr -d '\r\n')
 if [[ -z "$DEVICE_ABI" ]]; then
     echo -e "${RED}ERROR: Failed to detect device ABI${NC}"
@@ -66,13 +66,19 @@ if [[ -z "$DEVICE_ABI" ]]; then
 fi
 echo -e "Device ABI: ${GREEN}$DEVICE_ABI${NC}"
 
-***REMOVED*** Step 4: Build the APK (force rebuild to ensure current git SHA)
-echo -e "\n${BLUE}[4/7] Building $VARIANT variant...${NC}"
+***REMOVED*** Step 4: Stop gradle daemons and clean
+echo -e "\n${BLUE}[4/8] Stopping gradle daemons and cleaning...${NC}"
+./gradlew --stop
+./gradlew clean --console=plain
+echo -e "${GREEN}Gradle daemons stopped and build outputs cleaned${NC}"
+
+***REMOVED*** Step 5: Build the APK (force rebuild to ensure current git SHA)
+echo -e "\n${BLUE}[5/8] Building $VARIANT variant...${NC}"
 echo -e "${YELLOW}Note: Using --rerun-tasks to ensure git SHA matches current HEAD${NC}"
 ./gradlew ":$APP_MODULE:assemble$VARIANT" --no-daemon --console=plain --rerun-tasks
 
-***REMOVED*** Step 5: Locate the APK deterministically
-echo -e "\n${BLUE}[5/7] Locating APK...${NC}"
+***REMOVED*** Step 6: Locate the APK deterministically
+echo -e "\n${BLUE}[6/8] Locating APK...${NC}"
 APK_OUTPUT_DIR="$PROJECT_ROOT/$APP_MODULE/build/outputs/apk/$FLAVOR/$BUILD_TYPE"
 APK_FILE="$APK_OUTPUT_DIR/$APP_MODULE-$FLAVOR-$DEVICE_ABI-$BUILD_TYPE.apk"
 
@@ -87,9 +93,9 @@ fi
 APK_SIZE=$(du -h "$APK_FILE" | awk '{print $1}')
 echo -e "APK: ${GREEN}$APK_FILE${NC} (${APK_SIZE})"
 
-***REMOVED*** Step 6: Optionally uninstall, then install
+***REMOVED*** Step 7: Optionally uninstall, then install
 if [[ "$UNINSTALL" == "true" ]]; then
-    echo -e "\n${BLUE}[6/7] Uninstalling existing app...${NC}"
+    echo -e "\n${BLUE}[7/8] Uninstalling existing app...${NC}"
     if adb shell pm list packages | grep -q "^package:$APPLICATION_ID\$"; then
         adb uninstall "$APPLICATION_ID" || true
         echo -e "${GREEN}Uninstalled $APPLICATION_ID${NC}"
@@ -97,15 +103,15 @@ if [[ "$UNINSTALL" == "true" ]]; then
         echo -e "${YELLOW}App not installed, skipping uninstall${NC}"
     fi
 else
-    echo -e "\n${BLUE}[6/7] Installing APK (upgrade)...${NC}"
+    echo -e "\n${BLUE}[7/8] Installing APK (upgrade)...${NC}"
 fi
 
 echo -e "${BLUE}Installing $APK_FILE...${NC}"
 adb install -r "$APK_FILE"
 echo -e "${GREEN}Install completed${NC}"
 
-***REMOVED*** Step 7: Verify installed SHA matches expected SHA
-echo -e "\n${BLUE}[7/7] Verifying installed build SHA...${NC}"
+***REMOVED*** Step 8: Verify installed SHA matches expected SHA
+echo -e "\n${BLUE}[8/8] Verifying installed build SHA...${NC}"
 
 ***REMOVED*** Clear logcat buffer
 adb logcat -c

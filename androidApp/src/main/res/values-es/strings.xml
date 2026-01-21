@@ -1025,4 +1025,127 @@
     <string name="settings_dev_health_monitor_status_last_ok">Habilitado - última comprobación OK</string>
     <string name="settings_dev_health_monitor_status_last_fail">Habilitado - última comprobación FALLÓ</string>
     <string name="settings_dev_health_monitor_status_waiting">Habilitado - esperando la primera comprobación</string>
+
+    <!-- Selling UI: Form Labels and Fields -->
+    <string name="form_label_category">Categoría</string>
+    <string name="form_label_title">Título</string>
+    <string name="form_label_price">Precio</string>
+    <string name="form_label_condition">Condición</string>
+    <string name="form_label_description">Descripción</string>
+    <string name="form_label_edit_description">Editar descripción</string>
+    <string name="form_label_custom_url">URL personalizada</string>
+
+    <!-- eBay Export Screen -->
+    <string name="ebay_export_title">Exportar a eBay (Mock)</string>
+    <string name="ebay_export_price_label">Precio (%1$s)</string>
+    <string name="ebay_export_price_currency_eur">Precio (EUR)</string>
+
+    <!-- Dialog Titles -->
+    <string name="dialog_title_draft_review">Revisión de borrador</string>
+    <string name="dialog_title_posting_target">Destino de publicación</string>
+    <string name="dialog_title_confirm_action">Confirmar acción</string>
+    <string name="dialog_title_mock_debug_settings">Configuración de depuración eBay Mock</string>
+    <string name="dialog_title_export_assistant">Asistente de exportación</string>
+    <string name="dialog_message_low_confidence_warning">Esta sugerencia tiene baja confianza. ¿Quieres aplicarla de todos modos?</string>
+
+    <!-- Business Domain: Pricing and Key Fields -->
+    <string name="label_key_fields">Campos clave</string>
+    <string name="label_field_category">Categoría: %1$s</string>
+    <string name="label_field_brand">Marca: %1$s</string>
+    <string name="label_field_model">Modelo: %1$s</string>
+    <string name="label_field_color">Color: %1$s</string>
+    <string name="label_completeness">Completitud</string>
+    <string name="label_completeness_percent">%1$d%% completo</string>
+    <string name="label_missing_fields">Faltan: %1$s</string>
+    <string name="label_status_saved">Guardado</string>
+
+    <!-- Button Labels and Actions -->
+    <string name="button_prev">Ant</string>
+    <string name="button_next">Sig</string>
+    <string name="button_copy">Copiar</string>
+    <string name="button_copy_all">Copiar todo</string>
+    <string name="button_copy_next">Copiar siguiente</string>
+    <string name="button_copy_checklist">Copiar lista</string>
+    <string name="button_apply">Aplicar</string>
+    <string name="button_replace">Reemplazar</string>
+    <string name="button_cancel">Cancelar</string>
+    <string name="button_retry">Reintentar</string>
+    <string name="button_retry_online">Reintentar en línea</string>
+    <string name="button_dismiss">Descartar</string>
+    <string name="button_save">Guardar</string>
+    <string name="button_open_target">Abrir destino</string>
+    <string name="button_share">Compartir</string>
+    <string name="button_add_as">Añadir como %1$s</string>
+    <string name="button_use_title">Usar título</string>
+    <string name="button_change_target">Cambiar destino</string>
+
+    <!-- Posting Assist Screen -->
+    <string name="posting_assist_title_screen">Asistente de publicación</string>
+    <string name="posting_assist_no_draft_available">No hay borrador disponible</string>
+    <string name="posting_assist_pagination">%1$d/%2$d</string>
+
+    <!-- Draft Review Screen -->
+    <string name="draft_review_title_screen">Revisión de borrador</string>
+    <string name="draft_review_posting_assist">Asistente de publicación</string>
+    <string name="draft_review_ask_assistant">Preguntar al asistente</string>
+    <string name="draft_review_no_draft_available">No hay borrador disponible para este artículo</string>
+
+    <!-- Assistant Screen -->
+    <string name="assistant_speaking_status">Hablando...</string>
+    <string name="assistant_confidence_high">Alta confianza</string>
+    <string name="assistant_confidence_likely">Probable</string>
+    <string name="assistant_confidence_uncertain">Incierto</string>
+    <string name="assistant_evidence_header">Basado en:</string>
+
+    <!-- Pricing & Market Domain -->
+    <string name="pricing_ai_market_price">Precio de mercado IA</string>
+    <string name="pricing_based_on_listings">Basado en %1$d publicaciones</string>
+    <string name="pricing_market_price">Precio de mercado</string>
+    <string name="pricing_based_on_count">Basado en %1$d publicación%2$s%3$s</string>
+    <string name="pricing_top_results">Mejores resultados</string>
+    <string name="pricing_typical_resale_value">Valor de reventa típico: %1$s</string>
+    <string name="pricing_based_on_conditions">Basado en las condiciones actuales del mercado</string>
+    <string name="pricing_hide_matches">Ocultar coincidencias (%1$d)</string>
+    <string name="pricing_show_matches">Mostrar coincidencias (%1$d)</string>
+
+    <!-- Pricing Display (localized rendering of structured PricingDisplay) -->
+    <string name="pricing_range_value">€%1$d–€%2$d</string>
+    <string name="pricing_context_current_market">Basado en las condiciones actuales del mercado</string>
+
+    <!-- Copy Labels and Categories -->
+    <string name="copy_label_title">Título</string>
+    <string name="copy_label_description">Descripción</string>
+    <string name="copy_label_price">Precio</string>
+    <string name="copy_label_checklist">Lista de verificación</string>
+
+    <!-- Settings Debug Options -->
+    <string name="debug_simulate_network_delay">Simular retraso de red</string>
+    <string name="debug_failure_mode">Modo de fallo</string>
+    <string name="debug_failure_rate">Tasa de fallo: %1$d%%</string>
+    <string name="debug_apply">Aplicar</string>
+    <string name="debug_reset">Restablecer</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_copied_to_clipboard">%1$s copiado al portapapeles</string>
+    <string name="toast_all_checks_passing">Todas las comprobaciones pasadas</string>
+
+    <!-- Generated Listing Screen Additions -->
+    <string name="generated_listing_section_title">Listado generado</string>
+
+    <!-- Status and Feedback Messages -->
+    <string name="status_bullet">•</string>
+    <string name="status_pagination_item_count">%1$d/%2$d</string>
+
+    <!-- Copy Action Labels (with field name) -->
+    <string name="action_copy_title">Copiar título</string>
+    <string name="action_copy_description">Copiar descripción</string>
+    <string name="action_copy_price">Copiar precio</string>
+
+    <!-- Quota Exceeded Dialog -->
+    <string name="quota_exceeded_title">Límite diario alcanzado</string>
+    <string name="quota_exceeded_message">Has alcanzado tu límite diario de %1$d solicitudes a la API de Vision. Esto ayuda a mantener los costos sostenibles.</string>
+    <string name="quota_exceeded_message_generic">Has alcanzado tu límite diario para solicitudes a la API de Vision. Esto ayuda a mantener los costos sostenibles.</string>
+    <string name="quota_exceeded_reset">Tu cuota se restablecerá a las %1$s (medianoche UTC).</string>
+    <string name="quota_exceeded_support">¿Te gusta Scanium? ¡Apoya la app para mantenerla funcionando sin problemas!</string>
+
 </resources>

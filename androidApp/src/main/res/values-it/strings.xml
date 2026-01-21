@@ -133,7 +133,7 @@
     <string name="settings_section_storage_options">Opzioni di archiviazione</string>
     <string name="settings_section_export">Esportazione</string>
     <string name="settings_export_format_title">Formato di esportazione predefinito</string>
-    <string name="settings_export_format_subtitle">Formato usato durante l'esportazione degli elementi</string>
+    <string name="settings_export_format_subtitle">Formato usato durante l\'esportazione degli elementi</string>
     <string name="settings_export_format_zip">Bundle ZIP</string>
     <string name="settings_export_format_zip_desc">Immagini e dati confezionati insieme</string>
     <string name="settings_export_format_csv">Foglio di calcolo CSV</string>
