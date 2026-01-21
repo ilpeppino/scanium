@@ -880,17 +880,19 @@ fun ItemsListScreen(
     }
 
     // Quota exceeded dialog
-    if (showQuotaDialog && quotaExceededEvent != null) {
-        com.scanium.app.ui.common.QuotaExceededDialog(
-            quotaLimit = quotaExceededEvent.quotaLimit,
-            resetTime = quotaExceededEvent.resetTime,
-            onDismiss = {
-                showQuotaDialog = false
-                itemsViewModel.clearQuotaExceededEvent()
-            },
-            onDonationClicked = { amount ->
-                // Optional: Add analytics here
-            },
-        )
+    quotaExceededEvent?.let { event ->
+        if (showQuotaDialog) {
+            com.scanium.app.ui.common.QuotaExceededDialog(
+                quotaLimit = event.quotaLimit,
+                resetTime = event.resetTime,
+                onDismiss = {
+                    showQuotaDialog = false
+                    itemsViewModel.clearQuotaExceededEvent()
+                },
+                onDonationClicked = { amount ->
+                    // Optional: Add analytics here
+                },
+            )
+        }
     }
 }
