@@ -122,3 +122,39 @@ export type ClassificationResult = {
     enrichment?: number;
   };
 };
+
+/** Classification mode for hypothesis generation */
+export type ClassificationMode = 'single' | 'multi-hypothesis';
+
+/** A single classification hypothesis from reasoning layer */
+export type ClassificationHypothesis = {
+  domainCategoryId: string;
+  label: string;
+  confidence: number; // 0-1
+  confidenceBand: 'HIGH' | 'MED' | 'LOW';
+  explanation: string; // 1-2 sentences
+  attributes: Record<string, string>;
+  visualEvidence?: {
+    matchedLabels?: string[];
+    detectedBrands?: string[];
+    dominantColors?: string[];
+    ocrHints?: string[];
+  };
+};
+
+/** Multi-hypothesis classification result */
+export type MultiHypothesisResult = {
+  requestId: string;
+  correlationId: string;
+  domainPackId: string;
+  hypotheses: ClassificationHypothesis[]; // 3-5 ranked
+  globalConfidence: number; // 0-100
+  needsRefinement: boolean; // true if < 70%
+  refinementReason?: string;
+  provider: 'openai' | 'claude' | 'mock';
+  timingsMs: {
+    total: number;
+    perception?: number;
+    reasoning?: number;
+  };
+};

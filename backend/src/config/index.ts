@@ -244,6 +244,22 @@ export const configSchema = z.object({
     })
     .default({}),
 
+  // Classification reasoning (multi-hypothesis)
+  reasoning: z
+    .object({
+      /** Reasoning provider: 'mock' for testing, 'openai' or 'claude' for production */
+      provider: z.enum(['mock', 'openai', 'claude']).default('openai'),
+      /** OpenAI model for reasoning (default gpt-4o-mini for speed) */
+      model: z.string().default('gpt-4o-mini'),
+      /** Maximum tokens for reasoning response */
+      maxTokens: z.coerce.number().int().min(100).max(2000).default(800),
+      /** Reasoning API timeout in milliseconds */
+      timeoutMs: z.coerce.number().int().min(1000).max(30000).default(10000),
+      /** Confidence threshold for auto-progress (70 = 70%) */
+      confidenceThreshold: z.coerce.number().int().min(0).max(100).default(70),
+    })
+    .default({}),
+
   googleCredentialsPath: z.string().optional(),
 
   // Pricing insights (Phase 4 feature)
