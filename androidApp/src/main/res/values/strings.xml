@@ -1149,4 +1149,9 @@
     <string name="quota_exceeded_reset">Your quota will reset at %1$s (midnight UTC).</string>
     <string name="quota_exceeded_support">Love Scanium? Support the app to keep it running smoothly!</string>
 
+    <!-- Hypothesis Selection -->
+    <string name="hypothesis_header">Most likely this is:</string>
+    <string name="hypothesis_none_of_these">None of these</string>
+    <string name="hypothesis_add_photo_to_refine">Add another photo to refine</string>
+
 </resources>

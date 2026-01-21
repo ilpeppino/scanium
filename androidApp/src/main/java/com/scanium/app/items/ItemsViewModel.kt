@@ -12,6 +12,9 @@ import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.items.classification.ItemClassificationCoordinator
 import com.scanium.app.items.listing.ListingStatusManager
 import com.scanium.app.items.overlay.OverlayTrackManager
+import com.scanium.app.classification.hypothesis.ClassificationHypothesis
+import com.scanium.app.classification.hypothesis.HypothesisSelectionState
+import com.scanium.app.classification.hypothesis.MultiHypothesisResult
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.ml.CropBasedEnricher
@@ -175,6 +178,12 @@ class ItemsViewModel
         /** Timestamp of the last detected QR URL - ViewModel-specific */
         private val _lastQrSeenTimestampMs = MutableStateFlow(0L)
         val lastQrSeenTimestampMs: StateFlow<Long> = _lastQrSeenTimestampMs
+
+        /** Hypothesis selection state for multi-hypothesis classification */
+        private val _hypothesisSelectionState = MutableStateFlow<HypothesisSelectionState>(
+            HypothesisSelectionState.Hidden
+        )
+        val hypothesisSelectionState: StateFlow<HypothesisSelectionState> = _hypothesisSelectionState
 
         /** Current ROI filter result for diagnostics */
         val lastRoiFilterResult get() = facade.lastRoiFilterResult
@@ -652,6 +661,55 @@ class ItemsViewModel
             val uri = runCatching { Uri.parse(value) }.getOrNull() ?: return null
             val scheme = uri.scheme?.lowercase(Locale.US)
             return if (scheme == "http" || scheme == "https") value else null
+        }
+
+        // ==================== Multi-Hypothesis Classification ====================
+
+        /**
+         * Show hypothesis selection sheet after first classification.
+         */
+        fun showHypothesisSelection(
+            result: MultiHypothesisResult,
+            itemId: String,
+            thumbnailUri: Uri?
+        ) {
+            _hypothesisSelectionState.value =
+                HypothesisSelectionState.Showing(
+                    result = result,
+                    itemId = itemId,
+                    thumbnailUri = thumbnailUri,
+                )
+        }
+
+        /**
+         * User confirmed a hypothesis - apply it to the item.
+         */
+        fun confirmHypothesis(
+            itemId: String,
+            hypothesis: ClassificationHypothesis
+        ) {
+            viewModelScope.launch(workerDispatcher) {
+                // Update item label with confirmed hypothesis
+                facade.updateItemFields(
+                    itemId = itemId,
+                    labelText = hypothesis.categoryName,
+                )
+
+                // TODO: Also update domainCategoryId in the item
+                // Currently updateItemFields doesn't support this field
+                // May need to add to ItemFieldUpdate or use a different approach
+
+                withContext(mainDispatcher) {
+                    _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
+                }
+            }
+        }
+
+        /**
+         * Dismiss hypothesis selection sheet.
+         */
+        fun dismissHypothesisSelection() {
+            _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
         }
     }
 
