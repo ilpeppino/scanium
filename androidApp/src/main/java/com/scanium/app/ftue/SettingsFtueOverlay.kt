@@ -12,17 +12,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -102,45 +99,39 @@ private fun TooltipBubbleSettings(
     text: String,
     targetOptionRect: Rect?,
 ) {
-    // Determine tooltip position
-    val tooltipPosition =
-        targetOptionRect?.let {
-            // Position above option
-            Offset(it.center.x, it.top - 80f)
-        } ?: return
+    targetOptionRect ?: return
 
-    Box(
+    Surface(
         modifier =
             Modifier
-                .fillMaxSize()
-                .wrapContentSize(Alignment.TopStart)
-                .offset(
-                    x = (tooltipPosition.x).dp,
-                    y = (tooltipPosition.y).dp,
-                ),
+                .width(260.dp)
+                .wrapContentHeight()
+                .offset {
+                    // Calculate position: center horizontally on target, position above it
+                    val tooltipWidth = 260.dp.toPx()
+                    val x = (targetOptionRect.center.x - tooltipWidth / 2)
+                        .coerceIn(16.dp.toPx(), size.width - tooltipWidth - 16.dp.toPx())
+
+                    // Position tooltip above target with some spacing
+                    val y = (targetOptionRect.top - 80.dp.toPx())
+                        .coerceAtLeast(16.dp.toPx())
+
+                    androidx.compose.ui.unit.IntOffset(x.toInt(), y.toInt())
+                },
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 8.dp,
     ) {
-        Surface(
+        Text(
+            text = text,
             modifier =
                 Modifier
-                    .width(220.dp)
-                    .wrapContentHeight()
-                    .offset(x = -110.dp),
-            // Center horizontally
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            tonalElevation = 8.dp,
-        ) {
-            Text(
-                text = text,
-                modifier =
-                    Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth(),
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
