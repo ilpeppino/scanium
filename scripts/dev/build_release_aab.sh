@@ -12,6 +12,8 @@
 ***REMOVED*** Options:
 ***REMOVED***   --version-name VERSION    Set new version name (e.g., 1.2.0)
 ***REMOVED***                            If not specified, keeps current version name
+***REMOVED***   --release-notes "NOTES"   Release notes for Google Play Console
+***REMOVED***                            If not specified, will prompt for input
 ***REMOVED***   --skip-increment         Don't increment version code (use current)
 ***REMOVED***   --dry-run               Show what would be built without building
 ***REMOVED***
@@ -20,6 +22,7 @@
 ***REMOVED***   ./scripts/dev/build_release_aab.sh prod --version-name 1.2.0
 ***REMOVED***   ./scripts/dev/build_release_aab.sh all                      ***REMOVED*** all flavors
 ***REMOVED***   ./scripts/dev/build_release_aab.sh beta --skip-increment
+***REMOVED***   ./scripts/dev/build_release_aab.sh --release-notes "Bug fixes and improvements"
 
 set -euo pipefail
 
@@ -41,6 +44,7 @@ APP_MODULE="androidApp"
 ***REMOVED*** Parse arguments
 FLAVOR="prod"
 NEW_VERSION_NAME=""
+RELEASE_NOTES=""
 SKIP_INCREMENT=false
 DRY_RUN=false
 
@@ -48,6 +52,10 @@ while [[ $***REMOVED*** -gt 0 ]]; do
     case $1 in
         --version-name)
             NEW_VERSION_NAME="$2"
+            shift 2
+            ;;
+        --release-notes)
+            RELEASE_NOTES="$2"
             shift 2
             ;;
         --skip-increment)
@@ -140,6 +148,27 @@ else
     FLAVORS=("$FLAVOR")
 fi
 
+***REMOVED*** Prompt for release notes if not provided
+if [[ -z "$RELEASE_NOTES" ]]; then
+    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}Release Notes${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}Enter release notes for Google Play Console (end with Ctrl+D):${NC}"
+    echo -e "${YELLOW}Example:${NC}"
+    echo -e "${YELLOW}  - Fixed camera crash on Android 14${NC}"
+    echo -e "${YELLOW}  - Improved object detection accuracy${NC}"
+    echo -e "${YELLOW}  - Performance improvements${NC}"
+    echo ""
+
+    ***REMOVED*** Read multi-line input
+    RELEASE_NOTES=$(cat)
+
+    if [[ -z "$RELEASE_NOTES" ]]; then
+        echo -e "${YELLOW}Warning: No release notes provided${NC}"
+        RELEASE_NOTES="Bug fixes and improvements"
+    fi
+fi
+
 ***REMOVED*** Display build plan
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}Scanium Release AAB Build${NC}"
@@ -214,6 +243,11 @@ echo -e "  Version:     ${GREEN}$NEW_VERSION_NAME ($NEW_VERSION_CODE)${NC}"
 echo -e "  Git SHA:     ${GREEN}$GIT_SHA${NC}"
 echo -e "  Flavors:     ${GREEN}${FLAVORS[*]}${NC}"
 
+***REMOVED*** Save release notes to file
+RELEASE_NOTES_FILE="$PROJECT_ROOT/release-notes-$NEW_VERSION_NAME.txt"
+echo "$RELEASE_NOTES" > "$RELEASE_NOTES_FILE"
+echo -e "\n${BLUE}Saved release notes to: ${CYAN}$RELEASE_NOTES_FILE${NC}"
+
 ***REMOVED*** Commit and push version.properties
 echo -e "\n${BLUE}Committing and pushing version.properties...${NC}"
 git add version.properties
@@ -222,7 +256,14 @@ git push
 
 echo -e "\n${GREEN}✓ Version committed and pushed${NC}"
 
+echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${CYAN}Release Notes for Google Play Console:${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo "$RELEASE_NOTES"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
 echo -e "\n${CYAN}Next steps:${NC}"
 echo -e "  1. Test the AAB(s) using bundletool or internal testing track"
 echo -e "  2. Upload to Google Play Console for release"
+echo -e "  3. Copy release notes from above or: ${CYAN}cat $RELEASE_NOTES_FILE${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
