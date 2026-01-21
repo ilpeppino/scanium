@@ -101,16 +101,6 @@ fun CameraScreen(
     val settingsRepository = remember { SettingsRepository(context) }
     val ftueRepository = remember { FtueRepository(context) }
     val cameraFtueViewModel = remember { CameraFtueViewModel(ftueRepository) }
-    val cameraUiFtueViewModel =
-        remember {
-            com.scanium.app.ftue
-                .CameraUiFtueViewModel(ftueRepository)
-        }
-    val cameraUiFtueRegistry =
-        remember {
-            com.scanium.app.ftue
-                .CameraUiFtueAnchorRegistry()
-        }
     val autoSaveEnabled by settingsRepository.autoSaveEnabledFlow.collectAsState(initial = false)
     val saveDirectoryUri by settingsRepository.saveDirectoryUriFlow.collectAsState(initial = null)
 
@@ -227,12 +217,6 @@ fun CameraScreen(
 
     // Camera FTUE state
     val cameraFtueCompleted by ftueRepository.cameraFtueCompletedFlow.collectAsState(initial = false)
-
-    // Camera UI FTUE (button navigation tutorial) - Phase 5: Integration
-    val cameraUiFtueActive by cameraUiFtueViewModel.isActive.collectAsState()
-    val cameraUiFtueStep by cameraUiFtueViewModel.currentStep.collectAsState()
-    val cameraUiFtueAnchors by cameraUiFtueRegistry.anchors.collectAsState()
-    val showCameraUiFtueBounds by settingsRepository.devShowCameraUiFtueBoundsFlow.collectAsState(initial = false)
     val showBuildWatermark by settingsRepository.devShowBuildWatermarkFlow.collectAsState(initial = false)
     val cameraFtueCurrentStep by cameraFtueViewModel.currentStep.collectAsState()
     val cameraFtueIsActive by cameraFtueViewModel.isActive.collectAsState()
@@ -250,13 +234,9 @@ fun CameraScreen(
     // Animation state for newly added items
     var lastAddedItem by remember { mutableStateOf<com.scanium.app.items.ScannedItem?>(null) }
 
-    LaunchedEffect(itemsViewModel, tourViewModel) {
+    LaunchedEffect(itemsViewModel) {
         itemsViewModel.itemAddedEvents.collect { item: com.scanium.app.items.ScannedItem ->
             lastAddedItem = item
-            // Advance tour if on TAKE_FIRST_PHOTO step
-            if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.TAKE_FIRST_PHOTO) {
-                tourViewModel?.nextStep()
-            }
         }
     }
 
@@ -267,26 +247,6 @@ fun CameraScreen(
     var imageRotationDegrees by remember { mutableStateOf(90) } // Default portrait
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
-
-    // Camera UI FTUE initialization (Phase 5: Trigger)
-    // Triggers when: permission granted, preview ready, anchors registered, AND tour is not active
-    // Camera UI FTUE only starts AFTER the tour is completed or skipped
-    LaunchedEffect(hasCameraPermission, previewSize, cameraUiFtueAnchors, isTourActive) {
-        val allAnchorsRegistered =
-            cameraUiFtueRegistry.hasAllAnchors(
-                com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS,
-            )
-        val previewVisible = previewSize.width > 0 && previewSize.height > 0
-
-        // Only initialize Camera UI FTUE when tour is NOT active
-        if (!isTourActive) {
-            cameraUiFtueViewModel.initialize(
-                cameraPermissionGranted = hasCameraPermission,
-                previewVisible = previewVisible,
-                allAnchorsRegistered = allAnchorsRegistered,
-            )
-        }
-    }
 
     // Compute ROI rect from scanGuidanceState
     val roiRect: androidx.compose.ui.geometry.Rect by remember(scanGuidanceState, previewSize) {
@@ -776,79 +736,6 @@ fun CameraScreen(
                     )
                 }
 
-                // Camera UI FTUE overlay (Phase 5: Render)
-                if (cameraUiFtueActive) {
-                    val currentAnchorId =
-                        when (cameraUiFtueStep) {
-                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER -> {
-                                com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_SHUTTER
-                            }
-
-                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA -> {
-                                com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_FLIP
-                            }
-
-                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST -> {
-                                com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_ITEMS
-                            }
-
-                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS -> {
-                                com.scanium.app.ftue.CameraUiFtueViewModel.ANCHOR_SETTINGS
-                            }
-
-                            else -> {
-                                null
-                            }
-                        }
-
-                    val currentAnchorRect = currentAnchorId?.let { cameraUiFtueRegistry.getAnchor(it) }
-
-                    val tooltipText =
-                        when (cameraUiFtueStep) {
-                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER -> {
-                                stringResource(R.string.ftue_camera_ui_shutter)
-                            }
-
-                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA -> {
-                                stringResource(R.string.ftue_camera_ui_flip)
-                            }
-
-                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST -> {
-                                stringResource(R.string.ftue_camera_ui_items)
-                            }
-
-                            com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS -> {
-                                stringResource(R.string.ftue_camera_ui_settings)
-                            }
-
-                            else -> {
-                                ""
-                            }
-                        }
-
-                    com.scanium.app.ftue.CameraUiFtueOverlay(
-                        step = cameraUiFtueStep,
-                        anchorRect = currentAnchorRect,
-                        tooltipText = tooltipText,
-                        onNext = { cameraUiFtueViewModel.nextStep() },
-                        onDismiss = { cameraUiFtueViewModel.dismiss() },
-                        showDebugBounds = showCameraUiFtueBounds,
-                    )
-                }
-
-                // DEV-ONLY: FTUE Diagnostics Overlay (PHASE 2)
-                // Shows real-time anchor status and force step buttons for debugging
-                if (BuildConfig.FLAVOR == "dev" && showCameraUiFtueBounds) {
-                    com.scanium.app.ftue.CameraUiFtueDiagnosticsOverlay(
-                        currentStep = cameraUiFtueStep,
-                        anchors = cameraUiFtueAnchors,
-                        showDebugBorders = showCameraUiFtueBounds,
-                        onForceStep = { step ->
-                            cameraUiFtueViewModel.forceStep(step)
-                        },
-                    )
-                }
-
                 // Cloud configuration status banner
                 ConfigurationStatusBanner(
                     classificationMode = classificationMode,
@@ -992,18 +879,12 @@ fun CameraScreen(
                     cameraState = cameraState,
                     captureResolution = captureResolution,
                     onNavigateToItems = {
-                        // If tour is on OPEN_ITEM_LIST step, advance before navigation
-                        if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.OPEN_ITEM_LIST) {
-                            tourViewModel?.nextStep()
-                        }
                         onNavigateToItems()
                     },
                     onOpenSettings = {
                         onNavigateToSettings()
                     },
                     tourViewModel = tourViewModel,
-                    cameraUiFtueRegistry = cameraUiFtueRegistry,
-                    cameraUiFtueStep = cameraUiFtueStep,
                     showShutterHint = showShutterHint,
                     onShutterTap = {
                         // Notify Camera FTUE of shutter tap
@@ -1212,8 +1093,10 @@ fun CameraScreen(
                             )
                         }
 
-                        com.scanium.app.ftue.TourStepKey.TAKE_FIRST_PHOTO,
-                        com.scanium.app.ftue.TourStepKey.OPEN_ITEM_LIST,
+                        com.scanium.app.ftue.TourStepKey.CAMERA_SHUTTER,
+                        com.scanium.app.ftue.TourStepKey.CAMERA_FLIP,
+                        com.scanium.app.ftue.TourStepKey.CAMERA_ITEMS,
+                        com.scanium.app.ftue.TourStepKey.CAMERA_SETTINGS,
                         -> {
                             currentTourStep?.let { step ->
                                 val bounds = step.targetKey?.let { targetBounds[it] }

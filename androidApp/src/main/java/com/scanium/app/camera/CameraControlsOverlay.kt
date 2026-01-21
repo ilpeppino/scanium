@@ -52,10 +52,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.ScannedItem
-import com.scanium.app.ftue.CameraUiFtueAnchorRegistry
-import com.scanium.app.ftue.CameraUiFtueViewModel
-import com.scanium.app.ftue.ftueAnchor
-import com.scanium.app.ftue.ftuePulse
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.ui.common.DonationContent
 import kotlinx.coroutines.delay
@@ -74,8 +70,6 @@ internal fun BoxScope.CameraOverlay(
     onNavigateToItems: () -> Unit,
     onOpenSettings: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
-    cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
-    cameraUiFtueStep: CameraUiFtueViewModel.CameraUiFtueStep = CameraUiFtueViewModel.CameraUiFtueStep.IDLE,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -108,19 +102,9 @@ internal fun BoxScope.CameraOverlay(
                 modifier =
                     Modifier
                         .size(48.dp)
-                        .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS)
                         .then(
                             if (tourViewModel != null) {
-                                Modifier.tourTarget("camera_settings", tourViewModel)
-                            } else {
-                                Modifier
-                            },
-                        ).then(
-                            if (cameraUiFtueRegistry != null) {
-                                Modifier.ftueAnchor(
-                                    id = CameraUiFtueViewModel.ANCHOR_SETTINGS,
-                                    registry = cameraUiFtueRegistry,
-                                )
+                                Modifier.tourTarget("camera_ui_settings", tourViewModel)
                             } else {
                                 Modifier
                             },
@@ -160,8 +144,6 @@ internal fun BoxScope.CameraOverlay(
             captureResolution = captureResolution,
             onNavigateToItems = onNavigateToItems,
             tourViewModel = tourViewModel,
-            cameraUiFtueRegistry = cameraUiFtueRegistry,
-            cameraUiFtueStep = cameraUiFtueStep,
             showShutterHint = showShutterHint,
             onShutterTap = onShutterTap,
             onShutterLongPress = onShutterLongPress,
@@ -179,8 +161,6 @@ internal fun BoxScope.CameraOverlay(
             captureResolution = captureResolution,
             onNavigateToItems = onNavigateToItems,
             tourViewModel = tourViewModel,
-            cameraUiFtueRegistry = cameraUiFtueRegistry,
-            cameraUiFtueStep = cameraUiFtueStep,
             showShutterHint = showShutterHint,
             onShutterTap = onShutterTap,
             onShutterLongPress = onShutterLongPress,
@@ -247,8 +227,6 @@ internal fun BoxScope.CameraOverlayPortrait(
     captureResolution: CaptureResolution,
     onNavigateToItems: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
-    cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
-    cameraUiFtueStep: CameraUiFtueViewModel.CameraUiFtueStep,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -310,22 +288,12 @@ internal fun BoxScope.CameraOverlayPortrait(
                         modifier =
                             Modifier
                                 .size(48.dp)
-                                .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST)
                                 .background(
                                     Color.Black.copy(alpha = 0.5f),
                                     shape = MaterialTheme.shapes.small,
                                 ).then(
                                     if (tourViewModel != null) {
-                                        Modifier.tourTarget("camera_items_button", tourViewModel)
-                                    } else {
-                                        Modifier
-                                    },
-                                ).then(
-                                    if (cameraUiFtueRegistry != null) {
-                                        Modifier.ftueAnchor(
-                                            id = CameraUiFtueViewModel.ANCHOR_ITEMS,
-                                            registry = cameraUiFtueRegistry,
-                                        )
+                                        Modifier.tourTarget("camera_ui_items", tourViewModel)
                                     } else {
                                         Modifier
                                     },
@@ -368,19 +336,9 @@ internal fun BoxScope.CameraOverlayPortrait(
                     modifier =
                         Modifier
                             .offset(y = 6.dp)
-                            .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER)
                             .then(
                                 if (tourViewModel != null) {
-                                    Modifier.tourTarget("camera_shutter", tourViewModel)
-                                } else {
-                                    Modifier
-                                },
-                            ).then(
-                                if (cameraUiFtueRegistry != null) {
-                                    Modifier.ftueAnchor(
-                                        id = CameraUiFtueViewModel.ANCHOR_SHUTTER,
-                                        registry = cameraUiFtueRegistry,
-                                    )
+                                    Modifier.tourTarget("camera_ui_shutter", tourViewModel)
                                 } else {
                                     Modifier
                                 },
@@ -398,16 +356,12 @@ internal fun BoxScope.CameraOverlayPortrait(
                     modifier =
                         Modifier
                             .size(48.dp)
-                            .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA)
                             .background(
                                 Color.Black.copy(alpha = 0.5f),
                                 shape = MaterialTheme.shapes.small,
                             ).then(
-                                if (cameraUiFtueRegistry != null) {
-                                    Modifier.ftueAnchor(
-                                        id = CameraUiFtueViewModel.ANCHOR_FLIP,
-                                        registry = cameraUiFtueRegistry,
-                                    )
+                                if (tourViewModel != null) {
+                                    Modifier.tourTarget("camera_ui_flip", tourViewModel)
                                 } else {
                                     Modifier
                                 },
@@ -453,8 +407,6 @@ internal fun BoxScope.CameraOverlayLandscape(
     captureResolution: CaptureResolution,
     onNavigateToItems: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
-    cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
-    cameraUiFtueStep: CameraUiFtueViewModel.CameraUiFtueStep,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -497,19 +449,9 @@ internal fun BoxScope.CameraOverlayLandscape(
                 showHint = showShutterHint,
                 modifier =
                     Modifier
-                        .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER)
                         .then(
                             if (tourViewModel != null) {
-                                Modifier.tourTarget("camera_shutter", tourViewModel)
-                            } else {
-                                Modifier
-                            },
-                        ).then(
-                            if (cameraUiFtueRegistry != null) {
-                                Modifier.ftueAnchor(
-                                    id = CameraUiFtueViewModel.ANCHOR_SHUTTER,
-                                    registry = cameraUiFtueRegistry,
-                                )
+                                Modifier.tourTarget("camera_ui_shutter", tourViewModel)
                             } else {
                                 Modifier
                             },
@@ -560,22 +502,12 @@ internal fun BoxScope.CameraOverlayLandscape(
                 modifier =
                     Modifier
                         .size(48.dp)
-                        .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST)
                         .background(
                             Color.Black.copy(alpha = 0.5f),
                             shape = MaterialTheme.shapes.small,
                         ).then(
                             if (tourViewModel != null) {
-                                Modifier.tourTarget("camera_items_button", tourViewModel)
-                            } else {
-                                Modifier
-                            },
-                        ).then(
-                            if (cameraUiFtueRegistry != null) {
-                                Modifier.ftueAnchor(
-                                    id = CameraUiFtueViewModel.ANCHOR_ITEMS,
-                                    registry = cameraUiFtueRegistry,
-                                )
+                                Modifier.tourTarget("camera_ui_items", tourViewModel)
                             } else {
                                 Modifier
                             },
@@ -620,16 +552,12 @@ internal fun BoxScope.CameraOverlayLandscape(
             modifier =
                 Modifier
                     .size(48.dp)
-                    .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA)
                     .background(
                         Color.Black.copy(alpha = 0.5f),
                         shape = MaterialTheme.shapes.small,
                     ).then(
-                        if (cameraUiFtueRegistry != null) {
-                            Modifier.ftueAnchor(
-                                id = CameraUiFtueViewModel.ANCHOR_FLIP,
-                                registry = cameraUiFtueRegistry,
-                            )
+                        if (tourViewModel != null) {
+                            Modifier.tourTarget("camera_ui_flip", tourViewModel)
                         } else {
                             Modifier
                         },

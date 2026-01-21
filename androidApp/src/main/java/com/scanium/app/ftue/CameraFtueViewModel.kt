@@ -13,25 +13,15 @@ import kotlinx.coroutines.launch
 /**
  * ViewModel for managing Camera screen FTUE (First-Time User Experience).
  *
- * Manages a multi-step sequence of hints:
+ * **STATUS: DISABLED** - This FTUE flow is currently disabled to streamline onboarding.
+ * Camera UI education is now handled by the Guided Tour (TourViewModel).
+ *
+ * Previously managed a multi-step sequence of hints:
  * 1. ROI pulse: "Center an object here to scan it"
  * 2. BBox hint: "Boxes appear around detected objects"
  * 3. Shutter pulse: "Tap to capture your first item"
  *
- * Triggers:
- * - Shows only on first run AFTER camera permission is granted
- * - Skips if user already captured at least one item
- * - Re-runnable via "Replay first-time guide"
- *
- * State machine:
- * - IDLE: Not started or completed
- * - WAITING_ROI: Waiting to show ROI pulse hint
- * - ROI_HINT_SHOWN: ROI hint displayed
- * - WAITING_BBOX: Waiting for first detection or timeout
- * - BBOX_HINT_SHOWN: BBox hint displayed
- * - WAITING_SHUTTER: Waiting to show shutter hint
- * - SHUTTER_HINT_SHOWN: Shutter hint displayed
- * - COMPLETED: All hints shown or user captured first item
+ * The code remains for potential re-enablement but will not trigger in normal flow.
  */
 class CameraFtueViewModel(
     private val ftueRepository: FtueRepository,
@@ -78,8 +68,7 @@ class CameraFtueViewModel(
 
     /**
      * Initialize the camera FTUE sequence.
-     * Should be called when camera screen is first shown.
-     * Checks persistence flags to determine if FTUE should run.
+     * **DISABLED**: This FTUE is currently disabled. Method kept for compatibility.
      *
      * @param shouldStartFtue: True if FTUE should start (check based on completion status)
      * @param hasExistingItems: True if user already has items (skip FTUE if true)
@@ -90,9 +79,16 @@ class CameraFtueViewModel(
     ) {
         viewModelScope.launch {
             if (com.scanium.app.config.FeatureFlags.isDevBuild) {
-                Log.d(TAG, "initialize: shouldStartFtue=$shouldStartFtue, hasExistingItems=$hasExistingItems")
+                Log.d(TAG, "initialize: Camera FTUE is DISABLED (streamlined onboarding)")
             }
 
+            // DISABLED: Camera FTUE is disabled - always mark as completed and inactive
+            _currentStep.value = CameraFtueStep.COMPLETED
+            _isActive.value = false
+            return@launch
+
+            // Legacy code below (unreachable - kept for reference)
+            // -----------------------------------------------------------
             if (!shouldStartFtue || hasExistingItems) {
                 // Don't set completion flag - just mark as not active
                 _currentStep.value = CameraFtueStep.COMPLETED

@@ -368,7 +368,17 @@
 
     <!-- FTUE Tour Steps -->
     <string name="ftue_tour_welcome_title">Welcome to Scanium!</string>
-    <string name="ftue_tour_welcome_desc">Let\'s take a quick tour to learn how to scan, edit, and share your items.</string>
+    <string name="ftue_tour_welcome_desc">Let\'s take a quick tour to learn the camera controls.</string>
+    <!-- Camera UI Tour Steps (Streamlined) -->
+    <string name="ftue_tour_camera_shutter_title">Shutter Button</string>
+    <string name="ftue_tour_camera_shutter_desc">Tap here to capture an item.</string>
+    <string name="ftue_tour_camera_flip_title">Flip Camera</string>
+    <string name="ftue_tour_camera_flip_desc">Switch between front and rear camera.</string>
+    <string name="ftue_tour_camera_items_title">Items List</string>
+    <string name="ftue_tour_camera_items_desc">View and manage scanned items.</string>
+    <string name="ftue_tour_camera_settings_title">Settings</string>
+    <string name="ftue_tour_camera_settings_desc">Adjust how Scanium works.</string>
+    <!-- Legacy Tour Steps (Deprecated - kept for backward compatibility) -->
     <string name="ftue_tour_take_photo_title">Capture Your First Item</string>
     <string name="ftue_tour_take_photo_desc">Tap the shutter button to take a photo of your first item. Point your camera at any object you want to catalog.</string>
     <string name="ftue_tour_open_list_title">View Your Items</string>
