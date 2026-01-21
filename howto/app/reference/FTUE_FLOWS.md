@@ -1,12 +1,12 @@
 ***REMOVED*** FTUE Flows Reference
 
-**Last Updated:** 2026-01-19
+**Last Updated:** 2026-01-21
 **Status:** Active
 **Owner:** Product/Engineering
 
 ***REMOVED******REMOVED*** Overview
 
-Scanium implements a comprehensive First-Time User Experience (FTUE) system across 6 distinct flows that guide users through the app's core functionality. Each flow is independently managed by dedicated ViewModels and triggers based on specific conditions.
+Scanium implements a streamlined First-Time User Experience (FTUE) system across 4 active flows that guide users through the app's core functionality. The Guided Tour now integrates camera UI education, while the standalone Camera FTUE and Camera UI FTUE have been consolidated or disabled. Each flow is independently managed by dedicated ViewModels and triggers based on specific conditions.
 
 ***REMOVED******REMOVED*** Table of Contents
 
@@ -14,8 +14,8 @@ Scanium implements a comprehensive First-Time User Experience (FTUE) system acro
 - [Flow Execution Order](***REMOVED***flow-execution-order)
 - [Individual Flows](***REMOVED***individual-flows)
   - [1. Guided Tour](***REMOVED***1-guided-tour-tourviewmodel)
-  - [2. Camera FTUE](***REMOVED***2-camera-ftue-cameraftueviewmodel)
-  - [3. Camera UI FTUE](***REMOVED***3-camera-ui-ftue-camerauiftueviewmodel)
+  - [2. Camera FTUE](***REMOVED***2-camera-ftue-cameraftueviewmodel) (DISABLED)
+  - [3. Camera UI FTUE](***REMOVED***3-camera-ui-ftue-camerauiftueviewmodel) (REMOVED - Integrated into Guided Tour)
   - [4. Items List FTUE](***REMOVED***4-items-list-ftue-itemslistftueviewmodel)
   - [5. Edit Item FTUE](***REMOVED***5-edit-item-ftue-edititemftueviewmodel)
   - [6. Settings FTUE](***REMOVED***6-settings-ftue-settingsftueviewmodel)
@@ -55,22 +55,6 @@ Scanium implements a comprehensive First-Time User Experience (FTUE) system acro
         ┌──────────────────────┐
         │  1. GUIDED TOUR      │ (First launch only)
         │  - Welcome           │
-        │  - Take photo        │
-        │  - Open list         │
-        │  - Edit/AI/Share     │
-        └──────────┬───────────┘
-                   │
-                   ▼
-        ┌──────────────────────┐
-        │  2. CAMERA FTUE      │ (After permission granted)
-        │  - ROI pulse         │
-        │  - BBox hint         │
-        │  - Shutter hint      │
-        └──────────┬───────────┘
-                   │
-                   ▼
-        ┌──────────────────────┐
-        │  3. CAMERA UI FTUE   │ (After Camera FTUE completes)
         │  - Shutter button    │
         │  - Flip camera       │
         │  - Items list        │
@@ -81,7 +65,7 @@ Scanium implements a comprehensive First-Time User Experience (FTUE) system acro
         │                      │                  │
         ▼                      ▼                  ▼
 ┌──────────────┐  ┌──────────────────┐  ┌──────────────┐
-│ 4. ITEMS     │  │ 5. EDIT ITEM     │  │ 6. SETTINGS  │
+│ 2. ITEMS     │  │ 3. EDIT ITEM     │  │ 4. SETTINGS  │
 │    LIST FTUE │  │    FTUE          │  │    FTUE      │
 │              │  │                  │  │              │
 │ - Tap        │  │ - Improve        │  │ - Language   │
@@ -93,10 +77,11 @@ Scanium implements a comprehensive First-Time User Experience (FTUE) system acro
 
 ***REMOVED******REMOVED******REMOVED*** Sequencing Rules
 
-1. **Guided Tour** → **Camera FTUE** → **Camera UI FTUE** (sequential)
+1. **Guided Tour** runs on first launch and includes camera UI education
 2. **Items List**, **Edit Item**, and **Settings** FTUEs are independent
-3. **Camera UI FTUE** waits for both Guided Tour AND Camera FTUE completion
-4. Each flow triggers only on first visit to its screen (unless replayed)
+3. Each flow triggers only on first visit to its screen (unless replayed)
+4. **Camera FTUE** is disabled (previously taught object detection mechanics)
+5. **Camera UI FTUE** is removed (now integrated into Guided Tour steps 1-4)
 
 ---
 
@@ -104,7 +89,7 @@ Scanium implements a comprehensive First-Time User Experience (FTUE) system acro
 
 ***REMOVED******REMOVED*** 1. Guided Tour (TourViewModel)
 
-**Purpose:** Comprehensive end-to-end onboarding showing the complete Scanium workflow
+**Purpose:** Streamlined onboarding introducing Scanium and teaching camera UI controls
 
 **Location:** `androidApp/src/main/java/com/scanium/app/ftue/TourViewModel.kt`
 
@@ -114,32 +99,28 @@ Scanium implements a comprehensive First-Time User Experience (FTUE) system acro
 - Force enabled in Developer Options
 - Runs BEFORE other FTUEs
 
-***REMOVED******REMOVED******REMOVED*** Steps (9 total)
+***REMOVED******REMOVED******REMOVED*** Steps (5 total)
 
 | Step | Screen | Target | Title | Description | User Action |
 |------|--------|--------|-------|-------------|-------------|
 | 0 | Camera | Full screen | Welcome | Introduction to Scanium | Tap "Next" |
-| 1 | Camera | Shutter button | Take First Photo | Guide to capturing first item | **Must capture item** |
-| 2 | Camera | Items button | Open Item List | Navigate to items | **Must navigate** |
-| 3 | Edit Item | Add photo button | Add Extra Photos | Add multiple angles | Tap "Next" |
-| 4 | Edit Item | Brand field | Edit Attributes | Improve item details | Tap "Next" |
-| 5 | Edit Item | AI button | Use AI Assistant | Generate descriptions | Tap "Next" |
-| 6 | Edit Item | Save button | Save Changes | Save edits | **Must navigate back** |
-| 7 | Items List | Share button | Share Bundle | Export for selling | Tap "Next" |
-| 8 | Items List | Full screen | Completion | Tour complete | Tap "Finish" |
+| 1 | Camera | Shutter button | Shutter Button | "Tap here to capture an item" | Tap "Next" |
+| 2 | Camera | Flip camera | Flip Camera | "Switch between front and rear camera" | Tap "Next" |
+| 3 | Camera | Items button | Items List | "View and manage scanned items" | Tap "Next" |
+| 4 | Camera | Settings button | Settings | "Adjust how Scanium works" | Tap "Finish" |
 
 ***REMOVED******REMOVED******REMOVED*** Key Features
 
 - **Spotlight shapes**: Circle for buttons, rounded rectangles for UI areas
-- **Demo item creation**: Automatically creates a demo item if items list is empty
-- **User-driven progression**: Steps 1, 2, 6 require actual user actions
-- **Context-aware**: Adapts to whether user has existing items
+- **Camera UI focus**: Steps 1-4 replace the previous Camera UI FTUE flow
+- **Single screen**: All steps occur on the Camera screen
+- **Simple progression**: User taps "Next" to advance through all steps
 
 ***REMOVED******REMOVED******REMOVED*** State Management
 
 ```kotlin
 sealed class TourScreen {
-    CAMERA, EDIT_ITEM, ITEMS_LIST
+    CAMERA
 }
 
 data class TourStep(
@@ -157,94 +138,59 @@ data class TourStep(
 
 ***REMOVED******REMOVED*** 2. Camera FTUE (CameraFtueViewModel)
 
-**Purpose:** Teach object detection mechanics and first capture
+**Status:** DISABLED
+
+**Previous Purpose:** Taught object detection mechanics (ROI pulse, bbox hints, shutter prompt)
 
 **Location:** `androidApp/src/main/java/com/scanium/app/ftue/CameraFtueViewModel.kt`
 
-***REMOVED******REMOVED******REMOVED*** Trigger Conditions
+***REMOVED******REMOVED******REMOVED*** Reason for Removal
 
-- Camera permission granted
-- User has NO existing items
-- First visit only (unless replayed)
-- Tour completed or inactive
+This flow has been **disabled** to streamline the onboarding experience. Users can learn through natural exploration rather than guided detection hints. The shutter button education is now handled by the Guided Tour (step 1).
 
-***REMOVED******REMOVED******REMOVED*** Steps (3 sequential)
+***REMOVED******REMOVED******REMOVED*** Previous Steps (For Reference)
 
-| ***REMOVED*** | Step | Duration | Description | Visual Effect | Advancement |
-|---|------|----------|-------------|---------------|-------------|
-| 1 | **ROI Pulse** | 1200ms | "Center an object here to scan it" | Pulsating ROI box overlay | Auto after duration |
-| 2 | **BBox Hint** | 800ms | "Boxes appear around detected objects" | Glow effect on first detection | Auto after duration OR first detection (3s timeout) |
-| 3 | **Shutter Hint** | Until tap | "Tap to capture your first item" | Pulsating shutter button | User taps shutter |
+| ***REMOVED*** | Step | Duration | Description |
+|---|------|----------|-------------|
+| 1 | **ROI Pulse** | 1200ms | "Center an object here to scan it" |
+| 2 | **BBox Hint** | 800ms | "Boxes appear around detected objects" |
+| 3 | **Shutter Hint** | Until tap | "Tap to capture your first item" |
 
-***REMOVED******REMOVED******REMOVED*** Timing Constants
+***REMOVED******REMOVED******REMOVED*** Implementation Status
 
-```kotlin
-ROI_PULSE_DURATION_MS = 1200L
-ROI_HINT_INITIAL_DELAY_MS = 800L        // Delay before first hint
-BBOX_DETECTION_TIMEOUT_MS = 3000L       // Wait for first detection
-BBOX_GLOW_DURATION_MS = 800L
-SHUTTER_HINT_DELAY_MS = 500L
-```
-
-***REMOVED******REMOVED******REMOVED*** State Machine
-
-```
-IDLE → WAITING_ROI → ROI_HINT_SHOWN → WAITING_BBOX →
-BBOX_HINT_SHOWN → WAITING_SHUTTER → SHUTTER_HINT_SHOWN → COMPLETED
-```
-
-***REMOVED******REMOVED******REMOVED*** Key Features
-
-- **Detection timeout**: If no object detected within 3s, BBox hint shows anyway
-- **Immediate completion**: Completing capture immediately completes FTUE
-- **Early dismissal**: Tapping outside dismissal marks as completed
+- ViewModel code remains in codebase but is not triggered
+- Can be re-enabled if needed by adjusting trigger conditions
+- Replay functionality still available via Developer Options
 
 ---
 
 ***REMOVED******REMOVED*** 3. Camera UI FTUE (CameraUiFtueViewModel)
 
-**Purpose:** Teach the 4 main camera button controls
+**Status:** REMOVED (Integrated into Guided Tour)
+
+**Previous Purpose:** Taught the 4 main camera button controls independently
 
 **Location:** `androidApp/src/main/java/com/scanium/app/ftue/CameraUiFtueViewModel.kt`
 
-***REMOVED******REMOVED******REMOVED*** Trigger Conditions
+***REMOVED******REMOVED******REMOVED*** Reason for Removal
 
-- Camera permission granted
-- Camera preview visible (width × height > 0)
-- All 4 button anchors registered
-- **Camera FTUE completed** (sequential dependency)
-- **Tour NOT active** (waits for tour)
+This flow has been **integrated into the Guided Tour** (steps 1-4). By consolidating camera UI education into the initial tour, users get a cohesive onboarding experience without redundant separate flows.
 
-***REMOVED******REMOVED******REMOVED*** Steps (4 buttons)
+***REMOVED******REMOVED******REMOVED*** Previous Steps (Now in Guided Tour)
 
-| ***REMOVED*** | Button | Anchor ID | Description | Spotlight |
-|---|--------|-----------|-------------|-----------|
-| 1 | **Shutter** | `camera_ui_shutter` | "Tap here to capture an item" | Circle |
-| 2 | **Flip Camera** | `camera_ui_flip` | "Switch between front and rear camera" | Rounded rect |
-| 3 | **Items List** | `camera_ui_items` | "View and manage scanned items" | Rounded rect |
-| 4 | **Settings** | `camera_ui_settings` | "Adjust how Scanium works" | Rounded rect |
+| ***REMOVED*** | Button | Description | Now in Guided Tour |
+|---|--------|-------------|---------------------|
+| 1 | **Shutter** | "Tap here to capture an item" | Tour Step 1 |
+| 2 | **Flip Camera** | "Switch between front and rear camera" | Tour Step 2 |
+| 3 | **Items List** | "View and manage scanned items" | Tour Step 3 |
+| 4 | **Settings** | "Adjust how Scanium works" | Tour Step 4 |
 
-***REMOVED******REMOVED******REMOVED*** Expected Anchors
+***REMOVED******REMOVED******REMOVED*** Implementation Status
 
-```kotlin
-const val ANCHOR_SHUTTER = "camera_ui_shutter"
-const val ANCHOR_FLIP = "camera_ui_flip"
-const val ANCHOR_ITEMS = "camera_ui_items"
-const val ANCHOR_SETTINGS = "camera_ui_settings"
-```
-
-***REMOVED******REMOVED******REMOVED*** Behavior
-
-- **Deterministic**: User must tap "Next" button or tap highlighted element
-- **No auto-advance**: Unlike other FTUEs, stays on each step until explicit action
-- **Anchor validation**: Waits for all 4 anchors before starting
-- **Visual feedback**: Pulsating animation on highlighted button
-
-***REMOVED******REMOVED******REMOVED*** State Flow
-
-```
-IDLE → SHUTTER → FLIP_CAMERA → ITEM_LIST → SETTINGS → COMPLETED
-```
+- ViewModel and overlay code can be removed from codebase
+- All functionality now handled by `TourViewModel`
+- Anchor registration still used by Guided Tour
+- Replay functionality through Guided Tour replay
 
 ---
 
@@ -503,14 +449,14 @@ fun FtueOverlay(
 
 ***REMOVED******REMOVED******REMOVED*** ViewModels
 
-| File | FTUE | Lines | Complexity |
-|------|------|-------|------------|
-| `TourViewModel.kt` | Guided Tour | 314 | High (multi-screen orchestration) |
-| `CameraFtueViewModel.kt` | Camera FTUE | 290 | Medium (detection integration) |
-| `CameraUiFtueViewModel.kt` | Camera UI FTUE | 267 | Medium (anchor registry) |
-| `ItemsListFtueViewModel.kt` | Items List FTUE | 380 | Medium (gesture detection + nudge) |
-| `EditItemFtueViewModel.kt` | Edit Item FTUE | 249 | Low (simple field hints) |
-| `SettingsFtueViewModel.kt` | Settings FTUE | 227 | Low (minimal guidance) |
+| File | FTUE | Status | Complexity |
+|------|------|--------|------------|
+| `TourViewModel.kt` | Guided Tour | **Active** (includes camera UI steps) | Medium (simplified single-screen) |
+| `CameraFtueViewModel.kt` | Camera FTUE | **Disabled** | Medium (detection integration) |
+| `CameraUiFtueViewModel.kt` | Camera UI FTUE | **Removed** (to be deleted) | N/A |
+| `ItemsListFtueViewModel.kt` | Items List FTUE | **Active** | Medium (gesture detection + nudge) |
+| `EditItemFtueViewModel.kt` | Edit Item FTUE | **Active** | Low (simple field hints) |
+| `SettingsFtueViewModel.kt` | Settings FTUE | **Active** | Low (minimal guidance) |
 
 ***REMOVED******REMOVED******REMOVED*** Persistence
 
@@ -520,14 +466,14 @@ fun FtueOverlay(
 
 ***REMOVED******REMOVED******REMOVED*** UI Overlays
 
-| File | Purpose |
-|------|---------|
-| `TourOverlay.kt` | Guided tour overlay with spotlight |
-| `CameraFtueOverlay.kt` | Camera FTUE hints and animations |
-| `CameraUiFtueOverlay.kt` | Camera UI button tutorials |
-| `ItemsListFtueOverlay.kt` | Items list gesture hints |
-| `EditItemFtueOverlay.kt` | Edit item field hints |
-| `SettingsFtueOverlay.kt` | Settings hints |
+| File | Purpose | Status |
+|------|---------|--------|
+| `TourOverlay.kt` | Guided tour overlay with spotlight (includes camera UI) | **Active** |
+| `CameraFtueOverlay.kt` | Camera FTUE hints and animations | **Disabled** |
+| `CameraUiFtueOverlay.kt` | Camera UI button tutorials | **Removed** (to be deleted) |
+| `ItemsListFtueOverlay.kt` | Items list gesture hints | **Active** |
+| `EditItemFtueOverlay.kt` | Edit item field hints | **Active** |
+| `SettingsFtueOverlay.kt` | Settings hints | **Active** |
 
 ***REMOVED******REMOVED******REMOVED*** Support Files
 
@@ -611,6 +557,14 @@ fun FtueOverlay(
 - **Test dismissal:** Ensure early dismissal marks as completed
 
 ---
+
+***REMOVED******REMOVED*** Recent Changes
+
+**2026-01-21**: Streamlined FTUE system
+- Integrated Camera UI FTUE into Guided Tour (steps 1-4)
+- Disabled Camera FTUE (object detection hints)
+- Reduced onboarding complexity from 6 flows to 4 active flows
+- Simplified Guided Tour to single-screen experience
 
 ***REMOVED******REMOVED*** Future Enhancements
 
