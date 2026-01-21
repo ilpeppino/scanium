@@ -326,7 +326,17 @@
 
     <!-- FTUE Tour Steps -->
     <string name="ftue_tour_welcome_title">Benvenuto in Scanium!</string>
-    <string name="ftue_tour_welcome_desc">Facciamo un rapido tour per imparare a scansionare, modificare e condividere i tuoi articoli.</string>
+    <string name="ftue_tour_welcome_desc">Facciamo un rapido tour per imparare i controlli della fotocamera.</string>
+    <!-- Camera UI Tour Steps (Streamlined) -->
+    <string name="ftue_tour_camera_shutter_title">Pulsante otturatore</string>
+    <string name="ftue_tour_camera_shutter_desc">Tocca qui per acquisire un articolo.</string>
+    <string name="ftue_tour_camera_flip_title">Cambia fotocamera</string>
+    <string name="ftue_tour_camera_flip_desc">Passa tra fotocamera frontale e posteriore.</string>
+    <string name="ftue_tour_camera_items_title">Lista articoli</string>
+    <string name="ftue_tour_camera_items_desc">Visualizza e gestisci gli articoli scansionati.</string>
+    <string name="ftue_tour_camera_settings_title">Impostazioni</string>
+    <string name="ftue_tour_camera_settings_desc">Regola come funziona Scanium.</string>
+    <!-- Legacy Tour Steps (Deprecated - kept for backward compatibility) -->
     <string name="ftue_tour_take_photo_title">Acquisisci il tuo primo articolo</string>
     <string name="ftue_tour_take_photo_desc">Tocca il pulsante dell\'otturatore per scattare una foto del tuo primo articolo. Punta la fotocamera su qualsiasi oggetto che desideri catalogare.</string>
     <string name="ftue_tour_open_list_title">Visualizza i tuoi articoli</string>
