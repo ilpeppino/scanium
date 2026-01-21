@@ -35,3 +35,13 @@ sealed class HypothesisSelectionState {
         val thumbnailUri: Uri?
     ) : HypothesisSelectionState()
 }
+
+/**
+ * Data for showing the correction dialog.
+ */
+data class CorrectionDialogData(
+    val itemId: String,
+    val imageHash: String,
+    val predictedCategory: String?,
+    val predictedConfidence: Float?
+)

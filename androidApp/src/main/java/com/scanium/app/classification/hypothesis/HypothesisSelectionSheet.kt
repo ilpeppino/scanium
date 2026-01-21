@@ -47,9 +47,10 @@ import com.scanium.app.R
 fun HypothesisSelectionSheet(
     result: MultiHypothesisResult,
     itemId: String,
+    imageHash: String,
     thumbnailUri: Uri?,
     onHypothesisConfirmed: (ClassificationHypothesis) -> Unit,
-    onNoneOfThese: () -> Unit,
+    onNoneOfThese: (String, String?, Float?) -> Unit, // (imageHash, predictedCategory, confidence)
     onAddPhoto: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -92,7 +93,14 @@ fun HypothesisSelectionSheet(
 
             // "None of these" option
             OutlinedButton(
-                onClick = onNoneOfThese,
+                onClick = {
+                    val topHypothesis = result.hypotheses.firstOrNull()
+                    onNoneOfThese(
+                        imageHash,
+                        topHypothesis?.categoryName,
+                        topHypothesis?.confidence
+                    )
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.hypothesis_none_of_these))

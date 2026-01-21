@@ -14,6 +14,7 @@ import { googleAuthRoutes } from './modules/auth/google/routes.js';
 import { SessionCleanupJob } from './modules/auth/google/cleanup-job.js';
 import { accountRoutes } from './modules/account/routes.js';
 import { classifierRoutes } from './modules/classifier/routes.js';
+import { correctionRoutes } from './modules/classifier/correction/routes.js';
 import { assistantRoutes } from './modules/assistant/routes.js';
 import { visionInsightsRoutes } from './modules/vision/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
@@ -193,6 +194,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Cloud classification proxy
   await app.register(classifierRoutes, { prefix: '/v1', config });
+
+  // Classification corrections (Phase 3: Learning)
+  await app.register(correctionRoutes, { prefix: '/v1', config });
 
   // Assistant chat proxy
   await app.register(assistantRoutes, { prefix: '/v1', config });

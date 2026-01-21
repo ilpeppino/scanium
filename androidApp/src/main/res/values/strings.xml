@@ -1154,4 +1154,15 @@
     <string name="hypothesis_none_of_these">None of these</string>
     <string name="hypothesis_add_photo_to_refine">Add another photo to refine</string>
 
+    <!-- Correction Dialog -->
+    <string name="correction_dialog_title">Help me improve</string>
+    <string name="correction_dialog_explanation">What is this item? Your feedback helps make classifications more accurate.</string>
+    <string name="correction_dialog_category_label">Correct category</string>
+    <string name="correction_dialog_category_hint">e.g., Robot vacuum, Coffee maker</string>
+    <string name="correction_dialog_notes_label">Additional notes (optional)</string>
+    <string name="correction_dialog_notes_hint">Any details that might help…</string>
+    <string name="correction_dialog_predicted">We guessed: %1$s (%2$d%% confident)</string>
+    <string name="correction_dialog_submit">Submit</string>
+    <string name="correction_dialog_cancel">Cancel</string>
+
 </resources>

@@ -13,6 +13,7 @@ import com.scanium.app.items.classification.ItemClassificationCoordinator
 import com.scanium.app.items.listing.ListingStatusManager
 import com.scanium.app.items.overlay.OverlayTrackManager
 import com.scanium.app.classification.hypothesis.ClassificationHypothesis
+import com.scanium.app.classification.hypothesis.CorrectionDialogData
 import com.scanium.app.classification.hypothesis.HypothesisSelectionState
 import com.scanium.app.classification.hypothesis.MultiHypothesisResult
 import com.scanium.app.items.persistence.ScannedItemStore
@@ -184,6 +185,13 @@ class ItemsViewModel
             HypothesisSelectionState.Hidden
         )
         val hypothesisSelectionState: StateFlow<HypothesisSelectionState> = _hypothesisSelectionState
+
+        /** Correction dialog state for classification errors */
+        private val _showCorrectionDialog = MutableStateFlow(false)
+        val showCorrectionDialog: StateFlow<Boolean> = _showCorrectionDialog
+
+        private val _correctionDialogData = MutableStateFlow<CorrectionDialogData?>(null)
+        val correctionDialogData: StateFlow<CorrectionDialogData?> = _correctionDialogData
 
         /** Current ROI filter result for diagnostics */
         val lastRoiFilterResult get() = facade.lastRoiFilterResult
@@ -710,6 +718,68 @@ class ItemsViewModel
          */
         fun dismissHypothesisSelection() {
             _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
+        }
+
+        /**
+         * Show correction dialog when user taps "None of these".
+         */
+        fun showCorrectionDialog(
+            itemId: String,
+            imageHash: String,
+            predictedCategory: String?,
+            predictedConfidence: Float?
+        ) {
+            _correctionDialogData.value = CorrectionDialogData(
+                itemId = itemId,
+                imageHash = imageHash,
+                predictedCategory = predictedCategory,
+                predictedConfidence = predictedConfidence
+            )
+            _showCorrectionDialog.value = true
+        }
+
+        /**
+         * Submit a classification correction.
+         * Stores locally and syncs to backend.
+         */
+        fun submitCorrection(
+            itemId: String,
+            imageHash: String,
+            predictedCategory: String?,
+            predictedConfidence: Float?,
+            correctedCategory: String,
+            notes: String?
+        ) {
+            viewModelScope.launch(workerDispatcher) {
+                try {
+                    // TODO: Store correction locally in Room database
+                    // TODO: Sync to backend via /v1/corrections API
+
+                    Log.i(TAG, "Correction submitted for item $itemId: $correctedCategory")
+
+                    // Update the item with the corrected category
+                    facade.updateItemFields(
+                        itemId = itemId,
+                        labelText = correctedCategory
+                    )
+
+                    withContext(mainDispatcher) {
+                        _showCorrectionDialog.value = false
+                        _correctionDialogData.value = null
+                        _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to submit correction", e)
+                }
+            }
+        }
+
+        /**
+         * Dismiss correction dialog.
+         */
+        fun dismissCorrectionDialog() {
+            _showCorrectionDialog.value = false
+            _correctionDialogData.value = null
         }
     }
 
