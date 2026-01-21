@@ -262,6 +262,21 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         }
       }
 
+      let recentCorrections: import('./types.js').RecentCorrection[] | undefined;
+      if (payload.fields.recentCorrections) {
+        try {
+          const parsed = JSON.parse(payload.fields.recentCorrections);
+          if (Array.isArray(parsed)) {
+            recentCorrections = parsed;
+          } else {
+            throw new Error('invalid recentCorrections format');
+          }
+        } catch (error) {
+          request.log.warn({ correlationId, error }, 'Failed to parse recentCorrections');
+          // Don't fail the request, just ignore invalid corrections
+        }
+      }
+
       // SEC-004: Validate file size BEFORE reading into buffer to prevent memory exhaustion
       const buffer = await readFileWithSizeValidation(
         payload.file,
@@ -394,6 +409,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         fileName: payload.file.filename ?? 'upload',
         domainPackId,
         hints,
+        recentCorrections,
         enrichAttributes,
         traceContext,
       };

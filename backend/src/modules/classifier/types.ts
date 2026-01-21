@@ -10,6 +10,15 @@ export type VisionFeature =
 
 export type ClassificationHints = Record<string, unknown>;
 
+/** Recent correction for local learning overlay */
+export type RecentCorrection = {
+  originalCategoryId: string;
+  correctedCategoryId: string;
+  correctedCategoryName: string;
+  correctedAt: number; // Timestamp in ms
+  visualFingerprint?: string; // Simplified visual context (e.g., dominant colors, detected brands)
+};
+
 export type ClassificationRequest = {
   requestId: string;
   correlationId: string;
@@ -19,6 +28,8 @@ export type ClassificationRequest = {
   fileName: string;
   domainPackId: string;
   hints?: ClassificationHints;
+  /** Recent corrections for local learning overlay */
+  recentCorrections?: RecentCorrection[];
   /** Request attribute enrichment via VisionExtractor */
   enrichAttributes?: boolean;
   /** W3C Trace Context for distributed tracing */

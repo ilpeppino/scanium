@@ -67,12 +67,14 @@ class CloudClassifierApi(
      *
      * @param bitmap Image to classify
      * @param config API configuration
+     * @param recentCorrections Recent user corrections for local learning overlay (optional)
      * @param onAttempt Callback for each attempt (attempt number, error or null)
      * @return ApiResult with response or error
      */
     suspend fun classify(
         bitmap: Bitmap,
         config: CloudClassifierConfig,
+        recentCorrections: String? = null,
         onAttempt: (suspend (Int, ApiError?) -> Unit)? = null,
     ): ApiResult {
         if (!config.isConfigured) {
@@ -90,7 +92,7 @@ class CloudClassifierApi(
 
         while (attempt <= maxAttempts) {
             try {
-                val response = executeRequest(endpoint, imageBytes, config.apiKey, correlationId)
+                val response = executeRequest(endpoint, imageBytes, config.apiKey, correlationId, recentCorrections)
 
                 if (response is ApiResult.Success) {
                     onAttempt?.invoke(attempt, null)
@@ -157,6 +159,7 @@ class CloudClassifierApi(
         imageBytes: ByteArray,
         apiKey: String?,
         correlationId: String,
+        recentCorrections: String? = null,
     ): ApiResult {
         val requestBody =
             MultipartBody
@@ -167,6 +170,12 @@ class CloudClassifierApi(
                     filename = "item.jpg",
                     body = imageBytes.toRequestBody("image/jpeg".toMediaType()),
                 ).addFormDataPart("domainPackId", domainPackId)
+                .apply {
+                    // Add recent corrections for local learning overlay if available
+                    if (!recentCorrections.isNullOrBlank()) {
+                        addFormDataPart("recentCorrections", recentCorrections)
+                    }
+                }
                 .build()
 
         // Log API key status

@@ -86,17 +86,29 @@ export class OpenAIReasoningProvider implements ReasoningProvider {
   async generateHypotheses(
     perception: PerceptionContext,
     domainPack: DomainPack,
-    _maxHypotheses: number = 5
+    _maxHypotheses: number = 5,
+    recentCorrections?: import('../types.js').RecentCorrection[]
   ): Promise<ClassificationHypothesis[]> {
     const userPrompt = buildReasoningUserPrompt(perception, domainPack);
+
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ];
+
+    // Add correction history for local learning overlay
+    if (recentCorrections && recentCorrections.length > 0) {
+      const correctionContext = this.buildCorrectionContext(recentCorrections, domainPack);
+      messages.splice(1, 0, {
+        role: 'system',
+        content: correctionContext,
+      });
+    }
 
     try {
       const response = await this.client.chat.completions.create({
         model: this.model,
-        messages: [
-          { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-          { role: 'user', content: userPrompt },
-        ],
+        messages,
         response_format: { type: 'json_object' },
         max_tokens: this.maxTokens,
         temperature: 0.3, // Lower temperature for more consistent classification
@@ -148,6 +160,38 @@ export class OpenAIReasoningProvider implements ReasoningProvider {
   private lookupCategoryName(categoryId: string, domainPack: DomainPack): string {
     const category = domainPack.categories.find((c) => c.id === categoryId);
     return category?.label ?? categoryId;
+  }
+
+  /**
+   * Build correction context from recent user corrections.
+   * This helps the model learn from past mistakes locally.
+   */
+  private buildCorrectionContext(
+    corrections: import('../types.js').RecentCorrection[],
+    domainPack: DomainPack
+  ): string {
+    const recent = corrections.slice(0, 10); // Use only last 10 corrections
+    const lines: string[] = [
+      'LEARNING FROM RECENT USER CORRECTIONS:',
+      'The user has recently corrected these classifications. Use this to avoid repeating mistakes:',
+      '',
+    ];
+
+    for (const correction of recent) {
+      const originalLabel = domainPack.categories.find(
+        (c) => c.id === correction.originalCategoryId
+      )?.label;
+      lines.push(
+        `- Misclassified as "${originalLabel ?? correction.originalCategoryId}" → Corrected to "${correction.correctedCategoryName}"`
+      );
+    }
+
+    lines.push('');
+    lines.push(
+      'When you see similar items, strongly favor the corrected categories over the original misclassifications.'
+    );
+
+    return lines.join('\n');
   }
 
   /**

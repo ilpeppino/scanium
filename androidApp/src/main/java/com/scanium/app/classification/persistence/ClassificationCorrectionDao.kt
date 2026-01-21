@@ -30,4 +30,11 @@ interface ClassificationCorrectionDao {
 
     @Query("DELETE FROM classification_corrections WHERE correctedAt < :cutoffTimestamp")
     suspend fun deleteOlderThan(cutoffTimestamp: Long): Int
+
+    /**
+     * Get recent corrections for local learning overlay.
+     * Returns most recent N corrections ordered by timestamp descending.
+     */
+    @Query("SELECT * FROM classification_corrections ORDER BY correctedAt DESC LIMIT :limit")
+    suspend fun getRecentCorrections(limit: Int = 20): List<ClassificationCorrectionEntity>
 }

@@ -63,66 +63,83 @@ fun HypothesisSelectionSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 32.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header: "Most likely this is:"
-            Text(
-                text = stringResource(R.string.hypothesis_header),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            // TODO: Add thumbnail display when image loading library is available
-            // thumbnailUri?.let { uri ->
-            //     AsyncImage(...)
-            // }
-
-            HorizontalDivider()
-
-            // Top 3 hypotheses (cards with tap to confirm)
-            result.hypotheses.take(3).forEachIndexed { index, hypothesis ->
-                HypothesisCard(
-                    hypothesis = hypothesis,
-                    rank = index + 1,
-                    onClick = { onHypothesisConfirmed(hypothesis) }
-                )
-            }
-
-            // "None of these" option
-            OutlinedButton(
-                onClick = {
-                    val topHypothesis = result.hypotheses.firstOrNull()
-                    onNoneOfThese(
-                        imageHash,
-                        topHypothesis?.categoryName,
-                        topHypothesis?.confidence
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
+            // Scrollable content: header + hypotheses
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(stringResource(R.string.hypothesis_none_of_these))
+                // Header: "Most likely this is:"
+                Text(
+                    text = stringResource(R.string.hypothesis_header),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // TODO: Add thumbnail display when image loading library is available
+                // thumbnailUri?.let { uri ->
+                //     AsyncImage(...)
+                // }
+
+                HorizontalDivider()
+
+                // Top 3 hypotheses (cards with tap to confirm)
+                result.hypotheses.take(3).forEachIndexed { index, hypothesis ->
+                    HypothesisCard(
+                        hypothesis = hypothesis,
+                        rank = index + 1,
+                        onClick = { onHypothesisConfirmed(hypothesis) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // "Add another photo to refine" (conditional)
-            if (result.needsRefinement) {
-                Button(
-                    onClick = onAddPhoto,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+            // Fixed bottom section: Always visible "None of these" + optional refinement CTA
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // "None of these" option - ALWAYS VISIBLE
+                OutlinedButton(
+                    onClick = {
+                        val topHypothesis = result.hypotheses.firstOrNull()
+                        onNoneOfThese(
+                            imageHash,
+                            topHypothesis?.categoryName,
+                            topHypothesis?.confidence
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AddAPhoto,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.hypothesis_add_photo_to_refine))
+                    Text(stringResource(R.string.hypothesis_none_of_these))
+                }
+
+                // "Add another photo to refine" (conditional)
+                if (result.needsRefinement) {
+                    Button(
+                        onClick = onAddPhoto,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddAPhoto,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.hypothesis_add_photo_to_refine))
+                    }
                 }
             }
         }
@@ -157,17 +174,17 @@ private fun HypothesisCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Rank badge (1, 2, 3)
+                // Rank badge (1, 2, 3) - Neutral color to avoid "pre-selected" feeling
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     modifier = Modifier.size(24.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = "$rank",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
