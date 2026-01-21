@@ -455,6 +455,7 @@
     <string name="assistant_ai_assistant">AI Assistant</string>
     <string name="assistant_disabled_title">AI assistant is disabled</string>
     <string name="assistant_disabled_message">Enable it in Settings to generate marketplace-ready descriptions.</string>
+    <string name="assistant_disabled_error_message">AI assistant is disabled. Enable it in Settings to continue.</string>
     <string name="assistant_disabled_open_settings">Open settings</string>
 
     <!-- Items -->
