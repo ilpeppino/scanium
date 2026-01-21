@@ -239,6 +239,8 @@ export const configSchema = z.object({
       minLabelConfidence: z.coerce.number().min(0).max(1).default(0.5),
       /** Minimum logo confidence (0-1) */
       minLogoConfidence: z.coerce.number().min(0).max(1).default(0.5),
+      /** Daily quota per user for Vision API requests (default 50) */
+      dailyQuotaLimit: z.coerce.number().int().min(1).max(1000).default(50),
     })
     .default({}),
 
@@ -423,6 +425,7 @@ export function loadConfig(): Config {
       minOcrConfidence: process.env.VISION_MIN_OCR_CONFIDENCE,
       minLabelConfidence: process.env.VISION_MIN_LABEL_CONFIDENCE,
       minLogoConfidence: process.env.VISION_MIN_LOGO_CONFIDENCE,
+      dailyQuotaLimit: process.env.VISION_DAILY_QUOTA_LIMIT,
     },
     googleCredentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     pricing: {

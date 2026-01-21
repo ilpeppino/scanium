@@ -78,6 +78,11 @@ class ItemsStateManager(
     private val _similarityThreshold = MutableStateFlow(aggregationConfig.similarityThreshold)
     val similarityThreshold: StateFlow<Float> = _similarityThreshold.asStateFlow()
 
+    // Vision API quota exceeded event
+    data class QuotaExceededEvent(val quotaLimit: Int?, val resetTime: String?)
+    private val _quotaExceededEvent = MutableStateFlow<QuotaExceededEvent?>(null)
+    val quotaExceededEvent: StateFlow<QuotaExceededEvent?> = _quotaExceededEvent.asStateFlow()
+
     private var onStateChanged: (() -> Unit)? = null
 
     init {
@@ -765,6 +770,27 @@ class ItemsStateManager(
 
         persistItems(updatedItems)
         onStateChanged?.invoke()
+    }
+
+    /**
+     * Notify that the Vision API quota has been exceeded.
+     * This will trigger the UI to show a quota exceeded dialog.
+     *
+     * @param quotaLimit The daily quota limit (e.g., 50)
+     * @param resetTime The time when quota resets (e.g., "23:45")
+     */
+    fun notifyQuotaExceeded(
+        quotaLimit: Int?,
+        resetTime: String?,
+    ) {
+        _quotaExceededEvent.value = QuotaExceededEvent(quotaLimit, resetTime)
+    }
+
+    /**
+     * Clear the quota exceeded event after the dialog is dismissed.
+     */
+    fun clearQuotaExceededEvent() {
+        _quotaExceededEvent.value = null
     }
 }
 

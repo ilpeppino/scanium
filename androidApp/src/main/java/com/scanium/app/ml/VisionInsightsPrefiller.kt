@@ -189,10 +189,22 @@ class VisionInsightsPrefiller
                         }
 
                         cloudResult.onFailure { error ->
-                            if (!localApplied) {
-                                Log.w(TAG, "SCAN_ENRICH: Vision extraction failed for item $itemId: ${error.message}")
+                            // Check if this is a quota exceeded error
+                            if (error is VisionInsightsException && error.isQuotaExceeded) {
+                                Log.w(TAG, "SCAN_ENRICH: Quota exceeded - limit=${error.quotaLimit}, resetAt=${error.quotaResetAt}")
+                                // Notify UI about quota exceeded (callback will be added via function parameter)
+                                withContext(Dispatchers.Main) {
+                                    stateManager.notifyQuotaExceeded(
+                                        quotaLimit = error.quotaLimit,
+                                        resetTime = error.quotaResetAt
+                                    )
+                                }
                             } else {
-                                Log.i(TAG, "SCAN_ENRICH: Cloud failed but local results available for item $itemId")
+                                if (!localApplied) {
+                                    Log.w(TAG, "SCAN_ENRICH: Vision extraction failed for item $itemId: ${error.message}")
+                                } else {
+                                    Log.i(TAG, "SCAN_ENRICH: Cloud failed but local results available for item $itemId")
+                                }
                             }
                         }
 

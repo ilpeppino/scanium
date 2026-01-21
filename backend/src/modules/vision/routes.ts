@@ -49,6 +49,9 @@ import {
   recordRateLimitHit,
 } from '../../infra/observability/metrics.js';
 import { collectAttributeCandidates } from './attribute-resolver.js';
+import { requireAuth } from '../../infra/http/plugins/auth-middleware.js';
+import { VisionQuotaService } from './quota-service.js';
+import { prisma } from '../../infra/db/prisma.js';
 
 type RouteOpts = { config: Config };
 
@@ -113,6 +116,11 @@ export const visionInsightsRoutes: FastifyPluginAsync<RouteOpts> = async (
           minLogoConfidence: config.vision.minLogoConfidence,
         })
       : new MockVisionExtractor();
+
+  // Initialize Vision Quota Service
+  const quotaService = new VisionQuotaService(prisma, {
+    dailyLimit: config.vision?.dailyQuotaLimit ?? 50,
+  });
 
   const visionCache = new VisualFactsCache({
     ttlMs: config.vision.cacheTtlSeconds * 1000,
@@ -182,6 +190,51 @@ export const visionInsightsRoutes: FastifyPluginAsync<RouteOpts> = async (
           correlationId,
         },
       } as VisionInsightsErrorResponse);
+    }
+
+    // User authentication required for quota tracking
+    let userId: string;
+    try {
+      userId = requireAuth(request);
+    } catch (error) {
+      return reply.status(401).send({
+        success: false,
+        error: {
+          code: 'AUTH_REQUIRED',
+          message: 'User authentication required for Vision API access',
+          correlationId,
+        },
+      } as VisionInsightsErrorResponse);
+    }
+
+    // Check user's daily quota
+    const quotaCheck = await quotaService.checkQuota(userId);
+    if (!quotaCheck.allowed) {
+      request.log.warn(
+        {
+          correlationId,
+          userId,
+          currentCount: quotaCheck.currentCount,
+          limit: quotaCheck.limit,
+        },
+        'Vision API quota exceeded'
+      );
+
+      const resetAtSeconds = Math.ceil((quotaCheck.resetAt.getTime() - Date.now()) / 1000);
+      return reply
+        .status(429)
+        .header('X-RateLimit-Limit', String(quotaCheck.limit))
+        .header('X-RateLimit-Remaining', '0')
+        .header('X-RateLimit-Reset', String(Math.floor(quotaCheck.resetAt.getTime() / 1000)))
+        .header('Retry-After', String(resetAtSeconds))
+        .send({
+          success: false,
+          error: {
+            code: 'QUOTA_EXCEEDED',
+            message: `Daily quota limit of ${quotaCheck.limit} requests exceeded. Resets at ${quotaCheck.resetAt.toISOString()}`,
+            correlationId,
+          },
+        } as VisionInsightsErrorResponse);
     }
 
     // Multipart validation
@@ -291,8 +344,18 @@ export const visionInsightsRoutes: FastifyPluginAsync<RouteOpts> = async (
 
       const cachedFacts = visionCache.get(cacheKey);
       if (cachedFacts) {
+        // Increment quota even for cache hits (user made a request)
+        await quotaService.incrementQuota(userId);
+
         request.log.info(
-          { correlationId, itemId, cacheHit: true },
+          {
+            correlationId,
+            itemId,
+            userId,
+            cacheHit: true,
+            quotaUsed: quotaCheck.currentCount + 1,
+            quotaLimit: quotaCheck.limit,
+          },
           'Vision insights cache hit'
         );
 
@@ -303,6 +366,13 @@ export const visionInsightsRoutes: FastifyPluginAsync<RouteOpts> = async (
           config.vision.provider,
           true
         );
+
+        // Add quota headers to response
+        reply
+          .header('X-RateLimit-Limit', String(quotaCheck.limit))
+          .header('X-RateLimit-Remaining', String(quotaCheck.limit - quotaCheck.currentCount - 1))
+          .header('X-RateLimit-Reset', String(Math.floor(quotaCheck.resetAt.getTime() / 1000)));
+
         return reply.status(200).send(response);
       }
 
@@ -358,6 +428,9 @@ export const visionInsightsRoutes: FastifyPluginAsync<RouteOpts> = async (
       // Cache the result
       visionCache.set(cacheKey, extractionResult.facts);
 
+      // Increment user's quota (after successful extraction)
+      await quotaService.incrementQuota(userId);
+
       // Record metrics
       const features: string[] = [];
       if (config.vision.enableOcr) features.push('ocr');
@@ -370,7 +443,10 @@ export const visionInsightsRoutes: FastifyPluginAsync<RouteOpts> = async (
         {
           correlationId,
           itemId,
+          userId,
           latencyMs,
+          quotaUsed: quotaCheck.currentCount + 1,
+          quotaLimit: quotaCheck.limit,
           ocrSnippets: extractionResult.facts.ocrSnippets.length,
           logos: extractionResult.facts.logoHints?.length ?? 0,
           colors: extractionResult.facts.dominantColors.length,
@@ -386,6 +462,13 @@ export const visionInsightsRoutes: FastifyPluginAsync<RouteOpts> = async (
         config.vision.provider,
         false
       );
+
+      // Add quota headers to response
+      reply
+        .header('X-RateLimit-Limit', String(quotaCheck.limit))
+        .header('X-RateLimit-Remaining', String(quotaCheck.limit - quotaCheck.currentCount - 1))
+        .header('X-RateLimit-Reset', String(Math.floor(quotaCheck.resetAt.getTime() / 1000)));
+
       return reply.status(200).send(response);
     } catch (error) {
       // Handle file size errors

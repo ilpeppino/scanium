@@ -144,6 +144,17 @@ fun ItemsListScreen(
     // Effective value: only allow if both feature flag AND user preference are true
     val allowScreenshots = FeatureFlags.allowScreenshots && userAllowScreenshots
 
+    // Quota exceeded dialog state
+    val quotaExceededEvent by itemsViewModel.quotaExceededEvent.collectAsState()
+    var showQuotaDialog by remember { mutableStateOf(false) }
+
+    // Show dialog when quota exceeded event is emitted
+    LaunchedEffect(quotaExceededEvent) {
+        if (quotaExceededEvent != null) {
+            showQuotaDialog = true
+        }
+    }
+
     DisposableEffect(allowScreenshots) {
         val window = (context as? Activity)?.window
         if (!allowScreenshots) {
@@ -864,6 +875,21 @@ fun ItemsListScreen(
                             snackbarHostState.showSnackbar(context.getString(R.string.items_share_text_failed))
                         }
                     }
+            },
+        )
+    }
+
+    // Quota exceeded dialog
+    if (showQuotaDialog && quotaExceededEvent != null) {
+        com.scanium.app.ui.common.QuotaExceededDialog(
+            quotaLimit = quotaExceededEvent.quotaLimit,
+            resetTime = quotaExceededEvent.resetTime,
+            onDismiss = {
+                showQuotaDialog = false
+                itemsViewModel.clearQuotaExceededEvent()
+            },
+            onDonationClicked = { amount ->
+                // Optional: Add analytics here
             },
         )
     }

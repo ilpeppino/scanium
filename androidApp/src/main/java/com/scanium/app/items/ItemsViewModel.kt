@@ -156,6 +156,9 @@ class ItemsViewModel
         /** Alerts for persistence errors */
         val persistenceAlerts: SharedFlow<PersistenceAlert> get() = facade.persistenceAlerts
 
+        /** Vision API quota exceeded event */
+        val quotaExceededEvent: StateFlow<ItemsStateManager.QuotaExceededEvent?> get() = facade.quotaExceededEvent
+
         /** UI events (e.g., navigation triggers) */
         val uiEvents: SharedFlow<ItemsUiEvent> get() = facade.uiEvents
 
@@ -606,6 +609,11 @@ class ItemsViewModel
          * Check if async telemetry is currently enabled.
          */
         fun isTelemetryEnabled(): Boolean = facade.isTelemetryEnabled()
+
+        /**
+         * Clear the quota exceeded event (called when dialog is dismissed).
+         */
+        fun clearQuotaExceededEvent() = facade.clearQuotaExceededEvent()
 
         // ==================== Lifecycle ====================
 

@@ -159,6 +159,9 @@ class ItemsUiFacade(
     /** Current similarity threshold for aggregation */
     val similarityThreshold: StateFlow<Float> = stateManager.similarityThreshold
 
+    /** Vision API quota exceeded event */
+    val quotaExceededEvent: StateFlow<ItemsStateManager.QuotaExceededEvent?> = stateManager.quotaExceededEvent
+
     /** Latest in-memory export payload */
     private val _exportPayload = MutableStateFlow<ExportPayload?>(null)
     val exportPayload: StateFlow<ExportPayload?> = _exportPayload
@@ -324,6 +327,13 @@ class ItemsUiFacade(
         classificationCoordinator.reset()
         overlayManager.clear()
         stateManager.clearAllItems()
+    }
+
+    /**
+     * Clear the quota exceeded event (called when dialog is dismissed).
+     */
+    fun clearQuotaExceededEvent() {
+        stateManager.clearQuotaExceededEvent()
     }
 
     /**

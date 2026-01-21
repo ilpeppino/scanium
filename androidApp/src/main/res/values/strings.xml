@@ -1141,4 +1141,11 @@
     <string name="action_copy_description">Copy Description</string>
     <string name="action_copy_price">Copy Price</string>
 
+    <!-- Quota Exceeded Dialog -->
+    <string name="quota_exceeded_title">Daily Limit Reached</string>
+    <string name="quota_exceeded_message">You\'ve reached your daily limit of %1$d Vision API requests. This helps keep running costs sustainable.</string>
+    <string name="quota_exceeded_message_generic">You\'ve reached your daily limit for Vision API requests. This helps keep running costs sustainable.</string>
+    <string name="quota_exceeded_reset">Your quota will reset at %1$s (midnight UTC).</string>
+    <string name="quota_exceeded_support">Love Scanium? Support the app to keep it running smoothly!</string>
+
 </resources>
