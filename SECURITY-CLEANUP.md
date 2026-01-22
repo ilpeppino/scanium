@@ -387,7 +387,7 @@ For each rotated secret:
 ```bash
 # Search for specific secrets
 git log --all -S'REDACTED_POSTGRES_PASSWORD' --oneline
-git log --all -S'Cr3UnvP9ubNBxSiKaJA7LWAaKEwl4WNdpVP' --oneline
+git log --all -S'REDACTED_SCANIUM_API_KEY' --oneline
 
 # Should return nothing or only REDACTED commits
 ```
