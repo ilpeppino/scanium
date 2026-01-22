@@ -21,10 +21,13 @@ import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.DocumentTextRecognitionClient
 import com.scanium.app.ml.ObjectDetectorClient
 import com.scanium.app.perf.PerformanceMonitor
+import com.scanium.android.platform.adapters.toRect
+import com.scanium.shared.core.models.model.NormalizedRect
 import com.scanium.core.models.scanning.GuidanceState
 import com.scanium.core.models.scanning.ScanGuidanceState
 import com.scanium.core.tracking.CandidateInfo
 import com.scanium.core.tracking.ScanGuidanceManager
+import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.telemetry.facade.Telemetry
 
 internal class CameraFrameAnalyzer(
@@ -148,6 +151,80 @@ internal class CameraFrameAnalyzer(
 
         if (current != null && timestampMs - current.lastSeenMs > DOCUMENT_CANDIDATE_TTL_MS) {
             updateDocumentCandidateState(null)
+        }
+    }
+
+    /**
+     * Creates a thumbnail from a bitmap using exact bounding box coordinates without tightening.
+     *
+     * This function implements the WYSIWYG principle: thumbnails match exactly what the user
+     * sees in camera overlay bounding boxes. Unlike ML Kit's cropThumbnail which applies a
+     * 4% tightening ratio, this preserves the exact bbox shown to the user.
+     *
+     * @param sourceBitmap Source bitmap (full frame)
+     * @param normalizedBbox Bounding box in normalized coordinates (0-1)
+     * @param rotationDegrees Rotation to apply for display orientation
+     * @return ImageRef.Bytes containing the cropped and rotated thumbnail, or null on error
+     */
+    private fun createWysiwygThumbnail(
+        sourceBitmap: Bitmap,
+        normalizedBbox: NormalizedRect,
+        rotationDegrees: Int = 0,
+    ): ImageRef.Bytes? {
+        return try {
+            // Convert normalized bbox to pixel coordinates
+            val pixelBbox = normalizedBbox.toRect(sourceBitmap.width, sourceBitmap.height)
+
+            // Ensure bounding box is within bitmap bounds
+            val left = pixelBbox.left.coerceIn(0, sourceBitmap.width - 1)
+            val top = pixelBbox.top.coerceIn(0, sourceBitmap.height - 1)
+            val width = pixelBbox.width().coerceIn(1, sourceBitmap.width - left)
+            val height = pixelBbox.height().coerceIn(1, sourceBitmap.height - top)
+
+            // Limit thumbnail size to save memory (match ML Kit's MAX_THUMBNAIL_DIMENSION_PX)
+            val maxDimension = 512
+            val scale = minOf(1.0f, maxDimension.toFloat() / maxOf(width, height))
+            val thumbnailWidth = (width * scale).toInt().coerceAtLeast(1)
+            val thumbnailHeight = (height * scale).toInt().coerceAtLeast(1)
+
+            // Create thumbnail with scaled dimensions
+            val croppedBitmap = Bitmap.createBitmap(thumbnailWidth, thumbnailHeight, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(croppedBitmap)
+            val srcRect = android.graphics.Rect(left, top, left + width, top + height)
+            val dstRect = android.graphics.Rect(0, 0, thumbnailWidth, thumbnailHeight)
+            canvas.drawBitmap(sourceBitmap, srcRect, dstRect, null)
+
+            // Rotate thumbnail to match display orientation
+            val rotatedBitmap = if (rotationDegrees != 0) {
+                val matrix = android.graphics.Matrix()
+                matrix.postRotate(rotationDegrees.toFloat())
+                val rotated = Bitmap.createBitmap(
+                    croppedBitmap,
+                    0,
+                    0,
+                    croppedBitmap.width,
+                    croppedBitmap.height,
+                    matrix,
+                    true
+                )
+                croppedBitmap.recycle() // Free the unrotated bitmap
+                rotated
+            } else {
+                croppedBitmap
+            }
+
+            // Convert to ImageRef.Bytes
+            val imageRef = rotatedBitmap.toImageRefJpeg(quality = 85)
+            rotatedBitmap.recycle() // Clean up after conversion
+
+            Log.d(
+                TAG,
+                "Created WYSIWYG thumbnail: ${imageRef.width}x${imageRef.height} (rotation: $rotationDegrees°)"
+            )
+            imageRef
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create WYSIWYG thumbnail", e)
+            null
         }
     }
 
@@ -287,16 +364,35 @@ internal class CameraFrameAnalyzer(
                 )
             Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
 
-            // Capture bitmap once for all detections (for cloud classification)
+            // Capture bitmap once for all detections (for cloud classification and WYSIWYG thumbnails)
             val fullFrameBitmap = lazyBitmapProvider()
 
-            // CRITICAL: Make a copy of the bitmap for cloud classification
-            // The original bitmap will be recycled at the end of processImageProxy,
-            // but cloud classification happens async and needs the bitmap later
-            val bitmapCopy = fullFrameBitmap?.copy(fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888, false)
+            // Generate unique capture ID - all detections from this frame share the same ID
+            // This prevents aggregation from merging multiple objects from the same capture
+            val captureId = java.util.UUID.randomUUID().toString()
 
             // Convert ScannedItems to RawDetections for pending state
             val rawDetections = response.scannedItems.map { item ->
+                // CRITICAL: Each detection needs its OWN copy of the bitmap
+                // If multiple detections share the same bitmap reference, deleting one item
+                // will recycle the bitmap that other pending detections are still using,
+                // causing thumbnail corruption. Create a separate copy for each detection.
+                val bitmapCopy = fullFrameBitmap?.copy(
+                    fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888,
+                    false
+                )
+
+                // WYSIWYG FIX: Create thumbnail from exact bounding box (no tightening)
+                // This ensures thumbnail matches what user sees in camera overlay
+                val bbox = item.boundingBox
+                val wysiwygThumbnail = if (fullFrameBitmap != null && bbox != null) {
+                    createWysiwygThumbnail(
+                        sourceBitmap = fullFrameBitmap,
+                        normalizedBbox = bbox,
+                        rotationDegrees = inputImage.rotationDegrees
+                    )
+                } else null
+
                 RawDetection(
                     boundingBox = item.boundingBox,
                     confidence = item.confidence,
@@ -305,8 +401,9 @@ internal class CameraFrameAnalyzer(
                     trackingId = item.id, // Use item ID as tracking ID
                     frameSharpness = 1.0f, // TODO: Get actual sharpness if available
                     captureType = CaptureType.SINGLE_SHOT,
-                    thumbnailRef = item.thumbnailRef, // Use ML Kit's cropped+rotated thumbnail
-                    fullFrameBitmap = bitmapCopy
+                    thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
+                    fullFrameBitmap = bitmapCopy,
+                    captureId = captureId
                 )
             }
 
@@ -439,11 +536,6 @@ internal class CameraFrameAnalyzer(
         val canAddItems = guidanceState.canAddItem
         val isLocked = guidanceState.state == GuidanceState.LOCKED
 
-        // CRITICAL: Make a copy of the bitmap for cloud classification
-        // The original bitmap will be recycled at the end of processImageProxy,
-        // but cloud classification happens async and needs the bitmap later
-        val bitmapCopy = fullFrameBitmap?.copy(fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888, false)
-
         val detectionsToAdd =
             if (canAddItems && isLocked) {
                 val allConfirmedCandidates = objectTracker.getConfirmedCandidates()
@@ -451,6 +543,10 @@ internal class CameraFrameAnalyzer(
                     TAG,
                     ">>> LOCKED state: checking ${allConfirmedCandidates.size} total confirmed candidates (${confirmedCandidates.size} newly confirmed)",
                 )
+
+                // Generate unique capture ID for this lock event - all candidates share the same ID
+                // This prevents aggregation from merging multiple objects from the same lock
+                val captureId = java.util.UUID.randomUUID().toString()
 
                 allConfirmedCandidates.mapNotNull { candidate ->
                     val bbox = candidate.boundingBoxNorm ?: return@mapNotNull null
@@ -468,6 +564,26 @@ internal class CameraFrameAnalyzer(
                         }
                         null
                     } else {
+                        // CRITICAL: Each detection needs its OWN copy of the bitmap
+                        // If multiple detections share the same bitmap reference, deleting one item
+                        // will recycle the bitmap that other pending detections are still using,
+                        // causing thumbnail corruption. Create a separate copy for each detection.
+                        val bitmapCopy = fullFrameBitmap?.copy(
+                            fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888,
+                            false
+                        )
+
+                        // WYSIWYG FIX: Create thumbnail from exact bounding box (no tightening)
+                        // This ensures thumbnail matches what user sees in camera overlay
+                        val candidateBbox = candidate.boundingBox
+                        val wysiwygThumbnail = if (fullFrameBitmap != null && candidateBbox != null) {
+                            createWysiwygThumbnail(
+                                sourceBitmap = fullFrameBitmap,
+                                normalizedBbox = candidateBbox,
+                                rotationDegrees = inputImage.rotationDegrees
+                            )
+                        } else null
+
                         // Create raw detection instead of ScannedItem
                         // Item will be created later after user confirms hypothesis
                         val rawDetection = RawDetection(
@@ -478,8 +594,9 @@ internal class CameraFrameAnalyzer(
                             trackingId = candidate.internalId,
                             frameSharpness = frameSharpness,
                             captureType = CaptureType.TRACKING,
-                            thumbnailRef = candidate.thumbnail, // Use tracker's cropped+rotated thumbnail
-                            fullFrameBitmap = bitmapCopy
+                            thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
+                            fullFrameBitmap = bitmapCopy,
+                            captureId = captureId
                         )
                         objectTracker.markCandidateConsumed(candidate.internalId)
                         Log.i(TAG, ">>> Created RawDetection from candidate ${candidate.internalId}, marked as consumed")
