@@ -499,6 +499,10 @@ export function loadConfig(): Config {
     throw new Error('Invalid configuration - check environment variables');
   }
 
+  console.log('[Config] Reasoning provider:', result.data.reasoning.provider);
+  console.log('[Config] Reasoning model:', result.data.reasoning.model);
+  console.log('[Config] OpenAI key present:', !!result.data.assistant.openaiApiKey);
+
   return result.data;
 }
 
