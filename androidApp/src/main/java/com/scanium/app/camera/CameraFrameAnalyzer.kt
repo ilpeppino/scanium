@@ -290,9 +290,6 @@ internal class CameraFrameAnalyzer(
             // Capture bitmap once for all detections (for cloud classification)
             val fullFrameBitmap = lazyBitmapProvider()
 
-            // Create thumbnail from bitmap if available
-            val thumbnailRef = fullFrameBitmap?.toImageRefJpeg(quality = 85)
-
             // CRITICAL: Make a copy of the bitmap for cloud classification
             // The original bitmap will be recycled at the end of processImageProxy,
             // but cloud classification happens async and needs the bitmap later
@@ -308,7 +305,7 @@ internal class CameraFrameAnalyzer(
                     trackingId = item.id, // Use item ID as tracking ID
                     frameSharpness = 1.0f, // TODO: Get actual sharpness if available
                     captureType = CaptureType.SINGLE_SHOT,
-                    thumbnailRef = thumbnailRef,
+                    thumbnailRef = item.thumbnailRef, // Use ML Kit's cropped+rotated thumbnail
                     fullFrameBitmap = bitmapCopy
                 )
             }
@@ -442,9 +439,6 @@ internal class CameraFrameAnalyzer(
         val canAddItems = guidanceState.canAddItem
         val isLocked = guidanceState.state == GuidanceState.LOCKED
 
-        // Create thumbnail from bitmap if available (shared by all detections in this frame)
-        val thumbnailRef = fullFrameBitmap?.toImageRefJpeg(quality = 85)
-
         // CRITICAL: Make a copy of the bitmap for cloud classification
         // The original bitmap will be recycled at the end of processImageProxy,
         // but cloud classification happens async and needs the bitmap later
@@ -484,7 +478,7 @@ internal class CameraFrameAnalyzer(
                             trackingId = candidate.internalId,
                             frameSharpness = frameSharpness,
                             captureType = CaptureType.TRACKING,
-                            thumbnailRef = thumbnailRef,
+                            thumbnailRef = candidate.thumbnail, // Use tracker's cropped+rotated thumbnail
                             fullFrameBitmap = bitmapCopy
                         )
                         objectTracker.markCandidateConsumed(candidate.internalId)
