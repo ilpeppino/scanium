@@ -28,6 +28,8 @@ import com.google.mlkit.vision.common.InputImage
 import com.scanium.app.BuildConfig
 import com.scanium.app.ObjectTracker
 import com.scanium.app.ScannedItem
+import com.scanium.app.items.CaptureType
+import com.scanium.app.items.RawDetection
 import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DetectionRouterConfig
@@ -650,7 +652,7 @@ class CameraXManager(
      */
     fun captureSingleFrame(
         scanMode: ScanMode,
-        onResult: (List<ScannedItem>) -> Unit,
+        onResult: (List<RawDetection>) -> Unit,
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
         onDetectionEvent: (DetectionEvent) -> Unit = {},
         onFrameSize: (Size) -> Unit = {},
@@ -730,7 +732,7 @@ class CameraXManager(
      */
     fun startScanning(
         scanMode: ScanMode,
-        onResult: (List<ScannedItem>) -> Unit,
+        onResult: (List<RawDetection>) -> Unit,
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
         onDetectionEvent: (DetectionEvent) -> Unit = {},
         onFrameSize: (Size) -> Unit = {},

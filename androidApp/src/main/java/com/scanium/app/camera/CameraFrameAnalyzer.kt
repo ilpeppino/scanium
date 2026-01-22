@@ -8,6 +8,8 @@ import com.google.mlkit.vision.common.InputImage
 import com.scanium.app.BuildConfig
 import com.scanium.app.ObjectTracker
 import com.scanium.app.ScannedItem
+import com.scanium.app.items.CaptureType
+import com.scanium.app.items.RawDetection
 import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DocumentCandidate
@@ -155,7 +157,7 @@ internal class CameraFrameAnalyzer(
         edgeInsetRatio: Float,
         useStreamMode: Boolean = false,
         onDetectionEvent: (DetectionEvent) -> Unit = {},
-    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+    ): Pair<List<RawDetection>, List<DetectionResult>> {
         var cachedBitmap: Bitmap? = null
         val frameStartTime = SystemClock.elapsedRealtime()
         val span =
@@ -172,7 +174,7 @@ internal class CameraFrameAnalyzer(
             val mediaImage =
                 imageProxy.image ?: run {
                     Log.e(TAG, "processImageProxy: mediaImage is null")
-                    return Pair(emptyList(), emptyList())
+                    return Pair(emptyList<RawDetection>(), emptyList<DetectionResult>())
                 }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
@@ -227,7 +229,7 @@ internal class CameraFrameAnalyzer(
         } catch (e: Exception) {
             Log.e(TAG, ">>> processImageProxy: ERROR", e)
             span?.recordError(e.message ?: "Unknown error")
-            Pair(emptyList(), emptyList())
+            Pair(emptyList<RawDetection>(), emptyList<DetectionResult>())
         } finally {
             val frameDuration = SystemClock.elapsedRealtime() - frameStartTime
             PerformanceMonitor.recordTimer(
@@ -254,10 +256,10 @@ internal class CameraFrameAnalyzer(
         onDetectionEvent: (DetectionEvent) -> Unit,
         edgeInsetRatio: Float,
         isScanning: Boolean,
-    ): Pair<List<ScannedItem>, List<DetectionResult>> =
+    ): Pair<List<RawDetection>, List<DetectionResult>> =
         if (isScanning) {
             Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (isScanning=$isScanning)")
-            val (items, detections) =
+            val (rawDetections, detections) =
                 processObjectDetectionWithTracking(
                     inputImage = inputImage,
                     lazyBitmapProvider = lazyBitmapProvider,
@@ -266,11 +268,12 @@ internal class CameraFrameAnalyzer(
                 )
             Log.i(
                 TAG,
-                ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results",
+                ">>> processImageProxy: Tracking path returned ${rawDetections.size} detections and ${detections.size} detection results",
             )
-            val event = detectionRouter.processObjectResults(items, detections)
+            // Detection router now gets empty list since items don't exist yet (pending state)
+            val event = detectionRouter.processObjectResults(emptyList(), detections)
             onDetectionEvent(event)
-            Pair(items, detections)
+            Pair(rawDetections, detections)
         } else {
             Log.i(TAG, ">>> processImageProxy: Taking SINGLE-SHOT PATH (isScanning=$isScanning)")
             val response =
@@ -282,24 +285,39 @@ internal class CameraFrameAnalyzer(
                     edgeInsetRatio = edgeInsetRatio,
                 )
             Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
-            val event =
-                detectionRouter.processObjectResults(
-                    response.scannedItems,
-                    response.detectionResults,
+
+            // Capture bitmap once for all detections (for cloud classification)
+            val fullFrameBitmap = lazyBitmapProvider()
+
+            // Convert ScannedItems to RawDetections for pending state
+            val rawDetections = response.scannedItems.map { item ->
+                RawDetection(
+                    boundingBox = item.boundingBox,
+                    confidence = item.confidence,
+                    onDeviceLabel = item.labelText ?: "Unknown",
+                    onDeviceCategory = item.category,
+                    trackingId = item.id, // Use item ID as tracking ID
+                    frameSharpness = 1.0f, // TODO: Get actual sharpness if available
+                    captureType = CaptureType.SINGLE_SHOT,
+                    fullFrameBitmap = fullFrameBitmap
                 )
+            }
+
+            // Detection router gets empty list since items don't exist yet (pending state)
+            val event = detectionRouter.processObjectResults(emptyList(), response.detectionResults)
             onDetectionEvent(event)
-            Pair(response.scannedItems, response.detectionResults)
+            Pair(rawDetections, response.detectionResults)
         }
 
     private suspend fun processBarcodeMode(
         inputImage: InputImage,
         lazyBitmapProvider: () -> Bitmap?,
         onDetectionEvent: (DetectionEvent) -> Unit,
-    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+    ): Pair<List<RawDetection>, List<DetectionResult>> {
         val canRun = detectionRouter.tryInvokeBarcodeDetection()
         return if (!canRun) {
             Log.d(TAG, "[BARCODE] Throttled - skipping frame")
-            Pair(emptyList(), emptyList())
+            Pair(emptyList<RawDetection>(), emptyList<DetectionResult>())
         } else {
             val rawItems =
                 barcodeDetector.scanBarcodes(
@@ -307,14 +325,10 @@ internal class CameraFrameAnalyzer(
                     sourceBitmap = lazyBitmapProvider,
                 )
 
-            if (rawItems.isEmpty()) {
-                Pair(emptyList(), emptyList())
-            } else {
-                val (event, uniqueItems) = detectionRouter.processBarcodeResults(rawItems)
-                onDetectionEvent(event)
-                Log.i(TAG, "[BARCODE] Detected ${rawItems.size} barcodes, ${uniqueItems.size} unique after dedupe")
-                Pair(uniqueItems, emptyList())
-            }
+            // TODO Phase 1: Barcode mode returns empty for now
+            // Will be updated in future phases to create RawDetections
+            Log.i(TAG, "[BARCODE] Detected ${rawItems.size} barcodes (Phase 1: not creating items yet)")
+            Pair(emptyList<RawDetection>(), emptyList<DetectionResult>())
         }
     }
 
@@ -322,15 +336,11 @@ internal class CameraFrameAnalyzer(
         inputImage: InputImage,
         lazyBitmapProvider: () -> Bitmap?,
         onDetectionEvent: (DetectionEvent) -> Unit,
-    ): Pair<List<ScannedItem>, List<DetectionResult>> {
-        val items =
-            textRecognizer.recognizeText(
-                image = inputImage,
-                sourceBitmap = lazyBitmapProvider,
-            )
-        val event = detectionRouter.processDocumentResults(items)
-        onDetectionEvent(event)
-        return Pair(items, emptyList())
+    ): Pair<List<RawDetection>, List<DetectionResult>> {
+        // TODO Phase 1: Document text mode returns empty for now
+        // Will be updated in future phases to create RawDetections
+        Log.i(TAG, "[DOCUMENT] Document text mode (Phase 1: not creating items yet)")
+        return Pair(emptyList<RawDetection>(), emptyList<DetectionResult>())
     }
 
     private suspend fun processObjectDetectionWithTracking(
@@ -339,7 +349,7 @@ internal class CameraFrameAnalyzer(
         cropRect: android.graphics.Rect,
         edgeInsetRatio: Float,
         analyzerLatencyMs: Long = 0,
-    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+    ): Pair<List<RawDetection>, List<DetectionResult>> {
         Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
 
         val trackingResponse =
@@ -356,8 +366,10 @@ internal class CameraFrameAnalyzer(
             ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass",
         )
 
+        // Capture bitmap for sharpness calculation and cloud classification
+        val fullFrameBitmap = lazyBitmapProvider()
         val frameSharpness =
-            lazyBitmapProvider()?.let { bitmap ->
+            fullFrameBitmap?.let { bitmap ->
                 SharpnessCalculator.calculateSharpness(bitmap)
             } ?: 0f
 
@@ -420,7 +432,7 @@ internal class CameraFrameAnalyzer(
         val canAddItems = guidanceState.canAddItem
         val isLocked = guidanceState.state == GuidanceState.LOCKED
 
-        val itemsToAdd =
+        val detectionsToAdd =
             if (canAddItems && isLocked) {
                 val allConfirmedCandidates = objectTracker.getConfirmedCandidates()
                 Log.i(
@@ -444,10 +456,21 @@ internal class CameraFrameAnalyzer(
                         }
                         null
                     } else {
-                        val item = objectDetector.candidateToScannedItem(candidate)
+                        // Create raw detection instead of ScannedItem
+                        // Item will be created later after user confirms hypothesis
+                        val rawDetection = RawDetection(
+                            boundingBox = candidate.boundingBox,
+                            confidence = candidate.maxConfidence,
+                            onDeviceLabel = candidate.labelText.takeIf { it.isNotBlank() } ?: "Unknown",
+                            onDeviceCategory = candidate.category,
+                            trackingId = candidate.internalId,
+                            frameSharpness = frameSharpness,
+                            captureType = CaptureType.TRACKING,
+                            fullFrameBitmap = fullFrameBitmap
+                        )
                         objectTracker.markCandidateConsumed(candidate.internalId)
-                        Log.i(TAG, ">>> Added item from candidate ${candidate.internalId}, marked as consumed")
-                        item
+                        Log.i(TAG, ">>> Created RawDetection from candidate ${candidate.internalId}, marked as consumed")
+                        rawDetection
                     }
                 }
             } else {
@@ -461,15 +484,15 @@ internal class CameraFrameAnalyzer(
                 emptyList()
             }
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${itemsToAdd.size} ScannedItems (gated by LOCKED=$isLocked)")
-        itemsToAdd.forEachIndexed { index, item ->
-            Log.i(TAG, "    ScannedItem $index: id=${item.id}, category=${item.category}, priceRange=${item.priceRange}")
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${detectionsToAdd.size} RawDetections (gated by LOCKED=$isLocked)")
+        detectionsToAdd.forEachIndexed { index, detection ->
+            Log.i(TAG, "    RawDetection $index: label=${detection.onDeviceLabel}, category=${detection.onDeviceCategory}, confidence=${detection.confidence}")
         }
 
         Log.i(
             TAG,
-            ">>> processObjectDetectionWithTracking: RETURNING ${itemsToAdd.size} items and ${trackingResponse.detectionResults.size} detection results",
+            ">>> processObjectDetectionWithTracking: RETURNING ${detectionsToAdd.size} detections and ${trackingResponse.detectionResults.size} detection results",
         )
-        return Pair(itemsToAdd, trackingResponse.detectionResults)
+        return Pair(detectionsToAdd, trackingResponse.detectionResults)
     }
 }

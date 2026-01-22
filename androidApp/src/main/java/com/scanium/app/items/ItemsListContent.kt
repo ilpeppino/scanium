@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.Card
@@ -76,6 +77,7 @@ import java.util.Locale
 @Composable
 internal fun ItemsListContent(
     items: List<ScannedItem>,
+    pendingDetectionCount: Int,
     state: ItemsListState,
     onItemClick: (ScannedItem) -> Unit,
     onItemLongPress: (ScannedItem) -> Unit,
@@ -110,6 +112,35 @@ internal fun ItemsListContent(
                         ),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    // Pending detection indicator (Phase 3)
+                    if (pendingDetectionCount > 0) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.HourglassEmpty,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Text(
+                                        text = "$pendingDetectionCount ${if (pendingDetectionCount == 1) "item" else "items"} awaiting confirmation",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     // Header: item count
                     item {
                         Text(

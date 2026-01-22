@@ -67,6 +67,7 @@ class CloudClassifierApi(
      *
      * @param bitmap Image to classify
      * @param config API configuration
+     * @param mode Classification mode ("single" or "multi-hypothesis")
      * @param recentCorrections Recent user corrections for local learning overlay (optional)
      * @param onAttempt Callback for each attempt (attempt number, error or null)
      * @return ApiResult with response or error
@@ -74,6 +75,7 @@ class CloudClassifierApi(
     suspend fun classify(
         bitmap: Bitmap,
         config: CloudClassifierConfig,
+        mode: String = "single",
         recentCorrections: String? = null,
         onAttempt: (suspend (Int, ApiError?) -> Unit)? = null,
     ): ApiResult {
@@ -81,11 +83,11 @@ class CloudClassifierApi(
             return ApiResult.ConfigError("Cloud classification disabled")
         }
 
-        val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify?enrichAttributes=true"
+        val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify?mode=$mode&enrichAttributes=true"
         val correlationId = CorrelationIds.currentClassificationSessionId()
         val imageBytes = bitmap.toJpegBytes()
 
-        Log.d(TAG, "Classifying endpoint=$endpoint domainPack=$domainPackId correlationId=$correlationId")
+        Log.d(TAG, "Classifying mode=$mode endpoint=$endpoint domainPack=$domainPackId correlationId=$correlationId")
 
         var attempt = 1
         var lastError: ApiError? = null
@@ -366,6 +368,7 @@ sealed class ApiError(
  */
 @Serializable
 data class CloudClassificationResponse(
+    // Single-hypothesis fields (backward compatible)
     val domainCategoryId: String? = null,
     val confidence: Float? = null,
     val label: String? = null,
@@ -373,6 +376,25 @@ data class CloudClassificationResponse(
     val enrichedAttributes: EnrichedAttributesResponse? = null,
     val visionAttributes: VisionAttributesResponse? = null,
     val requestId: String? = null,
+
+    // Multi-hypothesis fields (new)
+    val hypotheses: List<HypothesisResponse>? = null,
+    val globalConfidence: Float? = null,
+    val needsRefinement: Boolean? = null,
+    val provider: String? = null, // "openai", "claude", "mock"
+)
+
+/**
+ * Single hypothesis from multi-hypothesis classification.
+ */
+@Serializable
+data class HypothesisResponse(
+    val categoryId: String,
+    val categoryName: String,
+    val explanation: String,
+    val confidence: Float,
+    val confidenceBand: String, // "HIGH", "MED", "LOW"
+    val attributes: Map<String, String> = emptyMap(),
 )
 
 /**

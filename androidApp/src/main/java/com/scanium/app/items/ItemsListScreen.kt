@@ -101,6 +101,7 @@ fun ItemsListScreen(
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
 ) {
     val items by itemsViewModel.items.collectAsState()
+    val pendingDetectionCount by itemsViewModel.pendingDetectionCount.collectAsState()
     val context = LocalContext.current
 
     // Item detail sheet state
@@ -449,6 +450,7 @@ fun ItemsListScreen(
 
             ItemsListContent(
                 items = items,
+                pendingDetectionCount = pendingDetectionCount,
                 state = listState,
                 onItemClick = { item ->
                     if (selectionMode) {

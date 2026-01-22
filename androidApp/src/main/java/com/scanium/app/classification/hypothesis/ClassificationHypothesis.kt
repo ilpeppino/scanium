@@ -10,6 +10,7 @@ data class ClassificationHypothesis(
     val categoryName: String,
     val explanation: String,
     val confidence: Float, // 0.0-1.0
+    val confidenceBand: String = "MED", // "HIGH", "MED", "LOW"
     val attributes: Map<String, String> = emptyMap()
 )
 
