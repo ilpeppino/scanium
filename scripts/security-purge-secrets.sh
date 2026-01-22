@@ -98,34 +98,34 @@ echo -e "${YELLOW}[3/6] Defining secrets to purge...${NC}"
 # These are the actual secrets that need to be removed from history
 SECRETS_TO_PURGE=(
     # PostgreSQL Password (CRITICAL - in git history)
-    "Efsidims5!p"
+    "REDACTED_POSTGRES_PASSWORD"
 
     # Scanium API Keys (CRITICAL - in git history)
-    "Cr3UnvP9ubNBxSiKaJA7LWAaKEwl4WNdpVP-CzuxA6hAxyLlo3iPqqfHo3R4nxoz"
-    "LPWOkPQ7IBzegqVpxSg98iafC8FVfRfBGUHDOdIlTBRDD_ktvrseQsZ9kQqa88na"
+    "REDACTED_SCANIUM_API_KEY_1"
+    "REDACTED_SCANIUM_API_KEY_2"
 
     # OpenAI API Keys (partial patterns - full keys are very long)
-    "sk-proj-YgZ9s3U_Dp1hM8iDOB8LeA"  # Prefix of first key
-    "sk-svcacct-_IluPxAjhHyPqQzoOoeEsrLfyMCM"  # Prefix of service account key
+    "REDACTED_OPENAI_PROJECT_KEY"  # Prefix of first key
+    "REDACTED_OPENAI_SERVICE_ACCOUNT_KEY"  # Prefix of service account key
 
     # eBay OAuth Credentials
-    "Giuseppe-scanium-SBX-4e06b92ff-cac0b68f"  # Client ID
-    "SBX-e06b92ff0623-8e4b-4dbe-a982-ad43"  # Client secret
-    "a66a0307079595a1e0398b709515ecd03910998b60a6ab0c9319e2a7f672de8f"  # Encryption key
+    "REDACTED_EBAY_CLIENT_ID"  # Client ID
+    "REDACTED_EBAY_CLIENT_SECRET"  # Client secret
+    "REDACTED_EBAY_ENCRYPTION_KEY"  # Encryption key
 
     # Session Signing Secrets
-    "f7d831f0e0ca83c27e88346b1567e01931cee5d0569c3a29c2a9afba3a684fe9"  # Backend session secret
-    "o4w/SP16rFjkuaazGw6G1yiDwWJ62V0hjc3vu14t5aA="  # NAS session secret
+    "REDACTED_BACKEND_SESSION_SECRET"  # Backend session secret
+    "REDACTED_NAS_SESSION_SECRET"  # NAS session secret
 
     # Cloudflare Tunnel Token (decoded components)
-    "b418ee9297d24e9337e0c71712c056d6"  # Account ID from token
-    "b0598752-fe95-4449-9cd7-c71c53f56401"  # Tunnel ID from token
+    "REDACTED_CLOUDFLARE_ACCOUNT_ID"  # Account ID from token
+    "REDACTED_CLOUDFLARE_TUNNEL_ID"  # Tunnel ID from token
 
     # Google OAuth Client ID (less sensitive but good to obscure)
-    "480326569434-nhp9a4ups5sb3i5ualtuc67h2865qhdo.apps.googleusercontent.com"
+    "REDACTED_GOOGLE_OAUTH_CLIENT_ID"
 
     # Internal IP address (informational)
-    "192.168.178.45"
+    "REDACTED_INTERNAL_IP"
 
     # Production domain (informational - consider keeping this)
     # "scanium.gtemp1.com"  # Commented out - this is needed for documentation
@@ -182,35 +182,35 @@ cat > "${EXPRESSIONS_FILE}" << 'EXPRESSIONS_EOF'
 # OR: regex:<pattern>==>replacement:<new-value>
 
 # PostgreSQL Password
-literal:Efsidims5!p==>REDACTED_POSTGRES_PASSWORD
+literal:REDACTED_POSTGRES_PASSWORD==>REDACTED_POSTGRES_PASSWORD
 
 # Scanium API Keys
-literal:Cr3UnvP9ubNBxSiKaJA7LWAaKEwl4WNdpVP-CzuxA6hAxyLlo3iPqqfHo3R4nxoz==>REDACTED_SCANIUM_API_KEY_1
-literal:LPWOkPQ7IBzegqVpxSg98iafC8FVfRfBGUHDOdIlTBRDD_ktvrseQsZ9kQqa88na==>REDACTED_SCANIUM_API_KEY_2
+literal:REDACTED_SCANIUM_API_KEY_1==>REDACTED_SCANIUM_API_KEY_1
+literal:REDACTED_SCANIUM_API_KEY_2==>REDACTED_SCANIUM_API_KEY_2
 
 # OpenAI API Keys (use regex to catch full keys)
 regex:sk-proj-YgZ9s3U_[A-Za-z0-9_-]{80,}==>REDACTED_OPENAI_PROJECT_KEY
-regex:sk-svcacct-_IluPxAjhHyPqQzoOoeEsrLfyMCM[A-Za-z0-9_-]{80,}==>REDACTED_OPENAI_SERVICE_ACCOUNT_KEY
+regex:REDACTED_OPENAI_SERVICE_ACCOUNT_KEY[A-Za-z0-9_-]{80,}==>REDACTED_OPENAI_SERVICE_ACCOUNT_KEY
 
 # eBay Credentials
-literal:Giuseppe-scanium-SBX-4e06b92ff-cac0b68f==>REDACTED_EBAY_CLIENT_ID
-literal:SBX-e06b92ff0623-8e4b-4dbe-a982-ad43==>REDACTED_EBAY_CLIENT_SECRET
-literal:a66a0307079595a1e0398b709515ecd03910998b60a6ab0c9319e2a7f672de8f==>REDACTED_EBAY_ENCRYPTION_KEY
+literal:REDACTED_EBAY_CLIENT_ID==>REDACTED_EBAY_CLIENT_ID
+literal:REDACTED_EBAY_CLIENT_SECRET==>REDACTED_EBAY_CLIENT_SECRET
+literal:REDACTED_EBAY_ENCRYPTION_KEY==>REDACTED_EBAY_ENCRYPTION_KEY
 
 # Session Signing Secrets
-literal:f7d831f0e0ca83c27e88346b1567e01931cee5d0569c3a29c2a9afba3a684fe9==>REDACTED_BACKEND_SESSION_SECRET
-literal:o4w/SP16rFjkuaazGw6G1yiDwWJ62V0hjc3vu14t5aA===>REDACTED_NAS_SESSION_SECRET
+literal:REDACTED_BACKEND_SESSION_SECRET==>REDACTED_BACKEND_SESSION_SECRET
+literal:REDACTED_NAS_SESSION_SECRET==>REDACTED_NAS_SESSION_SECRET
 
 # Cloudflare Tunnel Token Components
-literal:b418ee9297d24e9337e0c71712c056d6==>REDACTED_CLOUDFLARE_ACCOUNT_ID
-literal:b0598752-fe95-4449-9cd7-c71c53f56401==>REDACTED_CLOUDFLARE_TUNNEL_ID
+literal:REDACTED_CLOUDFLARE_ACCOUNT_ID==>REDACTED_CLOUDFLARE_ACCOUNT_ID
+literal:REDACTED_CLOUDFLARE_TUNNEL_ID==>REDACTED_CLOUDFLARE_TUNNEL_ID
 regex:CLOUDFLARED_TOKEN\s*=\s*eyJ[A-Za-z0-9+/=]+===>CLOUDFLARED_TOKEN=REDACTED_TOKEN
 
 # Google OAuth Client ID
-literal:480326569434-nhp9a4ups5sb3i5ualtuc67h2865qhdo.apps.googleusercontent.com==>REDACTED_GOOGLE_OAUTH_CLIENT_ID
+literal:REDACTED_GOOGLE_OAUTH_CLIENT_ID==>REDACTED_GOOGLE_OAUTH_CLIENT_ID
 
 # Internal network info (optional - less sensitive)
-literal:192.168.178.45==>REDACTED_INTERNAL_IP
+literal:REDACTED_INTERNAL_IP==>REDACTED_INTERNAL_IP
 EXPRESSIONS_EOF
 
 echo -e "${GREEN}✓ Created filter expressions file: ${EXPRESSIONS_FILE}${NC}"
