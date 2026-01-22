@@ -47,6 +47,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
   console.log('[Reasoning Init] OpenAI Key Length:', config.assistant.openaiApiKey?.length);
 
   if (config.reasoning.provider === 'openai' && config.assistant.openaiApiKey) {
+    console.log('[Reasoning Init] ✅ Conditions met, initializing reasoning service...');
     const openaiProvider = new OpenAIReasoningProvider({
       apiKey: config.assistant.openaiApiKey,
       model: config.reasoning.model,
@@ -58,6 +59,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
       provider: config.reasoning.provider,
       confidenceThreshold: config.reasoning.confidenceThreshold,
     });
+    console.log('[Reasoning Init] ✅ Reasoning service initialized successfully!');
 
     fastify.log.info(
       {
