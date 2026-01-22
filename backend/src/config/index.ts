@@ -443,6 +443,13 @@ export function loadConfig(): Config {
       minLogoConfidence: process.env.VISION_MIN_LOGO_CONFIDENCE,
       dailyQuotaLimit: process.env.VISION_DAILY_QUOTA_LIMIT,
     },
+    reasoning: {
+      provider: process.env.REASONING_PROVIDER,
+      model: process.env.REASONING_MODEL,
+      maxTokens: process.env.REASONING_MAX_TOKENS,
+      timeoutMs: process.env.REASONING_TIMEOUT_MS,
+      confidenceThreshold: process.env.REASONING_CONFIDENCE_THRESHOLD,
+    },
     googleCredentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     pricing: {
       enabled: process.env.PRICING_ENABLED,
