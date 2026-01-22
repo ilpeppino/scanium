@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
+import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.app.BuildConfig
 import com.scanium.app.ObjectTracker
 import com.scanium.app.ScannedItem
@@ -289,6 +290,9 @@ internal class CameraFrameAnalyzer(
             // Capture bitmap once for all detections (for cloud classification)
             val fullFrameBitmap = lazyBitmapProvider()
 
+            // Create thumbnail from bitmap if available
+            val thumbnailRef = fullFrameBitmap?.toImageRefJpeg(quality = 85)
+
             // Convert ScannedItems to RawDetections for pending state
             val rawDetections = response.scannedItems.map { item ->
                 RawDetection(
@@ -299,6 +303,7 @@ internal class CameraFrameAnalyzer(
                     trackingId = item.id, // Use item ID as tracking ID
                     frameSharpness = 1.0f, // TODO: Get actual sharpness if available
                     captureType = CaptureType.SINGLE_SHOT,
+                    thumbnailRef = thumbnailRef,
                     fullFrameBitmap = fullFrameBitmap
                 )
             }
@@ -432,6 +437,9 @@ internal class CameraFrameAnalyzer(
         val canAddItems = guidanceState.canAddItem
         val isLocked = guidanceState.state == GuidanceState.LOCKED
 
+        // Create thumbnail from bitmap if available (shared by all detections in this frame)
+        val thumbnailRef = fullFrameBitmap?.toImageRefJpeg(quality = 85)
+
         val detectionsToAdd =
             if (canAddItems && isLocked) {
                 val allConfirmedCandidates = objectTracker.getConfirmedCandidates()
@@ -466,6 +474,7 @@ internal class CameraFrameAnalyzer(
                             trackingId = candidate.internalId,
                             frameSharpness = frameSharpness,
                             captureType = CaptureType.TRACKING,
+                            thumbnailRef = thumbnailRef,
                             fullFrameBitmap = fullFrameBitmap
                         )
                         objectTracker.markCandidateConsumed(candidate.internalId)

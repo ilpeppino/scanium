@@ -814,7 +814,7 @@ class ItemsViewModel
             val pendingState = PendingDetectionState.AwaitingClassification(
                 detectionId = detectionId,
                 rawDetection = rawDetection,
-                thumbnailRef = null, // TODO: Capture thumbnail from detection
+                thumbnailRef = rawDetection.thumbnailRef,
                 timestamp = System.currentTimeMillis()
             )
 
@@ -1077,7 +1077,7 @@ class ItemsViewModel
                 priceRange = 0.0 to 0.0, // Will be estimated by PricingEngine later
                 confidence = hypothesis?.confidence ?: rawDetection.confidence,
                 boundingBox = rawDetection.boundingBox,
-                thumbnail = null, // Will be set by ItemAggregator
+                thumbnail = rawDetection.thumbnailRef,
                 classificationStatus = if (hypothesis != null) "CONFIRMED" else "FALLBACK",
                 timestamp = System.currentTimeMillis(),
                 attributes = emptyMap()

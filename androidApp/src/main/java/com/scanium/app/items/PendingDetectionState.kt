@@ -67,6 +67,7 @@ sealed class PendingDetectionState {
  * @property trackingId Optional tracking ID from ObjectTracker (null for single-shot)
  * @property frameSharpness Image quality metric (0.0-1.0)
  * @property captureType How this detection was captured
+ * @property thumbnailRef Optional thumbnail image reference for display in UI
  * @property fullFrameBitmap Optional full frame bitmap for classification (cleared after use)
  */
 data class RawDetection(
@@ -77,6 +78,7 @@ data class RawDetection(
     val trackingId: String?,
     val frameSharpness: Float,
     val captureType: CaptureType,
+    val thumbnailRef: ImageRef? = null,
     val fullFrameBitmap: android.graphics.Bitmap? = null
 )
 
