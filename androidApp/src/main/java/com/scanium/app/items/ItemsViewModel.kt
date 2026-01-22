@@ -1067,25 +1067,30 @@ class ItemsViewModel
         ) {
             Log.i(TAG, "createItemFromDetection: detectionId=$detectionId hypothesis=${hypothesis?.categoryName}")
 
-            val item = ScannedItem(
-                id = UUID.randomUUID().toString(),
-                labelText = hypothesis?.categoryName ?: rawDetection.onDeviceLabel,
-                category = hypothesis?.let {
-                    // TODO Phase 2: Map domainCategoryId to ItemCategory properly
-                    rawDetection.onDeviceCategory
-                } ?: rawDetection.onDeviceCategory,
-                priceRange = 0.0 to 0.0, // Will be estimated by PricingEngine later
-                confidence = hypothesis?.confidence ?: rawDetection.confidence,
-                boundingBox = rawDetection.boundingBox,
-                thumbnail = rawDetection.thumbnailRef,
-                classificationStatus = if (hypothesis != null) "CONFIRMED" else "FALLBACK",
-                timestamp = System.currentTimeMillis(),
-                attributes = emptyMap()
-            )
+            try {
+                val item = ScannedItem(
+                    id = UUID.randomUUID().toString(),
+                    labelText = hypothesis?.categoryName ?: rawDetection.onDeviceLabel,
+                    category = hypothesis?.let {
+                        // TODO Phase 2: Map domainCategoryId to ItemCategory properly
+                        rawDetection.onDeviceCategory
+                    } ?: rawDetection.onDeviceCategory,
+                    priceRange = 0.0 to 0.0, // Will be estimated by PricingEngine later
+                    confidence = hypothesis?.confidence ?: rawDetection.confidence,
+                    boundingBox = rawDetection.boundingBox,
+                    thumbnail = rawDetection.thumbnailRef,
+                    classificationStatus = if (hypothesis != null) "CONFIRMED" else "FALLBACK",
+                    timestamp = System.currentTimeMillis(),
+                    attributes = emptyMap()
+                )
 
-            withContext(mainDispatcher) {
-                facade.addItem(item)
-                Log.i(TAG, "Item created from detection: ${item.id} - ${item.labelText}")
+                withContext(mainDispatcher) {
+                    facade.addItem(item)
+                    Log.i(TAG, "Item created from detection: ${item.id} - ${item.labelText}")
+                }
+            } finally {
+                // Clean up bitmap after classification and item creation
+                rawDetection.fullFrameBitmap?.recycle()
             }
         }
 

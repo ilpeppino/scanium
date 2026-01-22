@@ -293,6 +293,11 @@ internal class CameraFrameAnalyzer(
             // Create thumbnail from bitmap if available
             val thumbnailRef = fullFrameBitmap?.toImageRefJpeg(quality = 85)
 
+            // CRITICAL: Make a copy of the bitmap for cloud classification
+            // The original bitmap will be recycled at the end of processImageProxy,
+            // but cloud classification happens async and needs the bitmap later
+            val bitmapCopy = fullFrameBitmap?.copy(fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888, false)
+
             // Convert ScannedItems to RawDetections for pending state
             val rawDetections = response.scannedItems.map { item ->
                 RawDetection(
@@ -304,7 +309,7 @@ internal class CameraFrameAnalyzer(
                     frameSharpness = 1.0f, // TODO: Get actual sharpness if available
                     captureType = CaptureType.SINGLE_SHOT,
                     thumbnailRef = thumbnailRef,
-                    fullFrameBitmap = fullFrameBitmap
+                    fullFrameBitmap = bitmapCopy
                 )
             }
 
@@ -440,6 +445,11 @@ internal class CameraFrameAnalyzer(
         // Create thumbnail from bitmap if available (shared by all detections in this frame)
         val thumbnailRef = fullFrameBitmap?.toImageRefJpeg(quality = 85)
 
+        // CRITICAL: Make a copy of the bitmap for cloud classification
+        // The original bitmap will be recycled at the end of processImageProxy,
+        // but cloud classification happens async and needs the bitmap later
+        val bitmapCopy = fullFrameBitmap?.copy(fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888, false)
+
         val detectionsToAdd =
             if (canAddItems && isLocked) {
                 val allConfirmedCandidates = objectTracker.getConfirmedCandidates()
@@ -475,7 +485,7 @@ internal class CameraFrameAnalyzer(
                             frameSharpness = frameSharpness,
                             captureType = CaptureType.TRACKING,
                             thumbnailRef = thumbnailRef,
-                            fullFrameBitmap = fullFrameBitmap
+                            fullFrameBitmap = bitmapCopy
                         )
                         objectTracker.markCandidateConsumed(candidate.internalId)
                         Log.i(TAG, ">>> Created RawDetection from candidate ${candidate.internalId}, marked as consumed")
