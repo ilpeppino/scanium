@@ -53,6 +53,24 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
       provider: config.reasoning.provider,
       confidenceThreshold: config.reasoning.confidenceThreshold,
     });
+
+    fastify.log.info(
+      {
+        provider: config.reasoning.provider,
+        model: config.reasoning.model,
+        confidenceThreshold: config.reasoning.confidenceThreshold,
+        domainPackId: config.classifier.domainPackId,
+      },
+      'Multi-hypothesis classification reasoning service initialized'
+    );
+  } else {
+    fastify.log.warn(
+      {
+        reasoningProvider: config.reasoning.provider,
+        hasOpenAIKey: !!config.assistant.openaiApiKey,
+      },
+      'Multi-hypothesis classification NOT available - reasoning service not initialized'
+    );
   }
 
   const redisClient = await createRedisClient(
