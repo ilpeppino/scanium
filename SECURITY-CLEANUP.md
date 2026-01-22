@@ -1,19 +1,19 @@
-***REMOVED*** Security Cleanup Guide for Scanium
+# Security Cleanup Guide for Scanium
 
 This document provides a complete guide for securing the Scanium repository before making it public.
 
-***REMOVED******REMOVED*** Table of Contents
+## Table of Contents
 
-1. [Overview](***REMOVED***overview)
-2. [Pre-commit Hook Setup](***REMOVED***pre-commit-hook-setup)
-3. [Git History Purge](***REMOVED***git-history-purge)
-4. [Credential Rotation Checklist](***REMOVED***credential-rotation-checklist)
-5. [Post-Cleanup Verification](***REMOVED***post-cleanup-verification)
-6. [Team Coordination](***REMOVED***team-coordination)
+1. [Overview](#overview)
+2. [Pre-commit Hook Setup](#pre-commit-hook-setup)
+3. [Git History Purge](#git-history-purge)
+4. [Credential Rotation Checklist](#credential-rotation-checklist)
+5. [Post-Cleanup Verification](#post-cleanup-verification)
+6. [Team Coordination](#team-coordination)
 
 ---
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Scanium repository contains sensitive credentials in git history that must be addressed before making it public:
 
@@ -27,13 +27,13 @@ The Scanium repository contains sensitive credentials in git history that must b
 
 ---
 
-***REMOVED******REMOVED*** Pre-commit Hook Setup
+## Pre-commit Hook Setup
 
-***REMOVED******REMOVED******REMOVED*** What It Does
+### What It Does
 
 The pre-commit hook uses [gitleaks](https://github.com/gitleaks/gitleaks) to scan staged changes for secrets before allowing a commit.
 
-***REMOVED******REMOVED******REMOVED*** Installation Status
+### Installation Status
 
 ✅ **Already installed and configured!**
 
@@ -41,7 +41,7 @@ The pre-commit hook uses [gitleaks](https://github.com/gitleaks/gitleaks) to sca
 - **Pre-commit hook**: `.git/hooks/pre-commit`
 - **Configuration**: `.gitleaks.toml`
 
-***REMOVED******REMOVED******REMOVED*** How It Works
+### How It Works
 
 1. You stage files: `git add file.txt`
 2. You attempt commit: `git commit -m "message"`
@@ -49,7 +49,7 @@ The pre-commit hook uses [gitleaks](https://github.com/gitleaks/gitleaks) to sca
 4. **If secrets found**: Commit is BLOCKED with details
 5. **If no secrets**: Commit proceeds normally
 
-***REMOVED******REMOVED******REMOVED*** Configuration Details
+### Configuration Details
 
 The `.gitleaks.toml` file includes:
 
@@ -57,23 +57,23 @@ The `.gitleaks.toml` file includes:
 - **Custom rules**: Scanium-specific patterns (API keys, database passwords, etc.)
 - **Allowlist**: Excludes example files, documentation, and test fixtures
 
-***REMOVED******REMOVED******REMOVED*** Testing the Hook
+### Testing the Hook
 
 ```bash
-***REMOVED*** This should be BLOCKED
+# This should be BLOCKED
 echo "POSTGRES_PASSWORD=SuperSecret123" > test.env
 git add test.env
 git commit -m "test"
-***REMOVED*** ❌ COMMIT BLOCKED: Secrets detected!
+# ❌ COMMIT BLOCKED: Secrets detected!
 
-***REMOVED*** This should pass (allowlisted pattern)
+# This should pass (allowlisted pattern)
 echo "POSTGRES_PASSWORD=your-password-here" > .env.example
 git add .env.example
 git commit -m "add example"
-***REMOVED*** ✅ No secrets detected. Proceeding with commit.
+# ✅ No secrets detected. Proceeding with commit.
 ```
 
-***REMOVED******REMOVED******REMOVED*** Bypassing the Hook
+### Bypassing the Hook
 
 **⚠️ NOT RECOMMENDED** - Only for false positives:
 
@@ -83,7 +83,7 @@ git commit --no-verify -m "message"
 
 **Better approach**: Add false positives to `.gitleaks.toml` allowlist
 
-***REMOVED******REMOVED******REMOVED*** Updating the Configuration
+### Updating the Configuration
 
 Edit `.gitleaks.toml` to:
 - Add new custom rules for Scanium-specific secrets
@@ -104,7 +104,7 @@ paths = [
 ]
 ```
 
-***REMOVED******REMOVED******REMOVED*** Maintenance
+### Maintenance
 
 Gitleaks updates regularly. Update with:
 ```bash
@@ -113,9 +113,9 @@ brew upgrade gitleaks
 
 ---
 
-***REMOVED******REMOVED*** Git History Purge
+## Git History Purge
 
-***REMOVED******REMOVED******REMOVED*** ⚠️ CRITICAL WARNINGS
+### ⚠️ CRITICAL WARNINGS
 
 **READ THIS BEFORE PROCEEDING:**
 
@@ -125,7 +125,7 @@ brew upgrade gitleaks
 4. **Old secrets remain** in old clones until they're deleted
 5. **Requires force push** - Overwrites remote repository
 
-***REMOVED******REMOVED******REMOVED*** When to Run
+### When to Run
 
 Run the purge script **ONLY** when ALL these conditions are met:
 
@@ -135,13 +135,13 @@ Run the purge script **ONLY** when ALL these conditions are met:
 - ✅ You have a verified backup strategy
 - ✅ You're prepared to notify all collaborators
 
-***REMOVED******REMOVED******REMOVED*** Script Location
+### Script Location
 
 ```
 scripts/security-purge-secrets.sh
 ```
 
-***REMOVED******REMOVED******REMOVED*** What It Purges
+### What It Purges
 
 The script removes these secrets from git history:
 
@@ -159,12 +159,12 @@ The script removes these secrets from git history:
 
 All secrets are replaced with `REDACTED_<TYPE>` placeholders.
 
-***REMOVED******REMOVED******REMOVED*** Running the Script
+### Running the Script
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 1: Dry Run (Safe to Test)
+#### Step 1: Dry Run (Safe to Test)
 
 ```bash
-***REMOVED*** Default is dry run - safe to execute
+# Default is dry run - safe to execute
 ./scripts/security-purge-secrets.sh
 ```
 
@@ -173,14 +173,14 @@ This will:
 - Display affected commits
 - Create no changes
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 2: Review the Output
+#### Step 2: Review the Output
 
 Check:
 - Number of secrets found
 - Which commits contain secrets
 - Estimated impact
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 3: Coordinate with Team
+#### Step 3: Coordinate with Team
 
 **BEFORE running for real:**
 
@@ -198,7 +198,7 @@ Check:
    tar -czf scanium-backup-$(date +%Y%m%d).tar.gz scanium/
    ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 4: Run the Purge (Point of No Return)
+#### Step 4: Run the Purge (Point of No Return)
 
 ```bash
 DRY_RUN=false ./scripts/security-purge-secrets.sh
@@ -214,32 +214,32 @@ DRY_RUN=false ./scripts/security-purge-secrets.sh
 
 **This takes 1-5 minutes depending on repo size.**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 5: Verify the Changes
+#### Step 5: Verify the Changes
 
 ```bash
-***REMOVED*** Check recent commits
+# Check recent commits
 git log --all --oneline | head -20
 
-***REMOVED*** Search for REDACTED placeholders
+# Search for REDACTED placeholders
 git log --all -p -S'REDACTED' | less
 
-***REMOVED*** Check repository size (should be smaller)
+# Check repository size (should be smaller)
 du -sh .git
 
-***REMOVED*** Verify a specific secret is gone
+# Verify a specific secret is gone
 git log --all -S'REDACTED_POSTGRES_PASSWORD' --oneline
-***REMOVED*** (should show nothing)
+# (should show nothing)
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 6: Force Push to Remote
+#### Step 6: Force Push to Remote
 
 **⚠️ THIS OVERWRITES REMOTE HISTORY**
 
 ```bash
-***REMOVED*** Push all branches
+# Push all branches
 git push origin --force --all
 
-***REMOVED*** Push all tags
+# Push all tags
 git push origin --force --tags
 ```
 
@@ -247,7 +247,7 @@ git push origin --force --tags
 - Temporarily disable branch protection rules
 - Confirm force push with admin permissions
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 7: Notify Team to Re-clone
+#### Step 7: Notify Team to Re-clone
 
 **Send this message to all collaborators:**
 
@@ -259,7 +259,7 @@ The Scanium git repository history has been rewritten to remove exposed secrets.
 ACTION REQUIRED:
 1. Commit and push any outstanding work NOW (before seeing this message)
 2. Delete your local clone:
-   cd /Users/family/dev  ***REMOVED*** or wherever your clone is
+   cd /Users/family/dev  # or wherever your clone is
    rm -rf scanium
 
 3. Re-clone the repository:
@@ -275,12 +275,12 @@ WHY: Git history was rewritten to remove credentials. Your old clone contains
 Questions? See: SECURITY-CLEANUP.md
 ```
 
-***REMOVED******REMOVED******REMOVED*** Rollback (If Something Goes Wrong)
+### Rollback (If Something Goes Wrong)
 
 If you need to rollback **before force pushing**:
 
 ```bash
-***REMOVED*** Restore from backup
+# Restore from backup
 cd /Users/family/dev
 rm -rf scanium
 mv scanium-backup-<timestamp> scanium
@@ -293,7 +293,7 @@ If you already force pushed, you'll need to:
 
 ---
 
-***REMOVED******REMOVED*** Credential Rotation Checklist
+## Credential Rotation Checklist
 
 **⚠️ ROTATE ALL SECRETS BEFORE OR IMMEDIATELY AFTER PURGING**
 
@@ -303,7 +303,7 @@ Even after purging git history, old secrets exist in:
 - Local backups
 - Any forks
 
-***REMOVED******REMOVED******REMOVED*** Priority 1 - Rotate Today
+### Priority 1 - Rotate Today
 
 - [ ] **PostgreSQL Password**
   - Current: `REDACTED_POSTGRES_PASSWORD`
@@ -329,7 +329,7 @@ Even after purging git history, old secrets exist in:
   - Update in: `deploy/nas/compose/.env`
   - Check OpenAI billing for unauthorized usage
 
-***REMOVED******REMOVED******REMOVED*** Priority 2 - Rotate This Week
+### Priority 2 - Rotate This Week
 
 - [ ] **Cloudflare Tunnel Token**
   - Rotate in Cloudflare dashboard
@@ -357,20 +357,20 @@ Even after purging git history, old secrets exist in:
   - Generate new: `openssl rand -base64 32`
   - Update in: `deploy/nas/compose/.env`
 
-***REMOVED******REMOVED******REMOVED*** Generating New Secrets
+### Generating New Secrets
 
 ```bash
-***REMOVED*** Hex-encoded secret (64 chars)
+# Hex-encoded secret (64 chars)
 openssl rand -hex 32
 
-***REMOVED*** Base64-encoded secret
+# Base64-encoded secret
 openssl rand -base64 32
 
-***REMOVED*** Alphanumeric secret (for API keys)
+# Alphanumeric secret (for API keys)
 openssl rand -base64 48 | tr -d '/+=' | head -c 64
 ```
 
-***REMOVED******REMOVED******REMOVED*** Verification After Rotation
+### Verification After Rotation
 
 For each rotated secret:
 1. ✅ Update in all locations (dev, staging, prod)
@@ -380,49 +380,49 @@ For each rotated secret:
 
 ---
 
-***REMOVED******REMOVED*** Post-Cleanup Verification
+## Post-Cleanup Verification
 
-***REMOVED******REMOVED******REMOVED*** 1. Verify Secrets Are Gone
+### 1. Verify Secrets Are Gone
 
 ```bash
-***REMOVED*** Search for specific secrets
+# Search for specific secrets
 git log --all -S'REDACTED_POSTGRES_PASSWORD' --oneline
 git log --all -S'Cr3UnvP9ubNBxSiKaJA7LWAaKEwl4WNdpVP' --oneline
 
-***REMOVED*** Should return nothing or only REDACTED commits
+# Should return nothing or only REDACTED commits
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Verify REDACTED Placeholders
+### 2. Verify REDACTED Placeholders
 
 ```bash
-***REMOVED*** Should see REDACTED placeholders in old commits
+# Should see REDACTED placeholders in old commits
 git log --all -p -S'REDACTED_POSTGRES_PASSWORD' | head -100
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Run Gitleaks Scan
+### 3. Run Gitleaks Scan
 
 ```bash
-***REMOVED*** Scan entire history
+# Scan entire history
 gitleaks detect --verbose
 
-***REMOVED*** Should report: "no leaks found"
+# Should report: "no leaks found"
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Check Repository Size
+### 4. Check Repository Size
 
 ```bash
-***REMOVED*** Before purge
+# Before purge
 du -sh .git
 
-***REMOVED*** After purge (should be smaller)
+# After purge (should be smaller)
 du -sh .git
 
-***REMOVED*** Garbage collect to reclaim space
+# Garbage collect to reclaim space
 git reflog expire --expire=now --all
 git gc --prune=now --aggressive
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Verify Services Still Work
+### 5. Verify Services Still Work
 
 After rotating credentials:
 - [ ] Backend connects to PostgreSQL
@@ -434,9 +434,9 @@ After rotating credentials:
 
 ---
 
-***REMOVED******REMOVED*** Team Coordination
+## Team Coordination
 
-***REMOVED******REMOVED******REMOVED*** Pre-Purge Checklist
+### Pre-Purge Checklist
 
 - [ ] All team members notified (email/Slack/etc.)
 - [ ] Scheduled downtime window communicated
@@ -445,14 +445,14 @@ After rotating credentials:
 - [ ] External backup created and verified
 - [ ] Credentials ready to rotate
 
-***REMOVED******REMOVED******REMOVED*** During Purge
+### During Purge
 
 - [ ] Run script: `DRY_RUN=false ./scripts/security-purge-secrets.sh`
 - [ ] Verify changes locally
 - [ ] Force push to remote
 - [ ] Immediately notify team
 
-***REMOVED******REMOVED******REMOVED*** Post-Purge
+### Post-Purge
 
 - [ ] All team members re-cloned successfully
 - [ ] All rotated credentials verified working
@@ -462,17 +462,17 @@ After rotating credentials:
 
 ---
 
-***REMOVED******REMOVED*** FAQ
+## FAQ
 
-***REMOVED******REMOVED******REMOVED*** Q: Can I skip the git history purge?
+### Q: Can I skip the git history purge?
 
 **A:** If the repository will be public, NO. The secrets are accessible in git history and can be extracted easily. Even if private, it's a security risk.
 
-***REMOVED******REMOVED******REMOVED*** Q: Can I just delete and re-create the repository?
+### Q: Can I just delete and re-create the repository?
 
 **A:** Yes, but you lose all git history and issue/PR numbers. The purge preserves history while removing secrets.
 
-***REMOVED******REMOVED******REMOVED*** Q: What if I find more secrets after purging?
+### Q: What if I find more secrets after purging?
 
 **A:** Run the purge script again. You'll need to:
 1. Add the new secrets to the script
@@ -480,25 +480,25 @@ After rotating credentials:
 3. Force push again
 4. Rotate those secrets too
 
-***REMOVED******REMOVED******REMOVED*** Q: Why not just delete the commits with secrets?
+### Q: Why not just delete the commits with secrets?
 
 **A:** Git doesn't work that way. Commits are linked in a chain. Removing one requires rewriting all descendants, which is what `git-filter-repo` does.
 
-***REMOVED******REMOVED******REMOVED*** Q: Can I use `git filter-branch` instead?
+### Q: Can I use `git filter-branch` instead?
 
 **A:** No. `git filter-branch` is deprecated and much slower. Use `git-filter-repo`.
 
-***REMOVED******REMOVED******REMOVED*** Q: How long are old secrets cached on GitHub?
+### Q: How long are old secrets cached on GitHub?
 
 **A:** GitHub caches git objects for some time. Rotate secrets immediately to minimize risk.
 
-***REMOVED******REMOVED******REMOVED*** Q: What about forks of the repository?
+### Q: What about forks of the repository?
 
 **A:** Forks will still contain the old history. You cannot force push to forks you don't own. This is why rotation is critical.
 
 ---
 
-***REMOVED******REMOVED*** Additional Resources
+## Additional Resources
 
 - **Gitleaks Documentation**: https://github.com/gitleaks/gitleaks
 - **git-filter-repo Guide**: https://github.com/newren/git-filter-repo
@@ -506,33 +506,33 @@ After rotating credentials:
 
 ---
 
-***REMOVED******REMOVED*** Quick Reference
+## Quick Reference
 
-***REMOVED******REMOVED******REMOVED*** Files Created/Modified
+### Files Created/Modified
 
 ```
-.gitleaks.toml                          ***REMOVED*** Gitleaks configuration
-.git/hooks/pre-commit                   ***REMOVED*** Pre-commit hook script
-scripts/security-purge-secrets.sh       ***REMOVED*** Git history purge script
-SECURITY-CLEANUP.md                     ***REMOVED*** This document
+.gitleaks.toml                          # Gitleaks configuration
+.git/hooks/pre-commit                   # Pre-commit hook script
+scripts/security-purge-secrets.sh       # Git history purge script
+SECURITY-CLEANUP.md                     # This document
 ```
 
-***REMOVED******REMOVED******REMOVED*** Commands
+### Commands
 
 ```bash
-***REMOVED*** Test pre-commit hook
+# Test pre-commit hook
 git add <file> && git commit -m "test"
 
-***REMOVED*** Dry run purge
+# Dry run purge
 ./scripts/security-purge-secrets.sh
 
-***REMOVED*** Run purge
+# Run purge
 DRY_RUN=false ./scripts/security-purge-secrets.sh
 
-***REMOVED*** Verify purge
+# Verify purge
 gitleaks detect --verbose
 
-***REMOVED*** Generate new secret
+# Generate new secret
 openssl rand -hex 32
 ```
 

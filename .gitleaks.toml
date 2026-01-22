@@ -1,13 +1,13 @@
-***REMOVED*** Gitleaks configuration for Scanium
-***REMOVED*** Detects secrets and credentials before they're committed
+# Gitleaks configuration for Scanium
+# Detects secrets and credentials before they're committed
 
 title = "Gitleaks config for Scanium"
 
-***REMOVED*** Use default gitleaks rules
+# Use default gitleaks rules
 [extend]
 useDefault = true
 
-***REMOVED*** Custom rules specific to Scanium
+# Custom rules specific to Scanium
 [[rules]]
 id = "scanium-api-key"
 description = "Scanium API Key (long base64-like strings in env files)"
@@ -46,7 +46,7 @@ regex = '''(storePassword|keyPassword)\s*=\s*.+'''
 path = '''keystore\.properties'''
 tags = ["android", "keystore"]
 
-***REMOVED*** Allowlist configuration
+# Allowlist configuration
 [allowlist]
 description = "Allowlisted files and patterns"
 paths = [
