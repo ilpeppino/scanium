@@ -41,6 +41,16 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
   const domainPack = loadDomainPack(config.classifier.domainPackPath);
   let reasoningService: ClassificationReasoningService | null = null;
 
+  fastify.log.info(
+    {
+      reasoningProvider: config.reasoning.provider,
+      reasoningModel: config.reasoning.model,
+      hasOpenAIKey: !!config.assistant.openaiApiKey,
+      openaiKeyLength: config.assistant.openaiApiKey?.length,
+    },
+    'Checking reasoning service initialization conditions'
+  );
+
   if (config.reasoning.provider === 'openai' && config.assistant.openaiApiKey) {
     const openaiProvider = new OpenAIReasoningProvider({
       apiKey: config.assistant.openaiApiKey,
