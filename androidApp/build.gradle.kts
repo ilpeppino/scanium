@@ -135,8 +135,8 @@ android {
         // API keys are provisioned at runtime and stored in the Android Keystore.
         //
         // For dual-mode configuration (LAN + Remote):
-        //   scanium.api.base.url=https://your-public-backend.com  ***REMOVED*** Remote/production URL
-        //   scanium.api.base.url.debug=http://192.168.1.100:3000  ***REMOVED*** LAN URL for debug builds
+        //   scanium.api.base.url=https://your-public-backend.com  # Remote/production URL
+        //   scanium.api.base.url.debug=http://192.168.1.100:3000  # LAN URL for debug builds
         //
         // Debug builds will use .debug URL if set, otherwise fall back to main URL
         // Release builds always use the main URL (scanium.api.base.url)
@@ -722,12 +722,12 @@ tasks.register("validateDevDebugBackendConfig") {
                 |║                                                                       ║
                 |║  Option 1: In local.properties (recommended for development)          ║
                 |║    scanium.api.base.url.debug=http://192.168.1.100:3000               ║
-                |║    ***REMOVED*** or                                                               ║
+                |║    # or                                                               ║
                 |║    scanium.api.base.url=https://your-backend.example.com              ║
                 |║                                                                       ║
                 |║  Option 2: Via environment variables                                  ║
                 |║    export SCANIUM_API_BASE_URL_DEBUG=http://192.168.1.100:3000        ║
-                |║    ***REMOVED*** or                                                               ║
+                |║    # or                                                               ║
                 |║    export SCANIUM_API_BASE_URL=https://your-backend.example.com       ║
                 |║                                                                       ║
                 |║  Run: scripts/android-configure-backend-dev.sh for guided setup       ║
