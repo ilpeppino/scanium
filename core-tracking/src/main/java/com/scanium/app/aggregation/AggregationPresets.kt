@@ -207,6 +207,38 @@ object AggregationPresets {
         )
 
     /**
+     * No aggregation configuration.
+     *
+     * DISABLES all merging - every capture creates a separate item.
+     * Use when you want WYSIWYG behavior: each photo = unique item,
+     * even if it's the same physical object from different angles.
+     *
+     * Good for:
+     * - User wants explicit control over each capture
+     * - Each photo should be a distinct item regardless of similarity
+     * - No automatic merging or deduplication desired
+     * - Multi-angle captures of same object should be separate items
+     */
+    val NO_AGGREGATION =
+        AggregationConfig(
+            similarityThreshold = 2.0f,
+// Impossible threshold - nothing can reach 200% similarity
+            maxCenterDistanceRatio = 0.0f,
+// No distance tolerance
+            maxSizeDifferenceRatio = 0.0f,
+// No size tolerance
+            categoryMatchRequired = true,
+            labelMatchRequired = true,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.25f,
+                    labelWeight = 0.25f,
+                    sizeWeight = 0.25f,
+                    distanceWeight = 0.25f,
+                ),
+        )
+
+    /**
      * Get configuration by name.
      *
      * Useful for runtime configuration selection.
@@ -219,6 +251,7 @@ object AggregationPresets {
             "REALTIME" -> REALTIME
             "LABEL_FOCUSED" -> LABEL_FOCUSED
             "SPATIAL_FOCUSED" -> SPATIAL_FOCUSED
+            "NO_AGGREGATION" -> NO_AGGREGATION
             else -> BALANCED
         }
     }
@@ -234,6 +267,7 @@ object AggregationPresets {
             "REALTIME",
             "LABEL_FOCUSED",
             "SPATIAL_FOCUSED",
+            "NO_AGGREGATION",
         )
     }
 }

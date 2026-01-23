@@ -95,7 +95,7 @@ class ItemsUiFacade(
             itemsStore = itemsStore,
             initialWorkerDispatcher = workerDispatcher,
             initialMainDispatcher = mainDispatcher,
-            aggregationConfig = AggregationPresets.REALTIME,
+            aggregationConfig = AggregationPresets.NO_AGGREGATION,  // Each capture = unique item
         )
 
     /**
