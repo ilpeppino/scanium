@@ -562,14 +562,13 @@ internal class CameraFrameAnalyzer(
 
                 allConfirmedCandidates.mapNotNull { candidate ->
                     val bbox = candidate.boundingBoxNorm ?: return@mapNotNull null
-                    val centerX = (bbox.left + bbox.right) / 2f
-                    val centerY = (bbox.top + bbox.bottom) / 2f
 
-                    val isInsideRoi = currentRoi.containsBoxCenter(centerX, centerY)
+                    // Strict ROI check: entire bounding box must be inside ROI
+                    val isInsideRoi = currentRoi.containsBox(bbox.left, bbox.top, bbox.right, bbox.bottom)
                     if (!isInsideRoi) {
                         Log.e(
                             TAG,
-                            "!!! ASSERTION FAILED: Confirmed candidate ${candidate.internalId} is OUTSIDE ROI (center=$centerX,$centerY, roi=$currentRoi)",
+                            "!!! ASSERTION FAILED: Confirmed candidate ${candidate.internalId} is OUTSIDE ROI (bbox=$bbox, roi=$currentRoi)",
                         )
                         if (BuildConfig.DEBUG && Log.isLoggable(TAG, Log.ASSERT)) {
                             throw IllegalStateException("Confirmed candidate outside ROI - this should never happen")

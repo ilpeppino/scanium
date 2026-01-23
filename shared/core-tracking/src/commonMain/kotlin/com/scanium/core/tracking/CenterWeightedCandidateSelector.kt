@@ -184,8 +184,7 @@ class CenterWeightedCandidateSelector(
                 val gatingResult =
                     applyGatingRulesWithRoi(
                         detection = detection,
-                        boxCenterX = boxCenterX,
-                        boxCenterY = boxCenterY,
+                        boundingBox = detection.boundingBox,
                         scanRoi = scanRoi,
                         area = area,
                         frameSharpness = frameSharpness,
@@ -278,19 +277,24 @@ class CenterWeightedCandidateSelector(
     }
 
     /**
-     * Apply ROI-aware gating rules.
+     * Apply ROI-aware gating rules with strict containment check.
      */
     private fun applyGatingRulesWithRoi(
         detection: DetectionInfo,
-        boxCenterX: Float,
-        boxCenterY: Float,
+        boundingBox: NormalizedRect,
         scanRoi: ScanRoi,
         area: Float,
         frameSharpness: Float,
     ): GatingResult {
         // Rule 1: ROI containment gate
-        // Reject if center is outside ROI (unless very high confidence)
-        val isInsideRoi = scanRoi.containsBoxCenter(boxCenterX, boxCenterY)
+        // Reject if ENTIRE bounding box is not fully inside ROI (unless very high confidence)
+        // This ensures background objects outside guideline overlay are excluded
+        val isInsideRoi = scanRoi.containsBox(
+            boundingBox.left,
+            boundingBox.top,
+            boundingBox.right,
+            boundingBox.bottom,
+        )
         if (!isInsideRoi && detection.confidence < config.highConfidenceOverride) {
             return GatingResult(
                 passed = false,

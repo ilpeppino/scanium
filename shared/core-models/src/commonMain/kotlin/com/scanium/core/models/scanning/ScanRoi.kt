@@ -72,6 +72,25 @@ data class ScanRoi(
     }
 
     /**
+     * Check if an ENTIRE bounding box is contained within the ROI.
+     * All four corners of the box must be inside the ROI boundaries.
+     *
+     * @param boxLeft Left edge of the bounding box (normalized)
+     * @param boxTop Top edge of the bounding box (normalized)
+     * @param boxRight Right edge of the bounding box (normalized)
+     * @param boxBottom Bottom edge of the bounding box (normalized)
+     * @return True if the entire box is contained within the ROI
+     */
+    fun containsBox(
+        boxLeft: Float,
+        boxTop: Float,
+        boxRight: Float,
+        boxBottom: Float,
+    ): Boolean {
+        return boxLeft >= left && boxTop >= top && boxRight <= right && boxBottom <= bottom
+    }
+
+    /**
      * Calculate the distance from a point to the ROI center.
      * Returns value in range [0, ~0.707] where 0 = centered, ~0.707 = corner.
      */

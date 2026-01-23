@@ -6,8 +6,8 @@ import com.scanium.core.models.scanning.ScanRoi
 /**
  * Result of filtering detections by ROI.
  *
- * @param roiEligible Detections with center inside ROI (preview-ready)
- * @param outsideRoi Detections with center outside ROI (filtered out)
+ * @param roiEligible Detections with ENTIRE bounding box inside ROI (preview-ready)
+ * @param outsideRoi Detections with bounding box outside or partially outside ROI (filtered out)
  * @param totalDetections Original count before filtering
  */
 data class RoiFilterResult(
@@ -15,7 +15,7 @@ data class RoiFilterResult(
     val outsideRoi: List<DetectionResult>,
     val totalDetections: Int,
 ) {
-    /** True if detections exist but none are inside ROI */
+    /** True if detections exist but none have their entire box inside ROI */
     val hasDetectionsOutsideRoiOnly: Boolean
         get() = roiEligible.isEmpty() && outsideRoi.isNotEmpty()
 
@@ -31,9 +31,10 @@ data class RoiFilterResult(
 /**
  * Filters detections based on ROI eligibility.
  *
- * A detection is ROI-eligible iff its CENTER point lies within the ROI.
+ * A detection is ROI-eligible iff its ENTIRE bounding box lies within the ROI.
  * This is a strict rule that ensures:
- * - Only detections inside the scan zone are shown
+ * - Only detections FULLY inside the scan zone are shown
+ * - Background/floor objects outside the guideline overlay are excluded
  * - Users learn to center objects in the scan zone
  * - Consistent behavior between visualization and scanning
  */
@@ -64,10 +65,10 @@ object RoiDetectionFilter {
 
         for (detection in detections) {
             val bbox = detection.bboxNorm
-            val centerX = (bbox.left + bbox.right) / 2f
-            val centerY = (bbox.top + bbox.bottom) / 2f
 
-            if (scanRoi.containsBoxCenter(centerX, centerY)) {
+            // Check if ENTIRE bounding box is contained within ROI
+            // All four corners must be inside the guideline overlay
+            if (scanRoi.containsBox(bbox.left, bbox.top, bbox.right, bbox.bottom)) {
                 eligible.add(detection)
             } else {
                 outside.add(detection)
