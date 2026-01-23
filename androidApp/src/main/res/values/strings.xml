@@ -455,6 +455,7 @@
     <string name="assistant_ai_assistant">AI Assistant</string>
     <string name="assistant_disabled_title">AI assistant is disabled</string>
     <string name="assistant_disabled_message">Enable it in Settings to generate marketplace-ready descriptions.</string>
+    <string name="assistant_disabled_error_message">AI assistant is disabled. Enable it in Settings to continue.</string>
     <string name="assistant_disabled_open_settings">Open settings</string>
 
     <!-- Items -->
@@ -1147,5 +1148,21 @@
     <string name="quota_exceeded_message_generic">You\'ve reached your daily limit for Vision API requests. This helps keep running costs sustainable.</string>
     <string name="quota_exceeded_reset">Your quota will reset at %1$s (midnight UTC).</string>
     <string name="quota_exceeded_support">Love Scanium? Support the app to keep it running smoothly!</string>
+
+    <!-- Hypothesis Selection -->
+    <string name="hypothesis_header">Most likely this is:</string>
+    <string name="hypothesis_none_of_these">None of these</string>
+    <string name="hypothesis_add_photo_to_refine">Add another photo to refine</string>
+
+    <!-- Correction Dialog -->
+    <string name="correction_dialog_title">Help me improve</string>
+    <string name="correction_dialog_explanation">What is this item? Your feedback helps make classifications more accurate.</string>
+    <string name="correction_dialog_category_label">Correct category</string>
+    <string name="correction_dialog_category_hint">e.g., Robot vacuum, Coffee maker</string>
+    <string name="correction_dialog_notes_label">Additional notes (optional)</string>
+    <string name="correction_dialog_notes_hint">Any details that might help…</string>
+    <string name="correction_dialog_predicted">We guessed: %1$s (%2$d%% confident)</string>
+    <string name="correction_dialog_submit">Submit</string>
+    <string name="correction_dialog_cancel">Cancel</string>
 
 </resources>

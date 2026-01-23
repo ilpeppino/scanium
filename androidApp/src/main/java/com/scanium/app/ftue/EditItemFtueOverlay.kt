@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -102,37 +103,41 @@ private fun TooltipBubbleEdit(
 ) {
     targetFieldRect ?: return
 
-    Surface(
-        modifier =
-            Modifier
-                .width(260.dp)
-                .wrapContentHeight()
-                .offset {
-                    // Calculate position: center horizontally on target, position above it
-                    val tooltipWidth = 260.dp.toPx()
-                    val x = (targetFieldRect.center.x - tooltipWidth / 2)
-                        .coerceIn(16.dp.toPx(), size.width - tooltipWidth - 16.dp.toPx())
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val containerWidth = with(androidx.compose.ui.platform.LocalDensity.current) { maxWidth.toPx() }
 
-                    // Position tooltip above target with some spacing
-                    val y = (targetFieldRect.top - 80.dp.toPx())
-                        .coerceAtLeast(16.dp.toPx())
-
-                    androidx.compose.ui.unit.IntOffset(x.toInt(), y.toInt())
-                },
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 8.dp,
-    ) {
-        Text(
-            text = text,
+        Surface(
             modifier =
                 Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+                    .width(260.dp)
+                    .wrapContentHeight()
+                    .offset {
+                        // Calculate position: center horizontally on target, position above it
+                        val tooltipWidth = 260.dp.toPx()
+                        val x = (targetFieldRect.center.x - tooltipWidth / 2)
+                            .coerceIn(16.dp.toPx(), containerWidth - tooltipWidth - 16.dp.toPx())
+
+                        // Position tooltip above target with some spacing
+                        val y = (targetFieldRect.top - 80.dp.toPx())
+                            .coerceAtLeast(16.dp.toPx())
+
+                        androidx.compose.ui.unit.IntOffset(x.toInt(), y.toInt())
+                    },
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 8.dp,
+        ) {
+            Text(
+                text = text,
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

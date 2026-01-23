@@ -244,6 +244,22 @@ export const configSchema = z.object({
     })
     .default({}),
 
+  // Classification reasoning (multi-hypothesis)
+  reasoning: z
+    .object({
+      /** Reasoning provider: 'mock' for testing, 'openai' or 'claude' for production */
+      provider: z.enum(['mock', 'openai', 'claude']).default('openai'),
+      /** OpenAI model for reasoning (default gpt-4o-mini for speed) */
+      model: z.string().default('gpt-4o-mini'),
+      /** Maximum tokens for reasoning response */
+      maxTokens: z.coerce.number().int().min(100).max(2000).default(800),
+      /** Reasoning API timeout in milliseconds */
+      timeoutMs: z.coerce.number().int().min(1000).max(30000).default(10000),
+      /** Confidence threshold for auto-progress (70 = 70%) */
+      confidenceThreshold: z.coerce.number().int().min(0).max(100).default(70),
+    })
+    .default({}),
+
   googleCredentialsPath: z.string().optional(),
 
   // Pricing insights (Phase 4 feature)
@@ -427,6 +443,13 @@ export function loadConfig(): Config {
       minLogoConfidence: process.env.VISION_MIN_LOGO_CONFIDENCE,
       dailyQuotaLimit: process.env.VISION_DAILY_QUOTA_LIMIT,
     },
+    reasoning: {
+      provider: process.env.REASONING_PROVIDER,
+      model: process.env.REASONING_MODEL,
+      maxTokens: process.env.REASONING_MAX_TOKENS,
+      timeoutMs: process.env.REASONING_TIMEOUT_MS,
+      confidenceThreshold: process.env.REASONING_CONFIDENCE_THRESHOLD,
+    },
     googleCredentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     pricing: {
       enabled: process.env.PRICING_ENABLED,
@@ -475,6 +498,10 @@ export function loadConfig(): Config {
     console.error(result.error.format());
     throw new Error('Invalid configuration - check environment variables');
   }
+
+  console.log('[Config] Reasoning provider:', result.data.reasoning.provider);
+  console.log('[Config] Reasoning model:', result.data.reasoning.model);
+  console.log('[Config] OpenAI key present:', !!result.data.assistant.openaiApiKey);
 
   return result.data;
 }

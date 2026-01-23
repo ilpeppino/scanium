@@ -6,18 +6,27 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.scanium.app.classification.persistence.ClassificationCorrectionDao
+import com.scanium.app.classification.persistence.ClassificationCorrectionEntity
 import com.scanium.app.selling.persistence.ListingDraftDao
 import com.scanium.app.selling.persistence.ListingDraftEntity
 
 @Database(
-    entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class, ListingDraftEntity::class],
-    version = 10,
+    entities = [
+        ScannedItemEntity::class,
+        ScannedItemHistoryEntity::class,
+        ListingDraftEntity::class,
+        ClassificationCorrectionEntity::class
+    ],
+    version = 11,
     exportSchema = false,
 )
 abstract class ScannedItemDatabase : RoomDatabase() {
     abstract fun scannedItemDao(): ScannedItemDao
 
     abstract fun listingDraftDao(): ListingDraftDao
+
+    abstract fun classificationCorrectionDao(): ClassificationCorrectionDao
 
     companion object {
         @Volatile
@@ -44,6 +53,7 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     MIGRATION_7_8,
                     MIGRATION_8_9,
                     MIGRATION_9_10,
+                    MIGRATION_10_11,
                 )
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
@@ -290,6 +300,38 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     // Create indexes for sync queries
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_scanned_items_serverId ON scanned_items(serverId)")
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_scanned_items_needsSync ON scanned_items(needsSync)")
+                }
+            }
+
+        private val MIGRATION_10_11 =
+            object : Migration(10, 11) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Add classification_corrections table for local learning overlay
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS classification_corrections (
+                            id TEXT NOT NULL PRIMARY KEY,
+                            itemId TEXT NOT NULL,
+                            imageHash TEXT NOT NULL,
+                            originalCategoryId TEXT,
+                            originalCategoryName TEXT,
+                            originalConfidence REAL,
+                            correctedCategoryId TEXT NOT NULL,
+                            correctedCategoryName TEXT NOT NULL,
+                            correctionMethod TEXT NOT NULL,
+                            notes TEXT,
+                            visualContext TEXT NOT NULL,
+                            correctedAt INTEGER NOT NULL,
+                            syncedToBackend INTEGER NOT NULL DEFAULT 0,
+                            syncedAt INTEGER
+                        )
+                        """.trimIndent(),
+                    )
+
+                    // Create indexes for efficient queries
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_classification_corrections_itemId ON classification_corrections(itemId)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_classification_corrections_correctedAt ON classification_corrections(correctedAt)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_classification_corrections_syncedToBackend ON classification_corrections(syncedToBackend)")
                 }
             }
     }

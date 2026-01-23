@@ -208,3 +208,32 @@ model VisionQuota {
   @@index([date]) // For cleanup of old records
   @@map("vision_quotas")
 }
+
+// Classification correction tracking
+// Stores user corrections for classification errors to enable learning
+model ClassificationCorrection {
+  id        String   @id @default(uuid())
+  userId    String?  // Optional: anonymous corrections allowed
+  deviceId  String?  // For device-local learning
+
+  // Original classification
+  imageHash            String   // SHA-256 of image
+  predictedCategory    String   // What we classified it as
+  predictedConfidence  Float?   // Original confidence
+
+  // User correction
+  correctedCategory    String   // What user said it is
+  correctionMethod     String   // "tap_alternative" | "manual_entry" | "search"
+  notes                String?  // Optional user notes
+
+  // Perception snapshot (for learning)
+  perceptionSnapshot   Json?    // Labels, OCR, colors at time of classification
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, imageHash])
+  @@index([deviceId, imageHash])
+  @@index([predictedCategory])
+  @@index([correctedCategory])
+  @@map("classification_corrections")
+}

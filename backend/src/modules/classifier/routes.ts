@@ -18,6 +18,9 @@ import {
   recordRateLimitHit,
   recordAttributeExtraction,
 } from '../../infra/observability/metrics.js';
+import { ClassificationReasoningService } from './reasoning/reasoning-service.js';
+import { OpenAIReasoningProvider } from './reasoning/openai-reasoning-provider.js';
+import { loadDomainPack } from './domain/domain-pack.js';
 
 type RouteOpts = { config: Config };
 
@@ -33,6 +36,50 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
     config,
     logger: fastify.log,
   });
+
+  // Initialize reasoning service for multi-hypothesis classification
+  const domainPack = loadDomainPack(config.classifier.domainPackPath);
+  let reasoningService: ClassificationReasoningService | null = null;
+
+  console.log('[Reasoning Init] Provider:', config.reasoning.provider);
+  console.log('[Reasoning Init] Model:', config.reasoning.model);
+  console.log('[Reasoning Init] Has OpenAI Key:', !!config.assistant.openaiApiKey);
+  console.log('[Reasoning Init] OpenAI Key Length:', config.assistant.openaiApiKey?.length);
+
+  if (config.reasoning.provider === 'openai' && config.assistant.openaiApiKey) {
+    console.log('[Reasoning Init] ✅ Conditions met, initializing reasoning service...');
+    const openaiProvider = new OpenAIReasoningProvider({
+      apiKey: config.assistant.openaiApiKey,
+      model: config.reasoning.model,
+      maxTokens: config.reasoning.maxTokens,
+      timeoutMs: config.reasoning.timeoutMs,
+    });
+
+    reasoningService = new ClassificationReasoningService(openaiProvider, domainPack, {
+      provider: config.reasoning.provider,
+      confidenceThreshold: config.reasoning.confidenceThreshold,
+    });
+    console.log('[Reasoning Init] ✅ Reasoning service initialized successfully!');
+
+    fastify.log.info(
+      {
+        provider: config.reasoning.provider,
+        model: config.reasoning.model,
+        confidenceThreshold: config.reasoning.confidenceThreshold,
+        domainPackId: config.classifier.domainPackId,
+      },
+      'Multi-hypothesis classification reasoning service initialized'
+    );
+  } else {
+    fastify.log.warn(
+      {
+        reasoningProvider: config.reasoning.provider,
+        hasOpenAIKey: !!config.assistant.openaiApiKey,
+      },
+      'Multi-hypothesis classification NOT available - reasoning service not initialized'
+    );
+  }
+
   const redisClient = await createRedisClient(
     config.classifier.rateLimitRedisUrl,
     fastify.log
@@ -240,6 +287,21 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         }
       }
 
+      let recentCorrections: import('./types.js').RecentCorrection[] | undefined;
+      if (payload.fields.recentCorrections) {
+        try {
+          const parsed = JSON.parse(payload.fields.recentCorrections);
+          if (Array.isArray(parsed)) {
+            recentCorrections = parsed;
+          } else {
+            throw new Error('invalid recentCorrections format');
+          }
+        } catch (error) {
+          request.log.warn({ correlationId, error }, 'Failed to parse recentCorrections');
+          // Don't fail the request, just ignore invalid corrections
+        }
+      }
+
       // SEC-004: Validate file size BEFORE reading into buffer to prevent memory exhaustion
       const buffer = await readFileWithSizeValidation(
         payload.file,
@@ -335,6 +397,20 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         enrichAttributesParam === '1' ||
         (enrichAttributesParam === undefined && config.classifier.enableAttributeEnrichment);
 
+      // Parse mode from query parameter (default: 'single')
+      const mode =
+        ((request.query as Record<string, string>)?.mode ?? 'single').toLowerCase();
+
+      if (!['single', 'multi-hypothesis'].includes(mode)) {
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid mode. Must be "single" or "multi-hypothesis"',
+            correlationId,
+          },
+        });
+      }
+
       // Images stay in-memory only. Future retention requires explicit opt-in via config.
       const requestId = randomUUID();
 
@@ -358,11 +434,66 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         fileName: payload.file.filename ?? 'upload',
         domainPackId,
         hints,
+        recentCorrections,
         enrichAttributes,
         traceContext,
       };
 
       const classifyStartTime = performance.now();
+
+      // Handle multi-hypothesis mode
+      if (mode === 'multi-hypothesis') {
+        if (!reasoningService) {
+          return reply.status(503).send({
+            error: {
+              code: 'SERVICE_UNAVAILABLE',
+              message: 'Multi-hypothesis classification not configured. OpenAI API key required.',
+              correlationId,
+            },
+          });
+        }
+
+        // Step 1: Get perception from Google Vision
+        const { providerResponse, providerUnavailable } = await service.getPerception(
+          classificationRequest
+        );
+
+        if (providerUnavailable) {
+          return reply.status(503).send({
+            error: {
+              code: 'SERVICE_UNAVAILABLE',
+              message: 'Vision service unavailable',
+              correlationId,
+            },
+          });
+        }
+
+        // Step 2: Generate hypotheses using reasoning service
+        const multiHypothesisResult = await reasoningService.generateMultiHypothesis(
+          classificationRequest,
+          providerResponse
+        );
+
+        const classifyLatencyMs = performance.now() - classifyStartTime;
+        usageStore.recordClassification(apiKey, config.classifier.visionFeature, false);
+
+        request.log.info(
+          {
+            requestId,
+            correlationId,
+            mode: 'multi-hypothesis',
+            hypothesesCount: multiHypothesisResult.hypotheses.length,
+            globalConfidence: multiHypothesisResult.globalConfidence,
+            needsRefinement: multiHypothesisResult.needsRefinement,
+            latencyMs: classifyLatencyMs,
+          },
+          'Multi-hypothesis classification response'
+        );
+
+        return reply.status(200).send({ ...multiHypothesisResult, cacheHit: false, correlationId });
+      }
+
+      // Standard single-hypothesis flow
       const result = await service.classify(classificationRequest);
       const classifyLatencyMs = performance.now() - classifyStartTime;
 

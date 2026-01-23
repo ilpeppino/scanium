@@ -10,6 +10,15 @@ export type VisionFeature =
 
 export type ClassificationHints = Record<string, unknown>;
 
+/** Recent correction for local learning overlay */
+export type RecentCorrection = {
+  originalCategoryId: string;
+  correctedCategoryId: string;
+  correctedCategoryName: string;
+  correctedAt: number; // Timestamp in ms
+  visualFingerprint?: string; // Simplified visual context (e.g., dominant colors, detected brands)
+};
+
 export type ClassificationRequest = {
   requestId: string;
   correlationId: string;
@@ -19,6 +28,8 @@ export type ClassificationRequest = {
   fileName: string;
   domainPackId: string;
   hints?: ClassificationHints;
+  /** Recent corrections for local learning overlay */
+  recentCorrections?: RecentCorrection[];
   /** Request attribute enrichment via VisionExtractor */
   enrichAttributes?: boolean;
   /** W3C Trace Context for distributed tracing */
@@ -120,5 +131,41 @@ export type ClassificationResult = {
     mapping?: number;
     /** Time spent on attribute enrichment (ms) */
     enrichment?: number;
+  };
+};
+
+/** Classification mode for hypothesis generation */
+export type ClassificationMode = 'single' | 'multi-hypothesis';
+
+/** A single classification hypothesis from reasoning layer */
+export type ClassificationHypothesis = {
+  domainCategoryId: string;
+  label: string;
+  confidence: number; // 0-1
+  confidenceBand: 'HIGH' | 'MED' | 'LOW';
+  explanation: string; // 1-2 sentences
+  attributes: Record<string, string>;
+  visualEvidence?: {
+    matchedLabels?: string[];
+    detectedBrands?: string[];
+    dominantColors?: string[];
+    ocrHints?: string[];
+  };
+};
+
+/** Multi-hypothesis classification result */
+export type MultiHypothesisResult = {
+  requestId: string;
+  correlationId: string;
+  domainPackId: string;
+  hypotheses: ClassificationHypothesis[]; // 3-5 ranked
+  globalConfidence: number; // 0-100
+  needsRefinement: boolean; // true if < 70%
+  refinementReason?: string;
+  provider: 'openai' | 'claude' | 'mock';
+  timingsMs: {
+    total: number;
+    perception?: number;
+    reasoning?: number;
   };
 };

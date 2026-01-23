@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.ItemCategory
+import com.scanium.app.classification.hypothesis.ClassificationHypothesis
+import com.scanium.app.classification.hypothesis.MultiHypothesisResult
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.logging.ScaniumLog
@@ -42,6 +44,7 @@ import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
  * - Request: multipart/form-data
  *   - `image`: JPEG file (cropped item)
  *   - `domainPackId`: string (default: "home_resale")
+ *   - `recentCorrections`: JSON array of recent user corrections (optional)
  * - Response: JSON (see CloudClassificationResponse in CloudClassifierApi)
  *
  * ## Error Handling
@@ -57,6 +60,7 @@ import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
  * ```
  *
  * @property context Android context (nullable) for debug crop saving
+ * @property correctionDao DAO for accessing recent classification corrections (nullable)
  * @property domainPackId Domain pack to use for classification (default: "home_resale")
  * @property maxAttempts Maximum number of retry attempts
  * @property baseDelayMs Base delay for exponential backoff
@@ -65,6 +69,7 @@ import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
  */
 class CloudClassifier(
     private val context: Context? = null,
+    private val correctionDao: com.scanium.app.classification.persistence.ClassificationCorrectionDao? = null,
     private val domainPackId: String = "home_resale",
     maxAttempts: Int = 3,
     baseDelayMs: Long = 1_000L,
@@ -143,6 +148,17 @@ class CloudClassifier(
 
             maybeSaveDebugCrop(input)
 
+            // Fetch recent corrections for local learning overlay
+            val recentCorrectionsJson = correctionDao?.let { dao ->
+                try {
+                    val corrections = dao.getRecentCorrections(limit = 20)
+                    com.scanium.app.classification.persistence.CorrectionHistoryHelper.toBackendJson(corrections)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to fetch recent corrections", e)
+                    null
+                }
+            }
+
             // Begin telemetry span
             val classifySpan = telemetryHelper.beginClassificationSpan()
             val startTime = System.currentTimeMillis()
@@ -153,6 +169,7 @@ class CloudClassifier(
                     api.classify(
                         bitmap = input.bitmap,
                         config = config,
+                        recentCorrections = recentCorrectionsJson,
                     ) { attempt, error ->
                         // Callback for each attempt
                         if (error != null) {
@@ -213,6 +230,71 @@ class CloudClassifier(
                 return@withContext failureResult("Unexpected error: ${e.message}")
             } finally {
                 classifySpan?.ensureCleanup()
+            }
+        }
+
+    /**
+     * Classify an image with multi-hypothesis mode, returning ranked hypotheses.
+     *
+     * @param bitmap Image to classify
+     * @return MultiHypothesisResult with top hypotheses, or null on error
+     */
+    suspend fun classifyMultiHypothesis(bitmap: Bitmap): MultiHypothesisResult? =
+        withContext(Dispatchers.IO) {
+            val config = currentConfig()
+
+            // Check configuration
+            if (!config.isConfigured) {
+                ScaniumLog.w(TAG, "Cloud classifier not configured for multi-hypothesis")
+                return@withContext null
+            }
+
+            // Fetch recent corrections for local learning overlay
+            val recentCorrectionsJson = correctionDao?.let { dao ->
+                try {
+                    val corrections = dao.getRecentCorrections(limit = 20)
+                    com.scanium.app.classification.persistence.CorrectionHistoryHelper.toBackendJson(corrections)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to fetch recent corrections", e)
+                    null
+                }
+            }
+
+            try {
+                // Execute API request with mode=multi-hypothesis
+                val apiResult =
+                    api.classify(
+                        bitmap = bitmap,
+                        config = config,
+                        mode = "multi-hypothesis",
+                        recentCorrections = recentCorrectionsJson,
+                    ) { attempt, error ->
+                        // Log errors but don't fail - just return null
+                        if (error != null) {
+                            Log.w(TAG, "Multi-hypothesis attempt $attempt error: ${error.message}")
+                        }
+                    }
+
+                // Process API result
+                when (apiResult) {
+                    is ApiResult.Success -> {
+                        val response = apiResult.response
+                        return@withContext parseMultiHypothesisResponse(response)
+                    }
+
+                    is ApiResult.Error -> {
+                        Log.w(TAG, "Multi-hypothesis classification error: ${apiResult.error.message}")
+                        return@withContext null
+                    }
+
+                    is ApiResult.ConfigError -> {
+                        Log.w(TAG, "Multi-hypothesis config error: ${apiResult.message}")
+                        return@withContext null
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Unexpected error in multi-hypothesis classification", e)
+                return@withContext null
             }
         }
 
@@ -289,6 +371,34 @@ class CloudClassifier(
             status = ClassificationStatus.SUCCESS,
             errorMessage = null,
             requestId = requestId,
+        )
+    }
+
+    /**
+     * Parse multi-hypothesis API response into MultiHypothesisResult.
+     */
+    private fun parseMultiHypothesisResponse(apiResponse: CloudClassificationResponse): MultiHypothesisResult? {
+        val hypotheses = apiResponse.hypotheses?.take(3)?.map { h ->
+            ClassificationHypothesis(
+                categoryId = h.categoryId,
+                categoryName = h.categoryName,
+                explanation = h.explanation,
+                confidence = h.confidence,
+                confidenceBand = h.confidenceBand,
+                attributes = h.attributes
+            )
+        } ?: emptyList()
+
+        if (hypotheses.isEmpty()) {
+            Log.w(TAG, "No hypotheses in multi-hypothesis response")
+            return null
+        }
+
+        return MultiHypothesisResult(
+            hypotheses = hypotheses,
+            globalConfidence = apiResponse.globalConfidence ?: 0f,
+            needsRefinement = apiResponse.needsRefinement ?: false,
+            requestId = apiResponse.requestId ?: ""
         )
     }
 
