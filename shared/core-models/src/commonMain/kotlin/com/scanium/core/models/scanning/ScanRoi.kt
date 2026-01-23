@@ -167,20 +167,20 @@ data class ScanRoi(
     }
 
     companion object {
-        /** Default ROI - centered, 65% of frame width */
+        /** Default ROI - centered, 80% of frame width */
         val DEFAULT =
             ScanRoi(
                 centerXNorm = 0.5f,
                 centerYNorm = 0.5f,
-                widthNorm = 0.65f,
-                heightNorm = 0.65f,
+                widthNorm = 0.80f,
+                heightNorm = 0.80f,
             )
 
         /** Minimum allowed ROI size (45% of frame) */
         const val MIN_SIZE_NORM = 0.45f
 
-        /** Maximum allowed ROI size (75% of frame) */
-        const val MAX_SIZE_NORM = 0.75f
+        /** Maximum allowed ROI size (80% of frame) */
+        const val MAX_SIZE_NORM = 0.80f
 
         /** Area threshold - boxes larger than this are "too close" */
         const val MAX_CLOSE_AREA = 0.35f
@@ -209,7 +209,7 @@ data class ScanRoi(
          */
         fun forAspectRatio(
             previewAspectRatio: Float,
-            baseSize: Float = 0.65f,
+            baseSize: Float = 0.80f,
         ): ScanRoi {
             val clampedBase = baseSize.coerceIn(MIN_SIZE_NORM, MAX_SIZE_NORM)
             return if (previewAspectRatio > 1f) {
@@ -238,7 +238,7 @@ data class ScanRoi(
  */
 data class ScanRoiConfig(
     /** Initial ROI size (fraction of frame) */
-    val initialSize: Float = 0.65f,
+    val initialSize: Float = 0.80f,
     /** Minimum ROI size */
     val minSize: Float = ScanRoi.MIN_SIZE_NORM,
     /** Maximum ROI size */
