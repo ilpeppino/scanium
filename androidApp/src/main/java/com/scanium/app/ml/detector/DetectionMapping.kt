@@ -37,15 +37,28 @@ object DetectionMapping {
     const val MAX_THUMBNAIL_DIMENSION_PX = 512
     const val BOUNDING_BOX_TIGHTEN_RATIO = 0.04f
 
+    // Bounding box validation thresholds
+    private const val MAX_BBOX_AREA_RATIO = 0.70f // Reject if bbox > 70% of frame
+    private const val MAX_ASPECT_RATIO = 5.0f // Reject if width/height > 5 or < 0.2
+    private const val MIN_ASPECT_RATIO = 0.2f
+
     // Rate-limited logging for dropped detections
     @Volatile
     private var lastEdgeDropLogTime = 0L
+    @Volatile
+    private var lastOversizedDropLogTime = 0L
+    @Volatile
+    private var lastAspectRatioDropLogTime = 0L
     private const val EDGE_DROP_LOG_INTERVAL_MS = 5000L
+    private const val BBOX_VALIDATION_LOG_INTERVAL_MS = 5000L
 
     /**
      * PHASE 3: Geometry-based filtering (ZERO image cropping)
-     * Checks if a detection's center falls within the visible cropRect with inset margin.
+     * Checks if a detection's bounding box is fully contained within the safe zone with inset margin.
      * This eliminates detections at screen edges that are likely partial/cut-off objects.
+     *
+     * Updated to check all four corners instead of just the center to prevent large boxes
+     * from passing validation when they extend far beyond the safe zone.
      *
      * @param bbox Detection bounding box in absolute pixel coordinates
      * @param cropRect Visible viewport rect (from ImageProxy.cropRect)
@@ -60,10 +73,6 @@ object DetectionMapping {
         // If no cropRect provided, accept all detections (no filtering)
         if (cropRect == null || edgeInsetRatio <= 0f) return true
 
-        // Calculate detection center (no allocations - use primitives)
-        val centerX = (bbox.left + bbox.right) / 2
-        val centerY = (bbox.top + bbox.bottom) / 2
-
         // Calculate inset safe zone (inset from each edge)
         val insetX = (cropRect.width() * edgeInsetRatio).toInt()
         val insetY = (cropRect.height() * edgeInsetRatio).toInt()
@@ -73,10 +82,26 @@ object DetectionMapping {
         val safeTop = cropRect.top + insetY
         val safeBottom = cropRect.bottom - insetY
 
-        // Check if center is inside safe zone
-        val isInside =
+        // Calculate bbox area for adaptive checking
+        val bboxArea = bbox.width() * bbox.height()
+        val frameArea = cropRect.width() * cropRect.height()
+        val areaRatio = if (frameArea > 0) bboxArea.toFloat() / frameArea.toFloat() else 0f
+
+        // For large detections (>40% of frame), require all corners inside safe zone
+        // For smaller detections, only require center inside (less strict)
+        val requireAllCorners = areaRatio > 0.40f
+
+        val isInside = if (requireAllCorners) {
+            // All four corners must be inside safe zone
+            bbox.left >= safeLeft && bbox.right <= safeRight &&
+                bbox.top >= safeTop && bbox.bottom <= safeBottom
+        } else {
+            // Only center needs to be inside (original behavior for small objects)
+            val centerX = (bbox.left + bbox.right) / 2
+            val centerY = (bbox.top + bbox.bottom) / 2
             centerX >= safeLeft && centerX <= safeRight &&
                 centerY >= safeTop && centerY <= safeBottom
+        }
 
         // Rate-limited logging for edge drops
         if (!isInside) {
@@ -84,13 +109,76 @@ object DetectionMapping {
             if (now - lastEdgeDropLogTime >= EDGE_DROP_LOG_INTERVAL_MS) {
                 Log.d(
                     TAG,
-                    "[EDGE_FILTER] Dropped detection at edge: center=($centerX,$centerY), safeZone=($safeLeft,$safeTop)-($safeRight,$safeBottom)",
+                    "[EDGE_FILTER] Dropped detection at edge: bbox=($bbox), " +
+                        "safeZone=($safeLeft,$safeTop)-($safeRight,$safeBottom), " +
+                        "areaRatio=${(areaRatio * 100).toInt()}%, strictMode=$requireAllCorners",
                 )
                 lastEdgeDropLogTime = now
             }
         }
 
         return isInside
+    }
+
+    /**
+     * Validates bounding box size and aspect ratio to filter out problematic detections.
+     * Rejects detections that are:
+     * - Too large (>70% of frame area) - likely background/floor included
+     * - Extreme aspect ratios (>5:1 or <1:5) - likely erroneous detections
+     *
+     * @param bbox Detection bounding box in absolute pixel coordinates
+     * @param frameWidth Frame width in pixels
+     * @param frameHeight Frame height in pixels
+     * @return true if bbox passes validation, false if it should be rejected
+     */
+    fun isBoundingBoxValid(
+        bbox: Rect,
+        frameWidth: Int,
+        frameHeight: Int,
+    ): Boolean {
+        if (frameWidth <= 0 || frameHeight <= 0) return true
+
+        // Calculate bbox dimensions
+        val bboxWidth = bbox.width().coerceAtLeast(1)
+        val bboxHeight = bbox.height().coerceAtLeast(1)
+
+        // Check area ratio
+        val frameArea = frameWidth * frameHeight
+        val bboxArea = bboxWidth * bboxHeight
+        val areaRatio = bboxArea.toFloat() / frameArea.toFloat()
+
+        if (areaRatio > MAX_BBOX_AREA_RATIO) {
+            val now = System.currentTimeMillis()
+            if (now - lastOversizedDropLogTime >= BBOX_VALIDATION_LOG_INTERVAL_MS) {
+                Log.w(
+                    TAG,
+                    "[BBOX_VALIDATION] Rejected oversized detection: area=${(areaRatio * 100).toInt()}% " +
+                        "(${bboxWidth}x$bboxHeight in ${frameWidth}x$frameHeight frame), " +
+                        "threshold=${(MAX_BBOX_AREA_RATIO * 100).toInt()}%",
+                )
+                lastOversizedDropLogTime = now
+            }
+            return false
+        }
+
+        // Check aspect ratio (width/height)
+        val aspectRatio = bboxWidth.toFloat() / bboxHeight.toFloat()
+
+        if (aspectRatio > MAX_ASPECT_RATIO || aspectRatio < MIN_ASPECT_RATIO) {
+            val now = System.currentTimeMillis()
+            if (now - lastAspectRatioDropLogTime >= BBOX_VALIDATION_LOG_INTERVAL_MS) {
+                Log.w(
+                    TAG,
+                    "[BBOX_VALIDATION] Rejected detection with extreme aspect ratio: " +
+                        "ratio=${"%.2f".format(aspectRatio)} (${bboxWidth}x$bboxHeight), " +
+                        "valid range: $MIN_ASPECT_RATIO-$MAX_ASPECT_RATIO",
+                )
+                lastAspectRatioDropLogTime = now
+            }
+            return false
+        }
+
+        return true
     }
 
     /**

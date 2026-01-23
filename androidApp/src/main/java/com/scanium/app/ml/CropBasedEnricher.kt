@@ -305,7 +305,17 @@ class CropBasedEnricher
             val right = (bbox.right * fullImage.width).toInt().coerceIn(left + 1, fullImage.width)
             val bottom = (bbox.bottom * fullImage.height).toInt().coerceIn(top + 1, fullImage.height)
 
-            return Bitmap.createBitmap(fullImage, left, top, right - left, bottom - top)
+            val cropWidth = right - left
+            val cropHeight = bottom - top
+            val bboxArea = (bbox.right - bbox.left) * (bbox.bottom - bbox.top)
+
+            Log.d(
+                TAG,
+                "CROP_ENRICH: Cropping bbox (${bbox.left}, ${bbox.top}, ${bbox.right}, ${bbox.bottom}) " +
+                    "area=${(bboxArea * 100).toInt()}% to ${cropWidth}x$cropHeight from ${fullImage.width}x${fullImage.height}",
+            )
+
+            return Bitmap.createBitmap(fullImage, left, top, cropWidth, cropHeight)
         }
 
         private fun cropWithPadding(
@@ -315,8 +325,25 @@ class CropBasedEnricher
         ): Bitmap {
             val bboxWidth = bbox.right - bbox.left
             val bboxHeight = bbox.bottom - bbox.top
-            val padX = bboxWidth * padding
-            val padY = bboxHeight * padding
+
+            // Adaptive padding: reduce padding for larger objects to avoid capturing too much background
+            // Calculate bbox area ratio to determine appropriate padding
+            val bboxArea = bboxWidth * bboxHeight
+            val adaptivePadding = when {
+                bboxArea > 0.50f -> padding * 0.2f  // Large objects (>50%): 5% padding (was 25%)
+                bboxArea > 0.35f -> padding * 0.4f  // Medium-large: 10% padding
+                bboxArea > 0.20f -> padding * 0.6f  // Medium: 15% padding
+                else -> padding                      // Small objects: full 25% padding
+            }
+
+            Log.d(
+                TAG,
+                "CROP_ENRICH: Adaptive padding for bbox area=${(bboxArea * 100).toInt()}%: " +
+                    "using ${(adaptivePadding * 100).toInt()}% padding (base=${(padding * 100).toInt()}%)",
+            )
+
+            val padX = bboxWidth * adaptivePadding
+            val padY = bboxHeight * adaptivePadding
 
             val left = ((bbox.left - padX) * fullImage.width).toInt().coerceIn(0, fullImage.width - 1)
             val top = ((bbox.top - padY) * fullImage.height).toInt().coerceIn(0, fullImage.height - 1)

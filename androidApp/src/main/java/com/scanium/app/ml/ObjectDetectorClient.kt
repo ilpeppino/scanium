@@ -102,6 +102,12 @@ class ObjectDetectorClient {
                     return@forEach
                 }
 
+                // Validate bounding box size and aspect ratio
+                if (!DetectionMapping.isBoundingBoxValid(obj.boundingBox, uprightWidth, uprightHeight)) {
+                    // Detection has invalid bbox (too large or extreme aspect ratio) - skip it
+                    return@forEach
+                }
+
                 val scannedItem =
                     DetectionMapping.convertToScannedItem(
                         detectedObject = obj,
@@ -206,6 +212,12 @@ class ObjectDetectorClient {
                 // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
                 if (!DetectionMapping.isDetectionInsideSafeZone(obj.boundingBox, cropRect, edgeInsetRatio)) {
                     // Detection is outside visible area or too close to edge - skip it
+                    return@forEach
+                }
+
+                // Validate bounding box size and aspect ratio
+                if (!DetectionMapping.isBoundingBoxValid(obj.boundingBox, uprightWidth, uprightHeight)) {
+                    // Detection has invalid bbox (too large or extreme aspect ratio) - skip it
                     return@forEach
                 }
 

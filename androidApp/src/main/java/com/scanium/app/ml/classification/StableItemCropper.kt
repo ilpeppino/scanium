@@ -123,8 +123,28 @@ class StableItemCropper(
     ): android.graphics.Rect {
         val rect = boundingBox.toRect(width, height)
 
-        val padX = (rect.width() * paddingRatio).roundToInt()
-        val padY = (rect.height() * paddingRatio).roundToInt()
+        // Adaptive padding: reduce padding for larger objects to avoid capturing too much background
+        // Large objects (>50% of frame) already have enough context, small objects need more padding
+        val frameArea = width * height
+        val bboxArea = rect.width() * rect.height()
+        val areaRatio = if (frameArea > 0) bboxArea.toFloat() / frameArea.toFloat() else 0f
+
+        val adaptivePaddingRatio = when {
+            areaRatio > 0.50f -> paddingRatio * 0.3f  // Large objects: 3.6% padding (was 12%)
+            areaRatio > 0.35f -> paddingRatio * 0.5f  // Medium-large: 6% padding
+            areaRatio > 0.20f -> paddingRatio * 0.75f // Medium: 9% padding
+            else -> paddingRatio                       // Small objects: full 12% padding
+        }
+
+        Log.d(
+            TAG,
+            "Adaptive padding: areaRatio=${(areaRatio * 100).toInt()}%, " +
+                "paddingRatio=${(adaptivePaddingRatio * 100).toInt()}% " +
+                "(base=${(paddingRatio * 100).toInt()}%)",
+        )
+
+        val padX = (rect.width() * adaptivePaddingRatio).roundToInt()
+        val padY = (rect.height() * adaptivePaddingRatio).roundToInt()
 
         val left = (rect.left - padX).coerceAtLeast(0)
         val top = (rect.top - padY).coerceAtLeast(0)
