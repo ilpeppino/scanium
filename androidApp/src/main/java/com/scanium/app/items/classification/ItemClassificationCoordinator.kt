@@ -334,11 +334,15 @@ class ItemClassificationCoordinator(
                 if (thumbnailToUse == null) {
                     null
                 } else {
+                    // CRITICAL FIX: Create a temporary copy with prepared thumbnail for classification
+                    // Original WYSIWYG thumbnail must be preserved in the aggregator
+                    // Classification uses the prepared thumbnail but doesn't persist it
                     if (thumbnailToUse is ImageRef.Bytes) {
                         ThumbnailCache.put(aggregatedItem.aggregatedId, thumbnailToUse)
                     }
-                    stateManager.updateThumbnail(aggregatedItem.aggregatedId, thumbnailToUse)
-                    aggregatedItem
+                    // Return a copy of the item with the prepared thumbnail for classification
+                    // The original item in the aggregator retains its WYSIWYG thumbnail
+                    aggregatedItem.copy(thumbnail = thumbnailToUse)
                 }
             }
         }
