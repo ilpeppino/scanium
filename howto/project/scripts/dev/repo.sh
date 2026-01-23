@@ -345,6 +345,20 @@ main() {
   printf "%sRepo:%s   %s\n" "$C_DIM" "$C_RESET" "$repo_path"
   printf "%sBranch:%s %s\n" "$C_DIM" "$C_RESET" "$(git rev-parse --abbrev-ref HEAD)"
   printf "%sAction:%s %s\n" "$C_DIM" "$C_RESET" "${last_action:-none}"
+
+  # Show last commit SHA with date/time
+  local commit_info
+  commit_info=$(git log -1 --format='%h - %ci' 2>/dev/null || echo "unknown")
+  printf "%sCommit:%s %s\n" "$C_DIM" "$C_RESET" "$commit_info"
+
+  # Show uncommitted files if any
+  if ! working_tree_clean; then
+    printf "%sStatus:%s uncommitted changes detected\n" "$C_DIM" "$C_RESET"
+    print_dirty_files
+  else
+    printf "%sStatus:%s clean working tree\n" "$C_DIM" "$C_RESET"
+  fi
+
   hr
 
   echo "__REPO_PATH__=$repo_path"
