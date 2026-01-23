@@ -1,22 +1,22 @@
-#!/usr/bin/env bash
+***REMOVED***!/usr/bin/env bash
 
-# Deterministic build + install + verify script for betaDebug variant
-# Ensures the installed APK always matches the current git HEAD SHA
-#
-# Usage:
-#   ./scripts/dev/install_beta_debug.sh [--uninstall]
-#
-# Options:
-#   --uninstall    Uninstall existing app before installing
+***REMOVED*** Deterministic build + install + verify script for betaDebug variant
+***REMOVED*** Ensures the installed APK always matches the current git HEAD SHA
+***REMOVED***
+***REMOVED*** Usage:
+***REMOVED***   ./scripts/dev/install_beta_debug.sh [--uninstall]
+***REMOVED***
+***REMOVED*** Options:
+***REMOVED***   --uninstall    Uninstall existing app before installing
 
 set -euo pipefail
 
-# Colors for output
+***REMOVED*** Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m' ***REMOVED*** No Color
 
 UNINSTALL=false
 if [[ "${1:-}" == "--uninstall" ]]; then
@@ -37,7 +37,7 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}Scanium Beta Build + Install + Verify${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-# Step 1: Compute expected SHA
+***REMOVED*** Step 1: Compute expected SHA
 echo -e "\n${BLUE}[1/7] Computing expected git SHA...${NC}"
 EXPECTED_SHA=$(git rev-parse --short HEAD)
 if [[ -z "$EXPECTED_SHA" ]]; then
@@ -46,7 +46,7 @@ if [[ -z "$EXPECTED_SHA" ]]; then
 fi
 echo -e "Expected SHA: ${GREEN}$EXPECTED_SHA${NC}"
 
-# Step 2: Check for connected device
+***REMOVED*** Step 2: Check for connected device
 echo -e "\n${BLUE}[2/7] Checking for connected device...${NC}"
 if ! adb devices | grep -q 'device$'; then
     echo -e "${RED}ERROR: No device connected. Connect a device and enable USB debugging.${NC}"
@@ -57,7 +57,7 @@ fi
 DEVICE_SERIAL=$(adb devices | grep 'device$' | head -1 | awk '{print $1}')
 echo -e "Device: ${GREEN}$DEVICE_SERIAL${NC}"
 
-# Step 3: Detect device ABI
+***REMOVED*** Step 3: Detect device ABI
 echo -e "\n${BLUE}[3/7] Detecting device ABI...${NC}"
 DEVICE_ABI=$(adb shell getprop ro.product.cpu.abi | tr -d '\r\n')
 if [[ -z "$DEVICE_ABI" ]]; then
@@ -66,12 +66,12 @@ if [[ -z "$DEVICE_ABI" ]]; then
 fi
 echo -e "Device ABI: ${GREEN}$DEVICE_ABI${NC}"
 
-# Step 4: Build the APK (force rebuild to ensure current git SHA)
+***REMOVED*** Step 4: Build the APK (force rebuild to ensure current git SHA)
 echo -e "\n${BLUE}[4/7] Building $VARIANT variant...${NC}"
 echo -e "${YELLOW}Note: Using --rerun-tasks to ensure git SHA matches current HEAD${NC}"
 ./gradlew ":$APP_MODULE:assemble$VARIANT" --no-daemon --console=plain --rerun-tasks
 
-# Step 5: Locate the APK deterministically
+***REMOVED*** Step 5: Locate the APK deterministically
 echo -e "\n${BLUE}[5/7] Locating APK...${NC}"
 APK_OUTPUT_DIR="$PROJECT_ROOT/$APP_MODULE/build/outputs/apk/$FLAVOR/$BUILD_TYPE"
 APK_FILE="$APK_OUTPUT_DIR/$APP_MODULE-$FLAVOR-$DEVICE_ABI-$BUILD_TYPE.apk"
@@ -87,7 +87,7 @@ fi
 APK_SIZE=$(du -h "$APK_FILE" | awk '{print $1}')
 echo -e "APK: ${GREEN}$APK_FILE${NC} (${APK_SIZE})"
 
-# Step 6: Optionally uninstall, then install
+***REMOVED*** Step 6: Optionally uninstall, then install
 if [[ "$UNINSTALL" == "true" ]]; then
     echo -e "\n${BLUE}[6/7] Uninstalling existing app...${NC}"
     if adb shell pm list packages | grep -q "^package:$APPLICATION_ID\$"; then
@@ -104,22 +104,22 @@ echo -e "${BLUE}Installing $APK_FILE...${NC}"
 adb install -r "$APK_FILE"
 echo -e "${GREEN}Install completed${NC}"
 
-# Step 7: Verify installed SHA matches expected SHA
+***REMOVED*** Step 7: Verify installed SHA matches expected SHA
 echo -e "\n${BLUE}[7/7] Verifying installed build SHA...${NC}"
 
-# Clear logcat buffer
+***REMOVED*** Clear logcat buffer
 adb logcat -c
 
-# Launch the app to trigger startup logging
+***REMOVED*** Launch the app to trigger startup logging
 echo -e "${BLUE}Launching app to read build info...${NC}"
 adb shell am start -n "$APPLICATION_ID/com.scanium.app.MainActivity" > /dev/null 2>&1 || {
     echo -e "${YELLOW}Warning: Failed to launch app, but may still be able to read build info${NC}"
 }
 
-# Wait for app startup
+***REMOVED*** Wait for app startup
 sleep 2
 
-# Read the build info from logcat
+***REMOVED*** Read the build info from logcat
 BUILD_LOG=$(adb logcat -d -s APP_BUILD:I | grep -E "git=|versionName=" | tail -1)
 
 if [[ -z "$BUILD_LOG" ]]; then
@@ -135,9 +135,9 @@ fi
 
 echo -e "${GREEN}Received build info from device${NC}"
 
-# Parse the build log
-# Format: versionName=X.X.X versionCode=XXX flavor=beta buildType=debug git=XXXXXXX time=YYYY-MM-DDTHH:MM:SSZ
-# Using sed for macOS compatibility (grep -P not available on macOS)
+***REMOVED*** Parse the build log
+***REMOVED*** Format: versionName=X.X.X versionCode=XXX flavor=beta buildType=debug git=XXXXXXX time=YYYY-MM-DDTHH:MM:SSZ
+***REMOVED*** Using sed for macOS compatibility (grep -P not available on macOS)
 INSTALLED_VERSION_NAME=$(echo "$BUILD_LOG" | sed -n 's/.*versionName=\([^ ]*\).*/\1/p')
 INSTALLED_VERSION_CODE=$(echo "$BUILD_LOG" | sed -n 's/.*versionCode=\([^ ]*\).*/\1/p')
 INSTALLED_FLAVOR=$(echo "$BUILD_LOG" | sed -n 's/.*flavor=\([^ ]*\).*/\1/p')
@@ -145,7 +145,7 @@ INSTALLED_BUILD_TYPE=$(echo "$BUILD_LOG" | sed -n 's/.*buildType=\([^ ]*\).*/\1/
 INSTALLED_SHA=$(echo "$BUILD_LOG" | sed -n 's/.*git=\([^ ]*\).*/\1/p')
 INSTALLED_BUILD_TIME=$(echo "$BUILD_LOG" | sed -n 's/.*time=\([^ ]*\).*/\1/p')
 
-# Fallback to "unknown" if parsing failed
+***REMOVED*** Fallback to "unknown" if parsing failed
 [[ -z "$INSTALLED_VERSION_NAME" ]] && INSTALLED_VERSION_NAME="unknown"
 [[ -z "$INSTALLED_VERSION_CODE" ]] && INSTALLED_VERSION_CODE="unknown"
 [[ -z "$INSTALLED_FLAVOR" ]] && INSTALLED_FLAVOR="unknown"
@@ -164,7 +164,7 @@ echo -e "Build Time:   ${GREEN}$INSTALLED_BUILD_TIME${NC}"
 echo -e "Expected SHA: ${GREEN}$EXPECTED_SHA${NC}"
 echo -e "Installed SHA: ${GREEN}$INSTALLED_SHA${NC}"
 
-# Compare SHAs
+***REMOVED*** Compare SHAs
 if [[ "$INSTALLED_SHA" == "$EXPECTED_SHA" ]]; then
     echo -e "\n${GREEN}✓ SUCCESS: Installed SHA matches expected SHA${NC}"
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

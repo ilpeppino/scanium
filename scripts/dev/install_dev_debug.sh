@@ -1,22 +1,22 @@
-#!/usr/bin/env bash
+***REMOVED***!/usr/bin/env bash
 
-# Deterministic build + install + verify script for devDebug variant
-# Ensures the installed APK always matches the current git HEAD SHA
-#
-# Usage:
-#   ./scripts/dev/install_dev_debug.sh [--uninstall]
-#
-# Options:
-#   --uninstall    Uninstall existing app before installing
+***REMOVED*** Deterministic build + install + verify script for devDebug variant
+***REMOVED*** Ensures the installed APK always matches the current git HEAD SHA
+***REMOVED***
+***REMOVED*** Usage:
+***REMOVED***   ./scripts/dev/install_dev_debug.sh [--uninstall]
+***REMOVED***
+***REMOVED*** Options:
+***REMOVED***   --uninstall    Uninstall existing app before installing
 
 set -euo pipefail
 
-# Colors for output
+***REMOVED*** Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m' ***REMOVED*** No Color
 
 UNINSTALL=false
 if [[ "${1:-}" == "--uninstall" ]]; then
@@ -37,7 +37,7 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}Scanium Dev Build + Install + Verify${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-# Step 1: Compute expected SHA
+***REMOVED*** Step 1: Compute expected SHA
 echo -e "\n${BLUE}[1/7] Computing expected git SHA...${NC}"
 EXPECTED_SHA=$(git rev-parse --short HEAD)
 if [[ -z "$EXPECTED_SHA" ]]; then
@@ -46,7 +46,7 @@ if [[ -z "$EXPECTED_SHA" ]]; then
 fi
 echo -e "Expected SHA: ${GREEN}$EXPECTED_SHA${NC}"
 
-# Step 2: Check for connected device
+***REMOVED*** Step 2: Check for connected device
 echo -e "\n${BLUE}[2/7] Checking for connected device...${NC}"
 if ! adb devices | grep -q 'device$'; then
     echo -e "${RED}ERROR: No device connected. Connect a device and enable USB debugging.${NC}"
@@ -57,7 +57,7 @@ fi
 DEVICE_SERIAL=$(adb devices | grep 'device$' | head -1 | awk '{print $1}')
 echo -e "Device: ${GREEN}$DEVICE_SERIAL${NC}"
 
-# Step 3: Detect device ABI
+***REMOVED*** Step 3: Detect device ABI
 echo -e "\n${BLUE}[3/7] Detecting device ABI...${NC}"
 DEVICE_ABI=$(adb shell getprop ro.product.cpu.abi | tr -d '\r\n')
 if [[ -z "$DEVICE_ABI" ]]; then
@@ -66,12 +66,12 @@ if [[ -z "$DEVICE_ABI" ]]; then
 fi
 echo -e "Device ABI: ${GREEN}$DEVICE_ABI${NC}"
 
-# Step 4: Build the APK (force rebuild to ensure current git SHA)
+***REMOVED*** Step 4: Build the APK (force rebuild to ensure current git SHA)
 echo -e "\n${BLUE}[4/7] Building $VARIANT variant...${NC}"
 echo -e "${YELLOW}Note: Using --rerun-tasks to ensure git SHA matches current HEAD${NC}"
 ./gradlew ":$APP_MODULE:assemble$VARIANT" --no-daemon --console=plain --rerun-tasks
 
-# Step 5: Locate the APK deterministically
+***REMOVED*** Step 5: Locate the APK deterministically
 echo -e "\n${BLUE}[5/7] Locating APK...${NC}"
 APK_OUTPUT_DIR="$PROJECT_ROOT/$APP_MODULE/build/outputs/apk/$FLAVOR/$BUILD_TYPE"
 APK_FILE="$APK_OUTPUT_DIR/$APP_MODULE-$FLAVOR-$DEVICE_ABI-$BUILD_TYPE.apk"
@@ -87,7 +87,7 @@ fi
 APK_SIZE=$(du -h "$APK_FILE" | awk '{print $1}')
 echo -e "APK: ${GREEN}$APK_FILE${NC} (${APK_SIZE})"
 
-# Step 6: Optionally uninstall, then install
+***REMOVED*** Step 6: Optionally uninstall, then install
 if [[ "$UNINSTALL" == "true" ]]; then
     echo -e "\n${BLUE}[6/7] Uninstalling existing app...${NC}"
     if adb shell pm list packages | grep -q "^package:$APPLICATION_ID\$"; then
@@ -104,23 +104,23 @@ echo -e "${BLUE}Installing $APK_FILE...${NC}"
 adb install -r "$APK_FILE"
 echo -e "${GREEN}Install completed${NC}"
 
-# Step 7: Verify installed SHA matches expected SHA
+***REMOVED*** Step 7: Verify installed SHA matches expected SHA
 echo -e "\n${BLUE}[7/7] Verifying installed build SHA...${NC}"
 
-# Clear logcat buffer
+***REMOVED*** Clear logcat buffer
 adb logcat -c
 
-# Trigger the debug broadcast receiver (explicit component required for Android 8+)
+***REMOVED*** Trigger the debug broadcast receiver (explicit component required for Android 8+)
 adb shell am broadcast -n "$APPLICATION_ID/com.scanium.app.debug.BuildInfoReceiver" -a com.scanium.app.DEBUG_BUILD_INFO > /dev/null 2>&1 || {
     echo -e "${RED}ERROR: Failed to trigger debug broadcast${NC}"
     echo -e "${YELLOW}This may indicate the BuildInfoReceiver is not registered.${NC}"
     exit 1
 }
 
-# Wait briefly for logcat output
+***REMOVED*** Wait briefly for logcat output
 sleep 1
 
-# Read the build info from logcat
+***REMOVED*** Read the build info from logcat
 BUILD_INFO=$(adb logcat -d -s BuildInfoReceiver:I | grep "BUILD_INFO|" | tail -1)
 
 if [[ -z "$BUILD_INFO" ]]; then
@@ -137,8 +137,8 @@ fi
 
 echo -e "${GREEN}Received build info from device${NC}"
 
-# Parse the build info
-# Format: BUILD_INFO|packageName|versionName|versionCode|flavor|buildType|gitSha|buildTime
+***REMOVED*** Parse the build info
+***REMOVED*** Format: BUILD_INFO|packageName|versionName|versionCode|flavor|buildType|gitSha|buildTime
 INSTALLED_PACKAGE=$(echo "$BUILD_INFO" | cut -d'|' -f2)
 INSTALLED_VERSION_NAME=$(echo "$BUILD_INFO" | cut -d'|' -f3)
 INSTALLED_VERSION_CODE=$(echo "$BUILD_INFO" | cut -d'|' -f4)
@@ -158,7 +158,7 @@ echo -e "Build Time:   ${GREEN}$INSTALLED_BUILD_TIME${NC}"
 echo -e "Expected SHA: ${GREEN}$EXPECTED_SHA${NC}"
 echo -e "Installed SHA: ${GREEN}$INSTALLED_SHA${NC}"
 
-# Compare SHAs
+***REMOVED*** Compare SHAs
 if [[ "$INSTALLED_SHA" == "$EXPECTED_SHA" ]]; then
     echo -e "\n${GREEN}✓ SUCCESS: Installed SHA matches expected SHA${NC}"
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

@@ -1,35 +1,35 @@
-#!/usr/bin/env bash
+***REMOVED***!/usr/bin/env bash
 
-# Build Android App Bundle (AAB) with automatic version incrementing
-# Creates release AABs for specified flavor(s) with incremented versionCode
-#
-# Usage:
-#   ./scripts/dev/build_release_aab.sh [options] [flavor]
-#
-# Arguments:
-#   flavor    Build flavor: prod, beta, dev, or 'all' (default: prod)
-#
-# Options:
-#   --version-name VERSION    Set new version name (e.g., 1.2.0)
-#                            If not specified, keeps current version name
-#   --skip-increment         Don't increment version code (use current)
-#   --dry-run               Show what would be built without building
-#
-# Examples:
-#   ./scripts/dev/build_release_aab.sh                          # prod only
-#   ./scripts/dev/build_release_aab.sh prod --version-name 1.2.0
-#   ./scripts/dev/build_release_aab.sh all                      # all flavors
-#   ./scripts/dev/build_release_aab.sh beta --skip-increment
+***REMOVED*** Build Android App Bundle (AAB) with automatic version incrementing
+***REMOVED*** Creates release AABs for specified flavor(s) with incremented versionCode
+***REMOVED***
+***REMOVED*** Usage:
+***REMOVED***   ./scripts/dev/build_release_aab.sh [options] [flavor]
+***REMOVED***
+***REMOVED*** Arguments:
+***REMOVED***   flavor    Build flavor: prod, beta, dev, or 'all' (default: prod)
+***REMOVED***
+***REMOVED*** Options:
+***REMOVED***   --version-name VERSION    Set new version name (e.g., 1.2.0)
+***REMOVED***                            If not specified, keeps current version name
+***REMOVED***   --skip-increment         Don't increment version code (use current)
+***REMOVED***   --dry-run               Show what would be built without building
+***REMOVED***
+***REMOVED*** Examples:
+***REMOVED***   ./scripts/dev/build_release_aab.sh                          ***REMOVED*** prod only
+***REMOVED***   ./scripts/dev/build_release_aab.sh prod --version-name 1.2.0
+***REMOVED***   ./scripts/dev/build_release_aab.sh all                      ***REMOVED*** all flavors
+***REMOVED***   ./scripts/dev/build_release_aab.sh beta --skip-increment
 
 set -euo pipefail
 
-# Colors for output
+***REMOVED*** Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m' ***REMOVED*** No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -38,13 +38,13 @@ cd "$PROJECT_ROOT"
 VERSION_FILE="$PROJECT_ROOT/version.properties"
 APP_MODULE="androidApp"
 
-# Parse arguments
+***REMOVED*** Parse arguments
 FLAVOR="prod"
 NEW_VERSION_NAME=""
 SKIP_INCREMENT=false
 DRY_RUN=false
 
-while [[ $# -gt 0 ]]; do
+while [[ $***REMOVED*** -gt 0 ]]; do
     case $1 in
         --version-name)
             NEW_VERSION_NAME="$2"
@@ -70,13 +70,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Initialize version file if it doesn't exist
+***REMOVED*** Initialize version file if it doesn't exist
 if [[ ! -f "$VERSION_FILE" ]]; then
     echo -e "${YELLOW}Version file not found. Creating $VERSION_FILE with initial version...${NC}"
     cat > "$VERSION_FILE" << EOF
-# Scanium Version Configuration
-# This file tracks versionCode and versionName for release builds
-# DO NOT manually edit versionCode - it is auto-incremented by build_release_aab.sh
+***REMOVED*** Scanium Version Configuration
+***REMOVED*** This file tracks versionCode and versionName for release builds
+***REMOVED*** DO NOT manually edit versionCode - it is auto-incremented by build_release_aab.sh
 
 versionCode=1
 versionName=1.0.0
@@ -84,7 +84,7 @@ EOF
     echo -e "${GREEN}Created version file with versionCode=1, versionName=1.0.0${NC}"
 fi
 
-# Read current version
+***REMOVED*** Read current version
 CURRENT_VERSION_CODE=$(grep "^versionCode=" "$VERSION_FILE" | cut -d'=' -f2)
 CURRENT_VERSION_NAME=$(grep "^versionName=" "$VERSION_FILE" | cut -d'=' -f2)
 
@@ -93,7 +93,7 @@ if [[ -z "$CURRENT_VERSION_CODE" || -z "$CURRENT_VERSION_NAME" ]]; then
     exit 1
 fi
 
-# Determine new version
+***REMOVED*** Determine new version
 if [[ "$SKIP_INCREMENT" == "true" ]]; then
     NEW_VERSION_CODE=$CURRENT_VERSION_CODE
 else
@@ -104,19 +104,19 @@ if [[ -z "$NEW_VERSION_NAME" ]]; then
     NEW_VERSION_NAME=$CURRENT_VERSION_NAME
 fi
 
-# Validate version name format (semantic versioning)
+***REMOVED*** Validate version name format (semantic versioning)
 if ! [[ "$NEW_VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
     echo -e "${RED}ERROR: Invalid version name format: $NEW_VERSION_NAME${NC}"
     echo -e "${YELLOW}Expected format: X.Y.Z or X.Y.Z-suffix (e.g., 1.2.0 or 1.2.0-beta)${NC}"
     exit 1
 fi
 
-# Get git information
+***REMOVED*** Get git information
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 GIT_STATUS=$(git status --porcelain 2>/dev/null || echo "")
 
-# Check for uncommitted changes
+***REMOVED*** Check for uncommitted changes
 if [[ -n "$GIT_STATUS" ]]; then
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${YELLOW}⚠️  WARNING: Uncommitted changes detected${NC}"
@@ -124,7 +124,7 @@ if [[ -n "$GIT_STATUS" ]]; then
     echo -e "${YELLOW}Building from a dirty working tree. Consider committing changes first.${NC}"
     echo ""
 
-    # Give user a chance to abort
+    ***REMOVED*** Give user a chance to abort
     read -p "Continue anyway? (y/N) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -133,14 +133,14 @@ if [[ -n "$GIT_STATUS" ]]; then
     fi
 fi
 
-# Determine which flavors to build
+***REMOVED*** Determine which flavors to build
 if [[ "$FLAVOR" == "all" ]]; then
     FLAVORS=("prod" "beta" "dev")
 else
     FLAVORS=("$FLAVOR")
 fi
 
-# Display build plan
+***REMOVED*** Display build plan
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}Scanium Release AAB Build${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -157,29 +157,29 @@ if [[ "$DRY_RUN" == "true" ]]; then
     exit 0
 fi
 
-# Update version file
+***REMOVED*** Update version file
 echo -e "\n${BLUE}[1/3] Updating version file...${NC}"
 cat > "$VERSION_FILE" << EOF
-# Scanium Version Configuration
-# This file tracks versionCode and versionName for release builds
-# DO NOT manually edit versionCode - it is auto-incremented by build_release_aab.sh
+***REMOVED*** Scanium Version Configuration
+***REMOVED*** This file tracks versionCode and versionName for release builds
+***REMOVED*** DO NOT manually edit versionCode - it is auto-incremented by build_release_aab.sh
 
 versionCode=$NEW_VERSION_CODE
 versionName=$NEW_VERSION_NAME
 EOF
 echo -e "${GREEN}Updated $VERSION_FILE${NC}"
 
-# Build AABs for each flavor
+***REMOVED*** Build AABs for each flavor
 echo -e "\n${BLUE}[2/3] Building release AAB(s)...${NC}"
 
 BUILD_TASKS=()
 for flavor in "${FLAVORS[@]}"; do
-    # Capitalize first letter for Gradle task name
+    ***REMOVED*** Capitalize first letter for Gradle task name
     VARIANT="${flavor^}Release"
     BUILD_TASKS+=(":$APP_MODULE:bundle$VARIANT")
 done
 
-# Build all tasks
+***REMOVED*** Build all tasks
 echo -e "${CYAN}Running: ./gradlew ${BUILD_TASKS[*]} -Pscanium.version.code=$NEW_VERSION_CODE -Pscanium.version.name=$NEW_VERSION_NAME${NC}"
 ./gradlew "${BUILD_TASKS[@]}" \
     -Pscanium.version.code="$NEW_VERSION_CODE" \
@@ -187,7 +187,7 @@ echo -e "${CYAN}Running: ./gradlew ${BUILD_TASKS[*]} -Pscanium.version.code=$NEW
     --no-daemon \
     --console=plain
 
-# Display AAB locations and sizes
+***REMOVED*** Display AAB locations and sizes
 echo -e "\n${BLUE}[3/3] Build complete! AAB files:${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
