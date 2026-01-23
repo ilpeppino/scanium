@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.MergeType
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,6 +44,7 @@ fun SettingsCameraScreen(
     val classificationMode by classificationViewModel.classificationMode.collectAsState()
     val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
     val showDetectionBoxes by settingsViewModel.showDetectionBoxes.collectAsState()
+    val smartMergeSuggestionsEnabled by settingsViewModel.smartMergeSuggestionsEnabled.collectAsState()
 
     // Filter resolution options: HIGH only available in dev builds
     val availableResolutions =
@@ -172,6 +174,15 @@ fun SettingsCameraScreen(
                 icon = Icons.Filled.CropFree,
                 checked = showDetectionBoxes,
                 onCheckedChange = settingsViewModel::setShowDetectionBoxes,
+            )
+
+            // 5) Smart merge suggestions toggle
+            SettingSwitchRow(
+                title = stringResource(R.string.settings_smart_merge_title),
+                subtitle = stringResource(R.string.settings_smart_merge_subtitle),
+                icon = Icons.Filled.MergeType,
+                checked = smartMergeSuggestionsEnabled,
+                onCheckedChange = settingsViewModel::setSmartMergeSuggestionsEnabled,
             )
         }
     }

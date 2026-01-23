@@ -41,4 +41,15 @@ internal class ScanningSettings(
             preferences[SettingsKeys.Scanning.OPEN_ITEM_LIST_AFTER_SCAN_KEY] = enabled
         }
     }
+
+    val smartMergeSuggestionsEnabledFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[SettingsKeys.Scanning.SMART_MERGE_SUGGESTIONS_ENABLED_KEY] ?: false
+        }
+
+    suspend fun setSmartMergeSuggestionsEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SettingsKeys.Scanning.SMART_MERGE_SUGGESTIONS_ENABLED_KEY] = enabled
+        }
+    }
 }

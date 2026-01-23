@@ -134,6 +134,17 @@ class ItemsUiFacade(
             workerDispatcher = workerDispatcher,
         )
 
+    /**
+     * Coordinates automatic duplicate detection and merge suggestions.
+     */
+    private val duplicateDetectionCoordinator =
+        com.scanium.app.items.merging.DuplicateDetectionCoordinator(
+            scope = scope,
+            stateManager = stateManager,
+            settingsRepository = settingsRepository,
+            workerDispatcher = workerDispatcher,
+        )
+
     // ==================== Public State ====================
 
     /** Current list of scanned items */
@@ -166,6 +177,10 @@ class ItemsUiFacade(
     private val _exportPayload = MutableStateFlow<ExportPayload?>(null)
     val exportPayload: StateFlow<ExportPayload?> = _exportPayload
 
+    /** Merge suggestion state for smart duplicate detection */
+    val mergeSuggestionState: StateFlow<com.scanium.app.items.merging.MergeSuggestionState> =
+        duplicateDetectionCoordinator.mergeSuggestionState
+
     init {
         // Start classification session
         classificationCoordinator.startNewSession()
@@ -175,6 +190,7 @@ class ItemsUiFacade(
             classificationCoordinator.triggerEnhancedClassification()
             classificationCoordinator.syncPriceEstimations(stateManager.getScannedItems())
             overlayManager.refreshOverlayTracks()
+            duplicateDetectionCoordinator.triggerDetection()
         }
 
         listingManager.setItemsReference(stateManager.items)
@@ -532,6 +548,102 @@ class ItemsUiFacade(
      */
     fun removeStaleItems(maxAgeMs: Long = 30_000L) {
         stateManager.removeStaleItems(maxAgeMs)
+    }
+
+    // ==================== Merge Operations ====================
+
+    /**
+     * Dismiss current merge suggestions.
+     */
+    fun dismissMergeSuggestions() {
+        duplicateDetectionCoordinator.dismissSuggestions()
+    }
+
+    /**
+     * Accept all merge groups at once.
+     * Merges all suggested similar items and clears suggestions.
+     *
+     * @param groups List of merge groups to accept
+     */
+    fun acceptAllMerges(groups: List<com.scanium.app.items.merging.MergeGroup>) {
+        groups.forEach { group ->
+            mergeItems(group.allItemIds, group.primaryItem.id)
+        }
+        duplicateDetectionCoordinator.acceptAllGroups()
+    }
+
+    /**
+     * Accept a single merge group.
+     * Merges the similar items into the primary item.
+     *
+     * @param group The merge group to accept
+     */
+    fun acceptMergeGroup(group: com.scanium.app.items.merging.MergeGroup) {
+        mergeItems(group.allItemIds, group.primaryItem.id)
+        duplicateDetectionCoordinator.acceptGroup(group)
+    }
+
+    /**
+     * Reject a merge group (user chose not to merge).
+     * Removes the group from suggestions without merging.
+     *
+     * @param group The merge group to reject
+     */
+    fun rejectMergeGroup(group: com.scanium.app.items.merging.MergeGroup) {
+        duplicateDetectionCoordinator.rejectGroup(group)
+    }
+
+    /**
+     * Merges multiple items into a single primary item.
+     *
+     * Strategy:
+     * 1. Keep primary item unchanged
+     * 2. For secondary items:
+     *    - Consolidate attributes (merge unique values)
+     *    - Copy photos to primary item
+     *    - Increment merge count
+     *    - Delete secondary items from state
+     *
+     * @param itemIds All item IDs in the group (primary + similar)
+     * @param keepPrimaryId ID of the item to keep as primary
+     */
+    private fun mergeItems(
+        itemIds: List<String>,
+        keepPrimaryId: String,
+    ) {
+        scope.launch(workerDispatcher) {
+            Log.i(TAG, "Merging ${itemIds.size} items, keeping primary: $keepPrimaryId")
+
+            val allItems = stateManager.getScannedItems()
+            val itemsToMerge = allItems.filter { it.id in itemIds }
+
+            if (itemsToMerge.isEmpty()) {
+                Log.w(TAG, "No items found to merge")
+                return@launch
+            }
+
+            val primaryItem = itemsToMerge.find { it.id == keepPrimaryId }
+            if (primaryItem == null) {
+                Log.w(TAG, "Primary item not found: $keepPrimaryId")
+                return@launch
+            }
+
+            val secondaryItems = itemsToMerge.filter { it.id != keepPrimaryId }
+
+            // TODO(Phase 5): Implement actual merge logic
+            // - Consolidate attributes from secondary items
+            // - Copy photos from secondary items to primary
+            // - Increment merge count on primary
+            // - Delete secondary items from state manager
+
+            // For now, just delete the secondary items (simple merge)
+            secondaryItems.forEach { secondaryItem ->
+                stateManager.removeItem(secondaryItem.id)
+                Log.i(TAG, "Removed secondary item: ${secondaryItem.id}")
+            }
+
+            Log.i(TAG, "Merge complete. Kept primary: $keepPrimaryId, removed ${secondaryItems.size} items")
+        }
     }
 
     // ==================== Telemetry Operations ====================

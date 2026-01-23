@@ -133,6 +133,10 @@ class SettingsViewModel
             settingsRepository.openItemListAfterScanFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+        val smartMergeSuggestionsEnabled: StateFlow<Boolean> =
+            settingsRepository.smartMergeSuggestionsEnabledFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
         val entitlements =
             entitlementManager.entitlementPolicyFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.scanium.app.model.user.FreeEntitlements)
@@ -336,6 +340,10 @@ class SettingsViewModel
 
         fun setOpenItemListAfterScan(enabled: Boolean) {
             viewModelScope.launch { settingsRepository.setOpenItemListAfterScan(enabled) }
+        }
+
+        fun setSmartMergeSuggestionsEnabled(enabled: Boolean) {
+            viewModelScope.launch { settingsRepository.setSmartMergeSuggestionsEnabled(enabled) }
         }
 
         fun setForceFtueTour(enabled: Boolean) {

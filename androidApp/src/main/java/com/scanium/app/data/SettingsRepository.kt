@@ -302,6 +302,12 @@ class SettingsRepository(
         scanningSettings.setOpenItemListAfterScan(enabled)
     }
 
+    val smartMergeSuggestionsEnabledFlow: Flow<Boolean> = scanningSettings.smartMergeSuggestionsEnabledFlow
+
+    suspend fun setSmartMergeSuggestionsEnabled(enabled: Boolean) {
+        scanningSettings.setSmartMergeSuggestionsEnabled(enabled)
+    }
+
     val primaryRegionCountryFlow: Flow<String> = unifiedSettings.primaryRegionCountryFlow
 
     suspend fun setPrimaryRegionCountry(countryCode: String) {

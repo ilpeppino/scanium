@@ -57,6 +57,7 @@ internal object SettingsKeys {
         val SCANNING_GUIDANCE_ENABLED_KEY = booleanPreferencesKey("scanning_guidance_enabled")
         val SHOW_DETECTION_BOXES_KEY = booleanPreferencesKey("show_detection_boxes")
         val OPEN_ITEM_LIST_AFTER_SCAN_KEY = booleanPreferencesKey("open_item_list_after_scan")
+        val SMART_MERGE_SUGGESTIONS_ENABLED_KEY = booleanPreferencesKey("smart_merge_suggestions_enabled")
     }
 
     object Unified {

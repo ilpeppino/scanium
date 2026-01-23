@@ -79,10 +79,14 @@ internal fun ItemsListContent(
     items: List<ScannedItem>,
     pendingDetectionCount: Int,
     state: ItemsListState,
+    mergeSuggestionState: com.scanium.app.items.merging.MergeSuggestionState,
     onItemClick: (ScannedItem) -> Unit,
     onItemLongPress: (ScannedItem) -> Unit,
     onDeleteItem: (ScannedItem) -> Unit,
     onRetryClassification: (ScannedItem) -> Unit,
+    onDismissMergeSuggestions: () -> Unit,
+    onAcceptAllMerges: (List<com.scanium.app.items.merging.MergeGroup>) -> Unit,
+    onShowMergeReview: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
     modifier: Modifier = Modifier,
 ) {
@@ -138,6 +142,18 @@ internal fun ItemsListContent(
                                     )
                                 }
                             }
+                        }
+                    }
+
+                    // Smart merge suggestions banner
+                    if (mergeSuggestionState is com.scanium.app.items.merging.MergeSuggestionState.Available) {
+                        item {
+                            com.scanium.app.items.merging.SmartMergeBanner(
+                                suggestedMergeCount = mergeSuggestionState.totalSuggestedMerges,
+                                onAcceptAll = { onAcceptAllMerges(mergeSuggestionState.groups) },
+                                onReview = onShowMergeReview,
+                                onDismiss = onDismissMergeSuggestions,
+                            )
                         }
                     }
 

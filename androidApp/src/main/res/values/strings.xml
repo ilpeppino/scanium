@@ -156,6 +156,25 @@
     <string name="settings_section_overlay">Overlay</string>
     <string name="settings_detection_boxes_title">Show detection boxes</string>
     <string name="settings_detection_boxes_subtitle">Display bounding boxes around detected items</string>
+    <string name="settings_smart_merge_title">Smart merge suggestions</string>
+    <string name="settings_smart_merge_subtitle">Automatically detect similar items and suggest merging them</string>
+
+    <!-- Smart Merge Banner & Review -->
+    <plurals name="smart_merge_banner_title">
+        <item quantity="one">%d item looks similar</item>
+        <item quantity="other">%d items look similar</item>
+    </plurals>
+    <string name="smart_merge_banner_subtitle">Review merges?</string>
+    <string name="smart_merge_accept_all">Accept All</string>
+    <string name="smart_merge_review">Review</string>
+    <string name="smart_merge_review_title">Review Merge Suggestions</string>
+    <string name="smart_merge_review_subtitle">%d suggested merge groups. Review each below.</string>
+    <string name="smart_merge_primary_item">Primary Item</string>
+    <string name="smart_merge_similar_items">Similar Items (%d)</string>
+    <string name="smart_merge_similarity">%d%% similar</string>
+    <string name="smart_merge_accept">Accept</string>
+    <string name="smart_merge_reject">Reject</string>
+    <string name="smart_merge_no_groups">No merge suggestions available</string>
 
     <!-- Assistant -->
     <string name="settings_assistant_title">AI Assistant</string>

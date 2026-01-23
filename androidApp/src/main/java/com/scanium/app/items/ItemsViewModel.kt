@@ -177,6 +177,9 @@ class ItemsViewModel
         /** Latest in-memory export payload for selected items */
         val exportPayload: StateFlow<ExportPayload?> get() = facade.exportPayload
 
+        /** Merge suggestion state for smart duplicate detection */
+        val mergeSuggestionState: StateFlow<com.scanium.app.items.merging.MergeSuggestionState> get() = facade.mergeSuggestionState
+
         /** Latest detected QR URL (if any) - ViewModel-specific with TTL */
         private val _latestQrUrl = MutableStateFlow<String?>(null)
         val latestQrUrl: StateFlow<String?> = _latestQrUrl
@@ -373,6 +376,39 @@ class ItemsViewModel
          * Gets the listing status for a specific item.
          */
         fun getListingStatus(itemId: String): ItemListingStatus? = facade.getListingStatus(itemId)
+
+        // ==================== Merge Operations (Delegated to Facade) ====================
+
+        /**
+         * Dismisses current merge suggestions.
+         */
+        fun dismissMergeSuggestions() {
+            facade.dismissMergeSuggestions()
+        }
+
+        /**
+         * Accepts all merge suggestions at once.
+         * Merges all similar items into their respective primary items.
+         */
+        fun acceptAllMerges(groups: List<com.scanium.app.items.merging.MergeGroup>) {
+            facade.acceptAllMerges(groups)
+        }
+
+        /**
+         * Accepts a single merge group.
+         * Merges the similar items into the primary item.
+         */
+        fun acceptMergeGroup(group: com.scanium.app.items.merging.MergeGroup) {
+            facade.acceptMergeGroup(group)
+        }
+
+        /**
+         * Rejects a merge group without merging.
+         * Removes the group from suggestions.
+         */
+        fun rejectMergeGroup(group: com.scanium.app.items.merging.MergeGroup) {
+            facade.rejectMergeGroup(group)
+        }
 
         // ==================== Item Edit Operations (Delegated to Facade) ====================
 

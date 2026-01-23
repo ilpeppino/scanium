@@ -102,10 +102,14 @@ fun ItemsListScreen(
 ) {
     val items by itemsViewModel.items.collectAsState()
     val pendingDetectionCount by itemsViewModel.pendingDetectionCount.collectAsState()
+    val mergeSuggestionState by itemsViewModel.mergeSuggestionState.collectAsState()
     val context = LocalContext.current
 
     // Item detail sheet state
     var detailSheetItem by remember { mutableStateOf<ScannedItem?>(null) }
+
+    // Merge review sheet state
+    var showMergeReviewSheet by remember { mutableStateOf(false) }
 
     // Attribute edit dialog state
     var editingItemId by remember { mutableStateOf<String?>(null) }
@@ -452,6 +456,7 @@ fun ItemsListScreen(
                 items = items,
                 pendingDetectionCount = pendingDetectionCount,
                 state = listState,
+                mergeSuggestionState = mergeSuggestionState,
                 onItemClick = { item ->
                     if (selectionMode) {
                         toggleSelection(item)
@@ -469,6 +474,15 @@ fun ItemsListScreen(
                 },
                 onRetryClassification = { item ->
                     itemsViewModel.retryClassification(item.id)
+                },
+                onDismissMergeSuggestions = {
+                    itemsViewModel.dismissMergeSuggestions()
+                },
+                onAcceptAllMerges = { groups ->
+                    itemsViewModel.acceptAllMerges(groups)
+                },
+                onShowMergeReview = {
+                    showMergeReviewSheet = true
                 },
                 tourViewModel = tourViewModel,
                 modifier =
@@ -790,6 +804,33 @@ fun ItemsListScreen(
                     null
                 },
         )
+    }
+
+    // Merge review sheet for reviewing duplicate suggestions
+    if (showMergeReviewSheet) {
+        val currentState = mergeSuggestionState
+        if (currentState is com.scanium.app.items.merging.MergeSuggestionState.Available) {
+            com.scanium.app.items.merging.MergeReviewSheet(
+                groups = currentState.groups,
+                onAcceptGroup = { group ->
+                    itemsViewModel.acceptMergeGroup(group)
+                    // Close sheet if no more groups
+                    if (currentState.groups.size == 1) {
+                        showMergeReviewSheet = false
+                    }
+                },
+                onRejectGroup = { group ->
+                    itemsViewModel.rejectMergeGroup(group)
+                    // Close sheet if no more groups
+                    if (currentState.groups.size == 1) {
+                        showMergeReviewSheet = false
+                    }
+                },
+                onDismiss = {
+                    showMergeReviewSheet = false
+                },
+            )
+        }
     }
 
     // Attribute edit dialog
