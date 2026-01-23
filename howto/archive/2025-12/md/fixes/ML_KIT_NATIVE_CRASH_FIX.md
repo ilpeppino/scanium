@@ -1,11 +1,11 @@
-***REMOVED*** ML Kit Native Crash Fix - December 8, 2024
+# ML Kit Native Crash Fix - December 8, 2024
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 The app was crashing with a **native crash in ML Kit** after detecting the first frame of objects.
 No Java exception - just "Process has died".
 
-***REMOVED******REMOVED******REMOVED*** Root Cause from Tombstone
+### Root Cause from Tombstone
 
 ```
 Abort message: 'Failed to find the byte array of frame at timestamp: 1144982583000'
@@ -14,7 +14,7 @@ Stack: libmlkitcommonpipeline.so
 
 ML Kit was trying to access a frame buffer that had already been released/recycled.
 
-***REMOVED******REMOVED*** Why This Happened
+## Why This Happened
 
 The code was using a **multi-strategy fallback approach**:
 
@@ -29,13 +29,13 @@ The problem:
 - When both detectors try to process the same frame sequence, STREAM_MODE tries to access recycled
   buffers → **CRASH**
 
-***REMOVED******REMOVED*** The Fix
+## The Fix
 
 **Use ONLY SINGLE_IMAGE_MODE** - don't mix detector modes.
 
-***REMOVED******REMOVED******REMOVED*** Changes Made
+### Changes Made
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. CameraXManager.kt (line 257-259)
+#### 1. CameraXManager.kt (line 257-259)
 
 Changed from:
 
@@ -51,7 +51,7 @@ To:
 val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. ObjectDetectorClient.kt (line 310)
+#### 2. ObjectDetectorClient.kt (line 310)
 
 Disabled the fallback logic that mixed modes:
 
@@ -60,16 +60,16 @@ Disabled the fallback logic that mixed modes:
 if (false && detectedObjects.isEmpty() && useStreamMode) {
 ```
 
-***REMOVED******REMOVED*** Trade-offs
+## Trade-offs
 
-***REMOVED******REMOVED******REMOVED*** STREAM_MODE (what we had before - BROKEN):
+### STREAM_MODE (what we had before - BROKEN):
 
 - ✅ Better for tracking across frames
 - ✅ More efficient when it works
 - ❌ **CRASHES when frame buffers get recycled**
 - ❌ Doesn't work reliably on all devices
 
-***REMOVED******REMOVED******REMOVED*** SINGLE_IMAGE_MODE (what we use now - WORKS):
+### SINGLE_IMAGE_MODE (what we use now - WORKS):
 
 - ✅ **Stable - no crashes**
 - ✅ Works reliably on all devices
@@ -84,13 +84,13 @@ The trade-off is acceptable because:
 3. Objects are still detected successfully
 4. Memory-efficient thumbnails (200x200 max) keep memory low
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
 ✅ **Build successful**
 ✅ **No mixed detector modes**
 ✅ **SINGLE_IMAGE_MODE used consistently**
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 1. **Install the fixed APK**:
    ```bash
@@ -117,7 +117,7 @@ The trade-off is acceptable because:
 - Logs show SINGLE_IMAGE_MODE used consistently
 - Memory stays around 28-40MB
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
 This fix addresses the tombstone error:
 
@@ -126,7 +126,7 @@ statusor.cc:86] Attempting to fetch value instead of handling error NOT_FOUND:
 Failed to find the byte array of frame at timestamp: 1144982583000
 ```
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - See `MEMORY_CRASH_FIX.md` for thumbnail memory optimization
 - See `BITMAP_CRASH_FIX.md` for bitmap lifecycle issues

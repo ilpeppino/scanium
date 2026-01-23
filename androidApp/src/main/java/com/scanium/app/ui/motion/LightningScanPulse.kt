@@ -41,7 +41,7 @@ enum class PulseDirection {
  *
  * Brand motion rules:
  * - 200-300ms single pass, no looping
- * - Yellow (***REMOVED***FFD400) as action accent only
+ * - Yellow (#FFD400) as action accent only
  * - Subtle thin line or small glow
  * - No continuous looping animations
  *

@@ -1,22 +1,22 @@
-***REMOVED*** Privacy Technical Notes
+# Privacy Technical Notes
 
 This document describes the technical implementation of privacy controls in Scanium, including where
 toggles are checked in code, where uploads occur, and what redaction is applied to logs.
 
-***REMOVED******REMOVED*** Table of Contents
+## Table of Contents
 
-1. [Toggle Check Locations](***REMOVED***toggle-check-locations)
-2. [Upload Endpoints](***REMOVED***upload-endpoints)
-3. [Log Redaction](***REMOVED***log-redaction)
-4. [Voice Privacy Safeguards](***REMOVED***voice-privacy-safeguards)
-5. [Assistant Privacy Safeguards](***REMOVED***assistant-privacy-safeguards)
-6. [Privacy Safe Mode](***REMOVED***privacy-safe-mode)
+1. [Toggle Check Locations](#toggle-check-locations)
+2. [Upload Endpoints](#upload-endpoints)
+3. [Log Redaction](#log-redaction)
+4. [Voice Privacy Safeguards](#voice-privacy-safeguards)
+5. [Assistant Privacy Safeguards](#assistant-privacy-safeguards)
+6. [Privacy Safe Mode](#privacy-safe-mode)
 
 ---
 
-***REMOVED******REMOVED*** Toggle Check Locations
+## Toggle Check Locations
 
-***REMOVED******REMOVED******REMOVED*** Cloud Classification Toggle
+### Cloud Classification Toggle
 
 **User preference storage:**
 
@@ -38,7 +38,7 @@ User toggle → SettingsRepository → FeatureFlagRepository → ClassificationO
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Assistant Toggle
+### Assistant Toggle
 
 **User preference storage:**
 
@@ -53,7 +53,7 @@ User toggle → SettingsRepository → FeatureFlagRepository → ClassificationO
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Assistant Images Toggle
+### Assistant Images Toggle
 
 **User preference storage:**
 
@@ -77,7 +77,7 @@ if (allowImages) {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Voice Mode Toggle
+### Voice Mode Toggle
 
 **User preference storage:**
 
@@ -91,7 +91,7 @@ if (allowImages) {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Speak Answers Toggle
+### Speak Answers Toggle
 
 **User preference storage:**
 
@@ -105,7 +105,7 @@ if (allowImages) {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Share Diagnostics Toggle
+### Share Diagnostics Toggle
 
 **User preference storage:**
 
@@ -119,9 +119,9 @@ if (allowImages) {
 
 ---
 
-***REMOVED******REMOVED*** Upload Endpoints
+## Upload Endpoints
 
-***REMOVED******REMOVED******REMOVED*** Cloud Classification
+### Cloud Classification
 
 **Endpoint:** `POST {SCANIUM_API_BASE_URL}/v1/classify`
 
@@ -151,7 +151,7 @@ Headers:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** AI Assistant Chat
+### AI Assistant Chat
 
 **Endpoint:** `POST {SCANIUM_API_BASE_URL}/v1/assist/chat`
 
@@ -192,7 +192,7 @@ Headers:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Crash Reports (Sentry)
+### Crash Reports (Sentry)
 
 **Endpoint:** Sentry SDK handles automatically
 
@@ -214,9 +214,9 @@ Headers:
 
 ---
 
-***REMOVED******REMOVED*** Log Redaction
+## Log Redaction
 
-***REMOVED******REMOVED******REMOVED*** ScaniumLog Wrapper
+### ScaniumLog Wrapper
 
 **File:** `androidApp/.../logging/ScaniumLog.kt`
 
@@ -230,7 +230,7 @@ All logging goes through `ScaniumLog` which:
     - API keys or tokens
     - Full image data
 
-***REMOVED******REMOVED******REMOVED*** What IS Logged (safely)
+### What IS Logged (safely)
 
 - Correlation IDs (for request tracing)
 - Classification results (category, confidence)
@@ -238,34 +238,34 @@ All logging goes through `ScaniumLog` which:
 - State transitions (e.g., "listening started")
 - Performance metrics (timing)
 
-***REMOVED******REMOVED******REMOVED*** What is NOT Logged
+### What is NOT Logged
 
 - `AssistantPromptRequest.question` - Never logged
 - `VoiceResult.transcript` - Only logged as "[transcript received]"
 - Image bytes - Never logged
 - API keys - Masked if accidentally included
 
-***REMOVED******REMOVED******REMOVED*** Log Filtering for Verification
+### Log Filtering for Verification
 
 ```bash
-***REMOVED*** Verify assistant image toggle behavior
+# Verify assistant image toggle behavior
 adb logcat -s AssistantViewModel | grep -i image
 
-***REMOVED*** Verify cloud classification toggle behavior
+# Verify cloud classification toggle behavior
 adb logcat -s CloudClassifier | grep -i "classifying\|disabled\|not configured"
 
-***REMOVED*** Verify voice listening start/stop
+# Verify voice listening start/stop
 adb logcat -s AssistantVoice | grep -i "listening\|stopped\|shutdown"
 
-***REMOVED*** Verify crash opt-in
+# Verify crash opt-in
 adb logcat -s AndroidCrashPortAdapter | grep -i "diagnostics\|attached"
 ```
 
 ---
 
-***REMOVED******REMOVED*** Voice Privacy Safeguards
+## Voice Privacy Safeguards
 
-***REMOVED******REMOVED******REMOVED*** No Always-On Listening
+### No Always-On Listening
 
 **Implementation:** `androidApp/.../selling/assistant/AssistantVoiceController.kt:150-166`
 
@@ -276,7 +276,7 @@ fun startListening(onResult: (VoiceResult) -> Unit) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Explicit User Gesture Required
+### Explicit User Gesture Required
 
 **Implementation:** `androidApp/.../selling/assistant/AssistantScreen.kt:403-419`
 
@@ -291,7 +291,7 @@ IconButton(onClick = {
 })
 ```
 
-***REMOVED******REMOVED******REMOVED*** Recording Stops on Lifecycle Events
+### Recording Stops on Lifecycle Events
 
 **Implementation:** `androidApp/.../selling/assistant/AssistantScreen.kt:146-148`
 
@@ -308,7 +308,7 @@ The `shutdown()` method:
 - Destroys the SpeechRecognizer
 - Releases TTS resources
 
-***REMOVED******REMOVED******REMOVED*** Visual Indicator During Recording
+### Visual Indicator During Recording
 
 **Implementation:** `androidApp/.../selling/assistant/AssistantScreen.kt:346-352` and `759-842`
 
@@ -323,7 +323,7 @@ if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.TRANSCRIBING)
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** No Audio Storage
+### No Audio Storage
 
 **Implementation:** `androidApp/.../selling/assistant/AssistantVoiceController.kt:184-185`
 
@@ -335,15 +335,15 @@ override fun onBufferReceived(buffer: ByteArray?) {
 
 ---
 
-***REMOVED******REMOVED*** Assistant Privacy Safeguards
+## Assistant Privacy Safeguards
 
-***REMOVED******REMOVED******REMOVED*** Images Only Sent When Enabled
+### Images Only Sent When Enabled
 
 The assistant must check `allowAssistantImagesFlow` before including thumbnails in requests.
 
 **Toggle location:** Settings → Send Images to Assistant
 
-***REMOVED******REMOVED******REMOVED*** Cloud Misconfiguration Handling
+### Cloud Misconfiguration Handling
 
 **Implementation:** `androidApp/.../assistant/AssistantRepository.kt:86-101`
 
@@ -361,9 +361,9 @@ Clear error messages are shown in UI instead of silent failures.
 
 ---
 
-***REMOVED******REMOVED*** Privacy Safe Mode
+## Privacy Safe Mode
 
-***REMOVED******REMOVED******REMOVED*** Implementation
+### Implementation
 
 **File:** `androidApp/.../data/SettingsRepository.kt:302-309`
 
@@ -377,7 +377,7 @@ suspend fun enablePrivacySafeMode() {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** What It Disables
+### What It Disables
 
 | Feature              | Disabled by Privacy Safe Mode     |
 |----------------------|-----------------------------------|
@@ -387,31 +387,31 @@ suspend fun enablePrivacySafeMode() {
 | Voice Mode           | No (uses on-device STT)           |
 | Assistant Text       | No (but entitlements still apply) |
 
-***REMOVED******REMOVED******REMOVED*** UI Location
+### UI Location
 
 Settings → Privacy & Data → Privacy Safe Mode
 
 ---
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
 ```bash
-***REMOVED*** Check that assistant doesn't send images when disabled
+# Check that assistant doesn't send images when disabled
 adb logcat -s AssistantViewModel | grep -E "image|thumbnail"
 
-***REMOVED*** Check cloud classification is respecting toggle
+# Check cloud classification is respecting toggle
 adb logcat -s CloudClassifier FeatureFlagRepository | grep -E "cloud|enabled|disabled"
 
-***REMOVED*** Check voice never records in background
+# Check voice never records in background
 adb logcat -s AssistantVoice | grep -E "listening|shutdown|dispose"
 
-***REMOVED*** Check crash reporting opt-in
+# Check crash reporting opt-in
 adb logcat -s AndroidCrashPortAdapter Sentry | grep -E "diagnostics|opt"
 ```
 
 ---
 
-***REMOVED******REMOVED*** Changelog
+## Changelog
 
 | Date       | Change                                     |
 |------------|--------------------------------------------|

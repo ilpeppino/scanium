@@ -1,17 +1,17 @@
-***REMOVED*** Scanium Real-Life Scan Tests Runbook
+# Scanium Real-Life Scan Tests Runbook
 
 Manual instrumented test runbook for verifying Eye Mode and Focus Mode scanning behavior.
 
 ---
 
-***REMOVED******REMOVED*** Eye Mode vs Focus Mode
+## Eye Mode vs Focus Mode
 
-***REMOVED******REMOVED******REMOVED*** Mental Model
+### Mental Model
 
 - **Eye Mode** = "I see what Scanium sees" (global vision)
 - **Focus Mode** = "I choose what Scanium acts on" (user intent via ROI selection)
 
-***REMOVED******REMOVED******REMOVED*** Visual Language
+### Visual Language
 
 | State      | Visual                        | Behavior                                       |
 |------------|-------------------------------|------------------------------------------------|
@@ -22,9 +22,9 @@ Manual instrumented test runbook for verifying Eye Mode and Focus Mode scanning 
 
 ---
 
-***REMOVED******REMOVED*** 1. Architecture Overview
+## 1. Architecture Overview
 
-***REMOVED******REMOVED******REMOVED*** Detection Flow
+### Detection Flow
 
 ```
 ImageAnalysis (1280x720)
@@ -50,7 +50,7 @@ DetectionOverlay                          SelectionManager
                 (SELECTED/READY/LOCKED)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Key Principle
+### Key Principle
 
 - **ROI is a SELECTION TOOL, not a detection filter**
 - All objects are detected and shown (Eye Mode)
@@ -58,33 +58,33 @@ DetectionOverlay                          SelectionManager
 
 ---
 
-***REMOVED******REMOVED*** 2. MUST-Pass Test Criteria
+## 2. MUST-Pass Test Criteria
 
-***REMOVED******REMOVED******REMOVED*** Criterion 1: Global Detection (Eye Mode)
+### Criterion 1: Global Detection (Eye Mode)
 
 **Why it matters**: User must see what Scanium sees - all detected objects, anywhere in frame.
 **Code path**: ML Kit → ALL detections → DetectionOverlay (no ROI filtering)
 **Failure indicates**: ROI filtering still active; bboxes hidden outside ROI.
 
-***REMOVED******REMOVED******REMOVED*** Criterion 2: Single Selection (Focus Mode)
+### Criterion 2: Single Selection (Focus Mode)
 
 **Why it matters**: Only ONE object can be selected/scanned at a time.
 **Code path**: `OverlayTrackManager.selectBestCandidate()` → `selectedTrackingId`
 **Failure indicates**: Multiple objects selected; selection logic broken.
 
-***REMOVED******REMOVED******REMOVED*** Criterion 3: Selection via ROI Intersection
+### Criterion 3: Selection via ROI Intersection
 
 **Why it matters**: User controls selection by centering object in ROI.
 **Code path**: `RoiDetectionFilter.filterByRoi()` → `selectBestCandidate()`
 **Failure indicates**: Selection not tied to ROI; random object selected.
 
-***REMOVED******REMOVED******REMOVED*** Criterion 4: Visual State Progression
+### Criterion 4: Visual State Progression
 
 **Why it matters**: User must clearly see the state: EYE → SELECTED → READY → LOCKED.
 **Code path**: `mapOverlayTracks()` → `DetectionOverlay` rendering
 **Failure indicates**: Wrong colors/strokes; states not visually distinct.
 
-***REMOVED******REMOVED******REMOVED*** Criterion 5: Only Selected Object Lockable
+### Criterion 5: Only Selected Object Lockable
 
 **Why it matters**: No accidental adds from background objects.
 **Code path**: `ScanGuidanceManager.evaluateState()` with selected candidate only
@@ -92,9 +92,9 @@ DetectionOverlay                          SelectionManager
 
 ---
 
-***REMOVED******REMOVED*** 3. Test Cases
+## 3. Test Cases
 
-***REMOVED******REMOVED******REMOVED*** TEST-001: Global Detection - Bboxes Appear Everywhere
+### TEST-001: Global Detection - Bboxes Appear Everywhere
 
 **Test ID**: TEST-001
 **Title**: Bboxes appear for ALL detected objects, anywhere in frame
@@ -135,7 +135,7 @@ DetectionOverlay                          SelectionManager
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TEST-002: Selection via Centering
+### TEST-002: Selection via Centering
 
 **Test ID**: TEST-002
 **Title**: Object becomes SELECTED when centered in ROI
@@ -176,7 +176,7 @@ DetectionOverlay                          SelectionManager
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TEST-003: SELECTED to READY to LOCKED Progression
+### TEST-003: SELECTED to READY to LOCKED Progression
 
 **Test ID**: TEST-003
 **Title**: Visual state progression works correctly
@@ -218,7 +218,7 @@ DetectionOverlay                          SelectionManager
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TEST-004: Pan Breaks Selection (No Background Adds)
+### TEST-004: Pan Breaks Selection (No Background Adds)
 
 **Test ID**: TEST-004
 **Title**: Panning camera changes selection, no accidental adds
@@ -261,7 +261,7 @@ DetectionOverlay                          SelectionManager
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TEST-005: Edge Detection Without Selection
+### TEST-005: Edge Detection Without Selection
 
 **Test ID**: TEST-005
 **Title**: Objects at frame edges detected but not selectable
@@ -302,7 +302,7 @@ DetectionOverlay                          SelectionManager
 
 ---
 
-***REMOVED******REMOVED*** 4. Debug Mode Reference
+## 4. Debug Mode Reference
 
 Enable debug overlay in Settings → Developer Options → "Show scan diagnostics":
 
@@ -315,9 +315,9 @@ Enable debug overlay in Settings → Developer Options → "Show scan diagnostic
 
 ---
 
-***REMOVED******REMOVED*** 5. Quick Reference
+## 5. Quick Reference
 
-***REMOVED******REMOVED******REMOVED*** Guidance States & Hints
+### Guidance States & Hints
 
 | State     | Hint                 | Visual                  |
 |-----------|----------------------|-------------------------|
@@ -329,7 +329,7 @@ Enable debug overlay in Settings → Developer Options → "Show scan diagnostic
 | GOOD      | "Hold to lock"       | READY style             |
 | LOCKED    | "Ready"              | LOCKED style + pulse    |
 
-***REMOVED******REMOVED******REMOVED*** Box Style Stroke Widths
+### Box Style Stroke Widths
 
 | Style    | Stroke Multiplier | Color      |
 |----------|-------------------|------------|
@@ -340,7 +340,7 @@ Enable debug overlay in Settings → Developer Options → "Show scan diagnostic
 
 ---
 
-***REMOVED******REMOVED*** 6. Success Criteria Summary
+## 6. Success Criteria Summary
 
 1. **App opens** → Bboxes appear immediately for ALL detected objects
 2. **Panning** → Bboxes update continuously (never disappear outside ROI)

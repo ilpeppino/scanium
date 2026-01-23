@@ -8,7 +8,7 @@ package com.scanium.telemetry
  * 2. Truncates string values exceeding the maximum length
  * 3. Redacts values for sensitive keys (replaces with "[REDACTED]")
  *
- * ***REMOVED******REMOVED*** PII Denylist
+ * ## PII Denylist
  * The following attribute keys are automatically redacted:
  * - Personal identifiers: email, phone, address, full_name, username, user_id
  * - Authentication: token, auth, password, api_key, secret, credentials, cookies, session_token
@@ -17,7 +17,7 @@ package com.scanium.telemetry
  * - Payment: credit_card, card_number, cvv, billing
  * - Device identifiers: imei, device_id, mac_address, serial_number
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  * ```kotlin
  * val rawAttributes = mapOf(
  *     "scan_duration_ms" to "1234",

@@ -1,11 +1,11 @@
 > Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
 > state.
 
-***REMOVED*** eBay Domain Pack Generator
+# eBay Domain Pack Generator
 
 Auto-generate Scanium Domain Packs from eBay marketplace category trees using the eBay Taxonomy API.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This tool downloads eBay category hierarchies and transforms them into Scanium Domain Pack JSON
 files that can be used for:
@@ -14,7 +14,7 @@ files that can be used for:
 - Listing title generation
 - Future eBay integration (category selection + item aspects)
 
-***REMOVED******REMOVED*** Features
+## Features
 
 - ✅ OAuth client credentials flow for eBay API authentication
 - ✅ Downloads complete category trees from eBay Taxonomy API
@@ -28,9 +28,9 @@ files that can be used for:
 - ✅ Dry-run mode for previewing output
 - ✅ Deterministic output for meaningful diffs
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
-***REMOVED******REMOVED******REMOVED*** 1. eBay Developer Account
+### 1. eBay Developer Account
 
 Create an eBay Developer account and application:
 
@@ -39,7 +39,7 @@ Create an eBay Developer account and application:
 3. Create a new application (select "Production" or "Sandbox")
 4. Note your **Client ID** and **Client Secret**
 
-***REMOVED******REMOVED******REMOVED*** 2. Required API Access
+### 2. Required API Access
 
 The generator uses the [eBay Taxonomy API](https://developer.ebay.com/api-docs/commerce/taxonomy/)
 which requires:
@@ -47,14 +47,14 @@ which requires:
 - **OAuth Scope**: `https://api.ebay.com/oauth/api_scope`
 - **Authentication**: Application token (client credentials flow)
 
-***REMOVED******REMOVED******REMOVED*** 3. Environment Variables
+### 3. Environment Variables
 
 Set the following environment variables:
 
 ```bash
 export EBAY_CLIENT_ID="your-client-id"
 export EBAY_CLIENT_SECRET="your-client-secret"
-export EBAY_ENV="production"  ***REMOVED*** or "sandbox"
+export EBAY_ENV="production"  # or "sandbox"
 ```
 
 Or create a `.env` file in the tool directory:
@@ -65,31 +65,31 @@ EBAY_CLIENT_SECRET=your-client-secret
 EBAY_ENV=production
 ```
 
-***REMOVED******REMOVED*** Installation
+## Installation
 
 ```bash
 cd backend/tools/ebay-domainpack-gen
 npm install
 ```
 
-***REMOVED******REMOVED*** Usage
+## Usage
 
-***REMOVED******REMOVED******REMOVED*** Basic Commands
+### Basic Commands
 
 ```bash
-***REMOVED*** Generate domain packs for Netherlands marketplace (by-branch strategy)
+# Generate domain packs for Netherlands marketplace (by-branch strategy)
 npm run gen -- generate --marketplace EBAY_NL
 
-***REMOVED*** List supported marketplaces
+# List supported marketplaces
 npm run gen -- list-marketplaces
 
-***REMOVED*** Show help
+# Show help
 npm run gen -- --help
 ```
 
-***REMOVED******REMOVED******REMOVED*** Generation Strategies
+### Generation Strategies
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. By-Branch (Recommended)
+#### 1. By-Branch (Recommended)
 
 Generates multiple domain packs, one per top-level eBay category branch:
 
@@ -114,7 +114,7 @@ npm run gen -- generate \
 - Easier to maintain and update specific verticals
 - Faster to load in the app
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Subtree
+#### 2. Subtree
 
 Generates a single pack from a specific category subtree:
 
@@ -128,7 +128,7 @@ npm run gen -- generate \
 
 **Use case:** Generate packs for specific product categories only
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Full
+#### 3. Full
 
 Generates a single mega-pack with all leaf categories:
 
@@ -141,19 +141,19 @@ npm run gen -- generate \
 
 **Warning:** May produce very large files (5,000+ categories)
 
-***REMOVED******REMOVED******REMOVED*** Advanced Options
+### Advanced Options
 
 ```bash
 npm run gen -- generate \
   --marketplace EBAY_ES \
   --strategy by-branch \
   --output ../../domainpacks/ebay/es \
-  --enable-aspects \              ***REMOVED*** Fetch eBay item aspects
-  --cache .cache/ebay \            ***REMOVED*** Enable caching
-  --env production                 ***REMOVED*** Use production API
+  --enable-aspects \              # Fetch eBay item aspects
+  --cache .cache/ebay \            # Enable caching
+  --env production                 # Use production API
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Options Reference
+#### Options Reference
 
 | Option                     | Description                                    | Default          |
 |----------------------------|------------------------------------------------|------------------|
@@ -166,7 +166,7 @@ npm run gen -- generate \
 | `--env <env>`              | eBay environment (sandbox, production)         | production       |
 | `--dry-run`                | Preview generation without writing files       | false            |
 
-***REMOVED******REMOVED******REMOVED*** Dry Run Mode
+### Dry Run Mode
 
 Preview what would be generated without writing files:
 
@@ -176,9 +176,9 @@ npm run gen -- generate \
   --dry-run
 ```
 
-***REMOVED******REMOVED*** Supported Marketplaces
+## Supported Marketplaces
 
-***REMOVED******REMOVED******REMOVED*** EU Focus
+### EU Focus
 
 - `EBAY_DE` - Germany 🇩🇪
 - `EBAY_FR` - France 🇫🇷
@@ -190,13 +190,13 @@ npm run gen -- generate \
 - `EBAY_AT` - Austria 🇦🇹
 - `EBAY_CH` - Switzerland 🇨🇭
 
-***REMOVED******REMOVED******REMOVED*** Other
+### Other
 
 - `EBAY_US` - United States 🇺🇸
 
 [Full list of supported marketplaces](https://developer.ebay.com/api-docs/commerce/taxonomy/static/supportedmarketplaces.html)
 
-***REMOVED******REMOVED*** Output Format
+## Output Format
 
 Generated domain packs follow this schema:
 
@@ -239,7 +239,7 @@ Generated domain packs follow this schema:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Field Descriptions
+### Field Descriptions
 
 | Field                           | Type     | Description                                        |
 |---------------------------------|----------|----------------------------------------------------|
@@ -254,12 +254,12 @@ Generated domain packs follow this schema:
 | `categories[].tokens`           | string[] | Searchable keyword tokens                          |
 | `categories[].attributes`       | object   | Metadata and eBay-specific info                    |
 
-***REMOVED******REMOVED*** Category Mapping Rules
+## Category Mapping Rules
 
 eBay categories are mapped to Scanium `ItemCategory` enums using pattern-based rules defined in
 `category-mapping-rules.yaml`.
 
-***REMOVED******REMOVED******REMOVED*** Supported Scanium Categories
+### Supported Scanium Categories
 
 - `ELECTRONICS` - Electronic devices and accessories
 - `FASHION` - Clothing, shoes, and fashion accessories
@@ -277,7 +277,7 @@ eBay categories are mapped to Scanium `ItemCategory` enums using pattern-based r
 - `ART` - Art and artistic items
 - `OTHER` - Other items (fallback)
 
-***REMOVED******REMOVED******REMOVED*** Multilingual Support
+### Multilingual Support
 
 Rules support multiple languages (German, French, Italian, Spanish, Dutch):
 
@@ -286,7 +286,7 @@ Rules support multiple languages (German, French, Italian, Spanish, Dutch):
   itemCategoryName: FASHION
 ```
 
-***REMOVED******REMOVED******REMOVED*** Customizing Mapping Rules
+### Customizing Mapping Rules
 
 Edit `category-mapping-rules.yaml` to adjust mappings:
 
@@ -303,7 +303,7 @@ rules:
 
 Rules are evaluated in order; first match wins.
 
-***REMOVED******REMOVED*** Token Generation
+## Token Generation
 
 Tokens are generated from category names and paths using these rules:
 
@@ -329,7 +329,7 @@ Tokens are generated from category names and paths using these rules:
 5. **Deterministic:**
     - Tokens are sorted alphabetically for stable output
 
-***REMOVED******REMOVED*** Caching
+## Caching
 
 The generator caches API responses to reduce network calls:
 
@@ -346,7 +346,7 @@ Clear cache:
 rm -rf .cache/ebay
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 Run unit tests:
 
@@ -360,7 +360,7 @@ Run tests in watch mode:
 npm run test:watch
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test Coverage
+### Test Coverage
 
 - ✅ Token generation and normalization
 - ✅ Denylist behavior
@@ -369,7 +369,7 @@ npm run test:watch
 - ✅ Priority calculation
 - ✅ Deterministic output ordering
 
-***REMOVED******REMOVED*** Regenerating/Updating Packs
+## Regenerating/Updating Packs
 
 eBay category trees change over time. To update packs:
 
@@ -390,9 +390,9 @@ eBay category trees change over time. To update packs:
 
 4. **Commit** updated packs if changes look good
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Authentication Errors
+### Authentication Errors
 
 **Error:** `eBay OAuth failed (401)`
 
@@ -402,7 +402,7 @@ eBay category trees change over time. To update packs:
 - Check that your app has the required scope: `https://api.ebay.com/oauth/api_scope`
 - Ensure you're using the correct environment (sandbox vs production)
 
-***REMOVED******REMOVED******REMOVED*** Rate Limiting
+### Rate Limiting
 
 **Error:** `Failed to get item aspects (429)`
 
@@ -412,7 +412,7 @@ eBay category trees change over time. To update packs:
 - Use `--cache` to avoid re-fetching data
 - Consider disabling `--enable-aspects` if not needed
 
-***REMOVED******REMOVED******REMOVED*** Empty Categories
+### Empty Categories
 
 **Issue:** Generated pack has 0 categories
 
@@ -423,7 +423,7 @@ eBay category trees change over time. To update packs:
 - Try with `--env sandbox` to test with sandbox data
 - Check eBay API status: [eBay Status Page](https://developer.ebay.com/support/api-status)
 
-***REMOVED******REMOVED******REMOVED*** Invalid Category Tree ID
+### Invalid Category Tree ID
 
 **Error:** `Failed to get category tree`
 
@@ -433,7 +433,7 @@ eBay category trees change over time. To update packs:
 - Clear cache: `rm -rf .cache/ebay`
 - Try again
 
-***REMOVED******REMOVED*** API Documentation
+## API Documentation
 
 - [eBay Taxonomy API Overview](https://developer.ebay.com/api-docs/commerce/taxonomy/)
 - [getDefaultCategoryTreeId](https://developer.ebay.com/api-docs/commerce/taxonomy/resources/category_tree/methods/getDefaultCategoryTreeId)
@@ -441,9 +441,9 @@ eBay category trees change over time. To update packs:
 - [getItemAspectsForCategory](https://developer.ebay.com/api-docs/commerce/taxonomy/resources/category_tree/methods/getItemAspectsForCategory)
 - [Supported Marketplaces](https://developer.ebay.com/api-docs/commerce/taxonomy/static/supportedmarketplaces.html)
 
-***REMOVED******REMOVED*** Examples
+## Examples
 
-***REMOVED******REMOVED******REMOVED*** Generate for All EU Marketplaces
+### Generate for All EU Marketplaces
 
 ```bash
 for marketplace in EBAY_DE EBAY_FR EBAY_IT EBAY_ES EBAY_NL EBAY_BE; do
@@ -455,7 +455,7 @@ for marketplace in EBAY_DE EBAY_FR EBAY_IT EBAY_ES EBAY_NL EBAY_BE; do
 done
 ```
 
-***REMOVED******REMOVED******REMOVED*** Generate with Aspects for Listing Assistance
+### Generate with Aspects for Listing Assistance
 
 ```bash
 npm run gen -- generate \
@@ -466,7 +466,7 @@ npm run gen -- generate \
   --output ../../domainpacks/ebay/de
 ```
 
-***REMOVED******REMOVED******REMOVED*** Preview Output (Dry Run)
+### Preview Output (Dry Run)
 
 ```bash
 npm run gen -- generate \
@@ -475,11 +475,11 @@ npm run gen -- generate \
   --dry-run
 ```
 
-***REMOVED******REMOVED*** License
+## License
 
 UNLICENSED - Internal Scanium tool
 
-***REMOVED******REMOVED*** Support
+## Support
 
 For issues or questions:
 

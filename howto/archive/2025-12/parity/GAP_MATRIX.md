@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** iOS-Android Parity Gap Matrix
+# iOS-Android Parity Gap Matrix
 
 **Last Updated:** 2025-12-19
 **Purpose:** Detailed capability-by-capability gap analysis with root cause, risk, and solution
@@ -8,7 +8,7 @@ approaches
 
 ---
 
-***REMOVED******REMOVED*** How to Read This Matrix
+## How to Read This Matrix
 
 - **Android Status:** Evidence paths showing Android implementation
 - **iOS Status:** Evidence paths showing iOS implementation (or absence)
@@ -21,9 +21,9 @@ approaches
 
 ---
 
-***REMOVED******REMOVED*** Gap Matrix
+## Gap Matrix
 
-| ***REMOVED***                              | Capability                   | Android Status                                                        | iOS Status                                                                                                                                   | Gap Description                                                   | Root Cause Type              | Risk                                            | Dependencies                              | Proposed Solution                                                                          | Est |
+| #                              | Capability                   | Android Status                                                        | iOS Status                                                                                                                                   | Gap Description                                                   | Root Cause Type              | Risk                                            | Dependencies                              | Proposed Solution                                                                          | Est |
 |--------------------------------|------------------------------|-----------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------|------------------------------|-------------------------------------------------|-------------------------------------------|--------------------------------------------------------------------------------------------|-----|
 | **1. CAMERA CAPTURE**          |
 | 1.1                            | Camera Preview UI            | ✅ `CameraScreen.kt:45`<br>`CameraXManager.kt:78`                      | ❌ None<br>Frame source exists: `AVFoundationFrameSource.swift:6` but no UI                                                                   | No SwiftUI camera view with live preview                          | Missing UI                   | **HIGH** - App cannot scan items                | None                                      | Create `CameraView.swift` with `AVCaptureVideoPreviewLayer` wrapped in UIViewRepresentable | M   |
@@ -101,7 +101,7 @@ approaches
 
 ---
 
-***REMOVED******REMOVED*** Summary Statistics
+## Summary Statistics
 
 **Total Gaps:** 57
 **Critical (HIGH risk):** 12
@@ -120,7 +120,7 @@ with proper staffing)
 
 ---
 
-***REMOVED******REMOVED*** Critical Path (Must Fix for MVP)
+## Critical Path (Must Fix for MVP)
 
 1. **Camera UI** (1.1-1.2) - 2 weeks
 2. **ML Integration** (2.1-2.2) - 2 weeks
@@ -135,7 +135,7 @@ with proper staffing)
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. Review this matrix with stakeholders
 2. Prioritize gaps based on risk and business value

@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Comprehensive Repository Audit Report
+# Comprehensive Repository Audit Report
 
 **Date:** 2025-12-20
 **Repository:** Scanium - Kotlin Multiplatform Mobile (KMM) Object Detection & Price Estimation App
@@ -10,14 +10,14 @@ documentation aspects
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Scanium is a well-architected Android application with strong foundations in code organization,
 testing, and security practices. The codebase demonstrates professional-grade development with 171+
 tests, comprehensive documentation, and active CI/CD pipelines. However, several areas require
 attention to improve security posture, performance, and production readiness.
 
-***REMOVED******REMOVED******REMOVED*** Overall Assessment
+### Overall Assessment
 
 - **Codebase Size:** 162 Kotlin files, 28 TypeScript files
 - **Test Coverage:** 171+ tests (75%+ androidApp, 85%+ shared modules)
@@ -27,7 +27,7 @@ attention to improve security posture, performance, and production readiness.
 
 ---
 
-***REMOVED******REMOVED*** Findings Summary
+## Findings Summary
 
 | Category       | Critical | High   | Medium | Low    | Total  |
 |----------------|----------|--------|--------|--------|--------|
@@ -40,9 +40,9 @@ attention to improve security posture, performance, and production readiness.
 
 ---
 
-***REMOVED******REMOVED*** 🔴 CRITICAL FINDINGS (Priority 1)
+## 🔴 CRITICAL FINDINGS (Priority 1)
 
-***REMOVED******REMOVED******REMOVED*** SEC-001: Database Tokens Stored Unencrypted
+### SEC-001: Database Tokens Stored Unencrypted
 
 **Priority:** CRITICAL
 **Category:** Security
@@ -77,7 +77,7 @@ refreshToken String
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-002: Session Secret Stored in Environment Variable
+### SEC-002: Session Secret Stored in Environment Variable
 
 **Priority:** CRITICAL
 **Category:** Security
@@ -111,9 +111,9 @@ SESSION_SIGNING_SECRET=change_me_to_a_random_secret_min_32_chars
 
 ---
 
-***REMOVED******REMOVED*** 🟠 HIGH PRIORITY FINDINGS (Priority 2)
+## 🟠 HIGH PRIORITY FINDINGS (Priority 2)
 
-***REMOVED******REMOVED******REMOVED*** SEC-003: API Keys Transmitted in Headers Without TLS Verification
+### SEC-003: API Keys Transmitted in Headers Without TLS Verification
 
 **Priority:** HIGH
 **Category:** Security
@@ -142,7 +142,7 @@ enforced in code.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-004: No Input Validation on File Upload Size Before Processing
+### SEC-004: No Input Validation on File Upload Size Before Processing
 
 **Priority:** HIGH
 **Category:** Security
@@ -175,7 +175,7 @@ const sanitized = await sanitizeImageBuffer(buffer, payload.file.mimetype);
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-005: Insufficient Rate Limiting Granularity
+### SEC-005: Insufficient Rate Limiting Granularity
 
 **Priority:** HIGH
 **Category:** Security
@@ -205,7 +205,7 @@ per-IP or per-user limits.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-006: Missing CORS Origin Validation
+### SEC-006: Missing CORS Origin Validation
 
 **Priority:** HIGH
 **Category:** Security
@@ -239,7 +239,7 @@ credentials: true,
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-007: Android BuildConfig Exposes API Keys in APK
+### SEC-007: Android BuildConfig Exposes API Keys in APK
 
 **Priority:** HIGH
 **Category:** Security
@@ -273,7 +273,7 @@ buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-001: CameraX Executor Not Properly Managed
+### PERF-001: CameraX Executor Not Properly Managed
 
 **Priority:** HIGH
 **Category:** Performance
@@ -305,7 +305,7 @@ private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-002: Detection Scope Not Cancelled on Cleanup
+### PERF-002: Detection Scope Not Cancelled on Cleanup
 
 **Priority:** HIGH
 **Category:** Performance
@@ -336,7 +336,7 @@ private val detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-003: Bitmap Processing Without Proper Memory Management
+### PERF-003: Bitmap Processing Without Proper Memory Management
 
 **Priority:** HIGH
 **Category:** Performance
@@ -364,7 +364,7 @@ Bitmap objects are created during image processing but not explicitly recycled.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-001: No Mechanism to Refresh Expired OAuth Tokens
+### FUNC-001: No Mechanism to Refresh Expired OAuth Tokens
 
 **Priority:** HIGH
 **Category:** Functional
@@ -393,7 +393,7 @@ Tokens are stored with expiresAt timestamp but no refresh mechanism is implement
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-002: Missing Error Handling for Network Failures
+### FUNC-002: Missing Error Handling for Network Failures
 
 **Priority:** HIGH
 **Category:** Functional
@@ -422,9 +422,9 @@ documented.
 
 ---
 
-***REMOVED******REMOVED*** 🟡 MEDIUM PRIORITY FINDINGS (Priority 3)
+## 🟡 MEDIUM PRIORITY FINDINGS (Priority 3)
 
-***REMOVED******REMOVED******REMOVED*** SEC-008: ProGuard Configuration Too Permissive
+### SEC-008: ProGuard Configuration Too Permissive
 
 **Priority:** MEDIUM
 **Category:** Security
@@ -457,7 +457,7 @@ Keep rules are too broad, preventing effective code obfuscation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-009: Missing Content Security Policy Headers
+### SEC-009: Missing Content Security Policy Headers
 
 **Priority:** MEDIUM
 **Category:** Security
@@ -486,7 +486,7 @@ No security headers are configured (CSP, X-Frame-Options, X-Content-Type-Options
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-010: SQL Injection Risk in Dynamic Queries
+### SEC-010: SQL Injection Risk in Dynamic Queries
 
 **Priority:** MEDIUM
 **Category:** Security
@@ -514,7 +514,7 @@ While Prisma provides SQL injection protection, raw SQL queries (if any) could b
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-011: Missing Database Connection Encryption
+### SEC-011: Missing Database Connection Encryption
 
 **Priority:** MEDIUM
 **Category:** Security
@@ -546,7 +546,7 @@ DATABASE_URL=postgresql://scanium:scanium@postgres:5432/scanium
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-012: Weak Password Policy for Database User
+### SEC-012: Weak Password Policy for Database User
 
 **Priority:** MEDIUM
 **Category:** Security
@@ -578,7 +578,7 @@ POSTGRES_PASSWORD=scanium
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-013: No Request Logging for Security Audit Trail
+### SEC-013: No Request Logging for Security Audit Trail
 
 **Priority:** MEDIUM
 **Category:** Security
@@ -607,7 +607,7 @@ Limited security event logging for authentication failures, unauthorized access 
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-014: Missing CSRF Protection
+### SEC-014: Missing CSRF Protection
 
 **Priority:** MEDIUM
 **Category:** Security
@@ -634,7 +634,7 @@ No CSRF token validation for state-changing operations.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-015: Android Network Security Config Allows Localhost Cleartext
+### SEC-015: Android Network Security Config Allows Localhost Cleartext
 
 **Priority:** MEDIUM
 **Category:** Security
@@ -661,7 +661,7 @@ documented.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-004: Synchronous File I/O on Main Thread
+### PERF-004: Synchronous File I/O on Main Thread
 
 **Priority:** MEDIUM
 **Category:** Performance
@@ -687,7 +687,7 @@ Local properties file reading could block on slow I/O.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-005: Missing Database Connection Pooling Configuration
+### PERF-005: Missing Database Connection Pooling Configuration
 
 **Priority:** MEDIUM
 **Category:** Performance
@@ -715,7 +715,7 @@ No explicit connection pool configuration for Prisma.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-006: No Image Caching Strategy
+### PERF-006: No Image Caching Strategy
 
 **Priority:** MEDIUM
 **Category:** Performance
@@ -743,7 +743,7 @@ Images are processed repeatedly without caching.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-007: ObjectTracker Uses Suboptimal Data Structures
+### PERF-007: ObjectTracker Uses Suboptimal Data Structures
 
 **Priority:** MEDIUM
 **Category:** Performance
@@ -771,7 +771,7 @@ Uses mutableMapOf for candidate tracking, which has O(n) iteration for spatial m
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-008: No Lazy Loading for ML Models
+### PERF-008: No Lazy Loading for ML Models
 
 **Priority:** MEDIUM
 **Category:** Performance
@@ -799,7 +799,7 @@ All ML models are loaded eagerly at startup.
 
 ---
 
-``***REMOVED******REMOVED******REMOVED*** PERF-009: Missing APK Size Optimization
+``### PERF-009: Missing APK Size Optimization
 **Priority:** MEDIUM
 **Category:** Performance
 **Files:**
@@ -826,7 +826,7 @@ No APK splitting or language/density-specific resource configuration.
 
 ---
 
-``***REMOVED******REMOVED******REMOVED*** FUNC-003: No Data Persistence for Scanned Items
+``### FUNC-003: No Data Persistence for Scanned Items
 **Priority:** MEDIUM
 **Category:** Functional
 **Files:**
@@ -853,7 +853,7 @@ Scanned items are stored in memory only and lost on app close.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-004: Missing Pagination for Items List
+### FUNC-004: Missing Pagination for Items List
 
 **Priority:** MEDIUM
 **Category:** Functional
@@ -881,7 +881,7 @@ Items list loads all items at once, potential performance issue with large datas
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-005: No Offline Mode Indicator
+### FUNC-005: No Offline Mode Indicator
 
 **Priority:** MEDIUM
 **Category:** Functional
@@ -909,7 +909,7 @@ No visual indication when network features are unavailable.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-006: Missing User Feedback for Long Operations
+### FUNC-006: Missing User Feedback for Long Operations
 
 **Priority:** MEDIUM
 **Category:** Functional
@@ -937,7 +937,7 @@ No loading indicators for slow operations like listing creation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-007: No Input Validation on User-Entered Data
+### FUNC-007: No Input Validation on User-Entered Data
 
 **Priority:** MEDIUM
 **Category:** Functional
@@ -965,7 +965,7 @@ User inputs (title, price) lack validation before submission.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-008: Missing Accessibility Features
+### FUNC-008: Missing Accessibility Features
 
 **Priority:** MEDIUM
 **Category:** Functional
@@ -994,7 +994,7 @@ No content descriptions for screen readers, insufficient touch targets.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-009: No Analytics or Crash Reporting
+### FUNC-009: No Analytics or Crash Reporting
 
 **Priority:** MEDIUM
 **Category:** Functional
@@ -1024,7 +1024,7 @@ No crash reporting (Firebase Crashlytics) or analytics implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-001: Inconsistent Error Handling Patterns
+### TECH-001: Inconsistent Error Handling Patterns
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1052,7 +1052,7 @@ Mix of throw/try-catch and Result types for error handling.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-002: No API Versioning Strategy
+### TECH-002: No API Versioning Strategy
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1080,7 +1080,7 @@ Routes use `/v1` prefix but no versioning strategy documented.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-003: Missing API Documentation
+### TECH-003: Missing API Documentation
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1108,7 +1108,7 @@ No OpenAPI/Swagger documentation for REST API.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-004: Tight Coupling Between ViewModel and View
+### TECH-004: Tight Coupling Between ViewModel and View
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1136,7 +1136,7 @@ ViewModels contain view-specific logic, making testing harder.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-005: No Dependency Injection Framework
+### TECH-005: No Dependency Injection Framework
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1164,7 +1164,7 @@ Manual dependency injection makes testing and refactoring harder.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-006: Hardcoded Configuration Values
+### TECH-006: Hardcoded Configuration Values
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1192,7 +1192,7 @@ TrackerConfig values are hardcoded in CameraXManager.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-007: Missing Feature Flags System
+### TECH-007: Missing Feature Flags System
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1220,7 +1220,7 @@ No feature flag system for gradual rollouts or A/B testing.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-008: iOS App in Early Stage
+### TECH-008: iOS App in Early Stage
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1248,7 +1248,7 @@ iOS app exists but is not production-ready, creating maintenance burden.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-009: No Automated UI Testing
+### TECH-009: No Automated UI Testing
 
 **Priority:** MEDIUM
 **Category:** Technical Debt
@@ -1276,9 +1276,9 @@ Only 3 instrumented UI tests, insufficient for production app.
 
 ---
 
-***REMOVED******REMOVED*** ⚪ LOW PRIORITY FINDINGS (Priority 4)
+## ⚪ LOW PRIORITY FINDINGS (Priority 4)
 
-***REMOVED******REMOVED******REMOVED*** DOC-001: README References Non-Existent Files
+### DOC-001: README References Non-Existent Files
 
 **Priority:** LOW
 **Category:** Documentation
@@ -1299,7 +1299,7 @@ References to `./md/architecture/ARCHITECTURE.md` and other paths don't exist.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** DOC-002: Outdated Dependency Versions in Documentation
+### DOC-002: Outdated Dependency Versions in Documentation
 
 **Priority:** LOW
 **Category:** Documentation
@@ -1320,7 +1320,7 @@ Documentation doesn't reflect latest library versions.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** DOC-003: Missing Architecture Decision Records (ADRs)
+### DOC-003: Missing Architecture Decision Records (ADRs)
 
 **Priority:** LOW
 **Category:** Documentation
@@ -1342,7 +1342,7 @@ Key architectural decisions not fully documented.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-010: Debug Logging in Release Builds
+### PERF-010: Debug Logging in Release Builds
 
 **Priority:** LOW
 **Category:** Performance
@@ -1363,7 +1363,7 @@ Logging statements throughout code (handled by ProGuard).
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** TECH-010: Unused Dependencies
+### TECH-010: Unused Dependencies
 
 **Priority:** LOW
 **Category:** Technical Debt
@@ -1385,7 +1385,7 @@ Logging statements throughout code (handled by ProGuard).
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-016: No Security Headers in Android WebView (If Used)
+### SEC-016: No Security Headers in Android WebView (If Used)
 
 **Priority:** LOW
 **Category:** Security
@@ -1405,7 +1405,7 @@ If WebView is added, security configuration needed.
 
 ---
 
-***REMOVED******REMOVED*** Positive Findings ✅
+## Positive Findings ✅
 
 The following aspects of the codebase demonstrate excellence:
 
@@ -1422,30 +1422,30 @@ The following aspects of the codebase demonstrate excellence:
 
 ---
 
-***REMOVED******REMOVED*** Recommendations by Category
+## Recommendations by Category
 
-***REMOVED******REMOVED******REMOVED*** Immediate Actions (This Week)
+### Immediate Actions (This Week)
 
 1. Fix CRITICAL security issues (SEC-001, SEC-002)
 2. Add executor/coroutine cleanup (PERF-001, PERF-002)
 3. Implement OAuth token refresh (FUNC-001)
 4. Add CloudClassifier implementation (FUNC-002)
 
-***REMOVED******REMOVED******REMOVED*** Short-Term (This Month)
+### Short-Term (This Month)
 
 1. Address all HIGH priority security issues
 2. Implement proper resource management
 3. Add comprehensive error handling
 4. Set up crash reporting and analytics
 
-***REMOVED******REMOVED******REMOVED*** Medium-Term (This Quarter)
+### Medium-Term (This Quarter)
 
 1. Implement data persistence
 2. Add dependency injection framework
 3. Improve test coverage to 90%+
 4. Complete API documentation
 
-***REMOVED******REMOVED******REMOVED*** Long-Term (Next Quarter+)
+### Long-Term (Next Quarter+)
 
 1. Refactor for better separation of concerns
 2. Complete iOS implementation or deprecate
@@ -1454,30 +1454,30 @@ The following aspects of the codebase demonstrate excellence:
 
 ---
 
-***REMOVED******REMOVED*** Testing Gaps
+## Testing Gaps
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests Needed
+### Unit Tests Needed
 
 - CloudClassifier error handling scenarios
 - Token refresh flow
 - Image upload size validation
 - Rate limiting edge cases
 
-***REMOVED******REMOVED******REMOVED*** Integration Tests Needed
+### Integration Tests Needed
 
 - End-to-end OAuth flow
 - Database encryption/decryption
 - API authentication and authorization
 - Image processing pipeline
 
-***REMOVED******REMOVED******REMOVED*** Performance Tests Needed
+### Performance Tests Needed
 
 - Load testing for classifier endpoint
 - Memory leak detection
 - Bitmap lifecycle validation
 - ObjectTracker scalability
 
-***REMOVED******REMOVED******REMOVED*** Security Tests Needed
+### Security Tests Needed
 
 - Penetration testing
 - SQL injection attempts
@@ -1486,9 +1486,9 @@ The following aspects of the codebase demonstrate excellence:
 
 ---
 
-***REMOVED******REMOVED*** Dependency Audit Results
+## Dependency Audit Results
 
-***REMOVED******REMOVED******REMOVED*** Android Dependencies
+### Android Dependencies
 
 - **AGP:** 8.5.0 (Latest stable)
 - **Kotlin:** 2.0.0 (Latest)
@@ -1497,7 +1497,7 @@ The following aspects of the codebase demonstrate excellence:
 - **ML Kit:** Latest versions
 - **Coroutines:** 1.7.3 (Latest)
 
-***REMOVED******REMOVED******REMOVED*** Backend Dependencies
+### Backend Dependencies
 
 - **Node.js:** >= 20.0.0 (Latest LTS)
 - **TypeScript:** 5.5.4 (Latest)
@@ -1505,7 +1505,7 @@ The following aspects of the codebase demonstrate excellence:
 - **Prisma:** 5.19.0 (Latest)
 - **Google Cloud Vision:** 4.3.3 (Latest)
 
-***REMOVED******REMOVED******REMOVED*** Recommendations
+### Recommendations
 
 1. Update Compose BOM to 2024.x
 2. Verify all dependencies for CVEs weekly
@@ -1514,9 +1514,9 @@ The following aspects of the codebase demonstrate excellence:
 
 ---
 
-***REMOVED******REMOVED*** Build & Deployment Checklist
+## Build & Deployment Checklist
 
-***REMOVED******REMOVED******REMOVED*** Pre-Production Checklist
+### Pre-Production Checklist
 
 - [ ] Fix all CRITICAL and HIGH priority issues
 - [ ] Update dependencies to latest stable versions
@@ -1534,7 +1534,7 @@ The following aspects of the codebase demonstrate excellence:
 - [ ] Test production deployment process
 - [ ] Create rollback procedures
 
-***REMOVED******REMOVED******REMOVED*** Release Checklist
+### Release Checklist
 
 - [ ] All tests passing
 - [ ] Code coverage > 85%
@@ -1548,7 +1548,7 @@ The following aspects of the codebase demonstrate excellence:
 
 ---
 
-***REMOVED******REMOVED*** Conclusion
+## Conclusion
 
 Scanium is a well-engineered application with strong foundations. The codebase demonstrates
 professional development practices with comprehensive testing, security measures, and clean

@@ -1,12 +1,12 @@
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium Smoke Test Monitor - NAS Deployment
-***REMOVED*** =============================================================================
-***REMOVED*** Lightweight container that runs smoke tests every 5 minutes.
-***REMOVED*** Logs results to /volume1/docker/scanium/logs/smoke.log
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   docker-compose -f docker-compose.nas.monitor.yml up -d
-***REMOVED*** =============================================================================
+# =============================================================================
+# Scanium Smoke Test Monitor - NAS Deployment
+# =============================================================================
+# Lightweight container that runs smoke tests every 5 minutes.
+# Logs results to /volume1/docker/scanium/logs/smoke.log
+#
+# Usage:
+#   docker-compose -f docker-compose.nas.monitor.yml up -d
+# =============================================================================
 
 version: "3.8"
 

@@ -1,4 +1,4 @@
-***REMOVED*** Scanium Backend - Handoff Report
+# Scanium Backend - Handoff Report
 
 **Date**: 2026-01-09
 **Session**: AI Export Assistant MARKETPLACE Tone Validation Failure
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 **Fixed Issues** ✅
 
@@ -20,9 +20,9 @@
 
 ---
 
-***REMOVED******REMOVED*** Issues Resolved
+## Issues Resolved
 
-***REMOVED******REMOVED******REMOVED*** Issue 1: Share Functionality Crash ✅ FIXED
+### Issue 1: Share Functionality Crash ✅ FIXED
 
 **Symptom**: App crashed with NullPointerException when returning from Share (WhatsApp)
 
@@ -61,9 +61,9 @@ if (savedInstanceState == null) {
 
 ---
 
-***REMOVED******REMOVED*** Issues Still Requiring Resolution
+## Issues Still Requiring Resolution
 
-***REMOVED******REMOVED******REMOVED*** Issue 2: AI Export Assistant MARKETPLACE Tone Validation ❌ ONGOING
+### Issue 2: AI Export Assistant MARKETPLACE Tone Validation ❌ ONGOING
 
 **Symptom**:
 
@@ -107,14 +107,14 @@ Test 3: tone="MARKETPLACE"   → FAILED ❌ (400 validation error)
 
 ---
 
-***REMOVED******REMOVED*** Root Cause Analysis (RCA)
+## Root Cause Analysis (RCA)
 
-***REMOVED******REMOVED******REMOVED*** What We Know ✅
+### What We Know ✅
 
 1. **Schema Contains MARKETPLACE**: Verified via direct grep on deployed container
    ```bash
    docker run --rm scanium-api:latest grep -A3 'tone: z.enum' /app/dist/modules/assistant/routes.js
-   ***REMOVED*** Output: tone: z.enum(['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL', 'MARKETPLACE']).optional()
+   # Output: tone: z.enum(['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL', 'MARKETPLACE']).optional()
    ```
 
 2. **Source Code Has MARKETPLACE**: Confirmed in
@@ -130,7 +130,7 @@ Test 3: tone="MARKETPLACE"   → FAILED ❌ (400 validation error)
 
 5. **Backend Health Check Passes**: `https://scanium.gtemp1.com/health` returns 200 OK
 
-***REMOVED******REMOVED******REMOVED*** What We Don't Know ❓
+### What We Don't Know ❓
 
 1. **Why MARKETPLACE Specifically Fails**:
     - Schema shows it's included
@@ -151,7 +151,7 @@ Test 3: tone="MARKETPLACE"   → FAILED ❌ (400 validation error)
     - Haven't verified if logs appear on NAS during actual requests
     - Need to SSH and tail logs during live test
 
-***REMOVED******REMOVED******REMOVED*** Hypotheses (Most to Least Likely)
+### Hypotheses (Most to Least Likely)
 
 **Hypothesis 1: Image ID Mismatch - Container Running Wrong Image** ⭐⭐⭐⭐⭐
 
@@ -187,9 +187,9 @@ Test 3: tone="MARKETPLACE"   → FAILED ❌ (400 validation error)
 
 ---
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
-***REMOVED******REMOVED******REMOVED*** 1. MainActivity.kt ✅ DEPLOYED TO MOBILE
+### 1. MainActivity.kt ✅ DEPLOYED TO MOBILE
 
 **Path**: `/Users/family/dev/scanium/androidApp/src/main/java/com/scanium/app/MainActivity.kt`
 
@@ -200,7 +200,7 @@ Test 3: tone="MARKETPLACE"   → FAILED ❌ (400 validation error)
 
 **Status**: Deployed to mobile, verified working
 
-***REMOVED******REMOVED******REMOVED*** 2. routes.ts ✅ DEPLOYED TO NAS (but not working)
+### 2. routes.ts ✅ DEPLOYED TO NAS (but not working)
 
 **Path**: `/Users/family/dev/scanium/backend/src/modules/assistant/routes.ts`
 
@@ -221,7 +221,7 @@ Test 3: tone="MARKETPLACE"   → FAILED ❌ (400 validation error)
 
 **Status**: Deployed to NAS, but MARKETPLACE still failing validation
 
-***REMOVED******REMOVED******REMOVED*** 3. AssistantRepository.kt (Debug Only)
+### 3. AssistantRepository.kt (Debug Only)
 
 **Path**:
 `/Users/family/dev/scanium/androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt`
@@ -234,9 +234,9 @@ Test 3: tone="MARKETPLACE"   → FAILED ❌ (400 validation error)
 
 ---
 
-***REMOVED******REMOVED*** Deployment Pipeline
+## Deployment Pipeline
 
-***REMOVED******REMOVED******REMOVED*** Current Architecture
+### Current Architecture
 
 ```
 ┌─────────────────┐
@@ -261,27 +261,27 @@ Test 3: tone="MARKETPLACE"   → FAILED ❌ (400 validation error)
 └─────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Deployment Commands Used
+### Deployment Commands Used
 
 ```bash
-***REMOVED*** 1. Build image for NAS architecture
+# 1. Build image for NAS architecture
 cd /Users/family/dev/scanium/backend
 docker build --platform linux/amd64 --no-cache -t scanium-api:latest .
 
-***REMOVED*** 2. Save to tarball
+# 2. Save to tarball
 docker save -o /tmp/scanium-api.tar.gz scanium-api:latest
 
-***REMOVED*** 3. Copy to NAS
+# 3. Copy to NAS
 scp -O /tmp/scanium-api.tar.gz ilpeppino@nas:/volume1/docker/scanium/
 
-***REMOVED*** 4. Load on NAS
+# 4. Load on NAS
 ssh ilpeppino@nas "/usr/local/bin/docker load -i /volume1/docker/scanium/scanium-api.tar.gz"
 
-***REMOVED*** 5. Restart container
+# 5. Restart container
 ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issues Encountered During Deployment
+### Issues Encountered During Deployment
 
 1. **Colima Not Running**: `Cannot connect to Docker daemon`
     - Fix: `colima delete -f && colima start --arch x86_64 --cpu 4 --memory 8`
@@ -294,28 +294,28 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 
 ---
 
-***REMOVED******REMOVED*** TODO List for Tomorrow
+## TODO List for Tomorrow
 
-***REMOVED******REMOVED******REMOVED*** Priority 1: Verify Runtime State vs Deployed Code ⚠️ CRITICAL
+### Priority 1: Verify Runtime State vs Deployed Code ⚠️ CRITICAL
 
 1. **Check Live Backend Logs During Test**
    ```bash
    ssh ilpeppino@nas "/usr/local/bin/docker logs scanium-backend --tail 200 --follow"
-   ***REMOVED*** Keep this running, then trigger MARKETPLACE test from mobile
-   ***REMOVED*** Look for "===== VALIDATION ERROR =====" debug output
+   # Keep this running, then trigger MARKETPLACE test from mobile
+   # Look for "===== VALIDATION ERROR =====" debug output
    ```
     - **Expected**: Should see console.error debug output with Zod errors
     - **If Missing**: Container not running new code
 
 2. **Verify Container Image ID Matches**
    ```bash
-   ***REMOVED*** On local machine
+   # On local machine
    docker images scanium-api:latest --format "{{.ID}}"
 
-   ***REMOVED*** On NAS
+   # On NAS
    ssh ilpeppino@nas "/usr/local/bin/docker images scanium-api:latest --format '{{.ID}}'"
 
-   ***REMOVED*** Compare - should be identical
+   # Compare - should be identical
    ```
     - **If Different**: Wrong image loaded on NAS
 
@@ -326,7 +326,7 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
     - **Expected**: Should show latest image ID
     - **If Wrong**: Need to recreate container, not just restart
 
-***REMOVED******REMOVED******REMOVED*** Priority 2: Verify Single Backend Instance ⚠️ HIGH
+### Priority 2: Verify Single Backend Instance ⚠️ HIGH
 
 4. **List All Running Containers**
    ```bash
@@ -340,7 +340,7 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
    ssh ilpeppino@nas "cd /volume1/docker/scanium && /usr/local/bin/docker-compose ps"
    ```
 
-***REMOVED******REMOVED******REMOVED*** Priority 3: Investigate Cloudflare Caching 🔍 MEDIUM
+### Priority 3: Investigate Cloudflare Caching 🔍 MEDIUM
 
 6. **Check Cloudflare Cache Settings**
     - Log into Cloudflare dashboard
@@ -352,25 +352,25 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
     - Check if multiple tunnels are active
     - Verify tunnel routes to correct backend instance
 
-***REMOVED******REMOVED******REMOVED*** Priority 4: Force Complete Container Rebuild 🔄 MEDIUM
+### Priority 4: Force Complete Container Rebuild 🔄 MEDIUM
 
 8. **Recreate Container From Scratch** (if above checks fail)
    ```bash
-   ***REMOVED*** Stop and remove container
+   # Stop and remove container
    ssh ilpeppino@nas "/usr/local/bin/docker stop scanium-backend"
    ssh ilpeppino@nas "/usr/local/bin/docker rm scanium-backend"
 
-   ***REMOVED*** Remove old image
+   # Remove old image
    ssh ilpeppino@nas "/usr/local/bin/docker rmi scanium-api:latest"
 
-   ***REMOVED*** Load fresh image
+   # Load fresh image
    ssh ilpeppino@nas "/usr/local/bin/docker load -i /volume1/docker/scanium/scanium-api.tar.gz"
 
-   ***REMOVED*** Start new container (need docker run command or docker-compose up)
+   # Start new container (need docker run command or docker-compose up)
    ssh ilpeppino@nas "cd /volume1/docker/scanium && /usr/local/bin/docker-compose up -d"
    ```
 
-***REMOVED******REMOVED******REMOVED*** Priority 5: Code Cleanup 🧹 LOW (After Fix Confirmed)
+### Priority 5: Code Cleanup 🧹 LOW (After Fix Confirmed)
 
 9. **Remove Debug Logging**
     - Remove `console.error()` from routes.ts (lines 563-567)
@@ -380,15 +380,15 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 
 ---
 
-***REMOVED******REMOVED*** Test Procedure for Tomorrow
+## Test Procedure for Tomorrow
 
-***REMOVED******REMOVED******REMOVED*** Prerequisites
+### Prerequisites
 
 1. Ensure mobile device connected: `adb devices`
 2. Start log monitoring: `adb logcat -c && adb logcat | tee /tmp/test-$(date +%H%M%S).log`
 3. SSH into NAS for backend logs: `ssh ilpeppino@nas`
 
-***REMOVED******REMOVED******REMOVED*** Test Steps
+### Test Steps
 
 1. **Baseline Test** - Verify backend is running
    ```bash
@@ -415,9 +415,9 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 
 ---
 
-***REMOVED******REMOVED*** Key Technical Insights
+## Key Technical Insights
 
-***REMOVED******REMOVED******REMOVED*** Zod Schema Validation
+### Zod Schema Validation
 
 - Location: `src/modules/assistant/routes.ts:94`
 - Validation happens at request parsing
@@ -433,14 +433,14 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
   }).optional();
   ```
 
-***REMOVED******REMOVED******REMOVED*** Android Request Format
+### Android Request Format
 
 - Sent as multipart/form-data
 - JSON payload in "payload" field
 - Images in "images[]" field
 - Content-Type: multipart/form-data; boundary=...
 
-***REMOVED******REMOVED******REMOVED*** Backend Response Format
+### Backend Response Format
 
 ```json
 {
@@ -458,15 +458,15 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 
 ---
 
-***REMOVED******REMOVED*** Relevant Log Timestamps
+## Relevant Log Timestamps
 
-***REMOVED******REMOVED******REMOVED*** Share Crash Investigation (Fixed)
+### Share Crash Investigation (Fixed)
 
 - 21:33:00 UTC - Backend started
 - Test occurred ~21:34:00
 - Crash caught in logcat with NullPointerException
 
-***REMOVED******REMOVED******REMOVED*** AI Export Investigation (Ongoing)
+### AI Export Investigation (Ongoing)
 
 - 21:36:23 UTC - Backend restarted after route changes
 - 21:38:08 UTC - POST /health test (404 - wrong method)
@@ -477,16 +477,16 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 
 ---
 
-***REMOVED******REMOVED*** Environment Details
+## Environment Details
 
-***REMOVED******REMOVED******REMOVED*** Development Machine
+### Development Machine
 
 - OS: macOS (Darwin 25.1.0)
 - Architecture: Apple Silicon (ARM64)
 - Docker: Colima with x86_64 emulation (QEMU)
 - Working Directory: `/Users/family/dev/scanium/backend`
 
-***REMOVED******REMOVED******REMOVED*** Production NAS
+### Production NAS
 
 - Host: REDACTED_INTERNAL_IP (ilpeppino@nas)
 - Model: Synology DS418play
@@ -496,7 +496,7 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 - Container: scanium-backend
 - Image: scanium-api:latest
 
-***REMOVED******REMOVED******REMOVED*** Mobile Device
+### Mobile Device
 
 - Platform: Android
 - App: Scanium
@@ -505,7 +505,7 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 
 ---
 
-***REMOVED******REMOVED*** Questions to Answer Tomorrow
+## Questions to Answer Tomorrow
 
 1. **Is the container actually running the new image?**
     - Check image ID match between local and NAS
@@ -530,7 +530,7 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 **Fix is Complete When**:
 
@@ -542,7 +542,7 @@ ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 
 ---
 
-***REMOVED******REMOVED*** Notes for Future Claude Session
+## Notes for Future Claude Session
 
 When you read this tomorrow, start with:
 
@@ -560,32 +560,32 @@ rather than a code issue.
 
 ---
 
-***REMOVED******REMOVED*** Useful Commands Reference
+## Useful Commands Reference
 
 ```bash
-***REMOVED*** Check backend health
+# Check backend health
 curl -s https://scanium.gtemp1.com/health | jq
 
-***REMOVED*** Monitor Android logs
+# Monitor Android logs
 adb logcat -c && adb logcat | grep -E "(ScaniumAssist|ScaniumNet|MainActivity)"
 
-***REMOVED*** SSH to NAS
+# SSH to NAS
 ssh ilpeppino@nas
 
-***REMOVED*** Check NAS docker containers
+# Check NAS docker containers
 ssh ilpeppino@nas "/usr/local/bin/docker ps -a"
 
-***REMOVED*** Tail backend logs
+# Tail backend logs
 ssh ilpeppino@nas "/usr/local/bin/docker logs scanium-backend --tail 200 --follow"
 
-***REMOVED*** Verify schema in deployed image
+# Verify schema in deployed image
 ssh ilpeppino@nas "/usr/local/bin/docker run --rm scanium-api:latest grep -A3 'tone: z.enum' /app/dist/modules/assistant/routes.js"
 
-***REMOVED*** Check image IDs
-docker images scanium-api:latest --format "{{.ID}}"  ***REMOVED*** Local
-ssh ilpeppino@nas "/usr/local/bin/docker images scanium-api:latest --format '{{.ID}}'"  ***REMOVED*** NAS
+# Check image IDs
+docker images scanium-api:latest --format "{{.ID}}"  # Local
+ssh ilpeppino@nas "/usr/local/bin/docker images scanium-api:latest --format '{{.ID}}'"  # NAS
 
-***REMOVED*** Restart backend
+# Restart backend
 ssh ilpeppino@nas "/usr/local/bin/docker restart scanium-backend"
 ```
 

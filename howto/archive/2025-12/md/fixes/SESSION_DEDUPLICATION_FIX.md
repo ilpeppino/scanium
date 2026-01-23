@@ -1,33 +1,33 @@
-***REMOVED*** Session-Level De-duplication Fix - December 8, 2024
+# Session-Level De-duplication Fix - December 8, 2024
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 The SessionDeduplicator was treating all UNKNOWN category items as duplicates, causing only 1-2
 items to be added during scanning while slowly panning the camera.
 
-***REMOVED******REMOVED*** Root Causes
+## Root Causes
 
-***REMOVED******REMOVED******REMOVED*** 1. Empty Label Bug (Critical)
+### 1. Empty Label Bug (Critical)
 
 The `calculateLabelSimilarity()` function checked `if (label1 == label2) return 1.0f` **before**
 checking for empty strings. This meant empty labels matched with 100% similarity.
 
-***REMOVED******REMOVED******REMOVED*** 2. Category Name Fallback Bug (Critical)
+### 2. Category Name Fallback Bug (Critical)
 
 The `extractMetadata()` function used `item.category.name` as the label fallback, causing all
 UNKNOWN items to have labelText="UNKNOWN", which then matched as identical.
 
-***REMOVED******REMOVED******REMOVED*** 3. Missing Position Data
+### 3. Missing Position Data
 
 `ScannedItem` didn't include bounding box position, so spatial proximity matching couldn't work.
 
-***REMOVED******REMOVED******REMOVED*** 4. Missing Label Data
+### 4. Missing Label Data
 
 `ScannedItem` didn't include ML Kit label text, so label-based matching couldn't work.
 
-***REMOVED******REMOVED*** Fixes Applied
+## Fixes Applied
 
-***REMOVED******REMOVED******REMOVED*** Fix 1: Empty Label Check First (SessionDeduplicator.kt:149-156)
+### Fix 1: Empty Label Check First (SessionDeduplicator.kt:149-156)
 
 ```kotlin
 private fun calculateLabelSimilarity(label1: String, label2: String): Float {
@@ -41,7 +41,7 @@ private fun calculateLabelSimilarity(label1: String, label2: String): Float {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Fix 2: Add Position and Label Fields to ScannedItem (ScannedItem.kt:22-33)
+### Fix 2: Add Position and Label Fields to ScannedItem (ScannedItem.kt:22-33)
 
 ```kotlin
 data class ScannedItem(
@@ -58,7 +58,7 @@ data class ScannedItem(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Fix 3: Pass Position and Label from ObjectDetectorClient (ObjectDetectorClient.kt:492-513)
+### Fix 3: Pass Position and Label from ObjectDetectorClient (ObjectDetectorClient.kt:492-513)
 
 ```kotlin
 // Normalize bounding box to 0-1 coordinates for session deduplication
@@ -82,7 +82,7 @@ ScannedItem(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Fix 4: Use Actual Position and Labels in extractMetadata (SessionDeduplicator.kt:215-256)
+### Fix 4: Use Actual Position and Labels in extractMetadata (SessionDeduplicator.kt:215-256)
 
 ```kotlin
 // Extract position from bounding box if available
@@ -109,15 +109,15 @@ val labelText = when {
 }
 ```
 
-***REMOVED******REMOVED*** Results
+## Results
 
-***REMOVED******REMOVED******REMOVED*** Before Fix
+### Before Fix
 
 - **Item accumulation**: Only 1-2 items total
 - **Logs**: `labelSim=1.0` for all comparisons
 - **Behavior**: Every item rejected as "similar to existing"
 
-***REMOVED******REMOVED******REMOVED*** After Fix
+### After Fix
 
 - **Item accumulation**: ~27 items in 16 seconds (~1-2 items/second)
 - **Logs**: `labelSim=0.0` for empty labels, proper position-based matching
@@ -128,15 +128,15 @@ val labelText = when {
     - ✅ Proper rejection: "Similar item found... REJECTED"
     - ✅ Proper acceptance: "ACCEPTED: unique item"
 
-***REMOVED******REMOVED******REMOVED*** Memory Usage
+### Memory Usage
 
 - **Stable**: 18-29MB (out of 256MB max)
 - **No leaks**: Adding items causes 0MB additional memory
 - **No crashes**: App runs continuously without crashes
 
-***REMOVED******REMOVED*** Key Algorithm Details
+## Key Algorithm Details
 
-***REMOVED******REMOVED******REMOVED*** Similarity Rules (SessionDeduplicator.kt:77-144)
+### Similarity Rules (SessionDeduplicator.kt:77-144)
 
 1. **Category must match** (essential)
 
@@ -154,7 +154,7 @@ val labelText = when {
     - Distance threshold: 5% of frame diagonal (strict)
     - When labels present: 15% of frame diagonal (lenient)
 
-***REMOVED******REMOVED******REMOVED*** Distance Calculation (SessionDeduplicator.kt:202-210)
+### Distance Calculation (SessionDeduplicator.kt:202-210)
 
 ```kotlin
 private fun calculateNormalizedDistance(item1: ItemMetadata, item2: ItemMetadata): Float {
@@ -168,9 +168,9 @@ private fun calculateNormalizedDistance(item1: ItemMetadata, item2: ItemMetadata
 }
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Manual Test Results
+### Manual Test Results
 
 1. **Launch app**: `adb shell am start -n com.scanium.app/.MainActivity`
 2. **Long-press to scan**: Camera detects objects
@@ -181,7 +181,7 @@ private fun calculateNormalizedDistance(item1: ItemMetadata, item2: ItemMetadata
     - Memory stays at 18-29MB ✅
     - No crashes ✅
 
-***REMOVED******REMOVED******REMOVED*** Example Log Output
+### Example Log Output
 
 ```
 SessionDeduplicator: No labels: positions very close (distance=0.045774244) - likely same object
@@ -193,7 +193,7 @@ SessionDeduplicator: No labels: positions differ (distance=0.12030976) - treatin
 ItemsViewModel:     ACCEPTED: unique item 43cf1857...
 ```
 
-***REMOVED******REMOVED*** Related Fixes
+## Related Fixes
 
 This fix builds on previous work:
 
@@ -201,7 +201,7 @@ This fix builds on previous work:
 - `MEMORY_CRASH_FIX.md`: Thumbnail downscaling to 200x200 max
 - `ML_KIT_ZERO_DETECTIONS_FIX.md`: Removing `.enableClassification()` for better detection
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
 1. `app/src/main/java/com/scanium/app/items/ScannedItem.kt`
     - Added `boundingBox: RectF?` field
@@ -217,7 +217,7 @@ This fix builds on previous work:
     - Updated `convertToScannedItem()` to pass labelText from ML Kit
     - Updated `candidateToScannedItem()` to pass position and label from ObjectCandidate
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
 ✅ **Build successful** with all tests passing
 ✅ **APK installed** and tested on device

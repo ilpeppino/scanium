@@ -77,8 +77,8 @@ class EnrichmentModelsParsingTest {
                             {"name": "Kleenex", "confidence": 0.95}
                         ],
                         "dominantColors": [
-                            {"name": "blue", "hex": "***REMOVED***0066CC", "pct": 45.5},
-                            {"name": "white", "hex": "***REMOVED***FFFFFF", "pct": 30.2}
+                            {"name": "blue", "hex": "#0066CC", "pct": 45.5},
+                            {"name": "white", "hex": "#FFFFFF", "pct": 30.2}
                         ],
                         "labelHints": ["tissue box", "health product"]
                     },

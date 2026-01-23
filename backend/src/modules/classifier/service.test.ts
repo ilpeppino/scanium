@@ -156,7 +156,7 @@ describe('ClassifierService', () => {
 
     expect(result.visualFacts).toBeDefined();
     expect(result.visualFacts?.ocrSnippets.some((s) => s.text === 'IKEA')).toBe(true);
-    expect(result.visualFacts?.dominantColors[0]?.rgbHex).toBe('***REMOVED***FF0000');
+    expect(result.visualFacts?.dominantColors[0]?.rgbHex).toBe('#FF0000');
 
     expect(result.enrichedAttributes?.brand?.value).toBe('IKEA');
     expect(result.enrichedAttributes?.brand?.evidenceRefs[0]?.type).toBe('logo');

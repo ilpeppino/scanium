@@ -1,12 +1,12 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Prove metrics pipeline: Backend → Alloy → Mimir
-***REMOVED*** Usage: bash prove-metrics.sh [backend_url] [mimir_url]
-***REMOVED***
-***REMOVED*** This script:
-***REMOVED*** 1. Generates backend traffic (200, 400, 404, 500 responses)
-***REMOVED*** 2. Queries Mimir to verify:
-***REMOVED***    - up{job="scanium-backend"} = 1 (scraping works)
-***REMOVED***    - scanium_* metrics exist and change
+#!/bin/bash
+# Prove metrics pipeline: Backend → Alloy → Mimir
+# Usage: bash prove-metrics.sh [backend_url] [mimir_url]
+#
+# This script:
+# 1. Generates backend traffic (200, 400, 404, 500 responses)
+# 2. Queries Mimir to verify:
+#    - up{job="scanium-backend"} = 1 (scraping works)
+#    - scanium_* metrics exist and change
 
 set -euo pipefail
 
@@ -17,20 +17,20 @@ echo "[prove-metrics] ========================================="
 echo "[prove-metrics] Proving Backend → Alloy → Mimir pipeline"
 echo "[prove-metrics] ========================================="
 
-***REMOVED*** Step 1: Generate backend traffic
+# Step 1: Generate backend traffic
 echo "[prove-metrics] Step 1: Generating backend traffic..."
 echo "[prove-metrics] - Health check (200)"
 curl -sf "$BACKEND_URL/health" > /dev/null || { echo "❌ Backend health check failed"; exit 1; }
 
 echo "[prove-metrics] - API calls (various status codes)"
-***REMOVED*** 200 OK
+# 200 OK
 curl -sf "$BACKEND_URL/health" > /dev/null 2>&1 || true
-***REMOVED*** 404 Not Found
+# 404 Not Found
 curl -sf "$BACKEND_URL/nonexistent" > /dev/null 2>&1 || true
-***REMOVED*** Give backend a moment to emit metrics
+# Give backend a moment to emit metrics
 sleep 2
 
-***REMOVED*** Step 2: Query Mimir - Check backend scrape target is UP
+# Step 2: Query Mimir - Check backend scrape target is UP
 echo "[prove-metrics] Step 2: Checking backend scrape target..."
 UP_RESULT=$(curl -sf -G "$MIMIR_URL/prometheus/api/v1/query" --data-urlencode 'query=up{job="scanium-backend"}')
 
@@ -44,7 +44,7 @@ else
   exit 1
 fi
 
-***REMOVED*** Step 3: Check backend-specific metrics exist
+# Step 3: Check backend-specific metrics exist
 echo "[prove-metrics] Step 3: Checking backend metrics exist..."
 METRICS_RESULT=$(curl -sf -G "$MIMIR_URL/prometheus/api/v1/query" --data-urlencode 'query=scanium_process_cpu_seconds_total{job="scanium-backend"}')
 
@@ -58,7 +58,7 @@ else
   exit 1
 fi
 
-***REMOVED*** Step 4: Verify metrics are being scraped recently
+# Step 4: Verify metrics are being scraped recently
 echo "[prove-metrics] Step 4: Verifying recent scrape activity..."
 SCRAPE_RESULT=$(curl -sf -G "$MIMIR_URL/prometheus/api/v1/query" --data-urlencode 'query=scrape_duration_seconds{job="scanium-backend"}')
 

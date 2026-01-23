@@ -1,10 +1,10 @@
-***REMOVED*** Grafana Dashboard Regression - 2026-01-09
+# Grafana Dashboard Regression - 2026-01-09
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 Grafana dashboards stopped showing data after commit `adb94ad` (2026-01-09 16:54 CET).
 
-***REMOVED******REMOVED*** Timeline
+## Timeline
 
 - **16:54:** Commit `adb94ad` pushed: "feat(monitoring): extract mobile telemetry labels in Alloy"
 - **17:00:** Dashboards showing no data reported
@@ -12,9 +12,9 @@ Grafana dashboards stopped showing data after commit `adb94ad` (2026-01-09 16:54
 - **17:30:** Root cause identified and fix applied
 - **17:35:** Metrics restored, dashboards functional
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
-***REMOVED******REMOVED******REMOVED*** Primary Issue: Missing Backend Components in alloy.hcl
+### Primary Issue: Missing Backend Components in alloy.hcl
 
 The monitoring stack uses `/volume1/docker/scanium/repo/monitoring/docker-compose.yml`, which mounts
 `alloy.hcl` (not `config.alloy`).
@@ -34,7 +34,7 @@ used.
 
 Only mobile OTLP components and pipeline self-monitoring remained functional.
 
-***REMOVED******REMOVED******REMOVED*** Secondary Issue: Missing Docker Socket Mount
+### Secondary Issue: Missing Docker Socket Mount
 
 The `docker-compose.yml` was missing the Docker socket volume mount:
 
@@ -45,9 +45,9 @@ volumes:
 
 This prevented `loki.source.docker` from accessing container logs.
 
-***REMOVED******REMOVED*** Fix Applied
+## Fix Applied
 
-***REMOVED******REMOVED******REMOVED*** 1. Merged Configurations
+### 1. Merged Configurations
 
 Created complete `alloy.hcl` by merging:
 
@@ -56,32 +56,32 @@ Created complete `alloy.hcl` by merging:
 
 Result: 305-line config with full observability stack.
 
-***REMOVED******REMOVED******REMOVED*** 2. Added Docker Socket Mount
+### 2. Added Docker Socket Mount
 
 Updated `monitoring/docker-compose.yml`:
 
 ```yaml
 volumes:
   - ./alloy/alloy.hcl:/etc/alloy/config.alloy:ro
-  - /var/run/docker.sock:/var/run/docker.sock:ro  ***REMOVED*** Added
+  - /var/run/docker.sock:/var/run/docker.sock:ro  # Added
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Restarted Alloy
+### 3. Restarted Alloy
 
 ```bash
 docker-compose restart alloy
-docker-compose up -d alloy  ***REMOVED*** After socket mount added
+docker-compose up -d alloy  # After socket mount added
 ```
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
-***REMOVED******REMOVED******REMOVED*** ✅ Metrics (Mimir) - RESTORED
+### ✅ Metrics (Mimir) - RESTORED
 
 ```bash
-***REMOVED*** Query successful - 20+ metric series available
+# Query successful - 20+ metric series available
 curl -s "http://localhost:3000/api/datasources/proxy/uid/MIMIR/api/v1/label/__name__/values"
 
-***REMOVED*** Backend metrics flowing
+# Backend metrics flowing
 alloy_build_info{job="alloy"}  -> OK
 up{source="scanium-backend"}   -> OK (value: 0, indicating backend down but metric exists)
 ```
@@ -96,12 +96,12 @@ up{source="scanium-backend"}   -> OK (value: 0, indicating backend down but metr
 - `prometheus.remote_write.backend` ✅
 - `prometheus.remote_write.pipeline` ✅
 
-***REMOVED******REMOVED******REMOVED*** ⚠️ Logs (Loki) - ISSUE REMAINS
+### ⚠️ Logs (Loki) - ISSUE REMAINS
 
 ```bash
-***REMOVED*** No log streams available
+# No log streams available
 curl -s "http://localhost:3000/api/datasources/proxy/uid/LOKI/loki/api/v1/labels"
-***REMOVED*** Returns: {"status":"success"}  (empty data)
+# Returns: {"status":"success"}  (empty data)
 ```
 
 **Status:**
@@ -120,34 +120,34 @@ curl -s "http://localhost:3000/api/datasources/proxy/uid/LOKI/loki/api/v1/labels
 **Note:** This Loki issue may have been pre-existing (not caused by today's regression). The
 regression primarily affected metrics, which are now restored.
 
-***REMOVED******REMOVED******REMOVED*** ✅ Traces (Tempo) - Components Available
+### ✅ Traces (Tempo) - Components Available
 
 OTLP trace exporters are loaded and healthy. Traces will flow when mobile apps send telemetry.
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
-***REMOVED******REMOVED******REMOVED*** Local Repository
+### Local Repository
 
 1. `monitoring/alloy/alloy.hcl` - Merged config (215→305 lines)
 
-***REMOVED******REMOVED******REMOVED*** NAS Deployment
+### NAS Deployment
 
 1. `/volume1/docker/scanium/repo/monitoring/alloy/alloy.hcl` - Updated
 2. `/volume1/docker/scanium/repo/monitoring/docker-compose.yml` - Added socket mount
 
-***REMOVED******REMOVED*** Recommendations
+## Recommendations
 
-***REMOVED******REMOVED******REMOVED*** Immediate
+### Immediate
 
 - ✅ Metrics dashboards should now display data
 - ✅ Backend self-monitoring restored
 - ⚠️ Investigate Loki logs issue (see "Next Steps")
 
-***REMOVED******REMOVED******REMOVED*** Next Steps for Loki Logs
+### Next Steps for Loki Logs
 
 1. **Check Permissions**
    ```bash
-   docker exec scanium-alloy id  ***REMOVED*** Check user/group
+   docker exec scanium-alloy id  # Check user/group
    docker exec scanium-alloy ls -la /var/run/docker.sock
    ```
 
@@ -170,20 +170,20 @@ OTLP trace exporters are loaded and healthy. Traces will flow when mobile apps s
    });
    ```
 
-***REMOVED******REMOVED******REMOVED*** Architectural
+### Architectural
 
 - **Maintain single source of truth:** Keep only `alloy.hcl`, remove `config.alloy`
 - **Add validation:** CI check to ensure all required components are present
 - **Document compose files:** Clarify which compose file is used for NAS deployment
 
-***REMOVED******REMOVED*** Lessons Learned
+## Lessons Learned
 
 1. **Config file confusion:** Having both `alloy.hcl` and `config.alloy` led to regression
 2. **Minimal testing:** Change was deployed without verifying all components loaded
 3. **Documentation gap:** Unclear which compose file is canonical for NAS deployment
 4. **Version awareness:** Running older Alloy v1.0.0 may have hidden bugs
 
-***REMOVED******REMOVED*** Prevention
+## Prevention
 
 1. Add pre-commit hook to validate Alloy config:
    ```bash
@@ -193,7 +193,7 @@ OTLP trace exporters are loaded and healthy. Traces will flow when mobile apps s
 
 2. Add smoke test after deployment:
    ```bash
-   ***REMOVED*** Verify all expected components loaded
+   # Verify all expected components loaded
    curl localhost:12345/api/v0/web/components | \
      jq '.[] | select(.localID | contains("backend"))'
    ```

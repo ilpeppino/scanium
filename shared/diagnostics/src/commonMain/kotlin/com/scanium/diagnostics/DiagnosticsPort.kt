@@ -14,7 +14,7 @@ import com.scanium.telemetry.TelemetryEvent
  * - Crash reporting systems (to attach diagnostics to crash reports)
  * - Manual "send report" features (user-initiated diagnostics export)
  *
- * ***REMOVED******REMOVED*** Usage in Telemetry Facade
+ * ## Usage in Telemetry Facade
  * ```kotlin
  * class Telemetry(
  *     private val diagnosticsPort: DiagnosticsPort,
@@ -28,7 +28,7 @@ import com.scanium.telemetry.TelemetryEvent
  * }
  * ```
  *
- * ***REMOVED******REMOVED*** Usage in Crash Handler
+ * ## Usage in Crash Handler
  * ```kotlin
  * class CrashHandler(private val diagnosticsPort: DiagnosticsPort) {
  *     fun handleCrash(exception: Throwable) {

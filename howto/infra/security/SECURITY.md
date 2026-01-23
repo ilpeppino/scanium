@@ -1,6 +1,6 @@
-***REMOVED*** Security
+# Security
 
-***REMOVED******REMOVED*** Data retention policy
+## Data retention policy
 
 - **Scanned items and drafts:** Stored locally on the device in the app database. Retained until you
   delete items/drafts in the app, clear app storage, or uninstall the app.

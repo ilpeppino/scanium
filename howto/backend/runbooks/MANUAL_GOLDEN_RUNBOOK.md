@@ -1,13 +1,13 @@
-***REMOVED*** Manual Golden Instrumented Test Runbook
+# Manual Golden Instrumented Test Runbook
 
-***REMOVED******REMOVED*** Purpose & Usage
+## Purpose & Usage
 
 This runbook describes the canonical “golden” manual regression that every physical-device build
 must pass before release. Each test case is structured so it can later be mirrored 1:1 in automated
 instrumentation (Compose UI + Espresso). Mark each checkbox when complete and capture evidence (
 screenshots/logs) as needed.
 
-***REMOVED******REMOVED*** How to Use
+## How to Use
 
 1. Install the signed APK on a clean device (Pixel 7+ on Android 13 recommended).
 2. Unless stated, begin each test from the `Routes.CAMERA` start destination.
@@ -17,9 +17,9 @@ screenshots/logs) as needed.
 
 ---
 
-***REMOVED******REMOVED*** Smoke Suite (critical acceptance)
+## Smoke Suite (critical acceptance)
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-001 – Clean Install & Launch
+### SCN-SMOKE-001 – Clean Install & Launch
 
 - [ ] Status
 - Test ID: SCN-SMOKE-001
@@ -42,7 +42,7 @@ screenshots/logs) as needed.
 - Automation Hints: Use `Routes.CAMERA` start; wait for `testTag("cameraPreview")`; instrumentation
   tag `@smoke`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-002 – FTUE Spotlight Path
+### SCN-SMOKE-002 – FTUE Spotlight Path
 
 - [ ] Status
 - Test ID: SCN-SMOKE-002
@@ -63,7 +63,7 @@ screenshots/logs) as needed.
 - Automation Hints: Advocate `testTag("tour-overlay-step-{index}")`; use Compose semantics to assert
   bounds.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-003 – Camera Preview & Capture
+### SCN-SMOKE-003 – Camera Preview & Capture
 
 - [ ] Status
 - Test ID: SCN-SMOKE-003
@@ -84,7 +84,7 @@ screenshots/logs) as needed.
 - Automation Hints: Tag shutter as `testTag("shutterButton")`; overlay via
   `testTag("detection-overlay")`; `@smoke`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-004 – Item Selection Toggle
+### SCN-SMOKE-004 – Item Selection Toggle
 
 - [ ] Status
 - Test ID: SCN-SMOKE-004
@@ -104,7 +104,7 @@ screenshots/logs) as needed.
   `adb shell run-as com.scanium.app cat databases/scanned_items.db`.
 - Automation Hints: Add `testTag("item-card-{id}")`; check semantics `selected = true`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-005 – Swipe Delete & Undo
+### SCN-SMOKE-005 – Swipe Delete & Undo
 
 - [ ] Status
 - Test ID: SCN-SMOKE-005
@@ -124,7 +124,7 @@ screenshots/logs) as needed.
 - Automation Hints: Tag swipe row `testTag("item-swipe-row-{id}")`; snackbar
   `testTag("undo-snackbar")`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-006 – Assistant Entry via Items FAB
+### SCN-SMOKE-006 – Assistant Entry via Items FAB
 
 - [ ] Status
 - Test ID: SCN-SMOKE-006
@@ -145,7 +145,7 @@ screenshots/logs) as needed.
 - Automation Hints: FAB `testTag("fab-assistant")`; context chips
   `testTag("assistant-context-chip-{itemId}")`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-007 – Assistant Text Chat Basics
+### SCN-SMOKE-007 – Assistant Text Chat Basics
 
 - [ ] Status
 - Test ID: SCN-SMOKE-007
@@ -165,7 +165,7 @@ screenshots/logs) as needed.
 - Automation Hints: Input `testTag("assistant-input")`, Send icon `testTag("assistant-send")`, chat
   list `testTag("assistant-chat-list")`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-008 – Voice Input & TTS Happy Path
+### SCN-SMOKE-008 – Voice Input & TTS Happy Path
 
 - [ ] Status
 - Test ID: SCN-SMOKE-008
@@ -189,7 +189,7 @@ screenshots/logs) as needed.
 - Automation Hints: Tag mic icon `testTag("voice-button")`, speaking chip
   `testTag("tts-speaking-chip")`; annotate instrumentation `@smoke @voice`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-009 – Selling Flow Launch
+### SCN-SMOKE-009 – Selling Flow Launch
 
 - [ ] Status
 - Test ID: SCN-SMOKE-009
@@ -209,7 +209,7 @@ screenshots/logs) as needed.
   `MockEbayApi` config in logcat.
 - Automation Hints: Button `testTag("action-sell")`, composer root `testTag("sell-dialog")`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-010 – Theme Toggle
+### SCN-SMOKE-010 – Theme Toggle
 
 - [ ] Status
 - Test ID: SCN-SMOKE-010
@@ -230,7 +230,7 @@ screenshots/logs) as needed.
 - Automation Hints: Add `testTag("theme-toggle")`; instrumentation should assert
   `MaterialTheme.colorScheme.isLight`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-SMOKE-011 – Developer Options Health Snapshot
+### SCN-SMOKE-011 – Developer Options Health Snapshot
 
 - [ ] Status
 - Test ID: SCN-SMOKE-011
@@ -252,9 +252,9 @@ screenshots/logs) as needed.
 
 ---
 
-***REMOVED******REMOVED*** Full Scanner Mode
+## Full Scanner Mode
 
-***REMOVED******REMOVED******REMOVED*** SCN-FULL-001 – Object Scan (Single + Continuous)
+### SCN-FULL-001 – Object Scan (Single + Continuous)
 
 - [ ] Status
 - Test ID: SCN-FULL-001
@@ -274,7 +274,7 @@ screenshots/logs) as needed.
   `startScanning`.
 - Automation Hints: `testTag("shutterButton")`; long-press gesture; `@full`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-FULL-002 – Barcode Scan + Dedupe
+### SCN-FULL-002 – Barcode Scan + Dedupe
 
 - [ ] Status
 - Test ID: SCN-FULL-002
@@ -295,7 +295,7 @@ screenshots/logs) as needed.
   detail shows `Barcode Value`.
 - Automation Hints: Use deterministic barcode fixtures; `@full`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-FULL-003 – QR URL Overlay + Open Browser
+### SCN-FULL-003 – QR URL Overlay + Open Browser
 
 - [ ] Status
 - Test ID: SCN-FULL-003
@@ -315,7 +315,7 @@ screenshots/logs) as needed.
   intent in logcat.
 - Automation Hints: `testTag("qr-url-pill")` (add if missing); `@full`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-FULL-004 – Document Overlay Scan + Cancel
+### SCN-FULL-004 – Document Overlay Scan + Cancel
 
 - [ ] Status
 - Test ID: SCN-FULL-004
@@ -336,7 +336,7 @@ screenshots/logs) as needed.
   in logcat.
 - Automation Hints: `testTag("document-scan-pill")` (add if missing); `@full`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-FULL-005 – Full Scanner Session Performance (5–10 min)
+### SCN-FULL-005 – Full Scanner Session Performance (5–10 min)
 
 - [ ] Status
 - Test ID: SCN-FULL-005
@@ -355,7 +355,7 @@ screenshots/logs) as needed.
 - Failure Notes / Diagnostics: Capture `adb logcat` and `adb shell dumpsys meminfo com.scanium.app`.
 - Automation Hints: Mark as `@performance @manual`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-FULL-006 – Developer Detection Toggles
+### SCN-FULL-006 – Developer Detection Toggles
 
 - [ ] Status
 - Test ID: SCN-FULL-006
@@ -379,9 +379,9 @@ screenshots/logs) as needed.
 
 ---
 
-***REMOVED******REMOVED*** Full Regression Suite
+## Full Regression Suite
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-001 – FTUE Spotlight Layout Audit
+### SCN-REG-001 – FTUE Spotlight Layout Audit
 
 - [ ] Status
 - Test ID: SCN-REG-001
@@ -402,7 +402,7 @@ screenshots/logs) as needed.
 - Automation Hints: `testTag("tour-overlay-step-{index}")` to assert coordinates;
   `@regression @ftue`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-002 – Force FTUE Toggle Behavior
+### SCN-REG-002 – Force FTUE Toggle Behavior
 
 - [ ] Status
 - Test ID: SCN-REG-002
@@ -420,7 +420,7 @@ screenshots/logs) as needed.
 - Automation Hints: Hook to `DeveloperOptionsViewModel.forceFtueTour`; tag
   `testTag("force-ftue-switch")`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-003 – Tour Reset Button
+### SCN-REG-003 – Tour Reset Button
 
 - [ ] Status
 - Test ID: SCN-REG-003
@@ -437,7 +437,7 @@ screenshots/logs) as needed.
 - Failure Notes / Diagnostics: Monitor logcat for `TourViewModel` reset.
 - Automation Hints: Add `testTag("reset-tour-button")`; instrumentation ensures DataStore update.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-004 – Keep Screen Awake During Scanning
+### SCN-REG-004 – Keep Screen Awake During Scanning
 
 - [ ] Status
 - Test ID: SCN-REG-004
@@ -455,7 +455,7 @@ screenshots/logs) as needed.
   `CameraScreen`.
 - Automation Hints: Compose instrumentation can assert `LocalView.keepScreenOn == true`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-005 – Camera Lens Flip
+### SCN-REG-005 – Camera Lens Flip
 
 - [ ] Status
 - Test ID: SCN-REG-005
@@ -474,7 +474,7 @@ screenshots/logs) as needed.
 - Automation Hints: Tag button `testTag("lens-switch")`; instrumentation loops toggles;
   `@regression`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-006 – Scan Modes & Gestures
+### SCN-REG-006 – Scan Modes & Gestures
 
 - [ ] Status
 - Test ID: SCN-REG-006
@@ -493,7 +493,7 @@ screenshots/logs) as needed.
 - Failure Notes / Diagnostics: Check `currentScanMode` state in logs.
 - Automation Hints: Tag icons `testTag("mode-{modeName}")`; use semantics `selected=true`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-007 – Resolution Selector
+### SCN-REG-007 – Resolution Selector
 
 - [ ] Status
 - Test ID: SCN-REG-007
@@ -513,7 +513,7 @@ screenshots/logs) as needed.
 - Automation Hints: Tag resolution buttons `testTag("resolution-low")` etc; instrumentation can
   compare `ImageCapture` output metadata.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-008 – Shutter Sound Policy
+### SCN-REG-008 – Shutter Sound Policy
 
 - [ ] Status
 - Test ID: SCN-REG-008
@@ -532,7 +532,7 @@ screenshots/logs) as needed.
 - Automation Hints: Hard to automate; instrumentation can assert absence of custom audio call; tag
   as `@regression @manual`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-009 – Items Action Menu Integrity
+### SCN-REG-009 – Items Action Menu Integrity
 
 - [ ] Status
 - Test ID: SCN-REG-009
@@ -550,7 +550,7 @@ screenshots/logs) as needed.
 - Failure Notes / Diagnostics: Compare with product spec; screenshot menu.
 - Automation Hints: Add `testTag("items-action-menu")`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-010 – Long-Press Bubble Preview
+### SCN-REG-010 – Long-Press Bubble Preview
 
 - [ ] Status
 - Test ID: SCN-REG-010
@@ -569,7 +569,7 @@ screenshots/logs) as needed.
 - Automation Hints: Provide `testTag("preview-overlay")`; instrumentation can check state change on
   pointer input.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-011 – Camera Stress Switching
+### SCN-REG-011 – Camera Stress Switching
 
 - [ ] Status
 - Test ID: SCN-REG-011
@@ -588,7 +588,7 @@ screenshots/logs) as needed.
 - Failure Notes / Diagnostics: Capture logcat; collect `CameraXManager` stats.
 - Automation Hints: Stress test via instrumentation loop; tag `@regression @performance`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-012 – Items List Memory / Scroll
+### SCN-REG-012 – Items List Memory / Scroll
 
 - [ ] Status
 - Test ID: SCN-REG-012
@@ -606,7 +606,7 @@ screenshots/logs) as needed.
 - Failure Notes / Diagnostics: Inspect `adb shell dumpsys gfxinfo com.scanium.app`.
 - Automation Hints: Use `LazyColumn` semantics; instrumentation can count compose measure passes.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-013 – Assistant IME Handling
+### SCN-REG-013 – Assistant IME Handling
 
 - [ ] Status
 - Test ID: SCN-REG-013
@@ -624,7 +624,7 @@ screenshots/logs) as needed.
 - Automation Hints: Compose instrumentation can assert
   `lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.key == latestMessageId`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-014 – Assistant Offline/Error Fallback
+### SCN-REG-014 – Assistant Offline/Error Fallback
 
 - [ ] Status
 - Test ID: SCN-REG-014
@@ -644,7 +644,7 @@ screenshots/logs) as needed.
 - Automation Hints: Provide `testTag("assistant-error-banner")`; instrumentation toggles network via
   shell commands (if allowed).
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-015 – Assistant Voice Error Banner
+### SCN-REG-015 – Assistant Voice Error Banner
 
 - [ ] Status
 - Test ID: SCN-REG-015
@@ -662,7 +662,7 @@ screenshots/logs) as needed.
 - Automation Hints: Tag `testTag("voice-error-banner")`; instrumentation can call
   `UiAutomation.revokeRuntimePermission`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-016 – Settings Toggles Consistency
+### SCN-REG-016 – Settings Toggles Consistency
 
 - [ ] Status
 - Test ID: SCN-REG-016
@@ -682,7 +682,7 @@ screenshots/logs) as needed.
 - Automation Hints: Tag toggles `testTag("toggle-cloud-classification")` etc.; instrumentation can
   assert BuildConfig-driven banners.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-017 – Developer Gating & Diagnostics Copy Sanitization
+### SCN-REG-017 – Developer Gating & Diagnostics Copy Sanitization
 
 - [ ] Status
 - Test ID: SCN-REG-017
@@ -701,7 +701,7 @@ screenshots/logs) as needed.
 - Automation Hints: For automation, differentiate variants using BuildConfig; tag
   `testTag("developer-options-row")`.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-018 – Backend Degraded Handling
+### SCN-REG-018 – Backend Degraded Handling
 
 - [ ] Status
 - Test ID: SCN-REG-018
@@ -722,7 +722,7 @@ screenshots/logs) as needed.
 - Automation Hints: Tag `testTag("cloud-warning-banner")` in Camera settings; instrumentation may
   stub backend via MockWebServer.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-019 – Selling Flow Error Handling
+### SCN-REG-019 – Selling Flow Error Handling
 
 - [ ] Status
 - Test ID: SCN-REG-019
@@ -741,7 +741,7 @@ screenshots/logs) as needed.
 - Failure Notes / Diagnostics: Check `SellOnEbayScreen` logs; capture error strings.
 - Automation Hints: Add `testTag("sell-error-banner")`; instrumentation can stub data layer.
 
-***REMOVED******REMOVED******REMOVED*** SCN-REG-020 – Release-Like Sanity Sweep
+### SCN-REG-020 – Release-Like Sanity Sweep
 
 - [ ] Status
 - Test ID: SCN-REG-020
@@ -764,7 +764,7 @@ screenshots/logs) as needed.
 
 ---
 
-***REMOVED******REMOVED*** Failure Escalation Checklist
+## Failure Escalation Checklist
 
 - Gather `adb logcat` filtered by `ScaniumApplication`, `CameraScreen`, `AssistantVoice`,
   `DiagnosticsRepository`.
@@ -772,7 +772,7 @@ screenshots/logs) as needed.
 - Record screen for visual bugs (overlays, animations).
 - Note BuildConfig fields (API base URL, Sentry DSN) from Developer options snapshot.
 
-***REMOVED******REMOVED*** Automation Conversion Notes
+## Automation Conversion Notes
 
 - Every test case already includes `Automation Hints` for `testTag` additions; update Compose
   components accordingly.

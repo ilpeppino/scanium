@@ -1,30 +1,30 @@
-***REMOVED*** Scanium Documentation Index
+# Scanium Documentation Index
 
 This is the canonical entry point for all Scanium documentation. Documentation is organized by topic
 and component.
 
-***REMOVED******REMOVED*** Quick Links
+## Quick Links
 
 | Topic                         | Description                             |
 |-------------------------------|-----------------------------------------|
 | [README](../README.md)        | Project overview, features, quick start |
-| [Architecture](***REMOVED***architecture) | System design and component structure   |
-| [Development](***REMOVED***development)   | Setup, workflow, testing                |
-| [Operations](***REMOVED***operations)     | Releases, deployment, monitoring        |
-| [Security](***REMOVED***security)         | Security posture and guidelines         |
+| [Architecture](#architecture) | System design and component structure   |
+| [Development](#development)   | Setup, workflow, testing                |
+| [Operations](#operations)     | Releases, deployment, monitoring        |
+| [Security](#security)         | Security posture and guidelines         |
 
 ---
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** System Overview
+### System Overview
 
 - **[Camera Pipeline](./architecture-camera-pipeline.md)** - CameraX integration, frame analysis,
   detection routing
 - **[Item Aggregation](./architecture-item-aggregation.md)** - Deduplication strategy, similarity
   scoring, session management
 
-***REMOVED******REMOVED******REMOVED*** Platform Parity (iOS)
+### Platform Parity (iOS)
 
 - **[Android Baseline](./parity/ANDROID_BASELINE.md)** - Current Android feature inventory
 - **[iOS Current State](./parity/IOS_CURRENT.md)** - iOS implementation status
@@ -32,27 +32,27 @@ and component.
 - **[Parity Plan](./parity/PARITY_PLAN.md)** - Path to feature parity
 - **[PR Roadmap](./parity/PR_ROADMAP.md)** - Pull request roadmap
 
-***REMOVED******REMOVED******REMOVED*** Pricing System
+### Pricing System
 
 - **[Pricing Insights](./PRICING_INSIGHTS.md)** - Price estimation logic and data sources
 
-***REMOVED******REMOVED******REMOVED*** Vision & Enrichment
+### Vision & Enrichment
 
 - **[Phase 1 State](./vision/PHASE1_current_state.md)** - Vision enrichment current status
 
 ---
 
-***REMOVED******REMOVED*** Development
+## Development
 
-***REMOVED******REMOVED******REMOVED*** Getting Started
+### Getting Started
 
 - **[README](../README.md)** - Prerequisites, setup, building, testing
 
-***REMOVED******REMOVED******REMOVED*** KMP Migration
+### KMP Migration
 
 - **[Migration Map](../howto/MIGRATION_MAP.md)** - Kotlin Multiplatform migration strategy
 
-***REMOVED******REMOVED******REMOVED*** Reference Guides
+### Reference Guides
 
 - **[Export Formats](../howto/app/reference/EXPORT_FORMATS.md)** - CSV/ZIP export specifications
 - **[Flavor Gating](../howto/app/reference/FLAVOR_GATING.md)** - Build variant feature flags
@@ -61,11 +61,11 @@ and component.
 - **[Scanning Guidance](../howto/app/reference/SCANNING_GUIDANCE.md)** - User guidance system
 - **[Motion Language](../howto/app/reference/MOTION_LANGUAGE.md)** - Animation specifications
 
-***REMOVED******REMOVED******REMOVED*** Backend Development
+### Backend Development
 
 - **[Items Sync API](../backend/howto/backend/items-sync.md)** - Multi-device sync implementation
 
-***REMOVED******REMOVED******REMOVED*** Debugging Guides
+### Debugging Guides
 
 Located in `howto/app/debugging/`:
 
@@ -73,9 +73,9 @@ Located in `howto/app/debugging/`:
 
 ---
 
-***REMOVED******REMOVED*** Operations
+## Operations
 
-***REMOVED******REMOVED******REMOVED*** Releases
+### Releases
 
 - **[Release Checklist](../howto/app/releases/RELEASE_CHECKLIST.md)** - Pre-release verification
   steps
@@ -83,25 +83,25 @@ Located in `howto/app/debugging/`:
   procedures
 - **[Beta Validation](../howto/app/releases/BETA_VALIDATION.md)** - Beta testing workflow
 
-***REMOVED******REMOVED******REMOVED*** QA & Testing
+### QA & Testing
 
 - **[Regression Tests](../howto/app/runbooks/REGRESSION_TESTS_CLOUD.md)** - Cloud regression test
   runbook
 
-***REMOVED******REMOVED******REMOVED*** Infrastructure
+### Infrastructure
 
 - **[Infrastructure Overview](../howto/infra/README.md)** - Deployment infrastructure
 - **[NAS Deployment](../howto/infra/deploy/nas-README.md)** - NAS-based deployment guide
 - **[Ops Runbook](../howto/infra/runbooks/ops-README.md)** - Operations procedures
 
-***REMOVED******REMOVED******REMOVED*** Monitoring
+### Monitoring
 
 - **[Monitoring Stack](../monitoring/CHANGELOG.md)** - LGTM stack changelog
 - **[Grafana Access](../monitoring/GRAFANA_ACCESS_GUIDE.md)** - Accessing Grafana dashboards
 - **[Cloudflare Tunnel](../monitoring/CLOUDFLARE_TUNNEL_SETUP.md)** - Tunnel configuration
 - **[Tunnel Troubleshooting](./cloudflared-tunnel-troubleshooting.md)** - Common tunnel issues
 
-***REMOVED******REMOVED******REMOVED*** Incidents
+### Incidents
 
 Located in `howto/infra/incidents/`:
 
@@ -110,7 +110,7 @@ Located in `howto/infra/incidents/`:
 
 ---
 
-***REMOVED******REMOVED*** Security
+## Security
 
 - **[Security Guidelines](../howto/infra/security/SECURITY.md)** - Security policies and best
   practices
@@ -124,7 +124,7 @@ Located in `howto/infra/incidents/`:
 
 ---
 
-***REMOVED******REMOVED*** Archive
+## Archive
 
 Historical documentation from December 2025 is archived in `howto/archive/2025-12/`. Key archived
 docs:
@@ -136,7 +136,7 @@ docs:
 
 ---
 
-***REMOVED******REMOVED*** Contributing to Docs
+## Contributing to Docs
 
 1. **New docs**: Add to appropriate section in `docs/` or `howto/`
 2. **Update this index**: When adding new docs, update INDEX.md

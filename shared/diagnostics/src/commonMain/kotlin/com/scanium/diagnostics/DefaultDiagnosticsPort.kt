@@ -10,7 +10,7 @@ import com.scanium.telemetry.TelemetryEvent
  * - Builds JSON diagnostics bundles with application context
  * - Provides thread-safe access to breadcrumbs
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  * ```kotlin
  * val diagnosticsPort = DefaultDiagnosticsPort(
  *     contextProvider = { mapOf(

@@ -1,9 +1,9 @@
-***REMOVED*** Scanium How-To Documentation
+# Scanium How-To Documentation
 
 This directory consolidates **all documentation, runbooks, operational scripts, and reports** for
 the Scanium project.
 
-***REMOVED******REMOVED*** Directory Structure
+## Directory Structure
 
 | Directory                  | Scope                                                     |
 |----------------------------|-----------------------------------------------------------|
@@ -14,33 +14,33 @@ the Scanium project.
 | [project/](project/)       | Repo conventions, workflows, branching, contributor docs  |
 | [archive/](archive/)       | Deprecated/obsolete docs (kept for historical reference)  |
 
-***REMOVED******REMOVED*** Quick Links
+## Quick Links
 
-***REMOVED******REMOVED******REMOVED*** Canonical HOWTOs
+### Canonical HOWTOs
 
 - [Android App HOWTO](android-app.md)
 - [Backend HOWTO](backend.md)
 - [Monitoring HOWTO](monitoring.md)
 
-***REMOVED******REMOVED******REMOVED*** Operations
+### Operations
 
 - [Backend Deploy Runbook](backend/deploy/)
 - [Monitoring Scripts](monitoring/scripts/)
 - [NAS Infrastructure](infra/deploy/)
 - [Incident Reports](monitoring/incidents/)
 
-***REMOVED******REMOVED******REMOVED*** Development
+### Development
 
 - [Dev Guide](project/reference/DEV_GUIDE.md)
 - [CI/CD Workflows](project/workflows/)
 - [Security Guidelines](infra/security/)
 
-***REMOVED******REMOVED******REMOVED*** App
+### App
 
 - [Release Checklist](app/releases/)
 - [Debugging Guides](app/debugging/)
 
-***REMOVED******REMOVED*** Migration Note
+## Migration Note
 
 This structure was created on 2026-01-10 to consolidate documentation that was previously scattered
 across:

@@ -8,14 +8,14 @@
     <!-- Upper Lens -->
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***6400FF"
+        android:strokeColor="#6400FF"
         android:strokeWidth="20"
         android:strokeLineCap="round"
         android:pathData="M 400,310 m -170,0 a 170,170 0 1,0 340,0 a 170,170 0 1,0 -340,0" />
 
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***1a1a1a"
+        android:strokeColor="#1a1a1a"
         android:strokeWidth="14"
         android:pathData="M 400,310 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0" />
 
@@ -23,20 +23,20 @@
         android:cx="400"
         android:cy="310"
         android:r="110"
-        android:fillColor="***REMOVED***6400FF"
+        android:fillColor="#6400FF"
         android:fillAlpha="0.6" />
 
     <!-- Lower Lens -->
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***6400FF"
+        android:strokeColor="#6400FF"
         android:strokeWidth="20"
         android:strokeLineCap="round"
         android:pathData="M 400,690 m -170,0 a 170,170 0 1,0 340,0 a 170,170 0 1,0 -340,0" />
 
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***1a1a1a"
+        android:strokeColor="#1a1a1a"
         android:strokeWidth="14"
         android:pathData="M 400,690 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0" />
 
@@ -44,12 +44,12 @@
         android:cx="400"
         android:cy="690"
         android:r="110"
-        android:fillColor="***REMOVED***6400FF"
+        android:fillColor="#6400FF"
         android:fillAlpha="0.6" />
 
     <!-- Blue Curved S - Upper Part -->
     <path
-        android:strokeColor="***REMOVED***0066FF"
+        android:strokeColor="#0066FF"
         android:strokeWidth="80"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
@@ -58,7 +58,7 @@
 
     <!-- Blue Curved S - Lower Part -->
     <path
-        android:strokeColor="***REMOVED***0066FF"
+        android:strokeColor="#0066FF"
         android:strokeWidth="80"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"

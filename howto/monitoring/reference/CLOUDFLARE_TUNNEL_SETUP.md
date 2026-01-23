@@ -1,8 +1,8 @@
-***REMOVED*** Cloudflare Tunnel Setup for Scanium Services
+# Cloudflare Tunnel Setup for Scanium Services
 
 **Tunnel ID**: `REDACTED_CLOUDFLARE_TUNNEL_ID`
 
-***REMOVED******REMOVED*** Configured Hostnames
+## Configured Hostnames
 
 | Hostname             | Service     | Container         | Port |
 |----------------------|-------------|-------------------|------|
@@ -12,7 +12,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Step 1: Add Grafana Hostname to Cloudflare Tunnel
+## Step 1: Add Grafana Hostname to Cloudflare Tunnel
 
 1. **Go to Cloudflare Zero Trust Dashboard**:
     - Login to https://one.dash.cloudflare.com/
@@ -46,7 +46,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Step 2: Verify DNS
+## Step 2: Verify DNS
 
 The DNS record should be automatically created by Cloudflare Tunnel.
 
@@ -62,7 +62,7 @@ Target: <tunnel-id>.cfargotunnel.com
 
 ---
 
-***REMOVED******REMOVED*** Step 3: Test Access
+## Step 3: Test Access
 
 After saving the configuration (it takes ~30 seconds to propagate):
 
@@ -98,11 +98,11 @@ After saving the configuration (it takes ~30 seconds to propagate):
 
 ---
 
-***REMOVED******REMOVED*** OTLP Tunnel Setup (Mobile Telemetry)
+## OTLP Tunnel Setup (Mobile Telemetry)
 
 The OTLP tunnel enables mobile apps to send telemetry data to the Grafana Alloy receiver over HTTPS.
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Add OTLP Hostname
+### Step 1: Add OTLP Hostname
 
 1. **Go to Cloudflare Zero Trust Dashboard**:
     - Navigate to **Networks** → **Tunnels**
@@ -127,12 +127,12 @@ The OTLP tunnel enables mobile apps to send telemetry data to the Grafana Alloy 
 
 5. **Save the hostname**
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Verify OTLP Tunnel
+### Step 2: Verify OTLP Tunnel
 
 After configuration propagates (~30 seconds):
 
 ```bash
-***REMOVED*** Test OTLP endpoint health
+# Test OTLP endpoint health
 curl -s https://otlp.gtemp1.com/v1/logs -X POST \
   -H "Content-Type: application/json" \
   -d '{"resourceLogs":[]}' -w "%{http_code}\n" -o /dev/null
@@ -140,7 +140,7 @@ curl -s https://otlp.gtemp1.com/v1/logs -X POST \
 
 Expected: `200` (empty logs accepted)
 
-***REMOVED******REMOVED******REMOVED*** Mobile App Configuration
+### Mobile App Configuration
 
 The Android app defaults to `https://otlp.gtemp1.com` for OTLP telemetry.
 
@@ -155,25 +155,25 @@ See: `androidApp/build.gradle.kts` for configuration options.
 
 ---
 
-***REMOVED******REMOVED*** Current Network Configuration
+## Current Network Configuration
 
-***REMOVED******REMOVED******REMOVED*** Grafana Container Networks:
+### Grafana Container Networks:
 
 - `scanium-observability` (internal): For Loki, Tempo, Mimir access
 - `backend_scanium-network` (shared): For cloudflared access
 
-***REMOVED******REMOVED******REMOVED*** Cloudflared Container Network:
+### Cloudflared Container Network:
 
 - `backend_scanium-network` (shared): Can reach both backend and grafana
 
-***REMOVED******REMOVED******REMOVED*** Container Names for Ingress Rules:
+### Container Names for Ingress Rules:
 
 - Backend API: `scanium-backend` (port 8080)
 - Grafana: `scanium-grafana` (port 3000)
 
 ---
 
-***REMOVED******REMOVED*** Tunnel Configuration Summary
+## Tunnel Configuration Summary
 
 | Hostname             | Service     | Container         | Port |
 |----------------------|-------------|-------------------|------|
@@ -183,9 +183,9 @@ See: `androidApp/build.gradle.kts` for configuration options.
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "Bad Gateway" or "502"
+### "Bad Gateway" or "502"
 
 **Problem**: Cloudflared can't reach Grafana container
 
@@ -208,7 +208,7 @@ See: `androidApp/build.gradle.kts` for configuration options.
    ssh nas "/usr/local/bin/docker exec scanium-cloudflared wget -O- http://scanium-grafana:3000/api/health"
    ```
 
-***REMOVED******REMOVED******REMOVED*** "DNS resolution failed"
+### "DNS resolution failed"
 
 **Problem**: DNS record not created
 
@@ -223,7 +223,7 @@ See: `androidApp/build.gradle.kts` for configuration options.
    Proxy status: Proxied (orange cloud)
    ```
 
-***REMOVED******REMOVED******REMOVED*** Infinite redirect or "too many redirects"
+### Infinite redirect or "too many redirects"
 
 **Problem**: Grafana ROOT_URL misconfigured
 
@@ -243,25 +243,25 @@ If issues persist:
 
 ---
 
-***REMOVED******REMOVED*** Security Considerations
+## Security Considerations
 
-***REMOVED******REMOVED******REMOVED*** Current Setup:
+### Current Setup:
 
 - ✅ Grafana behind Cloudflare (DDoS protection)
 - ✅ HTTPS enforced by Cloudflare
 - ⚠️ **Anonymous access enabled** (Admin role)
 - ⚠️ Login form disabled
 
-***REMOVED******REMOVED******REMOVED*** For Production:
+### For Production:
 
 **Option 1: Enable Authentication**
 
 ```yaml
-***REMOVED*** In monitoring/docker-compose.yml
+# In monitoring/docker-compose.yml
 environment:
-  - GF_AUTH_ANONYMOUS_ENABLED=false  ***REMOVED*** Disable anonymous
-  - GF_AUTH_DISABLE_LOGIN_FORM=false ***REMOVED*** Enable login
-  ***REMOVED*** Add admin credentials:
+  - GF_AUTH_ANONYMOUS_ENABLED=false  # Disable anonymous
+  - GF_AUTH_DISABLE_LOGIN_FORM=false # Enable login
+  # Add admin credentials:
   - GF_SECURITY_ADMIN_USER=admin
   - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
 ```
@@ -278,7 +278,7 @@ This adds authentication before reaching Grafana.
 
 ---
 
-***REMOVED******REMOVED*** Deployment
+## Deployment
 
 Changes deployed on: 2026-01-11
 
@@ -296,7 +296,7 @@ ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-com
 
 ---
 
-***REMOVED******REMOVED*** Quick Reference
+## Quick Reference
 
 **Access URLs**:
 
@@ -307,20 +307,20 @@ ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-com
 **Container logs**:
 
 ```bash
-***REMOVED*** Grafana logs
+# Grafana logs
 ssh nas "/usr/local/bin/docker logs -f scanium-grafana"
 
-***REMOVED*** Cloudflared logs
+# Cloudflared logs
 ssh nas "/usr/local/bin/docker logs -f scanium-cloudflared"
 ```
 
 **Restart services**:
 
 ```bash
-***REMOVED*** Restart Grafana
+# Restart Grafana
 ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-compose restart grafana"
 
-***REMOVED*** Restart cloudflared
+# Restart cloudflared
 ssh nas "cd /volume1/docker/scanium/repo/backend && /usr/local/bin/docker-compose restart cloudflared"
 ```
 

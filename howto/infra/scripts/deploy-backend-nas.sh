@@ -1,31 +1,31 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** deploy-backend-nas.sh
-***REMOVED***
-***REMOVED*** Builds a uniquely tagged scanium-backend image and deploys it on NAS.
-***REMOVED*** Tags are based on date + git short SHA: YYYY.MM.DD-<shortSHA>
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   bash scripts/app/deploy-backend-nas.sh
-***REMOVED***
-***REMOVED*** Requirements:
-***REMOVED***   - Must run on NAS
-***REMOVED***   - Docker and docker-compose in PATH
-***REMOVED***   - Repo at /volume1/docker/scanium/repo
-***REMOVED***   - Main branch must be up to date
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+##############################################################################
+# deploy-backend-nas.sh
+#
+# Builds a uniquely tagged scanium-backend image and deploys it on NAS.
+# Tags are based on date + git short SHA: YYYY.MM.DD-<shortSHA>
+#
+# Usage:
+#   bash scripts/app/deploy-backend-nas.sh
+#
+# Requirements:
+#   - Must run on NAS
+#   - Docker and docker-compose in PATH
+#   - Repo at /volume1/docker/scanium/repo
+#   - Main branch must be up to date
+##############################################################################
 
 REPO_ROOT="/volume1/docker/scanium/repo"
 BACKEND_DIR="$REPO_ROOT/backend"
 DOCKER="/usr/local/bin/docker"
 DOCKER_COMPOSE="/usr/local/bin/docker-compose"
 
-***REMOVED*** Ensure docker is in PATH
+# Ensure docker is in PATH
 export PATH="/usr/local/bin:$PATH"
 
-***REMOVED*** Helper function to list recent image tags
+# Helper function to list recent image tags
 list_tags() {
   echo "════════════════════════════════════════════════════════════"
   echo "Recent scanium-backend image tags:"
@@ -34,7 +34,7 @@ list_tags() {
   echo ""
 }
 
-***REMOVED*** If --list-tags flag is provided, show tags and exit
+# If --list-tags flag is provided, show tags and exit
 if [[ "${1:-}" == "--list-tags" ]]; then
   list_tags
   exit 0
@@ -45,7 +45,7 @@ echo "Scanium Backend Deployment - NAS Local Tagged Build"
 echo "════════════════════════════════════════════════════════════"
 echo ""
 
-***REMOVED*** Step 1: Navigate to repo and update from origin
+# Step 1: Navigate to repo and update from origin
 echo "[1/8] Updating repository from origin/main..."
 cd "$REPO_ROOT"
 git checkout main
@@ -53,27 +53,27 @@ git pull --rebase origin main
 echo "✓ Repository updated"
 echo ""
 
-***REMOVED*** Step 2: Compute tag from current commit
+# Step 2: Compute tag from current commit
 echo "[2/8] Computing image tag..."
 SHORT_SHA=$(git rev-parse --short HEAD)
 TAG=$(date -u +%Y.%m.%d)-${SHORT_SHA}
 echo "✓ Image tag: $TAG"
 echo ""
 
-***REMOVED*** Step 3: Export BACKEND_TAG for docker-compose
+# Step 3: Export BACKEND_TAG for docker-compose
 echo "[3/8] Setting BACKEND_TAG environment variable..."
 export BACKEND_TAG="$TAG"
 echo "✓ BACKEND_TAG=$BACKEND_TAG"
 echo ""
 
-***REMOVED*** Step 4: Build the image with the tag
+# Step 4: Build the image with the tag
 echo "[4/8] Building backend image (scanium-backend:$TAG)..."
 cd "$BACKEND_DIR"
 $DOCKER_COMPOSE build api
 echo "✓ Image built"
 echo ""
 
-***REMOVED*** Step 5: Verify the image was tagged correctly
+# Step 5: Verify the image was tagged correctly
 echo "[5/8] Verifying image tag..."
 if ! $DOCKER image inspect "scanium-backend:$TAG" > /dev/null 2>&1; then
   echo "✗ ERROR: Image scanium-backend:$TAG was not created"
@@ -86,13 +86,13 @@ fi
 echo "✓ Image scanium-backend:$TAG exists"
 echo ""
 
-***REMOVED*** Step 6: Deploy (recreate container with new image)
+# Step 6: Deploy (recreate container with new image)
 echo "[6/8] Deploying backend container..."
 $DOCKER_COMPOSE up -d --force-recreate --no-deps api
 echo "✓ Container recreated"
 echo ""
 
-***REMOVED*** Step 7: Wait for container to be healthy
+# Step 7: Wait for container to be healthy
 echo "[7/8] Waiting for backend to be healthy..."
 MAX_WAIT=60
 WAIT_COUNT=0
@@ -112,13 +112,13 @@ if [ "$HEALTH" != "healthy" ]; then
   echo "   Current status: $HEALTH"
   echo "   Check logs: sudo docker logs scanium-backend"
 else
-  ***REMOVED*** Step 8: Verify deployed image tag
+  # Step 8: Verify deployed image tag
   echo ""
   echo "[8/8] Verifying deployment..."
   DEPLOYED_IMAGE=$($DOCKER inspect --format='{{.Config.Image}}' scanium-backend)
   echo "✓ Container is running with image: $DEPLOYED_IMAGE"
 
-  ***REMOVED*** Test health endpoint
+  # Test health endpoint
   echo "   Testing health endpoint..."
   if $DOCKER exec scanium-backend node -e "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"; then
     echo "✓ Health endpoint responding"

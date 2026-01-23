@@ -1,6 +1,6 @@
-***REMOVED*** KMP Migration Target Map
+# KMP Migration Target Map
 
-***REMOVED******REMOVED*** Top 10 Files
+## Top 10 Files
 
 - core-models/src/main/java/com/scanium/app/items/ScannedItem.kt
 - core-models/src/main/java/com/scanium/app/ml/RawDetection.kt
@@ -13,7 +13,7 @@
 - androidApp/src/main/java/com/scanium/app/ml/BarcodeScannerClient.kt
 - androidApp/src/main/java/com/scanium/app/ml/DocumentTextRecognitionClient.kt
 
-***REMOVED******REMOVED*** Leak Inventory
+## Leak Inventory
 
 - core-models/src/main/java/com/scanium/app/ml/RawDetection.kt — now portable (NormalizedRect +
   ImageRef thumbnailRef; no android.* fields).

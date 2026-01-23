@@ -1,11 +1,11 @@
-***REMOVED*** Android consumption hardening
+# Android consumption hardening
 
-***REMOVED******REMOVED*** Goal
+## Goal
 
 Keep the Android app wired to shared KMP modules through a single path to prevent duplicate class
 definitions when legacy wrappers coexist with shared packages.
 
-***REMOVED******REMOVED*** Dependency graph cleanup
+## Dependency graph cleanup
 
 - Android app should depend on `:core-models` and `:core-tracking` only; these wrappers already
   `api`-re-export the shared KMP modules.
@@ -15,7 +15,7 @@ definitions when legacy wrappers coexist with shared packages.
 - Library shells (`android-ml-mlkit`, `android-camera-camerax`, `android-platform-adapters`) stay
   Android-specific and should not reach into shared modules.
 
-***REMOVED******REMOVED*** Wrapper package hygiene
+## Wrapper package hygiene
 
 - Keep wrapper namespaces distinct from shared packages (e.g., wrappers under `com.scanium.core.*`,
   shared code under `com.scanium.shared.*`).

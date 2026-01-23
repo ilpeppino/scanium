@@ -1,11 +1,11 @@
-***REMOVED*** Phase B Smoke Test Guide
+# Phase B Smoke Test Guide
 
 **Date**: January 13, 2026
 **Prerequisites**: Phase B must be deployed to the backend
 
 ---
 
-***REMOVED******REMOVED*** Current Status
+## Current Status
 
 ✅ **Phase B Implementation**: Complete
 ⚠️ **Backend Deployment**: Phase B not yet deployed to https://scanium.gtemp1.com
@@ -13,47 +13,47 @@
 
 ---
 
-***REMOVED******REMOVED*** Setup Required
+## Setup Required
 
-***REMOVED******REMOVED******REMOVED*** 1. Deploy Phase B to Backend
+### 1. Deploy Phase B to Backend
 
 ```bash
-***REMOVED*** On the backend server:
+# On the backend server:
 cd /path/to/scanium/backend
 
-***REMOVED*** Pull latest code with Phase B changes
+# Pull latest code with Phase B changes
 git pull
 
-***REMOVED*** Install dependencies (if needed)
+# Install dependencies (if needed)
 npm install
 
-***REMOVED*** Run Prisma migration to add User and UserSession tables
+# Run Prisma migration to add User and UserSession tables
 npx prisma migrate dev --name add_google_auth
 
-***REMOVED*** Restart backend service
-***REMOVED*** (Use your deployment method: docker-compose restart, systemctl restart, etc.)
+# Restart backend service
+# (Use your deployment method: docker-compose restart, systemctl restart, etc.)
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Verify Environment Variables
+### 2. Verify Environment Variables
 
 Ensure these are set in backend `.env`:
 
 ```bash
-***REMOVED*** Phase A: Google OAuth
+# Phase A: Google OAuth
 GOOGLE_OAUTH_CLIENT_ID=your_android_client_id.apps.googleusercontent.com
 AUTH_SESSION_SECRET=base64_32_bytes_min
 AUTH_SESSION_EXPIRY_SECONDS=2592000
 
-***REMOVED*** Phase B: Per-user rate limits (optional, has defaults)
+# Phase B: Per-user rate limits (optional, has defaults)
 ASSIST_USER_RATE_LIMIT_PER_MINUTE=20
 ASSIST_USER_DAILY_QUOTA=100
 ```
 
 ---
 
-***REMOVED******REMOVED*** Smoke Test Procedures
+## Smoke Test Procedures
 
-***REMOVED******REMOVED******REMOVED*** Test 1: Verify Backend is Running
+### Test 1: Verify Backend is Running
 
 ```bash
 curl -s https://scanium.gtemp1.com/health | jq
@@ -76,7 +76,7 @@ curl -s https://scanium.gtemp1.com/health | jq
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 2: AUTH_REQUIRED (No Authorization Header)
+### Test 2: AUTH_REQUIRED (No Authorization Header)
 
 ```bash
 curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
@@ -102,7 +102,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 3: AUTH_INVALID (Invalid Token)
+### Test 3: AUTH_INVALID (Invalid Token)
 
 ```bash
 curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
@@ -129,9 +129,9 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 4: Successful Request (Valid Auth)
+### Test 4: Successful Request (Valid Auth)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 4a: Sign In and Get Token
+#### Step 4a: Sign In and Get Token
 
 This requires using the Android app or simulating the Google sign-in flow. For testing, you can:
 
@@ -141,10 +141,10 @@ This requires using the Android app or simulating the Google sign-in flow. For t
 **For testing, create a test user and session:**
 
 ```bash
-***REMOVED*** Connect to your Postgres DB
+# Connect to your Postgres DB
 psql postgresql://user:pass@localhost:5432/scanium
 
-***REMOVED*** Create test user
+# Create test user
 INSERT INTO "User" (id, email, "displayName", "googleId", "createdAt", "updatedAt")
 VALUES (
   gen_random_uuid(),
@@ -155,8 +155,8 @@ VALUES (
   NOW()
 ) RETURNING id;
 
-***REMOVED*** Note the returned user ID, then create a session
-***REMOVED*** Replace USER_ID_HERE with the actual UUID from above
+# Note the returned user ID, then create a session
+# Replace USER_ID_HERE with the actual UUID from above
 INSERT INTO "UserSession" (id, "userId", "sessionToken", "expiresAt", "createdAt", "lastUsedAt")
 VALUES (
   gen_random_uuid(),
@@ -168,7 +168,7 @@ VALUES (
 );
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 4b: Test with Valid Token
+#### Step 4b: Test with Valid Token
 
 ```bash
 curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
@@ -201,7 +201,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 5: Rate Limit Exceeded (429)
+### Test 5: Rate Limit Exceeded (429)
 
 Make 25+ rapid requests with the same valid token:
 
@@ -209,7 +209,7 @@ Make 25+ rapid requests with the same valid token:
 TOKEN="test-session-token-for-smoke-testing"
 API_KEY="YOUR_API_KEY"
 
-***REMOVED*** Make 25 requests rapidly
+# Make 25 requests rapidly
 for i in {1..25}; do
   echo "Request $i:"
   curl -s -X POST https://scanium.gtemp1.com/v1/assist/chat \
@@ -250,15 +250,15 @@ done
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 6: Warmup Endpoint (Also Protected)
+### Test 6: Warmup Endpoint (Also Protected)
 
 ```bash
-***REMOVED*** Without auth - should return AUTH_REQUIRED
+# Without auth - should return AUTH_REQUIRED
 curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
   -H "X-API-Key: YOUR_API_KEY" \
   | jq
 
-***REMOVED*** With valid auth - should return 200
+# With valid auth - should return 200
 curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
   -H "X-API-Key: YOUR_API_KEY" \
   -H "Authorization: Bearer $TOKEN" \
@@ -278,9 +278,9 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 
 ---
 
-***REMOVED******REMOVED*** Android App Testing
+## Android App Testing
 
-***REMOVED******REMOVED******REMOVED*** 1. Sign In Flow
+### 1. Sign In Flow
 
 1. Open Scanium app
 2. Go to Settings > General
@@ -288,21 +288,21 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 4. Complete Google sign-in
 5. Verify "Signed in as [email]" appears
 
-***REMOVED******REMOVED******REMOVED*** 2. Assistant Usage
+### 2. Assistant Usage
 
 1. Scan or select an item
 2. Open Assistant (chat icon)
 3. Send a message
 4. **Expected**: Assistant responds normally (using authenticated session)
 
-***REMOVED******REMOVED******REMOVED*** 3. Rate Limit UX
+### 3. Rate Limit UX
 
 1. Make 20+ assistant requests rapidly
 2. **Expected**: After 20 requests, see message:
     - "Switched to Local Helper: Rate Limited (wait XXs)."
     - Assistant continues working in local mode
 
-***REMOVED******REMOVED******REMOVED*** 4. Session Expiry UX
+### 4. Session Expiry UX
 
 1. Sign out from Settings
 2. Try to use Assistant
@@ -311,9 +311,9 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 
 ---
 
-***REMOVED******REMOVED*** Verification Checklist
+## Verification Checklist
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 - [ ] Prisma migration applied successfully
 - [ ] `User` and `UserSession` tables exist in database
@@ -325,7 +325,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 - [ ] Test 5 (Rate limit) returns `RATE_LIMITED` (429) with `resetAt`
 - [ ] Test 6 (Warmup) requires auth
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 - [ ] App builds successfully (`./gradlew :androidApp:assembleDevDebug`)
 - [ ] Sign-in flow works (Google Credential Manager)
@@ -334,7 +334,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 - [ ] "Sign in required" message shows when not signed in
 - [ ] No "You're offline" shown for auth/rate limit errors
 
-***REMOVED******REMOVED******REMOVED*** Error Contract
+### Error Contract
 
 - [ ] All errors include `correlationId`
 - [ ] `AUTH_REQUIRED` has code `"AUTH_REQUIRED"`
@@ -345,23 +345,23 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "AUTH_REQUIRED but I'm signed in on Android"
+### "AUTH_REQUIRED but I'm signed in on Android"
 
 1. Check Android logs for `X-Scanium-Auth` or `Authorization` header
 2. Verify token is stored: Settings > Developer Options > View stored data
 3. Check backend logs for token validation errors
 4. Verify `AUTH_SESSION_SECRET` matches between deployments
 
-***REMOVED******REMOVED******REMOVED*** "Rate limited immediately"
+### "Rate limited immediately"
 
 1. Check `ASSIST_USER_RATE_LIMIT_PER_MINUTE` (default: 20)
 2. Verify user ID is correct (check backend logs)
 3. If using Redis, verify it's running and accessible
 4. Check for duplicate requests (retry logic)
 
-***REMOVED******REMOVED******REMOVED*** "Migration failed"
+### "Migration failed"
 
 1. Check database is accessible: `psql $DATABASE_URL`
 2. Verify no conflicting tables exist
@@ -370,7 +370,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 ✅ All 6 smoke tests pass with expected responses
 ✅ Android app successfully signs in via Google
@@ -381,7 +381,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 
 ---
 
-***REMOVED******REMOVED*** Next Steps After Smoke Test
+## Next Steps After Smoke Test
 
 1. **Monitor Logs**: Watch for auth errors in production
 2. **Adjust Limits**: Tune `USER_RATE_LIMIT` based on usage patterns
@@ -391,9 +391,9 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 
 ---
 
-***REMOVED******REMOVED*** Quick Reference
+## Quick Reference
 
-***REMOVED******REMOVED******REMOVED*** Default Rate Limits (Phase B)
+### Default Rate Limits (Phase B)
 
 | Limit Type            | Default | Config Variable                       |
 |-----------------------|---------|---------------------------------------|
@@ -402,7 +402,7 @@ curl -s -X POST https://scanium.gtemp1.com/v1/assist/warmup \
 | Per-IP rate limit     | 60/min  | `ASSIST_IP_RATE_LIMIT_PER_MINUTE`     |
 | Per-device rate limit | 30/min  | `ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE` |
 
-***REMOVED******REMOVED******REMOVED*** Error Codes (Phase B)
+### Error Codes (Phase B)
 
 | Code            | HTTP Status | Meaning               | Retryable                |
 |-----------------|-------------|-----------------------|--------------------------|

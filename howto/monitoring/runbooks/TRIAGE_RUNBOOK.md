@@ -1,8 +1,8 @@
-***REMOVED*** Sentry → Grafana Triage Runbook
+# Sentry → Grafana Triage Runbook
 
 Step-by-step workflow for investigating Sentry issues using the full observability stack.
 
-***REMOVED******REMOVED*** Quick Reference
+## Quick Reference
 
 | Tool    | Purpose                           | URL                       |
 |---------|-----------------------------------|---------------------------|
@@ -12,7 +12,7 @@ Step-by-step workflow for investigating Sentry issues using the full observabili
 | Tempo   | Distributed traces                | Grafana → Explore → Tempo |
 | Mimir   | Metrics queries                   | Grafana → Explore → Mimir |
 
-***REMOVED******REMOVED*** Triage Workflow Overview
+## Triage Workflow Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -47,7 +47,7 @@ Step-by-step workflow for investigating Sentry issues using the full observabili
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED*** Step 1: Receive Sentry Alert
+## Step 1: Receive Sentry Alert
 
 When you receive a Sentry notification:
 
@@ -55,9 +55,9 @@ When you receive a Sentry notification:
 2. Note the issue summary (exception type, message)
 3. Check the issue stats (frequency, affected users)
 
-***REMOVED******REMOVED*** Step 2: Extract Context from Sentry Issue
+## Step 2: Extract Context from Sentry Issue
 
-***REMOVED******REMOVED******REMOVED*** Key Tags to Extract
+### Key Tags to Extract
 
 In the Sentry issue detail view, locate these tags in the sidebar:
 
@@ -70,7 +70,7 @@ In the Sentry issue detail view, locate these tags in the sidebar:
 | `env`         | `prod`                       | Environment isolation                  |
 | `scan_mode`   | `CLOUD`                      | Classification mode context            |
 
-***REMOVED******REMOVED******REMOVED*** Extract from Event Details
+### Extract from Event Details
 
 1. **Tags Panel:** Click "Tags" in sidebar to see all tags
 2. **Breadcrumbs:** Review recent app events before crash
@@ -78,7 +78,7 @@ In the Sentry issue detail view, locate these tags in the sidebar:
 4. **Device Info:** Note device model, OS version
 5. **Release:** Note exact release version (`com.scanium.app@1.0.42+42`)
 
-***REMOVED******REMOVED******REMOVED*** Copy Session ID
+### Copy Session ID
 
 The `session_id` tag is the primary correlation key:
 
@@ -88,9 +88,9 @@ session_id: cls-550e8400-e29b-41d4-a716-446655440000
 
 Copy this value for Grafana queries.
 
-***REMOVED******REMOVED*** Step 3: Jump to Grafana
+## Step 3: Jump to Grafana
 
-***REMOVED******REMOVED******REMOVED*** Option A: App Health Dashboard (Recommended Start)
+### Option A: App Health Dashboard (Recommended Start)
 
 1. Open Grafana: http://localhost:3000
 2. Navigate to: Dashboards → Scanium → App Health
@@ -99,7 +99,7 @@ Copy this value for Grafana queries.
     - **Version:** `1.0.42` (from Sentry)
     - **Time range:** 30 minutes around crash timestamp
 
-***REMOVED******REMOVED******REMOVED*** Option B: Direct Loki Query (Session-Specific)
+### Option B: Direct Loki Query (Session-Specific)
 
 1. Open Grafana Explore: http://localhost:3000/explore
 2. Select **Loki** datasource
@@ -109,7 +109,7 @@ Copy this value for Grafana queries.
 {source="scanium-mobile", session_id="cls-550e8400-e29b-41d4-a716-446655440000"}
 ```
 
-***REMOVED******REMOVED******REMOVED*** Option C: Build URL with Filters
+### Option C: Build URL with Filters
 
 Construct a direct URL to Grafana Explore with pre-filled filters:
 
@@ -117,9 +117,9 @@ Construct a direct URL to Grafana Explore with pre-filled filters:
 http://localhost:3000/explore?left=["now-1h","now","Loki",{"expr":"{source=\"scanium-mobile\", session_id=\"cls-550e8400-...\"}"} ]
 ```
 
-***REMOVED******REMOVED*** Step 4: Loki Log Analysis
+## Step 4: Loki Log Analysis
 
-***REMOVED******REMOVED******REMOVED*** Query by Session ID
+### Query by Session ID
 
 Find all logs from the affected session:
 
@@ -127,7 +127,7 @@ Find all logs from the affected session:
 {source="scanium-mobile", session_id="cls-550e8400-e29b-41d4-a716-446655440000"}
 ```
 
-***REMOVED******REMOVED******REMOVED*** Query by Version (Broader)
+### Query by Version (Broader)
 
 Find patterns across all users on a version:
 
@@ -137,7 +137,7 @@ Find patterns across all users on a version:
 | level="ERROR"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Query with Context Lines
+### Query with Context Lines
 
 Get surrounding context for errors:
 
@@ -147,23 +147,23 @@ Get surrounding context for errors:
 | line_format "{{.timestamp}} [{{.level}}] {{.message}}"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Common Filter Patterns
+### Common Filter Patterns
 
 ```logql
-***REMOVED*** Errors only
+# Errors only
 {source="scanium-mobile", env="prod"} |= "ERROR"
 
-***REMOVED*** Classification events
+# Classification events
 {source="scanium-mobile"} |= "scan." or |= "classification."
 
-***REMOVED*** Network errors
+# Network errors
 {source="scanium-mobile"} |= "network" or |= "timeout" or |= "connection"
 
-***REMOVED*** ML inference issues
+# ML inference issues
 {source="scanium-mobile"} |= "inference" or |= "model"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Parse JSON Logs
+### Parse JSON Logs
 
 ```logql
 {source="scanium-mobile", env="prod"}
@@ -172,9 +172,9 @@ Get surrounding context for errors:
 | line_format "{{.timestamp}} {{.name}}: {{.message}}"
 ```
 
-***REMOVED******REMOVED*** Step 5: Tempo Trace Analysis
+## Step 5: Tempo Trace Analysis
 
-***REMOVED******REMOVED******REMOVED*** Find Traces by Session
+### Find Traces by Session
 
 In Grafana Explore with Tempo datasource:
 
@@ -184,7 +184,7 @@ In Grafana Explore with Tempo datasource:
     - `session_id = cls-550e8400-...` (custom attribute)
 3. Click trace to view spans
 
-***REMOVED******REMOVED******REMOVED*** Trace Analysis Checklist
+### Trace Analysis Checklist
 
 - [ ] Check span durations for anomalies
 - [ ] Look for error spans (red)
@@ -192,7 +192,7 @@ In Grafana Explore with Tempo datasource:
 - [ ] Verify network call timing
 - [ ] Check ML inference duration
 
-***REMOVED******REMOVED******REMOVED*** Link from Logs to Traces
+### Link from Logs to Traces
 
 If logs include `trace_id`:
 
@@ -202,12 +202,12 @@ If logs include `trace_id`:
 
 Click the trace ID in results to jump to Tempo.
 
-***REMOVED******REMOVED*** Step 6: Mimir Metrics Analysis
+## Step 6: Mimir Metrics Analysis
 
-***REMOVED******REMOVED******REMOVED*** Query Inference Latency
+### Query Inference Latency
 
 ```promql
-***REMOVED*** P95 inference latency by version
+# P95 inference latency by version
 histogram_quantile(0.95,
   sum by(le, app_version) (
     rate(ml_inference_latency_ms_bucket{env="prod"}[5m])
@@ -215,36 +215,36 @@ histogram_quantile(0.95,
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Query Error Rate by Version
+### Query Error Rate by Version
 
 ```promql
-***REMOVED*** Error rate per version
+# Error rate per version
 sum by(app_version) (
   rate(scanium_errors_total{env="prod"}[5m])
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Query Session Counts
+### Query Session Counts
 
 ```promql
-***REMOVED*** Active sessions per version
+# Active sessions per version
 count by(app_version) (
   scanium_active_sessions{env="prod"}
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Compare Versions
+### Compare Versions
 
 ```promql
-***REMOVED*** Error rate comparison: affected vs baseline
+# Error rate comparison: affected vs baseline
 sum(rate(scanium_errors_total{app_version="1.0.42", env="prod"}[5m]))
 /
 sum(rate(scanium_errors_total{app_version="1.0.41", env="prod"}[5m]))
 ```
 
-***REMOVED******REMOVED*** Step 7: Correlate and Diagnose
+## Step 7: Correlate and Diagnose
 
-***REMOVED******REMOVED******REMOVED*** Correlation Table
+### Correlation Table
 
 Build a timeline of events:
 
@@ -256,7 +256,7 @@ Build a timeline of events:
 | 10:29:55 | Loki   | `ERROR: OutOfMemoryError`             |
 | 10:29:55 | Sentry | Crash captured                        |
 
-***REMOVED******REMOVED******REMOVED*** Common Root Causes
+### Common Root Causes
 
 | Symptom                      | Likely Cause              | Where to Look               |
 |------------------------------|---------------------------|-----------------------------|
@@ -266,22 +266,22 @@ Build a timeline of events:
 | Inference failures           | Model compatibility       | Loki ML logs, model version |
 | Random crashes               | Race conditions           | Breadcrumbs, thread info    |
 
-***REMOVED******REMOVED*** Step 8: Document and Resolve
+## Step 8: Document and Resolve
 
-***REMOVED******REMOVED******REMOVED*** Update Sentry Issue
+### Update Sentry Issue
 
 1. Add findings to issue comments
 2. Link to Grafana dashboard/queries
 3. Assign to appropriate owner
 4. Set priority based on impact
 
-***REMOVED******REMOVED******REMOVED*** Create Fix
+### Create Fix
 
 1. Reference Sentry issue ID in commit message
 2. Include relevant log excerpts
 3. Tag fix version in Sentry
 
-***REMOVED******REMOVED******REMOVED*** Verify Fix
+### Verify Fix
 
 After deploying fix:
 
@@ -289,9 +289,9 @@ After deploying fix:
 2. Compare error rates in Grafana
 3. Verify in new version builds
 
-***REMOVED******REMOVED*** Dashboard Quick Links
+## Dashboard Quick Links
 
-***REMOVED******REMOVED******REMOVED*** Pre-built Dashboards
+### Pre-built Dashboards
 
 | Dashboard        | Purpose                        | Path                                    |
 |------------------|--------------------------------|-----------------------------------------|
@@ -300,7 +300,7 @@ After deploying fix:
 | Pipeline Health  | OTLP pipeline status           | Dashboards → Scanium → Pipeline Health  |
 | Usage            | User activity patterns         | Dashboards → Scanium → Usage            |
 
-***REMOVED******REMOVED******REMOVED*** Useful Explore Queries
+### Useful Explore Queries
 
 Save these as Grafana "starred" queries:
 
@@ -322,28 +322,28 @@ Save these as Grafana "starred" queries:
 sum(increase(scanium_errors_total{env="prod"}[1h])) by (app_version)
 ```
 
-***REMOVED******REMOVED*** Troubleshooting Common Issues
+## Troubleshooting Common Issues
 
-***REMOVED******REMOVED******REMOVED*** No Logs Found for Session ID
+### No Logs Found for Session ID
 
 1. **Check time range:** Ensure it covers the crash timestamp
 2. **Check OTLP export:** Was telemetry enabled in that build?
 3. **Check user consent:** Did user have "Share Diagnostics" enabled?
 4. **Check Loki retention:** Data older than 14 days is purged
 
-***REMOVED******REMOVED******REMOVED*** Missing Traces
+### Missing Traces
 
 1. **Check sampling rate:** Dev = 100%, Prod = 10%
 2. **Check trace propagation:** Is `trace_id` included in logs?
 3. **Check Tempo retention:** 7-day default
 
-***REMOVED******REMOVED******REMOVED*** Metrics Not Matching Logs
+### Metrics Not Matching Logs
 
 1. **Check aggregation windows:** Metrics use 1m/5m buckets
 2. **Check label cardinality:** High cardinality may cause drops
 3. **Check time alignment:** Use same time range everywhere
 
-***REMOVED******REMOVED*** Escalation Path
+## Escalation Path
 
 | Severity              | Action                                       | Contact             |
 |-----------------------|----------------------------------------------|---------------------|
@@ -352,7 +352,7 @@ sum(increase(scanium_errors_total{env="prod"}[1h])) by (app_version)
 | P3 (Regression)       | Next sprint                                  | Backlog             |
 | P4 (Edge case)        | When capacity allows                         | Backlog             |
 
-***REMOVED******REMOVED*** See Also
+## See Also
 
 - [SENTRY_ALERTING.md](./SENTRY_ALERTING.md) - Sentry configuration and alert rules
 - [monitoring/README.md](../../monitoring/README.md) - LGTM stack setup

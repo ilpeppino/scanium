@@ -1,4 +1,4 @@
-***REMOVED*** Scanium — High-Level Architecture
+# Scanium — High-Level Architecture
 
 This architecture is designed for **consumer use first**, while remaining **fully extensible** for
 future **B2B use cases** such as inventory scanning, product cataloging, and enterprise
@@ -6,7 +6,7 @@ integrations.
 
 ---
 
-***REMOVED******REMOVED*** 1. Architecture Overview
+## 1. Architecture Overview
 
 Scanium consists of **four main layers**, each responsible for a distinct part of the scanning and
 intelligence pipeline:
@@ -20,11 +20,11 @@ A cloud intelligence path can optionally supplement the on-device pipeline.
 
 ---
 
-***REMOVED******REMOVED*** 2. Layers & Components
+## 2. Layers & Components
 
 ---
 
-***REMOVED******REMOVED*** 2.1. UI Layer (Jetpack Compose)
+## 2.1. UI Layer (Jetpack Compose)
 
 The presentation layer responsible for all user interactions:
 
@@ -44,24 +44,24 @@ The presentation layer responsible for all user interactions:
 
 ---
 
-***REMOVED******REMOVED*** 2.2. Scanning Engine
+## 2.2. Scanning Engine
 
 Responsible for real-time visual processing, tracking, and classification orchestration.
 
-***REMOVED******REMOVED******REMOVED*** A. Object Detection & Tracking
+### A. Object Detection & Tracking
 
 - **CameraX** for real-time frames.
 - **ML Kit Object Detection & Tracking**
     - Produces bounding boxes, tracking IDs.
     - Lightweight, fast, on-device.
 
-***REMOVED******REMOVED******REMOVED*** B. Item Aggregation
+### B. Item Aggregation
 
 - Converts per-frame detections into **stable, unique items**.
 - Deduplicates objects during camera movement.
 - Emits “confirmed” items to Classification Orchestrator.
 
-***REMOVED******REMOVED******REMOVED*** C. Classification Orchestrator
+### C. Classification Orchestrator
 
 Central controller for classification logic.
 
@@ -76,7 +76,7 @@ Central controller for classification logic.
 - Caches classification to avoid repetition.
 - Outputs semantic labels → Domain Intelligence Layer.
 
-***REMOVED******REMOVED******REMOVED*** D. Attribute Extractors
+### D. Attribute Extractors
 
 Modular extraction tools:
 
@@ -92,11 +92,11 @@ Modular extraction tools:
 
 ---
 
-***REMOVED******REMOVED*** 2.3. Domain Intelligence Layer
+## 2.3. Domain Intelligence Layer
 
 This layer makes the app adaptable to different consumer/business scenarios.
 
-***REMOVED******REMOVED******REMOVED*** A. Domain Packs
+### A. Domain Packs
 
 Configurable intelligence bundles defining:
 
@@ -112,13 +112,13 @@ Example Domain Packs:
 - `OfficeInventoryPack` (business)
 - `WarehousePack` (enterprise SKU workflows)
 
-***REMOVED******REMOVED******REMOVED*** B. Category Engine
+### B. Category Engine
 
 - Takes classification result + Domain Pack rules.
 - Performs coarse-to-fine category selection.
 - Maps semantic category → app-level `ItemCategory`.
 
-***REMOVED******REMOVED******REMOVED*** C. Attribute Engine
+### C. Attribute Engine
 
 For each classified item:
 
@@ -130,7 +130,7 @@ For each classified item:
     - Cloud → detailed metadata
 3. Produces a structured `ItemDetails` object.
 
-***REMOVED******REMOVED******REMOVED*** D. Pricing Engine (consumer-first)
+### D. Pricing Engine (consumer-first)
 
 - Uses:
     - `ItemCategory`
@@ -142,17 +142,17 @@ For each classified item:
 
 ---
 
-***REMOVED******REMOVED*** 2.4. Integration Layer
+## 2.4. Integration Layer
 
 Handles external interactions depending on user type.
 
-***REMOVED******REMOVED******REMOVED*** A. Consumer Integrations
+### A. Consumer Integrations
 
 - **Marketplace APIs**
     - eBay: category mapping & price lookups.
     - Future: Facebook Marketplace, Vinted, etc.
 
-***REMOVED******REMOVED******REMOVED*** B. Business Integrations
+### B. Business Integrations
 
 - Inventory/ERP systems
 - SKU databases
@@ -161,7 +161,7 @@ Handles external interactions depending on user type.
 
 ---
 
-***REMOVED******REMOVED*** 3. Architectural Principles
+## 3. Architectural Principles
 
 - Device-first intelligence: works offline, fast, privacy-friendly.
 - Cloud-optional enhancements: Businesses or advanced users can enable richer interpretation.
@@ -178,7 +178,7 @@ Handles external interactions depending on user type.
 
 ---
 
-***REMOVED******REMOVED*** 4. Summary
+## 4. Summary
 
 This architecture enables Scanium to:
 

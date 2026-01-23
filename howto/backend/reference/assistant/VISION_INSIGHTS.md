@@ -1,14 +1,14 @@
-***REMOVED*** Vision Insights Feature
+# Vision Insights Feature
 
 Displays vision-derived attributes (colors, brands, logos, OCR text, label hints) in the assistant
 UI and allows users to apply them as item attributes.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 When the backend analyzes item images, it returns `suggestedAttributes` in the assistant response.
 These are displayed as interactive chips that users can tap to apply to their items.
 
-***REMOVED******REMOVED*** Feature Flag
+## Feature Flag
 
 ```kotlin
 // RemoteConfig.kt
@@ -17,7 +17,7 @@ data class FeatureFlags(
 )
 ```
 
-***REMOVED******REMOVED*** Attribute Key Mapping
+## Attribute Key Mapping
 
 The following table shows how vision sources map to attribute keys and their alternatives (used when
 there's a conflict):
@@ -31,7 +31,7 @@ there's a conflict):
 | label  | category      | Category      | subcategory     |
 | *      | (as-is)       | (capitalized) | key + "2"       |
 
-***REMOVED******REMOVED*** Confidence Tier Mapping
+## Confidence Tier Mapping
 
 | Tier | Float Value | Chip Color                |
 |------|-------------|---------------------------|
@@ -39,7 +39,7 @@ there's a conflict):
 | MED  | 0.6         | tertiaryContainer (amber) |
 | LOW  | 0.3         | surfaceVariant (gray)     |
 
-***REMOVED******REMOVED*** Conflict Handling
+## Conflict Handling
 
 When a user taps a chip for an attribute they've already set:
 
@@ -52,7 +52,7 @@ When a user taps a chip for an attribute they've already set:
 
 User must explicitly confirm - no auto-apply.
 
-***REMOVED******REMOVED*** Telemetry
+## Telemetry
 
 When a vision attribute is applied, a log event is recorded:
 
@@ -60,9 +60,9 @@ When a vision attribute is applied, a log event is recorded:
 Vision attribute applied itemId=$itemId key=$targetKey value=$value source=$source confidence=$tier wasAlternative=$bool
 ```
 
-***REMOVED******REMOVED*** API Format
+## API Format
 
-***REMOVED******REMOVED******REMOVED*** Curl Example (Multipart with Images)
+### Curl Example (Multipart with Images)
 
 ```bash
 curl -X POST "https://your-backend/v1/assist/chat" \
@@ -73,7 +73,7 @@ curl -X POST "https://your-backend/v1/assist/chat" \
   -F 'itemImages[item-1]=@/path/to/image.jpg'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Expected Response (with Vision Data)
+### Expected Response (with Vision Data)
 
 ```json
 {
@@ -100,7 +100,7 @@ curl -X POST "https://your-backend/v1/assist/chat" \
 }
 ```
 
-***REMOVED******REMOVED*** Testing Instructions
+## Testing Instructions
 
 1. Open an item with photos in the Items list
 2. Tap "Get AI Help" to open the Assistant screen
@@ -114,7 +114,7 @@ curl -X POST "https://your-backend/v1/assist/chat" \
     - If conflict: Dialog appears with Replace/Add as Alternative/Cancel options
 6. Verify the attribute appears in item details
 
-***REMOVED******REMOVED*** Files
+## Files
 
 - `AssistantViewModel.kt` - `applyVisionAttribute()`, `getExistingAttribute()`,
   `getAlternativeKey()`

@@ -1,28 +1,28 @@
-***REMOVED*** Scanium NAS Deployment Guide
+# Scanium NAS Deployment Guide
 
 Deploy Scanium backend and monitoring stack on a Synology NAS (DS418play or similar x86_64 NAS)
 using Docker Compose via Synology Container Manager.
 
-***REMOVED******REMOVED*** Table of Contents
+## Table of Contents
 
-1. [Overview](***REMOVED***overview)
-2. [Prerequisites](***REMOVED***prerequisites)
-3. [Directory Structure](***REMOVED***directory-structure)
-4. [Step 1: Prepare the NAS](***REMOVED***step-1-prepare-the-nas)
-5. [Step 2: Build the Backend Image](***REMOVED***step-2-build-the-backend-image)
-6. [Step 3: Deploy Monitoring Stack](***REMOVED***step-3-deploy-monitoring-stack)
-7. [Step 4: Deploy Backend Stack](***REMOVED***step-4-deploy-backend-stack)
-8. [Step 5: Database Migrations](***REMOVED***step-5-database-migrations)
-9. [Verification Checklist](***REMOVED***verification-checklist)
-10. [Exposing Services Securely](***REMOVED***exposing-services-securely)
-11. [Maintenance](***REMOVED***maintenance)
-12. [Common Failures & Troubleshooting](***REMOVED***common-failures--troubleshooting)
+1. [Overview](#overview)
+2. [Prerequisites](#prerequisites)
+3. [Directory Structure](#directory-structure)
+4. [Step 1: Prepare the NAS](#step-1-prepare-the-nas)
+5. [Step 2: Build the Backend Image](#step-2-build-the-backend-image)
+6. [Step 3: Deploy Monitoring Stack](#step-3-deploy-monitoring-stack)
+7. [Step 4: Deploy Backend Stack](#step-4-deploy-backend-stack)
+8. [Step 5: Database Migrations](#step-5-database-migrations)
+9. [Verification Checklist](#verification-checklist)
+10. [Exposing Services Securely](#exposing-services-securely)
+11. [Maintenance](#maintenance)
+12. [Common Failures & Troubleshooting](#common-failures--troubleshooting)
 
 ---
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
-***REMOVED******REMOVED******REMOVED*** Architecture
+### Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -52,7 +52,7 @@ using Docker Compose via Synology Container Manager.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Resource Requirements
+### Resource Requirements
 
 Target: Synology DS418play (Intel Celeron J3455, 2 cores, 6GB RAM)
 
@@ -69,7 +69,7 @@ Target: Synology DS418play (Intel Celeron J3455, 2 cores, 6GB RAM)
 
 ---
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
 1. **Synology NAS** with Container Manager installed
     - DSM 7.0 or later
@@ -87,36 +87,36 @@ Target: Synology DS418play (Intel Celeron J3455, 2 cores, 6GB RAM)
 
 ---
 
-***REMOVED******REMOVED*** Directory Structure
+## Directory Structure
 
 On your NAS, create this structure:
 
 ```
 /volume1/docker/scanium/
-├── backend.env              ***REMOVED*** Backend environment variables (from env/backend.env.example)
-├── monitoring.env           ***REMOVED*** Monitoring environment variables (from env/monitoring.env.example)
-├── postgres/                ***REMOVED*** PostgreSQL data (auto-created)
-├── secrets/                 ***REMOVED*** Optional: Google Vision credentials
+├── backend.env              # Backend environment variables (from env/backend.env.example)
+├── monitoring.env           # Monitoring environment variables (from env/monitoring.env.example)
+├── postgres/                # PostgreSQL data (auto-created)
+├── secrets/                 # Optional: Google Vision credentials
 │   └── vision-sa.json
 └── monitoring/
     ├── alloy/
-    │   └── alloy.hcl        ***REMOVED*** Copy from repo: monitoring/alloy/alloy.hcl
+    │   └── alloy.hcl        # Copy from repo: monitoring/alloy/alloy.hcl
     ├── loki/
-    │   └── loki.yaml        ***REMOVED*** Copy from repo: monitoring/loki/loki.yaml
+    │   └── loki.yaml        # Copy from repo: monitoring/loki/loki.yaml
     ├── tempo/
-    │   └── tempo.yaml       ***REMOVED*** Copy from repo: monitoring/tempo/tempo.yaml
+    │   └── tempo.yaml       # Copy from repo: monitoring/tempo/tempo.yaml
     ├── mimir/
-    │   └── mimir.yaml       ***REMOVED*** Copy from repo: monitoring/mimir/mimir.yaml
+    │   └── mimir.yaml       # Copy from repo: monitoring/mimir/mimir.yaml
     └── grafana/
-        ├── provisioning/    ***REMOVED*** Copy from repo: monitoring/grafana/provisioning/
-        └── dashboards/      ***REMOVED*** Copy from repo: monitoring/grafana/dashboards/
+        ├── provisioning/    # Copy from repo: monitoring/grafana/provisioning/
+        └── dashboards/      # Copy from repo: monitoring/grafana/dashboards/
 ```
 
 ---
 
-***REMOVED******REMOVED*** Step 1: Prepare the NAS
+## Step 1: Prepare the NAS
 
-***REMOVED******REMOVED******REMOVED*** 1.1 Create Directory Structure
+### 1.1 Create Directory Structure
 
 SSH into your NAS:
 
@@ -127,44 +127,44 @@ ssh admin@YOUR_NAS_IP
 Create directories:
 
 ```bash
-***REMOVED*** Create base directory
+# Create base directory
 sudo mkdir -p /volume1/docker/scanium
 
-***REMOVED*** Create subdirectories
+# Create subdirectories
 sudo mkdir -p /volume1/docker/scanium/{postgres,secrets}
 sudo mkdir -p /volume1/docker/scanium/monitoring/{alloy,loki,tempo,mimir,grafana}
 sudo mkdir -p /volume1/docker/scanium/monitoring/grafana/{provisioning,dashboards}
 
-***REMOVED*** Set permissions (allow Docker to write)
+# Set permissions (allow Docker to write)
 sudo chmod -R 777 /volume1/docker/scanium
 ```
 
-***REMOVED******REMOVED******REMOVED*** 1.2 Copy Configuration Files
+### 1.2 Copy Configuration Files
 
 From your development machine, copy the monitoring configs:
 
 ```bash
-***REMOVED*** From the repo root directory
+# From the repo root directory
 NAS_IP="YOUR_NAS_IP"
 NAS_PATH="/volume1/docker/scanium"
 
-***REMOVED*** Copy monitoring configs
+# Copy monitoring configs
 scp monitoring/alloy/alloy.hcl admin@$NAS_IP:$NAS_PATH/monitoring/alloy/
 scp monitoring/loki/loki.yaml admin@$NAS_IP:$NAS_PATH/monitoring/loki/
 scp monitoring/tempo/tempo.yaml admin@$NAS_IP:$NAS_PATH/monitoring/tempo/
 scp monitoring/mimir/mimir.yaml admin@$NAS_IP:$NAS_PATH/monitoring/mimir/
 
-***REMOVED*** Copy Grafana provisioning
+# Copy Grafana provisioning
 scp -r monitoring/grafana/provisioning/* admin@$NAS_IP:$NAS_PATH/monitoring/grafana/provisioning/
 scp -r monitoring/grafana/dashboards/* admin@$NAS_IP:$NAS_PATH/monitoring/grafana/dashboards/
 ```
 
-***REMOVED******REMOVED******REMOVED*** 1.3 Create Environment Files
+### 1.3 Create Environment Files
 
 Copy example files and edit them:
 
 ```bash
-***REMOVED*** Copy env examples to NAS
+# Copy env examples to NAS
 scp deploy/nas/env/backend.env.example admin@$NAS_IP:$NAS_PATH/backend.env
 scp deploy/nas/env/monitoring.env.example admin@$NAS_IP:$NAS_PATH/monitoring.env
 ```
@@ -175,10 +175,10 @@ SSH into NAS and edit the env files:
 ssh admin@YOUR_NAS_IP
 cd /volume1/docker/scanium
 
-***REMOVED*** Edit backend.env - fill in all CHANGE_ME values
+# Edit backend.env - fill in all CHANGE_ME values
 nano backend.env
 
-***REMOVED*** Edit monitoring.env - set Grafana password
+# Edit monitoring.env - set Grafana password
 nano monitoring.env
 ```
 
@@ -194,69 +194,69 @@ nano monitoring.env
 
 - `GF_SECURITY_ADMIN_PASSWORD` → Generate with `openssl rand -base64 24`
 
-***REMOVED******REMOVED******REMOVED*** 1.4 Create Docker Network
+### 1.4 Create Docker Network
 
 ```bash
-***REMOVED*** SSH into NAS
+# SSH into NAS
 ssh admin@YOUR_NAS_IP
 
-***REMOVED*** Create shared network for backend and monitoring
+# Create shared network for backend and monitoring
 sudo docker network create scanium-observability
 ```
 
 ---
 
-***REMOVED******REMOVED*** Step 2: Build the Backend Image
+## Step 2: Build the Backend Image
 
 The backend needs to be built as a Docker image. You have two options:
 
-***REMOVED******REMOVED******REMOVED*** Option A: Build on Development Machine (Recommended)
+### Option A: Build on Development Machine (Recommended)
 
 Build on a faster machine and transfer to NAS:
 
 ```bash
-***REMOVED*** From the repo root, on your Mac/Linux machine
+# From the repo root, on your Mac/Linux machine
 cd backend
 
-***REMOVED*** Build the image
+# Build the image
 docker build -t scanium-api:latest .
 
-***REMOVED*** Save image to file
+# Save image to file
 docker save scanium-api:latest | gzip > scanium-api.tar.gz
 
-***REMOVED*** Copy to NAS
+# Copy to NAS
 scp scanium-api.tar.gz admin@YOUR_NAS_IP:/volume1/docker/scanium/
 
-***REMOVED*** SSH to NAS and load image
+# SSH to NAS and load image
 ssh admin@YOUR_NAS_IP
 sudo docker load < /volume1/docker/scanium/scanium-api.tar.gz
 
-***REMOVED*** Verify
+# Verify
 sudo docker images | grep scanium-api
 ```
 
-***REMOVED******REMOVED******REMOVED*** Option B: Build Directly on NAS (Slower)
+### Option B: Build Directly on NAS (Slower)
 
 Copy the backend source and build on NAS:
 
 ```bash
-***REMOVED*** From repo root on your machine
+# From repo root on your machine
 scp -r backend admin@YOUR_NAS_IP:/volume1/docker/scanium/backend-src
 
-***REMOVED*** SSH to NAS
+# SSH to NAS
 ssh admin@YOUR_NAS_IP
 cd /volume1/docker/scanium/backend-src
 sudo docker build -t scanium-api:latest .
 
-***REMOVED*** Clean up source after build
+# Clean up source after build
 rm -rf /volume1/docker/scanium/backend-src
 ```
 
 ---
 
-***REMOVED******REMOVED*** Step 3: Deploy Monitoring Stack
+## Step 3: Deploy Monitoring Stack
 
-***REMOVED******REMOVED******REMOVED*** 3.1 Via Synology Container Manager UI
+### 3.1 Via Synology Container Manager UI
 
 1. Open **Container Manager** in DSM
 2. Go to **Project** → **Create**
@@ -270,42 +270,42 @@ rm -rf /volume1/docker/scanium/backend-src
 
 <!-- Screenshot placeholder: Container Manager Create Project dialog -->
 
-***REMOVED******REMOVED******REMOVED*** 3.2 Via SSH (Alternative)
+### 3.2 Via SSH (Alternative)
 
 ```bash
 ssh admin@YOUR_NAS_IP
 cd /volume1/docker/scanium
 
-***REMOVED*** Copy compose file
-***REMOVED*** (You should have already copied this, or copy now from your machine)
+# Copy compose file
+# (You should have already copied this, or copy now from your machine)
 
-***REMOVED*** Set environment variable for data path
+# Set environment variable for data path
 export NAS_DATA_PATH=/volume1/docker/scanium
 export NAS_CONFIG_PATH=/volume1/docker/scanium
 
-***REMOVED*** Start monitoring stack
+# Start monitoring stack
 sudo docker compose -f docker-compose.nas.monitoring.yml \
   --env-file monitoring.env up -d
 
-***REMOVED*** Check status
+# Check status
 sudo docker compose -f docker-compose.nas.monitoring.yml ps
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3.3 Verify Monitoring Stack
+### 3.3 Verify Monitoring Stack
 
 Wait 1-2 minutes for services to start, then:
 
 ```bash
-***REMOVED*** Check all containers are healthy
+# Check all containers are healthy
 sudo docker ps --format "table {{.Names}}\t{{.Status}}"
 
-***REMOVED*** Expected output:
-***REMOVED*** NAMES              STATUS
-***REMOVED*** scanium-grafana    Up X minutes (healthy)
-***REMOVED*** scanium-alloy      Up X minutes (healthy)
-***REMOVED*** scanium-loki       Up X minutes (healthy)
-***REMOVED*** scanium-tempo      Up X minutes (healthy)
-***REMOVED*** scanium-mimir      Up X minutes (healthy)
+# Expected output:
+# NAMES              STATUS
+# scanium-grafana    Up X minutes (healthy)
+# scanium-alloy      Up X minutes (healthy)
+# scanium-loki       Up X minutes (healthy)
+# scanium-tempo      Up X minutes (healthy)
+# scanium-mimir      Up X minutes (healthy)
 ```
 
 Access Grafana at `http://YOUR_NAS_IP:3000`
@@ -321,9 +321,9 @@ Access Grafana at `http://YOUR_NAS_IP:3000`
 
 ---
 
-***REMOVED******REMOVED*** Step 4: Deploy Backend Stack
+## Step 4: Deploy Backend Stack
 
-***REMOVED******REMOVED******REMOVED*** 4.1 Via Synology Container Manager UI
+### 4.1 Via Synology Container Manager UI
 
 1. Open **Container Manager** in DSM
 2. Go to **Project** → **Create**
@@ -335,45 +335,45 @@ Access Grafana at `http://YOUR_NAS_IP:3000`
 7. Environment file: Select `/volume1/docker/scanium/backend.env`
 8. Review and click **Done**
 
-***REMOVED******REMOVED******REMOVED*** 4.2 Via SSH (Alternative)
+### 4.2 Via SSH (Alternative)
 
 ```bash
 ssh admin@YOUR_NAS_IP
 cd /volume1/docker/scanium
 
-***REMOVED*** Set environment variables
+# Set environment variables
 export NAS_DATA_PATH=/volume1/docker/scanium
 
-***REMOVED*** Start backend stack
+# Start backend stack
 sudo docker compose -f docker-compose.nas.backend.yml \
   --env-file backend.env up -d
 
-***REMOVED*** Check status
+# Check status
 sudo docker compose -f docker-compose.nas.backend.yml ps
 ```
 
 ---
 
-***REMOVED******REMOVED*** Step 5: Database Migrations
+## Step 5: Database Migrations
 
 After the backend container starts for the first time, you need to run Prisma migrations:
 
-***REMOVED******REMOVED******REMOVED*** 5.1 Check Migration Status
+### 5.1 Check Migration Status
 
 ```bash
 ssh admin@YOUR_NAS_IP
 
-***REMOVED*** Check current migration status
+# Check current migration status
 sudo docker exec scanium-api npx prisma migrate status
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5.2 Run Migrations
+### 5.2 Run Migrations
 
 ```bash
-***REMOVED*** Deploy pending migrations
+# Deploy pending migrations
 sudo docker exec scanium-api npx prisma migrate deploy
 
-***REMOVED*** Verify
+# Verify
 sudo docker exec scanium-api npx prisma migrate status
 ```
 
@@ -383,7 +383,7 @@ sudo docker exec scanium-api npx prisma migrate status
 Database schema is up to date!
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5.3 (If needed) Generate Prisma Client
+### 5.3 (If needed) Generate Prisma Client
 
 The Dockerfile already generates the Prisma client during build. If you need to regenerate:
 
@@ -393,74 +393,74 @@ sudo docker exec scanium-api npx prisma generate
 
 ---
 
-***REMOVED******REMOVED*** Verification Checklist
+## Verification Checklist
 
-***REMOVED******REMOVED******REMOVED*** Backend Verification
+### Backend Verification
 
 ```bash
-***REMOVED*** 1. Check container health
+# 1. Check container health
 sudo docker ps --filter name=scanium-api --format "{{.Status}}"
-***REMOVED*** Expected: Up X minutes (healthy)
+# Expected: Up X minutes (healthy)
 
-***REMOVED*** 2. Check health endpoint
+# 2. Check health endpoint
 curl -s http://YOUR_NAS_IP:8080/health
-***REMOVED*** Expected: {"status":"ok","timestamp":"..."}
+# Expected: {"status":"ok","timestamp":"..."}
 
-***REMOVED*** 3. Check API is responding (should return 401 without API key)
+# 3. Check API is responding (should return 401 without API key)
 curl -s -o /dev/null -w "%{http_code}" http://YOUR_NAS_IP:8080/api/v1/classifier
-***REMOVED*** Expected: 401
+# Expected: 401
 
-***REMOVED*** 4. Check database connection
+# 4. Check database connection
 sudo docker exec scanium-api npx prisma migrate status
-***REMOVED*** Expected: "Database schema is up to date!"
+# Expected: "Database schema is up to date!"
 
-***REMOVED*** 5. View logs
+# 5. View logs
 sudo docker logs scanium-api --tail 50
 ```
 
-***REMOVED******REMOVED******REMOVED*** Monitoring Verification
+### Monitoring Verification
 
 ```bash
-***REMOVED*** 1. Check all monitoring containers
+# 1. Check all monitoring containers
 sudo docker ps --filter "name=scanium-" --format "table {{.Names}}\t{{.Status}}"
 
-***REMOVED*** 2. Check Grafana health
+# 2. Check Grafana health
 curl -s http://YOUR_NAS_IP:3000/api/health
-***REMOVED*** Expected: {"commit":"...","database":"ok","version":"..."}
+# Expected: {"commit":"...","database":"ok","version":"..."}
 
-***REMOVED*** 3. Check Alloy OTLP endpoint is listening
+# 3. Check Alloy OTLP endpoint is listening
 curl -s -o /dev/null -w "%{http_code}" http://YOUR_NAS_IP:4318/v1/traces
-***REMOVED*** Expected: 405 (Method Not Allowed - but shows it's listening)
+# Expected: 405 (Method Not Allowed - but shows it's listening)
 
-***REMOVED*** 4. Check Loki is ready
+# 4. Check Loki is ready
 curl -s http://localhost:3100/ready
-***REMOVED*** Expected: ready (from NAS itself)
+# Expected: ready (from NAS itself)
 
-***REMOVED*** 5. Access Grafana UI
-***REMOVED*** Open http://YOUR_NAS_IP:3000 in browser
-***REMOVED*** Login with admin credentials from monitoring.env
+# 5. Access Grafana UI
+# Open http://YOUR_NAS_IP:3000 in browser
+# Login with admin credentials from monitoring.env
 ```
 
-***REMOVED******REMOVED******REMOVED*** Local Mac Dry-Run
+### Local Mac Dry-Run
 
 Before deploying to NAS, test locally:
 
 ```bash
 cd deploy/nas/compose
 
-***REMOVED*** Create test env files
+# Create test env files
 cp ../env/backend.env.example ../env/backend.env
 cp ../env/monitoring.env.example ../env/monitoring.env
-***REMOVED*** Edit files with test values
+# Edit files with test values
 
-***REMOVED*** Create local data directory
+# Create local data directory
 mkdir -p /tmp/scanium-test
 
-***REMOVED*** Override NAS paths for local test
+# Override NAS paths for local test
 export NAS_DATA_PATH=/tmp/scanium-test
 export NAS_CONFIG_PATH=/tmp/scanium-test
 
-***REMOVED*** Copy configs locally (from repo root)
+# Copy configs locally (from repo root)
 mkdir -p /tmp/scanium-test/monitoring/{alloy,loki,tempo,mimir,grafana}
 cp ../../../monitoring/alloy/alloy.hcl /tmp/scanium-test/monitoring/alloy/
 cp ../../../monitoring/loki/loki.yaml /tmp/scanium-test/monitoring/loki/
@@ -469,33 +469,33 @@ cp ../../../monitoring/mimir/mimir.yaml /tmp/scanium-test/monitoring/mimir/
 cp -r ../../../monitoring/grafana/provisioning /tmp/scanium-test/monitoring/grafana/
 cp -r ../../../monitoring/grafana/dashboards /tmp/scanium-test/monitoring/grafana/
 
-***REMOVED*** Create network
+# Create network
 docker network create scanium-observability || true
 
-***REMOVED*** Start monitoring (in a separate terminal)
+# Start monitoring (in a separate terminal)
 docker compose -f docker-compose.nas.monitoring.yml --env-file ../env/monitoring.env up
 
-***REMOVED*** Build and start backend (in another terminal)
+# Build and start backend (in another terminal)
 cd ../../../backend && docker build -t scanium-api:latest .
 cd ../deploy/nas/compose
 docker compose -f docker-compose.nas.backend.yml --env-file ../env/backend.env up
 
-***REMOVED*** Test health endpoint
+# Test health endpoint
 curl http://localhost:8080/health
 
-***REMOVED*** Test Grafana
+# Test Grafana
 open http://localhost:3000
 
-***REMOVED*** Cleanup
+# Cleanup
 docker compose -f docker-compose.nas.backend.yml --env-file ../env/backend.env down
 docker compose -f docker-compose.nas.monitoring.yml --env-file ../env/monitoring.env down
 ```
 
 ---
 
-***REMOVED******REMOVED*** Exposing Services Securely
+## Exposing Services Securely
 
-***REMOVED******REMOVED******REMOVED*** LAN-Only Access (Default)
+### LAN-Only Access (Default)
 
 By default, services are only accessible on your local network:
 
@@ -505,9 +505,9 @@ By default, services are only accessible on your local network:
 
 This is safe for home use where your network is trusted.
 
-***REMOVED******REMOVED******REMOVED*** External Access Options
+### External Access Options
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Option 1: Cloudflare Tunnel (Recommended)
+#### Option 1: Cloudflare Tunnel (Recommended)
 
 Provides secure HTTPS access without port forwarding:
 
@@ -521,7 +521,7 @@ Provides secure HTTPS access without port forwarding:
 4. Uncomment the `cloudflared` service in `docker-compose.nas.backend.yml`
 5. Restart the backend stack
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Option 2: Reverse Proxy with SSL
+#### Option 2: Reverse Proxy with SSL
 
 Use Synology's built-in reverse proxy:
 
@@ -529,7 +529,7 @@ Use Synology's built-in reverse proxy:
 2. Create rules for each service with SSL certificate
 3. Use Synology's DDNS or your own domain
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Option 3: VPN (Most Secure)
+#### Option 3: VPN (Most Secure)
 
 Use Synology VPN Server or WireGuard:
 
@@ -541,15 +541,15 @@ Use Synology VPN Server or WireGuard:
 
 ---
 
-***REMOVED******REMOVED*** NAS Performance Tuning
+## NAS Performance Tuning
 
-***REMOVED******REMOVED******REMOVED*** Monitoring Stack Configuration
+### Monitoring Stack Configuration
 
 The monitoring stack configurations in `monitoring/` have been optimized for the DS418play's
 resource constraints (2 cores, 4 threads, 6GB RAM). These tuned values differ from development
 workstation configurations.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Configuration Differences
+#### Key Configuration Differences
 
 | Setting                      | Dev Value | NAS Value | File                              | Rationale                          |
 |------------------------------|-----------|-----------|-----------------------------------|------------------------------------|
@@ -564,42 +564,42 @@ workstation configurations.
 > However, the current configuration uses 512MB as specified in line 37 of
 `monitoring/mimir/mimir.yaml`. If you experience memory pressure, consider reducing this to 128MB.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Related Issues
+#### Related Issues
 
 These optimizations address the following performance issues:
 
-- [***REMOVED***363](https://github.com/username/scanium/issues/363) - Tempo storage pool workers
-- [***REMOVED***364](https://github.com/username/scanium/issues/364) - Prometheus scrape intervals
+- [#363](https://github.com/username/scanium/issues/363) - Tempo storage pool workers
+- [#364](https://github.com/username/scanium/issues/364) - Prometheus scrape intervals
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Verifying NAS-Optimized Configuration
+#### Verifying NAS-Optimized Configuration
 
 After deploying, verify the tuned values are in effect:
 
 ```bash
-***REMOVED*** Check Tempo workers (should be 4)
+# Check Tempo workers (should be 4)
 sudo docker exec scanium-tempo grep -A2 "pool:" /etc/tempo/tempo.yaml
 
-***REMOVED*** Check Mimir query parallelism (should be 4)
+# Check Mimir query parallelism (should be 4)
 sudo docker exec scanium-mimir grep "max_query_parallelism" /etc/mimir/mimir.yaml
 
-***REMOVED*** Check Alloy scrape interval (should be 60s)
+# Check Alloy scrape interval (should be 60s)
 sudo docker exec scanium-alloy grep "scrape_interval" /etc/alloy/config.alloy
 
-***REMOVED*** Check Loki retention (should be 72h)
+# Check Loki retention (should be 72h)
 sudo docker exec scanium-loki grep "retention_period" /etc/loki/loki.yaml
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Performance Monitoring
+#### Performance Monitoring
 
 Monitor resource usage to ensure the stack runs within NAS constraints:
 
 ```bash
-***REMOVED*** Check container memory usage (should stay under limits)
+# Check container memory usage (should stay under limits)
 sudo docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
 
-***REMOVED*** Monitor system resources
-free -h  ***REMOVED*** Check available RAM
-df -h    ***REMOVED*** Check disk space
+# Monitor system resources
+free -h  # Check available RAM
+df -h    # Check disk space
 ```
 
 Expected resource usage:
@@ -608,7 +608,7 @@ Expected resource usage:
 - **CPU Usage:** <50% under normal load
 - **Disk Growth:** ~100MB/day with 3-day retention
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Troubleshooting Performance Issues
+#### Troubleshooting Performance Issues
 
 **High CPU Usage (>70%):**
 
@@ -628,45 +628,45 @@ Expected resource usage:
 - Enable compaction for Loki/Tempo
 - Archive old data to external storage
 
-***REMOVED******REMOVED*** Maintenance
+## Maintenance
 
-***REMOVED******REMOVED******REMOVED*** Viewing Logs
+### Viewing Logs
 
 ```bash
-***REMOVED*** Backend logs
+# Backend logs
 sudo docker logs scanium-api --tail 100 -f
 
-***REMOVED*** PostgreSQL logs
+# PostgreSQL logs
 sudo docker logs scanium-postgres --tail 100 -f
 
-***REMOVED*** Grafana logs
+# Grafana logs
 sudo docker logs scanium-grafana --tail 100 -f
 
-***REMOVED*** All monitoring stack
+# All monitoring stack
 sudo docker compose -f docker-compose.nas.monitoring.yml logs -f
 ```
 
-***REMOVED******REMOVED******REMOVED*** Restarting Services
+### Restarting Services
 
 ```bash
-***REMOVED*** Restart single service
+# Restart single service
 sudo docker restart scanium-api
 
-***REMOVED*** Restart entire stack
+# Restart entire stack
 sudo docker compose -f docker-compose.nas.backend.yml --env-file backend.env restart
 ```
 
-***REMOVED******REMOVED******REMOVED*** Updating Images
+### Updating Images
 
 ```bash
-***REMOVED*** Pull latest images
+# Pull latest images
 sudo docker compose -f docker-compose.nas.monitoring.yml pull
 
-***REMOVED*** Recreate with new images
+# Recreate with new images
 sudo docker compose -f docker-compose.nas.monitoring.yml --env-file monitoring.env up -d
 ```
 
-***REMOVED******REMOVED******REMOVED*** Backup Data
+### Backup Data
 
 Important directories to backup:
 
@@ -675,7 +675,7 @@ Important directories to backup:
 - `/volume1/docker/scanium/*.env` - Environment files (store securely!)
 
 ```bash
-***REMOVED*** Example backup command
+# Example backup command
 tar -czvf scanium-backup-$(date +%Y%m%d).tar.gz \
   /volume1/docker/scanium/postgres \
   /volume1/docker/scanium/monitoring/grafana
@@ -683,17 +683,17 @@ tar -czvf scanium-backup-$(date +%Y%m%d).tar.gz \
 
 ---
 
-***REMOVED******REMOVED*** Common Failures & Troubleshooting
+## Common Failures & Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Container Fails to Start
+### Container Fails to Start
 
 **Symptom:** Container status shows "Exited" or keeps restarting
 
 ```bash
-***REMOVED*** Check logs
+# Check logs
 sudo docker logs scanium-api --tail 100
 
-***REMOVED*** Check if image exists
+# Check if image exists
 sudo docker images | grep scanium-api
 ```
 
@@ -703,12 +703,12 @@ sudo docker images | grep scanium-api
 - Missing env file: Ensure `.env` files exist and have required values
 - Missing network: Create with `docker network create scanium-observability`
 
-***REMOVED******REMOVED******REMOVED*** Port Conflicts
+### Port Conflicts
 
 **Symptom:** "Address already in use" error
 
 ```bash
-***REMOVED*** Find what's using the port
+# Find what's using the port
 sudo netstat -tlnp | grep :8080
 ```
 
@@ -717,31 +717,31 @@ sudo netstat -tlnp | grep :8080
 - Change the port in `.env` file (e.g., `API_HOST_PORT=8081`)
 - Stop conflicting service
 
-***REMOVED******REMOVED******REMOVED*** Permission Denied on Volumes
+### Permission Denied on Volumes
 
 **Symptom:** "Permission denied" errors in container logs
 
 ```bash
-***REMOVED*** Fix permissions
+# Fix permissions
 sudo chmod -R 777 /volume1/docker/scanium
 ```
 
 **Note:** Some containers run as root (`user: "0"`) to handle Synology's permission model.
 
-***REMOVED******REMOVED******REMOVED*** DATABASE_URL Connection Failed
+### DATABASE_URL Connection Failed
 
 **Symptom:** "Connection refused" or "Authentication failed"
 
 ```bash
-***REMOVED*** Check postgres is running
+# Check postgres is running
 sudo docker ps | grep postgres
 
-***REMOVED*** Check postgres logs
+# Check postgres logs
 sudo docker logs scanium-postgres
 
-***REMOVED*** Verify DATABASE_URL format
+# Verify DATABASE_URL format
 echo $DATABASE_URL
-***REMOVED*** Should be: postgresql://scanium:PASSWORD@scanium-postgres:5432/scanium
+# Should be: postgresql://scanium:PASSWORD@scanium-postgres:5432/scanium
 ```
 
 **Solutions:**
@@ -750,12 +750,12 @@ echo $DATABASE_URL
 - Use container name (`scanium-postgres`) not `localhost` in DATABASE_URL
 - Ensure both containers are on same network
 
-***REMOVED******REMOVED******REMOVED*** ARM/x86 Image Mismatch
+### ARM/x86 Image Mismatch
 
 **Symptom:** "exec format error" when starting container
 
 ```bash
-***REMOVED*** Check image architecture
+# Check image architecture
 sudo docker inspect scanium-api | grep Architecture
 ```
 
@@ -768,15 +768,15 @@ sudo docker inspect scanium-api | grep Architecture
   docker build --platform linux/amd64 -t scanium-api:latest .
   ```
 
-***REMOVED******REMOVED******REMOVED*** Out of Memory (OOM)
+### Out of Memory (OOM)
 
 **Symptom:** Containers killed unexpectedly, "OOM killed" in logs
 
 ```bash
-***REMOVED*** Check memory usage
+# Check memory usage
 sudo docker stats --no-stream
 
-***REMOVED*** Check system memory
+# Check system memory
 free -h
 ```
 
@@ -787,7 +787,7 @@ free -h
 - Disable services not needed (e.g., Tempo if not using traces)
 - Add more RAM to NAS
 
-***REMOVED******REMOVED******REMOVED*** Grafana Login Invalid (Wrong Password)
+### Grafana Login Invalid (Wrong Password)
 
 **Symptom:** "Invalid username or password" even with correct `monitoring.env` values
 
@@ -795,7 +795,7 @@ free -h
 vars doesn't update stored credentials.
 
 ```bash
-***REMOVED*** Check what user Grafana has stored
+# Check what user Grafana has stored
 sudo docker exec scanium-grafana sqlite3 /var/lib/grafana/grafana.db "SELECT login FROM user WHERE is_admin=1;"
 ```
 
@@ -814,15 +814,15 @@ sudo docker exec scanium-grafana sqlite3 /var/lib/grafana/grafana.db "SELECT log
    sudo docker compose -f docker-compose.nas.monitoring.yml --env-file monitoring.env up -d
    ```
 
-***REMOVED******REMOVED******REMOVED*** Grafana Can't Connect to Datasources
+### Grafana Can't Connect to Datasources
 
 **Symptom:** "Bad Gateway" errors in Grafana
 
 ```bash
-***REMOVED*** Check datasource containers are healthy
+# Check datasource containers are healthy
 sudo docker ps --filter "name=scanium-"
 
-***REMOVED*** Test from Grafana container
+# Test from Grafana container
 sudo docker exec scanium-grafana wget -qO- http://loki:3100/ready
 ```
 
@@ -832,7 +832,7 @@ sudo docker exec scanium-grafana wget -qO- http://loki:3100/ready
 - Wait for services to become healthy (can take 1-2 minutes)
 - Check datasource URLs use container names, not localhost
 
-***REMOVED******REMOVED******REMOVED*** Containers Healthy But No Data in Grafana
+### Containers Healthy But No Data in Grafana
 
 **Symptom:** All containers show "healthy" but Grafana dashboards are empty
 
@@ -843,32 +843,32 @@ sudo docker exec scanium-grafana wget -qO- http://loki:3100/ready
 
 2. **Verify OTLP ingestion:**
    ```bash
-   ***REMOVED*** Check if Alloy is receiving data
+   # Check if Alloy is receiving data
    curl -s http://localhost:12345/metrics | grep otelcol_receiver_accepted
-   ***REMOVED*** Should show non-zero values
+   # Should show non-zero values
    ```
 
 3. **Check exporter health:**
    ```bash
    curl -s http://localhost:12345/metrics | grep otelcol_exporter_send_failed
-   ***REMOVED*** Should be 0
+   # Should be 0
    ```
 
 4. **Test from app device:**
    ```bash
-   ***REMOVED*** From device network, test OTLP endpoint
+   # From device network, test OTLP endpoint
    curl -X POST http://NAS_IP:4318/v1/logs \
      -H "Content-Type: application/json" \
      -d '{"resourceLogs":[]}'
-   ***REMOVED*** Should return empty 200 response
+   # Should return empty 200 response
    ```
 
-***REMOVED******REMOVED******REMOVED*** Container Health Check Failing
+### Container Health Check Failing
 
 **Symptom:** Container shows "(unhealthy)" status
 
 ```bash
-***REMOVED*** Run health check manually
+# Run health check manually
 sudo docker exec scanium-api node -e "require('http').get('http://localhost:8080/health', (r) => {console.log(r.statusCode)})"
 ```
 
@@ -880,31 +880,31 @@ sudo docker exec scanium-api node -e "require('http').get('http://localhost:8080
 
 ---
 
-***REMOVED******REMOVED*** Quick Reference
+## Quick Reference
 
-***REMOVED******REMOVED******REMOVED*** Useful Commands
+### Useful Commands
 
 ```bash
-***REMOVED*** View all Scanium containers
+# View all Scanium containers
 sudo docker ps --filter "name=scanium-"
 
-***REMOVED*** View container resource usage
+# View container resource usage
 sudo docker stats --filter "name=scanium-" --no-stream
 
-***REMOVED*** Enter container shell
+# Enter container shell
 sudo docker exec -it scanium-api sh
 
-***REMOVED*** View real-time logs
+# View real-time logs
 sudo docker logs -f scanium-api
 
-***REMOVED*** Check Docker disk usage
+# Check Docker disk usage
 sudo docker system df
 
-***REMOVED*** Clean up unused images
+# Clean up unused images
 sudo docker image prune -a
 ```
 
-***REMOVED******REMOVED******REMOVED*** Service URLs
+### Service URLs
 
 | Service     | URL                  | Notes             |
 |-------------|----------------------|-------------------|
@@ -913,7 +913,7 @@ sudo docker image prune -a
 | OTLP HTTP   | `http://NAS_IP:4318` | For app telemetry |
 | OTLP gRPC   | `http://NAS_IP:4317` | For app telemetry |
 
-***REMOVED******REMOVED******REMOVED*** File Locations
+### File Locations
 
 | File                  | Purpose                     |
 |-----------------------|-----------------------------|

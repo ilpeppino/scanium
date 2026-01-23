@@ -1,4 +1,4 @@
-***REMOVED*** Scanium Android App - Comprehensive Code Review Summary
+# Scanium Android App - Comprehensive Code Review Summary
 
 **Review Date:** 2025-12-13
 **Reviewer:** Claude (Codex CLI)
@@ -7,11 +7,11 @@
 
 ---
 
-***REMOVED******REMOVED*** Review Completion Status
+## Review Completion Status
 
 ✅ **COMPLETE** - All phases executed successfully
 
-***REMOVED******REMOVED******REMOVED*** Phases Completed:
+### Phases Completed:
 
 1. ✅ Pre-flight checks and project metadata gathering
 2. ✅ Architecture documentation review
@@ -24,54 +24,54 @@
 
 ---
 
-***REMOVED******REMOVED*** Outputs Generated
+## Outputs Generated
 
-***REMOVED******REMOVED******REMOVED*** 1. GitHub Issues (18 Total)
+### 1. GitHub Issues (18 Total)
 
 **Location:** `/home/user/scanium/docs/issues/`
 
 Since GitHub CLI (`gh`) is not installed, issues were generated as offline markdown files ready for
 manual creation.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Critical Priority (P0) - 3 Issues:
+#### Critical Priority (P0) - 3 Issues:
 
-- *****REMOVED***001**: Remove Duplicate CandidateTracker (Dead Code)
+- **#001**: Remove Duplicate CandidateTracker (Dead Code)
     - **Impact:** High - Reduces confusion, speeds up navigation
     - **Effort:** Small (2-4 hours)
 
-- *****REMOVED***002**: Remove or Activate Unused Room Database Layer
+- **#002**: Remove or Activate Unused Room Database Layer
     - **Impact:** Critical - Resolves architectural drift
     - **Effort:** Small to delete, Large to activate (decision required)
 
-- *****REMOVED***003**: Remove SessionDeduplicator (Dead Code)
+- **#003**: Remove SessionDeduplicator (Dead Code)
     - **Impact:** High - Cleanup unused 300-line implementation
     - **Effort:** Small (1-2 hours)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** High Priority (P1) - 6 Issues:
+#### High Priority (P1) - 6 Issues:
 
-- *****REMOVED***004**: Fix CameraXManager Comment References Wrong Tracker
-- *****REMOVED***005**: Remove Permanently Disabled Code Block (if false &&)
-- *****REMOVED***006**: Extract Hardcoded Configuration Values
-- *****REMOVED***007**: Document ItemAggregator System in CLAUDE.md
-- *****REMOVED***008**: Add Missing Fields to ScannedItemEntity (Schema Drift)
-- *****REMOVED***009**: Fix Tracker Configuration Documentation Mismatch
+- **#004**: Fix CameraXManager Comment References Wrong Tracker
+- **#005**: Remove Permanently Disabled Code Block (if false &&)
+- **#006**: Extract Hardcoded Configuration Values
+- **#007**: Document ItemAggregator System in CLAUDE.md
+- **#008**: Add Missing Fields to ScannedItemEntity (Schema Drift)
+- **#009**: Fix Tracker Configuration Documentation Mismatch
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Medium Priority (P2) - 7 Issues:
+#### Medium Priority (P2) - 7 Issues:
 
-- *****REMOVED***010**: Replace printStackTrace() with Proper Logging
-- *****REMOVED***011**: Replace Thread.sleep() with Coroutine Delay
-- *****REMOVED***012**: Potential Bitmap Memory Leaks (Missing recycle() calls)
-- *****REMOVED***013**: ItemsDao Uses Risky OnConflictStrategy.REPLACE
-- *****REMOVED***014**: Classification System Has Placeholder Implementations
-- *****REMOVED***015**: Missing Accessibility Features (TalkBack, Content Descriptions)
-- *****REMOVED***016**: Missing Error Handling for Camera Unavailable Scenarios
+- **#010**: Replace printStackTrace() with Proper Logging
+- **#011**: Replace Thread.sleep() with Coroutine Delay
+- **#012**: Potential Bitmap Memory Leaks (Missing recycle() calls)
+- **#013**: ItemsDao Uses Risky OnConflictStrategy.REPLACE
+- **#014**: Classification System Has Placeholder Implementations
+- **#015**: Missing Accessibility Features (TalkBack, Content Descriptions)
+- **#016**: Missing Error Handling for Camera Unavailable Scenarios
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Low Priority (P3) - 2 Issues:
+#### Low Priority (P3) - 2 Issues:
 
-- *****REMOVED***017**: No User Feedback When Switching Classification Modes
-- *****REMOVED***018**: No Loading State During ML Kit Model Download (First Launch)
+- **#017**: No User Feedback When Switching Classification Modes
+- **#018**: No Loading State During ML Kit Model Download (First Launch)
 
-***REMOVED******REMOVED******REMOVED*** 2. IMPROVEMENTS.md Roadmap
+### 2. IMPROVEMENTS.md Roadmap
 
 **Location:** `/home/user/scanium/docs/IMPROVEMENTS.md`
 **Size:** 22 KB, 754 lines
@@ -87,9 +87,9 @@ Comprehensive roadmap including:
 
 ---
 
-***REMOVED******REMOVED*** Key Findings Summary
+## Key Findings Summary
 
-***REMOVED******REMOVED******REMOVED*** Strengths Identified
+### Strengths Identified
 
 1. **Solid Architecture:**
     - Clean MVVM with proper separation of concerns
@@ -115,7 +115,7 @@ Comprehensive roadmap including:
     - ML Kit for on-device inference
     - Room database (though unused)
 
-***REMOVED******REMOVED******REMOVED*** Critical Issues Discovered
+### Critical Issues Discovered
 
 1. **Dead Code Accumulation (3 issues):**
     - CandidateTracker + DetectionCandidate in ml/ package (replaced by ObjectTracker) ✅ Removed
@@ -153,7 +153,7 @@ Comprehensive roadmap including:
     - Difficult to A/B test or tune performance
     - **Impact:** Maintenance difficulty, experimentation friction
 
-***REMOVED******REMOVED******REMOVED*** Architecture Inconsistencies
+### Architecture Inconsistencies
 
 1. **Tracking System Cleanup:**
     - Legacy CandidateTracker removed; ObjectTracker is the single implementation
@@ -175,7 +175,7 @@ Comprehensive roadmap including:
     - CloudClassifier requires external config (empty by default)
     - Likely intentional for PoC but not documented
 
-***REMOVED******REMOVED******REMOVED*** Performance Concerns
+### Performance Concerns
 
 1. **Bitmap Memory:**
     - Multiple createBitmap() without recycle()
@@ -191,9 +191,9 @@ Comprehensive roadmap including:
 
 ---
 
-***REMOVED******REMOVED*** Recommendations by Priority
+## Recommendations by Priority
 
-***REMOVED******REMOVED******REMOVED*** Immediate (This Week):
+### Immediate (This Week):
 
 1. **Delete dead code:**
     - CandidateTracker, DetectionCandidate ✅ Completed
@@ -210,7 +210,7 @@ Comprehensive roadmap including:
     - Replace Thread.sleep()
     - Replace printStackTrace()
 
-***REMOVED******REMOVED******REMOVED*** Sprint 1 (Next 2 Weeks):
+### Sprint 1 (Next 2 Weeks):
 
 4. **Externalize configuration:**
     - Create ScaniumConfig object
@@ -225,7 +225,7 @@ Comprehensive roadmap including:
     - Comprehensive bitmap lifecycle management
     - Memory stress testing
 
-***REMOVED******REMOVED******REMOVED*** Sprint 2 (Following 2 Weeks):
+### Sprint 2 (Following 2 Weeks):
 
 7. **Accessibility:**
     - Add content descriptions to all interactive elements
@@ -241,7 +241,7 @@ Comprehensive roadmap including:
     - Profile and optimize hot paths
     - Test on mid-range devices
 
-***REMOVED******REMOVED******REMOVED*** Future Roadmap (3-6 Months):
+### Future Roadmap (3-6 Months):
 
 10. **Production ML models** (CLIP or cloud classification)
 11. **Analytics integration** (Firebase)
@@ -250,9 +250,9 @@ Comprehensive roadmap including:
 
 ---
 
-***REMOVED******REMOVED*** Metrics
+## Metrics
 
-***REMOVED******REMOVED******REMOVED*** Code Quality:
+### Code Quality:
 
 - **Total Kotlin files:** 79 (main source)
 - **Test files:** 35 unit + 3 instrumented
@@ -263,7 +263,7 @@ Comprehensive roadmap including:
 - **Medium priority (P2):** 7
 - **Low priority (P3):** 2
 
-***REMOVED******REMOVED******REMOVED*** Architecture:
+### Architecture:
 
 - **Modules:** 1 (single module, appropriate for PoC)
 - **Packages:** 15 feature-based packages
@@ -276,7 +276,7 @@ Comprehensive roadmap including:
     - Domain Pack system (LocalDomainPackRepository, BasicCategoryEngine)
     - Selling integration (MockEbayApi, EbayMarketplaceService, ListingViewModel)
 
-***REMOVED******REMOVED******REMOVED*** Dead Code Identified:
+### Dead Code Identified:
 
 - **Files removed:**
     - CandidateTracker.kt
@@ -291,7 +291,7 @@ Comprehensive roadmap including:
 
 ---
 
-***REMOVED******REMOVED*** Testing Verification
+## Testing Verification
 
 All identified issues are actionable and testable:
 
@@ -305,9 +305,9 @@ All identified issues are actionable and testable:
 
 ---
 
-***REMOVED******REMOVED*** Next Steps for Development Team
+## Next Steps for Development Team
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Review Issues
+### Step 1: Review Issues
 
 Navigate to `/home/user/scanium/docs/issues/` and review all 18 issue files. Each issue contains:
 
@@ -318,16 +318,16 @@ Navigate to `/home/user/scanium/docs/issues/` and review all 18 issue files. Eac
 - Suggested implementation approach
 - Priority and labels
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Create GitHub Issues
+### Step 2: Create GitHub Issues
 
 Since `gh` CLI is not available, manually create issues:
 
 ```bash
-***REMOVED*** For each file in docs/issues/
-***REMOVED*** 1. Read the markdown
-***REMOVED*** 2. Create GitHub issue via web UI
-***REMOVED*** 3. Copy title, labels, and body content
-***REMOVED*** 4. Assign appropriate milestone/project
+# For each file in docs/issues/
+# 1. Read the markdown
+# 2. Create GitHub issue via web UI
+# 3. Copy title, labels, and body content
+# 4. Assign appropriate milestone/project
 ```
 
 Or install `gh` CLI and automate:
@@ -336,49 +336,49 @@ Or install `gh` CLI and automate:
 gh auth login
 cd docs/issues
 for file in *.md; do
-  gh issue create --title "$(head -1 $file | sed 's/***REMOVED*** //')" \
+  gh issue create --title "$(head -1 $file | sed 's/# //')" \
                   --body "$(cat $file)"
 done
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 3: Implement P0 Issues (Critical Path)
+### Step 3: Implement P0 Issues (Critical Path)
 
 Start with:
 
-1. Issue ***REMOVED***001 (Remove CandidateTracker)
-2. Issue ***REMOVED***002 (Remove/activate database)
-3. Issue ***REMOVED***003 (Remove SessionDeduplicator)
+1. Issue #001 (Remove CandidateTracker)
+2. Issue #002 (Remove/activate database)
+3. Issue #003 (Remove SessionDeduplicator)
 
 These unblock documentation and reduce confusion.
 
-***REMOVED******REMOVED******REMOVED*** Step 4: Documentation Sprint
+### Step 4: Documentation Sprint
 
 After P0:
 
-4. Issue ***REMOVED***007 (Document ItemAggregator)
-5. Issue ***REMOVED***009 (Fix TrackerConfig docs)
-6. Issue ***REMOVED***004 (Fix comment)
+4. Issue #007 (Document ItemAggregator)
+5. Issue #009 (Fix TrackerConfig docs)
+6. Issue #004 (Fix comment)
 
-***REMOVED******REMOVED******REMOVED*** Step 5: Production Readiness Sprint
+### Step 5: Production Readiness Sprint
 
 After docs:
 
-7. Issue ***REMOVED***016 (Camera error handling)
-8. Issue ***REMOVED***018 (ML Kit download UI)
-9. Issue ***REMOVED***012 (Memory management)
-10. Issue ***REMOVED***015 (Accessibility)
+7. Issue #016 (Camera error handling)
+8. Issue #018 (ML Kit download UI)
+9. Issue #012 (Memory management)
+10. Issue #015 (Accessibility)
 
-***REMOVED******REMOVED******REMOVED*** Step 6: Polish Sprint
+### Step 6: Polish Sprint
 
 After core issues:
 
-11. Issue ***REMOVED***006 (Config externalization)
-12. Issue ***REMOVED***017 (Classification mode UX)
+11. Issue #006 (Config externalization)
+12. Issue #017 (Classification mode UX)
 13. Remaining P2/P3 issues
 
 ---
 
-***REMOVED******REMOVED*** Conclusion
+## Conclusion
 
 **Overall Assessment:** ✅ **GOOD FOUNDATION, NEEDS CLEANUP & POLISH**
 
@@ -408,7 +408,7 @@ estimated 2-3 sprints), Scanium will be well-positioned for production launch.
 
 ---
 
-***REMOVED******REMOVED*** Contact & Questions
+## Contact & Questions
 
 For questions about this review:
 

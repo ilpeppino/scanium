@@ -1,11 +1,11 @@
-***REMOVED*** Scanium – Codex Context (agent quickmap)
+# Scanium – Codex Context (agent quickmap)
 
 - Update rule: when adding a module, append a row to the module table + dependency graph; when
   adding a feature area, add one bullet to TL;DR + Feature-routing.
 
-***REMOVED******REMOVED*** A) TL;DR Map (feature → touchpoints)
+## A) TL;DR Map (feature → touchpoints)
 
-***REMOVED******REMOVED******REMOVED*** Android Application
+### Android Application
 
 - App shell/nav: `androidApp/src/main/java/com/scanium/app/MainActivity.kt`,
   `navigation/NavGraph.kt`, `ScaniumApp.kt`.
@@ -47,7 +47,7 @@
 - Shared test utilities: `shared/test-utils` used by shared modules; Android tests in
   `androidApp/src/test` and `src/androidTest`.
 
-***REMOVED******REMOVED******REMOVED*** Backend Services
+### Backend Services
 
 - Backend entry point: `backend/src/main.ts` (Fastify server setup, middleware, OpenTelemetry).
 - API routes: `backend/src/routes/` (items.ts, auth/, health.ts).
@@ -58,7 +58,7 @@
 - Environment config: `backend/.env` (API keys, database URL, ngrok settings - gitignored).
 - External integrations: Anthropic Claude SDK, OpenAI SDK, Google Cloud Vision.
 
-***REMOVED******REMOVED******REMOVED*** Observability Stack
+### Observability Stack
 
 - Monitoring stack: `monitoring/docker-compose.yml` (Grafana, Loki, Tempo, Mimir, Alloy).
 - Grafana dashboards: `monitoring/grafana/dashboards/` (pre-provisioned visualizations).
@@ -66,14 +66,14 @@
 - Alloy config: `monitoring/alloy/alloy.hcl` (OTLP routing rules).
 - Backend configs: `monitoring/{loki,tempo,mimir}/*.yaml` (retention, storage).
 
-***REMOVED******REMOVED******REMOVED*** Development Scripts
+### Development Scripts
 
 - Integrated startup: `scripts/backend/start-dev.sh` (backend + PostgreSQL + ngrok + monitoring).
 - Integrated shutdown: `scripts/backend/stop-dev.sh` (with optional --with-monitoring).
 - Monitoring management: `scripts/monitoring/{start,stop,print-urls}.sh`.
 - Android build: `scripts/build.sh` (Java 17 auto-detection).
 
-***REMOVED******REMOVED******REMOVED*** Architecture Documentation
+### Architecture Documentation
 
 - [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) - Full system architecture (Android + backend +
   observability).
@@ -83,7 +83,7 @@
 - [`README.md`](../README.md) - Project overview and quick start.
 - [`monitoring/README.md`](../monitoring/README.md) - Observability stack guide.
 
-***REMOVED******REMOVED*** B) Module Table
+## B) Module Table
 
 **Dependency Injection:** Dagger Hilt is used throughout `androidApp`. ViewModels use
 `@HiltViewModel` + `@Inject constructor()`; `MainActivity` is annotated with `@AndroidEntryPoint`.
@@ -109,7 +109,7 @@ Portability guards: root `checkPortableModules` blocks android imports in `core-
 `core-tracking`; shared modules already KMP-only. `checkNoLegacyImports` forbids legacy
 `com.scanium.app.*` imports inside `androidApp`.
 
-***REMOVED******REMOVED*** C) Dependency Graph (modules)
+## C) Dependency Graph (modules)
 
 ```
 androidApp -> core-models, core-tracking, core-domainpack, core-scan, core-contracts,
@@ -123,9 +123,9 @@ shared:core-export -> shared:core-models
 shared:test-utils -> shared:core-models, shared:core-tracking
 ```
 
-***REMOVED******REMOVED*** D) Feature-routing Cheat Sheet
+## D) Feature-routing Cheat Sheet
 
-***REMOVED******REMOVED******REMOVED*** Android Application
+### Android Application
 
 - UI tweak/navigation: `androidApp` → `navigation/NavGraph.kt`, relevant screen under `camera/`,
   `items/`, `assistant/`, `selling/`, `settings/`, `ui/`.
@@ -158,7 +158,7 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - Tests: fast shared logic → `shared:core-tracking`, `shared:core-models`, `shared:core-export` JVM
   tests; Android features → `androidApp/src/test` or `src/androidTest`.
 
-***REMOVED******REMOVED******REMOVED*** Backend Services
+### Backend Services
 
 - API endpoints: `backend/src/routes/` (add new routes here).
 - Business logic: `backend/src/services/` (service layer, external API calls).
@@ -168,7 +168,7 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - Server config: `backend/src/index.ts` (middleware, CORS, OpenTelemetry).
 - Health checks: `backend/src/routes/health.ts`.
 
-***REMOVED******REMOVED******REMOVED*** Observability & Monitoring
+### Observability & Monitoring
 
 - Add dashboard: Create JSON in `monitoring/grafana/dashboards/`, restart Grafana.
 - Modify retention: Edit `monitoring/{loki,tempo,mimir}/*.yaml`, recreate containers.
@@ -176,7 +176,7 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - View logs: `docker compose -p scanium-monitoring logs -f [service]`.
 - Health checks: `scripts/monitoring/print-urls.sh`.
 
-***REMOVED******REMOVED******REMOVED*** Development Workflow
+### Development Workflow
 
 - Start full dev environment: `scripts/backend/start-dev.sh` (backend + monitoring).
 - Start backend only: `scripts/backend/start-dev.sh --no-monitoring`.
@@ -186,14 +186,14 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - Database migrations: `cd backend && npx prisma migrate dev`.
 - Reset database: `cd backend && npx prisma migrate reset`.
 
-***REMOVED******REMOVED*** E) Change Safety Checklist
+## E) Change Safety Checklist
 
 - Run fast checks: `./gradlew prePushJvmCheck` (shared JVM tests + portability), `./gradlew test` (
   unit), `./gradlew assembleDebug` (app builds), `./gradlew lint` when touching UI/Android.
 - Avoid: android.* imports in shared/KMP modules; adding heavy deps to shared; leaking API keys;
   bypassing domain pack contracts; breaking tracker reset/aggregation invariants.
 
-***REMOVED******REMOVED*** E.1) AI Agent Workflow
+## E.1) AI Agent Workflow
 
 - **Commit & Push:** When a task is complete and all tests pass, create a commit and push to main.
   Use descriptive commit messages following the repository's commit style (imperative mood, clear
@@ -218,9 +218,9 @@ shared:test-utils -> shared:core-models, shared:core-tracking
     - **Redeploy + verify:** All fixes must be committed and redeployed; verify container health,
       DNS resolution, and data flow after redeploy.
 
-***REMOVED******REMOVED*** F) Item Enrichment & Attribute Contract
+## F) Item Enrichment & Attribute Contract
 
-***REMOVED******REMOVED******REMOVED*** Canonical Attribute Schema
+### Canonical Attribute Schema
 
 | Key              | Type   | Source                   | Confidence | Description                               |
 |------------------|--------|--------------------------|------------|-------------------------------------------|
@@ -235,7 +235,7 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 **Source values:** `VISION_LOGO`, `VISION_OCR`, `VISION_COLOR`, `VISION_LABEL`, `LLM_DERIVED`,
 `USER`
 
-***REMOVED******REMOVED******REMOVED*** Attribute Lifecycle
+### Attribute Lifecycle
 
 **Created:**
 
@@ -266,7 +266,7 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - `ItemContextSnapshotBuilder.fromDraft()` converts to `ItemAttributeSnapshot`
 - `AssistantViewModel.mergeSnapshotAttributes()` adds vision attributes
 
-***REMOVED******REMOVED******REMOVED*** Critical Files for Enrichment Logic
+### Critical Files for Enrichment Logic
 
 **Must touch (for enrichment changes):**
 
@@ -287,24 +287,24 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 
 ---
 
-***REMOVED******REMOVED*** G) Vision Golden Assets
+## G) Vision Golden Assets
 
-***REMOVED******REMOVED******REMOVED*** Directory Structure
+### Directory Structure
 
 ```
 tests/
 └── golden_images/
-    ├── kleenex-small-box.jpg       ***REMOVED*** Household goods (tissue box)
-    ├── labello-lip-balm.jpg        ***REMOVED*** Cosmetics (lip balm) [future]
-    ├── nike-tshirt.jpg             ***REMOVED*** Apparel (branded t-shirt) [future]
-    └── multi-object-scene.jpg      ***REMOVED*** Multi-item scene [future]
+    ├── kleenex-small-box.jpg       # Household goods (tissue box)
+    ├── labello-lip-balm.jpg        # Cosmetics (lip balm) [future]
+    ├── nike-tshirt.jpg             # Apparel (branded t-shirt) [future]
+    └── multi-object-scene.jpg      # Multi-item scene [future]
 
 androidApp/src/test/resources/golden/
-    ├── nike_shoe_attributes.json   ***REMOVED*** Expected attributes for Nike shoe
-    └── iphone_partial_attributes.json  ***REMOVED*** Partial electronics item
+    ├── nike_shoe_attributes.json   # Expected attributes for Nike shoe
+    └── iphone_partial_attributes.json  # Partial electronics item
 ```
 
-***REMOVED******REMOVED******REMOVED*** Image Constraints
+### Image Constraints
 
 | Constraint    | Value                | Reason                       |
 |---------------|----------------------|------------------------------|
@@ -314,7 +314,7 @@ androidApp/src/test/resources/golden/
 | Quality       | 85% compression      | Balance quality/size         |
 | Content       | Clear, well-lit      | Reliable extraction          |
 
-***REMOVED******REMOVED******REMOVED*** Manifest Format (Expected Attributes)
+### Manifest Format (Expected Attributes)
 
 ```json
 {
@@ -330,7 +330,7 @@ androidApp/src/test/resources/golden/
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Adding a New Golden Image
+### Adding a New Golden Image
 
 1. **Select image:** Clear, well-lit, brand/text visible
 2. **Resize:** `convert input.jpg -resize 800x800\> -quality 85 output.jpg`
@@ -341,7 +341,7 @@ androidApp/src/test/resources/golden/
 7. **Run locally:** Verify with `GOOGLE_APPLICATION_CREDENTIALS=... npm test`
 8. **Commit:** Include image + fixture + test update in same PR
 
-***REMOVED******REMOVED******REMOVED*** CI Behavior
+### CI Behavior
 
 - Golden tests **skip** when `GOOGLE_APPLICATION_CREDENTIALS` not set
 - Use `describe.skip` / `describeIf` pattern for conditional execution
@@ -350,7 +350,7 @@ androidApp/src/test/resources/golden/
 
 ---
 
-***REMOVED******REMOVED*** H) Where Config Lives
+## H) Where Config Lives
 
 - Build configs: set via `local.properties` or env → `androidApp/build.gradle.kts` (
   `SCANIUM_API_BASE_URL`, `SCANIUM_API_KEY`, `SENTRY_DSN`, legacy `CLOUD_CLASSIFIER_*`,

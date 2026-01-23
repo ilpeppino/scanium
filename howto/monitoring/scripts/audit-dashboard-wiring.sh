@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -13,7 +13,7 @@ trap cleanup EXIT
 
 if command -v jq >/dev/null 2>&1; then
   for file in "$dash_dir"/*.json; do
-    rel="${file***REMOVED***"$repo_root/"}"
+    rel="${file#"$repo_root/"}"
     jq -c --arg file "$rel" '.. | objects | select(has("targets")) | {dashboard:$file, panel_title:(.title // "Untitled"), panel_ds:(.datasource // null), targets:.targets}' "$file" >> "$tmp_input"
   done
   python3 - "$tmp_input" "$out_file" <<'PY'
@@ -151,7 +151,7 @@ with open(input_path, "r", encoding="utf-8") as handle:
 findings.sort(key=lambda x: (x["dashboard"], x["panel"], x["ds_uid"], x["snippet"]))
 
 with open(out_path, "w", encoding="utf-8") as handle:
-    handle.write("***REMOVED*** Dashboard Wiring Findings\n\n")
+    handle.write("# Dashboard Wiring Findings\n\n")
     handle.write("| dashboard_file | panel_title | datasource_uid | suspected_language | query_snippet | problem | recommended_fix |\n")
     handle.write("| --- | --- | --- | --- | --- | --- | --- |\n")
     if not findings:
@@ -308,7 +308,7 @@ for filename in sorted(os.listdir(root)):
 findings.sort(key=lambda x: (x["dashboard"], x["panel"], x["ds_uid"], x["snippet"]))
 
 with open(out_path, "w", encoding="utf-8") as handle:
-    handle.write("***REMOVED*** Dashboard Wiring Findings\n\n")
+    handle.write("# Dashboard Wiring Findings\n\n")
     handle.write("| dashboard_file | panel_title | datasource_uid | suspected_language | query_snippet | problem | recommended_fix |\n")
     handle.write("| --- | --- | --- | --- | --- | --- | --- |\n")
     if not findings:

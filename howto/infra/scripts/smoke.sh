@@ -1,34 +1,34 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium Smoke Test
-***REMOVED*** =============================================================================
-***REMOVED*** Tests backend endpoints for basic reachability and authentication.
-***REMOVED*** Returns exit code 0 if all tests pass, 1 otherwise.
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   ./scripts/ops/smoke.sh --help
-***REMOVED***   ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
-***REMOVED***   SCANIUM_API_KEY=xxx ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
-***REMOVED***
-***REMOVED*** =============================================================================
+#!/usr/bin/env bash
+# =============================================================================
+# Scanium Smoke Test
+# =============================================================================
+# Tests backend endpoints for basic reachability and authentication.
+# Returns exit code 0 if all tests pass, 1 otherwise.
+#
+# Usage:
+#   ./scripts/ops/smoke.sh --help
+#   ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
+#   SCANIUM_API_KEY=xxx ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
+#
+# =============================================================================
 
-***REMOVED*** Source common library
+# Source common library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-***REMOVED*** shellcheck source=lib/common.sh
+# shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Defaults
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Defaults
+# -----------------------------------------------------------------------------
 BASE_URL=""
 API_KEY="${SCANIUM_API_KEY:-}"
 TIMEOUT=10
 VERBOSE=false
 FAILED=0
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Help
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Help
+# -----------------------------------------------------------------------------
 show_help() {
   cat <<EOF
 smoke.sh - Scanium backend smoke tests
@@ -43,13 +43,13 @@ Options:
   --help            Show this help message
 
 Examples:
-  ***REMOVED*** Test public production endpoint
+  # Test public production endpoint
   ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
 
-  ***REMOVED*** Test with authentication
+  # Test with authentication
   SCANIUM_API_KEY=xxx ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
 
-  ***REMOVED*** Test local development
+  # Test local development
   ./scripts/ops/smoke.sh --base-url http://localhost:8080 --verbose
 
 Endpoints tested:
@@ -64,10 +64,10 @@ Exit codes:
 EOF
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Parse arguments
-***REMOVED*** -----------------------------------------------------------------------------
-while [[ $***REMOVED*** -gt 0 ]]; do
+# -----------------------------------------------------------------------------
+# Parse arguments
+# -----------------------------------------------------------------------------
+while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
       show_help
@@ -78,7 +78,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --base-url=*)
-      BASE_URL="${1***REMOVED****=}"
+      BASE_URL="${1#*=}"
       shift
       ;;
     --api-key)
@@ -86,7 +86,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --api-key=*)
-      API_KEY="${1***REMOVED****=}"
+      API_KEY="${1#*=}"
       shift
       ;;
     --timeout)
@@ -94,7 +94,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --timeout=*)
-      TIMEOUT="${1***REMOVED****=}"
+      TIMEOUT="${1#*=}"
       shift
       ;;
     --verbose|-v)
@@ -102,7 +102,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift
       ;;
     *)
-      ***REMOVED*** Support legacy positional argument for base URL
+      # Support legacy positional argument for base URL
       if [[ -z "$BASE_URL" && "$1" != -* ]]; then
         BASE_URL="$1"
         shift
@@ -113,11 +113,11 @@ while [[ $***REMOVED*** -gt 0 ]]; do
   esac
 done
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Validate base URL
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Validate base URL
+# -----------------------------------------------------------------------------
 if [[ -z "$BASE_URL" ]]; then
-  ***REMOVED*** Try localhost first
+  # Try localhost first
   if curl -s --max-time 2 -o /dev/null http://localhost:8080/health 2>/dev/null; then
     BASE_URL="http://localhost:8080"
     log_info "Using detected local backend: $BASE_URL"
@@ -126,15 +126,15 @@ if [[ -z "$BASE_URL" ]]; then
   fi
 fi
 
-***REMOVED*** Strip trailing slash
+# Strip trailing slash
 BASE_URL="${BASE_URL%/}"
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Test functions
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Test functions
+# -----------------------------------------------------------------------------
 test_endpoint() {
   local endpoint="$1"
-  local expected_codes="$2"  ***REMOVED*** Comma-separated list of acceptable codes
+  local expected_codes="$2"  # Comma-separated list of acceptable codes
   local auth_required="${3:-false}"
   local url="${BASE_URL}${endpoint}"
 
@@ -143,7 +143,7 @@ test_endpoint() {
     headers="X-API-Key: $API_KEY"
   fi
 
-  ***REMOVED*** Get status and body
+  # Get status and body
   local response
   local http_code
   local body=""
@@ -160,7 +160,7 @@ test_endpoint() {
       ${headers:+-H "$headers"} "$url" 2>/dev/null || echo "000")
   fi
 
-  ***REMOVED*** Check if status is in expected list
+  # Check if status is in expected list
   local IFS=','
   local expected
   local passed=false
@@ -189,21 +189,21 @@ test_endpoint() {
   fi
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Run tests
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Run tests
+# -----------------------------------------------------------------------------
 log_info "Starting smoke tests against $BASE_URL"
 [[ -n "$API_KEY" ]] && log_info "API key provided - will run authenticated tests"
 echo ""
 
-***REMOVED*** Test 1: Health endpoint (always expect 200)
+# Test 1: Health endpoint (always expect 200)
 if ! test_endpoint "/health" "200"; then
   FAILED=1
 fi
 
-***REMOVED*** Test 2: Config endpoint
-***REMOVED*** - With API key: expect 200
-***REMOVED*** - Without API key: expect 401 (auth required)
+# Test 2: Config endpoint
+# - With API key: expect 200
+# - Without API key: expect 401 (auth required)
 if [[ -n "$API_KEY" ]]; then
   if ! test_endpoint "/v1/config" "200" "true"; then
     FAILED=1
@@ -214,9 +214,9 @@ else
   fi
 fi
 
-***REMOVED*** Test 3: Assist cache stats (GET endpoint that should work)
-***REMOVED*** - With API key: expect 200
-***REMOVED*** - Without API key: expect 401
+# Test 3: Assist cache stats (GET endpoint that should work)
+# - With API key: expect 200
+# - Without API key: expect 401
 if [[ -n "$API_KEY" ]]; then
   if ! test_endpoint "/v1/assist/cache/stats" "200" "true"; then
     FAILED=1
@@ -227,9 +227,9 @@ else
   fi
 fi
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Summary
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Summary
+# -----------------------------------------------------------------------------
 echo ""
 if [[ "$FAILED" -eq 0 ]]; then
   log_success "All smoke tests passed"

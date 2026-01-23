@@ -1,11 +1,11 @@
-***REMOVED*** Edit Item V3 Testing Guide
+# Edit Item V3 Testing Guide
 
 This guide provides step-by-step instructions for testing the new structured fields Edit Item UI (
 V3) and verifying that the AI assistant export correctly uses structured attributes and images.
 
-***REMOVED******REMOVED*** What Was Changed
+## What Was Changed
 
-***REMOVED******REMOVED******REMOVED*** 1. New Edit Item Screen (EditItemScreenV3.kt)
+### 1. New Edit Item Screen (EditItemScreenV3.kt)
 
 **Features:**
 
@@ -22,7 +22,7 @@ V3) and verifying that the AI assistant export correctly uses structured attribu
 - Blank fields are not sent (no empty strings)
 - Notes field maps to `item.displayLabel`
 
-***REMOVED******REMOVED******REMOVED*** 2. Backend Contract (Already Correct)
+### 2. Backend Contract (Already Correct)
 
 The existing `AssistantRepository.kt` and backend are already correct:
 
@@ -30,24 +30,24 @@ The existing `AssistantRepository.kt` and backend are already correct:
 - **Multipart:** `payload` field (JSON), `itemImages[<itemId>]` (images)
 - **Payload:** `items[]` with `itemId`, `message` non-empty, optional `history`
 
-***REMOVED******REMOVED******REMOVED*** 3. Existing Tests (Already Passing)
+### 3. Existing Tests (Already Passing)
 
 - `AssistantRequestSchemaTest`: Verifies payload schema matches backend Zod schema
 - `AssistantRepositoryMultipartTest`: Verifies multipart format and image attachments
 
-***REMOVED******REMOVED*** Unit Tests Verification
+## Unit Tests Verification
 
 Run the assistant tests to confirm everything passes:
 
 ```bash
 cd /Users/family/dev/scanium
 
-***REMOVED*** Run the schema and multipart tests
+# Run the schema and multipart tests
 ./gradlew :androidApp:testDevDebugUnitTest --tests "*AssistantRequestSchemaTest" --tests "*AssistantRepositoryMultipartTest"
 
-***REMOVED*** Expected output:
-***REMOVED*** BUILD SUCCESSFUL in Xs
-***REMOVED*** All tests should pass
+# Expected output:
+# BUILD SUCCESSFUL in Xs
+# All tests should pass
 ```
 
 **What These Tests Verify:**
@@ -59,9 +59,9 @@ cd /Users/family/dev/scanium
 - ✅ Multipart `itemImages[<itemId>]` field naming is correct
 - ✅ Headers are included
 
-***REMOVED******REMOVED*** Manual Testing Steps
+## Manual Testing Steps
 
-***REMOVED******REMOVED******REMOVED*** Test 1: Edit Fields and Save
+### Test 1: Edit Fields and Save
 
 **Objective:** Verify fields are saved to item attributes
 
@@ -84,7 +84,7 @@ cd /Users/family/dev/scanium
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 2: AI Export Uses Structured Attributes
+### Test 2: AI Export Uses Structured Attributes
 
 **Objective:** Verify AI button sends structured attributes + images
 
@@ -116,7 +116,7 @@ cd /Users/family/dev/scanium
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 3: Backend Receives Correct Payload
+### Test 3: Backend Receives Correct Payload
 
 **Objective:** Verify backend logs show correct request shape
 
@@ -146,7 +146,7 @@ cd /Users/family/dev/scanium
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 4: Clear Fields
+### Test 4: Clear Fields
 
 **Objective:** Verify clear "X" buttons work
 
@@ -162,7 +162,7 @@ cd /Users/family/dev/scanium
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 5: Focus Navigation
+### Test 5: Focus Navigation
 
 **Objective:** Verify keyboard navigation works
 
@@ -180,7 +180,7 @@ cd /Users/family/dev/scanium
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test 6: Photos Display
+### Test 6: Photos Display
 
 **Objective:** Verify photos row shows correctly
 
@@ -195,19 +195,19 @@ cd /Users/family/dev/scanium
 
 ---
 
-***REMOVED******REMOVED*** Backend Verification with Curl
+## Backend Verification with Curl
 
 If you encounter validation errors, use curl to verify the backend directly:
 
 ```bash
-***REMOVED*** Copy the example from docs/assistant/CURL_VERIFICATION_EXAMPLE.md
-***REMOVED*** Replace API_KEY and DEVICE_ID with your values
+# Copy the example from docs/assistant/CURL_VERIFICATION_EXAMPLE.md
+# Replace API_KEY and DEVICE_ID with your values
 
 cd /Users/family/dev/scanium
 cat docs/assistant/CURL_VERIFICATION_EXAMPLE.md
 
-***REMOVED*** Run Example 1 to test multipart with images
-***REMOVED*** Expected response: 200 OK with "reply" field
+# Run Example 1 to test multipart with images
+# Expected response: 200 OK with "reply" field
 ```
 
 **Common Validation Errors:**
@@ -224,9 +224,9 @@ cat docs/assistant/CURL_VERIFICATION_EXAMPLE.md
     - **Cause:** Header is `X-Device-Id` instead of `X-Scanium-Device-Id`
     - **Fix:** Verified in code - correct header at line 350 of AssistantRepository.kt
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Issue: Fields not saving
+### Issue: Fields not saving
 
 **Debug:**
 
@@ -244,15 +244,15 @@ updateItemAttribute: itemId=<id> key=brand value=Nike
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Issue: AI export fails with VALIDATION_ERROR
+### Issue: AI export fails with VALIDATION_ERROR
 
 **Debug:**
 
 ```bash
-***REMOVED*** Check Android logs for request shape
+# Check Android logs for request shape
 adb logcat -s ScaniumAssist:I
 
-***REMOVED*** Check backend logs
+# Check backend logs
 ssh nas "docker logs -f --tail 100 scanium-backend-prod | grep -A 10 'Validation failed'"
 ```
 
@@ -270,7 +270,7 @@ ssh nas "docker logs -f --tail 100 scanium-backend-prod | grep -A 10 'Validation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Issue: Images not included
+### Issue: Images not included
 
 **Debug:**
 
@@ -291,7 +291,7 @@ Multipart request: imageCount=1 totalBytes=12345
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Issue: Backend rejects with 400
+### Issue: Backend rejects with 400
 
 **Check backend logs:**
 
@@ -308,7 +308,7 @@ ssh nas "docker logs --tail 200 scanium-backend-prod | grep -E '(VALIDATION|zodE
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 All tests should pass with these results:
 
@@ -319,7 +319,7 @@ All tests should pass with these results:
 - ✅ **Images attached:** Multipart includes images
 - ✅ **No validation errors:** Backend accepts the request
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 After verifying all tests pass:
 
@@ -328,14 +328,14 @@ After verifying all tests pass:
 3. **Monitor production logs** for any validation errors
 4. **Test with real NAS** to ensure end-to-end flow works
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 - ✅ `androidApp/src/main/java/com/scanium/app/items/edit/EditItemScreenV3.kt` (new)
 - ✅ `docs/assistant/CURL_VERIFICATION_EXAMPLE.md` (new)
 - ✅ No backend changes required (already correct)
 - ✅ Existing tests pass (AssistantRequestSchemaTest, AssistantRepositoryMultipartTest)
 
-***REMOVED******REMOVED*** Contact
+## Contact
 
 If you encounter issues not covered by this guide:
 

@@ -1,10 +1,10 @@
-***REMOVED*** KMP Core Tracking Module
+# KMP Core Tracking Module
 
 This document describes the `shared/core-tracking` Kotlin Multiplatform module and the migration
 plan for moving platform-independent tracking and aggregation logic from the existing Android
 library `core-tracking` module.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The `shared/core-tracking` module contains the core business logic for:
 
@@ -14,7 +14,7 @@ The `shared/core-tracking` module contains the core business logic for:
 
 This module depends **only** on `shared:core-models` and has no other internal dependencies.
 
-***REMOVED******REMOVED*** Module Configuration
+## Module Configuration
 
 **Type**: Kotlin Multiplatform Library
 **Plugin**: `kotlin("multiplatform")`
@@ -37,14 +37,14 @@ This module depends **only** on `shared:core-models` and has no other internal d
 - Kotlinx Serialization JSON (for data serialization)
 - Kotlin Test (for testing)
 
-***REMOVED******REMOVED*** Files to Migrate
+## Files to Migrate
 
 The following files from `core-tracking/src/main/java/` will be migrated to
 `shared/core-tracking/src/commonMain/kotlin/`:
 
-***REMOVED******REMOVED******REMOVED*** Tracking System
+### Tracking System
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `Logger.kt`
+#### `Logger.kt`
 
 **Source**: `core-tracking/src/main/java/com/scanium/app/tracking/Logger.kt`
 **Target**: `shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/Logger.kt`
@@ -84,7 +84,7 @@ interface Logger {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ObjectCandidate.kt`
+#### `ObjectCandidate.kt`
 
 **Source**: `core-tracking/src/main/java/com/scanium/app/tracking/ObjectCandidate.kt`
 **Target**:
@@ -105,7 +105,7 @@ Candidate state during multi-frame tracking.
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ObjectTracker.kt`
+#### `ObjectTracker.kt`
 
 **Source**: `core-tracking/src/main/java/com/scanium/app/tracking/ObjectTracker.kt`
 **Target**: `shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ObjectTracker.kt`
@@ -136,7 +136,7 @@ Multi-frame tracking with spatial matching using IoU (Intersection over Union) a
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Supporting Files
+#### Supporting Files
 
 **TrackerConfig.kt**
 
@@ -152,9 +152,9 @@ Multi-frame tracking with spatial matching using IoU (Intersection over Union) a
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Aggregation System
+### Aggregation System
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ItemAggregator.kt`
+#### `ItemAggregator.kt`
 
 **Source**: `core-tracking/src/main/java/com/scanium/app/aggregation/ItemAggregator.kt`
 **Target**:
@@ -183,7 +183,7 @@ Session-level similarity-based deduplication and merging.
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `AggregationPresets.kt`
+#### `AggregationPresets.kt`
 
 **Source**: `core-tracking/src/main/java/com/scanium/app/aggregation/AggregationPresets.kt`
 **Target**:
@@ -199,7 +199,7 @@ Configuration presets for aggregation (REALTIME, CONSERVATIVE, etc.).
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `AggregatedItem.kt`
+#### `AggregatedItem.kt`
 
 **Source**: `core-tracking/src/main/java/com/scanium/app/aggregation/AggregatedItem.kt`
 **Target**:
@@ -215,11 +215,11 @@ Merged detection result with confidence and metadata.
 
 ---
 
-***REMOVED******REMOVED*** Tests to Migrate
+## Tests to Migrate
 
-***REMOVED******REMOVED******REMOVED*** Existing Tests
+### Existing Tests
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ObjectTrackerNormalizedMatchingTest.kt`
+#### `ObjectTrackerNormalizedMatchingTest.kt`
 
 **Source**:
 `core-tracking/src/test/java/com/scanium/app/tracking/ObjectTrackerNormalizedMatchingTest.kt`
@@ -244,9 +244,9 @@ Tests for ObjectTracker spatial matching logic.
 
 ---
 
-***REMOVED******REMOVED*** Migration Checklist
+## Migration Checklist
 
-***REMOVED******REMOVED******REMOVED*** Phase 1: Pre-Migration Cleanup ✅ (This PR)
+### Phase 1: Pre-Migration Cleanup ✅ (This PR)
 
 - [x] Create KMP module skeleton
 - [x] Define source sets (commonMain, androidMain, iosMain)
@@ -255,14 +255,14 @@ Tests for ObjectTracker spatial matching logic.
 - [x] Add placeholder files
 - [x] Document migration plan
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Prepare expect/actual for Logger (Next PR)
+### Phase 2: Prepare expect/actual for Logger (Next PR)
 
 - [ ] Define `expect fun createLogger(): Logger` in `commonMain`
 - [ ] Implement `actual fun createLogger()` in `androidMain` → `AndroidLogger`
 - [ ] Implement `actual fun createLogger()` in `iosMain` → `IOSLogger`
 - [ ] Test logger on both platforms
 
-***REMOVED******REMOVED******REMOVED*** Phase 3: Move Tracking Code (Future PR)
+### Phase 3: Move Tracking Code (Future PR)
 
 - [ ] Move `Logger.kt` interface → `commonMain`
 - [ ] Move `ObjectCandidate.kt` → `commonMain`
@@ -271,21 +271,21 @@ Tests for ObjectTracker spatial matching logic.
 - [ ] Move `ObjectTracker.kt` → `commonMain`
 - [ ] Verify no android.* imports remain
 
-***REMOVED******REMOVED******REMOVED*** Phase 4: Move Aggregation Code (Future PR)
+### Phase 4: Move Aggregation Code (Future PR)
 
 - [ ] Move `ItemAggregator.kt` → `commonMain`
 - [ ] Move `AggregationPresets.kt` → `commonMain`
 - [ ] Move `AggregatedItem.kt` → `commonMain`
 - [ ] Verify no android.* imports remain
 
-***REMOVED******REMOVED******REMOVED*** Phase 5: Move Tests (Future PR)
+### Phase 5: Move Tests (Future PR)
 
 - [ ] Migrate tests to `kotlin.test` framework
 - [ ] Move tests → `commonTest`
 - [ ] Add platform-specific tests if needed
 - [ ] Verify all tests pass on JVM and Android
 
-***REMOVED******REMOVED******REMOVED*** Phase 6: Update Dependencies (Future PR)
+### Phase 6: Update Dependencies (Future PR)
 
 - [ ] Update `androidApp` to depend on `shared:core-tracking`
 - [ ] Remove references to old `core-tracking` Android library
@@ -293,9 +293,9 @@ Tests for ObjectTracker spatial matching logic.
 
 ---
 
-***REMOVED******REMOVED*** Strict Rules for commonMain
+## Strict Rules for commonMain
 
-***REMOVED******REMOVED******REMOVED*** ✅ ALLOWED
+### ✅ ALLOWED
 
 - Kotlin stdlib (`kotlin.*`)
 - Kotlin Coroutines (`kotlinx.coroutines.*`)
@@ -304,7 +304,7 @@ Tests for ObjectTracker spatial matching logic.
 - Pure Kotlin: data classes, interfaces, objects, functions
 - `expect/actual` for platform-specific implementations
 
-***REMOVED******REMOVED******REMOVED*** ❌ FORBIDDEN
+### ❌ FORBIDDEN
 
 - `android.*` - Any Android SDK classes
 - `androidx.*` - Any AndroidX library classes
@@ -312,7 +312,7 @@ Tests for ObjectTracker spatial matching logic.
 - `java.util.*` except standard collections
 - CameraX, ML Kit, Compose - Platform-specific, stays in `androidApp`
 
-***REMOVED******REMOVED******REMOVED*** expect/actual Pattern
+### expect/actual Pattern
 
 **Logger Example**:
 
@@ -343,65 +343,65 @@ class IOSLogger : Logger {
 
 ---
 
-***REMOVED******REMOVED*** Package Structure
+## Package Structure
 
 Target package structure in `commonMain`:
 
 ```
 com.scanium.core.tracking/
-├── Logger.kt                      ***REMOVED*** Platform-agnostic interface
-├── LoggerFactory.kt               ***REMOVED*** expect fun createLogger()
-├── ObjectCandidate.kt             ***REMOVED*** Candidate state
-├── ObjectTracker.kt               ***REMOVED*** Multi-frame tracker
-├── TrackerConfig.kt               ***REMOVED*** Config data class
-├── DetectionInfo.kt               ***REMOVED*** Input data
+├── Logger.kt                      # Platform-agnostic interface
+├── LoggerFactory.kt               # expect fun createLogger()
+├── ObjectCandidate.kt             # Candidate state
+├── ObjectTracker.kt               # Multi-frame tracker
+├── TrackerConfig.kt               # Config data class
+├── DetectionInfo.kt               # Input data
 └── aggregation/
-    ├── ItemAggregator.kt          ***REMOVED*** Session-level dedup
-    ├── AggregationPresets.kt      ***REMOVED*** Config presets
-    └── AggregatedItem.kt          ***REMOVED*** Merged result
+    ├── ItemAggregator.kt          # Session-level dedup
+    ├── AggregationPresets.kt      # Config presets
+    └── AggregatedItem.kt          # Merged result
 ```
 
 ---
 
-***REMOVED******REMOVED*** Dependencies
+## Dependencies
 
-***REMOVED******REMOVED******REMOVED*** This Module Depends On
+### This Module Depends On
 
 - `shared:core-models` - For ImageRef, NormalizedRect, ScannedItem, ItemCategory
 - Kotlin stdlib
 - Kotlinx Coroutines Core
 - Kotlinx Serialization JSON
 
-***REMOVED******REMOVED******REMOVED*** Modules That Will Depend On This
+### Modules That Will Depend On This
 
 - `androidApp` - Uses ObjectTracker and ItemAggregator
 - Future: `iosApp` - Will use same tracking logic
 
 ---
 
-***REMOVED******REMOVED*** Build Verification
+## Build Verification
 
-***REMOVED******REMOVED******REMOVED*** Local Build (No Android SDK required for commonMain)
+### Local Build (No Android SDK required for commonMain)
 
 ```bash
 ./gradlew :shared:core-tracking:compileKotlinCommonMain
 ./gradlew :shared:core-tracking:compileKotlinAndroidDebug
 ```
 
-***REMOVED******REMOVED******REMOVED*** Testing
+### Testing
 
 ```bash
 ./gradlew :shared:core-tracking:cleanAllTests :shared:core-tracking:allTests
 ```
 
-***REMOVED******REMOVED******REMOVED*** Dependency Verification
+### Dependency Verification
 
 ```bash
-***REMOVED*** Verify depends on shared:core-models only
+# Verify depends on shared:core-models only
 ./gradlew :shared:core-tracking:dependencies
 ```
 
-***REMOVED******REMOVED******REMOVED*** CI Pipeline
+### CI Pipeline
 
 - Verify `commonMain` builds without Android SDK
 - Run tests on JVM (commonTest)
@@ -410,9 +410,9 @@ com.scanium.core.tracking/
 
 ---
 
-***REMOVED******REMOVED*** Key Algorithms
+## Key Algorithms
 
-***REMOVED******REMOVED******REMOVED*** ObjectTracker Spatial Matching
+### ObjectTracker Spatial Matching
 
 1. **IoU (Intersection over Union)**:
     - Measures bounding box overlap (0.0 = no overlap, 1.0 = perfect match)
@@ -426,7 +426,7 @@ com.scanium.core.tracking/
     - Match if: `IoU >= threshold OR centerDistance <= threshold`
     - Prefers tracking ID from ML Kit when available
 
-***REMOVED******REMOVED******REMOVED*** ItemAggregator Similarity Scoring
+### ItemAggregator Similarity Scoring
 
 **Weighted Scoring**:
 
@@ -439,7 +439,7 @@ com.scanium.core.tracking/
 
 ---
 
-***REMOVED******REMOVED*** Timeline
+## Timeline
 
 1. **This PR**: KMP skeleton only (no code moved)
 2. **Next PR**: Implement expect/actual Logger pattern
@@ -450,7 +450,7 @@ com.scanium.core.tracking/
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - **KMP Structure**: `docs/kmp-migration/KMP_STRUCTURE.md`
 - **KMP Core Models**: `docs/kmp-migration/KMP_CORE_MODELS.md`

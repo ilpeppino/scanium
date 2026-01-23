@@ -1,4 +1,4 @@
-***REMOVED*** Grafana Dashboard Verification Report
+# Grafana Dashboard Verification Report
 
 **Date**: 2026-01-11
 **Dashboard**: Scanium - Backend Errors
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The backend-errors dashboard is now **fully functional** after fixing Grafana variable expansion
 issues. All panels that have data available are rendering correctly.
@@ -15,9 +15,9 @@ issues. All panels that have data available are rendering correctly.
 
 ---
 
-***REMOVED******REMOVED*** Verification Results
+## Verification Results
 
-***REMOVED******REMOVED******REMOVED*** 1. Dashboard Configuration ✅
+### 1. Dashboard Configuration ✅
 
 ```
 Dashboard Version: 3
@@ -29,7 +29,7 @@ Last Updated: 2026-01-11T09:44:08Z
 - `env`: allValue = `.*` (matches any environment)
 - `status_code`: allValue = `4..|5..` (matches both 4xx and 5xx)
 
-***REMOVED******REMOVED******REMOVED*** 2. Panel Data Verification ✅
+### 2. Panel Data Verification ✅
 
 All panels queried successfully via Mimir backend:
 
@@ -42,14 +42,14 @@ All panels queried successfully via Mimir backend:
 | **Top Error Routes**       | ✅ Working | 5 routes displayed    |
 | **Error Details Table**    | ✅ Working | 6 rows                |
 
-***REMOVED******REMOVED******REMOVED*** 3. Status Code Breakdown (Pie Chart)
+### 3. Status Code Breakdown (Pie Chart)
 
 ```
 404 Not Found:    47 errors
 401 Unauthorized:  9 errors
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Top Error Routes (Bar Chart)
+### 4. Top Error Routes (Bar Chart)
 
 ```
 /v1/items/missing/route  : 9 errors
@@ -59,7 +59,7 @@ All panels queried successfully via Mimir backend:
 /v1/config               : 9 errors
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Error Details Table
+### 5. Error Details Table
 
 6 rows showing breakdown by:
 
@@ -70,7 +70,7 @@ All panels queried successfully via Mimir backend:
 
 ---
 
-***REMOVED******REMOVED*** Panels Currently Showing Data ✅
+## Panels Currently Showing Data ✅
 
 The following panels are **working correctly** and displaying data:
 
@@ -84,7 +84,7 @@ The following panels are **working correctly** and displaying data:
 
 ---
 
-***REMOVED******REMOVED*** Panels Expected to be Empty ⚠️
+## Panels Expected to be Empty ⚠️
 
 These panels are **correctly showing no data** (data doesn't exist):
 
@@ -102,55 +102,55 @@ These panels are **correctly showing no data** (data doesn't exist):
 
 ---
 
-***REMOVED******REMOVED*** Technical Details
+## Technical Details
 
-***REMOVED******REMOVED******REMOVED*** Variable Expansion Before Fix
+### Variable Expansion Before Fix
 
 When `$status_code` was set to "All" (`$__all`), queries expanded to:
 
 ```promql
-status_code=~"$__all"  ***REMOVED*** ❌ Literal string, matches nothing
+status_code=~"$__all"  # ❌ Literal string, matches nothing
 ```
 
-***REMOVED******REMOVED******REMOVED*** Variable Expansion After Fix
+### Variable Expansion After Fix
 
 With `allValue: "4..|5.."` property added, queries now expand to:
 
 ```promql
-status_code=~"4..|5.."  ***REMOVED*** ✅ Regex pattern, matches 4xx and 5xx
+status_code=~"4..|5.."  # ✅ Regex pattern, matches 4xx and 5xx
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test Queries Executed
+### Test Queries Executed
 
 ```promql
-***REMOVED*** Total Errors
+# Total Errors
 sum(increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h]))
 Result: 56.6 errors
 
-***REMOVED*** 4xx Errors
+# 4xx Errors
 sum(increase(scanium_http_requests_total{status_code=~"4.."}[1h]))
 Result: 56.6 errors
 
-***REMOVED*** 5xx Errors
+# 5xx Errors
 sum(increase(scanium_http_requests_total{status_code=~"5.."}[1h]))
 Result: 0.0 errors
 
-***REMOVED*** Status Code Breakdown
+# Status Code Breakdown
 sum by (status_code) (increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h]))
 Result: 2 series (404, 401)
 
-***REMOVED*** Top Routes
+# Top Routes
 topk(5, sum by (route) (increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h])))
 Result: 5 routes
 
-***REMOVED*** Table Data
+# Table Data
 sum by (route, service_name, status_code) (increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h])) > 0
 Result: 6 series
 ```
 
 ---
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
 1. **monitoring/grafana/dashboards/backend-errors.json**
     - Added `"allValue": "4..|5.."` to `status_code` variable (line 58)
@@ -163,7 +163,7 @@ Result: 6 series
 
 ---
 
-***REMOVED******REMOVED*** Deployment Timeline
+## Deployment Timeline
 
 ```
 09:27 UTC - Generated error traffic (178 requests over 90s)
@@ -177,27 +177,27 @@ Result: 6 series
 
 ---
 
-***REMOVED******REMOVED*** Recommendations
+## Recommendations
 
-***REMOVED******REMOVED******REMOVED*** 1. Generate Periodic Test Traffic (Optional)
+### 1. Generate Periodic Test Traffic (Optional)
 
 To keep error panels "alive" with recent data for validation:
 
 ```bash
-***REMOVED*** Run from NAS every 6 hours
+# Run from NAS every 6 hours
 0 */6 * * * /volume1/docker/scanium/repo/howto/monitoring/generate-error-traffic.sh http://172.23.0.5:8080
 ```
 
 **Note**: Not recommended for production as it adds noise to metrics.
 
-***REMOVED******REMOVED******REMOVED*** 2. Create Alerting for Metric Collection Failures
+### 2. Create Alerting for Metric Collection Failures
 
 ```promql
-***REMOVED*** Alert if backend metrics haven't been scraped in 10 minutes
+# Alert if backend metrics haven't been scraped in 10 minutes
 absent_over_time(scanium_http_requests_total[10m])
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Add Dashboard Annotations
+### 3. Add Dashboard Annotations
 
 Consider adding text annotations to panels explaining:
 
@@ -207,7 +207,7 @@ Consider adding text annotations to panels explaining:
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria Met ✅
+## Success Criteria Met ✅
 
 - [x] Dashboard configuration updated with `allValue` properties
 - [x] Grafana restarted and loaded latest version
@@ -220,31 +220,31 @@ Consider adding text annotations to panels explaining:
 
 ---
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
-***REMOVED******REMOVED******REMOVED*** Check Dashboard Variables
+### Check Dashboard Variables
 
 ```bash
 curl -s "http://REDACTED_INTERNAL_IP:3000/api/dashboards/uid/scanium-backend-errors" \
   | jq '.dashboard.templating.list[] | select(.name == "status_code" or .name == "env") | {name, allValue}'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test Panel Queries Directly
+### Test Panel Queries Directly
 
 ```bash
-***REMOVED*** From NAS
+# From NAS
 MIMIR="http://127.0.0.1:9009/prometheus"
 
-***REMOVED*** Total errors
+# Total errors
 curl -s "${MIMIR}/api/v1/query?query=sum(increase(scanium_http_requests_total{status_code=~\"4..|5..\"}[1h]))"
 
-***REMOVED*** Status breakdown
+# Status breakdown
 curl -s "${MIMIR}/api/v1/query?query=sum+by+(status_code)+(increase(scanium_http_requests_total{status_code=~\"4..|5..\"}[1h]))"
 ```
 
 ---
 
-***REMOVED******REMOVED*** Conclusion
+## Conclusion
 
 ✅ **Dashboard is fully operational**
 

@@ -1,8 +1,8 @@
-***REMOVED*** Migration Map
+# Migration Map
 
 Documentation reorganization performed on 2026-01-10.
 
-***REMOVED******REMOVED*** Legend
+## Legend
 
 | Action  | Meaning                                      |
 |---------|----------------------------------------------|
@@ -14,7 +14,7 @@ Documentation reorganization performed on 2026-01-10.
 
 ---
 
-***REMOVED******REMOVED*** Root Level Files
+## Root Level Files
 
 | Old Path                           | New Path                                               | Action |
 |------------------------------------|--------------------------------------------------------|--------|
@@ -26,7 +26,7 @@ Documentation reorganization performed on 2026-01-10.
 
 ---
 
-***REMOVED******REMOVED*** backend/docs/ → howto/backend/
+## backend/docs/ → howto/backend/
 
 | Old Path                                         | New Path                                                    | Action |
 |--------------------------------------------------|-------------------------------------------------------------|--------|
@@ -40,9 +40,9 @@ Documentation reorganization performed on 2026-01-10.
 
 ---
 
-***REMOVED******REMOVED*** docs/ → Various howto/ locations
+## docs/ → Various howto/ locations
 
-***REMOVED******REMOVED******REMOVED*** App-related docs → howto/app/
+### App-related docs → howto/app/
 
 | Old Path                                     | New Path                                                    | Action |
 |----------------------------------------------|-------------------------------------------------------------|--------|
@@ -72,7 +72,7 @@ Documentation reorganization performed on 2026-01-10.
 | `docs/LOCALIZATION_PLAN.md`                  | `howto/app/reference/LOCALIZATION_PLAN.md`                  | MOVE   |
 | `docs/WIP_scan_enrichment_flow.md`           | `howto/app/reference/WIP_scan_enrichment_flow.md`           | MOVE   |
 
-***REMOVED******REMOVED******REMOVED*** Backend-related docs → howto/backend/
+### Backend-related docs → howto/backend/
 
 | Old Path                                                       | New Path                                                   | Action |
 |----------------------------------------------------------------|------------------------------------------------------------|--------|
@@ -90,7 +90,7 @@ Documentation reorganization performed on 2026-01-10.
 | `docs/RUNBOOK_REAL_LIFE_SCAN_TESTS.md`                         | `howto/backend/runbooks/RUNBOOK_REAL_LIFE_SCAN_TESTS.md`   | MOVE   |
 | `docs/timeout-policy-verification.md`                          | `howto/backend/reference/timeout-policy-verification.md`   | MOVE   |
 
-***REMOVED******REMOVED******REMOVED*** docs/assistant/ → howto/backend/reference/assistant/
+### docs/assistant/ → howto/backend/reference/assistant/
 
 | Old Path                                       | New Path                                                          | Action |
 |------------------------------------------------|-------------------------------------------------------------------|--------|
@@ -101,7 +101,7 @@ Documentation reorganization performed on 2026-01-10.
 | `docs/assistant/PREFLIGHT_IMPLEMENTATION.md`   | `howto/backend/reference/assistant/PREFLIGHT_IMPLEMENTATION.md`   | MOVE   |
 | `docs/assistant/VISION_INSIGHTS.md`            | `howto/backend/reference/assistant/VISION_INSIGHTS.md`            | MOVE   |
 
-***REMOVED******REMOVED******REMOVED*** Monitoring-related docs → howto/monitoring/
+### Monitoring-related docs → howto/monitoring/
 
 | Old Path                                    | New Path                                                          | Action |
 |---------------------------------------------|-------------------------------------------------------------------|--------|
@@ -112,7 +112,7 @@ Documentation reorganization performed on 2026-01-10.
 | `docs/telemetry/FACADE.md`                  | `howto/monitoring/reference/telemetry/FACADE.md`                  | MOVE   |
 | `docs/telemetry/MOBILE_TELEMETRY_SCHEMA.md` | `howto/monitoring/reference/telemetry/MOBILE_TELEMETRY_SCHEMA.md` | MOVE   |
 
-***REMOVED******REMOVED******REMOVED*** Infrastructure/Ops docs → howto/infra/
+### Infrastructure/Ops docs → howto/infra/
 
 | Old Path                                        | New Path                                                    | Action |
 |-------------------------------------------------|-------------------------------------------------------------|--------|
@@ -125,7 +125,7 @@ Documentation reorganization performed on 2026-01-10.
 | `docs/ops/STARTUP_CRASH_RC.md`                  | `howto/infra/incidents/STARTUP_CRASH_RC.md`                 | MOVE   |
 | `docs/SECURITY.md`                              | `howto/infra/security/SECURITY.md`                          | MOVE   |
 
-***REMOVED******REMOVED******REMOVED*** Project/Architecture docs → howto/project/
+### Project/Architecture docs → howto/project/
 
 | Old Path                             | New Path                                              | Action |
 |--------------------------------------|-------------------------------------------------------|--------|
@@ -146,7 +146,7 @@ Documentation reorganization performed on 2026-01-10.
 
 ---
 
-***REMOVED******REMOVED*** monitoring/ → howto/monitoring/
+## monitoring/ → howto/monitoring/
 
 | Old Path                                                                      | New Path                                                                 | Action |
 |-------------------------------------------------------------------------------|--------------------------------------------------------------------------|--------|
@@ -172,7 +172,7 @@ Documentation reorganization performed on 2026-01-10.
 
 ---
 
-***REMOVED******REMOVED*** deploy/ → howto/infra/
+## deploy/ → howto/infra/
 
 | Old Path                       | New Path                                   | Action |
 |--------------------------------|--------------------------------------------|--------|
@@ -181,7 +181,7 @@ Documentation reorganization performed on 2026-01-10.
 
 ---
 
-***REMOVED******REMOVED*** Other scattered docs
+## Other scattered docs
 
 | Old Path                                                     | New Path                                                     | Action            |
 |--------------------------------------------------------------|--------------------------------------------------------------|-------------------|
@@ -195,7 +195,7 @@ Documentation reorganization performed on 2026-01-10.
 
 ---
 
-***REMOVED******REMOVED*** Archived docs (docs/_archive/2025-12/)
+## Archived docs (docs/_archive/2025-12/)
 
 All files under `docs/_archive/2025-12/` → `howto/archive/2025-12/`
 
@@ -203,9 +203,9 @@ These files are already marked as archived and will be moved in bulk.
 
 ---
 
-***REMOVED******REMOVED*** Operational Scripts
+## Operational Scripts
 
-***REMOVED******REMOVED******REMOVED*** Monitoring scripts → howto/monitoring/scripts/
+### Monitoring scripts → howto/monitoring/scripts/
 
 | Old Path                                         | New Path                                              | Action    |
 |--------------------------------------------------|-------------------------------------------------------|-----------|
@@ -219,7 +219,7 @@ These files are already marked as archived and will be moved in bulk.
 | `scripts/monitoring/rollback-monitoring-nas.sh`  | `howto/monitoring/scripts/rollback-monitoring-nas.sh` | MOVE+STUB |
 | `scripts/monitoring/verify-monitoring.sh`        | `howto/monitoring/scripts/verify-monitoring.sh`       | MOVE+STUB |
 
-***REMOVED******REMOVED******REMOVED*** Infrastructure scripts → howto/infra/scripts/
+### Infrastructure scripts → howto/infra/scripts/
 
 | Old Path                                | New Path                                        | Action    |
 |-----------------------------------------|-------------------------------------------------|-----------|
@@ -233,7 +233,7 @@ These files are already marked as archived and will be moved in bulk.
 | `scripts/app/deploy-backend-nas.sh`     | `howto/infra/scripts/deploy-backend-nas.sh`     | MOVE+STUB |
 | `scripts/app/rollback-backend-nas.sh`   | `howto/infra/scripts/rollback-backend-nas.sh`   | MOVE+STUB |
 
-***REMOVED******REMOVED******REMOVED*** Backend scripts → howto/backend/scripts/
+### Backend scripts → howto/backend/scripts/
 
 | Old Path                          | New Path                                | Action    |
 |-----------------------------------|-----------------------------------------|-----------|
@@ -242,7 +242,7 @@ These files are already marked as archived and will be moved in bulk.
 | `scripts/backend/stop-dev.sh`     | `howto/backend/scripts/stop-dev.sh`     | MOVE+STUB |
 | `scripts/backend/verify-setup.sh` | `howto/backend/scripts/verify-setup.sh` | MOVE+STUB |
 
-***REMOVED******REMOVED******REMOVED*** App scripts → howto/app/scripts/
+### App scripts → howto/app/scripts/
 
 | Old Path                                        | New Path                                             | Action    |
 |-------------------------------------------------|------------------------------------------------------|-----------|
@@ -257,7 +257,7 @@ These files are already marked as archived and will be moved in bulk.
 | `scripts/dev/capture_startup_crash.sh`          | `howto/app/scripts/capture_startup_crash.sh`         | MOVE+STUB |
 | `scripts/dev/test_ml_kit_detection.sh`          | `howto/app/scripts/test_ml_kit_detection.sh`         | MOVE+STUB |
 
-***REMOVED******REMOVED******REMOVED*** Project/CI scripts → howto/project/scripts/
+### Project/CI scripts → howto/project/scripts/
 
 | Old Path                                | New Path                                              | Action    |
 |-----------------------------------------|-------------------------------------------------------|-----------|
@@ -277,7 +277,7 @@ These files are already marked as archived and will be moved in bulk.
 | `scripts/lib/common.sh`                 | `howto/project/scripts/lib/common.sh`                 | MOVE+STUB |
 | `scripts/tools/create-github-issues.sh` | `howto/project/scripts/tools/create-github-issues.sh` | MOVE+STUB |
 
-***REMOVED******REMOVED******REMOVED*** Archived scripts
+### Archived scripts
 
 | Old Path                                                | New Path                                                | Action |
 |---------------------------------------------------------|---------------------------------------------------------|--------|
@@ -287,7 +287,7 @@ These files are already marked as archived and will be moved in bulk.
 
 ---
 
-***REMOVED******REMOVED*** Files to KEEP in place
+## Files to KEEP in place
 
 These files stay in their original locations (code-level documentation):
 
@@ -300,7 +300,7 @@ These files stay in their original locations (code-level documentation):
 
 ---
 
-***REMOVED******REMOVED*** Summary Statistics
+## Summary Statistics
 
 - **Total MD files inventoried**: 228
 - **Files to MOVE**: ~190

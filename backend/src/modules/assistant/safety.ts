@@ -406,7 +406,7 @@ function sanitizeHtml(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&***REMOVED***39;');
+    .replace(/'/g, '&#39;');
 }
 
 /**

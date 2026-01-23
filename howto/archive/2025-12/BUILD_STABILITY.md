@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Build Stability Rules and Guardrails
+# Build Stability Rules and Guardrails
 
 **Status:** Phase 4 - Build Stability + iOS Prep
 **Last Updated:** 2025-12-18
@@ -8,22 +8,22 @@
 
 ---
 
-***REMOVED******REMOVED*** Build Configuration Standards
+## Build Configuration Standards
 
-***REMOVED******REMOVED******REMOVED*** Java Toolchain: Java 17 (LTS)
+### Java Toolchain: Java 17 (LTS)
 
 **Requirement:** All Kotlin modules MUST use Java 17 toolchain.
 
 **Verification:**
 
 ```bash
-***REMOVED*** Check Java version
+# Check Java version
 java -version
-***REMOVED*** Should show: openjdk version "17.x.x"
+# Should show: openjdk version "17.x.x"
 
-***REMOVED*** Verify Gradle uses Java 17
+# Verify Gradle uses Java 17
 ./gradlew -version
-***REMOVED*** Should show: JVM: 17.x.x
+# Should show: JVM: 17.x.x
 ```
 
 **Configuration (enforced):**
@@ -51,7 +51,7 @@ android {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Version Lock Table
+### Version Lock Table
 
 **Critical:** These versions MUST remain in sync across all modules.
 
@@ -74,9 +74,9 @@ android {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Gradle Plugin Stability Rules
+### Gradle Plugin Stability Rules
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Approved Plugins (Stable)
+#### ✅ Approved Plugins (Stable)
 
 ```kotlin
 // build.gradle.kts (root)
@@ -96,7 +96,7 @@ plugins {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ❌ Forbidden Plugins (Experimental/Unstable)
+#### ❌ Forbidden Plugins (Experimental/Unstable)
 
 - ❌ `kotlin("plugin.parcelize")` - Use kotlinx.serialization instead
 - ❌ Experimental Compose plugins (alpha/beta versions)
@@ -107,9 +107,9 @@ plugins {
 
 ---
 
-***REMOVED******REMOVED*** Build Guardrails (Enforced)
+## Build Guardrails (Enforced)
 
-***REMOVED******REMOVED******REMOVED*** 1. Module Dependency Guard
+### 1. Module Dependency Guard
 
 **Rule:** No module can depend on `:androidApp` (prevents circular dependencies)
 
@@ -137,7 +137,7 @@ blocks.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Portable Modules Check
+### 2. Portable Modules Check
 
 **Rule:** `core-models` and `core-tracking` must have NO Android imports
 
@@ -209,7 +209,7 @@ tasks.named("check") {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Build Reproducibility
+### 3. Build Reproducibility
 
 **Rule:** Builds must be reproducible (same inputs → same outputs)
 
@@ -223,23 +223,23 @@ tasks.named("check") {
 **Verification:**
 
 ```bash
-***REMOVED*** Build twice, compare APKs
+# Build twice, compare APKs
 ./gradlew clean assembleDebug
 cp androidApp/build/outputs/apk/debug/androidApp-debug.apk build1.apk
 
 ./gradlew clean assembleDebug
 cp androidApp/build/outputs/apk/debug/androidApp-debug.apk build2.apk
 
-***REMOVED*** Should be byte-identical (excluding signatures)
+# Should be byte-identical (excluding signatures)
 diff <(unzip -p build1.apk classes.dex | md5) \
      <(unzip -p build2.apk classes.dex | md5)
 ```
 
 ---
 
-***REMOVED******REMOVED*** Build Verification Commands
+## Build Verification Commands
 
-***REMOVED******REMOVED******REMOVED*** Environment Requirements
+### Environment Requirements
 
 **⚠️ Container/Docker Limitation:**
 Commands marked with 🏗️ require the **Android SDK** and will **fail in container environments** (
@@ -252,41 +252,41 @@ See `hooks/README.md` for JVM-only pre-push validation setup.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Essential Checks (Must Pass)
+### Essential Checks (Must Pass)
 
 ```bash
-***REMOVED*** 1. Clean build 🏗️ (requires Android SDK)
+# 1. Clean build 🏗️ (requires Android SDK)
 ./gradlew clean assembleDebug
-***REMOVED*** ✅ Must complete without errors
-***REMOVED*** ⚠️ Container: Use GitHub Actions artifact instead (see docs/DEV_GUIDE.md)
+# ✅ Must complete without errors
+# ⚠️ Container: Use GitHub Actions artifact instead (see docs/DEV_GUIDE.md)
 
-***REMOVED*** 2. Unit tests 🏗️ (requires Android SDK for androidApp module)
+# 2. Unit tests 🏗️ (requires Android SDK for androidApp module)
 ./gradlew test
-***REMOVED*** ✅ All tests must pass (no ignored tests on main branch)
-***REMOVED*** ✅ Container-friendly alternative: ./gradlew prePushJvmCheck (shared modules only)
+# ✅ All tests must pass (no ignored tests on main branch)
+# ✅ Container-friendly alternative: ./gradlew prePushJvmCheck (shared modules only)
 
-***REMOVED*** 3. Portability checks ✅ (container-friendly)
+# 3. Portability checks ✅ (container-friendly)
 ./gradlew checkPortableModules checkDomainPackage
-***REMOVED*** ✅ No Android imports in portable code
-***REMOVED*** ✅ Works in containers (no Android SDK required)
+# ✅ No Android imports in portable code
+# ✅ Works in containers (no Android SDK required)
 
-***REMOVED*** 4. Lint checks 🏗️ (requires Android SDK)
+# 4. Lint checks 🏗️ (requires Android SDK)
 ./gradlew lint
-***REMOVED*** ⚠️ Warnings allowed, but no critical/fatal errors
-***REMOVED*** ⚠️ Container: Skip or run in CI
+# ⚠️ Warnings allowed, but no critical/fatal errors
+# ⚠️ Container: Skip or run in CI
 
-***REMOVED*** 5. Security scans (slow, run in CI) ✅ (container-friendly)
+# 5. Security scans (slow, run in CI) ✅ (container-friendly)
 ./gradlew dependencyCheckAnalyze
-***REMOVED*** ⚠️ May report vulnerabilities, review and accept/fix
+# ⚠️ May report vulnerabilities, review and accept/fix
 ```
 
-***REMOVED******REMOVED******REMOVED*** Full Verification Suite
+### Full Verification Suite
 
 **🏗️ Requires Android SDK** (run on workstation or CI, not in containers):
 
 ```bash
-***REMOVED***!/bin/bash
-***REMOVED*** scripts/verify-build.sh
+#!/bin/bash
+# scripts/verify-build.sh
 
 set -e
 
@@ -330,9 +330,9 @@ chmod +x scripts/verify-build.sh
 
 ---
 
-***REMOVED******REMOVED*** Testing Strategy
+## Testing Strategy
 
-***REMOVED******REMOVED******REMOVED*** Philosophy: Tests Must Not Block Builds
+### Philosophy: Tests Must Not Block Builds
 
 **Core Principle:** Tests validate correctness but must not prevent developers from building and
 running the app locally or in CI.
@@ -346,9 +346,9 @@ running the app locally or in CI.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test Types and Scope
+### Test Types and Scope
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. JVM Unit Tests (Primary Testing Layer)
+#### 1. JVM Unit Tests (Primary Testing Layer)
 
 **What:** Pure Kotlin logic tests running on JVM (no Android emulator/device needed)
 
@@ -404,7 +404,7 @@ class MockClassifierTest {
 
 ```bash
 ./gradlew test
-***REMOVED*** Or specific module:
+# Or specific module:
 ./gradlew :androidApp:testDebugUnitTest
 ```
 
@@ -417,7 +417,7 @@ class MockClassifierTest {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Instrumented Tests (Optional, Not Required for CI)
+#### 2. Instrumented Tests (Optional, Not Required for CI)
 
 **What:** Tests running on Android emulator or physical device
 
@@ -437,7 +437,7 @@ androidApp/src/androidTest/java/com/scanium/
 **Run:**
 
 ```bash
-***REMOVED*** Requires emulator or connected device
+# Requires emulator or connected device
 ./gradlew connectedAndroidTest
 ```
 
@@ -456,9 +456,9 @@ androidApp/src/androidTest/java/com/scanium/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Mock Implementations for Offline Builds
+### Mock Implementations for Offline Builds
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** NoopClassifier (Always Available)
+#### NoopClassifier (Always Available)
 
 **Purpose:** Fallback classifier that always returns UNKNOWN category
 
@@ -511,7 +511,7 @@ class NoopClassifier : ItemClassifier {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** MockClassifier (Deterministic Test Results)
+#### MockClassifier (Deterministic Test Results)
 
 **Purpose:** Returns predictable results based on hints for testing
 
@@ -590,7 +590,7 @@ class MockClassifier : ItemClassifier {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** InMemoryCategoryEngine (Portable Test Data)
+#### InMemoryCategoryEngine (Portable Test Data)
 
 **Purpose:** Test category mapping without domain pack files
 
@@ -651,7 +651,7 @@ class InMemoryCategoryEngine : CategoryEngine {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Test Configuration in Gradle
+### Test Configuration in Gradle
 
 **Keep tests decoupled from build:**
 
@@ -695,44 +695,44 @@ dependencies {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Running Tests Locally
+### Running Tests Locally
 
 **Essential (fast, run frequently):**
 
 ```bash
-***REMOVED*** Unit tests only (< 30 seconds)
+# Unit tests only (< 30 seconds)
 ./gradlew test
 
-***REMOVED*** With portable checks
+# With portable checks
 ./gradlew test checkPortableModules checkDomainPackage
 ```
 
 **Optional (slow, run before release):**
 
 ```bash
-***REMOVED*** Instrumented tests (requires emulator, 5-10 minutes)
+# Instrumented tests (requires emulator, 5-10 minutes)
 ./gradlew connectedAndroidTest
 
-***REMOVED*** Full verification suite
+# Full verification suite
 ./scripts/verify-build.sh
 ```
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** CI Test Strategy
+### CI Test Strategy
 
 **On every PR (fast checks):**
 
 ```yaml
-***REMOVED*** .github/workflows/pr-check.yml
-***REMOVED*** Note: CI runners have Android SDK, so full test suite works
+# .github/workflows/pr-check.yml
+# Note: CI runners have Android SDK, so full test suite works
 - name: Run unit tests
   run: ./gradlew test --no-daemon
 
 - name: Check portability
   run: ./gradlew checkPortableModules checkDomainPackage
 
-***REMOVED*** Upload test reports if failed
+# Upload test reports if failed
 - name: Upload test results
   if: failure()
   uses: actions/upload-artifact@v3
@@ -746,17 +746,17 @@ dependencies {
 **Container environments (JVM-only validation):**
 
 ```bash
-***REMOVED*** For developers in Claude Code or Docker without Android SDK
+# For developers in Claude Code or Docker without Android SDK
 ./gradlew prePushJvmCheck
 
-***REMOVED*** Or install git pre-push hook (see hooks/README.md)
+# Or install git pre-push hook (see hooks/README.md)
 ./hooks/install-hooks.sh
 ```
 
 **Nightly (comprehensive checks):**
 
 ```yaml
-***REMOVED*** .github/workflows/nightly.yml
+# .github/workflows/nightly.yml
 - name: Run instrumented tests
   uses: reactivecircus/android-emulator-runner@v2
   with:
@@ -769,7 +769,7 @@ dependencies {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Success Metrics
+### Success Metrics
 
 **Unit Test Coverage Goals:**
 
@@ -788,14 +788,14 @@ dependencies {
 
 ```bash
 ./gradlew testDebugUnitTestCoverage
-***REMOVED*** Report: androidApp/build/reports/coverage/test/debug/index.html
+# Report: androidApp/build/reports/coverage/test/debug/index.html
 ```
 
 ---
 
-***REMOVED******REMOVED*** CI/CD Requirements
+## CI/CD Requirements
 
-***REMOVED******REMOVED******REMOVED*** GitHub Actions Workflow
+### GitHub Actions Workflow
 
 **Minimum checks on every PR:**
 
@@ -851,7 +851,7 @@ name: Security Scan
 
 on:
   schedule:
-    - cron: '0 2 * * 1'  ***REMOVED*** Monday 2 AM UTC
+    - cron: '0 2 * * 1'  # Monday 2 AM UTC
   workflow_dispatch:
 
 jobs:
@@ -876,9 +876,9 @@ jobs:
 
 ---
 
-***REMOVED******REMOVED*** Dependency Management
+## Dependency Management
 
-***REMOVED******REMOVED******REMOVED*** Version Catalog (Recommended)
+### Version Catalog (Recommended)
 
 **Create `gradle/libs.versions.toml`:**
 
@@ -926,9 +926,9 @@ dependencies {
 
 ---
 
-***REMOVED******REMOVED*** Build Performance Optimization
+## Build Performance Optimization
 
-***REMOVED******REMOVED******REMOVED*** 1. Gradle Daemon
+### 1. Gradle Daemon
 
 **Enable in `gradle.properties`:**
 
@@ -939,7 +939,7 @@ org.gradle.caching=true
 org.gradle.configureondemand=true
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Build Cache
+### 2. Build Cache
 
 **Local cache (developer machines):**
 
@@ -950,13 +950,13 @@ org.gradle.caching=true
 **Remote cache (CI, optional):**
 
 ```properties
-***REMOVED*** gradle.properties (CI only)
+# gradle.properties (CI only)
 org.gradle.caching=true
 org.gradle.cache.remote.url=https://your-build-cache.com
 org.gradle.cache.remote.push=true
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Kotlin Incremental Compilation
+### 3. Kotlin Incremental Compilation
 
 **Enabled by default in Kotlin 2.0**
 
@@ -967,7 +967,7 @@ kotlin.incremental=true
 kotlin.incremental.java=true
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Compose Compiler Metrics (Debug only)
+### 4. Compose Compiler Metrics (Debug only)
 
 ```kotlin
 // androidApp/build.gradle.kts
@@ -989,53 +989,53 @@ kotlin {
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting Build Issues
+## Troubleshooting Build Issues
 
-***REMOVED******REMOVED******REMOVED*** Common Problems
+### Common Problems
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. "Compilation error: Argument type mismatch"
+#### 1. "Compilation error: Argument type mismatch"
 
 **Cause:** Kotlin/Java version mismatch
 **Fix:**
 
 ```bash
-***REMOVED*** Verify Java 17
+# Verify Java 17
 java -version
 
-***REMOVED*** Update toolchain in build.gradle.kts
+# Update toolchain in build.gradle.kts
 kotlin {
     jvmToolchain(17)
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. "Android resource linking failed"
+#### 2. "Android resource linking failed"
 
 **Cause:** Resource conflicts or missing resources
 **Fix:**
 
 ```bash
-***REMOVED*** Clean and rebuild
+# Clean and rebuild
 ./gradlew clean assembleDebug
 
-***REMOVED*** Check for duplicate resources
+# Check for duplicate resources
 find androidApp/src/main/res -type f -name "*.xml" | sort | uniq -d
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. "Execution failed for task ':checkPortableModules'"
+#### 3. "Execution failed for task ':checkPortableModules'"
 
 **Cause:** Android imports in portable code
 **Fix:**
 
 ```bash
-***REMOVED*** Find violations
+# Find violations
 grep -r "import android" core-models/ core-tracking/
 
-***REMOVED*** Replace with KMP-compatible types
-***REMOVED*** android.graphics.Bitmap → ImageRef
-***REMOVED*** android.util.Log → Logger interface
+# Replace with KMP-compatible types
+# android.graphics.Bitmap → ImageRef
+# android.util.Log → Logger interface
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. "KSP: Symbol processing failed"
+#### 4. "KSP: Symbol processing failed"
 
 **Cause:** KSP version incompatible with Kotlin version
 **Fix:**
@@ -1048,9 +1048,9 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 
 ---
 
-***REMOVED******REMOVED*** Build Failure Policy
+## Build Failure Policy
 
-***REMOVED******REMOVED******REMOVED*** On Main Branch
+### On Main Branch
 
 **Zero tolerance:** Main branch must ALWAYS build successfully.
 
@@ -1067,7 +1067,7 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 - "Will fix later" (fix immediately or revert)
 - Ignoring failing tests (fix or remove test)
 
-***REMOVED******REMOVED******REMOVED*** On Feature Branches
+### On Feature Branches
 
 **Pre-merge requirements:**
 
@@ -1082,7 +1082,7 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 
 ---
 
-***REMOVED******REMOVED*** Build Time Targets
+## Build Time Targets
 
 **Goals (measured on CI):**
 
@@ -1107,9 +1107,9 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 
 ---
 
-***REMOVED******REMOVED*** Version Bump Policy
+## Version Bump Policy
 
-***REMOVED******REMOVED******REMOVED*** Patch Updates (Auto-approve)
+### Patch Updates (Auto-approve)
 
 **Safe to update without review:**
 
@@ -1123,7 +1123,7 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 - Check release notes for breaking changes
 - Update version lock table in this document
 
-***REMOVED******REMOVED******REMOVED*** Minor Updates (Review required)
+### Minor Updates (Review required)
 
 **Require ADR or review:**
 
@@ -1138,7 +1138,7 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 - Update documentation
 - Run full test suite
 
-***REMOVED******REMOVED******REMOVED*** Major Updates (ADR required)
+### Major Updates (ADR required)
 
 **Must create ADR:**
 
@@ -1156,9 +1156,9 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
-***REMOVED******REMOVED******REMOVED*** Phase 4 Complete When:
+### Phase 4 Complete When:
 
 - [x] Java 17 toolchain verified
 - [x] Version lock table documented
@@ -1168,7 +1168,7 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 - [ ] Build time targets measured
 - [ ] iOS readiness documented (next section)
 
-***REMOVED******REMOVED******REMOVED*** Ongoing:
+### Ongoing:
 
 - Monitor build times weekly
 - Review dependency updates monthly
@@ -1177,7 +1177,7 @@ id("com.google.devtools.ksp") version "2.0.0-1.0.24"
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - [Gradle Build Performance](https://docs.gradle.org/current/userguide/performance.html)
 - [Android Gradle Plugin Release Notes](https://developer.android.com/build/releases/gradle-plugin)

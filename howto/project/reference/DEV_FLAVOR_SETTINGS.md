@@ -1,12 +1,12 @@
-***REMOVED*** DEV Flavor Settings
+# DEV Flavor Settings
 
 This document describes DEV-flavor-specific settings and UI changes.
 
-***REMOVED******REMOVED*** Developer Mode (Forced ON)
+## Developer Mode (Forced ON)
 
 In DEV builds, Developer Mode is **always enabled** and cannot be disabled by the user.
 
-***REMOVED******REMOVED******REMOVED*** Behavior
+### Behavior
 
 | Flavor | Developer Mode | Toggle in UI | `developerModeFlow` | `setDeveloperMode()` |
 |--------|----------------|--------------|---------------------|----------------------|
@@ -14,14 +14,14 @@ In DEV builds, Developer Mode is **always enabled** and cannot be disabled by th
 | BETA   | Always OFF     | Not shown    | Always `false`      | No-op (ignored)      |
 | PROD   | Always OFF     | Not shown    | Always `false`      | No-op (ignored)      |
 
-***REMOVED******REMOVED******REMOVED*** Why?
+### Why?
 
 1. **Consistency**: Developers always have access to debug features without having to remember to
    enable them
 2. **Determinism**: DEV builds behave identically for all developers
 3. **Simplicity**: One less toggle to manage during development
 
-***REMOVED******REMOVED******REMOVED*** UI Changes
+### UI Changes
 
 In the Developer Options screen:
 
@@ -29,7 +29,7 @@ In the Developer Options screen:
 - **After**: A static row showing "Developer Mode" with subtitle "Always enabled in DEV builds" (
   highlighted in primary color)
 
-***REMOVED******REMOVED******REMOVED*** Implementation
+### Implementation
 
 See `SettingsRepository.kt`:
 
@@ -58,30 +58,30 @@ suspend fun setDeveloperMode(enabled: Boolean) {
 }
 ```
 
-***REMOVED******REMOVED*** Diagnostics & Checks Description
+## Diagnostics & Checks Description
 
 In DEV builds, an informational card is shown at the top of the Developer Options screen.
 
-***REMOVED******REMOVED******REMOVED*** Purpose
+### Purpose
 
 Helps developers understand what the diagnostics sections (System Health, Assistant Diagnostics,
 Preflight Health Check, Background Health Monitor) are for.
 
-***REMOVED******REMOVED******REMOVED*** Text
+### Text
 
 > **Diagnostics & Checks**
 >
 > Diagnostics & checks help verify connectivity to your backend services (health, config, preflight,
 > assistant) and alert you when something breaks. Use them while testing to quickly spot disruptions.
 
-***REMOVED******REMOVED******REMOVED*** UI
+### UI
 
 - Shows as a rounded card with primary container background
 - Info icon on the left
 - Title in bold, description in secondary text
 - Only visible in DEV builds (`FeatureFlags.isDevBuild == true`)
 
-***REMOVED******REMOVED******REMOVED*** Implementation
+### Implementation
 
 See `DeveloperOptionsScreen.kt`:
 
@@ -98,9 +98,9 @@ private fun DiagnosticsDescriptionCard() {
 }
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 See `DeveloperModeSettingsTest.kt` for comprehensive tests covering:
 
@@ -109,7 +109,7 @@ See `DeveloperModeSettingsTest.kt` for comprehensive tests covering:
 - BETA/PROD always returns `false`
 - Truth table for all combinations
 
-***REMOVED******REMOVED******REMOVED*** Manual Verification
+### Manual Verification
 
 **DEV build:**
 
@@ -121,7 +121,7 @@ See `DeveloperModeSettingsTest.kt` for comprehensive tests covering:
 
 1. Verify Developer Options is not accessible (no entry in Settings)
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - [FLAVOR_GATING.md](../FLAVOR_GATING.md) - Overall flavor feature gating
 - [DEV_HEALTH_MONITOR.md](DEV_HEALTH_MONITOR.md) - Background health monitoring

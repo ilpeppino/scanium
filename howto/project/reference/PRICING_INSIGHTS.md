@@ -1,18 +1,18 @@
-***REMOVED*** Pricing Insights Feature
+# Pricing Insights Feature
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Pricing Insights feature uses OpenAI's chat completion API to search the web for comparable
 marketplace listings and compute price ranges for items.
 
-***REMOVED******REMOVED*** How It Works
+## How It Works
 
 1. **User Trigger**: Only runs when user taps the AI assistant button on Edit Item screen
 2. **Request Flag**: Client must set `includePricing: true` and provide `pricingPrefs`
 3. **Web Search**: Uses OpenAI to search marketplace domains for comparable listings
 4. **Response**: Returns up to 5 results with prices, URLs, and computed price range
 
-***REMOVED******REMOVED*** Request Format
+## Request Format
 
 ```json
 POST /v1/assist/chat
@@ -28,7 +28,7 @@ POST /v1/assist/chat
 }
 ```
 
-***REMOVED******REMOVED*** Response Format
+## Response Format
 
 When `includePricing: true`, the response includes optional `pricingInsights`:
 
@@ -68,7 +68,7 @@ When `includePricing: true`, the response includes optional `pricingInsights`:
 }
 ```
 
-***REMOVED******REMOVED*** Status Codes
+## Status Codes
 
 - `OK` - Successfully retrieved pricing data
 - `NOT_SUPPORTED` - Web search not available
@@ -77,7 +77,7 @@ When `includePricing: true`, the response includes optional `pricingInsights`:
 - `TIMEOUT` - Request timed out
 - `NO_RESULTS` - No comparable listings found
 
-***REMOVED******REMOVED*** Error Codes
+## Error Codes
 
 When status is not `OK`, `errorCode` provides details:
 
@@ -88,53 +88,53 @@ When status is not `OK`, `errorCode` provides details:
 - `TIMEOUT` - Request exceeded timeout
 - `RATE_LIMITED` - OpenAI rate limited
 
-***REMOVED******REMOVED*** Caching
+## Caching
 
 - **Key**: Hash of item attributes + pricing preferences
 - **TTL**: 24 hours (configurable via `PRICING_CACHE_TTL_SECONDS`)
 - **Eviction**: Automatic cleanup every 5 minutes
 - **Cache hits**: Return cached results immediately
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
 Environment variables:
 
 ```bash
-***REMOVED*** Enable pricing feature
+# Enable pricing feature
 PRICING_ENABLED=true
 
-***REMOVED*** Timeout for pricing lookup (ms)
+# Timeout for pricing lookup (ms)
 PRICING_TIMEOUT_MS=6000
 
-***REMOVED*** Cache TTL (seconds, default 24h)
+# Cache TTL (seconds, default 24h)
 PRICING_CACHE_TTL_SECONDS=86400
 
-***REMOVED*** Path to marketplaces catalog
+# Path to marketplaces catalog
 PRICING_CATALOG_PATH=config/marketplaces/marketplaces.eu.json
 ```
 
-***REMOVED******REMOVED*** Failure Modes
+## Failure Modes
 
-***REMOVED******REMOVED******REMOVED*** Graceful Degradation
+### Graceful Degradation
 
 - If pricing fails, assistant text generation still succeeds
 - Timeout budget separate from assistant timeout
 - Never blocks main response with 200 status
 
-***REMOVED******REMOVED******REMOVED*** Error Handling
+### Error Handling
 
 1. **Provider Unavailable**: Returns `status: 'ERROR'`, `errorCode: 'NO_TOOLING'`
 2. **Timeout**: Returns `status: 'TIMEOUT'`, `errorCode: 'TIMEOUT'`
 3. **No Results**: Returns `status: 'NO_RESULTS'`, `errorCode: 'NO_RESULTS'`
 4. **Rate Limited**: Returns `status: 'ERROR'`, `errorCode: 'RATE_LIMITED'`
 
-***REMOVED******REMOVED******REMOVED*** Logging
+### Logging
 
 - **No Secrets**: Query summaries exclude personal data
 - **Metrics**: `recordPricingRequest(status, country, latency, errorCode)`
 - **Cache Stats**: Available via `pricingService.getCacheStats()`
 
-***REMOVED******REMOVED*** Cost Control
+## Cost Control
 
 - **On-Demand Only**: No automatic triggers during scan/typing
 - **Domain Limiting**: Max 5 marketplace domains per request
@@ -142,7 +142,7 @@ PRICING_CATALOG_PATH=config/marketplaces/marketplaces.eu.json
 - **Caching**: 24-hour cache reduces repeated lookups
 - **Timeouts**: Hard 6-second limit (configurable)
 
-***REMOVED******REMOVED*** OpenAI Model
+## OpenAI Model
 
 - Uses same OpenAI credentials as assistant (`OPENAI_API_KEY`)
 - Model: Same as assistant model (e.g., `gpt-4o-mini`)
@@ -154,7 +154,7 @@ PRICING_CATALOG_PATH=config/marketplaces/marketplaces.eu.json
   ChatGPT). The code includes placeholders for `tools: [{ type: 'web_search' }]` for future
   integration.
 
-***REMOVED******REMOVED*** Security
+## Security
 
 - **Input Sanitization**: Item attributes filtered for PII
 - **URL Validation**: Only https:// URLs accepted
@@ -162,31 +162,31 @@ PRICING_CATALOG_PATH=config/marketplaces/marketplaces.eu.json
 - **Domain Whitelisting**: Only catalog domains searched
 - **No User Data**: Logs exclude item descriptions
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 ```bash
 npm test src/modules/pricing/service.test.ts
 ```
 
-***REMOVED******REMOVED******REMOVED*** Integration Tests
+### Integration Tests
 
 ```bash
 npm test src/modules/assistant/routes.e2e.test.ts
 ```
 
-***REMOVED******REMOVED******REMOVED*** Manual Testing
+### Manual Testing
 
 ```bash
-***REMOVED*** Without pricing
+# Without pricing
 curl -X POST https://scanium.gtemp1.com/v1/assist/chat \
   -H "X-API-Key: $API_KEY" \
   -H "X-Scanium-Device-Id: test" \
   -H "Content-Type: application/json" \
   -d '{...}'
 
-***REMOVED*** With pricing
+# With pricing
 curl -X POST https://scanium.gtemp1.com/v1/assist/chat \
   -H "X-API-Key: $API_KEY" \
   -H "X-Scanium-Device-Id: test" \
@@ -199,14 +199,14 @@ curl -X POST https://scanium.gtemp1.com/v1/assist/chat \
   }'
 ```
 
-***REMOVED******REMOVED*** Metrics
+## Metrics
 
 - `pricing_requests_total` - Total pricing requests
 - `pricing_latency_ms` - Latency histogram
 - `pricing_cache_size` - Current cache size
 - `pricing_status_total` - Requests by status
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
 ```
 ┌─────────────┐
@@ -240,7 +240,7 @@ curl -X POST https://scanium.gtemp1.com/v1/assist/chat \
       └─────────────┘
 ```
 
-***REMOVED******REMOVED*** Supported Countries
+## Supported Countries
 
 See `config/marketplaces/marketplaces.eu.json` for full list. Includes:
 
@@ -250,7 +250,7 @@ See `config/marketplaces/marketplaces.eu.json` for full list. Includes:
 - UK (United Kingdom) - Gumtree, Amazon.co.uk, eBay.co.uk
 - And 30+ more European countries
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
 - [ ] Historical price tracking
 - [ ] Price trend analysis

@@ -1,12 +1,12 @@
-***REMOVED*** Vertical Threshold Slider - Real-Time Detection Tuning
+# Vertical Threshold Slider - Real-Time Detection Tuning
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The **Vertical Threshold Slider** is a UI control on the Camera screen that allows real-time
 adjustment of the similarity threshold used in the item aggregation pipeline. This feature serves
 both as a **debugging tool** for developers and as a potential **advanced feature** for users.
 
-***REMOVED******REMOVED*** Visual Design
+## Visual Design
 
 The slider appears on the **right side** of the Camera screen, vertically centered:
 
@@ -32,15 +32,15 @@ The slider appears on the **right side** of the Camera screen, vertically center
 └─────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Color Scheme
+### Color Scheme
 
-- **Track (background)**: Deep Navy (`***REMOVED***050B18`)
-- **Active Track**: Scanium Blue (`***REMOVED***1F7BFF`)
-- **Thumb**: Scanium Blue (normal), Cyan Glow (`***REMOVED***00D4FF`) when dragging
+- **Track (background)**: Deep Navy (`#050B18`)
+- **Active Track**: Scanium Blue (`#1F7BFF`)
+- **Thumb**: Scanium Blue (normal), Cyan Glow (`#00D4FF`) when dragging
 - **Background**: Black with 70% opacity
 - **Text**: White with varying opacity
 
-***REMOVED******REMOVED******REMOVED*** Interaction
+### Interaction
 
 - **Tap or drag**: Direct positioning - touch anywhere on slider to set value
 - **Drag up**: Increase threshold (stricter matching)
@@ -51,9 +51,9 @@ The slider appears on the **right side** of the Camera screen, vertically center
 - **Vertical labels**: "HI", "THRESHOLD", and "LO" labels rotate parallel to slider
 - **Horizontal value**: Percentage value stays horizontal for easy reading
 
-***REMOVED******REMOVED*** Functionality
+## Functionality
 
-***REMOVED******REMOVED******REMOVED*** Threshold Control
+### Threshold Control
 
 The slider controls the **similarity threshold** in the aggregation system:
 
@@ -61,7 +61,7 @@ The slider controls the **similarity threshold** in the aggregation system:
 - **Default**: 0.55 (55%) - from REALTIME preset
 - **Display**: Percentage (e.g., "55%")
 
-***REMOVED******REMOVED******REMOVED*** Effect on Detection
+### Effect on Detection
 
 **Higher threshold (↑):**
 
@@ -77,7 +77,7 @@ The slider controls the **similarity threshold** in the aggregation system:
 - Accept less confident matches
 - More aggressive merging
 
-***REMOVED******REMOVED******REMOVED*** Real-Time Updates
+### Real-Time Updates
 
 Changes to the slider take effect **immediately**:
 
@@ -87,9 +87,9 @@ Changes to the slider take effect **immediately**:
 4. Next detection uses new threshold
 5. No camera restart required
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Component Flow
+### Component Flow
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -109,9 +109,9 @@ Changes to the slider take effect **immediately**:
 └─────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Key Components
+### Key Components
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. VerticalThresholdSlider.kt
+#### 1. VerticalThresholdSlider.kt
 
 **Location**: `app/src/main/java/com/scanium/app/camera/VerticalThresholdSlider.kt`
 
@@ -133,7 +133,7 @@ Custom Compose component that renders the vertical slider UI.
 - Vertical rotated labels parallel to slider
 - Row-based layout with slider + labels side-by-side
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. ItemsViewModel.kt
+#### 2. ItemsViewModel.kt
 
 **Location**: `app/src/main/java/com/scanium/app/items/ItemsViewModel.kt`
 
@@ -151,7 +151,7 @@ fun updateSimilarityThreshold(threshold: Float)
 fun getCurrentSimilarityThreshold(): Float
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. ItemAggregator.kt
+#### 3. ItemAggregator.kt
 
 **Location**: `app/src/main/java/com/scanium/app/aggregation/ItemAggregator.kt`
 
@@ -173,7 +173,7 @@ fun getCurrentSimilarityThreshold(): Float
 - `processDetection()` now uses `getCurrentSimilarityThreshold()` instead of hardcoded config value
 - Logs include current threshold for debugging
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. CameraScreen.kt
+#### 4. CameraScreen.kt
 
 **Location**: `app/src/main/java/com/scanium/app/camera/CameraScreen.kt`
 
@@ -192,9 +192,9 @@ VerticalThresholdSlider(
 )
 ```
 
-***REMOVED******REMOVED*** Usage Examples
+## Usage Examples
 
-***REMOVED******REMOVED******REMOVED*** Scenario 1: Too Many Duplicates
+### Scenario 1: Too Many Duplicates
 
 **Problem**: Same object appearing multiple times when panning camera
 
@@ -204,7 +204,7 @@ VerticalThresholdSlider(
 - Try 70-80% (0.7-0.8)
 - Stricter matching reduces false merges
 
-***REMOVED******REMOVED******REMOVED*** Scenario 2: Items Not Appearing
+### Scenario 2: Items Not Appearing
 
 **Problem**: Objects not being detected/aggregated during scanning
 
@@ -214,7 +214,7 @@ VerticalThresholdSlider(
 - Try 30-40% (0.3-0.4)
 - Looser matching increases detections
 
-***REMOVED******REMOVED******REMOVED*** Scenario 3: Debug Pipeline
+### Scenario 3: Debug Pipeline
 
 **Problem**: Understanding why items merge or stay separate
 
@@ -225,13 +225,13 @@ VerticalThresholdSlider(
 - Check logs for similarity scores vs threshold
 - Find optimal value for your use case
 
-***REMOVED******REMOVED*** Persistence (Optional)
+## Persistence (Optional)
 
-***REMOVED******REMOVED******REMOVED*** Current State
+### Current State
 
 The threshold is **in-memory only** - resets to default (55%) when app restarts.
 
-***REMOVED******REMOVED******REMOVED*** Adding Persistence
+### Adding Persistence
 
 A `ThresholdPreferences` utility is provided for DataStore-based persistence:
 
@@ -283,9 +283,9 @@ A `ThresholdPreferences` utility is provided for DataStore-based persistence:
    )
    ```
 
-***REMOVED******REMOVED*** Debugging
+## Debugging
 
-***REMOVED******REMOVED******REMOVED*** Log Output
+### Log Output
 
 When threshold changes:
 
@@ -315,15 +315,15 @@ ItemAggregator:       - Distance similarity: 0.52
 ItemAggregator:       - Final weighted score: 0.58
 ```
 
-***REMOVED******REMOVED******REMOVED*** Log Tags
+### Log Tags
 
 - `VerticalThresholdSlider` - Slider interactions (if logging added)
 - `ItemsViewModel` - Threshold updates
 - `ItemAggregator` - Aggregation decisions with threshold
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Manual Testing
+### Manual Testing
 
 1. **Build and run** the app
 2. **Navigate** to Camera screen
@@ -337,7 +337,7 @@ ItemAggregator:       - Final weighted score: 0.58
 10. **Observe** item count changes in real-time
 11. **Check logs** for threshold values and merge/create decisions
 
-***REMOVED******REMOVED******REMOVED*** Expected Behavior
+### Expected Behavior
 
 ✅ Slider visible on Camera screen
 ✅ Slider positioned on right, vertically centered
@@ -352,16 +352,16 @@ ItemAggregator:       - Final weighted score: 0.58
 ✅ Value clamped between 0% and 100%
 ✅ Logs show threshold updates with boxed warnings
 
-***REMOVED******REMOVED******REMOVED*** Edge Cases
+### Edge Cases
 
 - **Rapid dragging**: Should handle smoothly without crashes
 - **Extreme values** (0% or 100%): Should still work, just very loose/strict
 - **During scanning**: Should update without interrupting scan
 - **Camera rotation**: Slider should remain visible and functional
 
-***REMOVED******REMOVED*** UI Placement Considerations
+## UI Placement Considerations
 
-***REMOVED******REMOVED******REMOVED*** Why Right Side?
+### Why Right Side?
 
 - **Right-handed users**: Most users hold phone with right hand, thumb naturally rests on right edge
 - **Natural ergonomics**: Easy to reach without shifting grip
@@ -369,7 +369,7 @@ ItemAggregator:       - Final weighted score: 0.58
 - **Less interference**: Doesn't conflict with left-edge system gestures (back navigation)
 - **No conflicts**: Doesn't block camera controls or detected objects
 
-***REMOVED******REMOVED******REMOVED*** Padding & Spacing
+### Padding & Spacing
 
 - **Right padding**: 16dp from screen edge
 - **Vertical centering**: Aligned to center of screen
@@ -378,9 +378,9 @@ ItemAggregator:       - Final weighted score: 0.58
 - **Safe area**: Avoids top bar and bottom controls
 - **Compact width**: Slider + labels fit in ~80dp horizontal space
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** Potential Improvements
+### Potential Improvements
 
 1. **Toggle Visibility**
     - Show/hide slider based on debug mode or settings
@@ -406,24 +406,24 @@ ItemAggregator:       - Final weighted score: 0.58
     - Separate sliders for different factors (category, label, spatial)
     - Advanced mode with full control
 
-***REMOVED******REMOVED*** Accessibility
+## Accessibility
 
-***REMOVED******REMOVED******REMOVED*** Current Features
+### Current Features
 
 - **Large touch target**: 40dp width for easy interaction
 - **Visual feedback**: Clear color changes when dragging
 - **Numeric display**: Percentage shown in legible font size
 
-***REMOVED******REMOVED******REMOVED*** Future Improvements
+### Future Improvements
 
 - **Content descriptions**: Add semantic labels for screen readers
 - **Haptic feedback**: Vibration for blind/low-vision users
 - **Voice control**: "Set threshold to 70 percent"
 - **High contrast mode**: Enhanced visibility in bright sunlight
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Slider Not Appearing
+### Slider Not Appearing
 
 **Causes**:
 
@@ -437,7 +437,7 @@ ItemAggregator:       - Final weighted score: 0.58
 - Verify `VerticalThresholdSlider` is imported
 - Ensure `itemsViewModel` is available in CameraScreen scope
 
-***REMOVED******REMOVED******REMOVED*** Slider Not Responding
+### Slider Not Responding
 
 **Causes**:
 
@@ -450,7 +450,7 @@ ItemAggregator:       - Final weighted score: 0.58
 - Check that slider is above preview in Z-order
 - Review pointer input handling in slider code
 
-***REMOVED******REMOVED******REMOVED*** Threshold Not Affecting Detections
+### Threshold Not Affecting Detections
 
 **Causes**:
 
@@ -463,7 +463,7 @@ ItemAggregator:       - Final weighted score: 0.58
 - Verify `updateSimilarityThreshold()` chain is complete
 - Ensure `processDetection()` uses `getCurrentSimilarityThreshold()`
 
-***REMOVED******REMOVED******REMOVED*** Values Reset After App Restart
+### Values Reset After App Restart
 
 **Causes**:
 
@@ -475,9 +475,9 @@ ItemAggregator:       - Final weighted score: 0.58
 - Follow "Adding Persistence" section to enable DataStore
 - Or accept default value on app start (by design for debugging)
 
-***REMOVED******REMOVED*** References
+## References
 
-***REMOVED******REMOVED******REMOVED*** Source Files
+### Source Files
 
 - `app/src/main/java/com/scanium/app/camera/VerticalThresholdSlider.kt` - Slider UI component
 - `app/src/main/java/com/scanium/app/camera/CameraScreen.kt` - Integration point
@@ -486,15 +486,15 @@ ItemAggregator:       - Final weighted score: 0.58
 - `app/src/main/java/com/scanium/app/data/ThresholdPreferences.kt` - Persistence utility
 - `app/src/main/java/com/scanium/app/ui/theme/Color.kt` - Brand colors
 
-***REMOVED******REMOVED******REMOVED*** Related Documentation
+### Related Documentation
 
 - `./AGGREGATION_SYSTEM.md` - Aggregation system overview
 - `docs/TRACKING.md` - ObjectTracker frame-level logic
 - `docs/ML_KIT_INTEGRATION.md` - ML Kit detection pipeline
 
-***REMOVED******REMOVED*** Recent Fixes (2025-12-10)
+## Recent Fixes (2025-12-10)
 
-***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***1: Slider Using Delta-Based Dragging
+### Issue #1: Slider Using Delta-Based Dragging
 
 **Problem**: The slider was using `detectVerticalDragGestures` which only provides drag deltas, not
 absolute positions. This resulted in:
@@ -517,7 +517,7 @@ val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
 
 **Result**: Full 0-100% range is now accessible with consistent, predictable behavior.
 
-***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***2: Labels Not Fully Visible
+### Issue #2: Labels Not Fully Visible
 
 **Problem**: Labels were stacked vertically above/below slider, taking excessive vertical space and
 sometimes getting clipped.
@@ -530,7 +530,7 @@ sometimes getting clipped.
 
 **Result**: Compact horizontal layout (~80dp width) with all labels fully visible.
 
-***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***3: Slider Position on Left Side
+### Issue #3: Slider Position on Left Side
 
 **Problem**: Left side placement conflicted with system gestures and felt awkward for right-handed
 users.
@@ -542,7 +542,7 @@ users.
 
 **Result**: Better ergonomics and no gesture conflicts.
 
-***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***4: Threshold Not Propagating to Aggregator
+### Issue #4: Threshold Not Propagating to Aggregator
 
 **Problem**: ItemAggregator's `dynamicThreshold` was never initialized, so it used config default
 regardless of slider changes.

@@ -1,8 +1,8 @@
-***REMOVED*** Assistant Providers
+# Assistant Providers
 
 This document explains how to configure different AI providers for the Scanium assistant.
 
-***REMOVED******REMOVED*** Available Providers
+## Available Providers
 
 | Provider   | Description                     | Status           |
 |------------|---------------------------------|------------------|
@@ -11,32 +11,32 @@ This document explains how to configure different AI providers for the Scanium a
 | `mock`     | Grounded mock responses         | For testing only |
 | `disabled` | Disable assistant completely    | -                |
 
-***REMOVED******REMOVED*** OpenAI Provider Configuration
+## OpenAI Provider Configuration
 
-***REMOVED******REMOVED******REMOVED*** Required Environment Variables
+### Required Environment Variables
 
 ```bash
-***REMOVED*** Set the provider type
+# Set the provider type
 SCANIUM_ASSISTANT_PROVIDER=openai
 
-***REMOVED*** Your OpenAI API key (from platform.openai.com)
+# Your OpenAI API key (from platform.openai.com)
 OPENAI_API_KEY=sk-your-api-key-here
 
-***REMOVED*** Model to use (default: gpt-4o-mini)
+# Model to use (default: gpt-4o-mini)
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-***REMOVED******REMOVED******REMOVED*** Optional Configuration
+### Optional Configuration
 
 ```bash
-***REMOVED*** Max output tokens (default: 500)
+# Max output tokens (default: 500)
 ASSIST_MAX_OUTPUT_TOKENS=500
 
-***REMOVED*** Provider timeout in ms (default: 30000)
+# Provider timeout in ms (default: 30000)
 ASSIST_PROVIDER_TIMEOUT_MS=30000
 ```
 
-***REMOVED******REMOVED******REMOVED*** Supported OpenAI Models
+### Supported OpenAI Models
 
 | Model         | Description                        | Notes                   |
 |---------------|------------------------------------|-------------------------|
@@ -44,9 +44,9 @@ ASSIST_PROVIDER_TIMEOUT_MS=30000
 | `gpt-4o`      | More capable, higher cost          | For complex listings    |
 | `gpt-4-turbo` | Previous generation                | Still supported         |
 
-***REMOVED******REMOVED*** Claude Provider Configuration
+## Claude Provider Configuration
 
-***REMOVED******REMOVED******REMOVED*** Required Environment Variables
+### Required Environment Variables
 
 ```bash
 SCANIUM_ASSISTANT_PROVIDER=claude
@@ -54,16 +54,16 @@ CLAUDE_API_KEY=your-claude-api-key
 CLAUDE_MODEL=claude-sonnet-4-20250514
 ```
 
-***REMOVED******REMOVED*** Security Best Practices
+## Security Best Practices
 
-***REMOVED******REMOVED******REMOVED*** API Keys
+### API Keys
 
 1. **Never commit API keys** to version control
 2. Use environment files (`.env`) that are gitignored
 3. Rotate keys periodically
 4. Use project-specific API keys when possible
 
-***REMOVED******REMOVED******REMOVED*** Logging
+### Logging
 
 API keys are **never logged**. The provider only logs:
 
@@ -75,10 +75,10 @@ API keys are **never logged**. The provider only logs:
 Enable verbose logging only in development:
 
 ```bash
-ASSIST_LOG_CONTENT=true  ***REMOVED*** Only for debugging - do not use in production
+ASSIST_LOG_CONTENT=true  # Only for debugging - do not use in production
 ```
 
-***REMOVED******REMOVED*** Error Handling
+## Error Handling
 
 The OpenAI provider maps API errors to Scanium's standard error structure:
 
@@ -104,9 +104,9 @@ Example error response:
 }
 ```
 
-***REMOVED******REMOVED*** Deployment
+## Deployment
 
-***REMOVED******REMOVED******REMOVED*** Docker Compose
+### Docker Compose
 
 Add to your `.env` file in the compose directory:
 
@@ -116,31 +116,31 @@ OPENAI_API_KEY=sk-your-api-key-here
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-***REMOVED******REMOVED******REMOVED*** Verification Commands
+### Verification Commands
 
 After deployment, verify the provider is working:
 
 ```bash
-***REMOVED*** Check no mock fallback messages in compiled code
+# Check no mock fallback messages in compiled code
 docker exec scanium-backend sh -c 'grep -r "falling back to mock provider" /app/dist || echo "OK: No fallback message found"'
 
-***REMOVED*** Check container logs for provider initialization
+# Check container logs for provider initialization
 docker logs scanium-backend 2>&1 | grep -i "provider initialized"
 
-***REMOVED*** Test the warmup endpoint
+# Test the warmup endpoint
 curl -s -X POST https://your-domain.com/v1/assist/warmup \
   -H "X-API-Key: YOUR_SCANIUM_API_KEY" | jq .
 
-***REMOVED*** Expected response:
-***REMOVED*** {
-***REMOVED***   "status": "ok",
-***REMOVED***   "provider": "openai",
-***REMOVED***   "model": "gpt-4o-mini",
-***REMOVED***   ...
-***REMOVED*** }
+# Expected response:
+# {
+#   "status": "ok",
+#   "provider": "openai",
+#   "model": "gpt-4o-mini",
+#   ...
+# }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test a Real Request
+### Test a Real Request
 
 ```bash
 curl -X POST https://your-domain.com/v1/assist/chat \
@@ -156,15 +156,15 @@ curl -X POST https://your-domain.com/v1/assist/chat \
   }'
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Provider Not Configured Error
+### Provider Not Configured Error
 
 **Error:** `OPENAI_API_KEY is required when assistant.provider is "openai"`
 
 **Fix:** Set the `OPENAI_API_KEY` environment variable
 
-***REMOVED******REMOVED******REMOVED*** 401 Unauthorized
+### 401 Unauthorized
 
 **Cause:** Invalid or expired API key
 
@@ -174,7 +174,7 @@ curl -X POST https://your-domain.com/v1/assist/chat \
 2. Ensure key has correct permissions
 3. Regenerate if expired
 
-***REMOVED******REMOVED******REMOVED*** 429 Rate Limited
+### 429 Rate Limited
 
 **Cause:** Too many requests to OpenAI
 
@@ -184,7 +184,7 @@ curl -X POST https://your-domain.com/v1/assist/chat \
 2. Check OpenAI usage limits
 3. Consider upgrading OpenAI plan
 
-***REMOVED******REMOVED******REMOVED*** Timeout Errors
+### Timeout Errors
 
 **Cause:** Request took too long
 
@@ -194,19 +194,19 @@ curl -X POST https://your-domain.com/v1/assist/chat \
 2. Use a faster model (`gpt-4o-mini`)
 3. Check network connectivity
 
-***REMOVED******REMOVED*** Rolling Back
+## Rolling Back
 
 To quickly revert to mock provider:
 
 ```bash
-***REMOVED*** In your .env file:
+# In your .env file:
 SCANIUM_ASSISTANT_PROVIDER=mock
 
-***REMOVED*** Restart the container
+# Restart the container
 docker-compose restart backend
 ```
 
-***REMOVED******REMOVED*** Rate Limits
+## Rate Limits
 
 The Scanium backend has its own rate limiting independent of OpenAI:
 

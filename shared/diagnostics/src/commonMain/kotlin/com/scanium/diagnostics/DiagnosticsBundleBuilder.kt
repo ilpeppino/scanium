@@ -30,7 +30,7 @@ data class DiagnosticsBundle(
  *
  * All events are assumed to be already sanitized (PII removed).
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  * ```kotlin
  * val builder = DiagnosticsBundleBuilder()
  *
@@ -51,7 +51,7 @@ data class DiagnosticsBundle(
  * val bytes = builder.buildJsonBytes(context, events)
  * ```
  *
- * ***REMOVED******REMOVED*** Output Format
+ * ## Output Format
  * ```json
  * {
  *   "generatedAt": "2025-12-24T10:30:00Z",

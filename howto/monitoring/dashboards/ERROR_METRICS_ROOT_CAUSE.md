@@ -1,9 +1,9 @@
-***REMOVED*** Error Metrics Root Cause Analysis
+# Error Metrics Root Cause Analysis
 
 **Date**: 2026-01-11
 **Investigation**: Why error-related panels across Grafana dashboards showed "No data"
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 **Root Causes**:
 
@@ -16,9 +16,9 @@
 
 ---
 
-***REMOVED******REMOVED*** Update: Dashboard Variable Fix (2026-01-11)
+## Update: Dashboard Variable Fix (2026-01-11)
 
-***REMOVED******REMOVED******REMOVED*** Additional Root Cause Discovered
+### Additional Root Cause Discovered
 
 After generating error traffic, **only 4xx panels showed data** while other panels remained empty.
 Investigation revealed:
@@ -80,9 +80,9 @@ sum(increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h]))
 
 ---
 
-***REMOVED******REMOVED*** Investigation Process
+## Investigation Process
 
-***REMOVED******REMOVED******REMOVED*** Phase 1: Canonical Metric Discovery
+### Phase 1: Canonical Metric Discovery
 
 **Backend Metric**: `scanium_http_requests_total`
 **Label Schema**:
@@ -106,24 +106,24 @@ scanium_http_requests_total{method="GET",route="/",status_code="200"} 6
 scanium_http_requests_total{method="GET",route="/nonexistent",status_code="404"} 1
 ```
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Mimir Data Verification
+### Phase 2: Mimir Data Verification
 
 **Finding**: Error series exist in Mimir but with static values (no recent changes).
 
 **Test Queries**:
 
 ```promql
-***REMOVED*** Check if metric exists
+# Check if metric exists
 scanium_http_requests_total{status_code="404"}
 
-***REMOVED*** Check rate over 5m (returned 0 before traffic generation)
+# Check rate over 5m (returned 0 before traffic generation)
 sum(rate(scanium_http_requests_total{status_code=~"4.."}[5m]))
 ```
 
 **Before traffic**: Rate = 0 (static counters, no increase)
 **After traffic**: Rate = 0.259 req/s ✅
 
-***REMOVED******REMOVED******REMOVED*** Phase 3: Traffic Generation
+### Phase 3: Traffic Generation
 
 **Script**: `howto/monitoring/generate-error-traffic.sh`
 
@@ -135,7 +135,7 @@ Generated 178 requests over 90 seconds (~2 rps):
 
 **Results**: Error metrics immediately started showing in Mimir and dashboards.
 
-***REMOVED******REMOVED******REMOVED*** Phase 4: Dashboard Query Validation
+### Phase 4: Dashboard Query Validation
 
 **Tested Queries** (from `backend-errors.json`):
 
@@ -167,44 +167,44 @@ Result: ~71.5% ✅
 
 ---
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
-***REMOVED******REMOVED******REMOVED*** Direct Mimir Queries
+### Direct Mimir Queries
 
 ```bash
-***REMOVED*** Query Mimir endpoint
+# Query Mimir endpoint
 MIMIR_URL="http://127.0.0.1:9009/prometheus"
 
-***REMOVED*** Check 4xx error rate
+# Check 4xx error rate
 curl -s "${MIMIR_URL}/api/v1/query?query=sum(rate(scanium_http_requests_total{status_code=~\"4..\"}[5m]))" | jq .
 
-***REMOVED*** Check 5xx error rate
+# Check 5xx error rate
 curl -s "${MIMIR_URL}/api/v1/query?query=sum(rate(scanium_http_requests_total{status_code=~\"5..\"}[5m]))" | jq .
 
-***REMOVED*** Check 2xx success rate
+# Check 2xx success rate
 curl -s "${MIMIR_URL}/api/v1/query?query=sum(rate(scanium_http_requests_total{status_code=~\"2..\"}[5m]))" | jq .
 
-***REMOVED*** List all series for the metric
+# List all series for the metric
 curl -s "${MIMIR_URL}/api/v1/series?match[]=scanium_http_requests_total" | jq .
 ```
 
-***REMOVED******REMOVED******REMOVED*** Generate Test Traffic
+### Generate Test Traffic
 
 ```bash
-***REMOVED*** From NAS (or any host with access to backend)
+# From NAS (or any host with access to backend)
 cd /volume1/docker/scanium/repo
 bash howto/monitoring/generate-error-traffic.sh http://172.23.0.5:8080
 
-***REMOVED*** Wait 90 seconds for scrape interval
+# Wait 90 seconds for scrape interval
 sleep 90
 
-***REMOVED*** Verify metrics in Mimir
+# Verify metrics in Mimir
 curl -s "http://127.0.0.1:9009/prometheus/api/v1/query?query=sum(rate(scanium_http_requests_total{status_code=~\"4..\"}[5m]))" | jq .
 ```
 
 ---
 
-***REMOVED******REMOVED*** Affected Dashboards
+## Affected Dashboards
 
 All dashboards correctly configured and now showing data:
 
@@ -226,9 +226,9 @@ All dashboards correctly configured and now showing data:
 
 ---
 
-***REMOVED******REMOVED*** Key Findings
+## Key Findings
 
-***REMOVED******REMOVED******REMOVED*** ✅ What Was Correct
+### ✅ What Was Correct
 
 1. **Backend Instrumentation**: `recordHttpRequest()` in `backend/src/app.ts:113` correctly
    increments counters for ALL responses including errors
@@ -238,7 +238,7 @@ All dashboards correctly configured and now showing data:
 4. **Dashboard Queries**: All PromQL queries use correct metric names and label filters
 5. **Grafana Datasources**: Mimir datasource correctly configured at `http://mimir:9009/prometheus`
 
-***REMOVED******REMOVED******REMOVED*** ❌ What Was "Wrong"
+### ❌ What Was "Wrong"
 
 **Nothing was broken.** The system correctly showed "No data" / zero rates because:
 
@@ -248,14 +248,14 @@ All dashboards correctly configured and now showing data:
 
 ---
 
-***REMOVED******REMOVED*** Recommendations
+## Recommendations
 
-***REMOVED******REMOVED******REMOVED*** 1. Monitoring Validation (Optional)
+### 1. Monitoring Validation (Optional)
 
 Implement periodic health checks that intentionally generate controlled errors:
 
 ```bash
-***REMOVED*** Cron job or systemd timer (every 15 minutes)
+# Cron job or systemd timer (every 15 minutes)
 */15 * * * * /volume1/docker/scanium/repo/howto/monitoring/generate-error-traffic.sh http://172.23.0.5:8080
 ```
 
@@ -271,7 +271,7 @@ Implement periodic health checks that intentionally generate controlled errors:
 - May confuse during incident analysis
 - Not recommended for production
 
-***REMOVED******REMOVED******REMOVED*** 2. Dashboard Enhancements
+### 2. Dashboard Enhancements
 
 Add annotations to error panels explaining expected behavior:
 
@@ -280,7 +280,7 @@ Add annotations to error panels explaining expected behavior:
 verify metric collection with: curl http://backend:8080/metrics"
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Alerting Strategy
+### 3. Alerting Strategy
 
 Create alerts for:
 
@@ -289,7 +289,7 @@ Create alerts for:
 
 ---
 
-***REMOVED******REMOVED*** Lessons Learned
+## Lessons Learned
 
 1. **"No data" ≠ "Broken"**: Zero error rates in monitoring are a sign of system health, not
    monitoring failure
@@ -302,7 +302,7 @@ Create alerts for:
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - **Instrumentation**: `backend/src/app.ts:91-135` (onResponse hook)
 - **Metrics Module**: `backend/src/infra/observability/metrics.js`
@@ -312,23 +312,23 @@ Create alerts for:
 
 ---
 
-***REMOVED******REMOVED*** Appendix: Prometheus Query Patterns
+## Appendix: Prometheus Query Patterns
 
-***REMOVED******REMOVED******REMOVED*** Error Rate (per second)
+### Error Rate (per second)
 
 ```promql
 sum(rate(scanium_http_requests_total{status_code=~"4.."}[5m]))
 sum(rate(scanium_http_requests_total{status_code=~"5.."}[5m]))
 ```
 
-***REMOVED******REMOVED******REMOVED*** Error Count (absolute over time range)
+### Error Count (absolute over time range)
 
 ```promql
 sum(increase(scanium_http_requests_total{status_code=~"4.."}[1h]))
 sum(increase(scanium_http_requests_total{status_code=~"5.."}[1h]))
 ```
 
-***REMOVED******REMOVED******REMOVED*** Error Ratio (percentage)
+### Error Ratio (percentage)
 
 ```promql
 sum(rate(scanium_http_requests_total{status_code=~"[45].."}[5m]))
@@ -336,13 +336,13 @@ sum(rate(scanium_http_requests_total{status_code=~"[45].."}[5m]))
 sum(rate(scanium_http_requests_total[5m])) * 100
 ```
 
-***REMOVED******REMOVED******REMOVED*** Top Error Routes
+### Top Error Routes
 
 ```promql
 topk(10, sum by (route) (increase(scanium_http_requests_total{status_code=~"[45].."}[1h])))
 ```
 
-***REMOVED******REMOVED******REMOVED*** Status Code Breakdown
+### Status Code Breakdown
 
 ```promql
 sum by (status_code) (increase(scanium_http_requests_total{status_code=~"[45].."}[1h]))

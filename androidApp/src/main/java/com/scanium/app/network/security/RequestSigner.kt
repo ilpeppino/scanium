@@ -16,7 +16,7 @@ import javax.crypto.spec.SecretKeySpec
  * 2. Reject requests with timestamps older than a threshold (e.g., 5 minutes)
  * 3. Track seen signatures to prevent replay within the time window
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  * ```kotlin
  * // For JSON requests:
  * val signedRequest = RequestSigner.sign(

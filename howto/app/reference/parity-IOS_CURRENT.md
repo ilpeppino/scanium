@@ -1,4 +1,4 @@
-***REMOVED*** iOS Current State - Implementation Inventory
+# iOS Current State - Implementation Inventory
 
 **Document Version:** 1.0
 **Last Updated:** 2026-01-13
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The iOS application is in a **scaffolding/prototype stage** with:
 
@@ -23,15 +23,15 @@ The iOS application is in a **scaffolding/prototype stage** with:
 
 ---
 
-***REMOVED******REMOVED*** 1. CAPTURE - Camera & Frame Processing
+## 1. CAPTURE - Camera & Frame Processing
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **iosApp/ScaniumiOS/AVFoundationFrameSource.swift**
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: **PARTIAL - Layer Complete, Not Integrated**
+### Implementation Status: **PARTIAL - Layer Complete, Not Integrated**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Camera UX
+#### A. Camera UX
 
 **Status:** ❌ **MISSING**
 
@@ -45,7 +45,7 @@ The iOS application is in a **scaffolding/prototype stage** with:
 - Search in `iosApp/`: No `CameraView.swift`, `CaptureScreen.swift`, or similar
 - `ContentView.swift`: Only displays list, no camera navigation
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Capture/Resolution Settings
+#### B. Capture/Resolution Settings
 
 **Status:** ❌ **MISSING**
 
@@ -60,7 +60,7 @@ The iOS application is in a **scaffolding/prototype stage** with:
 captureSession.sessionPreset = .high
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Orientation Handling
+#### C. Orientation Handling
 
 **Status:** ✅ **IMPLEMENTED**
 **File:** `iosApp/ScaniumiOS/AVFoundationFrameSource.swift`
@@ -86,7 +86,7 @@ private func convertOrientation(_ avOrientation: AVCaptureVideoOrientation) -> I
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** D. Frame Processing Pipeline
+#### D. Frame Processing Pipeline
 
 **Status:** ✅ **IMPLEMENTED - Not Connected**
 **File:** `iosApp/ScaniumiOS/AVFoundationFrameSource.swift`
@@ -123,17 +123,17 @@ func captureOutput(_ output: AVCaptureOutput,
 
 ---
 
-***REMOVED******REMOVED*** 2. ML - Detection & Classification
+## 2. ML - Detection & Classification
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **iosApp/ScaniumiOS/VisionBarcodeService.swift**
 - **iosApp/ScaniumiOS/VisionTextService.swift**
 - **iosApp/ScaniumiOS/CoreMLObjectDetectionService.swift**
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: **COMPLETE Structure, NOT CONNECTED**
+### Implementation Status: **COMPLETE Structure, NOT CONNECTED**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Object Detection
+#### A. Object Detection
 
 **Status:** ⚠️ **PARTIAL - Framework Ready, Model Missing**
 **File:** `iosApp/ScaniumiOS/CoreMLObjectDetectionService.swift`
@@ -168,7 +168,7 @@ func detectObjects(in imageRef: ImageRef) async throws -> [DetectedObject] {
 - ❌ Thumbnail extraction not implemented
 - ❌ Not connected to camera or UI
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Barcode Scanning
+#### B. Barcode Scanning
 
 **Status:** ✅ **FULLY IMPLEMENTED - Not Connected**
 **File:** `iosApp/ScaniumiOS/VisionBarcodeService.swift`
@@ -198,7 +198,7 @@ func detectBarcodes(in imageRef: ImageRef) async throws -> [BarcodeDetection] {
 
 - ❌ Not connected to camera pipeline or UI
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Text Recognition (OCR)
+#### C. Text Recognition (OCR)
 
 **Status:** ✅ **FULLY IMPLEMENTED - Not Connected**
 **File:** `iosApp/ScaniumiOS/VisionTextService.swift`
@@ -229,7 +229,7 @@ func recognizeText(in imageRef: ImageRef) async throws -> [TextBlock] {
 
 - ❌ Not connected to camera pipeline or UI
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** D. Classification
+#### D. Classification
 
 **Status:** ❌ **MISSING - No Implementation**
 
@@ -247,16 +247,16 @@ func recognizeText(in imageRef: ImageRef) async throws -> [TextBlock] {
 
 ---
 
-***REMOVED******REMOVED*** 3. TRACKING - Object Tracking & Aggregation
+## 3. TRACKING - Object Tracking & Aggregation
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Shared KMP:** `core-tracking/`
 - **iOS Adapter:** None
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: ❌ **MISSING**
+### Implementation Status: ❌ **MISSING**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Object Tracking
+#### A. Object Tracking
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -269,7 +269,7 @@ func recognizeText(in imageRef: ImageRef) async throws -> [TextBlock] {
 - Search in `iosApp/`: No tracking-related files
 - No import of `core-tracking` module
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Item Aggregation
+#### B. Item Aggregation
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -283,16 +283,16 @@ func recognizeText(in imageRef: ImageRef) async throws -> [TextBlock] {
 
 ---
 
-***REMOVED******REMOVED*** 4. DOMAIN PACKS - Taxonomies & Classification
+## 4. DOMAIN PACKS - Taxonomies & Classification
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Shared KMP:** `core-domainpack/`
 - **iOS Adapter:** None
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: ❌ **MISSING**
+### Implementation Status: ❌ **MISSING**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Domain Pack Loading
+#### A. Domain Pack Loading
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -305,14 +305,14 @@ func recognizeText(in imageRef: ImageRef) async throws -> [TextBlock] {
 - Search in `iosApp/`: No domain pack loading code
 - No embedded JSON assets in bundle
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Domain Pack Validation
+#### B. Domain Pack Validation
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
 - No schema validation
 - No version checking
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Classification Flow
+#### C. Classification Flow
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -322,15 +322,15 @@ func recognizeText(in imageRef: ImageRef) async throws -> [TextBlock] {
 
 ---
 
-***REMOVED******REMOVED*** 5. STORAGE - Persistence & Export
+## 5. STORAGE - Persistence & Export
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **iOS Native:** None implemented
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: ❌ **MISSING**
+### Implementation Status: ❌ **MISSING**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Local Persistence
+#### A. Local Persistence
 
 **Status:** ❌ **NO DATABASE**
 
@@ -353,7 +353,7 @@ static let sample: [ScannedItem] = [...]
 - ❌ No history tracking
 - ❌ No draft storage
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Saved Images
+#### B. Saved Images
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -366,7 +366,7 @@ static let sample: [ScannedItem] = [...]
 - Search in `iosApp/`: No storage-related files
 - No PHPhotoLibrary integration
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Export Functionality
+#### C. Export Functionality
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -381,15 +381,15 @@ static let sample: [ScannedItem] = [...]
 
 ---
 
-***REMOVED******REMOVED*** 6. UI - Screens & Components
+## 6. UI - Screens & Components
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **iosApp/ScaniumiOS/ContentView.swift**
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: ⚠️ **MINIMAL - Display Only**
+### Implementation Status: ⚠️ **MINIMAL - Display Only**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Item List Screen
+#### A. Item List Screen
 
 **Status:** ✅ **IMPLEMENTED - Read-Only**
 **File:** `iosApp/ScaniumiOS/ContentView.swift`
@@ -429,7 +429,7 @@ var body: some View {
 - ❌ No empty state handling
 - ❌ No pull-to-refresh
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Item Details Dialog
+#### B. Item Details Dialog
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -441,7 +441,7 @@ var body: some View {
 
 - Search in `iosApp/`: No detail screen files
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Gestures & Interactions
+#### C. Gestures & Interactions
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -450,7 +450,7 @@ var body: some View {
 - No swipe actions
 - No pinch-to-zoom
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** D. Delete/Selection Flows
+#### D. Delete/Selection Flows
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -460,15 +460,15 @@ var body: some View {
 
 ---
 
-***REMOVED******REMOVED*** 7. NETWORKING - Backend & eBay Integration
+## 7. NETWORKING - Backend & eBay Integration
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **iOS Native:** None
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: ❌ **MISSING**
+### Implementation Status: ❌ **MISSING**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Backend Integration
+#### A. Backend Integration
 
 **Status:** ❌ **NO IMPLEMENTATION**
 
@@ -483,7 +483,7 @@ var body: some View {
 - Search in `iosApp/`: No networking files
 - No backend URL configuration
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. eBay Integration
+#### B. eBay Integration
 
 **Status:** ❌ **NO IMPLEMENTATION**
 
@@ -497,16 +497,16 @@ var body: some View {
 
 ---
 
-***REMOVED******REMOVED*** 8. LOGGING/MONITORING - Observability
+## 8. LOGGING/MONITORING - Observability
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Shared KMP:** `shared/telemetry/`
 - **iOS Native:** None
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: ❌ **MISSING**
+### Implementation Status: ❌ **MISSING**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Sentry Crash Reporting
+#### A. Sentry Crash Reporting
 
 **Status:** ❌ **NOT INTEGRATED**
 
@@ -519,7 +519,7 @@ var body: some View {
 - Search in `iosApp/`: No Sentry imports
 - No crash reporting initialization
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. OTLP Telemetry
+#### B. OTLP Telemetry
 
 **Status:** ❌ **NOT INTEGRATED**
 
@@ -530,7 +530,7 @@ var body: some View {
 
 - Search in `iosApp/`: No OTLP configuration
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Logging Infrastructure
+#### C. Logging Infrastructure
 
 **Status:** ❌ **NO IMPLEMENTATION**
 
@@ -544,15 +544,15 @@ var body: some View {
 
 ---
 
-***REMOVED******REMOVED*** 9. SECURITY/PRIVACY - Permissions & Data Handling
+## 9. SECURITY/PRIVACY - Permissions & Data Handling
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **iOS Native:** Info.plist
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: ❌ **MISSING**
+### Implementation Status: ❌ **MISSING**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Permissions
+#### A. Permissions
 
 **Status:** ❌ **NOT CONFIGURED**
 **File:** `iosApp/ScaniumiOS/Info.plist`
@@ -568,7 +568,7 @@ var body: some View {
 - Info.plist does not contain camera/photo usage descriptions
 - No runtime permission request code
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Data Handling
+#### B. Data Handling
 
 **Status:** ❌ **NO SECURITY IMPLEMENTATION**
 
@@ -583,9 +583,9 @@ var body: some View {
 
 ---
 
-***REMOVED******REMOVED*** 10. ADDITIONAL iOS FEATURES
+## 10. ADDITIONAL iOS FEATURES
 
-***REMOVED******REMOVED******REMOVED*** A. Audio/Sound Feedback
+### A. Audio/Sound Feedback
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -596,7 +596,7 @@ var body: some View {
 
 - Search in `iosApp/`: No audio-related files
 
-***REMOVED******REMOVED******REMOVED*** B. Accessibility (FTUE)
+### B. Accessibility (FTUE)
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -608,7 +608,7 @@ var body: some View {
 
 - No FTUE-related files
 
-***REMOVED******REMOVED******REMOVED*** C. Billing/Monetization
+### C. Billing/Monetization
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -620,7 +620,7 @@ var body: some View {
 
 - No billing-related files
 
-***REMOVED******REMOVED******REMOVED*** D. Voice/Assistant
+### D. Voice/Assistant
 
 **Status:** ❌ **NOT IMPLEMENTED**
 
@@ -631,7 +631,7 @@ var body: some View {
 
 - No voice-related files
 
-***REMOVED******REMOVED******REMOVED*** E. Theme & Design System
+### E. Theme & Design System
 
 **Status:** ⚠️ **MINIMAL - SwiftUI Defaults**
 
@@ -649,15 +649,15 @@ Image(systemName: "shippingbox")
 
 ---
 
-***REMOVED******REMOVED*** SHARED KMP INTEGRATION STATUS
+## SHARED KMP INTEGRATION STATUS
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **iosApp/ScaniumiOS/SharedBridge.swift**
 
-***REMOVED******REMOVED******REMOVED*** Implementation Status: ⚠️ **STUB - Architecture Ready, Not Initialized**
+### Implementation Status: ⚠️ **STUB - Architecture Ready, Not Initialized**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current Architecture
+#### Current Architecture
 
 **File:** `iosApp/ScaniumiOS/SharedBridge.swift`
 
@@ -666,7 +666,7 @@ Image(systemName: "shippingbox")
 - Abstraction layer using protocols:
     - `SharedBridge.Session` - lifecycle management
     - `SharedBridge.DataSource` - item data loading
-- Compile-time conditional imports: `***REMOVED***if canImport(Shared)`
+- Compile-time conditional imports: `#if canImport(Shared)`
 - Factory pattern for dependency injection
 
 **Evidence:**
@@ -674,15 +674,15 @@ Image(systemName: "shippingbox")
 ```swift
 // SharedBridge.swift:32-38
 static func makeSession(configuration: BootstrapConfiguration = BootstrapConfiguration()) -> Session {
-    ***REMOVED***if canImport(Shared)
+    #if canImport(Shared)
     return KmpBackedSession(configuration: configuration)
-    ***REMOVED***else
+    #else
     return StubSession(configuration: configuration)
-    ***REMOVED***endif
+    #endif
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** When Shared Framework Available
+#### When Shared Framework Available
 
 **Mapping Implementation (Partial):**
 
@@ -703,7 +703,7 @@ private extension ScannedItem {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** TODOs
+#### TODOs
 
 ```swift
 // SharedBridge.swift:74
@@ -713,7 +713,7 @@ private extension ScannedItem {
 // TODO: Tear down the shared scan session and release shared resources
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current Fallback
+#### Current Fallback
 
 **Feature Flag Control:**
 
@@ -729,9 +729,9 @@ static let useMocks = true
 
 ---
 
-***REMOVED******REMOVED*** PLATFORM ADAPTER SUMMARY
+## PLATFORM ADAPTER SUMMARY
 
-***REMOVED******REMOVED******REMOVED*** Protocols Defined
+### Protocols Defined
 
 **File:** `iosApp/ScaniumiOS/PlatformContracts.swift`
 
@@ -754,7 +754,7 @@ protocol ObjectDetectionService
 
 ---
 
-***REMOVED******REMOVED*** FILE HIERARCHY
+## FILE HIERARCHY
 
 ```
 /Users/family/dev/scanium/iosApp/
@@ -795,7 +795,7 @@ Total Swift Code: 754 lines across 11 files
 
 ---
 
-***REMOVED******REMOVED*** CAPABILITY SUMMARY TABLE
+## CAPABILITY SUMMARY TABLE
 
 | Capability               | Android Status | iOS Status | iOS Files                          | Notes               |
 |--------------------------|----------------|------------|------------------------------------|---------------------|
@@ -825,25 +825,25 @@ Total Swift Code: 754 lines across 11 files
 
 ---
 
-***REMOVED******REMOVED*** CRITICAL GAPS SUMMARY
+## CRITICAL GAPS SUMMARY
 
-***REMOVED******REMOVED******REMOVED*** 1. No Camera-to-Detection Pipeline
+### 1. No Camera-to-Detection Pipeline
 
 - Camera captures frames → No orchestration → Services unused
 
-***REMOVED******REMOVED******REMOVED*** 2. No Listing/Posting Flow
+### 2. No Listing/Posting Flow
 
 - UI shows items but no create/edit/upload capability
 
-***REMOVED******REMOVED******REMOVED*** 3. No Session Management
+### 3. No Session Management
 
 - SharedBridge stubs would need KMP initialization
 
-***REMOVED******REMOVED******REMOVED*** 4. No Real Data Persistence
+### 4. No Real Data Persistence
 
 - All data is in-memory mock
 
-***REMOVED******REMOVED******REMOVED*** 5. No Production Readiness
+### 5. No Production Readiness
 
 - Missing permissions handling
 - No error recovery
@@ -852,4 +852,4 @@ Total Swift Code: 754 lines across 11 files
 
 ---
 
-***REMOVED******REMOVED*** END OF IOS CURRENT STATE
+## END OF IOS CURRENT STATE

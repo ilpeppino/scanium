@@ -1,4 +1,4 @@
-***REMOVED*** PR ***REMOVED***8: Operational Toggles + Offline Behavior
+# PR #8: Operational Toggles + Offline Behavior
 
 **Author:** Claude Sonnet 4.5
 **Date:** 2025-12-24
@@ -6,12 +6,12 @@
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 Added runtime-configurable telemetry toggles and bounded queue behavior to prevent memory exhaustion
 and provide operational control without requiring app redeployment.
 
-***REMOVED******REMOVED******REMOVED*** Key Features
+### Key Features
 
 1. **Shared TelemetryConfig** - Cross-platform configuration model
 2. **Runtime Toggles** - Enable/disable, severity filtering, trace sampling
@@ -21,9 +21,9 @@ and provide operational control without requiring app redeployment.
 
 ---
 
-***REMOVED******REMOVED*** Changes Overview
+## Changes Overview
 
-***REMOVED******REMOVED******REMOVED*** 1. Shared Configuration Model
+### 1. Shared Configuration Model
 
 **File:**
 `shared/telemetry-contract/src/commonMain/kotlin/com/scanium/telemetry/TelemetryConfig.kt` (NEW)
@@ -71,7 +71,7 @@ data class TelemetryConfig(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Telemetry Facade Updates
+### 2. Telemetry Facade Updates
 
 **File:** `shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/facade/Telemetry.kt`
 
@@ -96,7 +96,7 @@ fun event(name: String, severity: TelemetrySeverity, userAttributes: Map<String,
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Bounded Queue Implementation
+### 3. Bounded Queue Implementation
 
 **Files:**
 
@@ -143,7 +143,7 @@ override fun emit(event: TelemetryEvent) {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Exponential Backoff Retry
+### 4. Exponential Backoff Retry
 
 **File:** `androidApp/src/main/java/com/scanium/app/telemetry/otlp/OtlpHttpExporter.kt`
 
@@ -191,7 +191,7 @@ private suspend fun executeWithRetry(url: String, payload: String, signalType: S
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. ScaniumApplication Integration
+### 5. ScaniumApplication Integration
 
 **File:** `androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt`
 
@@ -228,7 +228,7 @@ private fun initializeTelemetry() {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 6. Dependency Fix
+### 6. Dependency Fix
 
 **File:** `shared/telemetry/build.gradle.kts`
 
@@ -247,9 +247,9 @@ depend on `shared:telemetry` (like `core-models`).
 
 ---
 
-***REMOVED******REMOVED*** Recommended Defaults for Mobile
+## Recommended Defaults for Mobile
 
-***REMOVED******REMOVED******REMOVED*** Development
+### Development
 
 ```kotlin
 TelemetryConfig(
@@ -265,7 +265,7 @@ TelemetryConfig(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Production
+### Production
 
 ```kotlin
 TelemetryConfig(
@@ -281,7 +281,7 @@ TelemetryConfig(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Staging
+### Staging
 
 ```kotlin
 TelemetryConfig(
@@ -299,7 +299,7 @@ TelemetryConfig(
 
 ---
 
-***REMOVED******REMOVED*** Configuration Knobs
+## Configuration Knobs
 
 | Knob              | Purpose                     | Mobile Best Practice                    |
 |-------------------|-----------------------------|-----------------------------------------|
@@ -315,11 +315,11 @@ TelemetryConfig(
 
 ---
 
-***REMOVED******REMOVED*** Local Dev Configuration
+## Local Dev Configuration
 
 To change telemetry config for local development:
 
-***REMOVED******REMOVED******REMOVED*** Option 1: Edit ScaniumApplication.kt (temporary)
+### Option 1: Edit ScaniumApplication.kt (temporary)
 
 ```kotlin
 private fun initializeTelemetry() {
@@ -334,7 +334,7 @@ private fun initializeTelemetry() {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Option 2: Use Environment Presets
+### Option 2: Use Environment Presets
 
 ```kotlin
 val telemetryConfig = when (myDebugFlag) {
@@ -343,7 +343,7 @@ val telemetryConfig = when (myDebugFlag) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Option 3: Remote Config (Future Work)
+### Option 3: Remote Config (Future Work)
 
 - Add `SettingsRepository` integration
 - Expose toggles in Developer Settings UI
@@ -351,35 +351,35 @@ val telemetryConfig = when (myDebugFlag) {
 
 ---
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Manual Verification
+### Manual Verification
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test 1: Toggle Enabled
+#### Test 1: Toggle Enabled
 
 1. Set `enabled = false` in ScaniumApplication
 2. Run app, perform scan
 3. Verify: NO exports in Grafana/Loki/Tempo
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test 2: Severity Filtering
+#### Test 2: Severity Filtering
 
 1. Set `minSeverity = INFO`
 2. Emit DEBUG and INFO events
 3. Verify: Only INFO events appear in Loki
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test 3: Queue Overflow (DROP_OLDEST)
+#### Test 3: Queue Overflow (DROP_OLDEST)
 
 1. Set `maxQueueSize = 5`, `dropPolicy = DROP_OLDEST`
 2. Emit 10 events rapidly
 3. Verify: Only last 5 events are exported
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test 4: Queue Overflow (DROP_NEWEST)
+#### Test 4: Queue Overflow (DROP_NEWEST)
 
 1. Set `maxQueueSize = 5`, `dropPolicy = DROP_NEWEST`
 2. Emit 10 events rapidly
 3. Verify: Only first 5 events are exported
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test 5: Retry on Failure
+#### Test 5: Retry on Failure
 
 1. Stop Grafana Alloy (no OTLP endpoint)
 2. Emit events
@@ -388,7 +388,7 @@ val telemetryConfig = when (myDebugFlag) {
 
 ---
 
-***REMOVED******REMOVED*** Build Status
+## Build Status
 
 **Shared Modules:** ✅ PASS
 
@@ -403,15 +403,15 @@ val telemetryConfig = when (myDebugFlag) {
 
 ---
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
-***REMOVED******REMOVED******REMOVED*** New Files
+### New Files
 
 ```
 shared/telemetry-contract/src/commonMain/kotlin/com/scanium/telemetry/TelemetryConfig.kt
 ```
 
-***REMOVED******REMOVED******REMOVED*** Modified Files
+### Modified Files
 
 ```
 shared/telemetry/build.gradle.kts
@@ -425,7 +425,7 @@ androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt
 
 ---
 
-***REMOVED******REMOVED*** Architecture Diagram
+## Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -468,7 +468,7 @@ androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. **Fix Pre-Existing Errors:** Resolve `ItemsViewModel.kt` and `AssistantViewModel.kt` compilation
    errors (unrelated to this PR)
@@ -479,10 +479,10 @@ androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
-- **PR ***REMOVED***4:** Android Sentry Integration
-- **PR ***REMOVED***5:** Android OTLP Export Adapter
-- **PR ***REMOVED***6:** NAS Observability Sandbox
+- **PR #4:** Android Sentry Integration
+- **PR #5:** Android OTLP Export Adapter
+- **PR #6:** NAS Observability Sandbox
 - **OpenTelemetry Spec:** https://opentelemetry.io/docs/specs/otlp/
 - **Exponential Backoff:** https://en.wikipedia.org/wiki/Exponential_backoff

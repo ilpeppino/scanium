@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/DECISIONS.md.
 
-***REMOVED*** ADR-003: Module Boundaries and Dependency Rules
+# ADR-003: Module Boundaries and Dependency Rules
 
 **Status:** Accepted  
 **Date:** 2025-01-12  
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Context
+## Context
 
 The repo already has multiple modules (androidApp, android-*, shared/core-*, core-domainpack,
 core-contracts, core-scan). Without explicit rules, platform code could leak into shared modules or
@@ -17,7 +17,7 @@ platform modules could become intertwined, risking `./gradlew assembleDebug`.
 
 ---
 
-***REMOVED******REMOVED*** Decision
+## Decision
 
 Adopt a strict but incremental dependency policy:
 
@@ -51,7 +51,7 @@ Adopt a strict but incremental dependency policy:
 
 ---
 
-***REMOVED******REMOVED*** Consequences
+## Consequences
 
 **Positive**
 
@@ -67,7 +67,7 @@ Adopt a strict but incremental dependency policy:
 
 ---
 
-***REMOVED******REMOVED*** Notes for Future Enforcement
+## Notes for Future Enforcement
 
 - If additional shared modules are added (e.g., `shared/core-domain`), they must follow the same
   rules: depend only on other shared modules, never on Android or UI.

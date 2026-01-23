@@ -1,18 +1,18 @@
-***REMOVED*** Scanium Architecture: Eye Mode vs Focus Mode
+# Scanium Architecture: Eye Mode vs Focus Mode
 
-***REMOVED******REMOVED*** Product Goal
+## Product Goal
 
 **Scanium as an augmented "eye"** - with clear separation between passive recognition and active
 user intent.
 
-***REMOVED******REMOVED******REMOVED*** Mental Model
+### Mental Model
 
 - **Eye Mode** = "I see what Scanium sees" (vision)
 - **Focus Mode** = "I choose what Scanium acts on" (selection)
 
 ---
 
-***REMOVED******REMOVED*** Core Principles (Non-Negotiable)
+## Core Principles (Non-Negotiable)
 
 1. **Detection ≠ Selection**
     - Detection is global (whole frame)
@@ -30,9 +30,9 @@ user intent.
 
 ---
 
-***REMOVED******REMOVED*** Current Architecture Assessment
+## Current Architecture Assessment
 
-***REMOVED******REMOVED******REMOVED*** Where Detection Currently Happens
+### Where Detection Currently Happens
 
 ```
 ImageAnalysis (1280x720)
@@ -63,7 +63,7 @@ DetectionOverlay (renders bboxes)   ← Only shows ROI-eligible
 - Overlay Rendering: `OverlayTrackManager.kt:146` (filters before rendering)
 - Bbox Drawing: `DetectionOverlay.kt`
 
-***REMOVED******REMOVED******REMOVED*** Where ROI is Currently Applied
+### Where ROI is Currently Applied
 
 | Component                         | ROI Usage          | Current Behavior               |
 |-----------------------------------|--------------------|--------------------------------|
@@ -72,7 +72,7 @@ DetectionOverlay (renders bboxes)   ← Only shows ROI-eligible
 | `CenterWeightedCandidateSelector` | Gating rule        | Rejects outside-ROI detections |
 | `ScanGuidanceManager`             | Lock eligibility   | Only ROI objects can lock      |
 
-***REMOVED******REMOVED******REMOVED*** Where User Intent is Inferred vs Explicit
+### Where User Intent is Inferred vs Explicit
 
 | Action          | Current              | Intent Type                  |
 |-----------------|----------------------|------------------------------|
@@ -83,7 +83,7 @@ DetectionOverlay (renders bboxes)   ← Only shows ROI-eligible
 
 **Problem:** User intent is mostly inferred. The system decides what to show, not the user.
 
-***REMOVED******REMOVED******REMOVED*** Where Scan vs Picture Diverge
+### Where Scan vs Picture Diverge
 
 | Aspect          | Live Scan    | Picture                   |
 |-----------------|--------------|---------------------------|
@@ -94,27 +94,27 @@ DetectionOverlay (renders bboxes)   ← Only shows ROI-eligible
 
 ---
 
-***REMOVED******REMOVED*** Mismatches with New Goal
+## Mismatches with New Goal
 
-***REMOVED******REMOVED******REMOVED*** Mismatch 1: ROI Hides Detections
+### Mismatch 1: ROI Hides Detections
 
 **Current:** `RoiDetectionFilter.filterByRoi()` removes detections outside ROI before rendering.
 **Problem:** User cannot see what Scanium detects globally.
 **Fix:** Show ALL detections; use ROI only for selection highlighting.
 
-***REMOVED******REMOVED******REMOVED*** Mismatch 2: No Visual Distinction Between "Seen" and "Selected"
+### Mismatch 2: No Visual Distinction Between "Seen" and "Selected"
 
 **Current:** All visible bboxes have same base style (PREVIEW).
 **Problem:** User cannot distinguish "Scanium sees this" from "Scanium will act on this".
 **Fix:** Two visual states: neutral (Eye) vs highlighted (Focus).
 
-***REMOVED******REMOVED******REMOVED*** Mismatch 3: Lock is Implicit
+### Mismatch 3: Lock is Implicit
 
 **Current:** Lock happens automatically after stability conditions met.
 **Problem:** User doesn't explicitly choose which object to scan.
 **Fix:** Lock only the ROI-intersecting object; break lock when selection changes.
 
-***REMOVED******REMOVED******REMOVED*** Mismatch 4: Picture Capture Has No ROI Selection
+### Mismatch 4: Picture Capture Has No ROI Selection
 
 **Current:** Picture captures full frame, then classifies.
 **Problem:** Inconsistent with live scan's ROI-based behavior.
@@ -122,9 +122,9 @@ DetectionOverlay (renders bboxes)   ← Only shows ROI-eligible
 
 ---
 
-***REMOVED******REMOVED*** Target Architecture
+## Target Architecture
 
-***REMOVED******REMOVED******REMOVED*** Eye Mode (Always Active)
+### Eye Mode (Always Active)
 
 ```
 ImageAnalysis (1280x720)
@@ -142,7 +142,7 @@ DetectionOverlay                    SelectionManager
  with neutral style)                 intersects ROI)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Focus Mode (On Selection)
+### Focus Mode (On Selection)
 
 ```
 allDetections + ROI
@@ -161,14 +161,14 @@ DetectionOverlay          ScanGuidanceManager    PictureCapture
 
 ---
 
-***REMOVED******REMOVED*** Implementation Changes Required
+## Implementation Changes Required
 
-***REMOVED******REMOVED******REMOVED*** 1. Remove ROI Filtering from Overlay
+### 1. Remove ROI Filtering from Overlay
 
 **File:** `OverlayTrackManager.kt`
 **Change:** Remove `RoiDetectionFilter.filterByRoi()` call; pass ALL detections to overlay.
 
-***REMOVED******REMOVED******REMOVED*** 2. Add Selection Logic
+### 2. Add Selection Logic
 
 **New Concept:** `SelectedDetection` - the ONE detection that intersects ROI.
 **Logic:**
@@ -182,7 +182,7 @@ fun selectByRoi(detections: List<DetectionResult>, roi: ScanRoi): DetectionResul
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Update Overlay Visual States
+### 3. Update Overlay Visual States
 
 **File:** `DetectionOverlay.kt`, `OverlayTrack.kt`
 **New States:**
@@ -191,19 +191,19 @@ fun selectByRoi(detections: List<DetectionResult>, roi: ScanRoi): DetectionResul
 - `SELECTED` - Medium, accent color (ROI-intersecting)
 - `LOCKED` - Thick, bright accent (ready to act)
 
-***REMOVED******REMOVED******REMOVED*** 4. Update Lock Logic
+### 4. Update Lock Logic
 
 **File:** `ScanGuidanceManager.kt`
 **Change:** Lock should only target the `selectedDetection`, not any ROI-eligible detection.
 
-***REMOVED******REMOVED******REMOVED*** 5. Unify Picture Capture
+### 5. Unify Picture Capture
 
 **File:** `CameraXManager.kt`
 **Change:** Picture capture should use same selection logic; crop to selected bbox.
 
 ---
 
-***REMOVED******REMOVED*** Data Flow Diagram (Target)
+## Data Flow Diagram (Target)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -267,7 +267,7 @@ fun selectByRoi(detections: List<DetectionResult>, roi: ScanRoi): DetectionResul
 
 ---
 
-***REMOVED******REMOVED*** Visual Language
+## Visual Language
 
 | State      | Stroke         | Color                    | When                     |
 |------------|----------------|--------------------------|--------------------------|
@@ -278,7 +278,7 @@ fun selectByRoi(detections: List<DetectionResult>, roi: ScanRoi): DetectionResul
 
 ---
 
-***REMOVED******REMOVED*** Migration Steps
+## Migration Steps
 
 1. **Create `SelectionManager`** - new class for ROI-based selection logic
 2. **Update `OverlayTrackManager`** - pass all detections, add selection state
@@ -291,7 +291,7 @@ fun selectByRoi(detections: List<DetectionResult>, roi: ScanRoi): DetectionResul
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 1. App opens → bboxes appear immediately for ALL detected objects
 2. Panning → bboxes update continuously (no disappearing outside ROI)

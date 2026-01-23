@@ -1,11 +1,11 @@
-***REMOVED*** Incident: Camera Image Corruption on Background/Resume
+# Incident: Camera Image Corruption on Background/Resume
 
 **Severity**: RELEASE-BLOCKING
 **Date**: 2026-01-15
 **Branch**: refactoring
 **Baseline Commit**: 43cbfcd (docs: add AI language propagation troubleshooting report)
 
-***REMOVED******REMOVED*** Symptoms
+## Symptoms
 
 After app background/resume cycle:
 
@@ -16,14 +16,14 @@ After app background/resume cycle:
    item thumbnail)
 4. **Item Association**: Scanned items show wrong image from previous batch
 
-***REMOVED******REMOVED*** Root Cause Categories (to be determined)
+## Root Cause Categories (to be determined)
 
 - [ ] FILE OVERWRITE: Same output path reused for multiple captures
 - [ ] STALE BUFFER: ImageProxy/frame buffers not released, reused after resume
 - [ ] CROP REUSE: Crop rect or viewport state persists incorrectly
 - [ ] UI KEYING: LazyColumn items keyed by index instead of stable ID
 
-***REMOVED******REMOVED*** Reproduction Steps
+## Reproduction Steps
 
 **Setup**:
 
@@ -44,39 +44,39 @@ After app background/resume cycle:
 9. **Expected**: Batch B items show new distinct objects
 10. **Actual**: Batch B items show cropped versions of Batch A objects or mismatched labels
 
-***REMOVED******REMOVED*** Evidence Collection
+## Evidence Collection
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Instrumentation Logs
+### Phase 2: Instrumentation Logs
 
 (To be populated after instrumentation implementation)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A) Capture File Save Logs
+#### A) Capture File Save Logs
 
 ```
 [TEMP_CAM_BUG_DEBUG] CAPTURE_SAVED: captureId=<uuid>, itemId=<id>, path=/files/..., hash=<first16bytes>, size=<bytes>, callSite=<func>
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B) Thumbnail Generation Logs
+#### B) Thumbnail Generation Logs
 
 ```
 [TEMP_CAM_BUG_DEBUG] THUMBNAIL_ASSIGNED: itemId=<id>, captureId=<uuid>, source=<path>, dims=<w>x<h>
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C) Frame/Analyzer Logs
+#### C) Frame/Analyzer Logs
 
 ```
 [TEMP_CAM_BUG_DEBUG] FRAME_PROCESSED: frameCounter=<n>, wxh=<w>x<h>, rotation=<deg>, crop=<l,t,r,b>, deepCopy=<bool>, proxy_close=<bool>
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** D) Lifecycle Logs
+#### D) Lifecycle Logs
 
 ```
 [TEMP_CAM_BUG_DEBUG] CAMERA_LIFECYCLE: event=background|resume|unbind|bind, timestamp=<ms>
 ```
 
-***REMOVED******REMOVED*** System Architecture Map
+## System Architecture Map
 
-***REMOVED******REMOVED******REMOVED*** Capture → Storage → Thumbnail → Item Model → UI List
+### Capture → Storage → Thumbnail → Item Model → UI List
 
 ```
 CameraXManager.startCamera() (420-602)
@@ -105,38 +105,38 @@ ItemsListContent.LazyColumn items() (78-81)
   ↓ Renders with key = { it.id } (stable UUID, NOT index)
 ```
 
-***REMOVED******REMOVED*** Phase 1 Findings
+## Phase 1 Findings
 
-***REMOVED******REMOVED******REMOVED*** Critical Pipeline Components
+### Critical Pipeline Components
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Camera Capture & Analyzer
+#### Camera Capture & Analyzer
 
 - **CameraXManager.kt:420-602**: CameraX setup with ImageCapture + ImageAnalysis bound
 - **CameraFrameAnalyzer.kt:65-128**: Motion-based throttling (400-600ms intervals)
 - **CameraImageConverter.kt:24-81**: YUV_420_888 conversion (must deep-copy bytes)
 - **CameraXManager.kt:1047, 1288**: Session ID capture for validating stale callbacks
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** File Persistence
+#### File Persistence
 
 - **CameraXManager.kt:1392-1396**: Filename = `"SCANIUM_" + SimpleDateFormat("yyyyMMdd_HHmmss")`
     - **⚠️ CRITICAL**: Two captures in same second = same filename → overwrite!
 - **CameraXManager.kt:1395**: Storage = `context.cacheDir` (OK for dev, but no collision protection)
 - **StorageHelper.kt:43-44**: SAF storage also uses timestamp pattern
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Item Association & Persistence
+#### Item Association & Persistence
 
 - **ScannedItem.kt**: Has stable UUID `id` field
 - **DetectionMapping.kt:302-374**: Creates ScannedItem with UUID
 - **ScannedItemRepository.kt:37-119**: Persists to Room DB (reliable)
 - **LazyColumn.kt:80**: Uses `key = { it.id }` (stable keying ✓)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ML Detection & Cropping
+#### ML Detection & Cropping
 
 - **CameraXManager.kt:1704-1733**: `calculateVisibleViewport()` - crops for aspect ratio
 - **DetectionMapping.kt:111-158**: `uprightBboxToSensorBbox()` - coordinate transforms
 - **DetectionMapping.kt:55-94**: `isDetectionInsideSafeZone()` - edge margin filtering
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Lifecycle Management
+#### Lifecycle Management
 
 - **CameraScreen.kt:298-326**: LifecycleEventObserver monitors ON_RESUME/ON_PAUSE
 - **CameraScreen.kt:330-357**: ProcessLifecycleOwner app-level background/foreground tracking
@@ -144,7 +144,7 @@ ItemsListContent.LazyColumn items() (78-81)
 - **CameraXManager.kt:295-329**: `stopCameraSession()` - cancels scope, clears analyzer
 - **CameraXManager.kt:1196-1246**: No-frames watchdog + analyzer rebind recovery
 
-***REMOVED******REMOVED******REMOVED*** Likely Root Cause Candidates
+### Likely Root Cause Candidates
 
 1. **FILE OVERWRITE** ⚠️
     - SimpleDateFormat("yyyyMMdd_HHmmss") has 1-second resolution
@@ -167,9 +167,9 @@ ItemsListContent.LazyColumn items() (78-81)
     - `isCurrentSessionValid()` check missing in some code paths
     - Evidence: captureIds from both batches mixed
 
-***REMOVED******REMOVED*** RCA Summary
+## RCA Summary
 
-***REMOVED******REMOVED******REMOVED*** ROOT CAUSE: FILE OVERWRITE (PRIMARY ISSUE)
+### ROOT CAUSE: FILE OVERWRITE (PRIMARY ISSUE)
 
 **File**: CameraXManager.kt:1393-1400
 **Root Cause**: Filename generation uses SimpleDateFormat with only 1-second resolution
@@ -212,9 +212,9 @@ val photoFile = File(context.cacheDir, "SCANIUM_$timestamp.jpg")
 - Batch B captures to same filenames
 - UI references stale cache entries pointing to overwritten files
 
-***REMOVED******REMOVED*** Fixes Applied
+## Fixes Applied
 
-***REMOVED******REMOVED******REMOVED*** FIX 1: Collision-Proof Filename Generation ✅
+### FIX 1: Collision-Proof Filename Generation ✅
 
 **File**: CameraXManager.kt:1393-1402 (Fixed)
 
@@ -240,7 +240,7 @@ val photoFile = File(context.cacheDir, "SCANIUM_${timestamp}_${uniqueSuffix}.jpg
 - Tests: 10 captures in same second → 10 unique names ✓
 - Tests: Format validation passes ✓
 
-***REMOVED******REMOVED******REMOVED*** FIX 2: Debug Instrumentation (TEMP, disabled by default) ✅
+### FIX 2: Debug Instrumentation (TEMP, disabled by default) ✅
 
 **Files**:
 
@@ -253,9 +253,9 @@ val photoFile = File(context.cacheDir, "SCANIUM_${timestamp}_${uniqueSuffix}.jpg
 **Status**: Disabled by default (TEMP_CAM_BUG_DEBUG = false)
 **Activation**: Change line 73 to `true` for local debugging
 
-***REMOVED******REMOVED*** Tests Added
+## Tests Added
 
-***REMOVED******REMOVED******REMOVED*** Test Suite: CameraXManagerFilenameTest.kt ✅
+### Test Suite: CameraXManagerFilenameTest.kt ✅
 
 Comprehensive regression guard with 5 test cases:
 
@@ -284,7 +284,7 @@ Comprehensive regression guard with 5 test cases:
 
 **All tests pass**: ✓ (BUILD SUCCESSFUL in 56s)
 
-***REMOVED******REMOVED*** Validation Checklist
+## Validation Checklist
 
 - [x] Baseline build: PASS
 - [x] Phase 1 complete: All pipeline components mapped

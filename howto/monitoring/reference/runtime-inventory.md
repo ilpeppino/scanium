@@ -1,9 +1,9 @@
-***REMOVED*** Runtime Inventory - NAS Docker State
+# Runtime Inventory - NAS Docker State
 
 **Timestamp:** 2026-01-12 (captured after repo alignment to d5bf933)
 **Purpose:** Source of truth for monitoring stack deployment on NAS
 
-***REMOVED******REMOVED*** Container Status
+## Container Status
 
 ```
 NAMES                   IMAGE                           STATUS
@@ -18,7 +18,7 @@ scanium-mimir           grafana/mimir:2.11.0            Up 44 hours (healthy)
 scanium-smoke-monitor   alpine:3.19                     Up 2 days
 ```
 
-***REMOVED******REMOVED*** Docker Networks
+## Docker Networks
 
 ```
 NETWORK ID     NAME                            DRIVER    SCOPE
@@ -35,9 +35,9 @@ bf9936db109f   pihole_net                      macvlan   local
 31e5fc07f258   scanium_net                     bridge    local
 ```
 
-***REMOVED******REMOVED*** Network Topology
+## Network Topology
 
-***REMOVED******REMOVED******REMOVED*** Backend (scanium-backend)
+### Backend (scanium-backend)
 
 - **Network:** compose_scanium_net (172.21.0.0/16)
 - **IP:** 172.21.0.3
@@ -47,7 +47,7 @@ bf9936db109f   pihole_net                      macvlan   local
 - **Compose Project:** compose
 - **Service Name:** backend
 
-***REMOVED******REMOVED******REMOVED*** Alloy (scanium-alloy)
+### Alloy (scanium-alloy)
 
 - **Networks:**
     1. backend_scanium-network (172.23.0.0/16) - IP: 172.23.0.2, Gateway: 172.23.0.1
@@ -58,7 +58,7 @@ bf9936db109f   pihole_net                      macvlan   local
 - **Service Name:** alloy
 - **Note:** Bridge container between backend and observability networks
 
-***REMOVED******REMOVED******REMOVED*** Grafana (scanium-grafana)
+### Grafana (scanium-grafana)
 
 - **Networks:**
     1. backend_scanium-network (172.23.0.0/16) - IP: 172.23.0.6, Gateway: 172.23.0.1
@@ -69,30 +69,30 @@ bf9936db109f   pihole_net                      macvlan   local
 - **Service Name:** grafana
 - **Note:** Bridge container between backend and observability networks
 
-***REMOVED******REMOVED******REMOVED*** Loki (scanium-loki)
+### Loki (scanium-loki)
 
 - **Network:** scanium-observability (172.25.0.0/16)
 - **IP:** 172.25.0.3
 - **Gateway:** 172.25.0.1
 - **Aliases:** loki, 0c69815ed056
 
-***REMOVED******REMOVED******REMOVED*** Mimir (scanium-mimir)
+### Mimir (scanium-mimir)
 
 - **Network:** scanium-observability (172.25.0.0/16)
 - **IP:** 172.25.0.4
 - **Gateway:** 172.25.0.1
 - **Aliases:** mimir, 660c90df46a0
 
-***REMOVED******REMOVED******REMOVED*** Tempo (scanium-tempo)
+### Tempo (scanium-tempo)
 
 - **Network:** scanium-observability (172.25.0.0/16)
 - **IP:** 172.25.0.2
 - **Gateway:** 172.25.0.1
 - **Aliases:** tempo, e0b48b0270eb
 
-***REMOVED******REMOVED*** Persistence Mounts (Verified)
+## Persistence Mounts (Verified)
 
-***REMOVED******REMOVED******REMOVED*** Grafana
+### Grafana
 
 ```
 bind /volume1/docker/scanium/repo/monitoring/data/grafana -> /var/lib/grafana
@@ -100,21 +100,21 @@ bind /volume1/docker/scanium/repo/monitoring/grafana/provisioning -> /etc/grafan
 bind /volume1/docker/scanium/repo/monitoring/grafana/dashboards -> /var/lib/grafana/dashboards
 ```
 
-***REMOVED******REMOVED******REMOVED*** Loki
+### Loki
 
 ```
 bind /volume1/docker/scanium/repo/monitoring/data/loki -> /loki
 bind /volume1/docker/scanium/repo/monitoring/loki/loki.yaml -> /etc/loki/config.yaml
 ```
 
-***REMOVED******REMOVED******REMOVED*** Mimir
+### Mimir
 
 ```
 bind /volume1/docker/scanium/repo/monitoring/mimir/mimir.yaml -> /etc/mimir/config.yaml
 bind /volume1/docker/scanium/repo/monitoring/data/mimir -> /data
 ```
 
-***REMOVED******REMOVED******REMOVED*** Tempo
+### Tempo
 
 ```
 bind /volume1/docker/scanium/repo/monitoring/tempo/overrides.yaml -> /etc/tempo/overrides.yaml
@@ -122,7 +122,7 @@ bind /volume1/docker/scanium/repo/monitoring/data/tempo -> /var/tempo
 bind /volume1/docker/scanium/repo/monitoring/tempo/tempo.yaml -> /etc/tempo/config.yaml
 ```
 
-***REMOVED******REMOVED******REMOVED*** Alloy
+### Alloy
 
 ```
 bind /volume1/docker/scanium/repo/monitoring/alloy/alloy.hcl -> /etc/alloy/config.alloy
@@ -130,7 +130,7 @@ bind /var/run/docker.sock -> /var/run/docker.sock
 bind /volume1/docker/scanium/repo/monitoring/data/alloy -> /var/lib/alloy/data
 ```
 
-***REMOVED******REMOVED*** Data Directories Status
+## Data Directories Status
 
 ```
 drwxr-xr-x  1 ilpeppino users 384 Jan 11 11:36 alloy
@@ -142,14 +142,14 @@ drwxrwxrwx  1 ilpeppino users  36 Jan  9 16:52 tempo
 
 ✅ All persistence directories exist on NAS
 
-***REMOVED******REMOVED*** Network Drift Analysis
+## Network Drift Analysis
 
 - **Backend is isolated:** runs only on compose_scanium_net, not on scanium-observability
 - **Alloy bridges:** backend_scanium-network ↔ scanium-observability
 - **Grafana bridges:** backend_scanium-network ↔ scanium-observability
 - **LGTM stack (Loki, Mimir, Tempo):** isolated to scanium-observability
 
-***REMOVED******REMOVED*** Critical Paths for Telemetry
+## Critical Paths for Telemetry
 
 1. **Backend → Alloy:** Backend must reach Alloy on backend_scanium-network (172.23.0.2)
 2. **Alloy → Loki/Mimir/Tempo:** Alloy writes to scanium-observability network

@@ -1,30 +1,30 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Create Phase 2 GitHub issues for Scanium enterprise readiness
-***REMOVED*** Run after Phase 1 (20 issues) are complete
-***REMOVED*** Prerequisites: Labels already created from CREATE_LABELS.sh
-***REMOVED*** Usage: bash docs/go-live/CREATE_ISSUES_PHASE2.sh
+#!/bin/bash
+# Create Phase 2 GitHub issues for Scanium enterprise readiness
+# Run after Phase 1 (20 issues) are complete
+# Prerequisites: Labels already created from CREATE_LABELS.sh
+# Usage: bash docs/go-live/CREATE_ISSUES_PHASE2.sh
 
 set -e
 
 echo "🚀 Creating Phase 2 (Enterprise-Ready) issues..."
 echo ""
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** P2 HIGH - Security Hardening
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+###########################################
+# P2 HIGH - Security Hardening
+###########################################
 
 echo "Creating P2 severity:high security issues..."
 
 gh issue create \
   --title "[ENTERPRISE][HIGH] Penetration testing and vulnerability assessment" \
   --label "severity:high,epic:security,area:backend,area:android,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:security
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / 10K+ users
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No external penetration testing has been performed. Application has not been audited by security professionals for:
 - OWASP Top 10 vulnerabilities (injection, XSS, CSRF, etc.)
 - Mobile-specific attacks (SSL pinning bypass, root detection bypass)
@@ -33,13 +33,13 @@ No external penetration testing has been performed. Application has not been aud
 
 **Why it matters:** Unknown vulnerabilities may exist. Enterprise customers and compliance frameworks (SOC 2, ISO 27001) require regular pen testing.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - No pen test reports in repository
 - No external security audit history
 - No vulnerability disclosure policy
 - \`docs/go-live/GO_LIVE_BACKLOG_SUMMARY.md\` - Identified as enterprise readiness gap
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Pre-Test Preparation:**
 - [ ] Define pen test scope: Backend API, Android app, infrastructure (K8s, DB)
 - [ ] Choose pen testing firm (HackerOne, Synack, local firm)
@@ -66,34 +66,34 @@ No external penetration testing has been performed. Application has not been aud
 - [ ] Add pen test artifacts to compliance folder
 - [ ] Update security.txt with contact info
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Review pen test report
+# Review pen test report
 cat reports/security/pentest-2025-q1.pdf
 
-***REMOVED*** Verify critical findings resolved
+# Verify critical findings resolved
 grep \"CRITICAL\" reports/security/pentest-2025-q1.pdf
-***REMOVED*** Expected: 0 unresolved critical findings
+# Expected: 0 unresolved critical findings
 
-***REMOVED*** Verify security.txt published
+# Verify security.txt published
 curl https://api.scanium.com/.well-known/security.txt
-***REMOVED*** Expected: Contact, Expires, Preferred-Languages fields
+# Expected: Contact, Expires, Preferred-Languages fields
 
-***REMOVED*** Re-test critical finding (example: auth bypass)
+# Re-test critical finding (example: auth bypass)
 curl -X GET https://api.scanium.com/auth/ebay/status
-***REMOVED*** Expected: 401 Unauthorized (fixed)
+# Expected: 401 Unauthorized (fixed)
 \`\`\`"
 
 gh issue create \
   --title "[ENTERPRISE][HIGH] Third-party security audit and certification" \
   --label "severity:high,epic:security,epic:docs,area:backend,area:android,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:security, epic:docs
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / compliance requirements
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No third-party security audit or compliance certification exists. Enterprise customers and regulated industries require:
 - SOC 2 Type II (Security, Availability, Confidentiality)
 - ISO 27001 (Information Security Management)
@@ -102,12 +102,12 @@ No third-party security audit or compliance certification exists. Enterprise cus
 
 **Why it matters:** Cannot sell to enterprise customers or enter regulated markets (healthcare, finance) without certifications. Builds trust and demonstrates security maturity.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - No SOC 2, ISO 27001, or compliance certifications
 - \`docs/_archive/2025-12/security/SECURITY_RISK_ASSESSMENT.md\` - MASVS assessment done internally, not certified
 - \`docs/go-live/GO_LIVE_BACKLOG_SUMMARY.md\` - Compliance checklist shows gaps
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Choose Certification Path:**
 - [ ] Determine required certifications:
   - SOC 2 Type II (most common for SaaS, 6-12 months, \$20-50K)
@@ -146,21 +146,21 @@ No third-party security audit or compliance certification exists. Enterprise cus
 - [ ] Third-party data processing agreements (Google, OpenAI, eBay)
 - [ ] Receive GDPR compliance attestation
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Verify SOC 2 report published
+# Verify SOC 2 report published
 ls -l compliance/soc2/Scanium-SOC2-TypeII-2025.pdf
 
-***REMOVED*** Verify ISO 27001 certificate
+# Verify ISO 27001 certificate
 curl https://scanium.com/certifications/iso27001.pdf
 
-***REMOVED*** Verify MASVS badge in app
-***REMOVED*** Settings → About → Security Certifications
-***REMOVED*** Expected: \"OWASP MASVS Level 2 Certified\"
+# Verify MASVS badge in app
+# Settings → About → Security Certifications
+# Expected: \"OWASP MASVS Level 2 Certified\"
 
-***REMOVED*** Verify GDPR compliance in privacy policy
+# Verify GDPR compliance in privacy policy
 curl https://scanium.com/privacy | grep GDPR
-***REMOVED*** Expected: GDPR rights section
+# Expected: GDPR rights section
 \`\`\`"
 
 echo ""
@@ -169,13 +169,13 @@ echo "Creating P2 severity:medium operational excellence issues..."
 gh issue create \
   --title "[ENTERPRISE][MEDIUM] Load testing and capacity planning" \
   --label "severity:medium,epic:backend,epic:observability,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend, epic:observability
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / 10K+ users
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No load testing or capacity planning has been performed. Cannot answer:
 - How many concurrent users can the system handle?
 - What is the maximum requests per second (RPS) before degradation?
@@ -184,13 +184,13 @@ No load testing or capacity planning has been performed. Cannot answer:
 
 **Why it matters:** Risk of performance degradation or outages at scale. Cannot plan infrastructure costs. Enterprise customers require SLAs and capacity guarantees.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - No load tests documented
 - No capacity plan or resource sizing guidelines
 - No performance benchmarks or SLAs documented
 - Current deployment: 3 pods, db.t3.small - chosen arbitrarily
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Load Testing Setup:**
 - [ ] Choose load testing tool: k6 (recommended), JMeter, Gatling, or Locust
 - [ ] Create load test scenarios:
@@ -230,43 +230,43 @@ No load testing or capacity planning has been performed. Cannot answer:
 - [ ] Set performance regression alerts (p95 latency increased by 20%+)
 - [ ] Schedule quarterly load tests against production (during off-peak)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Run load test locally
+# Run load test locally
 cd backend/tests/load
 k6 run --vus 100 --duration 5m classification-load-test.js
 
-***REMOVED*** Output:
-***REMOVED*** ✓ http_req_duration (p95) < 500ms
-***REMOVED*** ✓ http_req_failed < 1%
-***REMOVED*** Max RPS sustained: 150
+# Output:
+# ✓ http_req_duration (p95) < 500ms
+# ✓ http_req_failed < 1%
+# Max RPS sustained: 150
 
-***REMOVED*** Run load test against staging
+# Run load test against staging
 k6 run --vus 1000 --duration 10m \\
   --env BASE_URL=https://staging-api.scanium.com \\
   classification-load-test.js
 
-***REMOVED*** Review capacity plan
+# Review capacity plan
 cat docs/operations/CAPACITY_PLAN.md
 
-***REMOVED*** Example output:
-***REMOVED*** Max capacity (current config): 500 RPS, 2,000 concurrent users
-***REMOVED*** Bottleneck: PostgreSQL connections (max 100)
-***REMOVED*** Scaling trigger: Add db.t3.medium when connections > 80
-***REMOVED*** Cost at 10K users: \$800/month
+# Example output:
+# Max capacity (current config): 500 RPS, 2,000 concurrent users
+# Bottleneck: PostgreSQL connections (max 100)
+# Scaling trigger: Add db.t3.medium when connections > 80
+# Cost at 10K users: \$800/month
 \`\`\`"
 
 gh issue create \
   --title "[ENTERPRISE][MEDIUM] Disaster recovery drills and testing" \
   --label "severity:medium,epic:observability,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:observability
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / operational maturity
 
-***REMOVED******REMOVED*** Problem Statement
-Disaster recovery runbook exists (from Phase 1 issue ***REMOVED***254) but has never been tested. Critical scenarios not validated:
+## Problem Statement
+Disaster recovery runbook exists (from Phase 1 issue #254) but has never been tested. Critical scenarios not validated:
 - Database restore from backup (is the backup valid? how long does it take?)
 - Failover to standby database replica (does it work? data loss?)
 - Complete infrastructure rebuild from scratch (K8s manifests, secrets)
@@ -274,13 +274,13 @@ Disaster recovery runbook exists (from Phase 1 issue ***REMOVED***254) but has n
 
 **Why it matters:** Disaster recovery plans fail when executed under pressure. Runbooks become outdated. Recovery Time Objective (RTO) and Recovery Point Objective (RPO) are guesses, not measurements.
 
-***REMOVED******REMOVED*** Evidence
-- Issue ***REMOVED***254 created incident response runbook but no drill schedule
-- Issue ***REMOVED***240 implemented backups but no restore tests documented
+## Evidence
+- Issue #254 created incident response runbook but no drill schedule
+- Issue #240 implemented backups but no restore tests documented
 - No RTO/RPO measurements from actual tests
 - No quarterly drill schedule
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Quarterly DR Drill Schedule:**
 - [ ] Schedule quarterly disaster recovery drills (Q1, Q2, Q3, Q4)
 - [ ] Rotate drill scenarios each quarter
@@ -331,42 +331,42 @@ Disaster recovery runbook exists (from Phase 1 issue ***REMOVED***254) but has n
 - [ ] Add new drill scenarios as architecture changes
 - [ ] Automate drill triggering (chaos engineering, next step)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Q1 Drill: Database Restore
-***REMOVED*** 1. Simulate corruption
+# Q1 Drill: Database Restore
+# 1. Simulate corruption
 kubectl exec -it postgres-0 -n scanium-prod -- psql -U scanium -c \"DROP TABLE users;\"
 
-***REMOVED*** 2. Start timer
+# 2. Start timer
 START_TIME=\$(date +%s)
 
-***REMOVED*** 3. Execute restore from backup
+# 3. Execute restore from backup
 ./scripts/restore-from-backup.sh --backup-file /backups/postgres/latest.dump
 
-***REMOVED*** 4. Stop timer
+# 4. Stop timer
 END_TIME=\$(date +%s)
 RTO=\$((END_TIME - START_TIME))
-echo \"RTO: \${RTO} seconds\"  ***REMOVED*** Target: < 3600s (1 hour)
+echo \"RTO: \${RTO} seconds\"  # Target: < 3600s (1 hour)
 
-***REMOVED*** 5. Verify data
+# 5. Verify data
 psql -d scanium -c \"SELECT COUNT(*) FROM users;\"
-***REMOVED*** Expected: Match pre-drill count
+# Expected: Match pre-drill count
 
-***REMOVED*** 6. Document results
+# 6. Document results
 cat reports/dr-drills/2025-q1-database-restore.md
-***REMOVED*** Expected: RTO: 35 minutes, RPO: 10 minutes, Status: Success
+# Expected: RTO: 35 minutes, RPO: 10 minutes, Status: Success
 \`\`\`"
 
 gh issue create \
   --title "[ENTERPRISE][MEDIUM] Chaos engineering and resilience testing" \
   --label "severity:medium,epic:backend,epic:observability,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend, epic:observability
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / resilience validation
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 System resilience is untested under failure conditions. Unknown how the system behaves when:
 - Backend pod crashes randomly
 - Database connections are slow or timing out
@@ -376,13 +376,13 @@ System resilience is untested under failure conditions. Unknown how the system b
 
 **Why it matters:** Production failures reveal weaknesses. Chaos engineering proactively injects failures to validate resilience and improve recovery.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - No chaos engineering tools configured (Chaos Mesh, Litmus, Gremlin)
 - No automated failure injection tests
 - Resilience features exist (circuit breakers, retries, timeouts) but not validated under failure
 - \`backend/src/infra/resilience/circuit-breaker.ts\` - Circuit breaker implemented but not chaos-tested
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Choose Chaos Engineering Tool:**
 - [ ] Choose tool: Chaos Mesh (K8s native, free), Litmus Chaos, or Gremlin (paid)
 - [ ] Install in staging environment first
@@ -439,13 +439,13 @@ System resilience is untested under failure conditions. Unknown how the system b
 - [ ] Add new experiments as architecture evolves
 - [ ] Gradually increase chaos intensity (more frequent, longer duration)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Install Chaos Mesh in staging
+# Install Chaos Mesh in staging
 kubectl apply -f https://mirrors.chaos-mesh.org/latest/crd.yaml
 kubectl apply -f https://mirrors.chaos-mesh.org/latest/chaos-mesh.yaml
 
-***REMOVED*** Create pod kill experiment
+# Create pod kill experiment
 cat <<EOF | kubectl apply -f -
 apiVersion: chaos-mesh.org/v1alpha1
 kind: PodChaos
@@ -461,37 +461,37 @@ spec:
     labelSelectors:
       app: scanium-backend
   scheduler:
-    cron: '*/5 * * * *'  ***REMOVED*** Every 5 minutes
+    cron: '*/5 * * * *'  # Every 5 minutes
 EOF
 
-***REMOVED*** Monitor during chaos
+# Monitor during chaos
 watch kubectl get pods -n scanium-staging
 
-***REMOVED*** Verify requests still succeed
+# Verify requests still succeed
 for i in {1..100}; do
   curl -s https://staging-api.scanium.com/healthz | jq .status
   sleep 1
 done
-***REMOVED*** Expected: 100 \"ok\" responses (no failures during pod kill)
+# Expected: 100 \"ok\" responses (no failures during pod kill)
 
-***REMOVED*** Check circuit breaker metrics
+# Check circuit breaker metrics
 curl http://localhost:8080/metrics | grep circuit_breaker
-***REMOVED*** Expected: circuit_breaker_state{service=\"database\"} = 0 (closed)
+# Expected: circuit_breaker_state{service=\"database\"} = 0 (closed)
 
-***REMOVED*** Review chaos experiment results
+# Review chaos experiment results
 kubectl describe podchaos backend-pod-kill -n scanium-staging
 \`\`\`"
 
 gh issue create \
   --title "[ENTERPRISE][MEDIUM] Blue-green and canary deployment strategy" \
   --label "severity:medium,epic:backend,area:backend,area:ci,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / zero-downtime deployments
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Current deployment strategy is basic rolling update (K8s default). Risky for production:
 - New version deployed to all users immediately
 - No gradual rollout (0% → 100% instantly)
@@ -500,13 +500,13 @@ Current deployment strategy is basic rolling update (K8s default). Risky for pro
 
 **Why it matters:** Breaking changes reach all users immediately. No way to detect issues before full rollout. Enterprise customers require zero-downtime deployments and safe rollback.
 
-***REMOVED******REMOVED*** Evidence
-- \`.github/workflows/backend-deploy-production.yml\` (from Phase 1 ***REMOVED***249) uses basic K8s deployment
+## Evidence
+- \`.github/workflows/backend-deploy-production.yml\` (from Phase 1 #249) uses basic K8s deployment
 - No Argo Rollouts, Flagger, or Istio configured
 - No canary or blue-green deployment documented
 - \`docs/go-live/GO_LIVE_BACKLOG_SUMMARY.md\` - Identified as enterprise gap
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Choose Deployment Strategy:**
 - [ ] Choose strategy: Blue-Green (recommended for DB migrations) or Canary (recommended for gradual rollout)
 - [ ] Choose tool: Argo Rollouts (K8s native, free), Flagger (with Istio), or cloud provider (AWS CodeDeploy, GCP Cloud Deploy)
@@ -548,63 +548,63 @@ Current deployment strategy is basic rolling update (K8s default). Risky for pro
 - [ ] Add deployment approval gates (manual approval before 100% rollout)
 - [ ] Configure Slack notifications for deployment progress (25%, 50%, 75%, 100%)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Blue-Green Deployment Example
+# Blue-Green Deployment Example
 
-***REMOVED*** 1. Deploy new version to green
+# 1. Deploy new version to green
 kubectl apply -f k8s/production/deployment-green.yaml
 
-***REMOVED*** 2. Wait for green pods healthy
+# 2. Wait for green pods healthy
 kubectl wait --for=condition=ready pod -l app=scanium-backend,env=green -n scanium-prod --timeout=300s
 
-***REMOVED*** 3. Run smoke tests against green
+# 3. Run smoke tests against green
 curl https://green-api.scanium.com/healthz
-***REMOVED*** Expected: 200 OK
+# Expected: 200 OK
 
-***REMOVED*** 4. Switch traffic to green (update service selector)
+# 4. Switch traffic to green (update service selector)
 kubectl patch service scanium-backend -n scanium-prod -p '{\"spec\":{\"selector\":{\"env\":\"green\"}}}'
 
-***REMOVED*** 5. Monitor green for errors
+# 5. Monitor green for errors
 kubectl logs -f -l app=scanium-backend,env=green -n scanium-prod | grep ERROR
-***REMOVED*** Expected: No errors for 10 minutes
+# Expected: No errors for 10 minutes
 
-***REMOVED*** 6. If healthy, decommission blue
+# 6. If healthy, decommission blue
 kubectl delete deployment scanium-backend-blue -n scanium-prod
 
-***REMOVED*** 7. If errors, rollback to blue
+# 7. If errors, rollback to blue
 kubectl patch service scanium-backend -n scanium-prod -p '{\"spec\":{\"selector\":{\"env\":\"blue\"}}}'
-***REMOVED*** Traffic switched back in < 5 seconds
+# Traffic switched back in < 5 seconds
 
-***REMOVED*** Canary Deployment Example (Argo Rollouts)
+# Canary Deployment Example (Argo Rollouts)
 
-***REMOVED*** 1. Deploy with canary strategy
+# 1. Deploy with canary strategy
 kubectl apply -f k8s/production/rollout-canary.yaml
 
-***REMOVED*** 2. Watch canary rollout
+# 2. Watch canary rollout
 kubectl argo rollouts get rollout scanium-backend -n scanium-prod --watch
 
-***REMOVED*** Output:
-***REMOVED*** Revision 2: 10% (1/10 pods) - Analyzing (5m)
-***REMOVED*** Revision 2: 25% (2/10 pods) - Healthy
-***REMOVED*** Revision 2: 50% (5/10 pods) - Healthy
-***REMOVED*** Revision 2: 100% (10/10 pods) - Healthy
+# Output:
+# Revision 2: 10% (1/10 pods) - Analyzing (5m)
+# Revision 2: 25% (2/10 pods) - Healthy
+# Revision 2: 50% (5/10 pods) - Healthy
+# Revision 2: 100% (10/10 pods) - Healthy
 
-***REMOVED*** 3. Abort rollout if needed
+# 3. Abort rollout if needed
 kubectl argo rollouts abort scanium-backend -n scanium-prod
-***REMOVED*** Automatic rollback to revision 1
+# Automatic rollback to revision 1
 \`\`\`"
 
 gh issue create \
   --title "[ENTERPRISE][MEDIUM] Database query optimization and indexing" \
   --label "severity:medium,epic:backend,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / performance at scale
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Database queries are not optimized for scale. No query performance analysis or indexing strategy:
 - No slow query logging or profiling
 - No database indexes beyond primary keys
@@ -614,13 +614,13 @@ Database queries are not optimized for scale. No query performance analysis or i
 
 **Why it matters:** Database becomes bottleneck at scale (10K+ users). Slow queries increase p95 latency and reduce throughput. High connection count exhausts database.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/prisma/schema.prisma\` - Only basic indexes (@@index on listings)
 - No slow query logs or pg_stat_statements enabled
 - No query performance monitoring in Grafana
 - Load testing (Phase 2 issue) will likely reveal database bottlenecks
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Query Performance Monitoring:**
 - [ ] Enable PostgreSQL slow query logging (queries > 100ms)
 - [ ] Enable pg_stat_statements extension (track query stats)
@@ -663,16 +663,16 @@ Database queries are not optimized for scale. No query performance analysis or i
 - [ ] Analyze new queries after feature launches
 - [ ] Vacuum and analyze tables monthly (prevents table bloat)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Enable slow query logging
-psql -d scanium -c \"ALTER SYSTEM SET log_min_duration_statement = 100;\"  ***REMOVED*** 100ms
+# Enable slow query logging
+psql -d scanium -c \"ALTER SYSTEM SET log_min_duration_statement = 100;\"  # 100ms
 psql -d scanium -c \"SELECT pg_reload_conf();\"
 
-***REMOVED*** Enable pg_stat_statements
+# Enable pg_stat_statements
 psql -d scanium -c \"CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\"
 
-***REMOVED*** View slow queries
+# View slow queries
 psql -d scanium -c \"
 SELECT
   query,
@@ -685,28 +685,28 @@ ORDER BY mean_exec_time DESC
 LIMIT 10;
 \"
 
-***REMOVED*** Example output:
-***REMOVED*** query                              | calls | total_exec_time | mean_exec_time | max_exec_time
-***REMOVED*** SELECT * FROM listings WHERE ...   | 1523  | 45234.5         | 29.7           | 450.2
+# Example output:
+# query                              | calls | total_exec_time | mean_exec_time | max_exec_time
+# SELECT * FROM listings WHERE ...   | 1523  | 45234.5         | 29.7           | 450.2
 
-***REMOVED*** Analyze query plan
+# Analyze query plan
 psql -d scanium -c \"EXPLAIN ANALYZE SELECT * FROM listings WHERE userId = '123' AND status = 'active';\"
 
-***REMOVED*** Expected before optimization:
-***REMOVED*** Seq Scan on listings (cost=0.00..1234.56)  ***REMOVED*** BAD: Sequential scan
+# Expected before optimization:
+# Seq Scan on listings (cost=0.00..1234.56)  # BAD: Sequential scan
 
-***REMOVED*** Add index
+# Add index
 psql -d scanium -c \"CREATE INDEX idx_listings_user_status ON listings(userId, status);\"
 
-***REMOVED*** Verify index used
+# Verify index used
 psql -d scanium -c \"EXPLAIN ANALYZE SELECT * FROM listings WHERE userId = '123' AND status = 'active';\"
 
-***REMOVED*** Expected after optimization:
-***REMOVED*** Index Scan using idx_listings_user_status (cost=0.00..8.56)  ***REMOVED*** GOOD: Index scan
+# Expected after optimization:
+# Index Scan using idx_listings_user_status (cost=0.00..8.56)  # GOOD: Index scan
 
-***REMOVED*** Monitor query performance
-curl http://localhost:3000/d/postgres-queries  ***REMOVED*** Grafana dashboard
-***REMOVED*** Verify: p95 query time < 100ms
+# Monitor query performance
+curl http://localhost:3000/d/postgres-queries  # Grafana dashboard
+# Verify: p95 query time < 100ms
 \`\`\`"
 
 echo ""
@@ -715,13 +715,13 @@ echo "Creating P2 severity:medium observability issues..."
 gh issue create \
   --title "[ENTERPRISE][MEDIUM] Mobile app telemetry and distributed tracing" \
   --label "severity:medium,epic:mobile,epic:observability,area:android,area:logging,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:mobile, epic:observability
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / end-to-end visibility
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Backend has OpenTelemetry instrumentation (logs, traces, metrics) but mobile app does not. Cannot trace requests end-to-end:
 - User taps \"Classify\" → Image upload → Backend → Google Vision → Response
 - No mobile performance metrics (network latency, API call duration)
@@ -730,13 +730,13 @@ Backend has OpenTelemetry instrumentation (logs, traces, metrics) but mobile app
 
 **Why it matters:** Cannot diagnose user-reported issues. \"App is slow\" → Which part? Network? Backend? Google Vision? Cannot tell.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/src/app.ts\` - Backend has OTel instrumentation
 - \`monitoring/\` - LGTM stack configured for backend only
 - \`androidApp/\` - No OTel SDK integration
 - \`docs/ARCHITECTURE.md:472\` - \"End-to-end telemetry from Android app to Grafana\" in roadmap
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Choose Mobile Telemetry Solution:**
 - [ ] Option A: OpenTelemetry Android SDK (OTLP → Alloy → Loki/Tempo)
 - [ ] Option B: Firebase Performance Monitoring (simple, but separate from LGTM stack)
@@ -783,51 +783,51 @@ Backend has OpenTelemetry instrumentation (logs, traces, metrics) but mobile app
 - [ ] Verify sampling works (10% of production traces captured)
 - [ ] Test opt-out (user disables analytics → no spans sent)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Build app with OTel integration
+# Build app with OTel integration
 ./gradlew assembleDebug
 
-***REMOVED*** Install on device
+# Install on device
 adb install androidApp/build/outputs/apk/debug/androidApp-debug.apk
 
-***REMOVED*** Trigger classification
-***REMOVED*** App → Camera → Scan object → Classify
+# Trigger classification
+# App → Camera → Scan object → Classify
 
-***REMOVED*** View trace in Grafana Tempo
-***REMOVED*** Navigate to Grafana → Explore → Tempo
-***REMOVED*** Search for recent traces
-***REMOVED*** Click trace to view timeline:
+# View trace in Grafana Tempo
+# Navigate to Grafana → Explore → Tempo
+# Search for recent traces
+# Click trace to view timeline:
 
-***REMOVED*** Trace ID: abc123def456
-***REMOVED*** Duration: 2.3s
-***REMOVED*** ├─ mobile.classification.upload (500ms)  [Android app]
-***REMOVED*** ├─ backend.classify.handler (1.5s)       [Backend API]
-***REMOVED***    ├─ google.vision.annotate (1.2s)      [Google Vision]
-***REMOVED***    └─ db.query (100ms)                   [PostgreSQL]
-***REMOVED*** └─ mobile.classification.render (300ms)  [Android app]
+# Trace ID: abc123def456
+# Duration: 2.3s
+# ├─ mobile.classification.upload (500ms)  [Android app]
+# ├─ backend.classify.handler (1.5s)       [Backend API]
+#    ├─ google.vision.annotate (1.2s)      [Google Vision]
+#    └─ db.query (100ms)                   [PostgreSQL]
+# └─ mobile.classification.render (300ms)  [Android app]
 
-***REMOVED*** Verify mobile metrics in Grafana
-***REMOVED*** Navigate to Grafana → Explore → Mimir
-***REMOVED*** Query: histogram_quantile(0.95, rate(mobile_api_duration_bucket[5m]))
-***REMOVED*** Expected: p95 latency < 2s
+# Verify mobile metrics in Grafana
+# Navigate to Grafana → Explore → Mimir
+# Query: histogram_quantile(0.95, rate(mobile_api_duration_bucket[5m]))
+# Expected: p95 latency < 2s
 
-***REMOVED*** Test opt-out
-***REMOVED*** Settings → Privacy → Disable Analytics
-***REMOVED*** Trigger classification
-***REMOVED*** Verify: No trace appears in Tempo
+# Test opt-out
+# Settings → Privacy → Disable Analytics
+# Trigger classification
+# Verify: No trace appears in Tempo
 \`\`\`"
 
 gh issue create \
   --title "[ENTERPRISE][MEDIUM] Synthetic monitoring and uptime checks" \
   --label "severity:medium,epic:observability,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:observability
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / external monitoring
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Monitoring stack (Grafana, Loki, Tempo) only monitors internal metrics (backend logs, traces). No external uptime monitoring:
 - No checks from outside the infrastructure (what users see)
 - No multi-region uptime checks (is API reachable from US, EU, Asia?)
@@ -836,13 +836,13 @@ Monitoring stack (Grafana, Loki, Tempo) only monitors internal metrics (backend 
 
 **Why it matters:** Internal monitoring shows backend is healthy, but users cannot reach the API (DNS issue). False sense of availability.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`monitoring/\` - Internal monitoring only (Grafana, Loki, Tempo, Mimir)
 - No external uptime monitoring configured
 - No status page for user-facing outages
 - No multi-region health checks
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Choose Synthetic Monitoring Tool:**
 - [ ] Option A: Grafana Synthetic Monitoring (free tier, integrates with Grafana Cloud)
 - [ ] Option B: Pingdom, UptimeRobot, or StatusCake (paid, simple)
@@ -898,45 +898,45 @@ Monitoring stack (Grafana, Loki, Tempo) only monitors internal metrics (backend 
 - [ ] Analyze synthetic transaction failures (which workflows fail most?)
 - [ ] Test status page updates during planned maintenance
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Configure synthetic check (example: curl-based)
-***REMOVED*** Add to cron (every 5 minutes)
+# Configure synthetic check (example: curl-based)
+# Add to cron (every 5 minutes)
 */5 * * * * curl -f https://api.scanium.com/healthz || echo \"API DOWN\" | mail -s \"Alert: API Down\" oncall@scanium.com
 
-***REMOVED*** Test uptime check from multiple regions
-***REMOVED*** US East
+# Test uptime check from multiple regions
+# US East
 curl -I https://api.scanium.com/healthz
-***REMOVED*** Expected: HTTP/2 200
+# Expected: HTTP/2 200
 
-***REMOVED*** EU West (use VPN or cloud VM)
+# EU West (use VPN or cloud VM)
 ssh eu-west-vm
 curl -I https://api.scanium.com/healthz
-***REMOVED*** Expected: HTTP/2 200
+# Expected: HTTP/2 200
 
-***REMOVED*** Asia Pacific
+# Asia Pacific
 ssh asia-vm
 curl -I https://api.scanium.com/healthz
-***REMOVED*** Expected: HTTP/2 200
+# Expected: HTTP/2 200
 
-***REMOVED*** Test synthetic transaction (classification)
+# Test synthetic transaction (classification)
 curl -X POST https://api.scanium.com/v1/classify \\
   -H \"X-API-Key: synthetic-test-key\" \\
   -F \"image=@test-images/mug.jpg\" \\
   -F \"domainPackId=home_resale\"
 
-***REMOVED*** Expected: 200 OK with domainCategoryId
+# Expected: 200 OK with domainCategoryId
 
-***REMOVED*** Check SSL certificate expiration
+# Check SSL certificate expiration
 echo | openssl s_client -connect api.scanium.com:443 2>/dev/null | openssl x509 -noout -dates
-***REMOVED*** Expected: notAfter > 30 days from now
+# Expected: notAfter > 30 days from now
 
-***REMOVED*** View status page
+# View status page
 curl https://status.scanium.com
-***REMOVED*** Expected: HTML with uptime percentages (99.95% last 30 days)
+# Expected: HTML with uptime percentages (99.95% last 30 days)
 
-***REMOVED*** Test status page incident
-***REMOVED*** Simulate API down → Verify status page shows \"Major Outage\"
+# Test status page incident
+# Simulate API down → Verify status page shows \"Major Outage\"
 \`\`\`"
 
 echo ""
@@ -945,14 +945,14 @@ echo "Creating P2 severity:low optimization issues..."
 gh issue create \
   --title "[ENTERPRISE][LOW] Error budget tracking and SLO enforcement" \
   --label "severity:low,epic:observability,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:observability
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / SRE best practices
 
-***REMOVED******REMOVED*** Problem Statement
-SLOs defined (from Phase 1 issue ***REMOVED***239) but no error budget tracking:
+## Problem Statement
+SLOs defined (from Phase 1 issue #239) but no error budget tracking:
 - SLO: 99.9% uptime (43 minutes downtime/month allowed)
 - SLO: p95 latency < 500ms
 - SLO: Error rate < 1%
@@ -964,12 +964,12 @@ But no system to:
 
 **Why it matters:** SLOs without error budgets are just guidelines. Error budgets create accountability and balance velocity vs reliability.
 
-***REMOVED******REMOVED*** Evidence
-- Issue ***REMOVED***239 created SLOs but no error budget automation
+## Evidence
+- Issue #239 created SLOs but no error budget automation
 - \`monitoring/grafana/dashboards/\` - No error budget dashboard
 - No policy for what happens when error budget exhausted
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Error Budget Calculation:**
 - [ ] Define error budget formula:
   - Uptime budget: (1 - 0.999) × 30 days = 43 minutes/month
@@ -1011,52 +1011,52 @@ But no system to:
 - [ ] Block deployments when budget exhausted (override requires director approval)
 - [ ] Notify team when deployment blocked due to budget
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** View error budget dashboard
+# View error budget dashboard
 curl http://localhost:3000/d/error-budget
 
-***REMOVED*** Example output:
-***REMOVED*** Uptime SLO: 99.9%
-***REMOVED*** Current uptime: 99.87%
-***REMOVED*** Downtime this month: 56 minutes (budget: 43 minutes)
-***REMOVED*** **BUDGET EXHAUSTED** 🔴
+# Example output:
+# Uptime SLO: 99.9%
+# Current uptime: 99.87%
+# Downtime this month: 56 minutes (budget: 43 minutes)
+# **BUDGET EXHAUSTED** 🔴
 
-***REMOVED*** Error Rate SLO: < 1%
-***REMOVED*** Current error rate: 0.3%
-***REMOVED*** Budget remaining: 0.7% ✅
+# Error Rate SLO: < 1%
+# Current error rate: 0.3%
+# Budget remaining: 0.7% ✅
 
-***REMOVED*** p95 Latency SLO: < 500ms
-***REMOVED*** Current p95: 420ms
-***REMOVED*** Budget remaining: healthy ✅
+# p95 Latency SLO: < 500ms
+# Current p95: 420ms
+# Budget remaining: healthy ✅
 
-***REMOVED*** Attempt deployment when budget exhausted
+# Attempt deployment when budget exhausted
 gh workflow run backend-deploy-production.yml
 
-***REMOVED*** Expected: Workflow fails with error:
-***REMOVED*** \"Deployment blocked: Uptime error budget exhausted (56/43 minutes used).
-***REMOVED***  Focus on reliability improvements before deploying new features.
-***REMOVED***  Override requires director approval.\"
+# Expected: Workflow fails with error:
+# \"Deployment blocked: Uptime error budget exhausted (56/43 minutes used).
+#  Focus on reliability improvements before deploying new features.
+#  Override requires director approval.\"
 
-***REMOVED*** Verify alert fired
-***REMOVED*** Check Slack/PagerDuty for alert:
-***REMOVED*** \"🔴 ERROR BUDGET EXHAUSTED: Uptime budget consumed (56/43 minutes).
-***REMOVED***  Freeze deployments. Focus on reliability.\"
+# Verify alert fired
+# Check Slack/PagerDuty for alert:
+# \"🔴 ERROR BUDGET EXHAUSTED: Uptime budget consumed (56/43 minutes).
+#  Freeze deployments. Focus on reliability.\"
 
-***REMOVED*** Review error budget policy
+# Review error budget policy
 cat docs/operations/ERROR_BUDGET_POLICY.md
 \`\`\`"
 
 gh issue create \
   --title "[ENTERPRISE][LOW] CDN and static asset optimization" \
   --label "severity:low,epic:backend,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / global performance
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No CDN configured. All API requests go directly to origin server:
 - Increased latency for users far from server (US users → EU server = 100ms+ latency)
 - No caching for static assets (domain pack JSON, API documentation)
@@ -1065,13 +1065,13 @@ No CDN configured. All API requests go directly to origin server:
 
 **Why it matters:** Global users experience high latency. Origin server handles all traffic (scaling costs). Vulnerable to DDoS attacks.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/src/app.ts\` - No CDN headers configured (Cache-Control, ETag)
 - No Cloudflare, CloudFront, or Fastly configured
 - Static assets served from origin (domain pack JSON, API docs)
 - \`docs/ARCHITECTURE.md\` - No CDN mentioned in architecture
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Choose CDN Provider:**
 - [ ] Option A: Cloudflare (free tier, simple setup, DDoS protection)
 - [ ] Option B: AWS CloudFront (pay-as-you-go, integrates with AWS)
@@ -1115,56 +1115,56 @@ No CDN configured. All API requests go directly to origin server:
 - [ ] Configure cache to reduce origin traffic (target: 50% reduction)
 - [ ] Estimate savings: Bandwidth cost reduced from \$45/month to \$20/month
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Configure DNS to use CDN
-***REMOVED*** Update DNS A record: api.scanium.com → Cloudflare IP
+# Configure DNS to use CDN
+# Update DNS A record: api.scanium.com → Cloudflare IP
 
-***REMOVED*** Test CDN is serving requests
+# Test CDN is serving requests
 curl -I https://api.scanium.com/v1/config
 
-***REMOVED*** Expected headers:
-***REMOVED*** CF-Cache-Status: HIT (or X-Cache: Hit from cloudfront)
-***REMOVED*** Cache-Control: public, max-age=3600
+# Expected headers:
+# CF-Cache-Status: HIT (or X-Cache: Hit from cloudfront)
+# Cache-Control: public, max-age=3600
 
-***REMOVED*** Test cache works
+# Test cache works
 curl -I https://api.scanium.com/v1/config
-***REMOVED*** First request: CF-Cache-Status: MISS
+# First request: CF-Cache-Status: MISS
 curl -I https://api.scanium.com/v1/config
-***REMOVED*** Second request: CF-Cache-Status: HIT ✅
+# Second request: CF-Cache-Status: HIT ✅
 
-***REMOVED*** Test authenticated requests bypass cache
+# Test authenticated requests bypass cache
 curl -I https://api.scanium.com/auth/ebay/status -H \"Authorization: Bearer token\"
-***REMOVED*** Expected: CF-Cache-Status: BYPASS (not cached)
+# Expected: CF-Cache-Status: BYPASS (not cached)
 
-***REMOVED*** Test latency improvement
-***REMOVED*** Before CDN (direct to origin in EU)
+# Test latency improvement
+# Before CDN (direct to origin in EU)
 time curl -I https://origin-api.scanium.com/healthz
-***REMOVED*** Expected: 150ms (US → EU latency)
+# Expected: 150ms (US → EU latency)
 
-***REMOVED*** After CDN (edge location in US)
+# After CDN (edge location in US)
 time curl -I https://api.scanium.com/healthz
-***REMOVED*** Expected: 20ms (US → US edge) ✅ 87% reduction
+# Expected: 20ms (US → US edge) ✅ 87% reduction
 
-***REMOVED*** Purge cache after deploy
+# Purge cache after deploy
 curl -X PURGE https://api.scanium.com/v1/config
-***REMOVED*** Expected: CF-Cache-Status: PURGED
+# Expected: CF-Cache-Status: PURGED
 
-***REMOVED*** View CDN analytics
-***REMOVED*** Cloudflare Dashboard → Analytics
-***REMOVED*** Expected: Cache hit rate: 85%, Bandwidth saved: 60%
+# View CDN analytics
+# Cloudflare Dashboard → Analytics
+# Expected: Cache hit rate: 85%, Bandwidth saved: 60%
 \`\`\`"
 
 gh issue create \
   --title "[ENTERPRISE][LOW] Bug bounty program and responsible disclosure" \
   --label "severity:low,epic:security,area:backend,area:android,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:security
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – enterprise readiness / proactive security
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No bug bounty program or responsible disclosure process. Security researchers have no official channel to report vulnerabilities:
 - No security.txt file (RFC 9116 standard)
 - No vulnerability disclosure policy
@@ -1173,13 +1173,13 @@ No bug bounty program or responsible disclosure process. Security researchers ha
 
 **Why it matters:** Bug bounty programs crowdsource security testing. Incentivize researchers to report vulnerabilities responsibly. Demonstrates security maturity to enterprise customers.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - No \`https://api.scanium.com/.well-known/security.txt\`
 - No bug bounty program documented
 - No responsible disclosure policy
 - Phase 2 penetration testing (issue created earlier) is one-time, bug bounty is continuous
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Create Responsible Disclosure Policy:**
 - [ ] Write vulnerability disclosure policy (\`docs/security/VULNERABILITY_DISCLOSURE.md\`)
 - [ ] Define scope: What is in scope (API, mobile app, infra), what is out of scope (social engineering, physical attacks)
@@ -1240,38 +1240,38 @@ No bug bounty program or responsible disclosure process. Security researchers ha
 - [ ] Expand scope as product evolves (add iOS app when launched)
 - [ ] Promote program (blog posts, tweets, security conferences)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Verify security.txt exists
+# Verify security.txt exists
 curl https://api.scanium.com/.well-known/security.txt
 
-***REMOVED*** Expected output:
-***REMOVED*** Contact: mailto:security@scanium.com
-***REMOVED*** Expires: 2026-12-31T23:59:59z
-***REMOVED*** Preferred-Languages: en
-***REMOVED*** Canonical: https://api.scanium.com/.well-known/security.txt
-***REMOVED*** Policy: https://scanium.com/security/disclosure
-***REMOVED*** Acknowledgments: https://scanium.com/security/thanks
+# Expected output:
+# Contact: mailto:security@scanium.com
+# Expires: 2026-12-31T23:59:59z
+# Preferred-Languages: en
+# Canonical: https://api.scanium.com/.well-known/security.txt
+# Policy: https://scanium.com/security/disclosure
+# Acknowledgments: https://scanium.com/security/thanks
 
-***REMOVED*** Validate security.txt
+# Validate security.txt
 curl https://api.scanium.com/.well-known/security.txt | gpg --verify
-***REMOVED*** Expected: Valid signature (if PGP signed)
+# Expected: Valid signature (if PGP signed)
 
-***REMOVED*** Check HackerOne program
+# Check HackerOne program
 curl https://hackerone.com/scanium
-***REMOVED*** Expected: Program page with scope, rewards, submissions
+# Expected: Program page with scope, rewards, submissions
 
-***REMOVED*** Test vulnerability submission flow
-***REMOVED*** 1. Researcher submits critical bug (auth bypass)
-***REMOVED*** 2. Triage team responds within 24h: \"Thank you, confirmed, investigating\"
-***REMOVED*** 3. Engineering team fixes bug within 7 days
-***REMOVED*** 4. Researcher verifies fix
-***REMOVED*** 5. Reward issued: \$1000
-***REMOVED*** 6. 90 days later: Public disclosure with credit to researcher
+# Test vulnerability submission flow
+# 1. Researcher submits critical bug (auth bypass)
+# 2. Triage team responds within 24h: \"Thank you, confirmed, investigating\"
+# 3. Engineering team fixes bug within 7 days
+# 4. Researcher verifies fix
+# 5. Reward issued: \$1000
+# 6. 90 days later: Public disclosure with credit to researcher
 
-***REMOVED*** View security hall of fame
+# View security hall of fame
 curl https://scanium.com/security/thanks
-***REMOVED*** Expected: List of researchers who contributed (with permission)
+# Expected: List of researchers who contributed (with permission)
 \`\`\`"
 
 echo ""

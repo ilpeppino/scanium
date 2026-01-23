@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Android Baseline (Source of Truth)
+# Android Baseline (Source of Truth)
 
 **Last Updated:** 2025-12-19
 **Android App Module:** `androidApp`
@@ -10,7 +10,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The Android implementation represents the **complete, production-ready** baseline for Scanium. All
 features are implemented, tested, and integrated with shared KMP modules. iOS must achieve parity
@@ -23,15 +23,15 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED*** Capability Breakdown
+## Capability Breakdown
 
-***REMOVED******REMOVED******REMOVED*** 1. Camera Capture
+### 1. Camera Capture
 
 **Status:** ✅ COMPLETE
 **Module:** `androidApp/src/main/java/com/scanium/app/camera/`
 **Dependency:** `android-camera-camerax` module (CameraX library)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **CameraX Integration:** Full camera lifecycle management
     - `CameraXManager.kt` - Camera binding, use cases (preview, analysis, image capture)
@@ -62,26 +62,26 @@ with this implementation.
     - `ImageUtils.kt` - Bitmap conversion, JPEG encoding, orientation handling
     - High-res image capture with EXIF data
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Entry Points:
+#### Key Entry Points:
 
 - `CameraScreen.kt:45` - Main camera composable
 - `CameraXManager.kt:78` - Camera initialization and frame analysis pipeline
 - Navigation: `Routes.CAMERA` (start destination)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Permissions:
+#### Permissions:
 
 - `AndroidManifest.xml:5` - `CAMERA` permission
 - `AndroidManifest.xml:8` - `camera.any` hardware feature (optional)
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. ML / Object Detection
+### 2. ML / Object Detection
 
 **Status:** ✅ COMPLETE
 **Module:** `androidApp/src/main/java/com/scanium/app/ml/`
 **Dependency:** ML Kit (Google Play Services)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **Object Detection:**
     - `ObjectDetectorClient.kt` - ML Kit object detection with custom models
@@ -104,13 +104,13 @@ with this implementation.
     - Configurable via `BuildConfig.CLASSIFIER_SAVE_CROPS`
     - Stores detection crops for model debugging
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Model Management:
+#### Model Management:
 
 - `AndroidManifest.xml:21-24` - ML Kit auto-download metadata
 - Models: `ocr`, `object_custom`
 - `CameraScreen.kt` - `ModelDownloadState.kt` for download progress UI
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Entry Points:
+#### Key Entry Points:
 
 - `ObjectDetectorClient.kt:42` - `detectObjects()` method
 - `BarcodeScannerClient.kt:28` - `detectBarcodes()` method
@@ -119,13 +119,13 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Classification
+### 3. Classification
 
 **Status:** ✅ COMPLETE
 **Module:** `androidApp/src/main/java/com/scanium/app/ml/classification/`
 **Integration:** On-device + Cloud hybrid
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **Classification Orchestrator:**
     - `ClassificationOrchestrator.kt` - Mode-based routing (on-device vs cloud)
@@ -154,7 +154,7 @@ with this implementation.
     - `ClassificationPreferences.kt` - SharedPreferences wrapper
     - User-selectable mode in camera settings
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Entry Points:
+#### Key Entry Points:
 
 - `ClassificationOrchestrator.kt:45` - `classify()` method
 - `OnDeviceClassifier.kt:15` - Label-to-category mapping
@@ -163,13 +163,13 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Object Tracking & Aggregation
+### 4. Object Tracking & Aggregation
 
 **Status:** ✅ COMPLETE
 **Module:** `shared/core-tracking` (KMP shared module)
 **Android Integration:** `ItemsViewModel.kt`, `CameraXManager.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **Object Tracker (Shared):**
     - `shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ObjectTracker.kt`
@@ -190,7 +190,7 @@ with this implementation.
     - `CameraXManager.kt:180` - Feeds ML Kit detections to tracker
     - Real-time UI updates via StateFlow
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Entry Points:
+#### Key Entry Points:
 
 - `ObjectTracker.kt:48` - `processFrame()` method
 - `ItemAggregator.kt:60` - `processDetection()` method
@@ -199,12 +199,12 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. Items List & Details UI
+### 5. Items List & Details UI
 
 **Status:** ✅ COMPLETE
 **Module:** `androidApp/src/main/java/com/scanium/app/items/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **Items List Screen:**
     - `ItemsListScreen.kt` - LazyColumn with scanned items
@@ -235,7 +235,7 @@ with this implementation.
     - Classification orchestration
     - Similarity threshold control
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Entry Points:
+#### Key Entry Points:
 
 - `ItemsListScreen.kt:45` - Main list composable
 - `ItemDetailDialog.kt:30` - Detail dialog composable
@@ -243,7 +243,7 @@ with this implementation.
 - `ItemsViewModel.kt:150` - `deleteItems()` batch deletion
 - Navigation: `Routes.ITEMS_LIST`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Gestures & UX:
+#### Gestures & UX:
 
 - Swipe-to-delete with confirmation
 - Long-press for multi-select
@@ -253,12 +253,12 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 6. Storage & Gallery Export
+### 6. Storage & Gallery Export
 
 **Status:** ✅ COMPLETE
 **Module:** `androidApp/src/main/java/com/scanium/app/media/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **MediaStore Integration:**
     - `MediaStoreSaver.kt` - Gallery export via MediaStore API
@@ -281,25 +281,25 @@ with this implementation.
     - Partial success reporting
     - Automatic cleanup on failure
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Entry Points:
+#### Key Entry Points:
 
 - `MediaStoreSaver.kt:58` - `saveImagesToGallery()` async method
 - `ItemsListScreen.kt:120` - Gallery save action in FAB dropdown
 - Integration: `ItemsViewModel` provides image URIs and refs
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Permissions:
+#### Permissions:
 
 - Android 10+: No permission required (scoped storage)
 - Android 9 and below: Would require `WRITE_EXTERNAL_STORAGE` (not implemented, targets API 24+)
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 7. eBay Selling Integration
+### 7. eBay Selling Integration
 
 **Status:** ✅ COMPLETE (Mock API Ready)
 **Module:** `androidApp/src/main/java/com/scanium/app/selling/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **Sell on eBay Screen:**
     - `selling/ui/SellOnEbayScreen.kt` - Full listing creation UI
@@ -331,30 +331,30 @@ with this implementation.
     - `selling/ui/DebugSettingsDialog.kt` - Mock delay/failure injection
     - Real-time config updates
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Security:
+#### Security:
 
 - `SellOnEbayScreen.kt:52-61` - `FLAG_SECURE` prevents screenshots of listing drafts (SEC-010)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Entry Points:
+#### Key Entry Points:
 
 - `SellOnEbayScreen.kt:39` - Main selling screen composable
 - `ListingViewModel.kt:77` - `postSelectedToEbay()` method
 - `EbayMarketplaceService.kt:25` - `createListing()` API call
 - Navigation: `Routes.SELL_ON_EBAY/{itemIds}`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Backend Integration:
+#### Backend Integration:
 
 - Mock API ready for replacement with real eBay OAuth + REST API
 - Structured for OAuth 2.0 token flow (not yet implemented)
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 8. Navigation
+### 8. Navigation
 
 **Status:** ✅ COMPLETE
 **Module:** `androidApp/src/main/java/com/scanium/app/navigation/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **Navigation Graph:**
     - `NavGraph.kt` - Jetpack Compose Navigation
@@ -370,7 +370,7 @@ with this implementation.
     - `ClassificationModeViewModel` shared for settings
     - `EbayMarketplaceService` injected into navigation graph
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Key Entry Points:
+#### Key Entry Points:
 
 - `ScaniumApp.kt:30` - App root with navigation setup
 - `NavGraph.kt:41` - NavHost definition
@@ -378,12 +378,12 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 9. Theming & UI
+### 9. Theming & UI
 
 **Status:** ✅ COMPLETE
 **Module:** `androidApp/src/main/java/com/scanium/app/ui/theme/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Features Implemented:
+#### Features Implemented:
 
 - **Material Design 3:**
     - `Theme.kt` - Dynamic color theming (Android 12+)
@@ -402,12 +402,12 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 10. Data Models & Platform Adapters
+### 10. Data Models & Platform Adapters
 
 **Status:** ✅ COMPLETE
 **Modules:** `shared/core-models`, `android-platform-adapters`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Shared Models (KMP):
+#### Shared Models (KMP):
 
 - `shared/core-models/src/commonMain/kotlin/com/scanium/shared/core/models/items/ScannedItem.kt`
     - ID, category, confidence, timestamp, bounding box, recognized text, barcode, listing status
@@ -420,7 +420,7 @@ with this implementation.
 - `shared/core-models/src/commonMain/kotlin/com/scanium/shared/core/models/model/NormalizedRect.kt`
     - Normalized bounding boxes (0.0-1.0 coordinates)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Android Platform Adapters:
+#### Android Platform Adapters:
 
 - `android-platform-adapters/src/main/java/com/scanium/android/platform/adapters/ImageAdapters.kt`
     - `ImageRef.Bytes.toBitmap()`, `Bitmap.toImageRefJpeg()`
@@ -429,12 +429,12 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 11. Build & Security
+### 11. Build & Security
 
 **Status:** ✅ COMPLETE
 **Module:** `androidApp/build.gradle.kts`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Build Configuration:
+#### Build Configuration:
 
 - **Plugins:**
     - Kotlin 2.0.0, Jetpack Compose, KSP, Kotlinx Serialization
@@ -457,13 +457,13 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 12. Testing
+### 12. Testing
 
 **Status:** ✅ COMPLETE
 **Android Tests:** 24 unit test files
 **Shared Tests:** 6 KMP test files in `core-tracking`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test Coverage:
+#### Test Coverage:
 
 - `shared/core-tracking/src/commonTest/`:
     - `ObjectTrackerTest.kt` - Tracker logic
@@ -476,19 +476,19 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 13. Observability & Logging
+### 13. Observability & Logging
 
 **Status:** ⚠️ PLANNED (Not Implemented)
 **Evidence:** No Sentry/Grafana dependencies in `build.gradle.kts`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current State:
+#### Current State:
 
 - Android Log (`Log.i`, `Log.e`, `Log.d`) used throughout
 - `DetectionLogger.kt` for ML debug logging
 - No crash reporting (Sentry planned)
 - No metrics/analytics (Grafana planned)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Planned:
+#### Planned:
 
 - Sentry for crash reporting
 - Grafana for usage metrics
@@ -496,19 +496,19 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED*** Permissions & Manifest
+## Permissions & Manifest
 
 **File:** `androidApp/src/main/AndroidManifest.xml`
 
-***REMOVED******REMOVED******REMOVED*** Declared Permissions:
+### Declared Permissions:
 
 - `android.permission.CAMERA` (line 5)
 
-***REMOVED******REMOVED******REMOVED*** Features:
+### Features:
 
 - `android.hardware.camera.any` (optional, not required)
 
-***REMOVED******REMOVED******REMOVED*** Application Config:
+### Application Config:
 
 - `allowBackup="false"` - Security best practice
 - `networkSecurityConfig="@xml/network_security_config"` - Custom network security
@@ -516,21 +516,21 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED*** Dependencies (Key)
+## Dependencies (Key)
 
-***REMOVED******REMOVED******REMOVED*** Android-Specific:
+### Android-Specific:
 
 - **CameraX:** `androidx.camera:camera-*` (version managed by BOM)
 - **ML Kit:** `com.google.mlkit:object-detection`, `barcode-scanning`, `text-recognition`
 - **Jetpack Compose:** Material 3, Navigation
 - **Coroutines:** `kotlinx.coroutines-android`
 
-***REMOVED******REMOVED******REMOVED*** Shared (KMP):
+### Shared (KMP):
 
 - **Kotlin Multiplatform:** `shared/core-models`, `shared/core-tracking`
 - **Kotlinx Serialization:** JSON for API communication
 
-***REMOVED******REMOVED******REMOVED*** Build Tools:
+### Build Tools:
 
 - **Gradle:** 8.x
 - **Kotlin:** 2.0.0
@@ -538,7 +538,7 @@ with this implementation.
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 The Android implementation is **feature-complete** and serves as the architectural reference for iOS
 parity. All core capabilities—camera, ML, tracking, UI, selling, storage—are implemented,

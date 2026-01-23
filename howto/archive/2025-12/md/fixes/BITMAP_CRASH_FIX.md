@@ -1,10 +1,10 @@
-***REMOVED*** Bitmap Crash Fix - December 8, 2024
+# Bitmap Crash Fix - December 8, 2024
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 The app was crashing immediately after detecting objects and adding them to the items list.
 
-***REMOVED******REMOVED******REMOVED*** Root Cause
+### Root Cause
 
 The crash was caused by **bitmap recycling** in thumbnail images. The issue was in the
 `cropThumbnail()` methods in:
@@ -24,7 +24,7 @@ The crash was caused by **bitmap recycling** in thumbnail images. The issue was 
 6. ScannedItem with thumbnail gets passed to ItemsViewModel
 7. UI tries to render the thumbnail → **CRASH: "bitmap is recycled"**
 
-***REMOVED******REMOVED******REMOVED*** The Bug
+### The Bug
 
 ```kotlin
 // WRONG - shares pixel data with source
@@ -38,7 +38,7 @@ When `Bitmap.createBitmap(source, ...)` is called, it creates a **mutable bitmap
 same underlying pixel buffer** as the source. This is efficient for temporary operations, but
 dangerous when the source lifetime is shorter than the derived bitmap.
 
-***REMOVED******REMOVED*** Solution
+## Solution
 
 **Create an independent copy of the bitmap** so it has its own pixel data:
 
@@ -53,19 +53,9 @@ private fun cropThumbnail(source: Bitmap, boundingBox: Rect): Bitmap? {
 The `.copy(Bitmap.Config.ARGB_8888, false)` creates a **new bitmap with its own pixel buffer**,
 making it safe to use even after the source is recycled.
 
-***REMOVED******REMOVED*** Changes Made
+## Changes Made
 
-***REMOVED******REMOVED******REMOVED*** 1. ObjectDetectorClient.kt (line 569-573)
-
-```kotlin
-// CRITICAL: Create a COPY of the bitmap so it has its own pixel data
-// Without .copy(), the cropped bitmap shares pixels with source and crashes
-// when source gets recycled after camera processing
-val cropped = Bitmap.createBitmap(source, left, top, width, height)
-cropped.copy(Bitmap.Config.ARGB_8888, false)
-```
-
-***REMOVED******REMOVED******REMOVED*** 2. BarcodeScannerClient.kt (line 163-167)
+### 1. ObjectDetectorClient.kt (line 569-573)
 
 ```kotlin
 // CRITICAL: Create a COPY of the bitmap so it has its own pixel data
@@ -75,7 +65,7 @@ val cropped = Bitmap.createBitmap(source, left, top, width, height)
 cropped.copy(Bitmap.Config.ARGB_8888, false)
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. DocumentTextRecognitionClient.kt (line 140-144)
+### 2. BarcodeScannerClient.kt (line 163-167)
 
 ```kotlin
 // CRITICAL: Create a COPY of the bitmap so it has its own pixel data
@@ -85,19 +75,29 @@ val cropped = Bitmap.createBitmap(source, left, top, width, height)
 cropped.copy(Bitmap.Config.ARGB_8888, false)
 ```
 
-***REMOVED******REMOVED*** Verification
+### 3. DocumentTextRecognitionClient.kt (line 140-144)
+
+```kotlin
+// CRITICAL: Create a COPY of the bitmap so it has its own pixel data
+// Without .copy(), the cropped bitmap shares pixels with source and crashes
+// when source gets recycled after camera processing
+val cropped = Bitmap.createBitmap(source, left, top, width, height)
+cropped.copy(Bitmap.Config.ARGB_8888, false)
+```
+
+## Verification
 
 ✅ **Build successful**: `./gradlew assembleDebug`
 ✅ **All tests pass**: `./gradlew test` (232 tests)
 ✅ **No crashes**: Items can now be detected and displayed without crashing
 
-***REMOVED******REMOVED*** Impact
+## Impact
 
 - **Memory**: Slightly higher memory usage (each thumbnail has its own pixel buffer)
 - **Performance**: Negligible impact (copy operation is fast for small thumbnails)
 - **Stability**: Major improvement - no more crashes when displaying detected items
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 To verify the fix:
 
@@ -118,13 +118,13 @@ To verify the fix:
     - Items appear in the list with thumbnails
     - **No crash** when items are added or when viewing the items list
 
-***REMOVED******REMOVED*** Why This Matters
+## Why This Matters
 
 This is a critical fix for production stability. The previous implementation would crash **every
 time** an object was successfully detected and added to the list. With this fix, the multi-layer
 de-duplication system can now work reliably in production.
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - See `ML_KIT_ZERO_DETECTIONS_FIX.md` for ML Kit detection issues
 - See `DEBUG_INVESTIGATION.md` for diagnostic logging

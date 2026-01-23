@@ -1,10 +1,10 @@
-***REMOVED*** Background Health Monitor - Implementation Status
+# Background Health Monitor - Implementation Status
 
 **Date:** 2026-01-11
 **Status:** ✅ **FULLY IMPLEMENTED AND WORKING**
 **Commit:** a06e33d9ce4d0e0d17c1a3a84c94529235daa268
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The DEV-flavor-only background health monitoring system is **already fully implemented** and working
 correctly. All requirements have been met with a robust, tested, and production-ready
@@ -12,9 +12,9 @@ implementation.
 
 ---
 
-***REMOVED******REMOVED*** Requirements Verification
+## Requirements Verification
 
-***REMOVED******REMOVED******REMOVED*** ✅ Core Mission (All Met)
+### ✅ Core Mission (All Met)
 
 | Requirement               | Status     | Implementation                       |
 |---------------------------|------------|--------------------------------------|
@@ -26,7 +26,7 @@ implementation.
 | "Run Now" button          | ✅ COMPLETE | One-time WorkRequest                 |
 | No beta/prod impact       | ✅ COMPLETE | Triple-layer isolation               |
 
-***REMOVED******REMOVED******REMOVED*** ✅ Endpoint Coverage
+### ✅ Endpoint Coverage
 
 **User Requirements:**
 
@@ -68,9 +68,9 @@ private val ENDPOINTS = listOf(
 
 ---
 
-***REMOVED******REMOVED*** DEV-Only Isolation (Triple-Layer Defense)
+## DEV-Only Isolation (Triple-Layer Defense)
 
-***REMOVED******REMOVED******REMOVED*** Layer 1: Navigation Blocking
+### Layer 1: Navigation Blocking
 
 ```kotlin
 // NavGraph.kt:198-204
@@ -88,7 +88,7 @@ composable(Routes.SETTINGS_DEVELOPER) {
 
 **Result:** Beta/prod users **cannot access** DeveloperOptionsScreen at all.
 
-***REMOVED******REMOVED******REMOVED*** Layer 2: Worker Runtime Guard
+### Layer 2: Worker Runtime Guard
 
 ```kotlin
 // DevHealthMonitorWorker.kt:51-54
@@ -103,7 +103,7 @@ override suspend fun doWork(): Result {
 
 **Result:** Even if somehow scheduled, worker **exits immediately** in beta/prod.
 
-***REMOVED******REMOVED******REMOVED*** Layer 3: Scheduler Runtime Guard
+### Layer 3: Scheduler Runtime Guard
 
 ```kotlin
 // DevHealthMonitorScheduler.kt:41-44
@@ -118,7 +118,7 @@ fun enable() {
 
 **Result:** Scheduling **fails silently** in beta/prod.
 
-***REMOVED******REMOVED******REMOVED*** Build Configuration
+### Build Configuration
 
 ```kotlin
 // build.gradle.kts
@@ -142,9 +142,9 @@ val isDevBuild: Boolean get() = BuildConfig.DEV_MODE_ENABLED
 
 ---
 
-***REMOVED******REMOVED*** Architecture Overview
+## Architecture Overview
 
-***REMOVED******REMOVED******REMOVED*** Components
+### Components
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -194,7 +194,7 @@ val isDevBuild: Boolean get() = BuildConfig.DEV_MODE_ENABLED
 └─────────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Data Flow
+### Data Flow
 
 ```
 User toggles "Enable monitoring" ON
@@ -248,7 +248,7 @@ DevHealthMonitorStateStore.updateLastResult()
 
 ---
 
-***REMOVED******REMOVED*** Test Results
+## Test Results
 
 **Date:** 2026-01-11 15:02:49
 **Test Suite:** `HealthCheckRepositoryTest`
@@ -283,9 +283,9 @@ DevHealthMonitorStateStore.updateLastResult()
 
 ---
 
-***REMOVED******REMOVED*** Notification Strategy
+## Notification Strategy
 
-***REMOVED******REMOVED******REMOVED*** Notification Channel
+### Notification Channel
 
 ```kotlin
 Channel ID: "dev_health_monitor_channel"
@@ -294,7 +294,7 @@ Importance: DEFAULT
 Description: "Background health check notifications (dev builds only)"
 ```
 
-***REMOVED******REMOVED******REMOVED*** State Transition Rules
+### State Transition Rules
 
 | Previous           | Current          | Action                | Reason                   |
 |--------------------|------------------|-----------------------|--------------------------|
@@ -307,7 +307,7 @@ Description: "Background health check notifications (dev builds only)"
 | FAIL               | FAIL (different) | ✅ Notify immediately  | New failure type         |
 | OK                 | OK               | ❌ No notify           | Stable                   |
 
-***REMOVED******REMOVED******REMOVED*** Notification Content
+### Notification Content
 
 **Failure:**
 
@@ -335,15 +335,15 @@ Auto-cancel: Yes
 
 ---
 
-***REMOVED******REMOVED*** User Interface
+## User Interface
 
-***REMOVED******REMOVED******REMOVED*** Developer Options Screen Location
+### Developer Options Screen Location
 
 ```
 Settings → [DEV BUILD ONLY] Developer Options → Background Health Monitor
 ```
 
-***REMOVED******REMOVED******REMOVED*** Controls
+### Controls
 
 1. **Enable monitoring** (Switch)
     - Default: ON (in dev builds)
@@ -362,7 +362,7 @@ Settings → [DEV BUILD ONLY] Developer Options → Background Health Monitor
     - Action: Enqueues one-time health check immediately
     - Useful for: Manual testing, debugging
 
-***REMOVED******REMOVED******REMOVED*** Status Display
+### Status Display
 
 - **Current Status Badge:**
     - 🟢 "Enabled - Last check OK"
@@ -377,33 +377,33 @@ Settings → [DEV BUILD ONLY] Developer Options → Background Health Monitor
 
 ---
 
-***REMOVED******REMOVED*** File Structure
+## File Structure
 
 ```
 androidApp/src/main/java/com/scanium/app/
 ├── monitoring/
-│   ├── DevHealthMonitorWorker.kt          ***REMOVED*** CoroutineWorker (15min periodic)
-│   ├── DevHealthMonitorScheduler.kt       ***REMOVED*** WorkManager scheduling logic
-│   ├── DevHealthMonitorStateStore.kt      ***REMOVED*** DataStore persistence
-│   ├── HealthCheckRepository.kt           ***REMOVED*** Performs health checks
-│   ├── HealthCheckModels.kt               ***REMOVED*** Data models
-│   └── NotificationDecision.kt            ***REMOVED*** Pure notification logic
+│   ├── DevHealthMonitorWorker.kt          # CoroutineWorker (15min periodic)
+│   ├── DevHealthMonitorScheduler.kt       # WorkManager scheduling logic
+│   ├── DevHealthMonitorStateStore.kt      # DataStore persistence
+│   ├── HealthCheckRepository.kt           # Performs health checks
+│   ├── HealthCheckModels.kt               # Data models
+│   └── NotificationDecision.kt            # Pure notification logic
 ├── ui/settings/
-│   ├── DeveloperOptionsScreen.kt          ***REMOVED*** UI composables
-│   └── DeveloperOptionsViewModel.kt       ***REMOVED*** UI logic + integration
+│   ├── DeveloperOptionsScreen.kt          # UI composables
+│   └── DeveloperOptionsViewModel.kt       # UI logic + integration
 ├── config/
-│   └── FeatureFlags.kt                    ***REMOVED*** isDevBuild flag
+│   └── FeatureFlags.kt                    # isDevBuild flag
 └── navigation/
-    └── NavGraph.kt                        ***REMOVED*** Navigation blocking (line 198)
+    └── NavGraph.kt                        # Navigation blocking (line 198)
 
 androidApp/src/test/java/com/scanium/app/
 └── monitoring/
-    └── HealthCheckRepositoryTest.kt       ***REMOVED*** 12 unit tests (all passing)
+    └── HealthCheckRepositoryTest.kt       # 12 unit tests (all passing)
 ```
 
 ---
 
-***REMOVED******REMOVED*** Recent Changes (Commit a06e33d)
+## Recent Changes (Commit a06e33d)
 
 **Fix:** "background health monitor uses correct health endpoint"
 
@@ -419,9 +419,9 @@ androidApp/src/test/java/com/scanium/app/
 
 ---
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
-***REMOVED******REMOVED******REMOVED*** Default Settings (DEV builds)
+### Default Settings (DEV builds)
 
 ```kotlin
 DevHealthMonitorStateStore.MonitorConfig(
@@ -431,7 +431,7 @@ DevHealthMonitorStateStore.MonitorConfig(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Timeouts
+### Timeouts
 
 ```kotlin
 connectTimeout = 10 seconds
@@ -439,13 +439,13 @@ readTimeout = 10 seconds
 writeTimeout = 10 seconds
 ```
 
-***REMOVED******REMOVED******REMOVED*** Rate Limiting
+### Rate Limiting
 
 ```kotlin
 REMINDER_INTERVAL_MS = 6 hours       // Re-notify for same failure after 6hr
 ```
 
-***REMOVED******REMOVED******REMOVED*** WorkManager Constraints
+### WorkManager Constraints
 
 ```kotlin
 interval = 15 minutes (minimum Android allows)
@@ -455,9 +455,9 @@ policy = ExistingPeriodicWorkPolicy.UPDATE  // Update on config change
 
 ---
 
-***REMOVED******REMOVED*** Safety Guarantees
+## Safety Guarantees
 
-***REMOVED******REMOVED******REMOVED*** 1. No PII/Secrets Logged
+### 1. No PII/Secrets Logged
 
 ```kotlin
 // API key NEVER logged
@@ -466,21 +466,21 @@ if (hasKey && spec.requiresAuth) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. No Request Body Logging
+### 2. No Request Body Logging
 
 ```kotlin
 // Only HTTP codes and failure reasons logged
 Log.d(TAG, "${spec.path}: $code (passed=$passed)")  // ✅ Safe
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. No Retry Storms
+### 3. No Retry Storms
 
 ```kotlin
 // Single request per endpoint, no retries
 val response = httpClient.newCall(request).execute()  // ✅ One shot
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Minimal Network Traffic
+### 4. Minimal Network Traffic
 
 ```kotlin
 // Small requests:
@@ -489,7 +489,7 @@ val response = httpClient.newCall(request).execute()  // ✅ One shot
 // - POST /v1/assist/warmup (empty body: ByteArray(0))
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. No Breaking Changes
+### 5. No Breaking Changes
 
 ```kotlin
 // All monitoring code:
@@ -500,9 +500,9 @@ val response = httpClient.newCall(request).execute()  // ✅ One shot
 
 ---
 
-***REMOVED******REMOVED*** Validation Checklist
+## Validation Checklist
 
-***REMOVED******REMOVED******REMOVED*** ✅ DEV Flavor Validation
+### ✅ DEV Flavor Validation
 
 - [x] Install `devDebug` build
 - [x] Navigate to Settings → Developer Options
@@ -524,7 +524,7 @@ val response = httpClient.newCall(request).execute()  // ✅ One shot
     - [x] Notification appears: "Scanium backend recovered" (if notify on recovery ON)
     - [x] Status shows OK in UI
 
-***REMOVED******REMOVED******REMOVED*** ✅ Beta/Prod Flavor Validation
+### ✅ Beta/Prod Flavor Validation
 
 - [x] Install `betaDebug` or `prodDebug` build
 - [x] Navigate to Settings
@@ -539,7 +539,7 @@ val response = httpClient.newCall(request).execute()  // ✅ One shot
 
 ---
 
-***REMOVED******REMOVED*** No Action Required
+## No Action Required
 
 The background health monitoring system is **complete and production-ready**. All requirements have
 been met:
@@ -555,7 +555,7 @@ been met:
 
 ---
 
-***REMOVED******REMOVED*** Next Steps (Optional Enhancements)
+## Next Steps (Optional Enhancements)
 
 If you want to further improve the monitoring system, consider:
 
@@ -585,7 +585,7 @@ correctly.
 
 ---
 
-***REMOVED******REMOVED*** Repo Alignment Status
+## Repo Alignment Status
 
 **Mac:** `a06e33d9ce4d0e0d17c1a3a84c94529235daa268` ✅
 **NAS:** `a06e33d9ce4d0e0d17c1a3a84c94529235daa268` ✅
@@ -595,7 +595,7 @@ No commits needed. No deployment needed. System is **ready to use**.
 
 ---
 
-***REMOVED******REMOVED*** Contact
+## Contact
 
 For questions about the health monitoring system:
 

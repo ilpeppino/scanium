@@ -12,12 +12,12 @@ import org.junit.runners.Suite
  * - Verify cloud classification works end-to-end
  * - Ensure share/export produces valid attachments
  *
- * ***REMOVED******REMOVED*** Prerequisites
+ * ## Prerequisites
  * - Cloud backend must be reachable (tests skip if not)
  * - Physical device recommended for camera tests (emulator may work but less reliable)
  * - Android 15 target but compatible with minSdk 24+
  *
- * ***REMOVED******REMOVED*** Running the Suite
+ * ## Running the Suite
  * ```
  * ./gradlew :androidApp:connectedDebugAndroidTest \
  *     -Pandroid.testInstrumentationRunnerArguments.SCANIUM_BASE_URL=https://api.example.com \

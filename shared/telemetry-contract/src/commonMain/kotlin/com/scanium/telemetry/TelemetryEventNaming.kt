@@ -9,7 +9,7 @@ package com.scanium.telemetry
  * - Use past tense for completed actions (e.g., "completed", "failed")
  * - Use present tense for ongoing states (e.g., "started", "in_progress")
  *
- * ***REMOVED******REMOVED*** Examples
+ * ## Examples
  * - `scan.started` - Scan operation started
  * - `scan.completed` - Scan operation completed successfully
  * - `ml.classification_failed` - ML classification failed

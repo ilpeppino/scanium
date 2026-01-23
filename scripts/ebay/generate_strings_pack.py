@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Generate English-only strings pack from eBay categories.
 Output: scripts/output/ebay/uk/strings_keys_catalog.ebay_uk.en.json
@@ -14,20 +14,20 @@ from typing import Dict, List, Optional
 
 def generate_label_from_scanium_name(scanium_name: str) -> str:
     """Generate clean English label from Scanium display name."""
-    ***REMOVED*** Take the display name as-is (already clean English labels)
+    # Take the display name as-is (already clean English labels)
     return scanium_name.strip()
 
 def generate_label_from_ebay_category(ebay_name: str) -> str:
     """Generate clean English label from eBay category name."""
-    ***REMOVED*** Clean up common eBay category name patterns
+    # Clean up common eBay category name patterns
     label = ebay_name.strip()
 
-    ***REMOVED*** Remove common suffixes
+    # Remove common suffixes
     for suffix in [" - Buy", " - Sell", " & Accessories", "& More", "New & Used"]:
         if label.endswith(suffix):
             label = label[:-len(suffix)].strip()
 
-    ***REMOVED*** Remove common prefixes
+    # Remove common prefixes
     for prefix in ["Find great deals on ", "Get the best deals on "]:
         if label.startswith(prefix):
             label = label[len(prefix):].strip()
@@ -62,10 +62,10 @@ def generate_strings_pack() -> int:
     mappings = mappings_data.get("mappings", [])
     scanium_subtypes = scanium_data.get("subtypes", [])
 
-    ***REMOVED*** Build Scanium lookup
+    # Build Scanium lookup
     scanium_by_id = {s["id"]: s for s in scanium_subtypes}
 
-    ***REMOVED*** Generate strings catalog
+    # Generate strings catalog
     strings_catalog = {
         "id": "ebay_uk_candidate",
         "locale": "en",
@@ -80,7 +80,7 @@ def generate_strings_pack() -> int:
         "strings": {},
     }
 
-    ***REMOVED*** Build strings from mappings
+    # Build strings from mappings
     for mapping in mappings:
         subtype_id = mapping.get("scaniumSubtypeId")
         scanium_display_name = mapping.get("scaniumDisplayName")
@@ -88,10 +88,10 @@ def generate_strings_pack() -> int:
         if not subtype_id or not scanium_display_name:
             continue
 
-        ***REMOVED*** Use Scanium's displayName as the label (already clean English)
+        # Use Scanium's displayName as the label (already clean English)
         label = generate_label_from_scanium_name(scanium_display_name)
 
-        ***REMOVED*** Create key following Scanium convention
+        # Create key following Scanium convention
         key = f"subtype.{subtype_id}"
 
         strings_catalog["strings"][key] = {
@@ -100,7 +100,7 @@ def generate_strings_pack() -> int:
             "confidence": mapping.get("confidence"),
         }
 
-    ***REMOVED*** Write output
+    # Write output
     output_path = output_dir / "strings_keys_catalog.ebay_uk.en.json"
     with open(output_path, 'w') as f:
         json.dump(strings_catalog, f, indent=2)

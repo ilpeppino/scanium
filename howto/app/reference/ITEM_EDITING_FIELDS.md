@@ -1,17 +1,17 @@
-***REMOVED*** Item Editing Fields
+# Item Editing Fields
 
 This document describes the user-editable fields added to the Edit Items feature.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The EditItemsScreen now supports two additional user-editable fields per item:
 
 - **Price** - User-specified price in EUR
 - **Condition** - Physical condition of the item
 
-***REMOVED******REMOVED*** Fields
+## Fields
 
-***REMOVED******REMOVED******REMOVED*** Price (`userPriceCents`)
+### Price (`userPriceCents`)
 
 - **Storage**: Integer cents (e.g., 1250 = €12.50)
 - **Validation**:
@@ -21,7 +21,7 @@ The EditItemsScreen now supports two additional user-editable fields per item:
 - **Display**: Currency formatted with € prefix (e.g., "€12.50")
 - **Input**: Decimal numeric keyboard with comma/period support
 
-***REMOVED******REMOVED******REMOVED*** Condition (`condition`)
+### Condition (`condition`)
 
 - **Type**: Enum (`ItemCondition`)
 - **Values**:
@@ -34,9 +34,9 @@ The EditItemsScreen now supports two additional user-editable fields per item:
 - **Storage**: String (enum name) in database
 - **Default**: null (not set)
 
-***REMOVED******REMOVED*** Data Model
+## Data Model
 
-***REMOVED******REMOVED******REMOVED*** ScannedItem (shared/core-models)
+### ScannedItem (shared/core-models)
 
 ```kotlin
 data class ScannedItem<FullImageUri>(
@@ -46,7 +46,7 @@ data class ScannedItem<FullImageUri>(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** ItemCondition Enum (shared/core-models)
+### ItemCondition Enum (shared/core-models)
 
 ```kotlin
 enum class ItemCondition(
@@ -60,33 +60,33 @@ enum class ItemCondition(
 }
 ```
 
-***REMOVED******REMOVED*** Persistence
+## Persistence
 
-***REMOVED******REMOVED******REMOVED*** Database Columns (ScannedItemEntity)
+### Database Columns (ScannedItemEntity)
 
 - `userPriceCents` - INTEGER NULL
 - `condition` - TEXT NULL (stores enum name)
 
-***REMOVED******REMOVED******REMOVED*** Migration
+### Migration
 
 - Version 3 → 4 adds both columns to `scanned_items` and `scanned_item_history` tables
 - Uses ALTER TABLE ADD COLUMN (safe for existing data)
 
-***REMOVED******REMOVED*** UI Components
+## UI Components
 
-***REMOVED******REMOVED******REMOVED*** EditItemsScreen
+### EditItemsScreen
 
 - Price input: OutlinedTextField with numeric keyboard and € prefix
 - Condition dropdown: ExposedDropdownMenuBox with 4 options + "Not set"
 - Compact layout: Fields arranged side-by-side in a Row
 
-***REMOVED******REMOVED******REMOVED*** ItemsListScreen
+### ItemsListScreen
 
 - Price display: Shows user price if set, otherwise estimated range
 - User price uses tertiary color to differentiate from estimates
 - Condition badge: Colored chip next to price
 
-***REMOVED******REMOVED*** Update Flow
+## Update Flow
 
 1. User selects item(s) in ItemsListScreen
 2. User taps Edit button → navigates to EditItemsScreen
@@ -95,7 +95,7 @@ enum class ItemCondition(
 5. `ItemsViewModel.updateItemsFields()` persists changes
 6. ItemsListScreen recomposes with updated values
 
-***REMOVED******REMOVED*** ItemFieldUpdate Structure
+## ItemFieldUpdate Structure
 
 ```kotlin
 data class ItemFieldUpdate(
@@ -112,7 +112,7 @@ data class ItemFieldUpdate(
 The `clear*` flags allow explicitly setting fields to null (distinguishing from "keep existing
 value").
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 - `shared/core-models/.../items/ScannedItem.kt` - Added fields and `formattedUserPrice`
 - `shared/core-models/.../items/ItemCondition.kt` - New enum

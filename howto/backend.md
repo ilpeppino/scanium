@@ -1,6 +1,6 @@
-***REMOVED*** Backend HOWTO
+# Backend HOWTO
 
-***REMOVED******REMOVED*** 1. Overview
+## 1. Overview
 
 The backend is a Node.js + TypeScript Fastify service that provides cloud classification, assistant
 chat, vision insights, enrichment, pricing APIs, and remote config. It runs behind Docker (and
@@ -15,7 +15,7 @@ Primary responsibilities for the Android app:
 - Remote config (`/v1/config`).
 - Health and readiness (`/health`, `/healthz`, `/readyz`).
 
-***REMOVED******REMOVED*** 2. Architecture
+## 2. Architecture
 
 Runtime and entry points:
 
@@ -43,7 +43,7 @@ Key modules:
 - Health: `backend/src/modules/health/` (health + metrics endpoints).
 - Admin: `backend/src/modules/admin/` (usage/debug, gated by admin key).
 
-***REMOVED******REMOVED*** 3. API Surface
+## 3. API Surface
 
 Public endpoints (current implementation in `backend/src/app.ts`):
 
@@ -93,7 +93,7 @@ Rate limiting:
   `backend/src/infra/rate-limit/`).
 - Per-IP, per-API key, and per-device limits are enforced at the route level.
 
-***REMOVED******REMOVED*** 4. Business Logic
+## 4. Business Logic
 
 Classification (cloud mode):
 
@@ -113,7 +113,7 @@ Assistant:
 - Safety: prompt and input sanitation in `assistant/safety.ts`.
 - Caching: response cache and in-flight request dedup in `infra/cache/unified-cache.ts`.
 
-***REMOVED******REMOVED*** 5. Data Handling
+## 5. Data Handling
 
 Storage layers:
 
@@ -135,7 +135,7 @@ Retention policies:
   is implemented for uploads.
 - For app data retention policies, see `howto/infra/security/SECURITY.md`.
 
-***REMOVED******REMOVED*** 6. Security Model
+## 6. Security Model
 
 Authentication and authorization:
 
@@ -163,7 +163,7 @@ Limitations:
 - Android `RequestSigner` headers are not currently validated by backend routes. Treat signature
   headers as best-effort until server-side validation exists.
 
-***REMOVED******REMOVED*** 7. Performance Considerations
+## 7. Performance Considerations
 
 - Classifier concurrency and rate limits are configurable (`CLASSIFIER_CONCURRENCY_LIMIT`,
   `CLASSIFIER_RATE_LIMIT_PER_MINUTE`).
@@ -171,7 +171,7 @@ Limitations:
 - OTLP metrics export runs on a 30s interval (`infra/telemetry/index.ts`).
 - NAS deployments tune CPU/memory limits in `deploy/nas/compose/` files.
 
-***REMOVED******REMOVED*** 8. Interaction With Android App
+## 8. Interaction With Android App
 
 Expected contracts (as used in Android):
 
@@ -194,7 +194,7 @@ Versioning strategy:
 - API routes use `/v1` prefixes but no explicit version negotiation. Android and backend are
   expected to move in lockstep.
 
-***REMOVED******REMOVED*** 9. Interaction With Monitoring
+## 9. Interaction With Monitoring
 
 Backend telemetry:
 
@@ -202,7 +202,7 @@ Backend telemetry:
 - HTTP request spans and metrics are emitted in `app.ts`.
 - `/metrics` exposes Prometheus-formatted metrics used by Alloy scrapes.
 
-***REMOVED******REMOVED*** 10. Deployment Notes (NAS)
+## 10. Deployment Notes (NAS)
 
 Local dev (Docker):
 

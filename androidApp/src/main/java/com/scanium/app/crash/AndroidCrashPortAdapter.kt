@@ -15,7 +15,7 @@ import io.sentry.SentryLevel
  * This adapter bridges the vendor-neutral CrashPort interface to the Sentry Android SDK.
  * It translates CrashPort operations (tags, breadcrumbs, exceptions) into Sentry-specific calls.
  *
- * ***REMOVED******REMOVED*** Diagnostics Bundle Attachment
+ * ## Diagnostics Bundle Attachment
  * If a [DiagnosticsPort] is provided, diagnostics bundles are automatically attached to all
  * captured exceptions. The bundle contains:
  * - Recent telemetry events (breadcrumbs from Telemetry facade)
@@ -24,7 +24,7 @@ import io.sentry.SentryLevel
  *
  * Bundle size is capped at [MAX_ATTACHMENT_BYTES] (128KB) to comply with Sentry limits.
  *
- * ***REMOVED******REMOVED*** Initialization
+ * ## Initialization
  * ```kotlin
  * // In Application.onCreate():
  * val diagnosticsPort = DefaultDiagnosticsPort(...)
@@ -35,7 +35,7 @@ import io.sentry.SentryLevel
  * crashPort.setTag("app_version", BuildConfig.VERSION_NAME)
  * ```
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * Sentry SDK is thread-safe, so this adapter is also thread-safe.
  *
  * @param diagnosticsPort Optional diagnostics port for attaching diagnostic bundles to crash reports

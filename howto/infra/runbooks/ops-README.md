@@ -1,26 +1,26 @@
-***REMOVED*** Scanium Ops Scripts
+# Scanium Ops Scripts
 
 Phase 1 maintenance scripts for monitoring and troubleshooting the Scanium backend.
 
-***REMOVED******REMOVED*** Quick Start
+## Quick Start
 
 ```bash
-***REMOVED*** Run smoke tests against production
+# Run smoke tests against production
 ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
 
-***REMOVED*** Run smoke tests with authentication
+# Run smoke tests with authentication
 SCANIUM_API_KEY=your-key ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
 
-***REMOVED*** Check Docker container status
+# Check Docker container status
 ./scripts/ops/docker_status.sh
 
-***REMOVED*** Collect support bundle for debugging
+# Collect support bundle for debugging
 ./scripts/ops/collect_support_bundle.sh
 ```
 
-***REMOVED******REMOVED*** Scripts
+## Scripts
 
-***REMOVED******REMOVED******REMOVED*** smoke.sh
+### smoke.sh
 
 Tests backend endpoints for reachability and authentication.
 
@@ -36,7 +36,7 @@ Tests backend endpoints for reachability and authentication.
 - `GET /v1/preflight` - Preflight check (200 with key, 401 without)
 - `GET /v1/assist/status` - Assist status (200/403 with key, 401/403 without)
 
-***REMOVED******REMOVED******REMOVED*** docker_status.sh
+### docker_status.sh
 
 Shows Docker container status with health and restart information.
 
@@ -52,7 +52,7 @@ Shows Docker container status with health and restart information.
 - Automatic log output for unhealthy/restarting/exited containers
 - Optional JSON export
 
-***REMOVED******REMOVED******REMOVED*** collect_support_bundle.sh
+### collect_support_bundle.sh
 
 Collects diagnostic information for troubleshooting.
 
@@ -70,7 +70,7 @@ Collects diagnostic information for troubleshooting.
 - Container logs (optional)
 - Ops scripts for reference
 
-***REMOVED******REMOVED*** Passing API Keys Safely
+## Passing API Keys Safely
 
 **Option 1: Environment variable (recommended)**
 
@@ -91,28 +91,28 @@ SCANIUM_API_KEY=your-key ./scripts/ops/smoke.sh --base-url https://scanium.gtemp
 ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com --api-key your-key
 ```
 
-***REMOVED******REMOVED*** NAS Cron Scheduling
+## NAS Cron Scheduling
 
 For monitoring on the Synology NAS:
 
 **Ephemeral container approach (recommended):**
 
 ```bash
-***REMOVED*** Run every 5 minutes
+# Run every 5 minutes
 */5 * * * * docker run --rm -v /volume1/docker/scanium:/app scanium-ops /app/scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com >> /var/log/scanium-smoke.log 2>&1
 ```
 
 **Direct execution (if scripts are accessible):**
 
 ```bash
-***REMOVED*** Run every 5 minutes
+# Run every 5 minutes
 */5 * * * * /volume1/docker/scanium/scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com >> /var/log/scanium-smoke.log 2>&1
 
-***REMOVED*** Daily status check at 6 AM
+# Daily status check at 6 AM
 0 6 * * * /volume1/docker/scanium/scripts/ops/docker_status.sh >> /var/log/scanium-status.log 2>&1
 ```
 
-***REMOVED******REMOVED*** Safety Notes
+## Safety Notes
 
 - All scripts support `--help`
 - All scripts are idempotent (safe to run multiple times)
@@ -120,7 +120,7 @@ For monitoring on the Synology NAS:
 - Scripts require only POSIX tools + docker CLI + curl
 - Works on both macOS (development) and Linux (NAS)
 
-***REMOVED******REMOVED*** Security
+## Security
 
 These scripts are designed to be safe:
 
@@ -128,7 +128,7 @@ These scripts are designed to be safe:
 - **No secrets in output:** Support bundles never include `.env` files or `local.properties`
 - **Read-only:** Scripts only read data, never modify containers or configuration
 
-***REMOVED******REMOVED*** Phase 1
+## Phase 1
 
 These scripts are designed as Phase 1 of the ops toolkit. Future phases may include:
 
@@ -137,7 +137,7 @@ These scripts are designed as Phase 1 of the ops toolkit. Future phases may incl
 - Automated alerting integration
 - Log aggregation
 
-***REMOVED******REMOVED*** Build Tooling
+## Build Tooling
 
 - AGP upgraded to 8.6.0 to align with compileSdk 35 (Android 15 API support) and remove the
   compileSdk warning.

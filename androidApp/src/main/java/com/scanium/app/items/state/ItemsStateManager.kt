@@ -35,7 +35,7 @@ import kotlinx.coroutines.withContext
  * - Telemetry collection
  * - Similarity threshold management
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * All state modifications are performed on the worker dispatcher to prevent UI jank.
  * The ItemAggregator uses synchronized methods for thread-safe access.
  *

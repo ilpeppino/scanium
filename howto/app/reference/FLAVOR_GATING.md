@@ -1,14 +1,14 @@
-***REMOVED*** Flavor Gating
+# Flavor Gating
 
 This document describes the product flavor behavior for Scanium's `dev`, `beta`, and `prod` builds.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium uses Android product flavors to control feature availability and UI visibility across
 different build variants. The centralized feature flag system ensures consistent behavior without
 scattered BuildConfig checks.
 
-***REMOVED******REMOVED*** Flavor Summary
+## Flavor Summary
 
 | Feature                 | dev                  | beta                   | prod                   |
 |-------------------------|----------------------|------------------------|------------------------|
@@ -19,9 +19,9 @@ scattered BuildConfig checks.
 | Item Diagnostics        | Shown                | Hidden                 | Hidden                 |
 | Diagnostics Description | Shown                | Hidden                 | Hidden                 |
 
-***REMOVED******REMOVED*** Feature Details
+## Feature Details
 
-***REMOVED******REMOVED******REMOVED*** Developer Mode
+### Developer Mode
 
 - **dev**: Developer Mode is **always ON** and cannot be disabled. The toggle is removed from the
   Developer Options screen - replaced with a static indicator showing "Always enabled in DEV
@@ -30,13 +30,13 @@ scattered BuildConfig checks.
 - **beta/prod**: Developer Options completely hidden. No entry point in Settings. Deep links to
   developer screen navigate back immediately.
 
-***REMOVED******REMOVED******REMOVED*** Screenshots
+### Screenshots
 
 - **dev**: Screenshot toggle available in Developer Options. FLAG_SECURE applied when disabled.
 - **beta/prod**: FLAG_SECURE always applied. No toggle exposed. User preference is ignored and
   clamped to false.
 
-***REMOVED******REMOVED******REMOVED*** AI Assistant
+### AI Assistant
 
 - **dev**: Full access to AI Assistant. Navigation to assistant screen works normally.
 - **beta/prod**: Assistant is completely hidden:
@@ -44,13 +44,13 @@ scattered BuildConfig checks.
     - No navigation routes accessible
     - Deep links or stale state navigates back immediately
 
-***REMOVED******REMOVED******REMOVED*** Image Resolution
+### Image Resolution
 
 - **dev**: All resolution options available (Low/Normal/High).
 - **beta/prod**: HIGH option hidden from UI. Persisted HIGH value from dev build is clamped to
   NORMAL at runtime.
 
-***REMOVED******REMOVED******REMOVED*** Item Diagnostics
+### Item Diagnostics
 
 - **dev**: Item list shows diagnostic labels:
     - Aggregation accuracy badge (Low/Medium/High confidence)
@@ -62,7 +62,7 @@ scattered BuildConfig checks.
     - Price and condition
     - Attributes
 
-***REMOVED******REMOVED******REMOVED*** Diagnostics & Checks Description
+### Diagnostics & Checks Description
 
 - **dev**: Shows an informational card at the top of the Developer Options screen explaining the
   purpose of diagnostics sections: "Diagnostics & checks help verify connectivity to your backend
@@ -70,9 +70,9 @@ scattered BuildConfig checks.
   while testing to quickly spot disruptions."
 - **beta/prod**: Not shown (Developer Options screen is not accessible).
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Central Feature Flags
+### Central Feature Flags
 
 All flavor-specific behavior is driven by `FeatureFlags.kt`:
 
@@ -86,7 +86,7 @@ object FeatureFlags {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** BuildConfig Fields
+### BuildConfig Fields
 
 Gradle flavors define these BuildConfig fields:
 
@@ -106,7 +106,7 @@ buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"NORMAL\"")
 buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
 ```
 
-***REMOVED******REMOVED******REMOVED*** Runtime Enforcement
+### Runtime Enforcement
 
 1. **UI Gating**: Composables check `FeatureFlags` before rendering gated elements
 2. **Navigation Guards**: Routes check flags and navigate back if unauthorized
@@ -115,7 +115,7 @@ buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
 5. **Developer Mode Forcing**: DEV builds always return `true` for `developerModeFlow`, BETA/PROD
    always return `false`
 
-***REMOVED******REMOVED******REMOVED*** Migration Safety
+### Migration Safety
 
 When a dev build is replaced by beta/prod, settings that would enable restricted features are
 clamped at runtime:
@@ -131,7 +131,7 @@ When a beta/prod build is replaced by dev:
 
 No crashes or stale UI will occur.
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
 - `androidApp/build.gradle.kts` - Flavor BuildConfig fields
 - `androidApp/src/main/java/com/scanium/app/config/FeatureFlags.kt` - Central flags
@@ -144,9 +144,9 @@ No crashes or stale UI will occur.
 - `androidApp/src/main/java/com/scanium/app/camera/CameraViewModel.kt` - Resolution clamping
 - `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt` - Settings clamping
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Manual Verification
+### Manual Verification
 
 **DEV build:**
 
@@ -166,7 +166,7 @@ No crashes or stale UI will occur.
 4. No developer menu in Settings
 5. Screenshots always blocked
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 See test files:
 

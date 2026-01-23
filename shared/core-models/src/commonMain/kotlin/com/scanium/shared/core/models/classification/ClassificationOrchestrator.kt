@@ -19,13 +19,13 @@ import kotlin.random.Random
  *
  * Dispatches classification requests to the active classifier with concurrency control and retry.
  *
- * ***REMOVED******REMOVED*** Features
+ * ## Features
  * - **Bounded queue**: Max 2 concurrent classification requests
  * - **Retry logic**: Exponential backoff with jitter for retryable errors
  * - **Caching**: Avoid duplicate uploads for the same item
  * - **Status tracking**: PENDING, SUCCESS, FAILED per item
  *
- * ***REMOVED******REMOVED*** Retry Policy
+ * ## Retry Policy
  * - Max retries: 3 (total 4 attempts)
  * - Base delay: 2 seconds
  * - Max delay: 16 seconds

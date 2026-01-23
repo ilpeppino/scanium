@@ -1,14 +1,14 @@
-***REMOVED***!/bin/bash
+#!/bin/bash
 
-***REMOVED*** Scanium Backend Development Stop Script
-***REMOVED*** Gracefully stops all development services
+# Scanium Backend Development Stop Script
+# Gracefully stops all development services
 
-***REMOVED*** Colors for output
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' ***REMOVED*** No Color
+NC='\033[0m' # No Color
 
 print_status() {
     echo -e "${BLUE}ℹ️  $1${NC}"
@@ -22,7 +22,7 @@ print_warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
-***REMOVED*** Parse command-line flags
+# Parse command-line flags
 STOP_MONITORING=0
 
 for arg in "$@"; do
@@ -55,13 +55,13 @@ echo "╚═══════════════════════�
 echo -e "${NC}"
 echo ""
 
-***REMOVED*** Stop backend server (port 8080)
+# Stop backend server (port 8080)
 print_status "Stopping backend server..."
 BACKEND_PIDS=$(lsof -ti:8080 2>/dev/null)
 if [ ! -z "$BACKEND_PIDS" ]; then
     echo "$BACKEND_PIDS" | xargs kill 2>/dev/null || true
     sleep 1
-    ***REMOVED*** Force kill if still running
+    # Force kill if still running
     BACKEND_PIDS=$(lsof -ti:8080 2>/dev/null)
     if [ ! -z "$BACKEND_PIDS" ]; then
         echo "$BACKEND_PIDS" | xargs kill -9 2>/dev/null || true
@@ -71,13 +71,13 @@ else
     print_warning "Backend server not running"
 fi
 
-***REMOVED*** Stop ngrok
+# Stop ngrok
 print_status "Stopping ngrok..."
 NGROK_PIDS=$(pgrep -f "ngrok http" 2>/dev/null)
 if [ ! -z "$NGROK_PIDS" ]; then
     echo "$NGROK_PIDS" | xargs kill 2>/dev/null || true
     sleep 1
-    ***REMOVED*** Force kill if still running
+    # Force kill if still running
     NGROK_PIDS=$(pgrep -f "ngrok http" 2>/dev/null)
     if [ ! -z "$NGROK_PIDS" ]; then
         echo "$NGROK_PIDS" | xargs kill -9 2>/dev/null || true
@@ -87,7 +87,7 @@ else
     print_warning "ngrok not running"
 fi
 
-***REMOVED*** Stop PostgreSQL
+# Stop PostgreSQL
 print_status "Stopping PostgreSQL..."
 if docker ps --filter name=scanium-postgres --format '{{.Names}}' | grep -q scanium-postgres; then
     cd "$(dirname "$0")"
@@ -97,7 +97,7 @@ else
     print_warning "PostgreSQL not running"
 fi
 
-***REMOVED*** Stop monitoring stack (if requested)
+# Stop monitoring stack (if requested)
 if [ "$STOP_MONITORING" = "1" ]; then
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     MONITORING_SCRIPT="${SCRIPT_DIR}/../monitoring/stop-monitoring.sh"
@@ -108,7 +108,7 @@ if [ "$STOP_MONITORING" = "1" ]; then
         print_warning "Monitoring stop script not found: $MONITORING_SCRIPT"
     fi
 else
-    ***REMOVED*** Check if monitoring is running and inform user
+    # Check if monitoring is running and inform user
     MONITORING_RUNNING=$(docker compose -p scanium-monitoring ps -q 2>/dev/null | wc -l | tr -d ' ')
     if [ "$MONITORING_RUNNING" -gt 0 ]; then
         print_status "Monitoring stack is still running"
@@ -117,7 +117,7 @@ else
     fi
 fi
 
-***REMOVED*** Clean up log files (optional)
+# Clean up log files (optional)
 if [ -f .dev-server.log ] || [ -f .ngrok.log ]; then
     read -p "Delete log files? (y/n) " -n 1 -r
     echo

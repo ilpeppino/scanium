@@ -1,5 +1,5 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** Quick script to access Grafana via SSH tunnel
+#!/usr/bin/env bash
+# Quick script to access Grafana via SSH tunnel
 
 set -euo pipefail
 
@@ -11,7 +11,7 @@ echo "Local port: $PORT"
 echo "NAS host: $NAS_HOST"
 echo
 
-***REMOVED*** Check if port is already in use
+# Check if port is already in use
 if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo "⚠️  Port $PORT is already in use!"
     echo
@@ -22,7 +22,7 @@ if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
     exit 1
 fi
 
-***REMOVED*** Check if NAS is reachable
+# Check if NAS is reachable
 if ! ssh -q -o ConnectTimeout=5 $NAS_HOST exit 2>/dev/null; then
     echo "❌ Cannot connect to $NAS_HOST via SSH"
     echo
@@ -33,7 +33,7 @@ if ! ssh -q -o ConnectTimeout=5 $NAS_HOST exit 2>/dev/null; then
     exit 1
 fi
 
-***REMOVED*** Check if Grafana is running on NAS
+# Check if Grafana is running on NAS
 echo "Checking if Grafana is running on NAS..."
 if ! ssh $NAS_HOST "/usr/local/bin/docker ps | grep -q scanium-grafana"; then
     echo "❌ Grafana container is not running on NAS!"
@@ -46,7 +46,7 @@ fi
 echo "✅ Grafana is running on NAS"
 echo
 
-***REMOVED*** Create SSH tunnel
+# Create SSH tunnel
 echo "Creating SSH tunnel..."
 echo "  ssh -L $PORT:localhost:3000 $NAS_HOST"
 echo
@@ -62,12 +62,12 @@ echo
 echo "Press Ctrl+C to close the tunnel and exit"
 echo
 
-***REMOVED*** Open browser (optional)
+# Open browser (optional)
 if command -v open >/dev/null 2>&1; then
     echo "Opening browser..."
     sleep 2
     open "http://localhost:$PORT/dashboards" &
 fi
 
-***REMOVED*** Keep tunnel open
+# Keep tunnel open
 ssh -o ServerAliveInterval=60 -L $PORT:localhost:3000 $NAS_HOST

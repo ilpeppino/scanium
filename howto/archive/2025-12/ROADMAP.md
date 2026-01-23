@@ -1,4 +1,4 @@
-***REMOVED*** 📘 OBJECTA — COMPLETE NEXT-PHASE DOCUMENT SET
+# 📘 OBJECTA — COMPLETE NEXT-PHASE DOCUMENT SET
 
 Below you will find **ALL requested documents**, generated **one by one**, all inside this single
 Markdown block:
@@ -10,31 +10,31 @@ Markdown block:
 
 ---
 
-***REMOVED*** 1️⃣ **OBJECTA ROADMAP — NEXT 3–6 MONTHS**
+# 1️⃣ **OBJECTA ROADMAP — NEXT 3–6 MONTHS**
 
-***REMOVED******REMOVED*** 🎯 **Goal**
+## 🎯 **Goal**
 
 Turn Scanium from a strong PoC into a production-grade, scalable, multi-mode AI scanning engine
 suitable for public release.
 
 ---
 
-***REMOVED******REMOVED*** **Phase 1 — Polishing the Core (Weeks 1–4)**
+## **Phase 1 — Polishing the Core (Weeks 1–4)**
 
-***REMOVED******REMOVED******REMOVED*** ✔ ML + Tracking Enhancements
+### ✔ ML + Tracking Enhancements
 
 - Improve multi-frame candidate → confirmed promotion thresholds.
 - Tune confidence scoring pipeline using real-world data logs.
 - Add dynamic frame-rate throttling based on device performance.
 - Reduce false positives through improved spatial heuristics (IoU thresholds, motion filtering).
 
-***REMOVED******REMOVED******REMOVED*** ✔ UX & Interaction
+### ✔ UX & Interaction
 
 - Refine slider animations and transitions.
 - Add optional confidence indicators (UI-safe color coding).
 - Implement gentle haptic feedback on confirmed detections.
 
-***REMOVED******REMOVED******REMOVED*** ✔ Stability Improvements
+### ✔ Stability Improvements
 
 - Strict ImageProxy closing audit.
 - Stabilize analyzer threading.
@@ -42,21 +42,21 @@ suitable for public release.
 
 ---
 
-***REMOVED******REMOVED*** **Phase 2 — New Capabilities (Weeks 5–10)**
+## **Phase 2 — New Capabilities (Weeks 5–10)**
 
-***REMOVED******REMOVED******REMOVED*** ✔ Barcode Mode Expansion
+### ✔ Barcode Mode Expansion
 
 - Batch barcode scanning with auto-confirmation.
 - Add semantic barcode type icons (EAN13, QR, etc.)
 - Add optional vibration/beep feedback for barcode hits.
 
-***REMOVED******REMOVED******REMOVED*** ✔ Text Recognition Mode (OCR)
+### ✔ Text Recognition Mode (OCR)
 
 - Document boundary detection.
 - Auto-enhance text regions.
 - Auto-extracted metadata (brand name, model, product title).
 
-***REMOVED******REMOVED******REMOVED*** ✔ Pricing System Enhancement
+### ✔ Pricing System Enhancement
 
 - Add a pluggable pricing provider interface.
 - Allow multiple pricing providers (internal mock + external API).
@@ -64,9 +64,9 @@ suitable for public release.
 
 ---
 
-***REMOVED******REMOVED*** **Phase 3 — Persistence + Cloud (Weeks 11–16)**
+## **Phase 3 — Persistence + Cloud (Weeks 11–16)**
 
-***REMOVED******REMOVED******REMOVED*** ✔ Data Layer
+### ✔ Data Layer
 
 - Add Room local DB for:
     - Scanned items
@@ -77,7 +77,7 @@ suitable for public release.
     - Threshold tuning
     - Last used scan mode
 
-***REMOVED******REMOVED******REMOVED*** ✔ Cloud Enhancements
+### ✔ Cloud Enhancements
 
 - Add optional Scanium Cloud Sync (users log in).
 - Save item history across devices.
@@ -85,9 +85,9 @@ suitable for public release.
 
 ---
 
-***REMOVED******REMOVED*** **Phase 4 — Release Readiness (Weeks 17–24)**
+## **Phase 4 — Release Readiness (Weeks 17–24)**
 
-***REMOVED******REMOVED******REMOVED*** ✔ Architecture Modernization
+### ✔ Architecture Modernization
 
 - Introduce multi-module structure:
     - :core:ml
@@ -99,7 +99,7 @@ suitable for public release.
     - :app
 - Add DI using Hilt.
 
-***REMOVED******REMOVED******REMOVED*** ✔ Testing & CI/CD
+### ✔ Testing & CI/CD
 
 - Raise test coverage to 80%.
 - Add full end-to-end UI tests.
@@ -107,7 +107,7 @@ suitable for public release.
     - Build → Test → Lint → Assemble → Deploy internal release.
 - Deploy Alpha & Beta builds to Play Store.
 
-***REMOVED******REMOVED******REMOVED*** ✔ UX Polish
+### ✔ UX Polish
 
 - Icons, animations, error states, internationalization.
 - Performance budget monitoring (<=150ms ML latency target).
@@ -115,9 +115,9 @@ suitable for public release.
 
 ---
 
-***REMOVED*** 2️⃣ **OBJECTA MVP LAUNCH CHECKLIST**
+# 2️⃣ **OBJECTA MVP LAUNCH CHECKLIST**
 
-***REMOVED******REMOVED*** ✅ **Core Detection**
+## ✅ **Core Detection**
 
 - [ ] Object detection stable at 2–5 fps analysis rate
 - [ ] Multi-frame tracking fully operational
@@ -125,33 +125,33 @@ suitable for public release.
 - [ ] Bounding box rendering smooth and aligned
 - [ ] No analyzer bottlenecks or frame leaks
 
-***REMOVED******REMOVED*** ✅ **Scanning Modes**
+## ✅ **Scanning Modes**
 
 - [ ] Item Recognition Mode (default)
 - [ ] Barcode Mode fully functional
 - [ ] OCR Mode (if included) detects text reliably
 - [ ] Slider UI polished with camera-like transitions
 
-***REMOVED******REMOVED*** ✅ **Pricing**
+## ✅ **Pricing**
 
 - [ ] Category → EUR price range mapping validated
 - [ ] Barcode → SKU → Price provider integrated (if planned)
 - [ ] Prices formatted with localization
 
-***REMOVED******REMOVED*** ✅ **UX**
+## ✅ **UX**
 
 - [ ] Smooth animation between modes
 - [ ] Camera permission flow stable
 - [ ] Items List UI polished and responsive
 - [ ] Confidence indicators optionally visible
 
-***REMOVED******REMOVED*** ✅ **Data & Persistence**
+## ✅ **Data & Persistence**
 
 - [ ] Session tracking works
 - [ ] Items saved to local database
 - [ ] Config saved in DataStore
 
-***REMOVED******REMOVED*** ✅ **Testing**
+## ✅ **Testing**
 
 - [ ] All unit tests passing
 - [ ] All integration tests passing
@@ -159,14 +159,14 @@ suitable for public release.
 - [ ] Slider interaction tested
 - [ ] CI pipeline green
 
-***REMOVED******REMOVED*** ✅ **Performance**
+## ✅ **Performance**
 
 - [ ] ML inference time consistently below threshold
 - [ ] Memory footprint stable over 10+ minutes scanning
 - [ ] No frame queue build-up
 - [ ] No thermal throttling observed in common devices
 
-***REMOVED******REMOVED*** ✅ **Release**
+## ✅ **Release**
 
 - [ ] Crash-free startup rate ≥99%
 - [ ] Google Play signing configured

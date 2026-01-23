@@ -1,8 +1,8 @@
-***REMOVED*** Backend Documentation
+# Backend Documentation
 
 Documentation for the Scanium Node/TypeScript backend service.
 
-***REMOVED******REMOVED*** Subfolders
+## Subfolders
 
 | Folder                   | Contents                                     |
 |--------------------------|----------------------------------------------|
@@ -12,25 +12,25 @@ Documentation for the Scanium Node/TypeScript backend service.
 | [reports/](reports/)     | Handoff reports and status updates           |
 | [scripts/](scripts/)     | Development and deployment scripts           |
 
-***REMOVED******REMOVED*** Quick Links
+## Quick Links
 
-***REMOVED******REMOVED******REMOVED*** Deployment
+### Deployment
 
 - [Redeploy Procedure](deploy/REDEPLOY.md)
 
-***REMOVED******REMOVED******REMOVED*** Reference
+### Reference
 
 - [Assistant Providers](reference/ASSISTANT_PROVIDERS.md)
 - [Vision Enrichment](reference/VISION_ENRICHMENT.md)
 - [Backend Connectivity](reference/BACKEND_CONNECTIVITY.md)
 - [Observability](reference/OBSERVABILITY.md)
 
-***REMOVED******REMOVED******REMOVED*** Runbooks
+### Runbooks
 
 - [Enrich Operator Runbook](runbooks/ENRICH_OPERATOR_RUNBOOK.md)
 - [Manual Golden Runbook](runbooks/MANUAL_GOLDEN_RUNBOOK.md)
 
-***REMOVED******REMOVED******REMOVED*** Scripts
+### Scripts
 
 - `start-dev.sh` - Start development server
 - `stop-dev.sh` - Stop development server

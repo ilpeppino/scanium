@@ -1,20 +1,20 @@
-***REMOVED*** Remove Permanently Disabled Code Block (if false &&)
+# Remove Permanently Disabled Code Block (if false &&)
 
 **Labels:** `tech-debt`, `priority:p2`, `area:ml`, `code-quality`
 **Type:** Code Quality
 **Severity:** Medium
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 ObjectDetectorClient.kt has a permanently disabled code block using `if (false && ...)` which should
 either be removed entirely or properly handled with configuration.
 
-***REMOVED******REMOVED*** Location
+## Location
 
 File: `/app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
 Line: 310
 
-***REMOVED******REMOVED*** Current Code
+## Current Code
 
 ```kotlin
 if (false && detectedObjects.isEmpty() && useStreamMode) {
@@ -24,22 +24,22 @@ if (false && detectedObjects.isEmpty() && useStreamMode) {
 }
 ```
 
-***REMOVED******REMOVED*** Impact
+## Impact
 
 - **Code Clutter**: Dead code that will never execute
 - **Confusion**: Developers don't know if this is temporary or permanent
 - **Maintenance**: Code must be maintained even though it's disabled
 - **Missed Cleanup**: Comment says "DISABLED" but doesn't explain if/when to re-enable
 
-***REMOVED******REMOVED*** Decision Required
+## Decision Required
 
 Choose ONE:
 
-***REMOVED******REMOVED******REMOVED*** Option A: Delete Entirely (Recommended)
+### Option A: Delete Entirely (Recommended)
 
 If the ML Kit crash issue is resolved and this fallback is no longer needed.
 
-***REMOVED******REMOVED******REMOVED*** Option B: Move to Feature Flag
+### Option B: Move to Feature Flag
 
 If this might be useful for debugging specific devices:
 
@@ -49,7 +49,7 @@ if (BuildConfig.ENABLE_MODE_FALLBACK && detectedObjects.isEmpty() && useStreamMo
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Option C: Document Permanently
+### Option C: Document Permanently
 
 If this must stay disabled, add a comprehensive comment:
 
@@ -60,14 +60,14 @@ If this must stay disabled, add a comprehensive comment:
 // Decision: Keep STREAM mode only, accept zero-detection cases.
 ```
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 
 - [ ] Choose option A, B, or C based on project needs
 - [ ] Implement chosen option
 - [ ] Update ML Kit documentation if permanently removing fallback
 - [ ] Verify tests pass
 
-***REMOVED******REMOVED*** Suggested Approach (Option A)
+## Suggested Approach (Option A)
 
 1. Delete lines 310-323 in ObjectDetectorClient.kt
 2. Keep the detailed diagnostic logging above it
@@ -78,6 +78,6 @@ If this must stay disabled, add a comprehensive comment:
    ```
 4. Commit with message: "Remove disabled ML Kit mode fallback"
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
 None

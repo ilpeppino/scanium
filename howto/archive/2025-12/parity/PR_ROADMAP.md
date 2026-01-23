@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** iOS Parity PR Roadmap
+# iOS Parity PR Roadmap
 
 **Last Updated:** 2025-12-19
 **Purpose:** Detailed PR-by-PR implementation roadmap with parallelization strategy
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** How to Use This Roadmap
+## How to Use This Roadmap
 
 - **PR Title:** Descriptive name for the pull request
 - **Scope:** Files and modules to be created/modified
@@ -22,7 +22,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Parallelization Tracks
+## Parallelization Tracks
 
 To maximize velocity, work can proceed on 5 concurrent tracks:
 
@@ -37,9 +37,9 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Phase 0: Validation & Guardrails (Week 1)
+## Phase 0: Validation & Guardrails (Week 1)
 
-***REMOVED******REMOVED******REMOVED*** PR-001: Validate XCFramework Integration
+### PR-001: Validate XCFramework Integration
 
 - **Track:** C
 - **Scope:**
@@ -56,7 +56,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-002: Add Missing iOS Permissions
+### PR-002: Add Missing iOS Permissions
 
 - **Track:** C
 - **Scope:**
@@ -74,7 +74,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-003: Create Parity Checklist
+### PR-003: Create Parity Checklist
 
 - **Track:** D
 - **Scope:**
@@ -89,7 +89,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-004: Add CI Parity Guard (Optional)
+### PR-004: Add CI Parity Guard (Optional)
 
 - **Track:** D
 - **Scope:**
@@ -104,9 +104,9 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Phase 1: Shared Brain Readiness (Week 2)
+## Phase 1: Shared Brain Readiness (Week 2)
 
-***REMOVED******REMOVED******REMOVED*** PR-005: Platform Adapters - Image Conversion
+### PR-005: Platform Adapters - Image Conversion
 
 - **Track:** C
 - **Scope:**
@@ -125,7 +125,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-006: Platform Adapters - Rect Conversion
+### PR-006: Platform Adapters - Rect Conversion
 
 - **Track:** C
 - **Scope:**
@@ -143,7 +143,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-007: Test ObjectTracker Integration
+### PR-007: Test ObjectTracker Integration
 
 - **Track:** C
 - **Scope:**
@@ -163,7 +163,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-008: Test ItemAggregator Integration
+### PR-008: Test ItemAggregator Integration
 
 - **Track:** C
 - **Scope:**
@@ -182,7 +182,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-009: Extend SharedBridge with Factory Methods
+### PR-009: Extend SharedBridge with Factory Methods
 
 - **Track:** C
 - **Scope:**
@@ -200,9 +200,9 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Phase 2: iOS Platform Adapters (Weeks 3-4)
+## Phase 2: iOS Platform Adapters (Weeks 3-4)
 
-***REMOVED******REMOVED******REMOVED*** PR-010: Validate Vision Barcode Service
+### PR-010: Validate Vision Barcode Service
 
 - **Track:** A
 - **Scope:**
@@ -219,7 +219,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-011: Validate Vision Text Service
+### PR-011: Validate Vision Text Service
 
 - **Track:** A
 - **Scope:**
@@ -236,7 +236,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-012: Validate CoreML Object Detection Service
+### PR-012: Validate CoreML Object Detection Service
 
 - **Track:** A
 - **Scope:**
@@ -254,7 +254,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-013: Implement On-Device Classifier
+### PR-013: Implement On-Device Classifier
 
 - **Track:** A
 - **Scope:**
@@ -272,7 +272,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-014: Implement Cloud Classifier
+### PR-014: Implement Cloud Classifier
 
 - **Track:** A
 - **Scope:**
@@ -290,7 +290,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-015: Implement Classification Orchestrator
+### PR-015: Implement Classification Orchestrator
 
 - **Track:** A
 - **Scope:**
@@ -308,7 +308,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-016: Add Classification Mode Persistence
+### PR-016: Add Classification Mode Persistence
 
 - **Track:** D
 - **Scope:**
@@ -324,7 +324,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-017: Add API Configuration to Info.plist
+### PR-017: Add API Configuration to Info.plist
 
 - **Track:** D
 - **Scope:**
@@ -341,11 +341,11 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Phase 3: iOS UI Parity (Weeks 5-7)
+## Phase 3: iOS UI Parity (Weeks 5-7)
 
-***REMOVED******REMOVED******REMOVED*** Track A: Camera UI
+### Track A: Camera UI
 
-***REMOVED******REMOVED******REMOVED*** PR-018: Create Camera Preview View
+### PR-018: Create Camera Preview View
 
 - **Track:** A
 - **Scope:**
@@ -362,7 +362,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-019: Add Shutter Button
+### PR-019: Add Shutter Button
 
 - **Track:** A
 - **Scope:**
@@ -379,7 +379,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-020: Add Detection Overlay
+### PR-020: Add Detection Overlay
 
 - **Track:** A
 - **Scope:**
@@ -395,7 +395,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-021: Add Mode Switcher
+### PR-021: Add Mode Switcher
 
 - **Track:** A
 - **Scope:**
@@ -411,7 +411,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-022: Add Settings Sheet
+### PR-022: Add Settings Sheet
 
 - **Track:** A
 - **Scope:**
@@ -427,7 +427,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-023: Create Camera ViewModel
+### PR-023: Create Camera ViewModel
 
 - **Track:** A
 - **Scope:**
@@ -446,7 +446,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-024: Wire ML Pipeline to Camera
+### PR-024: Wire ML Pipeline to Camera
 
 - **Track:** A
 - **Scope:**
@@ -469,9 +469,9 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track B: Items List & Details
+### Track B: Items List & Details
 
-***REMOVED******REMOVED******REMOVED*** PR-025: Create Items ViewModel
+### PR-025: Create Items ViewModel
 
 - **Track:** B
 - **Scope:**
@@ -491,7 +491,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-026: Enhance Items List View
+### PR-026: Enhance Items List View
 
 - **Track:** B
 - **Scope:**
@@ -513,7 +513,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-027: Create Item Detail View
+### PR-027: Create Item Detail View
 
 - **Track:** B
 - **Scope:**
@@ -530,7 +530,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-028: Add Floating Action Button
+### PR-028: Add Floating Action Button
 
 - **Track:** B
 - **Scope:**
@@ -546,9 +546,9 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track C: Navigation
+### Track C: Navigation
 
-***REMOVED******REMOVED******REMOVED*** PR-029: Create Navigation Architecture
+### PR-029: Create Navigation Architecture
 
 - **Track:** D
 - **Scope:**
@@ -568,7 +568,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-030: Wire Navigation to Views
+### PR-030: Wire Navigation to Views
 
 - **Track:** D
 - **Scope:**
@@ -585,9 +585,9 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Phase 4: Storage & Export Parity (Week 8)
+## Phase 4: Storage & Export Parity (Week 8)
 
-***REMOVED******REMOVED******REMOVED*** PR-031: Implement Photo Library Saver
+### PR-031: Implement Photo Library Saver
 
 - **Track:** E
 - **Scope:**
@@ -609,7 +609,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-032: Create SaveResult Model
+### PR-032: Create SaveResult Model
 
 - **Track:** E
 - **Scope:**
@@ -628,7 +628,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-033: Wire Save Action to FAB
+### PR-033: Wire Save Action to FAB
 
 - **Track:** E
 - **Scope:**
@@ -644,9 +644,9 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Phase 5: Selling Flow (Week 9 - Optional)
+## Phase 5: Selling Flow (Week 9 - Optional)
 
-***REMOVED******REMOVED******REMOVED*** PR-034: Create Selling Screen UI
+### PR-034: Create Selling Screen UI
 
 - **Track:** E
 - **Scope:**
@@ -662,7 +662,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-035: Create Listing Domain Models
+### PR-035: Create Listing Domain Models
 
 - **Track:** E
 - **Scope:**
@@ -679,7 +679,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-036: Implement Marketplace Service
+### PR-036: Implement Marketplace Service
 
 - **Track:** E
 - **Scope:**
@@ -696,7 +696,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-037: Wire Selling Flow to Navigation
+### PR-037: Wire Selling Flow to Navigation
 
 - **Track:** E
 - **Scope:**
@@ -712,9 +712,9 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Phase 6: Final Polish & Validation (Week 10)
+## Phase 6: Final Polish & Validation (Week 10)
 
-***REMOVED******REMOVED******REMOVED*** PR-038: Add Structured Logging
+### PR-038: Add Structured Logging
 
 - **Track:** D
 - **Scope:**
@@ -730,7 +730,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-039: Add Crash Reporting (Optional)
+### PR-039: Add Crash Reporting (Optional)
 
 - **Track:** D
 - **Scope:**
@@ -746,7 +746,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-040: Performance Optimization
+### PR-040: Performance Optimization
 
 - **Track:** A
 - **Scope:**
@@ -767,7 +767,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-041: Final Parity Validation
+### PR-041: Final Parity Validation
 
 - **Track:** D
 - **Scope:**
@@ -785,7 +785,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-042: Documentation Update
+### PR-042: Documentation Update
 
 - **Track:** D
 - **Scope:**
@@ -801,7 +801,7 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Parallelization Matrix
+## Parallelization Matrix
 
 | Week | Track A (Camera/ML)            | Track B (Items UI) | Track C (Shared)                       | Track D (Nav/Settings)         | Track E (Storage/Selling)      |
 |------|--------------------------------|--------------------|----------------------------------------|--------------------------------|--------------------------------|
@@ -820,31 +820,31 @@ after Track C completes.**
 
 ---
 
-***REMOVED******REMOVED*** Risk Mitigation Per Track
+## Risk Mitigation Per Track
 
-***REMOVED******REMOVED******REMOVED*** Track A Risks:
+### Track A Risks:
 
 - **Risk:** CoreML models underperform vs ML Kit
 - **Mitigation:** PR-012 validates early, fallback to cloud classifier
 
-***REMOVED******REMOVED******REMOVED*** Track B Risks:
+### Track B Risks:
 
 - **Risk:** Image loading from ImageRef fails
 - **Mitigation:** PR-005 validates conversion early, use placeholders as fallback
 
-***REMOVED******REMOVED******REMOVED*** Track C Risks:
+### Track C Risks:
 
 - **Risk:** Shared KMP APIs don't work on iOS
 - **Mitigation:** PR-007, PR-008 validate early in Phase 1
 
-***REMOVED******REMOVED******REMOVED*** Track E Risks:
+### Track E Risks:
 
 - **Risk:** Photo permission denied by user
 - **Mitigation:** Graceful error handling in PR-033
 
 ---
 
-***REMOVED******REMOVED*** Success Metrics
+## Success Metrics
 
 After all PRs merged:
 
@@ -857,7 +857,7 @@ After all PRs merged:
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. Assign PRs to engineers based on tracks
 2. Create GitHub project board with PR columns

@@ -1,9 +1,9 @@
-***REMOVED*** DEV Background Health Monitor
+# DEV Background Health Monitor
 
 A DEV-flavor-only background health monitoring system that periodically checks backend endpoints and
 sends local notifications when disruptions occur.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The health monitor runs every 15 minutes in the background using Android WorkManager. It checks the
 same endpoints used by ops smoke checks and notifies developers via local notifications when issues
@@ -12,7 +12,7 @@ are detected.
 **Important:** This feature is only available in DEV builds. Beta and Prod builds do not include the
 feature, UI, worker scheduling, or notification channel.
 
-***REMOVED******REMOVED*** Endpoints Checked
+## Endpoints Checked
 
 | Endpoint            | Pass Conditions (with API key) | Pass Conditions (no API key) |
 |---------------------|--------------------------------|------------------------------|
@@ -21,25 +21,25 @@ feature, UI, worker scheduling, or notification channel.
 | `/v1/preflight`     | HTTP 200                       | HTTP 200 or 401              |
 | `/v1/assist/status` | HTTP 200 or 403                | HTTP 200 or 403              |
 
-***REMOVED******REMOVED*** Enabling the Monitor
+## Enabling the Monitor
 
-***REMOVED******REMOVED******REMOVED*** Via UI
+### Via UI
 
 1. Open the Scanium DEV app
 2. Go to **Settings > Developer Options**
 3. Find the **Background Health Monitor** section
 4. Toggle **Enable monitoring** ON
 
-***REMOVED******REMOVED******REMOVED*** Configuration Options
+### Configuration Options
 
 - **Enable monitoring**: Master toggle for background checks
 - **Notify on recovery**: Send notification when backend recovers (default: ON)
 - **Base URL Override**: Custom backend URL (leave empty for default)
 - **Run Now**: Trigger immediate one-off check
 
-***REMOVED******REMOVED*** Notification Behavior
+## Notification Behavior
 
-***REMOVED******REMOVED******REMOVED*** Failure Notifications
+### Failure Notifications
 
 - **Title**: "Scanium backend issue"
 - **Text**: Describes the failure (e.g., "health timeout", "config unauthorized (401)")
@@ -50,48 +50,48 @@ Notifications are sent:
 - On signature change while failing (different endpoint or status code)
 - As reminder every 6 hours while continuously failing
 
-***REMOVED******REMOVED******REMOVED*** Recovery Notifications (if enabled)
+### Recovery Notifications (if enabled)
 
 - **Title**: "Scanium backend recovered"
 - **Text**: "All checks passing"
 
 Sent when transitioning from FAIL → OK (if "Notify on recovery" is enabled).
 
-***REMOVED******REMOVED*** ADB Commands
+## ADB Commands
 
-***REMOVED******REMOVED******REMOVED*** Run a One-Off Check
+### Run a One-Off Check
 
 ```bash
-***REMOVED*** Enqueue an immediate one-time check
+# Enqueue an immediate one-time check
 adb shell am broadcast -a android.intent.action.BOOT_COMPLETED -n com.scanium.app.dev/.monitoring.DevHealthMonitorWorker
 ```
 
 Or use the "Run Now" button in Developer Options.
 
-***REMOVED******REMOVED******REMOVED*** Inspect WorkManager State
+### Inspect WorkManager State
 
 ```bash
-***REMOVED*** List all scheduled work
+# List all scheduled work
 adb shell dumpsys jobscheduler | grep -A 20 "com.scanium.app.dev"
 
-***REMOVED*** Alternative: Use WorkManager inspector in Android Studio
+# Alternative: Use WorkManager inspector in Android Studio
 ```
 
-***REMOVED******REMOVED******REMOVED*** Clear Monitor State
+### Clear Monitor State
 
 ```bash
-***REMOVED*** Clear all health monitor state
+# Clear all health monitor state
 adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_health_monitor.preferences_pb"
 ```
 
-***REMOVED******REMOVED******REMOVED*** View Logs
+### View Logs
 
 ```bash
-***REMOVED*** Filter for health monitor logs
+# Filter for health monitor logs
 adb logcat -s DevHealthMonitor HealthCheck
 ```
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -119,7 +119,7 @@ adb logcat -s DevHealthMonitor HealthCheck
 └───────────────┘   └───────────────────┘   └───────────────────┘
 ```
 
-***REMOVED******REMOVED*** Files
+## Files
 
 | File                                       | Purpose                                                      |
 |--------------------------------------------|--------------------------------------------------------------|
@@ -132,7 +132,7 @@ adb logcat -s DevHealthMonitor HealthCheck
 | `ui/settings/DeveloperOptionsScreen.kt`    | UI section (HealthMonitorSection)                            |
 | `ui/settings/DeveloperOptionsViewModel.kt` | ViewModel health monitor controls                            |
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 Unit tests are located in `src/test/java/com/scanium/app/monitoring/`:
 
@@ -145,7 +145,7 @@ Run tests:
 ./gradlew :androidApp:testDevDebugUnitTest --tests "com.scanium.app.monitoring.*"
 ```
 
-***REMOVED******REMOVED*** Flavor Isolation
+## Flavor Isolation
 
 The feature uses runtime guards via `FeatureFlags.isDevBuild`:
 

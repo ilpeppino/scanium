@@ -1,9 +1,9 @@
-***REMOVED*** Camera Scanning Guidance System
+# Camera Scanning Guidance System
 
 This document describes the camera scanning guidance overlay system that helps users achieve
 reliable item detection.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The scanning guidance system provides visual and textual feedback to help users position items
 correctly for optimal scanning. It consists of:
@@ -16,7 +16,7 @@ correctly for optimal scanning. It consists of:
 6. **Distance Confidence** - Subtle visual feedback for optimal distance
 7. **Scan Confidence Metrics** - Telemetry for debugging and beta testing
 
-***REMOVED******REMOVED*** Key Concept: Single Source of Truth
+## Key Concept: Single Source of Truth
 
 The `ScanRoi` (Scan Region of Interest) is the canonical model used by **both** the UI and the
 analyzer:
@@ -27,9 +27,9 @@ analyzer:
 
 This ensures what the user **sees** (scan zone + hints) matches what the system **analyzes** (ROI).
 
-***REMOVED******REMOVED*** Scan Zone Behavior
+## Scan Zone Behavior
 
-***REMOVED******REMOVED******REMOVED*** Default Configuration
+### Default Configuration
 
 - **Position**: Centered in preview (0.5, 0.5)
 - **Shape**: Rounded rectangle
@@ -37,7 +37,7 @@ This ensures what the user **sees** (scan zone + hints) matches what the system 
 - **Min Size**: 45% (object too close)
 - **Max Size**: 75% (object too far)
 
-***REMOVED******REMOVED******REMOVED*** Dynamic Sizing
+### Dynamic Sizing
 
 The scan zone resizes based on detected object area:
 
@@ -47,7 +47,7 @@ The scan zone resizes based on detected object area:
 | 4-35%       | Stable        | None              |
 | < 4%        | Expands       | "Move closer"     |
 
-***REMOVED******REMOVED*** Recommended Distance
+## Recommended Distance
 
 | Distance | Experience                                 |
 |----------|--------------------------------------------|
@@ -55,60 +55,60 @@ The scan zone resizes based on detected object area:
 | 30-50 cm | **Optimal** - reliable detection and focus |
 | > 60 cm  | Too far - may need to move closer          |
 
-***REMOVED******REMOVED*** Guidance States
+## Guidance States
 
 The system transitions through these states:
 
-***REMOVED******REMOVED******REMOVED*** 1. SEARCHING
+### 1. SEARCHING
 
 Initial state when scanning starts. No candidate detected yet.
 
 - **Visual**: Subtle scan zone outline
 - **Hint**: None
 
-***REMOVED******REMOVED******REMOVED*** 2. TOO_CLOSE
+### 2. TOO_CLOSE
 
 Object detected but too close to camera.
 
 - **Visual**: Scan zone shrinks, orange outline
 - **Hint**: "Move phone away"
 
-***REMOVED******REMOVED******REMOVED*** 3. TOO_FAR
+### 3. TOO_FAR
 
 Object detected but too far from camera.
 
 - **Visual**: Scan zone expands, orange outline
 - **Hint**: "Move closer"
 
-***REMOVED******REMOVED******REMOVED*** 4. OFF_CENTER
+### 4. OFF_CENTER
 
 Object detected but not centered in scan zone.
 
 - **Visual**: Orange outline
 - **Hint**: "Center the object"
 
-***REMOVED******REMOVED******REMOVED*** 5. UNSTABLE
+### 5. UNSTABLE
 
 Camera or scene is unstable (motion or blur detected).
 
 - **Visual**: Pulsing outline
 - **Hint**: "Hold steady"
 
-***REMOVED******REMOVED******REMOVED*** 6. FOCUSING
+### 6. FOCUSING
 
 Camera is actively focusing.
 
 - **Visual**: Blue outline
 - **Hint**: "Focusing..." (brief)
 
-***REMOVED******REMOVED******REMOVED*** 7. GOOD
+### 7. GOOD
 
 All conditions are good - object centered, focused, stable.
 
 - **Visual**: Green pulsing outline
 - **Hint**: "Hold still to scan"
 
-***REMOVED******REMOVED******REMOVED*** 8. LOCKED
+### 8. LOCKED
 
 Locked onto a candidate - stable detection achieved.
 
@@ -116,11 +116,11 @@ Locked onto a candidate - stable detection achieved.
 - **Action**: Item will be added from this candidate only
 - **Hint**: "Ready to scan" (brief, 1 second)
 
-***REMOVED******REMOVED*** Bounding Box Visual States
+## Bounding Box Visual States
 
 Bounding boxes have three distinct visual styles that progress from detection to scan-ready:
 
-***REMOVED******REMOVED******REMOVED*** 1. PREVIEW State
+### 1. PREVIEW State
 
 Object detected but not yet ready for scanning.
 
@@ -129,7 +129,7 @@ Object detected but not yet ready for scanning.
 - **Alpha**: 0.6
 - **Label**: Small "Detected" (optional)
 
-***REMOVED******REMOVED******REMOVED*** 2. READY State
+### 2. READY State
 
 Scan conditions met, waiting for lock.
 
@@ -138,7 +138,7 @@ Scan conditions met, waiting for lock.
 - **Alpha**: 0.85
 - **Label**: Optional
 
-***REMOVED******REMOVED******REMOVED*** 3. LOCKED State
+### 3. LOCKED State
 
 Stable lock achieved, scan-ready.
 
@@ -153,15 +153,15 @@ Stable lock achieved, scan-ready.
 - READY → LOCKED: When stability lock criteria are met (400ms stable)
 - Any state → PREVIEW: When conditions degrade (motion, off-center, blur)
 
-***REMOVED******REMOVED*** Distance Confidence Indicator
+## Distance Confidence Indicator
 
 The scan zone border color subtly indicates distance quality:
 
 | Distance  | Zone Border            | Meaning                    |
 |-----------|------------------------|----------------------------|
-| Too close | Yellow-green (***REMOVED***7CB342) | Object too close to camera |
-| Optimal   | Green (***REMOVED***1DB954)        | Perfect scanning distance  |
-| Too far   | Yellow-green (***REMOVED***7CB342) | Object too far from camera |
+| Too close | Yellow-green (#7CB342) | Object too close to camera |
+| Optimal   | Green (#1DB954)        | Perfect scanning distance  |
+| Too far   | Yellow-green (#7CB342) | Object too far from camera |
 
 This is determined by comparing detected bbox area to thresholds:
 
@@ -169,7 +169,7 @@ This is determined by comparing detected bbox area to thresholds:
 - OPTIMAL: area between 4% and 35%
 - TOO_FAR: area < 4% of frame
 
-***REMOVED******REMOVED*** Picture Mode Alignment
+## Picture Mode Alignment
 
 Single-shot capture (shutter tap) shares the same ROI as live scanning:
 
@@ -179,11 +179,11 @@ Single-shot capture (shutter tap) shares the same ROI as live scanning:
 
 This ensures consistent behavior between live scan and picture capture.
 
-***REMOVED******REMOVED*** Lock Behavior
+## Lock Behavior
 
 The lock mechanism prevents background detections and panning artifacts:
 
-***REMOVED******REMOVED******REMOVED*** Lock Criteria (all must be true)
+### Lock Criteria (all must be true)
 
 1. Candidate box center inside ScanRoi
 2. Box area within acceptable range (4-35%)
@@ -191,14 +191,14 @@ The lock mechanism prevents background detections and panning artifacts:
 4. Low motion (< 0.1)
 5. Stable for ≥ 400 ms
 
-***REMOVED******REMOVED******REMOVED*** Behavior in LOCKED State
+### Behavior in LOCKED State
 
 - Only the locked candidate may trigger item add
 - Background detections are ignored
 - Panning immediately breaks lock
 - Lock auto-releases after item add or 5 second timeout
 
-***REMOVED******REMOVED*** Detection Selection (Phase 5 Scoring)
+## Detection Selection (Phase 5 Scoring)
 
 When multiple objects are detected, the system selects the best candidate using:
 
@@ -206,13 +206,13 @@ When multiple objects are detected, the system selects the best candidate using:
 score = confidence × 0.5 + areaScore × 0.2 + centerScore × 0.3
 ```
 
-***REMOVED******REMOVED******REMOVED*** Hard Rejects
+### Hard Rejects
 
 - Very small boxes (< 3% area)
 - Boxes with center outside ScanRoi (unless confidence > 80%)
 - Boxes detected during unstable focus
 
-***REMOVED******REMOVED*** Developer Diagnostics
+## Developer Diagnostics
 
 Enable "Scanning Diagnostics" in Developer Options to see:
 
@@ -224,13 +224,13 @@ Enable "Scanning Diagnostics" in Developer Options to see:
 - Motion score
 - Current guidance state
 
-***REMOVED******REMOVED*** Settings
+## Settings
 
-***REMOVED******REMOVED******REMOVED*** User Settings
+### User Settings
 
 - **Scanning Guidance** (ON by default) - Toggle visibility of the scan zone overlay and hints
 
-***REMOVED******REMOVED******REMOVED*** Developer Settings
+### Developer Settings
 
 - **ROI Diagnostics** (OFF by default) - Show detailed numeric diagnostics:
     - ROI size percentage
@@ -241,55 +241,55 @@ Enable "Scanning Diagnostics" in Developer Options to see:
     - Motion score
     - Current guidance state name
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "Items not being detected"
+### "Items not being detected"
 
 1. Ensure the object is within the scan zone
 2. Check if "Move closer" or "Move phone away" hints appear
 3. Hold the camera steady for 0.5-1 second
 4. Ensure good lighting conditions
 
-***REMOVED******REMOVED******REMOVED*** "Wrong object being scanned"
+### "Wrong object being scanned"
 
 1. Center the desired object in the scan zone
 2. Move other objects out of frame
 3. Wait for the green "LOCKED" state before moving
 
-***REMOVED******REMOVED******REMOVED*** "Detection feels laggy"
+### "Detection feels laggy"
 
 1. The system intentionally waits for stability before adding items
 2. This prevents accidental background detections
 3. Hold steady for the green lock to appear
 
-***REMOVED******REMOVED******REMOVED*** "Scan zone keeps resizing"
+### "Scan zone keeps resizing"
 
 1. This is intentional feedback about distance
 2. Shrinking = move away; Expanding = move closer
 3. Zone stabilizes when object is at optimal distance
 
-***REMOVED******REMOVED*** Files
+## Files
 
-***REMOVED******REMOVED******REMOVED*** Core Models (shared)
+### Core Models (shared)
 
 - `ScanRoi.kt` - Scan region of interest data class
 - `GuidanceState.kt` - Guidance state enum and composite state
 - `ScanGuidanceManager.kt` - Central coordinator
 - `RoiCoordinateMapper.kt` - Coordinate mapping between preview and analyzer spaces
 
-***REMOVED******REMOVED******REMOVED*** Tracking (shared)
+### Tracking (shared)
 
 - `ObjectTracker.kt` - Multi-frame candidate tracking
 - `CenterWeightedCandidateSelector.kt` - Center-weighted selection with ROI filtering
 
-***REMOVED******REMOVED******REMOVED*** Android Implementation
+### Android Implementation
 
 - `CameraGuidanceOverlay.kt` - Visual overlay composable
 - `CameraXManager.kt` - Integration with camera pipeline
 - `SharpnessCalculator.kt` - Laplacian-based sharpness scoring
 - `SettingsRepository.kt` - User/developer settings for guidance
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
 ```
 ┌─────────────────────┐
@@ -321,7 +321,7 @@ ScanRoi ────► UI Overlay (drawing)
         └───► CenterWeightedSelector (gating)
 ```
 
-***REMOVED******REMOVED*** User Hints (Micro-copy)
+## User Hints (Micro-copy)
 
 Hints are short, actionable messages:
 
@@ -342,7 +342,7 @@ Hints are short, actionable messages:
 - Auto-dismiss after state-specific duration (1-1.5s for transient states)
 - Rate-limited: 1.5s minimum between hint changes
 
-***REMOVED******REMOVED*** Scan Confidence Metrics
+## Scan Confidence Metrics
 
 For debugging and beta testing, `ScanConfidenceMetrics` tracks (aggregated, no images):
 
@@ -357,7 +357,7 @@ Access via:
 - `ScanGuidanceManager.metrics.liveMetrics` (StateFlow)
 - `ScanGuidanceManager.metrics.toDebugString()` (for logs)
 
-***REMOVED******REMOVED*** Category-Aware ROI (Foundation)
+## Category-Aware ROI (Foundation)
 
 The system supports category-specific ROI tuning (for future improvements):
 
@@ -377,7 +377,7 @@ data class CategoryRoiConfig(
 Currently uses UNKNOWN/generic settings. Category hints can be passed to enable per-category
 behavior.
 
-***REMOVED******REMOVED*** Related Documents
+## Related Documents
 
 - [SCAN_VS_PICTURE_ASSESSMENT.md](./SCAN_VS_PICTURE_ASSESSMENT.md) - Analysis of scanning behavior
 - [LIVE_SCAN_CENTERING_BUG.md](./LIVE_SCAN_CENTERING_BUG.md) - Previous centering improvements

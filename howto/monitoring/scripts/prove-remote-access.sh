@@ -1,11 +1,11 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Prove remote access to Grafana via cloudflared tunnel
-***REMOVED*** Usage: bash prove-remote-access.sh [remote_url]
-***REMOVED***
-***REMOVED*** This script:
-***REMOVED*** 1. Curls grafana.gtemp1.com/api/health from NAS
-***REMOVED*** 2. Verifies NO 502 (tunnel is working)
-***REMOVED*** 3. Checks that Grafana responds with valid JSON
+#!/bin/bash
+# Prove remote access to Grafana via cloudflared tunnel
+# Usage: bash prove-remote-access.sh [remote_url]
+#
+# This script:
+# 1. Curls grafana.gtemp1.com/api/health from NAS
+# 2. Verifies NO 502 (tunnel is working)
+# 3. Checks that Grafana responds with valid JSON
 
 set -euo pipefail
 
@@ -15,10 +15,10 @@ echo "[prove-remote] ============================================"
 echo "[prove-remote] Proving Remote Access via Cloudflared Tunnel"
 echo "[prove-remote] ============================================"
 
-***REMOVED*** Step 1: Check tunnel health endpoint
+# Step 1: Check tunnel health endpoint
 echo "[prove-remote] Step 1: Checking $REMOTE_URL/api/health..."
 
-***REMOVED*** Capture HTTP status code and response body
+# Capture HTTP status code and response body
 HTTP_CODE=$(curl -sf -w "%{http_code}" -o /tmp/remote-health.json "$REMOTE_URL/api/health" 2>/dev/null || echo "000")
 
 if [ "$HTTP_CODE" = "502" ]; then
@@ -35,7 +35,7 @@ fi
 
 echo "[prove-remote] ✅ Got HTTP $HTTP_CODE (tunnel is working)"
 
-***REMOVED*** Step 2: Verify response is valid JSON with expected fields
+# Step 2: Verify response is valid JSON with expected fields
 if [ -f /tmp/remote-health.json ]; then
   HEALTH_JSON=$(cat /tmp/remote-health.json)
 
@@ -47,7 +47,7 @@ if [ -f /tmp/remote-health.json ]; then
   fi
 fi
 
-***REMOVED*** Step 3: Try to access dashboards API
+# Step 3: Try to access dashboards API
 echo "[prove-remote] Step 2: Checking dashboard list endpoint..."
 DASH_CODE=$(curl -sf -w "%{http_code}" -o /dev/null "$REMOTE_URL/api/search?type=dash-db" 2>/dev/null || echo "000")
 

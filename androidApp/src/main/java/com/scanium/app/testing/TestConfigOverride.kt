@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Provides a way to override backend configuration (base URL, API key) and
  * force cloud mode enabled for regression tests.
  *
- * ***REMOVED******REMOVED*** Usage in Tests
+ * ## Usage in Tests
  *
  * Pass instrumentation arguments when running tests:
  * ```

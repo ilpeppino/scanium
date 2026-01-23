@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env sh
+#!/usr/bin/env sh
 set -eu
 
 BASE="${1:-https://scanium.gtemp1.com}"

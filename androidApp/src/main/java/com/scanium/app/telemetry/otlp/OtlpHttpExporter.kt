@@ -24,10 +24,10 @@ import kotlin.math.pow
  * Sends telemetry data to an OTLP-compatible backend (e.g., Grafana Alloy) using
  * HTTP POST requests with JSON payloads.
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * All export operations are async and non-blocking. Uses coroutines for background export.
  *
- * ***REMOVED******REMOVED*** Error Handling
+ * ## Error Handling
  * - Implements exponential backoff retry logic
  * - Retries on network failures and 5xx errors
  * - Does not retry on 4xx errors (client errors)

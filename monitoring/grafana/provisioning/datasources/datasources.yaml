@@ -1,10 +1,10 @@
-***REMOVED*** Grafana Datasource Provisioning
-***REMOVED*** Automatically configures Loki, Tempo, and Mimir datasources
+# Grafana Datasource Provisioning
+# Automatically configures Loki, Tempo, and Mimir datasources
 
 apiVersion: 1
 
 datasources:
-  ***REMOVED*** Loki - Logs datasource
+  # Loki - Logs datasource
   - name: Loki
     type: loki
     access: proxy
@@ -16,14 +16,14 @@ datasources:
     jsonData:
       maxLines: 1000
       derivedFields:
-        ***REMOVED*** Extract trace ID from logs and link to Tempo
+        # Extract trace ID from logs and link to Tempo
         - datasourceUid: TEMPO
           matcherRegex: "trace_id=(\\w+)"
           name: TraceID
           url: "$${__value.raw}"
     orgId: 1
 
-  ***REMOVED*** Tempo - Traces datasource
+  # Tempo - Traces datasource
   - name: Tempo
     type: tempo
     access: proxy
@@ -35,7 +35,7 @@ datasources:
     jsonData:
       httpMethod: GET
       tracesToLogs:
-        ***REMOVED*** Link traces to logs in Loki
+        # Link traces to logs in Loki
         datasourceUid: LOKI
         tags: [ 'service.name', 'deployment.environment' ]
         mappedTags: [ { key: 'service.name', value: 'service' } ]
@@ -45,7 +45,7 @@ datasources:
         filterByTraceID: true
         filterBySpanID: false
       tracesToMetrics:
-        ***REMOVED*** Link traces to metrics in Mimir
+        # Link traces to metrics in Mimir
         datasourceUid: MIMIR
         tags: [ { key: 'service.name', value: 'service' } ]
         queries:
@@ -61,7 +61,7 @@ datasources:
         datasourceUid: LOKI
     orgId: 1
 
-  ***REMOVED*** Mimir - Metrics datasource (Prometheus-compatible)
+  # Mimir - Metrics datasource (Prometheus-compatible)
   - name: Mimir
     type: prometheus
     access: proxy
@@ -75,7 +75,7 @@ datasources:
       prometheusType: Mimir
       prometheusVersion: 2.40.0
       exemplarTraceIdDestinations:
-        ***REMOVED*** Link exemplars to traces in Tempo
+        # Link exemplars to traces in Tempo
         - name: traceID
           datasourceUid: TEMPO
     orgId: 1

@@ -1,4 +1,4 @@
-***REMOVED*** PR ***REMOVED***9: Diagnostics Bundle Attached to Sentry (Crash-Time Attachment)
+# PR #9: Diagnostics Bundle Attached to Sentry (Crash-Time Attachment)
 
 **Author:** Claude Sonnet 4.5
 **Date:** 2025-12-24
@@ -6,13 +6,13 @@
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 Implemented automatic diagnostics bundle attachment to Sentry crash reports. On every captured
 exception, a compact JSON bundle containing recent telemetry events and application context is
 attached to the Sentry event.
 
-***REMOVED******REMOVED******REMOVED*** Key Features
+### Key Features
 
 1. **Automatic Breadcrumb Collection** - Telemetry events automatically recorded to
    DiagnosticsBuffer
@@ -23,9 +23,9 @@ attached to the Sentry event.
 
 ---
 
-***REMOVED******REMOVED*** Changes Overview
+## Changes Overview
 
-***REMOVED******REMOVED******REMOVED*** 1. Wire Telemetry Facade to DiagnosticsPort
+### 1. Wire Telemetry Facade to DiagnosticsPort
 
 **File:** `shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/facade/Telemetry.kt`
 
@@ -63,7 +63,7 @@ class Telemetry(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Update AndroidCrashPortAdapter for Attachments
+### 2. Update AndroidCrashPortAdapter for Attachments
 
 **File:** `androidApp/src/main/java/com/scanium/app/crash/AndroidCrashPortAdapter.kt`
 
@@ -120,7 +120,7 @@ class AndroidCrashPortAdapter(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Initialize DiagnosticsPort in ScaniumApplication
+### 3. Initialize DiagnosticsPort in ScaniumApplication
 
 **File:** `androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt`
 
@@ -175,7 +175,7 @@ class ScaniumApplication : Application() {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Add Manual Test Action in Developer Settings
+### 4. Add Manual Test Action in Developer Settings
 
 **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt`
 
@@ -224,7 +224,7 @@ Settings > Developer > Test Diagnostics Bundle
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. Dependency Updates
+### 5. Dependency Updates
 
 **File:** `shared/telemetry/build.gradle.kts`
 
@@ -254,7 +254,7 @@ dependencies {
 
 ---
 
-***REMOVED******REMOVED*** Diagnostics Bundle Structure
+## Diagnostics Bundle Structure
 
 The diagnostics bundle is a UTF-8 encoded JSON file with the following structure:
 
@@ -307,9 +307,9 @@ The diagnostics bundle is a UTF-8 encoded JSON file with the following structure
 
 ---
 
-***REMOVED******REMOVED*** Size Limit Enforcement
+## Size Limit Enforcement
 
-***REMOVED******REMOVED******REMOVED*** Two-Layer Protection
+### Two-Layer Protection
 
 **Layer 1: DiagnosticsBuffer (Collection Time)**
 
@@ -341,7 +341,7 @@ override fun captureException(...) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Why 128KB?
+### Why 128KB?
 
 - **Sentry Limit:** Sentry has a 20MB total event size limit, but recommends keeping attachments
   small
@@ -351,11 +351,11 @@ override fun captureException(...) {
 
 ---
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 
-***REMOVED******REMOVED******REMOVED*** Manual Testing
+### Manual Testing
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test 1: Verify Diagnostics Bundle Attachment
+#### Test 1: Verify Diagnostics Bundle Attachment
 
 1. **Enable Developer Mode:**
     - Open Settings
@@ -378,7 +378,7 @@ override fun captureException(...) {
     - Should see `diagnostics.json` attachment
     - Download and verify JSON structure
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test 2: Verify Bundle Size Capping
+#### Test 2: Verify Bundle Size Capping
 
 1. **Populate Buffer:**
     - Use app heavily to generate many telemetry events
@@ -395,7 +395,7 @@ override fun captureException(...) {
     - Attachment should be exactly 128KB or less
     - If capped, filename will be `diagnostics-capped.json`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Test 3: Verify Automatic Collection During Normal Use
+#### Test 3: Verify Automatic Collection During Normal Use
 
 1. **Use App Normally:**
     - Start scan
@@ -415,16 +415,16 @@ override fun captureException(...) {
 
 ---
 
-***REMOVED******REMOVED*** Expected Sentry Event Structure
+## Expected Sentry Event Structure
 
 When viewing a crash in Sentry, you should see:
 
-***REMOVED******REMOVED******REMOVED*** Breadcrumbs Tab
+### Breadcrumbs Tab
 
 - Sentry's built-in breadcrumbs (from `crashPort.addBreadcrumb()`)
 - Only WARN and ERROR events (as before)
 
-***REMOVED******REMOVED******REMOVED*** Attachments Tab (NEW!)
+### Attachments Tab (NEW!)
 
 - **diagnostics.json** - Full diagnostics bundle
     - Click to download
@@ -432,7 +432,7 @@ When viewing a crash in Sentry, you should see:
     - Includes application context
     - Timestamp shows when bundle was generated
 
-***REMOVED******REMOVED******REMOVED*** Extras Tab
+### Extras Tab
 
 - Custom attributes passed to `captureException()`
 - `diagnostics_test: "true"`
@@ -440,16 +440,16 @@ When viewing a crash in Sentry, you should see:
 
 ---
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
-***REMOVED******REMOVED******REMOVED*** New Dependencies
+### New Dependencies
 
 ```
 shared/telemetry/build.gradle.kts
   + api(project(":shared:diagnostics"))
 ```
 
-***REMOVED******REMOVED******REMOVED*** Modified Files
+### Modified Files
 
 ```
 shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/facade/Telemetry.kt
@@ -475,7 +475,7 @@ androidApp/src/main/java/com/scanium/app/ui/settings/SettingsScreen.kt
 
 ---
 
-***REMOVED******REMOVED*** Build Status
+## Build Status
 
 ✅ **Telemetry Code:** Compiles successfully
 
@@ -493,7 +493,7 @@ These errors exist on main branch and are NOT introduced by this PR.
 
 ---
 
-***REMOVED******REMOVED*** Architecture Diagram
+## Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -545,9 +545,9 @@ These errors exist on main branch and are NOT introduced by this PR.
 
 ---
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** Short Term
+### Short Term
 
 1. **User-Initiated "Send Report"**
     - Add UI button to manually send diagnostics
@@ -564,7 +564,7 @@ These errors exist on main branch and are NOT introduced by this PR.
     - Ensure valid JSON even when capped
     - Add `"capped": true` flag in bundle
 
-***REMOVED******REMOVED******REMOVED*** Long Term
+### Long Term
 
 4. **Attachment Opt-Out**
     - Respect user privacy settings
@@ -583,22 +583,22 @@ These errors exist on main branch and are NOT introduced by this PR.
 
 ---
 
-***REMOVED******REMOVED*** Security & Privacy
+## Security & Privacy
 
-***REMOVED******REMOVED******REMOVED*** PII Protection
+### PII Protection
 
 - **Events already sanitized:** Telemetry facade runs AttributeSanitizer before emitting
 - **Context provider:** Only includes non-PII fields (version, build, env, session_id)
 - **No user data:** No user names, emails, locations, or personal info
 - **No images:** Diagnostics bundle is text-only (JSON)
 
-***REMOVED******REMOVED******REMOVED*** User Consent
+### User Consent
 
 - **Inherits crash reporting consent:** Uses same `shareDiagnosticsFlow` setting
 - **Sentry beforeSend callback:** Filters events if user opts out
 - **Future enhancement:** Add explicit "Attach diagnostics" toggle
 
-***REMOVED******REMOVED******REMOVED*** Data Retention
+### Data Retention
 
 - **In-memory only:** DiagnosticsBuffer lives in RAM, cleared on app restart
 - **No local storage:** Bundles not persisted to disk
@@ -606,7 +606,7 @@ These errors exist on main branch and are NOT introduced by this PR.
 
 ---
 
-***REMOVED******REMOVED*** Testing Checklist
+## Testing Checklist
 
 - [x] Telemetry events append to DiagnosticsBuffer
 - [x] DiagnosticsBuffer enforces 200 event limit
@@ -625,10 +625,10 @@ These errors exist on main branch and are NOT introduced by this PR.
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
-- **PR ***REMOVED***4:** Android Sentry Integration (CrashPort foundation)
-- **PR ***REMOVED***5:** Android OTLP Export (Telemetry facade)
+- **PR #4:** Android Sentry Integration (CrashPort foundation)
+- **PR #5:** Android OTLP Export (Telemetry facade)
 - **shared/diagnostics:** Pre-existing module (DiagnosticsPort, DiagnosticsBuffer,
   DiagnosticsBundleBuilder)
 - **Sentry Attachments:** https://docs.sentry.io/platforms/android/enriching-events/attachments/

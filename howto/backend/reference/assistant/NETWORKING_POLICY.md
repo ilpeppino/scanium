@@ -1,9 +1,9 @@
-***REMOVED*** Assistant Networking Policy
+# Assistant Networking Policy
 
 This document describes the unified HTTP timeout and retry policy for all assistant-related network
 requests in the Scanium Android app.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 All assistant HTTP clients use a centralized configuration (`AssistantHttpConfig`) and factory (
 `AssistantOkHttpClientFactory`) to ensure consistent behavior across:
@@ -12,9 +12,9 @@ All assistant HTTP clients use a centralized configuration (`AssistantHttpConfig
 - Preflight health checks
 - Warmup requests
 
-***REMOVED******REMOVED*** Timeout Configuration
+## Timeout Configuration
 
-***REMOVED******REMOVED******REMOVED*** Production Chat Requests
+### Production Chat Requests
 
 Used for actual assistant chat interactions:
 
@@ -26,7 +26,7 @@ Used for actual assistant chat interactions:
 | Call    | 75s   | Overall request budget (connect + read + processing overhead) |
 | Retries | 1     | One retry on transient errors                                 |
 
-***REMOVED******REMOVED******REMOVED*** Preflight Health Checks
+### Preflight Health Checks
 
 Used for quick backend availability checks:
 
@@ -38,7 +38,7 @@ Used for quick backend availability checks:
 | Call    | 5s    | Total budget for health check           |
 | Retries | 0     | No retries - just report current status |
 
-***REMOVED******REMOVED******REMOVED*** Warmup Requests
+### Warmup Requests
 
 Used for priming connections and caches:
 
@@ -50,7 +50,7 @@ Used for priming connections and caches:
 | Call    | 15s   | Generous for background operation  |
 | Retries | 0     | No retries - warmup is best-effort |
 
-***REMOVED******REMOVED******REMOVED*** Test Configuration
+### Test Configuration
 
 Used in unit tests with MockWebServer:
 
@@ -62,11 +62,11 @@ Used in unit tests with MockWebServer:
 | Call    | 10s   | Overall test timeout                           |
 | Retries | 0     | Tests should control retry behavior explicitly |
 
-***REMOVED******REMOVED*** Retry Policy
+## Retry Policy
 
 The `AssistantRetryInterceptor` implements a consistent retry-once policy for transient errors.
 
-***REMOVED******REMOVED******REMOVED*** Errors That ARE Retried
+### Errors That ARE Retried
 
 - **Socket timeouts** - Connection may succeed on retry
 - **Network IOExceptions** - Transient network issues
@@ -74,7 +74,7 @@ The `AssistantRetryInterceptor` implements a consistent retry-once policy for tr
 - **HTTP 503 Service Unavailable** - Server temporarily overloaded
 - **HTTP 504 Gateway Timeout** - Upstream timeout
 
-***REMOVED******REMOVED******REMOVED*** Errors That Are NOT Retried
+### Errors That Are NOT Retried
 
 - **HTTP 400 Bad Request** - Client error, won't change on retry
 - **HTTP 401 Unauthorized** - Authentication issue
@@ -83,11 +83,11 @@ The `AssistantRetryInterceptor` implements a consistent retry-once policy for tr
 - **HTTP 429 Rate Limited** - Respect rate limits, don't hammer
 - **SSL/TLS errors** - Certificate issues shouldn't be retried
 
-***REMOVED******REMOVED******REMOVED*** Retry Delay
+### Retry Delay
 
 A 500ms delay is applied between retry attempts to avoid overwhelming the server.
 
-***REMOVED******REMOVED*** Error Mapping to User Messages
+## Error Mapping to User Messages
 
 | Error Type              | HTTP Code(s)                  | User Message                       |
 |-------------------------|-------------------------------|------------------------------------|
@@ -99,9 +99,9 @@ A 500ms delay is applied between retry attempts to avoid overwhelming the server
 | PROVIDER_UNAVAILABLE    | 503                           | "Assistant provider unavailable"   |
 | PROVIDER_NOT_CONFIGURED | -                             | "Assistant backend not configured" |
 
-***REMOVED******REMOVED*** Logging
+## Logging
 
-***REMOVED******REMOVED******REMOVED*** Startup Policy Log
+### Startup Policy Log
 
 On app startup, the assistant HTTP configuration is logged at INFO level:
 
@@ -113,14 +113,14 @@ AssistantHttp: Assistant HTTP Policy Initialized:
   Non-retryable: 400/401/403/404/429
 ```
 
-***REMOVED******REMOVED******REMOVED*** Per-Request Logging
+### Per-Request Logging
 
 Each client type logs its configuration at DEBUG level:
 
 - `AssistantHttp[chat]: AssistantHttpConfig(...)`
 - `AssistantHttp[preflight]: AssistantHttpConfig(...)`
 
-***REMOVED******REMOVED******REMOVED*** Retry Logging
+### Retry Logging
 
 Retry attempts are logged at DEBUG level:
 
@@ -129,9 +129,9 @@ AssistantRetry: Transient error 503 on attempt 1/2, will retry in 500ms
 AssistantRetry: Request succeeded on attempt 2/2
 ```
 
-***REMOVED******REMOVED*** Verifying on Device
+## Verifying on Device
 
-***REMOVED******REMOVED******REMOVED*** Testing Slow Responses
+### Testing Slow Responses
 
 To verify timeouts work correctly:
 
@@ -139,13 +139,13 @@ To verify timeouts work correctly:
 2. **Backend throttling**: If you control the backend, add artificial delays
 3. **Charles Proxy**: Use throttling to slow responses
 
-***REMOVED******REMOVED******REMOVED*** Expected Behavior
+### Expected Behavior
 
 1. **Chat request > 60s read time**: Should timeout and show "Assistant request timed out"
 2. **Preflight > 5s**: Should timeout and return UNKNOWN status (allows chat attempt)
 3. **502/503/504 from backend**: Should retry once, then show appropriate error
 
-***REMOVED******REMOVED******REMOVED*** Log Verification
+### Log Verification
 
 Filter logcat by tag `AssistantHttp` or `AssistantRetry`:
 
@@ -153,7 +153,7 @@ Filter logcat by tag `AssistantHttp` or `AssistantRetry`:
 adb logcat -s AssistantHttp:* AssistantRetry:*
 ```
 
-***REMOVED******REMOVED*** Implementation Files
+## Implementation Files
 
 | File                              | Purpose                                |
 |-----------------------------------|----------------------------------------|
@@ -163,7 +163,7 @@ adb logcat -s AssistantHttp:* AssistantRetry:*
 | `AssistantRepository.kt`          | Chat request handling                  |
 | `AssistantPreflight.kt`           | Health check handling                  |
 
-***REMOVED******REMOVED*** Test Coverage
+## Test Coverage
 
 Unit tests verify:
 

@@ -1,8 +1,8 @@
-***REMOVED*** AI Gateway API Documentation
+# AI Gateway API Documentation
 
 This document describes the AI Gateway API for the Scanium AI Assistant.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The AI Gateway is a secure backend proxy that handles all LLM interactions. Mobile clients
 communicate with the gateway, which validates requests, applies security controls, and forwards
@@ -17,12 +17,12 @@ sanitized requests to the LLM provider.
 - Daily quota enforcement
 - Safe error handling with stable reason codes
 
-***REMOVED******REMOVED*** Base URL
+## Base URL
 
 - **Development**: `http://localhost:8080`
 - **Production**: Configured via `PUBLIC_BASE_URL` environment variable
 
-***REMOVED******REMOVED*** Authentication
+## Authentication
 
 All requests require an API key in the `X-API-Key` header.
 
@@ -30,13 +30,13 @@ All requests require an API key in the `X-API-Key` header.
 X-API-Key: your-api-key-here
 ```
 
-***REMOVED******REMOVED*** Endpoints
+## Endpoints
 
-***REMOVED******REMOVED******REMOVED*** POST /v1/assist/chat
+### POST /v1/assist/chat
 
 Send a message to the AI assistant.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Request Headers
+#### Request Headers
 
 | Header                     | Required | Description                                 |
 |----------------------------|----------|---------------------------------------------|
@@ -47,7 +47,7 @@ Send a message to the AI assistant.
 | `X-App-Version`            | No       | Client app version                          |
 | `Content-Type`             | Yes      | `application/json` or `multipart/form-data` |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Request Body
+#### Request Body
 
 ```json
 {
@@ -105,7 +105,7 @@ Send a message to the AI assistant.
 | `history`               | array   | No       | Last 10      | Conversation history           |
 | `exportProfile`         | object  | No       | -            | Target marketplace profile     |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Multipart Request (with Images)
+#### Multipart Request (with Images)
 
 When sending images for visual context, use `multipart/form-data` content type. The endpoint accepts
 both JSON-only and multipart requests for backward compatibility.
@@ -145,7 +145,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 - Images are passed to the LLM provider as base64-encoded data for visual analysis
 - The Android setting "Send Images to Assistant" (default OFF) controls whether images are attached
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Response (Success)
+#### Response (Success)
 
 ```json
 {
@@ -186,7 +186,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 | `safety.requestId`  | string  | Unique request identifier       |
 | `correlationId`     | string  | Correlation ID for tracing      |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Action Types
+#### Action Types
 
 | Type                  | Description                 | Payload                          |
 |-----------------------|-----------------------------|----------------------------------|
@@ -196,7 +196,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 | `OPEN_SHARE`          | Open share dialog           | `itemId`                         |
 | `OPEN_URL`            | Open external URL           | `url` (https only)               |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Error Responses
+#### Error Responses
 
 **401 Unauthorized**
 
@@ -287,7 +287,7 @@ Headers included:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Safety Reason Codes
+#### Safety Reason Codes
 
 | Code                      | Description                        |
 |---------------------------|------------------------------------|
@@ -300,7 +300,7 @@ Headers included:
 | `PROVIDER_UNAVAILABLE`    | LLM provider unavailable           |
 | `PROVIDER_NOT_CONFIGURED` | LLM provider not configured        |
 
-***REMOVED******REMOVED*** Rate Limits
+## Rate Limits
 
 | Limit                   | Default | Environment Variable                  |
 |-------------------------|---------|---------------------------------------|
@@ -311,15 +311,15 @@ Headers included:
 
 When rate limited, the response includes a `Retry-After` header indicating how many seconds to wait.
 
-***REMOVED******REMOVED*** Environment Variables
+## Environment Variables
 
-***REMOVED******REMOVED******REMOVED*** Required
+### Required
 
 | Variable                     | Description              | Example          |
 |------------------------------|--------------------------|------------------|
 | `SCANIUM_ASSISTANT_API_KEYS` | Comma-separated API keys | `key1,key2,key3` |
 
-***REMOVED******REMOVED******REMOVED*** Optional
+### Optional
 
 | Variable                              | Default       | Description                               |
 |---------------------------------------|---------------|-------------------------------------------|
@@ -336,9 +336,9 @@ When rate limited, the response includes a `Retry-After` header indicating how m
 | `ASSIST_PROVIDER_TIMEOUT_MS`          | `30000`       | Provider timeout                          |
 | `ASSIST_LOG_CONTENT`                  | `false`       | Log message content (debug only)          |
 
-***REMOVED******REMOVED*** Local Development
+## Local Development
 
-***REMOVED******REMOVED******REMOVED*** Setup
+### Setup
 
 1. Copy environment template:
    ```bash
@@ -347,7 +347,7 @@ When rate limited, the response includes a `Retry-After` header indicating how m
 
 2. Configure API key:
    ```bash
-   ***REMOVED*** In backend/.env
+   # In backend/.env
    SCANIUM_ASSISTANT_API_KEYS=dev-key
    ```
 
@@ -358,7 +358,7 @@ When rate limited, the response includes a `Retry-After` header indicating how m
    npm run dev
    ```
 
-***REMOVED******REMOVED******REMOVED*** Testing with curl
+### Testing with curl
 
 **Valid request:**
 
@@ -410,14 +410,14 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 
 Expected: Response with `safety.blocked: true` and generic refusal message.
 
-***REMOVED******REMOVED******REMOVED*** Running Tests
+### Running Tests
 
 ```bash
 cd backend
 npm test
 ```
 
-***REMOVED******REMOVED*** Security Considerations
+## Security Considerations
 
 1. **API Keys**: Never commit API keys. Use environment variables.
 2. **Rate Limiting**: Enabled by default to prevent abuse.

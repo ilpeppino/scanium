@@ -1,26 +1,26 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED***
-***REMOVED*** Prove OpenAI Runtime Dashboard is working end-to-end
-***REMOVED***
-***REMOVED*** Tests:
-***REMOVED*** 1. Backend metrics endpoint is accessible
-***REMOVED*** 2. Metrics exist in Mimir (scraped by Alloy)
-***REMOVED*** 3. Dashboard queries return data
-***REMOVED***
-***REMOVED*** Usage: ./prove-openai-dashboard.sh [SKIP_TRAFFIC=1]
-***REMOVED***
-***REMOVED*** Exit codes:
-***REMOVED*** 0 = All tests passed
-***REMOVED*** 1 = One or more tests failed
+#!/usr/bin/env bash
+#
+# Prove OpenAI Runtime Dashboard is working end-to-end
+#
+# Tests:
+# 1. Backend metrics endpoint is accessible
+# 2. Metrics exist in Mimir (scraped by Alloy)
+# 3. Dashboard queries return data
+#
+# Usage: ./prove-openai-dashboard.sh [SKIP_TRAFFIC=1]
+#
+# Exit codes:
+# 0 = All tests passed
+# 1 = One or more tests failed
 
 set -euo pipefail
 
-***REMOVED*** Configuration
+# Configuration
 SKIP_TRAFFIC="${1:-0}"
 MIMIR_URL="${MIMIR_URL:-http://localhost:9009}"
 BACKEND_URL="${BACKEND_URL:-http://localhost:8080}"
 
-***REMOVED*** Find the API key from backend if running
+# Find the API key from backend if running
 if command -v docker &> /dev/null; then
   if docker ps --filter name=scanium-backend --format '{{.Names}}' | grep -q scanium-backend; then
     BACKEND_API_KEY=$(docker exec scanium-backend printenv SCANIUM_ASSISTANT_API_KEYS | cut -d',' -f1 2>/dev/null || echo "")
@@ -28,18 +28,18 @@ if command -v docker &> /dev/null; then
 fi
 BACKEND_API_KEY="${BACKEND_API_KEY:-REDACTED_SCANIUM_API_KEY_1}"
 
-***REMOVED*** Colors
+# Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-***REMOVED*** Test results
+# Test results
 TESTS_PASSED=0
 TESTS_FAILED=0
 
-***REMOVED*** Helper functions
+# Helper functions
 log_info() {
   echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -66,7 +66,7 @@ echo "Backend URL: $BACKEND_URL"
 echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 echo ""
 
-***REMOVED*** Test 1: Backend metrics endpoint is accessible
+# Test 1: Backend metrics endpoint is accessible
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Test 1: Backend Metrics Endpoint"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -74,7 +74,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 if curl -sf "${BACKEND_URL}/metrics" > /dev/null; then
   log_success "Backend metrics endpoint accessible"
 
-  ***REMOVED*** Check if assistant metrics exist
+  # Check if assistant metrics exist
   if curl -sf "${BACKEND_URL}/metrics" | grep -q "scanium_assistant_requests_total"; then
     log_success "Assistant metrics defined in backend"
   else
@@ -86,7 +86,7 @@ fi
 
 echo ""
 
-***REMOVED*** Test 2: Generate traffic if not skipped
+# Test 2: Generate traffic if not skipped
 if [[ "$SKIP_TRAFFIC" == "0" ]]; then
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "Test 2: Generate Test Traffic"
@@ -117,12 +117,12 @@ fi
 
 echo ""
 
-***REMOVED*** Test 3: Metrics exist in Mimir
+# Test 3: Metrics exist in Mimir
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Test 3: Metrics in Mimir (Scraped by Alloy)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-***REMOVED*** Check if backend is being scraped
+# Check if backend is being scraped
 SCRAPE_UP=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=up{job=\"scanium-backend\"}" | jq -r '.data.result[0].value[1] // "0"' 2>/dev/null || echo "0")
 if [[ "$SCRAPE_UP" == "1" ]]; then
   log_success "Backend is being scraped (up=1)"
@@ -130,7 +130,7 @@ else
   log_fail "Backend is NOT being scraped (up=$SCRAPE_UP)"
 fi
 
-***REMOVED*** Check assistant request metrics
+# Check assistant request metrics
 REQUEST_COUNT=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=scanium_assistant_requests_total{provider=\"openai\"}" | jq '[.data.result[].value[1] | tonumber] | add // 0' 2>/dev/null || echo "0")
 REQUEST_COUNT_INT=$(echo "$REQUEST_COUNT" | cut -d'.' -f1)
 if [[ "$REQUEST_COUNT_INT" =~ ^[0-9]+$ ]] && [[ "$REQUEST_COUNT_INT" -gt 0 ]]; then
@@ -139,7 +139,7 @@ else
   log_fail "Assistant request metrics NOT in Mimir or zero"
 fi
 
-***REMOVED*** Check latency metrics
+# Check latency metrics
 LATENCY_COUNT=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=scanium_assistant_request_latency_ms_count{provider=\"openai\"}" | jq '[.data.result[].value[1] | tonumber] | add // 0' 2>/dev/null || echo "0")
 LATENCY_COUNT_INT=$(echo "$LATENCY_COUNT" | cut -d'.' -f1)
 if [[ "$LATENCY_COUNT_INT" =~ ^[0-9]+$ ]] && [[ "$LATENCY_COUNT_INT" -gt 0 ]]; then
@@ -148,7 +148,7 @@ else
   log_warn "Latency metrics NOT in Mimir yet (may appear on next scrape)"
 fi
 
-***REMOVED*** Check token metrics
+# Check token metrics
 TOKEN_SUM=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=scanium_assistant_tokens_used_sum{provider=\"openai\",token_type=\"total\"}" | jq '[.data.result[].value[1] | tonumber] | add // 0' 2>/dev/null || echo "0")
 TOKEN_SUM_INT=$(echo "$TOKEN_SUM" | cut -d'.' -f1)
 if [[ "$TOKEN_SUM_INT" =~ ^[0-9]+$ ]] && [[ "$TOKEN_SUM_INT" -gt 0 ]]; then
@@ -159,12 +159,12 @@ fi
 
 echo ""
 
-***REMOVED*** Test 4: Dashboard queries work
+# Test 4: Dashboard queries work
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Test 4: Dashboard Queries"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-***REMOVED*** Query 1: Request rate
+# Query 1: Request rate
 RATE_RESULT=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=sum(rate(scanium_assistant_requests_total{provider=~\"openai\"}[5m]))" | jq -r '.data.result[0].value[1] // "null"' 2>/dev/null || echo "null")
 if [[ "$RATE_RESULT" != "null" ]] && [[ "$RATE_RESULT" != "0" ]]; then
   log_success "Request rate query returns data (rate=$RATE_RESULT)"
@@ -172,7 +172,7 @@ else
   log_warn "Request rate query returns zero/null (may need more time)"
 fi
 
-***REMOVED*** Query 2: Latency percentile
+# Query 2: Latency percentile
 P95_RESULT=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=histogram_quantile(0.95,%20sum%20by%20(le)%20(rate(scanium_assistant_request_latency_ms_bucket{provider=~\"openai\"}[5m])))" | jq -r '.data.result[0].value[1] // "null"' 2>/dev/null || echo "null")
 if [[ "$P95_RESULT" != "null" ]]; then
   log_success "p95 latency query returns data (p95=${P95_RESULT}ms)"
@@ -180,7 +180,7 @@ else
   log_warn "p95 latency query returns null (may need more data)"
 fi
 
-***REMOVED*** Query 3: Provider variable
+# Query 3: Provider variable
 PROVIDER_LABELS=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/label/provider/values?match[]=scanium_assistant_requests_total" | jq -r '.data[] // ""' 2>/dev/null || echo "")
 if echo "$PROVIDER_LABELS" | grep -q "openai"; then
   log_success "Dashboard provider variable has 'openai' option"

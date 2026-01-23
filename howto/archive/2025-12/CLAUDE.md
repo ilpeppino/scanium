@@ -1,4 +1,4 @@
-***REMOVED*** CLAUDE.md
+# CLAUDE.md
 
 Guidance for Claude Code when working with **Scanium** – a privacy-first Android app for real-time
 object detection, barcode scanning, and document OCR.
@@ -7,7 +7,7 @@ object detection, barcode scanning, and document OCR.
 cloud API (default) or on-device CLIP (future) for fine-grained category recognition (23 categories
 via Domain Pack).
 
-***REMOVED******REMOVED*** Project Essentials
+## Project Essentials
 
 - **Package**: `com.scanium.app`
 - **Language**: Kotlin
@@ -16,22 +16,22 @@ via Domain Pack).
 - **Required Java**: 17 (see `SETUP.md`)
 - **Architecture**: Multi-module Gradle (9 modules), MVVM, no DI framework
 
-***REMOVED******REMOVED*** Module Structure
+## Module Structure
 
 ```
 scanium/
-├── androidApp/                    ***REMOVED*** Main Android app module (UI, navigation, entry point)
-├── core-models/                   ***REMOVED*** Platform-independent data models and portable types
+├── androidApp/                    # Main Android app module (UI, navigation, entry point)
+├── core-models/                   # Platform-independent data models and portable types
 │   └── ImageRef, NormalizedRect, ItemCategory, ScanMode, ScannedItem, DetectionResult, RawDetection
-├── core-tracking/                 ***REMOVED*** Platform-independent tracking and aggregation logic
+├── core-tracking/                 # Platform-independent tracking and aggregation logic
 │   └── ObjectTracker, ObjectCandidate, ItemAggregator, Logger interface
-├── core-domainpack/               ***REMOVED*** Domain Pack system (categories, attributes, repository)
+├── core-domainpack/               # Domain Pack system (categories, attributes, repository)
 │   └── DomainPack, DomainCategory, BasicCategoryEngine, LocalDomainPackRepository
-├── core-scan/                     ***REMOVED*** Scan-related logic (placeholder for future KMP scan contracts)
-├── core-contracts/                ***REMOVED*** Platform-independent contracts and interfaces
-├── android-ml-mlkit/              ***REMOVED*** ML Kit Android wrappers (placeholder for modularization)
-├── android-camera-camerax/        ***REMOVED*** CameraX Android wrappers (placeholder for modularization)
-├── android-platform-adapters/     ***REMOVED*** Conversions between Android types and portable types
+├── core-scan/                     # Scan-related logic (placeholder for future KMP scan contracts)
+├── core-contracts/                # Platform-independent contracts and interfaces
+├── android-ml-mlkit/              # ML Kit Android wrappers (placeholder for modularization)
+├── android-camera-camerax/        # CameraX Android wrappers (placeholder for modularization)
+├── android-platform-adapters/     # Conversions between Android types and portable types
     └── ImageAdapters (Bitmap ↔ ImageRef), RectAdapters (Rect/RectF ↔ NormalizedRect)
 ```
 
@@ -45,28 +45,28 @@ scanium/
 
 **Note**: `app/` module is legacy (resources only), all code moved to `androidApp/`
 
-***REMOVED******REMOVED*** Commands
+## Commands
 
 ```bash
-***REMOVED*** Build (auto-detects Java 17)
+# Build (auto-detects Java 17)
 ./build.sh assembleDebug
 ./build.sh assembleRelease
 
-***REMOVED*** Test (local with Android SDK + Java 17)
-./gradlew test                              ***REMOVED*** All unit tests (175+)
-./gradlew test --tests "*ObjectTracker*"    ***REMOVED*** Single test class
-./gradlew connectedAndroidTest              ***REMOVED*** Instrumented tests
+# Test (local with Android SDK + Java 17)
+./gradlew test                              # All unit tests (175+)
+./gradlew test --tests "*ObjectTracker*"    # Single test class
+./gradlew connectedAndroidTest              # Instrumented tests
 
-***REMOVED*** CI-First Testing (Codex container without Android SDK)
-***REMOVED*** Push to main → GitHub Actions builds APK → Download artifact → Install on device
-***REMOVED*** See docs/CI_TESTING.md for details
+# CI-First Testing (Codex container without Android SDK)
+# Push to main → GitHub Actions builds APK → Download artifact → Install on device
+# See docs/CI_TESTING.md for details
 
-***REMOVED*** Install & Debug
+# Install & Debug
 ./gradlew installDebug
 adb logcat | grep -E "ObjectTraacker|CameraXManager|ObjectDetector"
 ```
 
-***REMOVED******REMOVED*** Architecture Flow
+## Architecture Flow
 
 ```
 ┌─ :androidApp ──────────────────────────────────────────────────────┐
@@ -99,9 +99,9 @@ adb logcat | grep -E "ObjectTraacker|CameraXManager|ObjectDetector"
 - `:core-tracking` → Platform-independent (uses Logger, ImageRef, NormalizedRect)
 - `:android-platform-adapters` → Conversion layer at module boundaries
 
-***REMOVED******REMOVED*** Critical Invariants
+## Critical Invariants
 
-***REMOVED******REMOVED******REMOVED*** 1. Dual Deduplication Strategy
+### 1. Dual Deduplication Strategy
 
 - **Frame-level**: `ObjectTracker` uses ML Kit `trackingId` (STREAM_MODE) or IoU+distance fallback
     - Config: `minFramesToConfirm=1`, `minConfidence=0.2f`, permissive thresholds
@@ -110,28 +110,28 @@ adb logcat | grep -E "ObjectTraacker|CameraXManager|ObjectDetector"
     - Handles trackingId churn, camera movement, bounding box jitter
     - Weighted: category 40%, label 15%, size 20%, distance 25%
 
-***REMOVED******REMOVED******REMOVED*** 2. Tracker Reset Triggers (OBJECT_DETECTION mode only)
+### 2. Tracker Reset Triggers (OBJECT_DETECTION mode only)
 
 - Starting new scan session (long-press)
 - Switching scan modes
 - Stopping scanning
 - **Critical**: Prevents stale candidates across sessions
 
-***REMOVED******REMOVED******REMOVED*** 3. ML Kit Detection Modes
+### 3. ML Kit Detection Modes
 
 - **SINGLE_IMAGE_MODE**: Tap captures (no tracking, better per-frame accuracy)
 - **STREAM_MODE**: Continuous scan (provides `trackingId` for tracking pipeline)
 - App auto-switches based on gesture (tap vs long-press)
 
-***REMOVED******REMOVED******REMOVED*** 4. Scan Mode Routing
+### 4. Scan Mode Routing
 
 - **OBJECT_DETECTION**: → `ObjectDetectorClient` → tracker → aggregator
 - **BARCODE**: → `BarcodeScannerClient` (instant recognition, no tracking)
 - **DOCUMENT_TEXT**: → `DocumentTextRecognitionClient` (OCR, no tracking)
 
-***REMOVED******REMOVED*** Key Files Map
+## Key Files Map
 
-***REMOVED******REMOVED******REMOVED*** Core Modules (Platform-Independent)
+### Core Modules (Platform-Independent)
 
 **:core-models** – Portable types and data models (Android-free)
 
@@ -175,7 +175,7 @@ adb logcat | grep -E "ObjectTraacker|CameraXManager|ObjectDetector"
 - `adapters/ImageAdapters.kt` – `Bitmap.toImageRefJpeg()`, `ImageRef.Bytes.toBitmap()`
 - `adapters/RectAdapters.kt` – Rect/RectF ↔ NormalizedRect conversions (placeholder)
 
-***REMOVED******REMOVED******REMOVED*** :androidApp Module (Android-Specific)
+### :androidApp Module (Android-Specific)
 
 **Camera & Processing**
 
@@ -221,7 +221,7 @@ adb logcat | grep -E "ObjectTraacker|CameraXManager|ObjectDetector"
 - `ScaniumApp.kt` – App-level Compose setup
 - `navigation/Routes.kt` – Compose nav destinations (CAMERA, ITEMS_LIST, SELL_ON_EBAY)
 
-***REMOVED******REMOVED*** Configuration Tuning
+## Configuration Tuning
 
 **Tracker** (`CameraXManager.kt`):
 
@@ -247,7 +247,7 @@ ItemAggregator(config = AggregationPresets.REALTIME)  // threshold 0.55, see Agg
 val analysisIntervalMs = 800L  // Process every 800ms
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 - **175+ tests**: 110 tracking/detection, 61 domain pack, 4+ eBay selling
 - **Unit**: `androidApp/src/test/` (JUnit 4, Robolectric, Truth, MockK, Coroutines Test)
@@ -255,12 +255,12 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - **Core tracking tests**: `core-tracking/src/test/` (Platform-independent unit tests)
 - See `md/testing/TEST_SUITE.md` for detailed coverage
 
-***REMOVED******REMOVED*** KMP/iOS Porting Status
+## KMP/iOS Porting Status
 
 **Goal**: Share Scanium's "brain" (tracking, aggregation, state management) across Android/iOS while
 keeping platform-specific UI/camera/ML.
 
-***REMOVED******REMOVED******REMOVED*** ✅ Completed (Phase 1: Module Restructuring & Portable Types)
+### ✅ Completed (Phase 1: Module Restructuring & Portable Types)
 
 1. **Multi-module Gradle structure established** (9 modules):
     - `:core-models` – Platform-independent data models (Android-free)
@@ -292,7 +292,7 @@ keeping platform-specific UI/camera/ML.
     - ✅ `core-tracking`: No Android dependencies (uses Logger, ImageRef, NormalizedRect)
     - ✅ CI builds successfully without Android SDK in core modules
 
-***REMOVED******REMOVED******REMOVED*** 🚧 Remaining Work (Phase 2: KMP Conversion)
+### 🚧 Remaining Work (Phase 2: KMP Conversion)
 
 1. Remove remaining Android dependencies from `core-models` (`Uri` in `ScannedItem`)
 2. Complete `RawDetection` migration (remove legacy `boundingBox`/`thumbnail` fields)
@@ -305,7 +305,7 @@ keeping platform-specific UI/camera/ML.
 7. Create iOS app target (`:iosApp`) with SwiftUI
 8. Implement iOS platform providers for ML/camera
 
-***REMOVED******REMOVED******REMOVED*** Shared Code Rules
+### Shared Code Rules
 
 1. **NO Android Dependencies** in `:core-*` modules:
     - ❌ Forbidden: `android.*`, `androidx.*`, `CameraX`, `ML Kit` classes
@@ -328,7 +328,7 @@ keeping platform-specific UI/camera/ML.
     - `Bitmap ↔ ImageRef`, `Rect/RectF ↔ NormalizedRect`
     - Used at boundaries when calling ML Kit or displaying images in Compose
 
-***REMOVED******REMOVED******REMOVED*** Non-Negotiables
+### Non-Negotiables
 
 - Android must remain fully functional during/after KMP migration
 - No breaking changes to Android UI/UX
@@ -336,7 +336,7 @@ keeping platform-specific UI/camera/ML.
 - Shared code must not assume Android threading (use `Dispatchers.Default`, not `Dispatchers.Main`)
 - CI must validate Android builds on every push (enforced via GitHub Actions)
 
-***REMOVED******REMOVED*** Known Limitations
+## Known Limitations
 
 - **No persistence**: In-memory only (ViewModel state cleared on app close)
 - **Mocked pricing**: `PricingEngine.kt` generates EUR ranges locally
@@ -352,7 +352,7 @@ keeping platform-specific UI/camera/ML.
 - **On-device CLIP**: Placeholder implementation; real TFLite CLIP model not integrated yet
 - **Attribute extraction**: Cloud API supports attributes map; on-device extraction not implemented
 
-***REMOVED******REMOVED*** Reference Documentation
+## Reference Documentation
 
 **Setup**: `SETUP.md` (Java 17 cross-platform), `README.md` (features/usage)
 

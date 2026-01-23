@@ -1,11 +1,11 @@
-***REMOVED*** AI Assistant Images Verification Guide
+# AI Assistant Images Verification Guide
 
 This document describes how to verify that image attachments are correctly sent to the assistant
 endpoint.
 
 ---
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
 1. Backend is running and accessible
 2. Android app is built with a valid `SCANIUM_API_BASE_URL`
@@ -13,9 +13,9 @@ endpoint.
 
 ---
 
-***REMOVED******REMOVED*** Enabling Image Attachments
+## Enabling Image Attachments
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Enable the Toggle
+### Step 1: Enable the Toggle
 
 1. Open the Scanium app
 2. Go to **Settings** (gear icon)
@@ -24,7 +24,7 @@ endpoint.
 
 This toggle controls whether images are sent to the backend for visual analysis.
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Prepare Test Item
+### Step 2: Prepare Test Item
 
 1. Scan an item with the camera
 2. Ensure the item has at least one photo captured
@@ -32,9 +32,9 @@ This toggle controls whether images are sent to the backend for visual analysis.
 
 ---
 
-***REMOVED******REMOVED*** Manual Verification Steps
+## Manual Verification Steps
 
-***REMOVED******REMOVED******REMOVED*** Android Logs (Logcat)
+### Android Logs (Logcat)
 
 Filter for these tags to see image attachment activity:
 
@@ -42,7 +42,7 @@ Filter for these tags to see image attachment activity:
 adb logcat -s ImageAttachmentBuilder ScaniumAssist Assistant
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Expected Logs When Toggle is ON:
+#### Expected Logs When Toggle is ON:
 
 ```
 D/ImageAttachmentBuilder: Processing item=abc123 photos=2 (using first 3)
@@ -52,14 +52,14 @@ I/Assistant: Assist request correlationId=assist_xxx items=1 messageLength=20 im
 I/ScaniumAssist: Multipart request: correlationId=assist_xxx imageCount=2 totalBytes=2048 itemImageCounts={abc123=2}
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Expected Logs When Toggle is OFF:
+#### Expected Logs When Toggle is OFF:
 
 ```
 D/ImageAttachmentBuilder: Images disabled by toggle, returning empty attachments
 I/Assistant: Assist request correlationId=assist_xxx items=1 messageLength=20 imagesEnabled=false attachments=0 totalBytes=0 itemImageCounts={}
 ```
 
-***REMOVED******REMOVED******REMOVED*** Backend Logs
+### Backend Logs
 
 When images are received, the backend should log:
 
@@ -77,15 +77,15 @@ INFO  assistant: JSON request received (no images)
 
 ---
 
-***REMOVED******REMOVED*** Curl Test (Backend Only)
+## Curl Test (Backend Only)
 
 You can test the backend's multipart handling directly:
 
 ```bash
-***REMOVED*** Create a test image
+# Create a test image
 echo "test image data" > /tmp/test.jpg
 
-***REMOVED*** Send multipart request
+# Send multipart request
 curl -X POST "http://localhost:3000/v1/assist/chat" \
   -H "X-API-Key: your-api-key" \
   -H "X-Scanium-Correlation-Id: test-123" \
@@ -107,7 +107,7 @@ Expected response includes visual evidence if vision extraction ran:
 
 ---
 
-***REMOVED******REMOVED*** Unit Test Verification
+## Unit Test Verification
 
 Run the image attachment tests:
 
@@ -125,7 +125,7 @@ Expected output:
 
 ---
 
-***REMOVED******REMOVED*** Verification Checklist
+## Verification Checklist
 
 | Step                           | Expected Result                               |
 |--------------------------------|-----------------------------------------------|
@@ -138,21 +138,21 @@ Expected output:
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** No Images Sent Despite Toggle ON
+### No Images Sent Despite Toggle ON
 
 1. Check draft has photos: `ScaniumLog.d` should show "photos=N"
 2. Verify photos have `ImageRef.Bytes` (not `ImageRef.CacheKey`)
 3. Check for skipped images in logs
 
-***REMOVED******REMOVED******REMOVED*** Multipart Request Fails
+### Multipart Request Fails
 
 1. Verify backend accepts multipart: check CORS and content-type handling
 2. Check image sizes don't exceed 2MB limit
 3. Verify field naming matches pattern: `itemImages[<itemId>]`
 
-***REMOVED******REMOVED******REMOVED*** Vision Extraction Not Running
+### Vision Extraction Not Running
 
 1. Confirm backend vision is enabled: `VISION_ENABLED=true`
 2. Check Google Cloud Vision API credentials
@@ -160,7 +160,7 @@ Expected output:
 
 ---
 
-***REMOVED******REMOVED*** Key Files
+## Key Files
 
 | File                                                 | Purpose                              |
 |------------------------------------------------------|--------------------------------------|

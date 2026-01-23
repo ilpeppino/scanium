@@ -1,13 +1,13 @@
-***REMOVED*** UI Redesign: Settings and Camera Screen
+# UI Redesign: Settings and Camera Screen
 
 This document describes the UI changes made to the Settings screens and Camera screen for improved
 visual consistency and landscape support.
 
-***REMOVED******REMOVED*** Summary of Changes
+## Summary of Changes
 
-***REMOVED******REMOVED******REMOVED*** A) Settings UI Redesign
+### A) Settings UI Redesign
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A1. Theme Buttons Consistent Sizing
+#### A1. Theme Buttons Consistent Sizing
 
 **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsComponents.kt`
 
@@ -23,7 +23,7 @@ visual consistency and landscape support.
 2. Check that all three theme buttons (System default, Light, Dark) have the same width
 3. Verify the buttons are evenly distributed in the row
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A2. Normalized Settings Row Style with Icons
+#### A2. Normalized Settings Row Style with Icons
 
 **Files:**
 
@@ -52,7 +52,7 @@ visual consistency and landscape support.
     - Segmented buttons below
 3. Compare visual consistency with other settings rows
 
-***REMOVED******REMOVED******REMOVED*** B) Camera Screen Landscape Layout
+### B) Camera Screen Landscape Layout
 
 **File:** `androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt`
 
@@ -90,7 +90,7 @@ visual consistency and landscape support.
 5. Test tap/long-press functionality in both orientations
 6. Verify no functional regressions (capture, scan, flip camera work correctly)
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
 | File                      | Changes                                                   |
 |---------------------------|-----------------------------------------------------------|
@@ -98,14 +98,14 @@ visual consistency and landscape support.
 | `SettingsCameraScreen.kt` | Added icon imports, switched to `SettingIconSegmentedRow` |
 | `CameraScreen.kt`         | Added orientation detection, portrait/landscape layouts   |
 
-***REMOVED******REMOVED*** No Changes Made To
+## No Changes Made To
 
 - Camera/scanning business logic
 - Theme switching functionality
 - Detection/classification pipelines
 - Data persistence
 
-***REMOVED******REMOVED*** Testing Notes
+## Testing Notes
 
 - Build: `./gradlew :androidApp:assembleDebug --no-daemon`
 - Tests: `./gradlew test --no-daemon`

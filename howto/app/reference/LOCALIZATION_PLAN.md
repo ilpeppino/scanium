@@ -1,6 +1,6 @@
-***REMOVED*** Localization Plan
+# Localization Plan
 
-***REMOVED******REMOVED*** Current State (Discovery)
+## Current State (Discovery)
 
 - The in-app language row lives in
   `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsGeneralScreen.kt` and uses
@@ -17,7 +17,7 @@
 - Translations currently exist for `it`, `fr`, `nl` only and cover the existing
   `values/strings.xml`, but many UI strings remain hardcoded in Kotlin and are not localized.
 
-***REMOVED******REMOVED*** Planned Changes
+## Planned Changes
 
 1. **Model & persistence**
     - Expand `AppLanguage` to the required values: `SYSTEM`, `EN`, `IT`, `FR`, `NL`, `DE`, `PT_BR`.

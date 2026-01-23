@@ -1,10 +1,10 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="0" width="1024" height="1024" fill="***REMOVED***1F4BFF" />
-    <rect x="112" y="112" width="800" height="800" rx="160" ry="160" fill="none" stroke="***REMOVED***FFFFFF"
+    <rect x="0" y="0" width="1024" height="1024" fill="#1F4BFF" />
+    <rect x="112" y="112" width="800" height="800" rx="160" ry="160" fill="none" stroke="#FFFFFF"
         stroke-width="60" />
     <!-- S Symbol: Smooth curved S -->
     <path
         d="M 628 295 C 628 295 580 245 512 245 C 420 245 355 295 355 365 C 355 435 420 475 512 495 C 604 515 669 555 669 635 C 669 715 604 775 512 775 C 444 775 396 725 396 725"
-        fill="none" stroke="***REMOVED***FFD400" stroke-width="90" stroke-linecap="round"
+        fill="none" stroke="#FFD400" stroke-width="90" stroke-linecap="round"
         stroke-linejoin="round" />
 </svg>

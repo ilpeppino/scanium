@@ -78,8 +78,8 @@ class VisionInsightsRepositoryTest {
                 logoHints = emptyList(),
                 dominantColors =
                     listOf(
-                        ColorResponse("blue", "***REMOVED***1E40AF", 45f),
-                        ColorResponse("white", "***REMOVED***FFFFFF", 30f),
+                        ColorResponse("blue", "#1E40AF", 45f),
+                        ColorResponse("white", "#FFFFFF", 30f),
                     ),
                 labelHints = emptyList(),
                 suggestedLabel = null,
@@ -90,7 +90,7 @@ class VisionInsightsRepositoryTest {
 
         assertEquals(2, result.visionAttributes.colors.size)
         assertEquals("blue", result.visionAttributes.colors[0].name)
-        assertEquals("***REMOVED***1E40AF", result.visionAttributes.colors[0].hex)
+        assertEquals("#1E40AF", result.visionAttributes.colors[0].hex)
         assertEquals(0.45f, result.visionAttributes.colors[0].score, 0.01f)
     }
 
@@ -165,7 +165,7 @@ class VisionInsightsRepositoryTest {
                 "correlationId": "def-456",
                 "ocrSnippets": ["Labello", "Lip Balm"],
                 "logoHints": [{"name": "Labello", "confidence": 0.92}],
-                "dominantColors": [{"name": "blue", "hex": "***REMOVED***1E40AF", "pct": 45.5}],
+                "dominantColors": [{"name": "blue", "hex": "#1E40AF", "pct": 45.5}],
                 "labelHints": ["cosmetics", "lip care"],
                 "suggestedLabel": "Labello Lip Balm",
                 "categoryHint": "cosmetics",
@@ -185,7 +185,7 @@ class VisionInsightsRepositoryTest {
         assertEquals("Labello", response.logoHints[0].name)
         assertEquals(0.92f, response.logoHints[0].confidence)
         assertEquals("blue", response.dominantColors[0].name)
-        assertEquals("***REMOVED***1E40AF", response.dominantColors[0].hex)
+        assertEquals("#1E40AF", response.dominantColors[0].hex)
         assertEquals(45.5f, response.dominantColors[0].pct)
         assertEquals("Labello Lip Balm", response.suggestedLabel)
         assertEquals("cosmetics", response.categoryHint)

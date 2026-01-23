@@ -1,10 +1,10 @@
-***REMOVED*** Backend OTLP Instrumentation Investigation Report
+# Backend OTLP Instrumentation Investigation Report
 
 **Date:** 2026-01-11
 **Investigator:** Scanium Monitoring Agent
 **Status:** Investigation Complete - Root Causes Identified
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Backend OTLP instrumentation IS working correctly for traces and logs. The issue is NOT with
 instrumentation or data flow, but with:
@@ -13,9 +13,9 @@ instrumentation or data flow, but with:
 2. Dashboards configured to use span metrics that don't exist yet
 3. Local Mac repo out of sync with NAS (different Alloy config)
 
-***REMOVED******REMOVED*** Investigation Findings
+## Investigation Findings
 
-***REMOVED******REMOVED******REMOVED*** 1. OTLP Initialization - WORKING
+### 1. OTLP Initialization - WORKING
 
 **Evidence:**
 
@@ -35,7 +35,7 @@ Backend logs (scanium-backend):
 - Auto-instrumentation: HttpInstrumentation, FastifyInstrumentation
 - Health/metrics endpoints excluded from tracing (line 78)
 
-***REMOVED******REMOVED******REMOVED*** 2. Network Connectivity - WORKING
+### 2. Network Connectivity - WORKING
 
 **Docker Networks:**
 
@@ -53,7 +53,7 @@ scanium-loki            Up 11 hours (healthy)
 scanium-mimir           Up 11 hours (healthy)
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Traces in Tempo - WORKING
+### 3. Traces in Tempo - WORKING
 
 **API Query Results:**
 
@@ -89,7 +89,7 @@ curl -s "http://localhost:3200/api/search?tags=service.name%3Dscanium-backend&li
 
 **Service Names:** `["scanium-backend"]`
 
-***REMOVED******REMOVED******REMOVED*** 4. Logs in Loki (OTLP) - WORKING
+### 4. Logs in Loki (OTLP) - WORKING
 
 **Query:**
 
@@ -129,7 +129,7 @@ curl -s "http://localhost:3100/loki/api/v1/query" -G \
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Logs in Loki (Docker Source) - WORKING
+### 5. Logs in Loki (Docker Source) - WORKING
 
 **Query:**
 
@@ -144,7 +144,7 @@ curl -s "http://localhost:3100/loki/api/v1/query" -G \
 - Source label: `docker`
 - Contains logs from all monitoring stack containers
 
-***REMOVED******REMOVED******REMOVED*** 6. Metrics in Mimir - WORKING
+### 6. Metrics in Mimir - WORKING
 
 **Backend Prometheus Scrape:**
 
@@ -176,9 +176,9 @@ curl -s "http://localhost:9009/prometheus/api/v1/query" \
 
 Backend `/metrics` endpoint is being scraped successfully by Alloy.
 
-***REMOVED******REMOVED*** Root Causes Identified
+## Root Causes Identified
 
-***REMOVED******REMOVED******REMOVED*** Issue 1: Tempo Span Metrics Not Generated
+### Issue 1: Tempo Span Metrics Not Generated
 
 **Problem:** Dashboards query `traces_spanmetrics_*` metrics that don't exist in Mimir.
 
@@ -194,7 +194,7 @@ section.
 
 **Known Issue:** This is a documented Tempo problem in single-tenant mode:
 
-- GitHub Issue ***REMOVED***5479 (Aug 2025): "Metrics Generator not processing spans in single-tenant mode"
+- GitHub Issue #5479 (Aug 2025): "Metrics Generator not processing spans in single-tenant mode"
 - Affects v2.7.2, v2.8.1, and v2.3.1 (currently deployed)
 - Requires explicit `overrides` section to enable metrics generation
 
@@ -208,7 +208,7 @@ overrides:
     - span-metrics
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue 2: Dashboard Queries Depend on Span Metrics
+### Issue 2: Dashboard Queries Depend on Span Metrics
 
 **Affected Dashboards:**
 
@@ -229,7 +229,7 @@ overrides:
 
 This query will fail until Tempo generates span metrics.
 
-***REMOVED******REMOVED******REMOVED*** Issue 3: Mac/NAS Config Drift
+### Issue 3: Mac/NAS Config Drift
 
 **Local Mac Config:** `/Users/family/dev/scanium/monitoring/alloy/alloy.hcl`
 
@@ -243,56 +243,56 @@ This query will fail until Tempo generates span metrics.
 
 **Impact:** Confusion during debugging. Mac repo should be synced with NAS before making changes.
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
-***REMOVED******REMOVED******REMOVED*** Check Traces
+### Check Traces
 
 ```bash
-***REMOVED*** Search for backend traces
+# Search for backend traces
 ssh nas 'curl -s "http://localhost:3200/api/search?tags=service.name%3Dscanium-backend&limit=10"'
 
-***REMOVED*** Get trace details
+# Get trace details
 ssh nas 'curl -s "http://localhost:3200/api/traces/{traceId}"'
 
-***REMOVED*** List service names
+# List service names
 ssh nas 'curl -s "http://localhost:3200/api/search/tag/service.name/values"'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check Logs (OTLP)
+### Check Logs (OTLP)
 
 ```bash
-***REMOVED*** Query OTLP logs
+# Query OTLP logs
 ssh nas 'curl -s "http://localhost:3100/loki/api/v1/query" -G \
   --data-urlencode "query={source=\"otlp\"}" \
   --data-urlencode "limit=10"'
 
-***REMOVED*** Count logs by level
+# Count logs by level
 ssh nas 'curl -s "http://localhost:3100/loki/api/v1/query" -G \
   --data-urlencode "query=count_over_time({source=\"otlp\"}[5m])"'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check Metrics
+### Check Metrics
 
 ```bash
-***REMOVED*** Backend up metric
+# Backend up metric
 ssh nas 'curl -s "http://localhost:9009/prometheus/api/v1/query" \
   --data-urlencode "query=up{job=\"scanium-backend\"}"'
 
-***REMOVED*** Check for span metrics (should be empty until fix)
+# Check for span metrics (should be empty until fix)
 ssh nas 'curl -s "http://localhost:9009/prometheus/api/v1/query" \
   --data-urlencode "query=traces_spanmetrics_calls_total"'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check Tempo Generator WAL
+### Check Tempo Generator WAL
 
 ```bash
-***REMOVED*** Should have files after fix
+# Should have files after fix
 ssh nas 'ls -la /volume1/docker/scanium/repo/monitoring/data/tempo/generator/wal/'
 ```
 
-***REMOVED******REMOVED*** Recommendations
+## Recommendations
 
-***REMOVED******REMOVED******REMOVED*** Immediate Actions
+### Immediate Actions
 
 1. **Fix Tempo Span Metrics**
     - Add `overrides` section to Tempo config
@@ -309,7 +309,7 @@ ssh nas 'ls -la /volume1/docker/scanium/repo/monitoring/data/tempo/generator/wal
     - Consider fallback queries for when no traces exist
     - Add annotations explaining metric sources
 
-***REMOVED******REMOVED******REMOVED*** Preventive Measures
+### Preventive Measures
 
 1. **Add Monitoring Tests**
     - Extend `scripts/monitoring/prove-telemetry.sh` to check span metrics
@@ -326,7 +326,7 @@ ssh nas 'ls -la /volume1/docker/scanium/repo/monitoring/data/tempo/generator/wal
     - Alert on empty span metrics for >10 minutes when traces exist
     - Monitor WAL directory size
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 **What's Working:**
 
@@ -352,30 +352,30 @@ ssh nas 'ls -la /volume1/docker/scanium/repo/monitoring/data/tempo/generator/wal
 
 **Total Estimated Resolution Time:** 15-20 minutes
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - [Tempo Metrics Generator Troubleshooting](https://grafana.com/docs/tempo/latest/troubleshooting/metrics-generator/)
 - [Tempo Span Metrics Configuration](https://grafana.com/docs/tempo/latest/metrics-from-traces/span-metrics/span-metrics-metrics-generator/)
-- [GitHub Issue ***REMOVED***5479](https://github.com/grafana/tempo/issues/5479) - Metrics Generator not
+- [GitHub Issue #5479](https://github.com/grafana/tempo/issues/5479) - Metrics Generator not
   processing spans in single-tenant mode
 - [Grafana Community Forum](https://community.grafana.com/t/no-metrics-being-generated/122800) - No
   metrics being generated
 
-***REMOVED******REMOVED*** Files Referenced
+## Files Referenced
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 - `/Users/family/dev/scanium/backend/src/infra/telemetry/index.ts` - OTLP initialization
 - `/Users/family/dev/scanium/backend/src/main.ts` - Telemetry bootstrap
 - `/Users/family/dev/scanium/backend/docker-compose.yml` - OTLP endpoint config
 
-***REMOVED******REMOVED******REMOVED*** Monitoring Stack
+### Monitoring Stack
 
 - `/volume1/docker/scanium/repo/monitoring/tempo/tempo.yaml` - Needs fix
 - `/volume1/docker/scanium/repo/monitoring/alloy/alloy.hcl` - OTLP receivers
 - `/Users/family/dev/scanium/monitoring/grafana/dashboards/traces-drilldown.json` - Depends on span
   metrics
 
-***REMOVED******REMOVED******REMOVED*** Scripts
+### Scripts
 
 - `/Users/family/dev/scanium/scripts/monitoring/prove-telemetry.sh` - Verification script

@@ -1,12 +1,12 @@
-***REMOVED*** Mobile Telemetry Schema
+# Mobile Telemetry Schema
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This document defines the mobile telemetry schema for Scanium mobile apps (Android/iOS). Mobile
 events are sent to the backend via HTTPS, logged as structured JSON, and ingested into Loki via
 Alloy docker log pipeline.
 
-***REMOVED******REMOVED*** Core Principles
+## Core Principles
 
 1. **Low Cardinality**: Only a small set of attributes become Loki labels
 2. **No PII**: Never collect user identifiers, GPS coordinates, photos, barcodes, item titles, or
@@ -15,7 +15,7 @@ Alloy docker log pipeline.
 4. **Redacted**: All events are automatically redacted on the backend
 5. **Opt-in Ready**: Infrastructure supports user opt-out (via feature flags)
 
-***REMOVED******REMOVED*** Event Schema
+## Event Schema
 
 Each telemetry event has the following structure:
 
@@ -35,7 +35,7 @@ Each telemetry event has the following structure:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Required Fields
+### Required Fields
 
 | Field          | Type   | Description                                 | Cardinality | Loki Label? |
 |----------------|--------|---------------------------------------------|-------------|-------------|
@@ -45,7 +45,7 @@ Each telemetry event has the following structure:
 | `build_type`   | string | `dev`, `beta`, or `prod`                    | Low (3)     | YES         |
 | `timestamp_ms` | number | Client timestamp (milliseconds since epoch) | N/A         | NO          |
 
-***REMOVED******REMOVED******REMOVED*** Optional Fields
+### Optional Fields
 
 | Field        | Type   | Description                            | Cardinality | Loki Label? |
 |--------------|--------|----------------------------------------|-------------|-------------|
@@ -53,7 +53,7 @@ Each telemetry event has the following structure:
 | `request_id` | string | Request correlation ID (if available)  | High        | NO          |
 | `attributes` | object | Event-specific metadata (limited keys) | Varies      | NO          |
 
-***REMOVED******REMOVED*** Loki Labels
+## Loki Labels
 
 **ONLY these fields become Loki labels:**
 
@@ -66,11 +66,11 @@ Each telemetry event has the following structure:
 All other fields remain inside the JSON log line and are **NOT** promoted to labels. This prevents
 cardinality explosion.
 
-***REMOVED******REMOVED*** Event Catalog
+## Event Catalog
 
-***REMOVED******REMOVED******REMOVED*** App Lifecycle Events
+### App Lifecycle Events
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `app_launch`
+#### `app_launch`
 
 Emitted when the app starts.
 
@@ -95,9 +95,9 @@ Emitted when the app starts.
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Scanning Events
+### Scanning Events
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `scan_started`
+#### `scan_started`
 
 Emitted when user initiates a scan.
 
@@ -121,7 +121,7 @@ Emitted when user initiates a scan.
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `scan_completed`
+#### `scan_completed`
 
 Emitted when a scan finishes successfully.
 
@@ -149,9 +149,9 @@ Emitted when a scan finishes successfully.
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** AI Assistant Events
+### AI Assistant Events
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `assist_clicked`
+#### `assist_clicked`
 
 Emitted when user taps the AI assistant button.
 
@@ -175,9 +175,9 @@ Emitted when user taps the AI assistant button.
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Sharing Events
+### Sharing Events
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `share_started`
+#### `share_started`
 
 Emitted when user initiates a share action.
 
@@ -201,9 +201,9 @@ Emitted when user initiates a share action.
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Error Events
+### Error Events
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `error_shown`
+#### `error_shown`
 
 Emitted when an error is displayed to the user.
 
@@ -231,7 +231,7 @@ Emitted when an error is displayed to the user.
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `crash_marker`
+#### `crash_marker`
 
 Emitted manually when app detects it recovered from a crash (not actual crash logs).
 
@@ -255,9 +255,9 @@ Emitted manually when app detects it recovered from a crash (not actual crash lo
 }
 ```
 
-***REMOVED******REMOVED*** Security
+## Security
 
-***REMOVED******REMOVED******REMOVED*** Authentication
+### Authentication
 
 Mobile clients authenticate using one of:
 
@@ -267,13 +267,13 @@ Mobile clients authenticate using one of:
 The shared secret is stored in the backend's secrets mechanism and is NOT committed to the
 repository.
 
-***REMOVED******REMOVED******REMOVED*** Rate Limiting
+### Rate Limiting
 
 - **Per IP**: 100 events per minute
 - **Per Session**: 10 events per second (if `session_id` provided)
 - Exceeded limits return `429 Too Many Requests`
 
-***REMOVED******REMOVED******REMOVED*** Redaction
+### Redaction
 
 All events are logged through a redaction filter that:
 
@@ -282,9 +282,9 @@ All events are logged through a redaction filter that:
 - Validates against schema
 - Rejects events with disallowed attributes
 
-***REMOVED******REMOVED*** Backend Ingestion
+## Backend Ingestion
 
-***REMOVED******REMOVED******REMOVED*** Endpoint
+### Endpoint
 
 ```
 POST /v1/telemetry/mobile
@@ -298,7 +298,7 @@ X-Client-Telemetry-Key: <secret>
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Response
+### Response
 
 - **202 Accepted**: Event accepted and will be processed
 - **400 Bad Request**: Invalid schema
@@ -306,7 +306,7 @@ X-Client-Telemetry-Key: <secret>
 - **429 Too Many Requests**: Rate limit exceeded
 - **500 Internal Server Error**: Backend error
 
-***REMOVED******REMOVED******REMOVED*** Logging Behavior
+### Logging Behavior
 
 For every accepted event, the backend logs ONE structured JSON line to stdout:
 
@@ -332,50 +332,50 @@ This log line is then:
 3. Pushed to Loki
 4. Queryable in Grafana
 
-***REMOVED******REMOVED*** Observability
+## Observability
 
-***REMOVED******REMOVED******REMOVED*** Loki Queries
+### Loki Queries
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** All mobile events
+#### All mobile events
 
 ```logql
 {source="scanium-mobile"}
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Events by platform
+#### Events by platform
 
 ```logql
 {source="scanium-mobile", platform="android"}
 {source="scanium-mobile", platform="ios"}
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Events by type
+#### Events by type
 
 ```logql
 {source="scanium-mobile", event_name="scan_started"}
 {source="scanium-mobile", event_name="error_shown"}
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Events by version
+#### Events by version
 
 ```logql
 {source="scanium-mobile", app_version="1.2.3"}
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Events by build type
+#### Events by build type
 
 ```logql
 {source="scanium-mobile", build_type="beta"}
 {source="scanium-mobile", build_type="prod"}
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Error events only
+#### Error events only
 
 ```logql
 {source="scanium-mobile", event_name=~"error_shown|crash_marker"}
 ```
 
-***REMOVED******REMOVED******REMOVED*** Dashboards
+### Dashboards
 
 Mobile telemetry is visualized in:
 
@@ -386,9 +386,9 @@ Mobile telemetry is visualized in:
     - Error rate
     - Session analysis
 
-***REMOVED******REMOVED*** Client Implementation
+## Client Implementation
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 See `/mobile/android/app/src/main/java/com/scanium/TelemetryClient.kt`
 
@@ -400,38 +400,38 @@ See `/mobile/android/app/src/main/java/com/scanium/TelemetryClient.kt`
 - Feature flag support (`ENABLE_TELEMETRY`)
 - Debug mode (manual test event button in dev builds)
 
-***REMOVED******REMOVED******REMOVED*** iOS
+### iOS
 
 (To be implemented - follow Android pattern)
 
-***REMOVED******REMOVED*** Migration Path
+## Migration Path
 
-***REMOVED******REMOVED******REMOVED*** Phase 1: Beta (Current)
+### Phase 1: Beta (Current)
 
 - Android only
 - Shared secret authentication
 - Manual monitoring in Grafana
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Production
+### Phase 2: Production
 
 - iOS support
 - User opt-out UI
 - Automated alerts for error spikes
 
-***REMOVED******REMOVED******REMOVED*** Phase 3: Advanced
+### Phase 3: Advanced
 
 - Client-side sampling
 - Trace correlation (OTLP traces)
 - Custom attributes validation
 
-***REMOVED******REMOVED*** Compliance Notes
+## Compliance Notes
 
 - **No PII**: This schema is designed to be GDPR/CCPA friendly (no personal data)
 - **User Control**: Telemetry can be disabled via feature flag (future: opt-out UI)
 - **Data Retention**: Loki retention is 30 days (configurable)
 - **Data Export**: Loki data can be exported via LogQL API if needed
 
-***REMOVED******REMOVED*** Appendix: Disallowed Attributes
+## Appendix: Disallowed Attributes
 
 The following MUST NEVER appear in telemetry:
 

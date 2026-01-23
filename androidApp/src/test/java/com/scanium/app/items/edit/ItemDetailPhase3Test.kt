@@ -78,7 +78,7 @@ class ItemDetailPhase3Test {
         // Arrange
         val visionAttrs =
             VisionAttributes(
-                colors = listOf(VisionColor("Black", "***REMOVED***000000", 0.9f)),
+                colors = listOf(VisionColor("Black", "#000000", 0.9f)),
                 ocrText = "NIKE\nJust Do It\nSize L",
                 logos = listOf(VisionLogo("Nike", 0.95f)),
                 labels = listOf(VisionLabel("T-shirt", 0.8f)),

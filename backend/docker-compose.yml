@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  ***REMOVED*** PostgreSQL database
+  # PostgreSQL database
   postgres:
     image: postgres:16-alpine
     container_name: scanium-postgres
@@ -20,7 +20,7 @@ services:
       timeout: 5s
       retries: 5
 
-  ***REMOVED*** Scanium Backend API
+  # Scanium Backend API
   api:
     image: scanium-backend:${BACKEND_TAG:-latest}
     build:
@@ -47,7 +47,7 @@ services:
       SCANIUM_ASSISTANT_PROVIDER: ${SCANIUM_ASSISTANT_PROVIDER:-openai}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       SCANIUM_CLASSIFIER_PROVIDER: ${SCANIUM_CLASSIFIER_PROVIDER:-mock}
-      ***REMOVED*** Comma-separated features: TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION,LABEL_DETECTION
+      # Comma-separated features: TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION,LABEL_DETECTION
       VISION_FEATURE: ${VISION_FEATURE:-LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES}
       CLASSIFIER_RATE_LIMIT_PER_MINUTE: ${CLASSIFIER_RATE_LIMIT_PER_MINUTE:-60}
       CLASSIFIER_CONCURRENCY_LIMIT: ${CLASSIFIER_CONCURRENCY_LIMIT:-2}
@@ -59,8 +59,8 @@ services:
       VISION_TIMEOUT_MS: ${VISION_TIMEOUT_MS:-10000}
       VISION_MAX_RETRIES: ${VISION_MAX_RETRIES:-2}
       GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}
-      ***REMOVED*** Vision Enrichment (independent of classifier provider)
-      ***REMOVED*** Set VISION_PROVIDER=google for real Vision extraction with enrichAttributes=true
+      # Vision Enrichment (independent of classifier provider)
+      # Set VISION_PROVIDER=google for real Vision extraction with enrichAttributes=true
       VISION_PROVIDER: ${VISION_PROVIDER:-mock}
       VISION_ENABLED: ${VISION_ENABLED:-true}
       VISION_ENABLE_OCR: ${VISION_ENABLE_OCR:-true}
@@ -82,7 +82,7 @@ services:
 
     networks:
       - backend_scanium-network
-    ***REMOVED*** Note: Port not exposed externally - accessed via Cloudflare Tunnel
+    # Note: Port not exposed externally - accessed via Cloudflare Tunnel
     expose:
       - '8080'
     healthcheck:
@@ -92,7 +92,7 @@ services:
       start_period: 10s
       retries: 3
 
-  ***REMOVED*** Cloudflare Tunnel
+  # Cloudflare Tunnel
   cloudflared:
     image: cloudflare/cloudflared:2025.11.1
     container_name: scanium-cloudflared

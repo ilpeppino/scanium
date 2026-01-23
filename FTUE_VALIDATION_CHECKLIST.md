@@ -1,9 +1,9 @@
-***REMOVED*** FTUE Validation Checklist
+# FTUE Validation Checklist
 
 This checklist provides deterministic testing protocol to verify FTUE (First-Time User Experience)
 visibility and functionality.
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
 - **Build**: DEV flavor debug APK installed (`./gradlew :androidApp:assembleDevDebug`)
 - **State**: All FTUE flags reset (Developer Options → Reset Tour Progress)
@@ -11,9 +11,9 @@ visibility and functionality.
 
 ---
 
-***REMOVED******REMOVED*** Camera FTUE Validation
+## Camera FTUE Validation
 
-***REMOVED******REMOVED******REMOVED*** Test 1: First Launch (No Items)
+### Test 1: First Launch (No Items)
 
 **Steps:**
 
@@ -40,7 +40,7 @@ FTUE: Camera FTUE sequence completed
 - "FTUE Camera step=ROI_HINT_SHOWN"
 - "FTUE Camera step=SHUTTER_HINT_SHOWN"
 
-***REMOVED******REMOVED******REMOVED*** Test 2: Force FTUE (With Items)
+### Test 2: Force FTUE (With Items)
 
 **Steps:**
 
@@ -55,7 +55,7 @@ FTUE: Camera FTUE sequence completed
 - Force flag overrides completion status
 - FTUE triggers despite having items
 
-***REMOVED******REMOVED******REMOVED*** Test 3: Reset FTUE
+### Test 3: Reset FTUE
 
 **Steps:**
 
@@ -71,7 +71,7 @@ FTUE: initialize: shouldStartFtue=true, hasExistingItems=...
 FTUE: FTUE starting: step=WAITING_ROI
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test 4: Early Flag Setting Fixed (Regression Test)
+### Test 4: Early Flag Setting Fixed (Regression Test)
 
 **Steps:**
 
@@ -90,9 +90,9 @@ FTUE: FTUE starting: step=WAITING_ROI
 
 ---
 
-***REMOVED******REMOVED*** Items List FTUE Validation
+## Items List FTUE Validation
 
-***REMOVED******REMOVED******REMOVED*** Test 1: First Visit With Items
+### Test 1: First Visit With Items
 
 **Steps:**
 
@@ -116,7 +116,7 @@ FTUE: Step transition: LONG_PRESS_HINT_SHOWN, overlayVisible=true
 FTUE: Step transition: SHARE_GOAL_SHOWN, overlayVisible=true
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test 2: Empty List (No FTUE)
+### Test 2: Empty List (No FTUE)
 
 **Steps:**
 
@@ -133,9 +133,9 @@ FTUE: Step transition: SHARE_GOAL_SHOWN, overlayVisible=true
 
 ---
 
-***REMOVED******REMOVED*** Edit Item FTUE Validation
+## Edit Item FTUE Validation
 
-***REMOVED******REMOVED******REMOVED*** Test 1: First Edit
+### Test 1: First Edit
 
 **Steps:**
 
@@ -157,9 +157,9 @@ FTUE: Edit Item FTUE sequence completed
 
 ---
 
-***REMOVED******REMOVED*** Settings FTUE Validation
+## Settings FTUE Validation
 
-***REMOVED******REMOVED******REMOVED*** Test 1: First Settings Visit
+### Test 1: First Settings Visit
 
 **Steps:**
 
@@ -180,9 +180,9 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 
 ---
 
-***REMOVED******REMOVED*** Debug Tools Validation
+## Debug Tools Validation
 
-***REMOVED******REMOVED******REMOVED*** Test 1: FTUE Debug State Display
+### Test 1: FTUE Debug State Display
 
 **Steps:**
 
@@ -200,7 +200,7 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 - Debug state updates in real-time
 - All fields display accurate information
 
-***REMOVED******REMOVED******REMOVED*** Test 2: Debug Bounds Visualization
+### Test 2: Debug Bounds Visualization
 
 **Steps:**
 
@@ -214,7 +214,7 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 - Debug visualization helps identify misaligned overlays
 - Bounds are accurate (not offscreen or zero-sized)
 
-***REMOVED******REMOVED******REMOVED*** Test 3: Toast Notifications (DEV Build Only)
+### Test 3: Toast Notifications (DEV Build Only)
 
 **Steps:**
 
@@ -236,9 +236,9 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 
 ---
 
-***REMOVED******REMOVED*** Regression Tests
+## Regression Tests
 
-***REMOVED******REMOVED******REMOVED*** Test 1: Completion Flags NOT Set Early
+### Test 1: Completion Flags NOT Set Early
 
 **Critical test to verify the primary bug fix.**
 
@@ -263,7 +263,7 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 - Completion flags ONLY set after actual completion or dismissal
 - Flags NOT set when preconditions fail
 
-***REMOVED******REMOVED******REMOVED*** Test 2: Flags Set on Actual Completion
+### Test 2: Flags Set on Actual Completion
 
 **Steps:**
 
@@ -279,7 +279,7 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 - Flags correctly mark tour as seen after completion
 - FTUE doesn't repeat unnecessarily
 
-***REMOVED******REMOVED******REMOVED*** Test 3: Flags Set on Dismiss
+### Test 3: Flags Set on Dismiss
 
 **Steps:**
 
@@ -297,7 +297,7 @@ FTUE: Step transition: REPLAY_HINT_SHOWN, overlayVisible=true
 
 ---
 
-***REMOVED******REMOVED*** Pass Criteria
+## Pass Criteria
 
 All tests must pass for FTUE to be considered functional:
 
@@ -312,9 +312,9 @@ All tests must pass for FTUE to be considered functional:
 
 ---
 
-***REMOVED******REMOVED*** Failure Troubleshooting
+## Failure Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** FTUE Not Appearing
+### FTUE Not Appearing
 
 1. **Check logs**: Is `initialize()` being called?
 2. **Check preconditions**: Are all trigger conditions met?
@@ -322,14 +322,14 @@ All tests must pass for FTUE to be considered functional:
 4. **Check debug state**: Does "Current Screen" show the right screen?
 5. **Check bounds**: Enable "Show FTUE Debug Bounds" – is spotlight visible?
 
-***REMOVED******REMOVED******REMOVED*** FTUE Appears But Invisible
+### FTUE Appears But Invisible
 
 1. **Check z-ordering**: Is overlay behind camera preview?
 2. **Check alpha**: Is dim layer alpha = 0.7 (not 0.0)?
 3. **Check anchors**: Does "Last Anchor Rect" show valid coordinates (not "Not captured")?
 4. **Check debug bounds**: White outline should match target element
 
-***REMOVED******REMOVED******REMOVED*** FTUE Triggers But Immediately Completes
+### FTUE Triggers But Immediately Completes
 
 1. **Check logs**: Are step transitions happening too fast?
 2. **Check timeout values**: Review delay constants in ViewModels
@@ -337,7 +337,7 @@ All tests must pass for FTUE to be considered functional:
 
 ---
 
-***REMOVED******REMOVED*** Post-Validation Steps
+## Post-Validation Steps
 
 After all tests pass:
 

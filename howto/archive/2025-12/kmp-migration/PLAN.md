@@ -1,6 +1,6 @@
-***REMOVED*** KMP Migration Plan (Keep Android Green)
+# KMP Migration Plan (Keep Android Green)
 
-***REMOVED******REMOVED*** Target Module Layout
+## Target Module Layout
 
 - **shared:core** – pure Kotlin models (ScannedItem equivalent without Bitmap/RectF), math helpers,
   time utilities.
@@ -14,7 +14,7 @@
 - **iosScaffold** – placeholder for future Swift package consuming shared artifacts; thin adapters
   for AVFoundation/Vision/CoreML.
 
-***REMOVED******REMOVED*** Incremental “Green Build” Steps (commit-by-commit)
+## Incremental “Green Build” Steps (commit-by-commit)
 
 1. **Baseline documentation + guards**: add KMP rules to docs (this file) and a lint/checklist;
    ensure `./gradlew assembleDebug` passes.
@@ -38,7 +38,7 @@
 8. **Add iOS scaffold**: create minimal Swift package binding to shared framework, with stub
    camera/ML adapters. Validate shared Gradle publishing and keep Android build green.
 
-***REMOVED******REMOVED*** Rules and Constraints
+## Rules and Constraints
 
 - Shared modules **must not** import `android.*`, CameraX, ML Kit, or Compose; only pure Kotlin/JVM
   libs.
@@ -49,7 +49,7 @@
 - Android build (`./gradlew assembleDebug`) must succeed after each commit; shared code addition
   must not break existing UI.
 
-***REMOVED******REMOVED*** Risks & Mitigations
+## Risks & Mitigations
 
 - **SDK/Gradle breakage**: Creating new modules may impact build scripts. Mitigate by adding modules
   incrementally and running `./gradlew assembleDebug` + `./gradlew test` every step.

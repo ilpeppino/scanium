@@ -1,8 +1,8 @@
-***REMOVED*** Project Documentation
+# Project Documentation
 
 Repository conventions, workflows, and contributor documentation.
 
-***REMOVED******REMOVED*** Subfolders
+## Subfolders
 
 | Folder                   | Contents                                     |
 |--------------------------|----------------------------------------------|
@@ -11,9 +11,9 @@ Repository conventions, workflows, and contributor documentation.
 | [scripts/](scripts/)     | Build, CI, and development scripts           |
 | [workflows/](workflows/) | CI/CD, GitHub Actions, release workflows     |
 
-***REMOVED******REMOVED*** Quick Links
+## Quick Links
 
-***REMOVED******REMOVED******REMOVED*** Reference
+### Reference
 
 - [Architecture](reference/ARCHITECTURE.md)
 - [Dev Guide](reference/DEV_GUIDE.md)
@@ -21,12 +21,12 @@ Repository conventions, workflows, and contributor documentation.
 - [Decisions Log](reference/DECISIONS.md)
 - [Agents Configuration](reference/AGENTS.md)
 
-***REMOVED******REMOVED******REMOVED*** Workflows
+### Workflows
 
 - [CI/CD](workflows/CI_CD.md)
 - [GitHub Issue Templates](workflows/GITHUB_ISSUES_TEMPLATES.md)
 
-***REMOVED******REMOVED******REMOVED*** Scripts
+### Scripts
 
 - `build.sh` - Main build script
 - `ci/local-ci.sh` - Run CI locally

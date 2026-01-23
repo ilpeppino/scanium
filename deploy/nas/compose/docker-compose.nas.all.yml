@@ -1,28 +1,28 @@
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium Full Stack - NAS Deployment (Synology DS418play)
-***REMOVED*** =============================================================================
-***REMOVED*** Combined backend + monitoring stack for convenience.
-***REMOVED*** For production, consider running them separately for easier maintenance.
-***REMOVED***
-***REMOVED*** Prerequisites:
-***REMOVED***   1. Copy ../env/backend.env.example to ../env/backend.env
-***REMOVED***   2. Copy ../env/monitoring.env.example to ../env/monitoring.env
-***REMOVED***   3. Create data directories on NAS (see README.md)
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   docker compose -f docker-compose.nas.all.yml \
-***REMOVED***     --env-file ../env/backend.env \
-***REMOVED***     --env-file ../env/monitoring.env \
-***REMOVED***     up -d
-***REMOVED*** =============================================================================
+# =============================================================================
+# Scanium Full Stack - NAS Deployment (Synology DS418play)
+# =============================================================================
+# Combined backend + monitoring stack for convenience.
+# For production, consider running them separately for easier maintenance.
+#
+# Prerequisites:
+#   1. Copy ../env/backend.env.example to ../env/backend.env
+#   2. Copy ../env/monitoring.env.example to ../env/monitoring.env
+#   3. Create data directories on NAS (see README.md)
+#
+# Usage:
+#   docker compose -f docker-compose.nas.all.yml \
+#     --env-file ../env/backend.env \
+#     --env-file ../env/monitoring.env \
+#     up -d
+# =============================================================================
 
 include:
   - docker-compose.nas.monitoring.yml
 
 services:
-  ***REMOVED*** ---------------------------------------------------------------------------
-  ***REMOVED*** PostgreSQL Database
-  ***REMOVED*** ---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
     container_name: scanium-postgres
@@ -48,9 +48,9 @@ services:
         reservations:
           memory: 128M
 
-  ***REMOVED*** ---------------------------------------------------------------------------
-  ***REMOVED*** Scanium Backend API
-  ***REMOVED*** ---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # Scanium Backend API
+  # ---------------------------------------------------------------------------
   api:
     image: ${SCANIUM_API_IMAGE:-scanium-api:latest}
     container_name: scanium-api
@@ -89,7 +89,7 @@ services:
       SCANIUM_CLASSIFIER_PROVIDER: google
       VISION_FEATURE: OBJECT_LOCALIZATION,TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION,LABEL_DETECTION
       GOOGLE_APPLICATION_CREDENTIALS: /secrets/vision-sa.json
-      ***REMOVED*** Connect to monitoring stack
+      # Connect to monitoring stack
       OTEL_EXPORTER_OTLP_ENDPOINT: http://scanium-alloy:4318
     volumes:
       - ${REMOTE_CONFIG_PATH:-./config/remote-config.json}:/app/config/remote-config.json:ro

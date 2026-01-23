@@ -1,6 +1,6 @@
-***REMOVED*** Android Multi-Device Sync (Phase E)
+# Android Multi-Device Sync (Phase E)
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Scanium Android app implements offline-first synchronization with the backend Items API. Items
 are created and edited locally, then synchronized to the cloud when online.
@@ -14,9 +14,9 @@ are created and edited locally, then synchronized to the cloud when online.
 - Tombstone-based soft delete
 - Local ID → Server ID mapping
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Components
+### Components
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -42,9 +42,9 @@ are created and edited locally, then synchronized to the cloud when online.
 └─────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED*** Database Schema
+## Database Schema
 
-***REMOVED******REMOVED******REMOVED*** Sync Fields (v10)
+### Sync Fields (v10)
 
 ```kotlin
 @Entity(tableName = "scanned_items")
@@ -63,7 +63,7 @@ data class ScannedItemEntity(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Migration (v9 → v10)
+### Migration (v9 → v10)
 
 **File:** `ScannedItemDatabase.kt`
 
@@ -94,9 +94,9 @@ private val MIGRATION_9_10 = object : Migration(9, 10) {
 }
 ```
 
-***REMOVED******REMOVED*** Sync Triggers
+## Sync Triggers
 
-***REMOVED******REMOVED******REMOVED*** 1. On Sign-In (First Sync)
+### 1. On Sign-In (First Sync)
 
 **File:** `FirstSyncManager.kt`
 
@@ -143,7 +143,7 @@ viewModelScope.launch {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. After Item Save
+### 2. After Item Save
 
 ```kotlin
 // In ScannedItemRepository
@@ -159,7 +159,7 @@ suspend fun saveItem(item: ScannedItemEntity) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. On App Resume
+### 3. On App Resume
 
 ```kotlin
 // In MainActivity or root ViewModel
@@ -174,7 +174,7 @@ override fun onResume() {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Periodic Background Sync
+### 4. Periodic Background Sync
 
 **File:** `WorkManagerModule.kt`
 
@@ -214,9 +214,9 @@ class ScaniumApp : Application(), HiltWorkManagerConfiguration {
 }
 ```
 
-***REMOVED******REMOVED*** Sync Algorithm
+## Sync Algorithm
 
-***REMOVED******REMOVED******REMOVED*** ItemSyncManager.syncAll()
+### ItemSyncManager.syncAll()
 
 **File:** `ItemSyncManager.kt`
 
@@ -247,7 +247,7 @@ suspend fun syncAll(): SyncResult {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Push to Server
+### Push to Server
 
 ```kotlin
 private suspend fun pushToServer(items: List<ScannedItemEntity>): List<String> {
@@ -292,7 +292,7 @@ private suspend fun pushToServer(items: List<ScannedItemEntity>): List<String> {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Pull from Server
+### Pull from Server
 
 ```kotlin
 private suspend fun pullFromServer(since: Long?): List<ItemDto> {
@@ -306,7 +306,7 @@ private suspend fun pullFromServer(since: Long?): List<ItemDto> {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Conflict Resolution
+### Conflict Resolution
 
 ```kotlin
 private suspend fun applyServerChanges(serverItems: List<ItemDto>): Int {
@@ -366,9 +366,9 @@ private suspend fun resolveConflict(local: ScannedItemEntity, server: ItemDto) {
 }
 ```
 
-***REMOVED******REMOVED*** Dependency Injection
+## Dependency Injection
 
-***REMOVED******REMOVED******REMOVED*** AuthModule.kt
+### AuthModule.kt
 
 ```kotlin
 @Module
@@ -397,7 +397,7 @@ object AuthModule {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** DatabaseModule.kt
+### DatabaseModule.kt
 
 ```kotlin
 @Module
@@ -422,7 +422,7 @@ object DatabaseModule {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** WorkManagerModule.kt
+### WorkManagerModule.kt
 
 ```kotlin
 @Module
@@ -446,9 +446,9 @@ object WorkManagerModule {
 }
 ```
 
-***REMOVED******REMOVED*** Network Layer
+## Network Layer
 
-***REMOVED******REMOVED******REMOVED*** ItemsApi.kt
+### ItemsApi.kt
 
 ```kotlin
 class ItemsApi(private val httpClient: OkHttpClient) {
@@ -487,7 +487,7 @@ class ItemsApi(private val httpClient: OkHttpClient) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** AuthTokenInterceptor.kt
+### AuthTokenInterceptor.kt
 
 ```kotlin
 class AuthTokenInterceptor(
@@ -524,9 +524,9 @@ class AuthTokenInterceptor(
 }
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 **File:** `ScannedItemSyncerTest.kt`
 
@@ -582,7 +582,7 @@ fun `handleConflict should choose latest clientUpdatedAt`() = runTest {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Migration Tests
+### Migration Tests
 
 **File:** `MigrationTest.kt`
 
@@ -615,9 +615,9 @@ fun testMigration9To10() {
 }
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Items Not Syncing
+### Items Not Syncing
 
 **Symptoms:** Items created offline don't appear on other devices
 
@@ -645,7 +645,7 @@ Log.d("Sync", "Signed in: $isSignedIn")
 3. Check battery: WorkManager skips if battery low
 4. Trigger manual sync: `syncManager.syncAll()`
 
-***REMOVED******REMOVED******REMOVED*** Conflicts on Every Sync
+### Conflicts on Every Sync
 
 **Symptoms:** Same item shows conflict repeatedly
 
@@ -663,7 +663,7 @@ val updated = item.copy(
 dao.upsertAll(listOf(updated))
 ```
 
-***REMOVED******REMOVED******REMOVED*** Server ID Mapping Lost
+### Server ID Mapping Lost
 
 **Symptoms:** Duplicate items on server after reinstall
 
@@ -685,9 +685,9 @@ for (serverItem in serverItems) {
 }
 ```
 
-***REMOVED******REMOVED*** Performance Optimization
+## Performance Optimization
 
-***REMOVED******REMOVED******REMOVED*** Batch Operations
+### Batch Operations
 
 ```kotlin
 // BAD: Update items one at a time
@@ -699,7 +699,7 @@ for (item in items) {
 dao.upsertAll(items)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Pagination
+### Pagination
 
 ```kotlin
 // Fetch items in pages to avoid memory issues
@@ -716,7 +716,7 @@ suspend fun syncAllPaginated() {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Index Optimization
+### Index Optimization
 
 ```kotlin
 @Dao
@@ -731,7 +731,7 @@ interface ScannedItemDao {
 }
 ```
 
-***REMOVED******REMOVED*** Best Practices
+## Best Practices
 
 1. **Always set clientUpdatedAt**
    ```kotlin
@@ -768,7 +768,7 @@ interface ScannedItemDao {
    }
    ```
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - [Backend Items API](../../../backend/howto/backend/items-sync.md)
 - [Authentication Flow](./auth-flow.md)

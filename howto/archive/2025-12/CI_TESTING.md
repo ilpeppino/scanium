@@ -1,6 +1,6 @@
-***REMOVED*** CI-First Testing for Scanium
+# CI-First Testing for Scanium
 
-***REMOVED******REMOVED*** Why CI-First?
+## Why CI-First?
 
 **Local Gradle builds in Codex container are NOT supported** due to:
 
@@ -8,21 +8,21 @@
 - Java 17 toolchain unavailable
 - Blocked dependency downloads (network restrictions)
 
-***REMOVED******REMOVED*** How to Test on Your Phone
+## How to Test on Your Phone
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Push to Main
+### Step 1: Push to Main
 
 ```bash
 git push origin main
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Download APK from GitHub Actions
+### Step 2: Download APK from GitHub Actions
 
 1. Go to **GitHub → Actions** tab
 2. Find the latest **"Android Debug APK"** workflow run
 3. Download the artifact named **`scanium-app-debug-apk`** (zip file)
 
-***REMOVED******REMOVED******REMOVED*** Step 3: Install on Android Device
+### Step 3: Install on Android Device
 
 1. Unzip the downloaded artifact
 2. Transfer `app-debug.apk` to your Android device
@@ -30,7 +30,7 @@ git push origin main
 4. Tap the APK to install
 5. Launch Scanium and test your changes
 
-***REMOVED******REMOVED*** Workflow Details
+## Workflow Details
 
 The CI workflow automatically:
 
@@ -41,7 +41,7 @@ The CI workflow automatically:
 
 **Workflow file:** `.github/workflows/android-debug-apk.yml`
 
-***REMOVED******REMOVED*** Local Development
+## Local Development
 
 You CAN still run Gradle locally if you have:
 

@@ -1,8 +1,8 @@
-***REMOVED*** Google Sign-In Configuration
+# Google Sign-In Configuration
 
 This document provides comprehensive instructions for configuring Google Sign-In across all Scanium build flavors (dev, beta, prod) and redeploying the application with proper OAuth credentials.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium uses Google Sign-In via Android Credential Manager for user authentication. Due to different package names across build flavors, each flavor requires separate OAuth client registration in Google Cloud Console.
 
@@ -11,7 +11,7 @@ Scanium uses Google Sign-In via Android Credential Manager for user authenticati
 - `com.scanium.app.dev` (dev)
 - `com.scanium.app.beta` (beta)
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 **Symptom:** Google Sign-In works in dev flavor but fails in beta/prod with "credentials not available" error.
 
@@ -22,9 +22,9 @@ Scanium uses Google Sign-In via Android Credential Manager for user authenticati
 - `backend/src/config/index.ts:447` - Backend OAuth configuration
 - `backend/src/modules/auth/google/token-verifier.ts:25` - Token verification
 
-***REMOVED******REMOVED*** Authentication Flow
+## Authentication Flow
 
-***REMOVED******REMOVED******REMOVED*** High-Level Flow
+### High-Level Flow
 
 ```
 User Taps Sign In
@@ -42,7 +42,7 @@ Backend verifies token with Google OAuth2Client
 Session created, user authenticated
 ```
 
-***REMOVED******REMOVED******REMOVED*** Code Components
+### Code Components
 
 1. **Android Client** (`CredentialManagerAuthLauncher.kt`)
    - Initiates sign-in with `GetGoogleIdOption`
@@ -58,19 +58,19 @@ Session created, user authenticated
    - Reads `GOOGLE_OAUTH_CLIENT_ID` from environment
    - Used across all auth flows
 
-***REMOVED******REMOVED*** Google Cloud Console Setup
+## Google Cloud Console Setup
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Access Google Cloud Console
+### Step 1: Access Google Cloud Console
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Select your Scanium project (or create one if needed)
 3. Navigate to **APIs & Services** > **Credentials**
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Create OAuth Client IDs for Each Flavor
+### Step 2: Create OAuth Client IDs for Each Flavor
 
 You need to create **3 separate Web application OAuth clients** (one for each flavor).
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Create OAuth Client for PROD (`com.scanium.app`)
+#### Create OAuth Client for PROD (`com.scanium.app`)
 
 1. Click **+ CREATE CREDENTIALS** > **OAuth client ID**
 2. Select **Application type**: **Web application**
@@ -88,7 +88,7 @@ You need to create **3 separate Web application OAuth clients** (one for each fl
    - Format: `XXXXXXXXXX-YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY.apps.googleusercontent.com`
 8. Store this as `GOOGLE_OAUTH_CLIENT_ID_PROD`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Create OAuth Client for BETA (`com.scanium.app.beta`)
+#### Create OAuth Client for BETA (`com.scanium.app.beta`)
 
 1. Repeat the same process with:
    - **Name**: `Scanium Beta Web Client`
@@ -96,7 +96,7 @@ You need to create **3 separate Web application OAuth clients** (one for each fl
    - **Redirect URIs**: Same as prod (or beta-specific)
 2. **Copy the Client ID** and store as `GOOGLE_OAUTH_CLIENT_ID_BETA`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Create OAuth Client for DEV (`com.scanium.app.dev`)
+#### Create OAuth Client for DEV (`com.scanium.app.dev`)
 
 1. Repeat the process with:
    - **Name**: `Scanium Dev Web Client`
@@ -108,13 +108,13 @@ You need to create **3 separate Web application OAuth clients** (one for each fl
    - **Redirect URIs**: Local and remote dev endpoints
 2. **Copy the Client ID** and store as `GOOGLE_OAUTH_CLIENT_ID_DEV`
 
-***REMOVED******REMOVED******REMOVED*** Step 3: Enable Google+ API
+### Step 3: Enable Google+ API
 
 1. In Google Cloud Console, go to **APIs & Services** > **Library**
 2. Search for **Google+ API**
 3. Click **ENABLE** if not already enabled
 
-***REMOVED******REMOVED******REMOVED*** Step 4: Configure OAuth Consent Screen
+### Step 4: Configure OAuth Consent Screen
 
 1. Go to **APIs & Services** > **OAuth consent screen**
 2. Select **External** user type (or Internal if G Workspace)
@@ -129,13 +129,13 @@ You need to create **3 separate Web application OAuth clients** (one for each fl
 5. Save and continue
 6. Add test users if app is in Testing mode
 
-***REMOVED******REMOVED*** Android Configuration
+## Android Configuration
 
-***REMOVED******REMOVED******REMOVED*** Option 1: BuildConfig Fields (Recommended)
+### Option 1: BuildConfig Fields (Recommended)
 
 This approach uses flavor-specific BuildConfig fields to inject the correct Client ID at build time.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Update `androidApp/build.gradle.kts`
+#### 1. Update `androidApp/build.gradle.kts`
 
 Add a new BuildConfig field for each flavor:
 
@@ -207,7 +207,7 @@ productFlavors {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Update `CredentialManagerAuthLauncher.kt`
+#### 2. Update `CredentialManagerAuthLauncher.kt`
 
 Replace the hardcoded constant with the BuildConfig value:
 
@@ -234,11 +234,11 @@ companion object {
 
 **File location:** `androidApp/src/main/java/com/scanium/app/auth/CredentialManagerAuthLauncher.kt:59-64`
 
-***REMOVED******REMOVED******REMOVED*** Option 2: Flavor-Specific Source Sets (Alternative)
+### Option 2: Flavor-Specific Source Sets (Alternative)
 
 If you prefer not to expose Client IDs in BuildConfig, you can create flavor-specific constant files.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Create flavor directories
+#### 1. Create flavor directories
 
 ```bash
 mkdir -p androidApp/src/prod/java/com/scanium/app/auth
@@ -246,7 +246,7 @@ mkdir -p androidApp/src/dev/java/com/scanium/app/auth
 mkdir -p androidApp/src/beta/java/com/scanium/app/auth
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Create `AuthConfig.kt` for each flavor
+#### 2. Create `AuthConfig.kt` for each flavor
 
 **`androidApp/src/prod/java/com/scanium/app/auth/AuthConfig.kt`:**
 ```kotlin
@@ -275,7 +275,7 @@ internal object AuthConfig {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Update `CredentialManagerAuthLauncher.kt`
+#### 3. Update `CredentialManagerAuthLauncher.kt`
 
 ```kotlin
 companion object {
@@ -286,11 +286,11 @@ companion object {
 }
 ```
 
-***REMOVED******REMOVED*** Backend Configuration
+## Backend Configuration
 
 The backend needs to know which OAuth Client ID to use for token verification. Since the backend typically serves all flavors, you have two options:
 
-***REMOVED******REMOVED******REMOVED*** Option 1: Single Backend for All Flavors (Simpler)
+### Option 1: Single Backend for All Flavors (Simpler)
 
 Use the **production Client ID** in backend configuration. Configure all three Google OAuth clients (prod, dev, beta) to authorize the same backend origin.
 
@@ -305,7 +305,7 @@ GOOGLE_OAUTH_CLIENT_ID=PROD_CLIENT_ID_HERE.apps.googleusercontent.com
 
 This way, tokens issued by any flavor can be verified by the backend.
 
-***REMOVED******REMOVED******REMOVED*** Option 2: Environment-Specific Backends (Advanced)
+### Option 2: Environment-Specific Backends (Advanced)
 
 If you have separate backend deployments for dev/beta/prod:
 
@@ -326,22 +326,22 @@ GOOGLE_OAUTH_CLIENT_ID=PROD_CLIENT_ID_HERE.apps.googleusercontent.com
 
 Update Android flavors to point to respective backend URLs in `local.properties`:
 ```properties
-***REMOVED*** Dev flavor
+# Dev flavor
 scanium.api.base.url.debug=http://localhost:3000
 scanium.api.base.url.release=https://dev.scanium.gtemp1.com
 
-***REMOVED*** Beta flavor
+# Beta flavor
 scanium.api.base.url.beta.debug=https://beta.scanium.gtemp1.com
 scanium.api.base.url.beta.release=https://beta.scanium.gtemp1.com
 
-***REMOVED*** Prod flavor
+# Prod flavor
 scanium.api.base.url.prod.debug=https://scanium.gtemp1.com
 scanium.api.base.url.prod.release=https://scanium.gtemp1.com
 ```
 
-***REMOVED******REMOVED*** Build and Deployment
+## Build and Deployment
 
-***REMOVED******REMOVED******REMOVED*** 1. Configure Credentials
+### 1. Configure Credentials
 
 Update `androidApp/build.gradle.kts` with the three Client IDs you obtained from Google Cloud Console.
 
@@ -369,35 +369,35 @@ buildConfigField(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Update Backend Configuration
+### 2. Update Backend Configuration
 
 Update `backend/.env` with the appropriate Client ID:
 
 ```bash
-***REMOVED*** If using single backend for all flavors (Option 1):
+# If using single backend for all flavors (Option 1):
 GOOGLE_OAUTH_CLIENT_ID=123456789-abc123def456ghi789jkl012mno345pq.apps.googleusercontent.com
 
-***REMOVED*** Ensure all other auth variables are set:
+# Ensure all other auth variables are set:
 AUTH_SESSION_SECRET=your-session-secret-here
 AUTH_SESSION_EXPIRY_SECONDS=86400
 AUTH_REFRESH_TOKEN_EXPIRY_SECONDS=2592000
 SESSION_SIGNING_SECRET=your-signing-secret-here
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Build Android App
+### 3. Build Android App
 
 ```bash
-***REMOVED*** Build dev flavor
+# Build dev flavor
 ./gradlew :androidApp:assembleDevDebug
 
-***REMOVED*** Build beta flavor
+# Build beta flavor
 ./gradlew :androidApp:assembleBetaDebug
 
-***REMOVED*** Build prod flavor (release)
+# Build prod flavor (release)
 ./gradlew :androidApp:assembleProdRelease
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Deploy Backend
+### 4. Deploy Backend
 
 ```bash
 cd backend
@@ -410,22 +410,22 @@ Or using the dev script:
 scripts/backend/start-dev.sh
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Install and Test
+### 5. Install and Test
 
 ```bash
-***REMOVED*** Install dev build
+# Install dev build
 adb install androidApp/build/outputs/apk/dev/debug/androidApp-dev-debug.apk
 
-***REMOVED*** Install beta build
+# Install beta build
 adb install androidApp/build/outputs/apk/beta/debug/androidApp-beta-debug.apk
 
-***REMOVED*** Install prod build
+# Install prod build
 adb install androidApp/build/outputs/apk/prod/release/androidApp-prod-release.apk
 ```
 
-***REMOVED******REMOVED*** Testing and Validation
+## Testing and Validation
 
-***REMOVED******REMOVED******REMOVED*** Manual Testing Checklist
+### Manual Testing Checklist
 
 For **each flavor** (dev, beta, prod):
 
@@ -453,23 +453,23 @@ For **each flavor** (dev, beta, prod):
    - Tap "Sign Out"
    - Should return to sign-in screen
 
-***REMOVED******REMOVED******REMOVED*** Backend Verification
+### Backend Verification
 
 Check backend logs for successful token verification:
 
 ```bash
-***REMOVED*** View backend logs
+# View backend logs
 cd backend
 npm run logs
 
-***REMOVED*** Look for:
-***REMOVED*** - "Google ID token verified successfully"
-***REMOVED*** - "User authenticated: [email]"
+# Look for:
+# - "Google ID token verified successfully"
+# - "User authenticated: [email]"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Troubleshooting
+### Troubleshooting
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Error: "Credentials not available"
+#### Error: "Credentials not available"
 
 **Cause:** OAuth Client ID not registered for the flavor's package name.
 
@@ -483,7 +483,7 @@ npm run logs
    ./gradlew :androidApp:assembleDevDebug
    ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Error: "Invalid ID token"
+#### Error: "Invalid ID token"
 
 **Cause:** Backend Client ID doesn't match the Android Client ID.
 
@@ -495,7 +495,7 @@ npm run logs
    scripts/backend/start-dev.sh
    ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Error: "Audience mismatch"
+#### Error: "Audience mismatch"
 
 **Cause:** Token was issued for a different Client ID than backend expects.
 
@@ -504,7 +504,7 @@ npm run logs
 2. Check that you didn't mix up dev/beta/prod Client IDs
 3. Verify OAuth client authorized origins include your backend URL
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Sign-In Works in Dev but Not Beta/Prod
+#### Sign-In Works in Dev but Not Beta/Prod
 
 **Cause:** You only registered a Client ID for dev flavor.
 
@@ -513,7 +513,7 @@ npm run logs
 2. Update `build.gradle.kts` with the new Client IDs
 3. Rebuild affected flavors
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Error: "API not enabled"
+#### Error: "API not enabled"
 
 **Cause:** Google+ API not enabled in Google Cloud Console.
 
@@ -522,9 +522,9 @@ npm run logs
 2. Search "Google+ API"
 3. Click ENABLE
 
-***REMOVED******REMOVED*** Security Considerations
+## Security Considerations
 
-***REMOVED******REMOVED******REMOVED*** Client ID Storage
+### Client ID Storage
 
 **BuildConfig Approach:**
 - Client IDs are **not secrets** - they're meant to identify your app to Google
@@ -538,7 +538,7 @@ npm run logs
 
 **Recommendation:** Use BuildConfig approach for simplicity. Client IDs are not sensitive.
 
-***REMOVED******REMOVED******REMOVED*** Backend Secret Management
+### Backend Secret Management
 
 **Critical:** Never commit backend secrets to version control.
 
@@ -552,7 +552,7 @@ Store secrets in:
 - Secret management service (AWS Secrets Manager, Google Secret Manager)
 - Environment variables in deployment platform
 
-***REMOVED******REMOVED******REMOVED*** Token Security
+### Token Security
 
 Google ID tokens contain:
 - User email
@@ -570,21 +570,21 @@ Google ID tokens contain:
 
 This is handled by `OAuth2Client.verifyIdToken()` in `token-verifier.ts`.
 
-***REMOVED******REMOVED*** File Reference
+## File Reference
 
-***REMOVED******REMOVED******REMOVED*** Android Files Modified
+### Android Files Modified
 
 - `androidApp/build.gradle.kts` - Add `GOOGLE_SERVER_CLIENT_ID` BuildConfig field per flavor
 - `androidApp/src/main/java/com/scanium/app/auth/CredentialManagerAuthLauncher.kt` - Use BuildConfig value
 
-***REMOVED******REMOVED******REMOVED*** Backend Files (No Changes Needed)
+### Backend Files (No Changes Needed)
 
 - `backend/src/config/index.ts` - Already reads `GOOGLE_OAUTH_CLIENT_ID`
 - `backend/src/modules/auth/google/token-verifier.ts` - Already verifies tokens correctly
 - `backend/src/modules/auth/google/routes.ts` - Already handles `/v1/auth/google` endpoint
 - `backend/.env` - Update `GOOGLE_OAUTH_CLIENT_ID` value only
 
-***REMOVED******REMOVED*** Additional Resources
+## Additional Resources
 
 - [Google Sign-In for Android](https://developers.google.com/identity/sign-in/android/start)
 - [Credential Manager API](https://developer.android.com/training/sign-in/credential-manager)
@@ -592,7 +592,7 @@ This is handled by `OAuth2Client.verifyIdToken()` in `token-verifier.ts`.
 - [Scanium FLAVOR_GATING.md](./FLAVOR_GATING.md) - Build flavor architecture
 - [Scanium Backend README](../../infra/README.md) - Backend deployment guide
 
-***REMOVED******REMOVED*** Revision History
+## Revision History
 
 | Date       | Author  | Changes                                      |
 |------------|---------|----------------------------------------------|

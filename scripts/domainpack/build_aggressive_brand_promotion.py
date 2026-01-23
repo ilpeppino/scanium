@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Build aggressive brand promotion payload from eBay UK brand candidates.
 Filters obvious junk, normalizes, dedupes, and limits to top 20 per subtype.
@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Set
 from collections import defaultdict
 
-***REMOVED*** Junk patterns to exclude
+# Junk patterns to exclude
 JUNK_KEYWORDS = {
     "unbranded", "unknown", "generic", "does not apply",
     "n/a", "na", "none", "not applicable", "no brand"
@@ -20,21 +20,21 @@ def is_junk_brand(brand: str) -> bool:
     """Check if brand should be filtered out as junk."""
     brand_lower = brand.lower().strip()
 
-    ***REMOVED*** Empty or too short
+    # Empty or too short
     if len(brand_lower) < 2:
         return True
 
-    ***REMOVED*** Check junk keywords
+    # Check junk keywords
     for keyword in JUNK_KEYWORDS:
         if keyword in brand_lower:
             return True
 
-    ***REMOVED*** URL-like (contains http, www, .com, etc.)
+    # URL-like (contains http, www, .com, etc.)
     if any(pattern in brand_lower for pattern in ['http', 'www.', '.com', '.co.uk', '@']):
         return True
 
-    ***REMOVED*** Pure model codes (mostly digits/symbols, not brand-like)
-    ***REMOVED*** Allow brands with letters, but filter pure numeric codes like "1234-AB"
+    # Pure model codes (mostly digits/symbols, not brand-like)
+    # Allow brands with letters, but filter pure numeric codes like "1234-AB"
     if re.match(r'^[\d\-_/]+$', brand_lower):
         return True
 
@@ -42,9 +42,9 @@ def is_junk_brand(brand: str) -> bool:
 
 def normalize_brand(brand: str) -> str:
     """Normalize brand name: trim, collapse spaces, preserve casing."""
-    ***REMOVED*** Trim
+    # Trim
     normalized = brand.strip()
-    ***REMOVED*** Collapse multiple spaces
+    # Collapse multiple spaces
     normalized = re.sub(r'\s+', ' ', normalized)
     return normalized
 
@@ -57,22 +57,22 @@ def process_brands(brands: List[str], max_brands: int = 20) -> List[str]:
     result: List[str] = []
 
     for brand in brands:
-        ***REMOVED*** Skip junk
+        # Skip junk
         if is_junk_brand(brand):
             continue
 
-        ***REMOVED*** Normalize
+        # Normalize
         normalized = normalize_brand(brand)
         normalized_lower = normalized.lower()
 
-        ***REMOVED*** Dedupe case-insensitively
+        # Dedupe case-insensitively
         if normalized_lower in seen_lower:
             continue
 
         seen_lower.add(normalized_lower)
         result.append(normalized)
 
-        ***REMOVED*** Limit to max
+        # Limit to max
         if len(result) >= max_brands:
             break
 
@@ -81,13 +81,13 @@ def process_brands(brands: List[str], max_brands: int = 20) -> List[str]:
 def build_promotion_payload(input_path: Path, output_path: Path, metrics_path: Path):
     """Build aggressive promotion payload and metrics."""
 
-    ***REMOVED*** Load input
+    # Load input
     with open(input_path) as f:
         data = json.load(f)
 
     candidates = data.get("candidatesBySubtype", {})
 
-    ***REMOVED*** Process each subtype
+    # Process each subtype
     promotion_payload = {}
     stats = {
         "total_subtypes": 0,
@@ -98,10 +98,10 @@ def build_promotion_payload(input_path: Path, output_path: Path, metrics_path: P
     for subtype_key, subtype_data in candidates.items():
         brands = subtype_data.get("brands", [])
 
-        ***REMOVED*** Process brands
+        # Process brands
         processed = process_brands(brands, max_brands=20)
 
-        if processed:  ***REMOVED*** Only include if we have valid brands
+        if processed:  # Only include if we have valid brands
             promotion_payload[subtype_key] = processed
             stats["total_subtypes"] += 1
             stats["total_brands_added"] += len(processed)
@@ -111,28 +111,28 @@ def build_promotion_payload(input_path: Path, output_path: Path, metrics_path: P
                 "brand_count": len(processed)
             })
 
-    ***REMOVED*** Sort by brand count descending
+    # Sort by brand count descending
     stats["subtypes_by_brand_count"].sort(key=lambda x: x["brand_count"], reverse=True)
 
-    ***REMOVED*** Write promotion payload
+    # Write promotion payload
     with open(output_path, 'w') as f:
         json.dump(promotion_payload, f, indent=2)
 
-    ***REMOVED*** Write metrics
+    # Write metrics
     with open(metrics_path, 'w') as f:
-        f.write("***REMOVED*** eBay UK Brand Promotion Metrics (Aggressive)\n\n")
-        f.write(f"***REMOVED******REMOVED*** Summary\n\n")
+        f.write("# eBay UK Brand Promotion Metrics (Aggressive)\n\n")
+        f.write(f"## Summary\n\n")
         f.write(f"- **Total subtypes with brands**: {stats['total_subtypes']}\n")
         f.write(f"- **Total brands to add**: {stats['total_brands_added']}\n")
         f.write(f"- **Average brands per subtype**: {stats['total_brands_added'] / max(stats['total_subtypes'], 1):.1f}\n\n")
 
-        f.write(f"***REMOVED******REMOVED*** Top 10 Subtypes by Brand Count\n\n")
+        f.write(f"## Top 10 Subtypes by Brand Count\n\n")
         f.write("| Rank | Subtype | Display Name | Brands |\n")
         f.write("|------|---------|--------------|--------|\n")
         for i, item in enumerate(stats["subtypes_by_brand_count"][:10], 1):
             f.write(f"| {i} | `{item['subtype']}` | {item['display_name']} | {item['brand_count']} |\n")
 
-        f.write(f"\n***REMOVED******REMOVED*** All Subtypes (sorted by brand count)\n\n")
+        f.write(f"\n## All Subtypes (sorted by brand count)\n\n")
         f.write("| Subtype | Display Name | Brands |\n")
         f.write("|---------|--------------|--------|\n")
         for item in stats["subtypes_by_brand_count"]:

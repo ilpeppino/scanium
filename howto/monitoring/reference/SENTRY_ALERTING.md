@@ -1,8 +1,8 @@
-***REMOVED*** Sentry Alerting Configuration
+# Sentry Alerting Configuration
 
 This document covers Sentry project configuration for crash and error monitoring in Scanium.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Sentry handles crash reporting and error tracking separately from the LGTM observability stack. This
 separation is intentional:
@@ -10,7 +10,7 @@ separation is intentional:
 - **Sentry excels at:** Crash symbolication, stack grouping, issue deduplication, release tracking
 - **LGTM excels at:** Metrics, logs, traces, dashboards, custom business alerts
 
-***REMOVED******REMOVED*** Release Naming Scheme
+## Release Naming Scheme
 
 Scanium uses a consistent release identifier format across all environments:
 
@@ -27,7 +27,7 @@ This format
 follows [Sentry's recommended release naming](https://docs.sentry.io/platforms/android/configuration/releases/)
 and is set automatically in the app initialization.
 
-***REMOVED******REMOVED******REMOVED*** Version Components
+### Version Components
 
 | Component      | Source                                               | Example  |
 |----------------|------------------------------------------------------|----------|
@@ -41,7 +41,7 @@ SCANIUM_VERSION_CODE: ${{ github.run_number }}
 SCANIUM_VERSION_NAME: "1.0.${{ github.run_number }}"
 ```
 
-***REMOVED******REMOVED*** Environment Configuration
+## Environment Configuration
 
 Two environments are used:
 
@@ -52,7 +52,7 @@ Two environments are used:
 
 Environment is set automatically based on build type.
 
-***REMOVED******REMOVED*** Tags Reference
+## Tags Reference
 
 The app sets these Sentry tags at initialization for filtering and grouping:
 
@@ -68,7 +68,7 @@ The app sets these Sentry tags at initialization for filtering and grouping:
 | `cloud_allowed`       | Cloud classification enabled | `true`, `false`            |
 | `domain_pack_version` | Domain model version         | `unknown` (placeholder)    |
 
-***REMOVED******REMOVED******REMOVED*** Dynamic Tag Updates
+### Dynamic Tag Updates
 
 These tags are updated in real-time as user preferences change:
 
@@ -76,9 +76,9 @@ These tags are updated in real-time as user preferences change:
 - `cloud_allowed` - Updated when cloud classification permission changes
 - `session_id` - Set at startup; new sessions create new IDs
 
-***REMOVED******REMOVED*** DSN Security (SEC-002)
+## DSN Security (SEC-002)
 
-***REMOVED******REMOVED******REMOVED*** Understanding DSN Exposure
+### Understanding DSN Exposure
 
 Sentry DSNs are intentionally "semi-public" by design. The DSN is embedded in the client
 application (APK) and can be extracted, but this is expected behavior:
@@ -89,11 +89,11 @@ application (APK) and can be extracted, but this is expected behavior:
 
 Reference: [Sentry DSN Explainer](https://docs.sentry.io/concepts/key-concepts/dsn-explainer/)
 
-***REMOVED******REMOVED******REMOVED*** Required Mitigations
+### Required Mitigations
 
 Configure these protections in Sentry to prevent abuse:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Rate Limiting (Quota Management)
+#### 1. Rate Limiting (Quota Management)
 
 Limit events per period to prevent spam attacks:
 
@@ -111,7 +111,7 @@ Limit events per period to prevent spam attacks:
 | 1K-10K DAU | 10,000      | 100,000    |
 | > 10K DAU  | 50,000      | 500,000    |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Inbound Filters
+#### 2. Inbound Filters
 
 Block known bad actors and suspicious traffic:
 
@@ -125,7 +125,7 @@ Block known bad actors and suspicious traffic:
     - Go to **Settings → Processing → Inbound Data Filters**
     - Add suspicious IP ranges to blocklist
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. DSN Rotation Schedule
+#### 3. DSN Rotation Schedule
 
 Rotate the DSN monthly to invalidate any leaked or abused keys:
 
@@ -155,7 +155,7 @@ Rotate the DSN monthly to invalidate any leaked or abused keys:
 | 15th  | Monitor adoption of new version     |
 | 30th  | Disable old DSN if adoption > 90%   |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Monitoring for Abuse
+#### 4. Monitoring for Abuse
 
 Set up alerts to detect DSN abuse:
 
@@ -167,7 +167,7 @@ Metric: count()
 Trigger: When count() increases by 500% in 1 hour
 
 Actions:
-  - Slack notification to ***REMOVED***security-alerts
+  - Slack notification to #security-alerts
   - Review event sources and consider DSN rotation
 ```
 
@@ -178,7 +178,7 @@ Actions:
 - Events from unexpected geographic regions
 - Duplicate events with identical timestamps
 
-***REMOVED******REMOVED******REMOVED*** Security Audit Checklist
+### Security Audit Checklist
 
 Review monthly:
 
@@ -190,30 +190,30 @@ Review monthly:
 
 ---
 
-***REMOVED******REMOVED*** Sentry Project Settings Checklist
+## Sentry Project Settings Checklist
 
 Configure these settings in Sentry UI (Project Settings):
 
-***REMOVED******REMOVED******REMOVED*** General Settings
+### General Settings
 
 - [ ] **Project Name:** `scanium-android`
 - [ ] **Platform:** Android
 - [ ] **Default Environment:** `prod`
 - [ ] **DSN:** Stored in `SCANIUM_SENTRY_DSN` (never commit to repo)
 
-***REMOVED******REMOVED******REMOVED*** Issue Grouping
+### Issue Grouping
 
 - [ ] Enable **Fingerprint Rules** if needed for custom grouping
 - [ ] Review **Stack Trace Rules** for obfuscated code (ProGuard/R8)
 - [ ] Upload **ProGuard mapping files** for each release (see Release Workflow)
 
-***REMOVED******REMOVED******REMOVED*** Data Scrubbing
+### Data Scrubbing
 
 - [ ] Enable **Data Scrubbing** for PII protection
 - [ ] Add custom scrubbing rules for any sensitive fields
 - [ ] Review default scrubbing (IP addresses, credentials)
 
-***REMOVED******REMOVED******REMOVED*** Inbound Filters
+### Inbound Filters
 
 Recommended filters to reduce noise:
 
@@ -221,9 +221,9 @@ Recommended filters to reduce noise:
 - [ ] **Filter legacy browsers** (N/A for mobile)
 - [ ] **Filter known web crawlers** (N/A for mobile)
 
-***REMOVED******REMOVED*** Alert Rules Configuration
+## Alert Rules Configuration
 
-***REMOVED******REMOVED******REMOVED*** Alert Rule 1: Crash Spike
+### Alert Rule 1: Crash Spike
 
 Detect sudden increases in crash rate.
 
@@ -241,7 +241,7 @@ Filters (If):
   - Event level is fatal OR error
 
 Actions (Then):
-  - Send notification to: ***REMOVED***scanium-alerts (Slack)
+  - Send notification to: #scanium-alerts (Slack)
   - Send email to: team@example.com
 
 Frequency: Alert once per 30 minutes per issue
@@ -256,7 +256,7 @@ Frequency: Alert once per 30 minutes per issue
 | 10K-100K DAU | > 50 crashes              | 10 min      |
 | > 100K DAU   | > 0.1% session crash rate | 10 min      |
 
-***REMOVED******REMOVED******REMOVED*** Alert Rule 2: New Issue (Regressions)
+### Alert Rule 2: New Issue (Regressions)
 
 Catch new errors introduced in a release.
 
@@ -273,12 +273,12 @@ Filters (If):
   - Issue has happened at least 3 times
 
 Actions (Then):
-  - Send notification to: ***REMOVED***scanium-alerts (Slack)
+  - Send notification to: #scanium-alerts (Slack)
 
 Frequency: Alert immediately
 ```
 
-***REMOVED******REMOVED******REMOVED*** Alert Rule 3: Regression Detected
+### Alert Rule 3: Regression Detected
 
 Alert when a resolved issue reappears.
 
@@ -293,13 +293,13 @@ Filters (If):
   - Issue category is Error
 
 Actions (Then):
-  - Send notification to: ***REMOVED***scanium-alerts (Slack)
+  - Send notification to: #scanium-alerts (Slack)
   - Assign to: original resolver (if available)
 
 Frequency: Alert immediately
 ```
 
-***REMOVED******REMOVED******REMOVED*** Alert Rule 4: High Error Rate (Metric Alert)
+### Alert Rule 4: High Error Rate (Metric Alert)
 
 Use Sentry's metric alerts for rate-based detection.
 
@@ -322,30 +322,30 @@ Actions:
   - Warning: Slack only
 ```
 
-***REMOVED******REMOVED*** Issue Ownership & Routing
+## Issue Ownership & Routing
 
-***REMOVED******REMOVED******REMOVED*** Code Owners (Optional)
+### Code Owners (Optional)
 
 Define ownership rules in Sentry to auto-assign issues:
 
 ```
-***REMOVED*** Sentry Ownership Rules (Project Settings → Issue Owners)
+# Sentry Ownership Rules (Project Settings → Issue Owners)
 
-***REMOVED*** ML/Classification issues
+# ML/Classification issues
 path:**/classification/* team:ml
 path:**/inference/* team:ml
 tags.scan_mode:CLOUD team:ml
 
-***REMOVED*** Settings/Preferences
+# Settings/Preferences
 path:**/settings/* team:android
 path:**/preferences/* team:android
 
-***REMOVED*** Networking
+# Networking
 path:**/network/* team:backend
 path:**/api/* team:backend
 ```
 
-***REMOVED******REMOVED******REMOVED*** Routing by Tags
+### Routing by Tags
 
 Use tag-based routing for targeted alerts:
 
@@ -354,16 +354,16 @@ Use tag-based routing for targeted alerts:
 - `scan_mode:CLOUD` → Include ML team
 - `platform:android` → Android team
 
-***REMOVED******REMOVED*** Integration Setup
+## Integration Setup
 
-***REMOVED******REMOVED******REMOVED*** Slack Integration
+### Slack Integration
 
 1. Go to Settings → Integrations → Slack
 2. Install Sentry app to workspace
-3. Configure default channel: `***REMOVED***scanium-alerts`
+3. Configure default channel: `#scanium-alerts`
 4. Enable issue link unfurling
 
-***REMOVED******REMOVED******REMOVED*** GitHub Integration
+### GitHub Integration
 
 1. Go to Settings → Integrations → GitHub
 2. Connect repository: `ilpeppino/scanium`
@@ -372,26 +372,26 @@ Use tag-based routing for targeted alerts:
     - [ ] Suspect commits
     - [ ] Issue sync
 
-***REMOVED******REMOVED******REMOVED*** PagerDuty (Production)
+### PagerDuty (Production)
 
 1. Go to Settings → Integrations → PagerDuty
 2. Create service for Scanium
 3. Use in Critical alert actions
 
-***REMOVED******REMOVED*** Release Workflow
+## Release Workflow
 
-***REMOVED******REMOVED******REMOVED*** Automatic Release Creation
+### Automatic Release Creation
 
 Sentry automatically creates releases when the app reports crashes with a release version.
 
-***REMOVED******REMOVED******REMOVED*** ProGuard/R8 Mapping Upload
+### ProGuard/R8 Mapping Upload
 
 For readable stack traces in release builds, upload mapping files:
 
 **In CI/CD (GitHub Actions):**
 
 ```yaml
-***REMOVED*** Add to android-release-bundle.yml
+# Add to android-release-bundle.yml
 - name: Upload Sentry mapping
   env:
     SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -406,22 +406,22 @@ For readable stack traces in release builds, upload mapping files:
 **Manually:**
 
 ```bash
-***REMOVED*** Install sentry-cli
+# Install sentry-cli
 npm install -g @sentry/cli
 
-***REMOVED*** Authenticate
+# Authenticate
 sentry-cli login
 
-***REMOVED*** Upload mapping
+# Upload mapping
 sentry-cli releases --org=your-org --project=scanium-android \
   files "com.scanium.app@1.0.42+42" \
   upload-mappings --android-manifest androidApp/src/main/AndroidManifest.xml \
   androidApp/build/outputs/mapping/release/mapping.txt
 ```
 
-***REMOVED******REMOVED*** Testing Crash Reporting
+## Testing Crash Reporting
 
-***REMOVED******REMOVED******REMOVED*** Debug Build Test
+### Debug Build Test
 
 In debug builds, use Developer Settings → "Test Crash Reporting":
 
@@ -430,7 +430,7 @@ In debug builds, use Developer Settings → "Test Crash Reporting":
 3. Tap "Crash Now" to trigger test crash
 4. Verify crash appears in Sentry with tag `crash_test: true`
 
-***REMOVED******REMOVED******REMOVED*** Programmatic Test
+### Programmatic Test
 
 ```kotlin
 // Only in debug builds
@@ -441,7 +441,7 @@ if (BuildConfig.DEBUG) {
 }
 ```
 
-***REMOVED******REMOVED*** Diagnostics Bundle Attachment
+## Diagnostics Bundle Attachment
 
 Every crash includes a `diagnostics.json` attachment with:
 
@@ -468,7 +468,7 @@ Every crash includes a `diagnostics.json` attachment with:
 
 This provides crash context even when breadcrumbs are insufficient.
 
-***REMOVED******REMOVED*** User Consent
+## User Consent
 
 Crash reporting respects user consent:
 
@@ -477,7 +477,7 @@ Crash reporting respects user consent:
 
 The app filters events in `beforeSend` based on user preference, ensuring GDPR/privacy compliance.
 
-***REMOVED******REMOVED*** See Also
+## See Also
 
 - [TRIAGE_RUNBOOK.md](./TRIAGE_RUNBOOK.md) - How to investigate issues using Sentry + Grafana
 - [monitoring/README.md](../../monitoring/README.md) - LGTM stack setup and Grafana alerts

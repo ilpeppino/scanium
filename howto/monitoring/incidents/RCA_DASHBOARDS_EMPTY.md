@@ -1,4 +1,4 @@
-***REMOVED*** RCA: Empty Backend and Mobile Dashboards
+# RCA: Empty Backend and Mobile Dashboards
 
 **Incident:** Backend and Mobile dashboards showing no data in Grafana
 **Severity:** High (blocks release)
@@ -7,7 +7,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Backend and mobile dashboards are empty due to **network isolation between backend and monitoring
 stack**, causing metrics scraping to fail, plus **docker log collection errors** preventing log
@@ -15,7 +15,7 @@ ingestion. Mobile dashboards are also empty due to absence of mobile telemetry i
 
 ---
 
-***REMOVED******REMOVED*** Symptoms
+## Symptoms
 
 1. **Backend Dashboards Empty:**
     - `backend-health.json` panels show no data
@@ -31,7 +31,7 @@ ingestion. Mobile dashboards are also empty due to absence of mobile telemetry i
 
 ---
 
-***REMOVED******REMOVED*** Timeline
+## Timeline
 
 - **2026-01-09 16:52:** Loki data directory last updated (initial deployment)
 - **2026-01-11 11:36:** Alloy data directory last updated
@@ -42,11 +42,11 @@ ingestion. Mobile dashboards are also empty due to absence of mobile telemetry i
 
 ---
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 
-***REMOVED******REMOVED******REMOVED*** 1. Metrics Pipeline (Backend → Mimir)
+### 1. Metrics Pipeline (Backend → Mimir)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Query: `up` metric for all targets
+#### Query: `up` metric for all targets
 
 ```bash
 curl 'http://127.0.0.1:9009/prometheus/api/v1/query?query=up'
@@ -61,7 +61,7 @@ curl 'http://127.0.0.1:9009/prometheus/api/v1/query?query=up'
 | mimir | mimir | scanium-mimir | 1 (UP) ✅ |
 | tempo | tempo | scanium-tempo | 1 (UP) ✅ |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Query: Backend scrape metadata
+#### Query: Backend scrape metadata
 
 ```bash
 curl 'http://127.0.0.1:9009/prometheus/api/v1/query?query={job="scanium-backend"}'
@@ -74,7 +74,7 @@ curl 'http://127.0.0.1:9009/prometheus/api/v1/query?query={job="scanium-backend"
 - `scrape_series_added`: **0**
 - `scrape_duration_seconds`: 0.037s (scrape attempt succeeds, but gets nothing)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Verification: Backend /metrics endpoint
+#### Verification: Backend /metrics endpoint
 
 ```bash
 curl http://172.21.0.3:8080/metrics
@@ -83,16 +83,16 @@ curl http://172.21.0.3:8080/metrics
 **Result:** ✅ **Backend metrics ARE available!**
 
 ```
-***REMOVED*** HELP scanium_process_cpu_user_seconds_total Total user CPU time spent in seconds.
-***REMOVED*** TYPE scanium_process_cpu_user_seconds_total counter
+# HELP scanium_process_cpu_user_seconds_total Total user CPU time spent in seconds.
+# TYPE scanium_process_cpu_user_seconds_total counter
 scanium_process_cpu_user_seconds_total 103.065
 ...
 (many more metrics)
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Logs Pipeline (Backend → Loki)
+### 2. Logs Pipeline (Backend → Loki)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Query: Loki labels
+#### Query: Loki labels
 
 ```bash
 curl 'http://127.0.0.1:3100/loki/api/v1/labels'
@@ -104,7 +104,7 @@ curl 'http://127.0.0.1:3100/loki/api/v1/labels'
 {"status":"success","data":["env","source"]}
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Query: Source label values
+#### Query: Source label values
 
 ```bash
 curl 'http://127.0.0.1:3100/loki/api/v1/label/source/values'
@@ -119,7 +119,7 @@ curl 'http://127.0.0.1:3100/loki/api/v1/label/source/values'
 ❌ **Expected:** `source=scanium-backend` (per alloy.hcl line 131)
 ❌ **Actual:** `source=docker` (default docker driver label, not our custom label)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Query: Backend logs
+#### Query: Backend logs
 
 ```bash
 curl 'http://127.0.0.1:3100/loki/api/v1/query' --data-urlencode 'query={source="scanium-backend"}' --data-urlencode 'limit=5'
@@ -133,7 +133,7 @@ curl 'http://127.0.0.1:3100/loki/api/v1/query' --data-urlencode 'query={source="
 
 **No backend logs found!** ❌
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Alloy Docker Log Collection Errors
+#### Alloy Docker Log Collection Errors
 
 ```
 ts=2026-01-12T19:32:49.838726325Z level=error
@@ -150,7 +150,7 @@ ts=2026-01-12T19:32:49.839163935Z level=warn
 
 **Docker log collection is failing continuously.**
 
-***REMOVED******REMOVED******REMOVED*** 3. Network Topology Analysis
+### 3. Network Topology Analysis
 
 From `monitoring/rca/runtime-inventory.md`:
 
@@ -178,9 +178,9 @@ prometheus.scrape "backend" {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Dashboard Query Requirements
+### 4. Dashboard Query Requirements
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Backend Dashboards (`backend-health.json`, `backend-api-performance.json`)
+#### Backend Dashboards (`backend-health.json`, `backend-api-performance.json`)
 
 **Metrics Queries:**
 
@@ -202,7 +202,7 @@ prometheus.scrape "backend" {
 - `env`
 - `level` (extracted from log JSON)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Mobile Dashboards (`mobile-app-health.json`)
+#### Mobile Dashboards (`mobile-app-health.json`)
 
 **Logs Queries:**
 
@@ -221,9 +221,9 @@ prometheus.scrape "backend" {
 
 ---
 
-***REMOVED******REMOVED*** Root Causes
+## Root Causes
 
-***REMOVED******REMOVED******REMOVED*** RC1: Network Isolation (Backend Metrics)
+### RC1: Network Isolation (Backend Metrics)
 
 **Problem:** Backend container is on `compose_scanium_net`, Alloy is on `backend_scanium-network`.
 These are separate Docker networks with no connectivity.
@@ -242,7 +242,7 @@ These are separate Docker networks with no connectivity.
 - The `backend_scanium-network` was created by monitoring compose, but backend never joined it
 - Backend remains on its own `compose_scanium_net`
 
-***REMOVED******REMOVED******REMOVED*** RC2: Docker Log Collection Failure (Backend Logs)
+### RC2: Docker Log Collection Failure (Backend Logs)
 
 **Problem:** Alloy's `loki.source.docker.backend` component is experiencing "context canceled"
 errors when trying to collect logs from Docker containers.
@@ -260,7 +260,7 @@ errors when trying to collect logs from Docker containers.
 - Docker API client timeout issues
 - Missing relabeling causing label mismatch
 
-***REMOVED******REMOVED******REMOVED*** RC3: No Mobile Telemetry Ingestion (Mobile Dashboards)
+### RC3: No Mobile Telemetry Ingestion (Mobile Dashboards)
 
 **Problem:** No mobile telemetry is currently being ingested to Loki.
 
@@ -276,7 +276,7 @@ errors when trying to collect logs from Docker containers.
 
 ---
 
-***REMOVED******REMOVED*** Contributing Factors
+## Contributing Factors
 
 1. **No E2E Tests:** No automated validation that dashboards show data after deployment
 2. **No Smoke Tests:** No synthetic telemetry generation for deterministic validation
@@ -286,9 +286,9 @@ errors when trying to collect logs from Docker containers.
 
 ---
 
-***REMOVED******REMOVED*** Corrective Actions
+## Corrective Actions
 
-***REMOVED******REMOVED******REMOVED*** Fix 1: Connect Backend to Alloy Network
+### Fix 1: Connect Backend to Alloy Network
 
 **Action:** Add backend to `backend_scanium-network` in the backend compose file.
 
@@ -303,17 +303,17 @@ services:
   backend:
     networks:
       - scanium_net
-      - scanium-network  ***REMOVED*** ADD THIS
+      - scanium-network  # ADD THIS
 
 networks:
   scanium_net:
     driver: bridge
-  scanium-network:     ***REMOVED*** ADD THIS
-    external: true     ***REMOVED*** Reference the monitoring network
+  scanium-network:     # ADD THIS
+    external: true     # Reference the monitoring network
     name: backend_scanium-network
 ```
 
-***REMOVED******REMOVED******REMOVED*** Fix 2: Fix Docker Log Collection (Troubleshooting Required)
+### Fix 2: Fix Docker Log Collection (Troubleshooting Required)
 
 **Immediate Actions:**
 
@@ -324,54 +324,54 @@ networks:
 **Alternative:** Backend emits OTLP logs to Alloy HTTP endpoint (more reliable than docker log
 scraping).
 
-***REMOVED******REMOVED******REMOVED*** Fix 3: Add Synthetic Mobile Telemetry for Testing
+### Fix 3: Add Synthetic Mobile Telemetry for Testing
 
 **Action:** Create `scripts/monitoring/emit-mobile-test-log.sh` that pushes a test log entry to Loki
 with mobile labels.
 
 **Purpose:** Deterministic E2E validation without requiring live mobile app.
 
-***REMOVED******REMOVED******REMOVED*** Fix 4: Dashboard UID/Datasource Verification
+### Fix 4: Dashboard UID/Datasource Verification
 
 **Action:** Verify all dashboards reference correct datasource UIDs (MIMIR for metrics, LOKI for
 logs).
 
-***REMOVED******REMOVED******REMOVED*** Fix 5: Image Fallback for Grafana
+### Fix 5: Image Fallback for Grafana
 
 **Action:** Create `monitoring/grafana/Dockerfile` that bakes in dashboards/provisioning so rollback
 doesn't lose config.
 
 ---
 
-***REMOVED******REMOVED*** Preventative Measures
+## Preventative Measures
 
-***REMOVED******REMOVED******REMOVED*** Test 1: Metrics Pipeline E2E (`scripts/monitoring/prove-metrics.sh`)
+### Test 1: Metrics Pipeline E2E (`scripts/monitoring/prove-metrics.sh`)
 
 - Generate backend traffic (200, 400, 404, 500 responses)
 - Query Mimir: `up{job="scanium-backend"}` must be 1
 - Query Mimir: `scanium_http_requests_total` must increase
 
-***REMOVED******REMOVED******REMOVED*** Test 2: Logs Pipeline E2E (`scripts/monitoring/prove-logs.sh`)
+### Test 2: Logs Pipeline E2E (`scripts/monitoring/prove-logs.sh`)
 
 - Trigger backend logs (via API calls)
 - Query Loki: `{source="scanium-backend"}` must return entries
 
-***REMOVED******REMOVED******REMOVED*** Test 3: Mobile Dashboard Wiring (`scripts/monitoring/prove-mobile-dashboard-wiring.sh`)
+### Test 3: Mobile Dashboard Wiring (`scripts/monitoring/prove-mobile-dashboard-wiring.sh`)
 
 - Run `emit-mobile-test-log.sh`
 - Query Loki: `{source="scanium-mobile"}` must return test entry
 
-***REMOVED******REMOVED******REMOVED*** Test 4: Grafana Dashboards (`scripts/monitoring/prove-grafana-dashboards.sh`)
+### Test 4: Grafana Dashboards (`scripts/monitoring/prove-grafana-dashboards.sh`)
 
 - Use Grafana API to list dashboards
 - For target dashboards, verify datasource UIDs exist and are reachable
 
-***REMOVED******REMOVED******REMOVED*** Test 5: Remote Access (`scripts/monitoring/prove-remote-access.sh`)
+### Test 5: Remote Access (`scripts/monitoring/prove-remote-access.sh`)
 
 - Curl `https://grafana.gtemp1.com/api/health`
 - Verify NO 502
 
-***REMOVED******REMOVED******REMOVED*** Test 6: E2E Runner (`scripts/monitoring/e2e-monitoring.sh`)
+### Test 6: E2E Runner (`scripts/monitoring/e2e-monitoring.sh`)
 
 - Runs all proof scripts
 - Exits non-zero on any failure
@@ -379,7 +379,7 @@ doesn't lose config.
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 - [ ] Backend dashboards show metrics (request rate, latency, errors)
 - [ ] Backend dashboards show logs (ERROR/WARN events)
@@ -390,7 +390,7 @@ doesn't lose config.
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. **PHASE 3:** Implement fixes (network, logs, dashboards, image fallback)
 2. **PHASE 4:** Implement E2E tests and proof scripts
@@ -399,27 +399,27 @@ doesn't lose config.
 
 ---
 
-***REMOVED******REMOVED*** Appendix: Useful Commands
+## Appendix: Useful Commands
 
-***REMOVED******REMOVED******REMOVED*** Check Mimir metrics
+### Check Mimir metrics
 
 ```bash
 ssh nas "curl -sf 'http://127.0.0.1:9009/prometheus/api/v1/query?query=up'"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check Loki logs
+### Check Loki logs
 
 ```bash
 ssh nas 'curl -G -s "http://127.0.0.1:3100/loki/api/v1/query" --data-urlencode "query={source=\"scanium-backend\"}" --data-urlencode "limit=5"'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check Alloy logs
+### Check Alloy logs
 
 ```bash
 ssh nas "/usr/local/bin/docker logs scanium-alloy 2>&1 | tail -50"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Restart monitoring stack
+### Restart monitoring stack
 
 ```bash
 ssh nas "cd /volume1/docker/scanium/repo/monitoring && docker-compose down && docker-compose up -d"

@@ -1,14 +1,14 @@
-***REMOVED*** Release Checklist
+# Release Checklist
 
 This guide documents the process for building and releasing Scanium for distribution.
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
 - Java 17 installed (`java -version`).
 - Android SDK installed.
 - Keystore file (e.g., `release.jks`) generated.
 
-***REMOVED******REMOVED*** 1. Keystore Setup
+## 1. Keystore Setup
 
 **NEVER commit the keystore file or passwords to the repository.**
 
@@ -30,13 +30,13 @@ This guide documents the process for building and releasing Scanium for distribu
     * `SCANIUM_KEY_ALIAS`
     * `SCANIUM_KEY_PASSWORD`
 
-***REMOVED******REMOVED*** 2. Versioning
+## 2. Versioning
 
 1. Open `androidApp/build.gradle.kts`.
 2. Increment `versionCode`.
 3. Update `versionName` (Semantic Versioning: Major.Minor.Patch).
 
-***REMOVED******REMOVED*** 3. Build Release Artifacts
+## 3. Build Release Artifacts
 
 Scanium uses three product flavors: **prod** (production), **dev** (development), **beta** (external
 testing).
@@ -44,11 +44,11 @@ testing).
 **Production builds** (for Play Store or public release):
 
 ```bash
-***REMOVED*** APK
+# APK
 ./scripts/build.sh assembleProdRelease
-***REMOVED*** Or: ./gradlew :androidApp:assembleProdRelease
+# Or: ./gradlew :androidApp:assembleProdRelease
 
-***REMOVED*** AAB (for Play Store)
+# AAB (for Play Store)
 ./gradlew :androidApp:bundleProdRelease
 ```
 
@@ -56,14 +56,14 @@ testing).
 
 ```bash
 ./gradlew :androidApp:assembleDevRelease
-***REMOVED*** Or AAB: ./gradlew :androidApp:bundleDevRelease
+# Or AAB: ./gradlew :androidApp:bundleDevRelease
 ```
 
 **Beta builds** (external testers, no Developer Options):
 
 ```bash
 ./gradlew :androidApp:assembleBetaRelease
-***REMOVED*** Or AAB: ./gradlew :androidApp:bundleBetaRelease
+# Or AAB: ./gradlew :androidApp:bundleBetaRelease
 ```
 
 **Outputs:**
@@ -71,14 +71,14 @@ testing).
 * APK: `androidApp/build/outputs/apk/{prod|dev|beta}/release/*.apk`
 * AAB: `androidApp/build/outputs/bundle/{prod|dev|beta}Release/*.aab`
 
-***REMOVED******REMOVED*** 4. Verification
+## 4. Verification
 
 1. **Install Release APK:**
    ```bash
-   ***REMOVED*** Prod release
+   # Prod release
    adb install androidApp/build/outputs/apk/prod/release/*.apk
 
-   ***REMOVED*** Or Dev/Beta
+   # Or Dev/Beta
    adb install androidApp/build/outputs/apk/dev/release/*.apk
    adb install androidApp/build/outputs/apk/beta/release/*.apk
    ```
@@ -91,12 +91,12 @@ testing).
     * **Dev flavor only:** Verify Developer Options is accessible in Settings.
     * **Beta flavor:** Verify Developer Options is NOT accessible.
 
-***REMOVED******REMOVED*** 5. Distribution
+## 5. Distribution
 
 * **Play Store:** Upload the `.aab` file to the Play Console.
 * **Direct:** Share the `.apk` file.
 
-***REMOVED******REMOVED*** 6. ProGuard/R8 Checks
+## 6. ProGuard/R8 Checks
 
 If the release build crashes but debug works, it's likely a ProGuard issue.
 Check `androidApp/proguard-rules.pro` and add keep rules for any reflection-based libraries (e.g.,

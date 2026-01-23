@@ -1,15 +1,15 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-***REMOVED*** Generate synthetic mobile telemetry events for testing
-***REMOVED*** Usage: ./generate-mobile-events.sh [backend_url]
-***REMOVED***
-***REMOVED*** This script sends a batch of synthetic mobile events to the backend
-***REMOVED*** for testing the mobile telemetry pipeline (Backend → Loki → Grafana)
+# Generate synthetic mobile telemetry events for testing
+# Usage: ./generate-mobile-events.sh [backend_url]
+#
+# This script sends a batch of synthetic mobile events to the backend
+# for testing the mobile telemetry pipeline (Backend → Loki → Grafana)
 
 BACKEND_URL="${1:-http://localhost:8080}"
 ENDPOINT="$BACKEND_URL/v1/telemetry/mobile"
-TIMESTAMP=$(date +%s)000  ***REMOVED*** Current timestamp in milliseconds
+TIMESTAMP=$(date +%s)000  # Current timestamp in milliseconds
 
 echo "═══════════════════════════════════════"
 echo "Generating Synthetic Mobile Events"
@@ -20,7 +20,7 @@ echo "Timestamp: $(date -Iseconds)"
 echo "═══════════════════════════════════════"
 echo
 
-***REMOVED*** Generate batch payload with diverse events
+# Generate batch payload with diverse events
 PAYLOAD=$(cat <<EOF
 {
   "events": [
@@ -157,7 +157,7 @@ EOF
 echo "📤 Sending batch of 10 events..."
 echo
 
-***REMOVED*** Submit events to backend
+# Submit events to backend
 RESPONSE=$(curl -sf -X POST "$ENDPOINT" \
   -H "Content-Type: application/json" \
   -d "$PAYLOAD" 2>&1) || {

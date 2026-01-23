@@ -1,10 +1,10 @@
-***REMOVED*** Release Sanity Checklist
+# Release Sanity Checklist
 
 This checklist must be completed before publishing any release to Google Play.
 
-***REMOVED******REMOVED*** Pre-Release Verification
+## Pre-Release Verification
 
-***REMOVED******REMOVED******REMOVED*** 1. Feature Flag Defaults
+### 1. Feature Flag Defaults
 
 | Flag                     | Expected Default            | Verified |
 |--------------------------|-----------------------------|----------|
@@ -19,14 +19,14 @@ This checklist must be completed before publishing any release to Google Play.
 **Verification:**
 
 ```bash
-***REMOVED*** Fresh install, check DataStore defaults
+# Fresh install, check DataStore defaults
 adb shell "run-as com.scanium.app cat /data/data/com.scanium.app/files/datastore/settings_preferences.preferences_pb" | xxd
-***REMOVED*** Or check via Settings UI on fresh install
+# Or check via Settings UI on fresh install
 ```
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Endpoints Configured
+### 2. Endpoints Configured
 
 | Endpoint      | Environment Variable               | Verified |
 |---------------|------------------------------------|----------|
@@ -38,9 +38,9 @@ adb shell "run-as com.scanium.app cat /data/data/com.scanium.app/files/datastore
 **Verification:**
 
 ```bash
-***REMOVED*** Check BuildConfig values in debug build
+# Check BuildConfig values in debug build
 adb shell "run-as com.scanium.app cat /data/data/com.scanium.app/shared_prefs/*.xml"
-***REMOVED*** Or inspect APK
+# Or inspect APK
 aapt dump strings app-release.apk | grep -i "scanium\|api\|sentry"
 ```
 
@@ -51,7 +51,7 @@ aapt dump strings app-release.apk | grep -i "scanium\|api\|sentry"
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Privacy Screens Present
+### 3. Privacy Screens Present
 
 | Screen                    | Route        | Accessible From                        | Verified |
 |---------------------------|--------------|----------------------------------------|----------|
@@ -68,7 +68,7 @@ aapt dump strings app-release.apk | grep -i "scanium\|api\|sentry"
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Crash Reporting Opt-in Verified
+### 4. Crash Reporting Opt-in Verified
 
 | Check                  | Expected                     | Verified |
 |------------------------|------------------------------|----------|
@@ -80,16 +80,16 @@ aapt dump strings app-release.apk | grep -i "scanium\|api\|sentry"
 **Verification:**
 
 ```bash
-***REMOVED*** Toggle OFF, trigger test crash, verify nothing sent to Sentry
+# Toggle OFF, trigger test crash, verify nothing sent to Sentry
 adb logcat -s Sentry AndroidCrashPortAdapter | grep -i "capture\|send"
 
-***REMOVED*** Toggle ON, trigger test crash via Developer settings
+# Toggle ON, trigger test crash via Developer settings
 adb logcat -s Sentry AndroidCrashPortAdapter | grep -i "capture\|attached"
 ```
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. Voice Permissions and Indicators
+### 5. Voice Permissions and Indicators
 
 | Check                         | Expected                        | Verified |
 |-------------------------------|---------------------------------|----------|
@@ -107,13 +107,13 @@ adb logcat -s Sentry AndroidCrashPortAdapter | grep -i "capture\|attached"
 5. Background the app → Verify no recording continues
 
 ```bash
-***REMOVED*** Monitor voice state
+# Monitor voice state
 adb logcat -s AssistantVoice | grep -E "listening|stopped|shutdown"
 ```
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 6. Assistant Image Toggle
+### 6. Assistant Image Toggle
 
 | Check                     | Expected                            | Verified |
 |---------------------------|-------------------------------------|----------|
@@ -125,16 +125,16 @@ adb logcat -s AssistantVoice | grep -E "listening|stopped|shutdown"
 **Verification:**
 
 ```bash
-***REMOVED*** With toggle OFF, send assistant message, verify no images
+# With toggle OFF, send assistant message, verify no images
 adb logcat -s AssistantViewModel | grep -i "image\|thumbnail"
 
-***REMOVED*** With toggle ON, verify images included
+# With toggle ON, verify images included
 adb logcat -s AssistantRepository | grep -i "image"
 ```
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 7. Privacy Safe Mode
+### 7. Privacy Safe Mode
 
 | Check              | Expected                               | Verified |
 |--------------------|----------------------------------------|----------|
@@ -151,16 +151,16 @@ adb logcat -s AssistantRepository | grep -i "image"
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 8. Build Commands Pass
+### 8. Build Commands Pass
 
 ```bash
-***REMOVED*** Unit tests
+# Unit tests
 ./gradlew test
 
-***REMOVED*** Debug build
+# Debug build
 ./gradlew assembleDebug
 
-***REMOVED*** Release bundle (unsigned OK if signing not configured)
+# Release bundle (unsigned OK if signing not configured)
 ./gradlew bundleRelease
 ```
 
@@ -172,7 +172,7 @@ adb logcat -s AssistantRepository | grep -i "image"
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 9. Manual App Walkthrough
+### 9. Manual App Walkthrough
 
 | Scenario                                          | Verified |
 |---------------------------------------------------|----------|
@@ -186,7 +186,7 @@ adb logcat -s AssistantRepository | grep -i "image"
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 10. Release Build Logging Minimal
+### 10. Release Build Logging Minimal
 
 | Check                 | Expected               | Verified |
 |-----------------------|------------------------|----------|
@@ -199,14 +199,14 @@ adb logcat -s AssistantRepository | grep -i "image"
 **Verification:**
 
 ```bash
-***REMOVED*** Build release variant and check logcat
+# Build release variant and check logcat
 adb logcat | grep -iE "api.?key\|secret\|password\|token"
-***REMOVED*** Should return nothing sensitive
+# Should return nothing sensitive
 ```
 
 ---
 
-***REMOVED******REMOVED*** Sign-Off
+## Sign-Off
 
 | Role          | Name | Date | Signature |
 |---------------|------|------|-----------|
@@ -216,13 +216,13 @@ adb logcat | grep -iE "api.?key\|secret\|password\|token"
 
 ---
 
-***REMOVED******REMOVED*** Notes
+## Notes
 
 _Add any release-specific notes here._
 
 ---
 
-***REMOVED******REMOVED*** Changelog
+## Changelog
 
 | Date       | Version | Notes                     |
 |------------|---------|---------------------------|

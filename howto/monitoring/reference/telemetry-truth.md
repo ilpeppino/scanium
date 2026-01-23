@@ -1,14 +1,14 @@
-***REMOVED*** Telemetry Truth Report
+# Telemetry Truth Report
 
 Generated: Fri Jan 9 21:37:04 CET 2026
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 ✅ Mimir has data (80 series)
 ✅ Loki has labels (5 labels)
 ✅ Tempo has services (1 services)
 
-***REMOVED******REMOVED*** Mimir (Metrics)
+## Mimir (Metrics)
 
 - **Series count**: 80
 - **Jobs found**:
@@ -18,7 +18,7 @@ Generated: Fri Jan 9 21:37:04 CET 2026
     - scanium-backend
     - tempo
 
-***REMOVED******REMOVED*** Loki (Logs)
+## Loki (Logs)
 
 - **Label count**: 5
 - **Has 'source' label**: true
@@ -29,15 +29,15 @@ Generated: Fri Jan 9 21:37:04 CET 2026
     - level
     - source
 
-***REMOVED******REMOVED*** Tempo (Traces)
+## Tempo (Traces)
 
 - **Service count**: 1
 - **Services found**:
     - scanium-backend
 
-***REMOVED******REMOVED*** Decision Gate
+## Decision Gate
 
-***REMOVED******REMOVED*** Raw Data
+## Raw Data
 
 ```json
 {

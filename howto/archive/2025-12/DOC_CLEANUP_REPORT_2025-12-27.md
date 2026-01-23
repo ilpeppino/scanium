@@ -1,13 +1,13 @@
-***REMOVED*** Documentation Cleanup Report - 2025-12-27
+# Documentation Cleanup Report - 2025-12-27
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This report documents the documentation cleanup performed on 2025-12-27 to consolidate the canonical
 documentation set and organize the archive.
 
-***REMOVED******REMOVED*** What Changed
+## What Changed
 
-***REMOVED******REMOVED******REMOVED*** Files Kept in `/docs` (11 Canonical Documents)
+### Files Kept in `/docs` (11 Canonical Documents)
 
 | File                       | Type      | Purpose                                        |
 |----------------------------|-----------|------------------------------------------------|
@@ -24,7 +24,7 @@ documentation set and organize the archive.
 | `CLEANUP_REPORT.md`        | Canonical | Doc migration tracking                         |
 | `REVIEW_REPORT.md`         | Canonical | Architectural and security review (2025-12-24) |
 
-***REMOVED******REMOVED******REMOVED*** Files Moved to Archive with DONE_ Prefix
+### Files Moved to Archive with DONE_ Prefix
 
 | Original Path                          | Archive Path                                                       | Verification                                                                                                                         |
 |----------------------------------------|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
@@ -34,34 +34,34 @@ documentation set and organize the archive.
 | `docs/VOICE_MODE_VALIDATION.md`        | `docs/_archive/2025-12/notes/DONE_VOICE_MODE_VALIDATION.md`        | `AssistantVoiceController.kt`, `VoiceSettingsRepositoryTest.kt` exist; voice mode implemented                                        |
 | `docs/logcat-commands.md`              | `docs/_archive/2025-12/notes/logcat-commands.md`                   | Reference notes for debugging                                                                                                        |
 
-***REMOVED******REMOVED******REMOVED*** Folders Moved to Archive
+### Folders Moved to Archive
 
 | Original Path   | Archive Path                     | Status                                      |
 |-----------------|----------------------------------|---------------------------------------------|
 | `docs/release/` | `docs/_archive/2025-12/release/` | Detailed release checklists (supplementary) |
 | `docs/go-live/` | `docs/_archive/2025-12/go-live/` | Production readiness (WIP - not ready)      |
 
-***REMOVED******REMOVED*** Documents Updated
+## Documents Updated
 
 | File                     | Changes                                                                                                                                                                                                                    |
 |--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `docs/INDEX.md`          | Added CODEX_CONTEXT, SECURITY, MANUAL_GOLDEN_RUNBOOK, RELEASE_CHECKLIST to canonical list; organized into sections (Core Reference, Operations & Process, Decision Log & Reports); updated archive structure documentation |
 | `docs/CLEANUP_REPORT.md` | Added 2025-12-27 cleanup section with migration table                                                                                                                                                                      |
 
-***REMOVED******REMOVED*** Verification Evidence
+## Verification Evidence
 
-***REMOVED******REMOVED******REMOVED*** AI Gateway (DONE)
+### AI Gateway (DONE)
 
 - Backend: `backend/src/modules/assistant/routes.ts` - `/v1/assist/chat` endpoint
 - Backend: `backend/src/modules/assistant/routes.test.ts` - Tests exist
 - Android: `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt`
 - Android: `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantScreen.kt`
 
-***REMOVED******REMOVED******REMOVED*** Copy/Share Features (DONE)
+### Copy/Share Features (DONE)
 
 - Test: `androidApp/src/test/java/com/scanium/app/selling/util/ListingShareHelperTest.kt`
 
-***REMOVED******REMOVED******REMOVED*** Voice Mode (DONE)
+### Voice Mode (DONE)
 
 - Controller:
   `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantVoiceController.kt`
@@ -69,7 +69,7 @@ documentation set and organize the archive.
   toggles)
 - Tests: `androidApp/src/test/java/com/scanium/app/data/VoiceSettingsRepositoryTest.kt`
 
-***REMOVED******REMOVED******REMOVED*** Accessibility (95 contentDescription usages across 20 files)
+### Accessibility (95 contentDescription usages across 20 files)
 
 - CameraScreen.kt: 7 usages
 - ItemsListScreen.kt: 16 usages
@@ -77,7 +77,7 @@ documentation set and organize the archive.
 - DeveloperOptionsScreen.kt: 7 usages
 - AssistantScreen.kt (selling): 14 usages
 
-***REMOVED******REMOVED*** Ambiguous Items (Not Modified)
+## Ambiguous Items (Not Modified)
 
 The following archived issue docs were reviewed but not renamed with DONE_/WIP_ prefixes because
 they already contain status indicators in their content:
@@ -94,18 +94,18 @@ they already contain status indicators in their content:
 | `issues/015-missing-accessibility-features.md`                      | Partially addressed (95 contentDescriptions exist) |
 | `issues/017-no-user-feedback-for-classification-mode-switch.md`     | Unknown status                                     |
 
-***REMOVED******REMOVED*** Archive Structure (After Cleanup)
+## Archive Structure (After Cleanup)
 
 ```
 docs/_archive/2025-12/
-├── ADR/                    ***REMOVED*** Architecture Decision Records
-├── apk/                    ***REMOVED*** APK distribution notes
-├── backend/                ***REMOVED*** Backend reference docs
-├── features/               ***REMOVED*** Feature design docs
-├── go-live/                ***REMOVED*** Production readiness (WIP)
-├── issues/                 ***REMOVED*** Issue tracking docs
-├── kmp-migration/          ***REMOVED*** KMP migration plans
-├── md/                     ***REMOVED*** Misc markdown docs
+├── ADR/                    # Architecture Decision Records
+├── apk/                    # APK distribution notes
+├── backend/                # Backend reference docs
+├── features/               # Feature design docs
+├── go-live/                # Production readiness (WIP)
+├── issues/                 # Issue tracking docs
+├── kmp-migration/          # KMP migration plans
+├── md/                     # Misc markdown docs
 │   ├── architecture/
 │   ├── backend/
 │   ├── debugging/
@@ -113,14 +113,14 @@ docs/_archive/2025-12/
 │   ├── fixes/
 │   ├── improvements/
 │   └── testing/
-├── notes/                  ***REMOVED*** Implemented feature docs (DONE_*)
-├── parity/                 ***REMOVED*** Platform parity plans
-├── pr/                     ***REMOVED*** PR-related docs
-├── release/                ***REMOVED*** Release checklists
-└── security/               ***REMOVED*** Security assessments
+├── notes/                  # Implemented feature docs (DONE_*)
+├── parity/                 # Platform parity plans
+├── pr/                     # PR-related docs
+├── release/                # Release checklists
+└── security/               # Security assessments
 ```
 
-***REMOVED******REMOVED*** Metrics
+## Metrics
 
 | Metric                                   | Count |
 |------------------------------------------|-------|

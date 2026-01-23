@@ -1,10 +1,10 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** Termux storage setup helper for Scanium
-***REMOVED*** Run this once after installing Termux to enable access to shared storage.
+#!/usr/bin/env bash
+# Termux storage setup helper for Scanium
+# Run this once after installing Termux to enable access to shared storage.
 
 set -euo pipefail
 
-***REMOVED*** Guard: must be run inside Termux after storage setup
+# Guard: must be run inside Termux after storage setup
 if [[ ! -d "$HOME/storage" ]]; then
     echo "This script must be run inside Termux after running: termux-setup-storage"
     exit 1

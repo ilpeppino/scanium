@@ -24,7 +24,7 @@ import kotlinx.datetime.Clock
  * - Runtime filtering by severity level
  * - Enable/disable toggle
  *
- * ***REMOVED******REMOVED*** Usage Example
+ * ## Usage Example
  * ```kotlin
  * // Initialize (typically in platform-specific code)
  * val config = TelemetryConfig.development()
@@ -51,7 +51,7 @@ import kotlinx.datetime.Clock
  * }
  * ```
  *
- * ***REMOVED******REMOVED*** Required Attributes
+ * ## Required Attributes
  * The facade enforces that all events include required attributes:
  * - platform, app_version, build, env, session_id, data_region
  *

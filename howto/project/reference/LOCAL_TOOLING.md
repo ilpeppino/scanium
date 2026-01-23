@@ -1,6 +1,6 @@
-***REMOVED*** Local Tooling
+# Local Tooling
 
-***REMOVED******REMOVED*** repo command
+## repo command
 
 Install (from this repo):
 

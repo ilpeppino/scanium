@@ -1,6 +1,6 @@
-***REMOVED*** Live Scan Centering Bug Analysis
+# Live Scan Centering Bug Analysis
 
-***REMOVED******REMOVED*** Issue Summary
+## Issue Summary
 
 Live scanning fails to detect centered near objects while incorrectly adding out-of-focus background
 items during panning.
@@ -10,7 +10,7 @@ items during panning.
 
 ---
 
-***REMOVED******REMOVED*** Reproduction Steps
+## Reproduction Steps
 
 1. Place two objects (A and B) close together but separated
 2. Position camera centered on object A (near, in focus)
@@ -20,7 +20,7 @@ items during panning.
 
 ---
 
-***REMOVED******REMOVED*** Expected Behavior
+## Expected Behavior
 
 - Scanning indicator shows activity when an object is centered in viewfinder
 - Items added correspond to the centered object, not distant background
@@ -30,9 +30,9 @@ items during panning.
 
 ---
 
-***REMOVED******REMOVED*** Hypothesis Checklist
+## Hypothesis Checklist
 
-***REMOVED******REMOVED******REMOVED*** 1. No Center-Weighting in Candidate Selection
+### 1. No Center-Weighting in Candidate Selection
 
 **Likelihood: HIGH**
 
@@ -49,7 +49,7 @@ confidence.
 
 **Fix:** Implement center-weighted scoring that prioritizes detections near frame center.
 
-***REMOVED******REMOVED******REMOVED*** 2. No Sharpness/Focus Gating
+### 2. No Sharpness/Focus Gating
 
 **Likelihood: MEDIUM-HIGH**
 
@@ -64,7 +64,7 @@ may contain detections of background objects that appear "larger" due to blur sp
 
 **Fix:** Implement lightweight sharpness score; reject detections when frame is very blurry.
 
-***REMOVED******REMOVED******REMOVED*** 3. Stability Requirement Too Weak
+### 3. Stability Requirement Too Weak
 
 **Likelihood: MEDIUM**
 
@@ -79,7 +79,7 @@ panning, background objects that flash into view for a single frame can be confi
 **Fix:** Add temporal stability requirement - candidate must be seen in N frames or for T
 milliseconds before confirmation.
 
-***REMOVED******REMOVED******REMOVED*** 4. Area Threshold Too Permissive
+### 4. Area Threshold Too Permissive
 
 **Likelihood: MEDIUM**
 
@@ -93,7 +93,7 @@ background objects appear small and should be filtered.
 
 **Fix:** Increase minimum area threshold AND add area-based scoring component.
 
-***REMOVED******REMOVED******REMOVED*** 5. Edge Inset Not Aggressive Enough
+### 5. Edge Inset Not Aggressive Enough
 
 **Likelihood: LOW-MEDIUM**
 
@@ -107,7 +107,7 @@ During panning, background objects may briefly appear centered.
 
 **Fix:** This is less likely the issue since filtering exists. Focus on center-weighting instead.
 
-***REMOVED******REMOVED******REMOVED*** 6. ROI/Coordinate Mismatch
+### 6. ROI/Coordinate Mismatch
 
 **Likelihood: LOW**
 
@@ -124,7 +124,7 @@ sees full frame for classification.
 
 ---
 
-***REMOVED******REMOVED*** Diagnostic Data Required
+## Diagnostic Data Required
 
 For each "candidate add" decision, log:
 
@@ -151,21 +151,21 @@ For each "candidate add" decision, log:
 
 ---
 
-***REMOVED******REMOVED*** Proposed Fix Summary
+## Proposed Fix Summary
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Diagnostics
+### Phase 2: Diagnostics
 
 - Add "Live scan diagnostics" developer toggle
 - Implement structured LiveScan logs with center/area/sharpness info
 - Add optional debug overlay showing selected candidate box
 
-***REMOVED******REMOVED******REMOVED*** Phase 3: Sharpness Score
+### Phase 3: Sharpness Score
 
 - Implement lightweight Laplacian variance computation
 - Sample central 128x128 crop for efficiency
 - Log sharpness score with each frame
 
-***REMOVED******REMOVED******REMOVED*** Phase 4: Center-Weighted Selection
+### Phase 4: Center-Weighted Selection
 
 ```
 For each detection candidate:
@@ -178,14 +178,14 @@ For each detection candidate:
 Select highest-scoring candidate, subject to gating rules.
 ```
 
-***REMOVED******REMOVED******REMOVED*** Phase 5: Gating Rules
+### Phase 5: Gating Rules
 
 1. **Center gate:** Reject if `centerDistance > 0.35` (unless confidence > 0.8)
 2. **Area gate:** Reject if `area < 0.03` (3% of frame minimum)
 3. **Sharpness gate:** Reject if `sharpness < threshold` AND `area < 0.10`
 4. **Stability gate:** Candidate must be selected for 3+ frames OR 400+ ms
 
-***REMOVED******REMOVED******REMOVED*** Phase 6: Panning Behavior
+### Phase 6: Panning Behavior
 
 - During high motion: Show "Scanning..." but DO NOT add items
 - After motion settles for 200ms: Resume item addition
@@ -193,9 +193,9 @@ Select highest-scoring candidate, subject to gating rules.
 
 ---
 
-***REMOVED******REMOVED*** Implementation Summary
+## Implementation Summary
 
-***REMOVED******REMOVED******REMOVED*** Files Added/Modified
+### Files Added/Modified
 
 **New Files:**
 
@@ -213,7 +213,7 @@ Select highest-scoring candidate, subject to gating rules.
 - `androidApp/.../camera/CameraXManager.kt` - Integrated sharpness calculation and diagnostics
 - `shared/core-tracking/.../ObjectTracker.kt` - Integrated center-weighted selection with stability
 
-***REMOVED******REMOVED******REMOVED*** Key Parameters (Tunable)
+### Key Parameters (Tunable)
 
 | Parameter                | Default    | Purpose                                              |
 |--------------------------|------------|------------------------------------------------------|
@@ -225,7 +225,7 @@ Select highest-scoring candidate, subject to gating rules.
 | `minStabilityFrames`     | 3          | Consecutive frames required for stability            |
 | `minStabilityTimeMs`     | 400        | Time in ms required for stability                    |
 
-***REMOVED******REMOVED******REMOVED*** Scoring Formula
+### Scoring Formula
 
 ```
 For each detection candidate:
@@ -236,14 +236,14 @@ For each detection candidate:
   score = (confidence * 0.4) + (normalizedArea * 0.3) + (normalizedCenterScore * 0.3)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Gating Rules Applied
+### Gating Rules Applied
 
 1. **Center Distance Gate**: Reject if `centerDistance > 0.35` (unless confidence > 0.8)
 2. **Area Gate**: Reject if `area < 0.03` (3% of frame)
 3. **Sharpness Gate**: Reject if `sharpness < 100` AND `area < 0.10` (small + blurry)
 4. **Stability Gate**: Must be selected for 3+ frames OR 400+ ms before confirmation
 
-***REMOVED******REMOVED*** Root Cause Evidence
+## Root Cause Evidence
 
 *To be filled after testing with diagnostics enabled:*
 
@@ -254,9 +254,9 @@ For each detection candidate:
 
 ---
 
-***REMOVED******REMOVED*** Fix Verification
+## Fix Verification
 
-***REMOVED******REMOVED******REMOVED*** Test Matrix
+### Test Matrix
 
 | Scenario                         | Expected Result                                    |
 |----------------------------------|----------------------------------------------------|
@@ -265,7 +265,7 @@ For each detection candidate:
 | Different lighting conditions    | No random background items                         |
 | Performance check                | Analyzer FPS not severely reduced                  |
 
-***REMOVED******REMOVED******REMOVED*** Tuned Thresholds
+### Tuned Thresholds
 
 *To be filled after testing:*
 
@@ -277,7 +277,7 @@ For each detection candidate:
 
 ---
 
-***REMOVED******REMOVED*** Related Files
+## Related Files
 
 - `CameraXManager.kt` - Frame processing, motion detection
 - `ObjectTracker.kt` - Candidate tracking and confirmation

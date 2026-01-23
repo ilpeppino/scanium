@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Architecture Refactoring Plan
+# Architecture Refactoring Plan
 
 **Status:** Proposed  
 **Last Updated:** 2025-01-12  
@@ -10,7 +10,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Phase 0 – Guardrails (fast, parallel)
+## Phase 0 – Guardrails (fast, parallel)
 
 - Tasks: Verify Java 17 toolchain; keep `checkPortableModules` green; ensure BuildConfig reads
   `scanium.api.*` from `local.properties`/env (no secrets committed).
@@ -19,7 +19,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Phase 1 – Shared Contracts & Config (parallelizable)
+## Phase 1 – Shared Contracts & Config (parallelizable)
 
 - Tasks: Extend portable contracts for classification/config (`shared/core-models`); add Android
   `CloudConfigProvider`; add mock classifier (offline-friendly).
@@ -29,7 +29,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Phase 2 – Pipeline Hardening (can split)
+## Phase 2 – Pipeline Hardening (can split)
 
 - Tasks: Adapt `ClassificationOrchestrator` to shared contracts via an adapter; enforce “stable
   items only” uploads; add retry/latency metrics hooks; unit tests with mock classifier.
@@ -39,7 +39,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Phase 3 – Domain Pack Integration (safe increments)
+## Phase 3 – Domain Pack Integration (safe increments)
 
 - Tasks: Route classifier outputs through `DomainPackRepository` + `BasicCategoryEngine`; store
   active domain pack id (default `home_resale`) in shared config; optional UI badge for cloud vs
@@ -50,7 +50,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Phase 4 – Backend Integration (parallel with Phase 3)
+## Phase 4 – Backend Integration (parallel with Phase 3)
 
 - Tasks: Backend proxy endpoint hardened for Vision (auth, rate limit, logging); client config
   contract stays unchanged; add mock/stub server for local tests if needed.
@@ -59,7 +59,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Phase 5 – iOS Prep (non-blocking)
+## Phase 5 – iOS Prep (non-blocking)
 
 - Tasks: Publish shared contracts/tracking for iOS consumption; document Vision/AVFoundation adapter
   to emit `RawDetection`/`ImageRef`; document Swift client using `CloudClassifierConfig`.
@@ -69,7 +69,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Phase 6 – Observability & Validation
+## Phase 6 – Observability & Validation
 
 - Tasks: Add logging around classifier mode selection/retries/latency (no PII); expose counters for
   cloud usage; keep offline mode working with mocks.
@@ -78,7 +78,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Parallelization Notes
+## Parallelization Notes
 
 - Contracts/config (Phase 1) can proceed while pipeline hardening starts, as long as adapters shield
   current code.
@@ -89,7 +89,7 @@ classification.
 
 ---
 
-***REMOVED******REMOVED*** Risk Mitigations
+## Risk Mitigations
 
 - Keep new behavior behind adapters; avoid rewrites until tests exist.
 - Use mock classifiers in unit tests to avoid network dependency.

@@ -1,14 +1,14 @@
-***REMOVED*** KMP Portability Readiness Status
+# KMP Portability Readiness Status
 
 **Last Updated**: 2025-12-16
 **Phase**: Portability Cleanup (Phase 1)
 
-***REMOVED******REMOVED*** 5-Point Completion Checklist
+## 5-Point Completion Checklist
 
 Based on the roadmap in `CLAUDE.md`, Phase 1 (Portability Cleanup) consists of the following
 criteria:
 
-***REMOVED******REMOVED******REMOVED*** 1. Multi-module Gradle structure established (9 modules)
+### 1. Multi-module Gradle structure established (9 modules)
 
 **Status**: ✅ **DONE**
 
@@ -29,7 +29,7 @@ criteria:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Portable types fully implemented and integrated
+### 2. Portable types fully implemented and integrated
 
 **Status**: ✅ **DONE**
 
@@ -59,7 +59,7 @@ criteria:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Core data models migrated to portable types
+### 3. Core data models migrated to portable types
 
 **Status**: ⚠️ **IN_PROGRESS** (95% complete)
 
@@ -96,7 +96,7 @@ criteria:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Platform adapter layer established
+### 4. Platform adapter layer established
 
 **Status**: ✅ **DONE**
 
@@ -120,7 +120,7 @@ criteria:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. Core modules are Android-free
+### 5. Core modules are Android-free
 
 **Status**: ⚠️ **IN_PROGRESS** (98% complete)
 
@@ -142,30 +142,30 @@ criteria:
 
 - Remove `android.net.Uri` import from
   `core-models/src/main/java/com/scanium/app/items/ScannedItem.kt`
-- This is the **same blocker** as criterion ***REMOVED***3 above
+- This is the **same blocker** as criterion #3 above
 
 **Blocker**: None (can be addressed independently)
 
 ---
 
-***REMOVED******REMOVED*** Overall Phase 1 Status
+## Overall Phase 1 Status
 
 **Phase Status**: ⚠️ **IN_PROGRESS** (95% complete)
 
-***REMOVED******REMOVED******REMOVED*** Summary
+### Summary
 
 - **3 of 5 criteria**: ✅ DONE (Multi-module structure, Portable types, Platform adapters)
 - **2 of 5 criteria**: ⚠️ IN_PROGRESS (Core data models, Android-free modules)
 - **Blockers**: None
 
-***REMOVED******REMOVED******REMOVED*** Single Remaining Issue
+### Single Remaining Issue
 
 Both incomplete criteria share the **same root cause**:
 
 - `android.net.Uri` dependency in
   `core-models/src/main/java/com/scanium/app/items/ScannedItem.kt:3,45`
 
-***REMOVED******REMOVED******REMOVED*** Next Action
+### Next Action
 
 To achieve **Phase 1 complete (all 5 criteria DONE)**:
 
@@ -174,7 +174,7 @@ To achieve **Phase 1 complete (all 5 criteria DONE)**:
 3. Migrate all callers to use `fullImagePath: String?` instead
 4. Re-verify with grep that `core-models` has zero Android imports
 
-***REMOVED******REMOVED******REMOVED*** Phase 2 Preview
+### Phase 2 Preview
 
 Once Phase 1 is complete, Phase 2 (KMP Module Conversion) involves:
 
@@ -186,29 +186,29 @@ Once Phase 1 is complete, Phase 2 (KMP Module Conversion) involves:
 
 ---
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
 ```bash
-***REMOVED*** Verify module structure
+# Verify module structure
 grep "^include" settings.gradle.kts
 
-***REMOVED*** Check for Android imports in core modules
+# Check for Android imports in core modules
 rg "^import android\." core-models/
 rg "^import android\." core-tracking/
 rg "^import androidx\." core-models/
 rg "^import androidx\." core-tracking/
 
-***REMOVED*** Verify portable types exist
+# Verify portable types exist
 ls -1 core-models/src/main/java/com/scanium/app/model/
 ls -1 core-tracking/src/main/java/com/scanium/app/tracking/Logger.kt
 
-***REMOVED*** Verify adapter layer exists
+# Verify adapter layer exists
 ls -1 android-platform-adapters/src/main/java/com/scanium/android/platform/adapters/
 ```
 
 ---
 
-***REMOVED******REMOVED*** Notes
+## Notes
 
 - **CI Status**: GitHub Actions builds APK on every push to main (
   `.github/workflows/android-debug-apk.yml`)

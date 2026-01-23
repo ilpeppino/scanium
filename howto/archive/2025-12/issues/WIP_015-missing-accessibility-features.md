@@ -1,17 +1,17 @@
-***REMOVED*** Missing Accessibility Features (TalkBack, Content Descriptions)
+# Missing Accessibility Features (TalkBack, Content Descriptions)
 
 **Labels:** `accessibility`, `priority:p2`, `area:ui`, `a11y`
 **Type:** Accessibility Gap
 **Severity:** Medium
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 The app is missing critical accessibility features for users with visual impairments. Compose
 components need content descriptions for TalkBack screen reader support.
 
-***REMOVED******REMOVED*** Missing Features
+## Missing Features
 
-***REMOVED******REMOVED******REMOVED*** 1. Content Descriptions for Icon Buttons
+### 1. Content Descriptions for Icon Buttons
 
 **CameraScreen.kt** - Multiple icon buttons without semantic labels:
 
@@ -35,7 +35,7 @@ IconButton(onClick = { /* remove */ }) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Missing Semantic Properties
+### 2. Missing Semantic Properties
 
 **ShutterButton.kt** - No role/label:
 
@@ -61,13 +61,13 @@ Box(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Detection Overlay Not Announced
+### 3. Detection Overlay Not Announced
 
 **DetectionOverlay.kt** - Bounding boxes drawn but not announced to TalkBack:
 
 No way for visually impaired users to know when objects are detected.
 
-***REMOVED******REMOVED******REMOVED*** 4. Dynamic Content Not Announced
+### 4. Dynamic Content Not Announced
 
 **CameraScreen.kt** - Items count changes but no announcement:
 
@@ -77,11 +77,11 @@ Text("Items (${itemsCount.size})")  // Changes silently
 
 Should trigger announcement when count updates.
 
-***REMOVED******REMOVED******REMOVED*** 5. Scan State Not Announced
+### 5. Scan State Not Announced
 
 **CameraState changes** (IDLE → SCANNING → IDLE) - No audio/haptic feedback for screen reader users.
 
-***REMOVED******REMOVED*** Impact
+## Impact
 
 **Severity**: Medium - App is unusable for blind/low-vision users
 
@@ -93,9 +93,9 @@ Should trigger announcement when count updates.
 
 **Legal Risk**: Some jurisdictions require accessibility compliance
 
-***REMOVED******REMOVED*** Expected Behavior
+## Expected Behavior
 
-***REMOVED******REMOVED******REMOVED*** TalkBack Navigation Should Work:
+### TalkBack Navigation Should Work:
 
 1. User lands on camera screen
 2. TalkBack announces: "Camera preview. Tap to capture photo. Long press to start scanning."
@@ -107,7 +107,7 @@ Should trigger announcement when count updates.
 7. User swipes to items button
 8. TalkBack announces: "Items list. 5 items. Double tap to open."
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 
 - [ ] All IconButtons have contentDescription
 - [ ] ShutterButton has semantic role and description
@@ -118,9 +118,9 @@ Should trigger announcement when count updates.
 - [ ] Minimum touch target size 48dp (Material Design guideline)
 - [ ] Test with TalkBack enabled on physical device
 
-***REMOVED******REMOVED*** Suggested Fixes
+## Suggested Fixes
 
-***REMOVED******REMOVED******REMOVED*** 1. Icon Button Content Descriptions
+### 1. Icon Button Content Descriptions
 
 ```kotlin
 // CameraScreen.kt
@@ -137,7 +137,7 @@ IconButton(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Scan Mode Switcher
+### 2. Scan Mode Switcher
 
 ```kotlin
 IconButton(
@@ -153,7 +153,7 @@ IconButton(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Shutter Button Semantics
+### 3. Shutter Button Semantics
 
 ```kotlin
 Box(
@@ -174,7 +174,7 @@ Box(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Announce Detection Events
+### 4. Announce Detection Events
 
 ```kotlin
 // CameraScreen.kt
@@ -204,7 +204,7 @@ Text(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Minimum Touch Targets
+### 5. Minimum Touch Targets
 
 Ensure all interactive elements are at least 48dp:
 
@@ -219,7 +219,7 @@ IconButton(
 }
 ```
 
-***REMOVED******REMOVED*** Testing Checklist
+## Testing Checklist
 
 Manual accessibility testing:
 
@@ -233,7 +233,7 @@ Manual accessibility testing:
 - [ ] Remove item with TalkBack gestures
 - [ ] Verify all touch targets are large enough (no "too small" warnings)
 
-***REMOVED******REMOVED*** Automated Testing
+## Automated Testing
 
 Add Compose accessibility tests:
 
@@ -252,6 +252,6 @@ fun shutterButtonHasContentDescription() {
 }
 ```
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
 None

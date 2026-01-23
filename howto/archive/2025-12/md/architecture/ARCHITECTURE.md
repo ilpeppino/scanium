@@ -1,6 +1,6 @@
-***REMOVED*** Scanium - Architecture Documentation
+# Scanium - Architecture Documentation
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium is a camera-first Android application that demonstrates real-time object detection and price
 estimation for the EU second-hand market. The app uses Google ML Kit for on-device object detection
@@ -15,21 +15,21 @@ and provides a proof-of-concept for scanning physical items and estimating their
 
 ---
 
-***REMOVED******REMOVED*** Table of Contents
+## Table of Contents
 
-1. [High-Level Architecture](***REMOVED***high-level-architecture)
-2. [Architectural Pattern](***REMOVED***architectural-pattern)
-3. [Module Organization](***REMOVED***module-organization)
-4. [Layer Architecture](***REMOVED***layer-architecture)
-5. [Key Architectural Decisions](***REMOVED***key-architectural-decisions)
-6. [Data Flow](***REMOVED***data-flow)
-7. [Technology Stack](***REMOVED***technology-stack)
-8. [Design Patterns](***REMOVED***design-patterns)
-9. [Future Considerations](***REMOVED***future-considerations)
+1. [High-Level Architecture](#high-level-architecture)
+2. [Architectural Pattern](#architectural-pattern)
+3. [Module Organization](#module-organization)
+4. [Layer Architecture](#layer-architecture)
+5. [Key Architectural Decisions](#key-architectural-decisions)
+6. [Data Flow](#data-flow)
+7. [Technology Stack](#technology-stack)
+8. [Design Patterns](#design-patterns)
+9. [Future Considerations](#future-considerations)
 
 ---
 
-***REMOVED******REMOVED*** High-Level Architecture
+## High-Level Architecture
 
 Scanium follows a **simplified MVVM (Model-View-ViewModel)** architecture with clear separation of
 concerns:
@@ -78,9 +78,9 @@ concerns:
 
 ---
 
-***REMOVED******REMOVED*** Architectural Pattern
+## Architectural Pattern
 
-***REMOVED******REMOVED******REMOVED*** MVVM (Model-View-ViewModel)
+### MVVM (Model-View-ViewModel)
 
 **Why MVVM?**
 
@@ -106,26 +106,26 @@ concerns:
 
 ---
 
-***REMOVED******REMOVED*** Module Organization
+## Module Organization
 
-***REMOVED******REMOVED******REMOVED*** Multi-Module Architecture (Android + Portable Core)
+### Multi-Module Architecture (Android + Portable Core)
 
 The app is split into Android UI plus reusable core libraries:
 
 ```
-androidApp/                  ***REMOVED*** Compose UI, feature orchestration, ML clients
+androidApp/                  # Compose UI, feature orchestration, ML clients
 ├── src/main/java/com/scanium/app/
-│   ├── camera/              ***REMOVED*** Camera screens, overlay, CameraXManager
-│   ├── items/               ***REMOVED*** Items UI + ItemsViewModel
-│   ├── ml/                  ***REMOVED*** ML Kit wrappers (object, barcode, OCR), pricing
-│   ├── navigation/          ***REMOVED*** ScaniumNavGraph + routes
-│   └── ui/                  ***REMOVED*** Theming and shared components
-android-camera-camerax/      ***REMOVED*** CameraX helpers shared across features
-android-ml-mlkit/            ***REMOVED*** ML Kit typealiases/helpers (Android-only)
-android-platform-adapters/   ***REMOVED*** Rect/Image adapters to portable models (ImageRef, NormalizedRect)
-core-models/                 ***REMOVED*** Portable data models (ScannedItem, ImageRef, NormalizedRect, ItemCategory)
-core-tracking/               ***REMOVED*** Aggregation/tracking math (ObjectTracker, AggregatedItem, ObjectCandidate)
-core-domainpack/, core-scan, core-contracts ***REMOVED*** Domain pack/config stubs and shared contracts
+│   ├── camera/              # Camera screens, overlay, CameraXManager
+│   ├── items/               # Items UI + ItemsViewModel
+│   ├── ml/                  # ML Kit wrappers (object, barcode, OCR), pricing
+│   ├── navigation/          # ScaniumNavGraph + routes
+│   └── ui/                  # Theming and shared components
+android-camera-camerax/      # CameraX helpers shared across features
+android-ml-mlkit/            # ML Kit typealiases/helpers (Android-only)
+android-platform-adapters/   # Rect/Image adapters to portable models (ImageRef, NormalizedRect)
+core-models/                 # Portable data models (ScannedItem, ImageRef, NormalizedRect, ItemCategory)
+core-tracking/               # Aggregation/tracking math (ObjectTracker, AggregatedItem, ObjectCandidate)
+core-domainpack/, core-scan, core-contracts # Domain pack/config stubs and shared contracts
 ```
 
 **Key cross-module contracts:**
@@ -141,9 +141,9 @@ core-domainpack/, core-scan, core-contracts ***REMOVED*** Domain pack/config stu
 
 ---
 
-***REMOVED******REMOVED*** Layer Architecture
+## Layer Architecture
 
-***REMOVED******REMOVED******REMOVED*** 1. UI Layer (Jetpack Compose)
+### 1. UI Layer (Jetpack Compose)
 
 **Components:**
 
@@ -174,7 +174,7 @@ core-domainpack/, core-scan, core-contracts ***REMOVED*** Domain pack/config stu
 - Excellent preview/tooling support
 - Future-proof (Google's recommended approach)
 
-***REMOVED******REMOVED******REMOVED*** 2. ViewModel Layer
+### 2. ViewModel Layer
 
 **Components:**
 
@@ -208,11 +208,11 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 - Passed to screens via navigation
 - Enables communication between camera and list screens
 
-***REMOVED******REMOVED******REMOVED*** 3. Domain/Business Logic Layer
+### 3. Domain/Business Logic Layer
 
 **Components:**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** CameraXManager
+#### CameraXManager
 
 - Manages CameraX lifecycle and configuration
 - Binds camera preview to `PreviewView`
@@ -227,7 +227,7 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 - Testable independently of UI
 - Clear lifecycle management
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectDetectorClient
+#### ObjectDetectorClient
 
 - Wraps Google ML Kit Object Detection API
 - Configures detector for multiple objects + classification
@@ -245,7 +245,7 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 - Provides domain-specific API
 - Simplifies error handling
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** BarcodeScannerClient
+#### BarcodeScannerClient
 
 - Wraps Google ML Kit Barcode Scanning API
 - Detects multiple barcode formats (QR, EAN, UPC, etc.)
@@ -259,7 +259,7 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 - Simpler API (no multi-frame tracking needed)
 - Clear separation of scan modes
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectTracker
+#### ObjectTracker
 
 - **Core of multi-frame detection pipeline**
 - Tracks object candidates across multiple frames using tracking IDs with spatial fallback
@@ -280,7 +280,7 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 - Testable independently
 - Clear state management
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** DetectionLogger
+#### DetectionLogger
 
 - Centralized debug logging for detection events
 - Only active in debug builds (`Log.isLoggable()` check)
@@ -297,7 +297,7 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 - Debug builds only (no production overhead)
 - Essential for threshold tuning
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** PricingEngine
+#### PricingEngine
 
 - Generates mock price ranges based on category
 - Takes bounding box size into account
@@ -311,7 +311,7 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 - Testable business rules
 - Clear pricing strategy
 
-***REMOVED******REMOVED******REMOVED*** 4. Data Layer
+### 4. Data Layer
 
 **Components (portable, shared in `core-models`):**
 
@@ -388,9 +388,9 @@ enum class ScanMode {
 
 ---
 
-***REMOVED******REMOVED*** Key Architectural Decisions
+## Key Architectural Decisions
 
-***REMOVED******REMOVED******REMOVED*** 1. No Dependency Injection Framework
+### 1. No Dependency Injection Framework
 
 **Decision:** Use manual dependency injection (constructor injection)
 
@@ -411,7 +411,7 @@ val cameraManager = remember {
 
 **When to change:** If app grows beyond 5-10 screens or needs complex scoping
 
-***REMOVED******REMOVED******REMOVED*** 2. Single-Activity Architecture
+### 2. Single-Activity Architecture
 
 **Decision:** One `MainActivity` with Compose navigation
 
@@ -430,7 +430,7 @@ val cameraManager = remember {
 - Easier deep linking
 - Better state preservation
 
-***REMOVED******REMOVED******REMOVED*** 3. Camera-First UX with CameraX
+### 3. Camera-First UX with CameraX
 
 **Decision:** App opens directly to camera screen using CameraX
 
@@ -459,7 +459,7 @@ AndroidView(factory = { PreviewView(it) })
 - Bridges imperative CameraX with declarative Compose
 - Full gesture support via `Modifier.pointerInput`
 
-***REMOVED******REMOVED******REMOVED*** 4. On-Device ML with ML Kit
+### 4. On-Device ML with ML Kit
 
 **Decision:** Google ML Kit Object Detection (on-device)
 
@@ -488,7 +488,7 @@ ObjectDetectorOptions.Builder()
 
 **Future Path:** Could add custom TensorFlow Lite model for specific product categories
 
-***REMOVED******REMOVED******REMOVED*** 4.1 Object Tracking and De-Duplication System
+### 4.1 Object Tracking and De-Duplication System
 
 **Decision:** Multi-frame tracking pipeline with ML Kit integration
 
@@ -593,7 +593,7 @@ averageBoxArea >= minBoxArea
 For detailed implementation documentation,
 see [TRACKING_IMPLEMENTATION.md](../features/TRACKING_IMPLEMENTATION.md).
 
-***REMOVED******REMOVED******REMOVED*** 5. Gesture-Based Interaction
+### 5. Gesture-Based Interaction
 
 **Decision:** Tap for single capture, long-press for continuous scan
 
@@ -622,7 +622,7 @@ detectTapGestures(
 - Tap = take a photo
 - Hold = video scan mode
 
-***REMOVED******REMOVED******REMOVED*** 6. Reactive State Management
+### 6. Reactive State Management
 
 **Decision:** Kotlin Flow + StateFlow for state
 
@@ -651,7 +651,7 @@ val items by itemsViewModel.items.collectAsState()
 - More operators (map, filter, etc.)
 - Compose prefers Flow
 
-***REMOVED******REMOVED******REMOVED*** 7. Navigation Architecture
+### 7. Navigation Architecture
 
 **Decision:** Navigation Compose with centralized NavGraph
 
@@ -677,7 +677,7 @@ NavHost(startDestination = Routes.CAMERA) {
 - Passed to composables via parameters
 - Both screens observe same state
 
-***REMOVED******REMOVED******REMOVED*** 8. Mocked Pricing Logic
+### 8. Mocked Pricing Logic
 
 **Decision:** Local `PricingEngine` object with hardcoded ranges
 
@@ -708,7 +708,7 @@ interface PricingRepository {
 - Faster iteration
 - No backend dependency
 
-***REMOVED******REMOVED******REMOVED*** 9. No Local Persistence
+### 9. No Local Persistence
 
 **Decision:** All data in memory (ViewModel state)
 
@@ -731,7 +731,7 @@ interface PricingRepository {
 - DataStore for preferences
 - Remote sync with backend
 
-***REMOVED******REMOVED******REMOVED*** 10. Material 3 Design System
+### 10. Material 3 Design System
 
 **Decision:** Use Material 3 (Material You) components
 
@@ -751,9 +751,9 @@ interface PricingRepository {
 
 ---
 
-***REMOVED******REMOVED*** Data Flow
+## Data Flow
 
-***REMOVED******REMOVED******REMOVED*** Multi-Frame Detection Pipeline Flow (Scanning Mode)
+### Multi-Frame Detection Pipeline Flow (Scanning Mode)
 
 ```
 User taps scan button
@@ -821,7 +821,7 @@ CameraXManager.stopScanning()
 ObjectTracker.reset()
 ```
 
-***REMOVED******REMOVED******REMOVED*** Barcode Scanning Flow
+### Barcode Scanning Flow
 
 ```
 User selects Barcode mode + taps scan
@@ -847,7 +847,7 @@ Every 800ms:
     ItemsViewModel.addItems() (deduplication)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Navigation Flow
+### Navigation Flow
 
 ```
 App Launch
@@ -875,9 +875,9 @@ Return to CameraScreen
 
 ---
 
-***REMOVED******REMOVED*** Technology Stack
+## Technology Stack
 
-***REMOVED******REMOVED******REMOVED*** Core Android
+### Core Android
 
 | Technology            | Version | Purpose                       |
 |-----------------------|---------|-------------------------------|
@@ -886,7 +886,7 @@ Return to CameraScreen
 | Compile SDK           | 34      | Target API level              |
 | Min SDK               | 24      | Minimum support (Android 7.0) |
 
-***REMOVED******REMOVED******REMOVED*** UI Layer
+### UI Layer
 
 | Technology              | Version    | Purpose                 |
 |-------------------------|------------|-------------------------|
@@ -895,7 +895,7 @@ Return to CameraScreen
 | Material Icons Extended | -          | Icon library            |
 | Activity Compose        | 1.8.2      | Compose-Activity bridge |
 
-***REMOVED******REMOVED******REMOVED*** Architecture Components
+### Architecture Components
 
 | Technology            | Version | Purpose             |
 |-----------------------|---------|---------------------|
@@ -903,7 +903,7 @@ Return to CameraScreen
 | ViewModel Compose     | 2.7.0   | State management    |
 | Navigation Compose    | 2.7.6   | Screen navigation   |
 
-***REMOVED******REMOVED******REMOVED*** Camera & ML
+### Camera & ML
 
 | Technology               | Version | Purpose                 |
 |--------------------------|---------|-------------------------|
@@ -914,13 +914,13 @@ Return to CameraScreen
 | ML Kit Object Detection  | 17.0.1  | On-device ML            |
 | Coroutines Play Services | 1.7.3   | Async ML Kit operations |
 
-***REMOVED******REMOVED******REMOVED*** Permissions
+### Permissions
 
 | Technology              | Version | Purpose                        |
 |-------------------------|---------|--------------------------------|
 | Accompanist Permissions | 0.32.0  | Permission handling in Compose |
 
-***REMOVED******REMOVED******REMOVED*** Testing
+### Testing
 
 | Technology      | Version | Purpose                         |
 |-----------------|---------|---------------------------------|
@@ -949,9 +949,9 @@ Return to CameraScreen
 
 ---
 
-***REMOVED******REMOVED*** Design Patterns
+## Design Patterns
 
-***REMOVED******REMOVED******REMOVED*** 1. Repository Pattern (Simplified)
+### 1. Repository Pattern (Simplified)
 
 **Where:** `ItemsViewModel` acts as lightweight repository
 
@@ -968,7 +968,7 @@ class ItemsViewModel : ViewModel() {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Singleton Pattern
+### 2. Singleton Pattern
 
 **Where:** `PricingEngine`, ML Kit detector
 
@@ -982,7 +982,7 @@ object PricingEngine {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Facade Pattern
+### 3. Facade Pattern
 
 **Where:** `CameraXManager`, `ObjectDetectorClient`
 
@@ -994,7 +994,7 @@ object PricingEngine {
 - Provide domain-specific API
 - Easier to test and mock
 
-***REMOVED******REMOVED******REMOVED*** 4. Observer Pattern
+### 4. Observer Pattern
 
 **Where:** StateFlow/Compose state observation
 
@@ -1006,13 +1006,13 @@ object PricingEngine {
 val items by itemsViewModel.items.collectAsState()
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Factory Pattern
+### 5. Factory Pattern
 
 **Where:** `AndroidView` factory for PreviewView
 
 **Why:** Lazy initialization of Android views in Compose
 
-***REMOVED******REMOVED******REMOVED*** 6. Builder Pattern
+### 6. Builder Pattern
 
 **Where:** ML Kit `ObjectDetectorOptions`, CameraX builders
 
@@ -1020,9 +1020,9 @@ val items by itemsViewModel.items.collectAsState()
 
 ---
 
-***REMOVED******REMOVED*** Future Considerations
+## Future Considerations
 
-***REMOVED******REMOVED******REMOVED*** Scalability Improvements
+### Scalability Improvements
 
 1. **Multi-Module Architecture**
     - `:app` - UI & navigation
@@ -1088,7 +1088,7 @@ val items by itemsViewModel.items.collectAsState()
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 Scanium demonstrates a **clean, pragmatic architecture** suitable for a proof-of-concept Android
 application. The architecture prioritizes:

@@ -1,11 +1,11 @@
-***REMOVED*** Timeout Policy & Progress States Verification Guide
+# Timeout Policy & Progress States Verification Guide
 
 This guide explains the unified timeout policy and progressive UI states implemented to prevent "
 assistant temporarily unavailable" errors and improve stability UX.
 
-***REMOVED******REMOVED*** What Changed
+## What Changed
 
-***REMOVED******REMOVED******REMOVED*** 1. Unified Timeout Policy (AssistantHttpConfig.kt)
+### 1. Unified Timeout Policy (AssistantHttpConfig.kt)
 
 **Problem:** Different OkHttpClient instances had inconsistent timeouts, causing premature "
 unavailable" errors.
@@ -25,9 +25,9 @@ unavailable" errors.
 - Backend ASSIST_PROVIDER_TIMEOUT_MS = 30s → Client read = 60s
 - Backend VISION_TIMEOUT_MS = 10s → Client read = 30s
 
-***REMOVED******REMOVED******REMOVED*** 2. Progress State Machines
+### 2. Progress State Machines
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** VisionEnrichmentState (ml/VisionEnrichmentState.kt)
+#### VisionEnrichmentState (ml/VisionEnrichmentState.kt)
 
 State machine for vision insights extraction:
 
@@ -48,7 +48,7 @@ IDLE → ENRICHING → READY / FAILED
 - `itemIdOrNull()`: Gets associated item ID
 - `transitionTo()`: Validates state transitions
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ExportAssistantState (items/edit/ExportAssistantViewModel.kt)
+#### ExportAssistantState (items/edit/ExportAssistantViewModel.kt)
 
 Enhanced assistant export state with progress messages:
 
@@ -61,7 +61,7 @@ IDLE → GENERATING → SUCCESS / ERROR
 - `getStatusMessage()`: Returns "Drafting description…" during generation
 - `isLongRunning()`: Returns true after 10 seconds (for "Still working…" indicator)
 
-***REMOVED******REMOVED******REMOVED*** 3. Applied Unified Timeouts
+### 3. Applied Unified Timeouts
 
 Updated clients to use centralized policy:
 
@@ -91,19 +91,19 @@ private val client = AssistantOkHttpClientFactory.create(
 
 ---
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 
-***REMOVED******REMOVED******REMOVED*** 1. Unit Tests (Automated)
+### 1. Unit Tests (Automated)
 
 Run the test suite:
 
 ```bash
 cd /Users/family/dev/scanium
 
-***REMOVED*** Run all new tests
+# Run all new tests
 ./gradlew :androidApp:testDevDebugUnitTest --tests "*VisionEnrichmentStateTest" --tests "*ExportAssistantStateTest" --tests "*AssistantTimeoutPolicyTest"
 
-***REMOVED*** Expected: BUILD SUCCESSFUL, all tests pass
+# Expected: BUILD SUCCESSFUL, all tests pass
 ```
 
 **Tests verify:**
@@ -116,7 +116,7 @@ cd /Users/family/dev/scanium
 - ✅ Moderate delays complete without timeout
 - ✅ Diagnostic info includes all configs
 
-***REMOVED******REMOVED******REMOVED*** 2. Manual Testing - Vision Enrichment
+### 2. Manual Testing - Vision Enrichment
 
 **Objective:** Verify "Extracting info from photo…" message appears without "unavailable" error
 
@@ -138,7 +138,7 @@ cd /Users/family/dev/scanium
 - ✅ Attributes appear after completion
 - ✅ No premature "unavailable" errors
 
-***REMOVED******REMOVED******REMOVED*** 3. Manual Testing - Assistant Export
+### 3. Manual Testing - Assistant Export
 
 **Objective:** Verify "Drafting description…" message and no premature failures
 
@@ -165,24 +165,24 @@ cd /Users/family/dev/scanium
 - ✅ UI doesn't block typing during generation
 - ✅ No premature "unavailable" errors
 
-***REMOVED******REMOVED******REMOVED*** 4. Backend Timeout Alignment
+### 4. Backend Timeout Alignment
 
 **Verify client > backend timeout:**
 
 ```bash
-***REMOVED*** Check backend timeouts
+# Check backend timeouts
 grep -E "(ASSIST_PROVIDER_TIMEOUT_MS|VISION_TIMEOUT_MS)" backend/.env.example
 
-***REMOVED*** Expected:
-***REMOVED*** VISION_TIMEOUT_MS=10000          (10 seconds)
-***REMOVED*** ASSIST_PROVIDER_TIMEOUT_MS=30000 (30 seconds)
+# Expected:
+# VISION_TIMEOUT_MS=10000          (10 seconds)
+# ASSIST_PROVIDER_TIMEOUT_MS=30000 (30 seconds)
 
-***REMOVED*** Check client timeouts (already verified in tests)
-***REMOVED*** Vision client read: 30s > backend 10s ✅
-***REMOVED*** Assistant client read: 60s > backend 30s ✅
+# Check client timeouts (already verified in tests)
+# Vision client read: 30s > backend 10s ✅
+# Assistant client read: 60s > backend 30s ✅
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Preflight Performance
+### 5. Preflight Performance
 
 **Verify preflight doesn't block UI:**
 
@@ -203,9 +203,9 @@ grep -E "(ASSIST_PROVIDER_TIMEOUT_MS|VISION_TIMEOUT_MS)" backend/.env.example
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Issue: "Extracting info from photo…" hangs forever
+### Issue: "Extracting info from photo…" hangs forever
 
 **Debug:**
 
@@ -225,7 +225,7 @@ adb logcat -s VisionInsightsRepo:I | grep -E "(timeout|error)"
 - Verify network: `adb shell ping scanium.gtemp1.com`
 - Increase client timeout if backend legitimately takes longer
 
-***REMOVED******REMOVED******REMOVED*** Issue: "Drafting description…" shows "unavailable" after 5 seconds
+### Issue: "Drafting description…" shows "unavailable" after 5 seconds
 
 **Debug:**
 
@@ -245,21 +245,21 @@ adb logcat -s ScaniumAssist:I | grep -E "(timeout|VALIDATION)"
 - Check backend: `ssh nas "docker logs --tail 100 scanium-backend-prod | grep ASSIST"`
 - Test with curl (see docs/assistant/CURL_VERIFICATION_EXAMPLE.md)
 
-***REMOVED******REMOVED******REMOVED*** Issue: Tests fail with "initializationError"
+### Issue: Tests fail with "initializationError"
 
 **Cause:** Robolectric not initialized properly
 
 **Fix:**
 
 ```bash
-***REMOVED*** Clean and rebuild
+# Clean and rebuild
 ./gradlew clean
 ./gradlew :androidApp:testDevDebugUnitTest --tests "*VisionEnrichmentStateTest"
 ```
 
 ---
 
-***REMOVED******REMOVED*** Backend Alignment Matrix
+## Backend Alignment Matrix
 
 | Operation         | Backend Timeout                  | Client Read Timeout | Buffer | Aligned? |
 |-------------------|----------------------------------|---------------------|--------|----------|
@@ -273,52 +273,52 @@ adb logcat -s ScaniumAssist:I | grep -E "(timeout|VALIDATION)"
 cd /Users/family/dev/scanium
 ./gradlew :androidApp:testDevDebugUnitTest --tests "*AssistantTimeoutPolicyTest.client timeout is greater than backend timeout*"
 
-***REMOVED*** Expected: PASS
+# Expected: PASS
 ```
 
 ---
 
-***REMOVED******REMOVED*** Diagnostic Commands
+## Diagnostic Commands
 
-***REMOVED******REMOVED******REMOVED*** Check Timeout Configuration at Runtime
+### Check Timeout Configuration at Runtime
 
 ```bash
-***REMOVED*** Android logs will show at startup:
+# Android logs will show at startup:
 adb logcat -s AssistantHttp:I | grep "Policy Initialized"
 
-***REMOVED*** Expected output:
-***REMOVED*** AssistantHttp: Assistant HTTP Policy Initialized:
-***REMOVED***   Version: 1.0.0
-***REMOVED***   Timeouts: connect=15s, read=60s, write=30s, call=75s, retries=1
-***REMOVED***   Retry: 1x on transient errors (502/503/504, timeout, network)
-***REMOVED***   Non-retryable: 400/401/403/404/429
+# Expected output:
+# AssistantHttp: Assistant HTTP Policy Initialized:
+#   Version: 1.0.0
+#   Timeouts: connect=15s, read=60s, write=30s, call=75s, retries=1
+#   Retry: 1x on transient errors (502/503/504, timeout, network)
+#   Non-retryable: 400/401/403/404/429
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check State Machine Transitions
+### Check State Machine Transitions
 
 ```bash
-***REMOVED*** Vision enrichment state changes:
+# Vision enrichment state changes:
 adb logcat -s VisionInsightsRepo:D | grep -E "(IDLE|ENRICHING|READY|FAILED)"
 
-***REMOVED*** Assistant export state changes:
+# Assistant export state changes:
 adb logcat -s ExportAssistantVM:D | grep -E "(Idle|Generating|Success|Error)"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Verify No "Unavailable" Errors During Valid Requests
+### Verify No "Unavailable" Errors During Valid Requests
 
 ```bash
-***REMOVED*** Monitor for false "unavailable" errors:
+# Monitor for false "unavailable" errors:
 adb logcat | grep -i "temporarily unavailable"
 
-***REMOVED*** Should NOT appear during:
-***REMOVED*** - Vision extraction (within 30s)
-***REMOVED*** - AI generation (within 60s)
-***REMOVED*** - Normal operation with backend reachable
+# Should NOT appear during:
+# - Vision extraction (within 30s)
+# - AI generation (within 60s)
+# - Normal operation with backend reachable
 ```
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria Checklist
+## Success Criteria Checklist
 
 - ✅ **Unit tests pass** (state machines + timeout policy)
 - ✅ **Vision enrichment** shows progress and completes without "unavailable"
@@ -330,7 +330,7 @@ adb logcat | grep -i "temporarily unavailable"
 
 ---
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 **Timeout Policy:**
 
@@ -359,7 +359,7 @@ added VISION to diagnostics)
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 After verification:
 
@@ -380,7 +380,7 @@ After verification:
 
 ---
 
-***REMOVED******REMOVED*** Contact
+## Contact
 
 For issues or questions about timeout policy:
 

@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -6,13 +6,13 @@ cd "$ROOT"
 
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-5}"
 
-if [ "$***REMOVED***" -eq 0 ]; then
+if [ "$#" -eq 0 ]; then
   TASKS=(test)
 else
   TASKS=("$@")
 fi
 
-***REMOVED*** AI Selection Menu
+# AI Selection Menu
 echo "╔════════════════════════════════════════╗"
 echo "║   Select AI Agent for Test Fixing      ║"
 echo "╠════════════════════════════════════════╣"
@@ -46,7 +46,7 @@ echo ""
 echo "Selected: $AI_NAME"
 echo ""
 
-***REMOVED*** Check if selected AI CLI is available
+# Check if selected AI CLI is available
 if ! command -v "$AI_CMD" >/dev/null 2>&1; then
   echo "Error: $AI_NAME CLI ('$AI_CMD') not found. Please install it first." >&2
   exit 1
@@ -64,7 +64,7 @@ run_sanity_check() {
   mkdir -p "$ROOT/tmp"
 
   echo "Running Gradle sanity check..."
-  ***REMOVED*** Capture output so failures are actionable even with `set -e`.
+  # Capture output so failures are actionable even with `set -e`.
   if "$sanity_script" >"$log_file" 2>&1; then
     echo "Sanity check passed"
     return 0
@@ -79,7 +79,7 @@ run_sanity_check() {
   return 1
 }
 
-***REMOVED*** Run sanity check before starting test-fix loop
+# Run sanity check before starting test-fix loop
 run_sanity_check
 
 build_and_deploy_apk() {
@@ -88,14 +88,14 @@ build_and_deploy_apk() {
   echo "║   Building and Deploying APK           ║"
   echo "╚════════════════════════════════════════╝"
 
-  ***REMOVED*** Build dev debug APK
+  # Build dev debug APK
   echo "Building devDebug APK..."
   if ! ./gradlew :androidApp:assembleDevDebug --console=plain; then
     echo "⚠️  Warning: APK build failed. Skipping deployment."
     return 1
   fi
 
-  ***REMOVED*** Find the built APK
+  # Find the built APK
   local apk_dir="$ROOT/androidApp/build/outputs/apk/dev/debug"
   local apk_file=$(find "$apk_dir" -name "*.apk" -type f | head -1)
 
@@ -106,14 +106,14 @@ build_and_deploy_apk() {
 
   echo "✓ APK built: $apk_file"
 
-  ***REMOVED*** Check if device is connected
+  # Check if device is connected
   if ! adb devices | grep -q "device$"; then
     echo "⚠️  Warning: No Android device connected. APK will not be copied to device."
     echo "   APK location: $apk_file"
     return 0
   fi
 
-  ***REMOVED*** Copy APK to device storage
+  # Copy APK to device storage
   local device_path="/sdcard/Download/scanium-dev-debug.apk"
   echo "Copying APK to device storage: $device_path"
 
@@ -135,7 +135,7 @@ for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
   if "$ROOT/scripts/dev/run_tests.sh" "${TASKS[@]}"; then
     echo "✅ Tests passed on attempt $attempt."
 
-    ***REMOVED*** Build and deploy APK after successful tests
+    # Build and deploy APK after successful tests
     build_and_deploy_apk
 
     exit 0
@@ -154,7 +154,7 @@ ${FAILURE_PACKET}
 EOF
 )
 
-  ***REMOVED*** Execute AI-specific fix command
+  # Execute AI-specific fix command
   case "$AI_CMD" in
     claude)
       claude --dangerously-skip-permissions -p "$PROMPT"
@@ -167,7 +167,7 @@ EOF
       ;;
   esac
 
-  ***REMOVED*** Re-run sanity check after AI fix attempt
+  # Re-run sanity check after AI fix attempt
   run_sanity_check
 
 done

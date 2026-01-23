@@ -1,14 +1,14 @@
-***REMOVED*** Real-Time Item Aggregation System
+# Real-Time Item Aggregation System
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The **Real-Time Item Aggregation System** is a robust solution for merging similar object detections
 during scanning mode. It replaces the previous strict deduplication logic that failed due to
 frequent ML Kit trackingId changes and overly strict spatial matching thresholds.
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
-***REMOVED******REMOVED******REMOVED*** Previous System Issues
+### Previous System Issues
 
 1. **trackingId Instability**: ML Kit's trackingId changed frequently during real-world scanning,
    breaking the deduplication logic.
@@ -18,7 +18,7 @@ frequent ML Kit trackingId changes and overly strict spatial matching thresholds
    forcing fallback to "loose identification."
 4. **Duplicate Overload**: Loose mode created too many duplicates when users panned around objects.
 
-***REMOVED******REMOVED******REMOVED*** Solution Requirements
+### Solution Requirements
 
 - **Resilient Matching**: Work even when trackingIds reset or oscillate
 - **Spatial Tolerance**: Handle bounding box shifts from camera movement
@@ -26,9 +26,9 @@ frequent ML Kit trackingId changes and overly strict spatial matching thresholds
 - **Configurable**: Tunable thresholds for different use cases
 - **Always Produce Items**: Avoid the "no items appear" failure mode
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Component Overview
+### Component Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -70,9 +70,9 @@ frequent ML Kit trackingId changes and overly strict spatial matching thresholds
           └──────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Key Components
+### Key Components
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. AggregatedItem (`AggregatedItem.kt`)
+#### 1. AggregatedItem (`AggregatedItem.kt`)
 
 Represents a unique physical object aggregated from multiple detections.
 
@@ -101,7 +101,7 @@ Represents a unique physical object aggregated from multiple detections.
 - `isStale(maxAgeMs)`: Check if item hasn't been seen recently
 - `cleanup()`: Release bitmap resources
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. ItemAggregator (`ItemAggregator.kt`)
+#### 2. ItemAggregator (`ItemAggregator.kt`)
 
 The core aggregation engine that processes detections and maintains aggregated items.
 
@@ -123,7 +123,7 @@ The core aggregation engine that processes detections and maintains aggregated i
 - `reset()`: Clear all items (new session)
 - `getStats()`: Get aggregation statistics
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. AggregationConfig (`ItemAggregator.kt`)
+#### 3. AggregationConfig (`ItemAggregator.kt`)
 
 Configuration parameters for aggregation behavior.
 
@@ -136,7 +136,7 @@ Configuration parameters for aggregation behavior.
 - `labelMatchRequired` (boolean): Must labels be present and similar? (default: false)
 - `weights`: Similarity factor weights
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. SimilarityWeights (`ItemAggregator.kt`)
+#### 4. SimilarityWeights (`ItemAggregator.kt`)
 
 Weights for combining similarity factors.
 
@@ -147,17 +147,17 @@ Weights for combining similarity factors.
 - `sizeWeight`: 0.20 (20%) - Bounding box size importance
 - `distanceWeight`: 0.25 (25%) - Spatial proximity importance
 
-***REMOVED******REMOVED*** Similarity Calculation
+## Similarity Calculation
 
 The aggregator uses a **weighted similarity model** that combines multiple factors:
 
-***REMOVED******REMOVED******REMOVED*** 1. Category Match
+### 1. Category Match
 
 - **Binary**: Categories must match exactly (if `categoryMatchRequired = true`)
 - **Score**: 1.0 if match, 0.0 if not
 - **Weight**: 30%
 
-***REMOVED******REMOVED******REMOVED*** 2. Label Similarity
+### 2. Label Similarity
 
 - **Algorithm**: Normalized Levenshtein distance
 - **Case-insensitive**: "T-Shirt" matches "t-shirt"
@@ -165,14 +165,14 @@ The aggregator uses a **weighted similarity model** that combines multiple facto
 - **Weight**: 25%
 - **Hard Filter**: If `labelMatchRequired = true`, both items must have labels
 
-***REMOVED******REMOVED******REMOVED*** 3. Size Similarity
+### 3. Size Similarity
 
 - **Calculation**: `min(area1, area2) / max(area1, area2)`
 - **Hard Filter**: If size difference > `maxSizeDifferenceRatio`, similarity = 0
 - **Score**: 1.0 for identical sizes, decreasing with difference
 - **Weight**: 20%
 
-***REMOVED******REMOVED******REMOVED*** 4. Spatial Distance
+### 4. Spatial Distance
 
 - **Calculation**: Euclidean distance between bounding box centers
 - **Normalization**: By frame diagonal (√2 for normalized coordinates)
@@ -180,7 +180,7 @@ The aggregator uses a **weighted similarity model** that combines multiple facto
 - **Score**: 1.0 for same position, decreasing with distance
 - **Weight**: 25%
 
-***REMOVED******REMOVED******REMOVED*** Final Score
+### Final Score
 
 ```
 similarity = (
@@ -194,11 +194,11 @@ similarity = (
 If `similarity >= similarityThreshold`: **MERGE**
 If `similarity < similarityThreshold`: **CREATE NEW**
 
-***REMOVED******REMOVED*** Integration with ItemsViewModel
+## Integration with ItemsViewModel
 
 The `ItemsViewModel` has been updated to use `ItemAggregator` instead of `SessionDeduplicator`.
 
-***REMOVED******REMOVED******REMOVED*** Changes
+### Changes
 
 **Before:**
 
@@ -237,14 +237,14 @@ private fun updateItemsState() {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** New Methods
+### New Methods
 
 - `getAggregationStats()`: Get merge statistics for monitoring
 - `removeStaleItems(maxAgeMs)`: Remove items not seen recently
 
-***REMOVED******REMOVED*** Configuration Guide
+## Configuration Guide
 
-***REMOVED******REMOVED******REMOVED*** Default Configuration (Balanced)
+### Default Configuration (Balanced)
 
 ```kotlin
 val aggregator = ItemAggregator(
@@ -258,7 +258,7 @@ val aggregator = ItemAggregator(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Strict Configuration (Fewer Merges)
+### Strict Configuration (Fewer Merges)
 
 Use when you need high precision and want to avoid false positives.
 
@@ -274,7 +274,7 @@ val aggregator = ItemAggregator(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Loose Configuration (More Merges)
+### Loose Configuration (More Merges)
 
 Use when you need high recall and want to aggressively merge similar items.
 
@@ -290,7 +290,7 @@ val aggregator = ItemAggregator(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Custom Weights
+### Custom Weights
 
 Adjust importance of different factors:
 
@@ -308,34 +308,34 @@ val aggregator = ItemAggregator(
 )
 ```
 
-***REMOVED******REMOVED*** Performance Characteristics
+## Performance Characteristics
 
-***REMOVED******REMOVED******REMOVED*** Computational Complexity
+### Computational Complexity
 
 - **Per Detection**: O(N) where N = number of existing aggregated items
 - **Similarity Calculation**: O(1) for category, size, distance; O(M) for label (M = label length)
 - **Memory**: O(N * S) where S = average size of thumbnail + metadata
 
-***REMOVED******REMOVED******REMOVED*** Optimization Strategies
+### Optimization Strategies
 
 1. **Early Exit**: Hard filters (category, size, distance) reject candidates quickly
 2. **Spatial Indexing** (future): Could use quadtree for O(log N) spatial queries
 3. **Thumbnail Caching**: Bitmaps reused across merges
 4. **Stale Removal**: Periodic cleanup prevents unbounded growth
 
-***REMOVED******REMOVED******REMOVED*** Typical Performance
+### Typical Performance
 
 - **2-5 fps analysis**: ~200ms per frame (including ML Kit detection)
 - **Aggregation overhead**: <10ms per detection with <50 items
 - **Memory usage**: ~5MB per 100 items (with thumbnails)
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Test Coverage
+### Test Coverage
 
 Two comprehensive test suites verify correctness:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. ItemAggregatorTest
+#### 1. ItemAggregatorTest
 
 - `test_similar_detections_merge_into_one_item`
 - `test_distinct_detections_remain_separate`
@@ -353,7 +353,7 @@ Two comprehensive test suites verify correctness:
 - `test_statistics_calculation`
 - `test_conversion_to_ScannedItem`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. ItemsViewModelAggregationTest
+#### 2. ItemsViewModelAggregationTest
 
 - `test_addItem_merges_similar_detections`
 - `test_addItem_keeps_distinct_items_separate`
@@ -369,22 +369,22 @@ Two comprehensive test suites verify correctness:
 - `test_aggregated_items_maintain_correct_confidence`
 - `test_aggregated_items_maintain_correct_bounding_box`
 
-***REMOVED******REMOVED******REMOVED*** Running Tests
+### Running Tests
 
 ```bash
 ./gradlew test --tests "com.scanium.app.aggregation.*"
 ./gradlew test --tests "com.scanium.app.items.ItemsViewModelAggregationTest"
 ```
 
-***REMOVED******REMOVED*** Debugging and Monitoring
+## Debugging and Monitoring
 
-***REMOVED******REMOVED******REMOVED*** Log Tags
+### Log Tags
 
 - `ItemAggregator`: Main aggregation logic
 - `ItemsViewModel`: ViewModel integration
 - `AggregatedItem`: Individual item operations
 
-***REMOVED******REMOVED******REMOVED*** Log Levels
+### Log Levels
 
 **INFO**: Key operations
 
@@ -405,7 +405,7 @@ ItemAggregator:   - Distance similarity: 0.88
 ItemAggregator:   - Final weighted score: 0.85
 ```
 
-***REMOVED******REMOVED******REMOVED*** Monitoring Statistics
+### Monitoring Statistics
 
 ```kotlin
 val stats = itemsViewModel.getAggregationStats()
@@ -415,16 +415,16 @@ Log.i(TAG, "  Total merges: ${stats.totalMerges}")
 Log.i(TAG, "  Avg merges/item: ${stats.averageMergesPerItem}")
 ```
 
-***REMOVED******REMOVED*** Migration Guide
+## Migration Guide
 
-***REMOVED******REMOVED******REMOVED*** For Developers
+### For Developers
 
 1. **No Code Changes Required**: If you use `ItemsViewModel`, the aggregation happens automatically.
 2. **Custom Configuration**: Create custom `AggregationConfig` in `ItemsViewModel` constructor.
 3. **Statistics Access**: Use `itemsViewModel.getAggregationStats()` for monitoring.
 4. **Stale Cleanup**: Call `itemsViewModel.removeStaleItems()` periodically if needed.
 
-***REMOVED******REMOVED******REMOVED*** For Testers
+### For Testers
 
 1. **Behavioral Changes**:
     - Items with similar appearance merge automatically
@@ -437,9 +437,9 @@ Log.i(TAG, "  Avg merges/item: ${stats.averageMergesPerItem}")
     - Test with camera movement (panning, rotation)
     - Test with varying lighting conditions
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** Potential Improvements
+### Potential Improvements
 
 1. **Thumbnail Similarity**: Add perceptual hashing or dominant color matching
 2. **Spatial Indexing**: Use quadtree for O(log N) spatial queries with large item counts
@@ -448,7 +448,7 @@ Log.i(TAG, "  Avg merges/item: ${stats.averageMergesPerItem}")
 5. **Multi-Object Tracking**: Track relationships between items (e.g., grouped objects)
 6. **ML-Based Similarity**: Use neural embeddings for semantic similarity
 
-***REMOVED******REMOVED******REMOVED*** API Extensions
+### API Extensions
 
 ```kotlin
 // Proposed future API
@@ -467,9 +467,9 @@ class ItemAggregator {
 }
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Too Many Duplicates
+### Too Many Duplicates
 
 **Symptoms**: Same object appears multiple times in list
 
@@ -480,7 +480,7 @@ class ItemAggregator {
 - Increase `maxSizeDifferenceRatio` (e.g., 0.7 instead of 0.5)
 - Set `labelMatchRequired = false` if labels are inconsistent
 
-***REMOVED******REMOVED******REMOVED*** Items Not Merging
+### Items Not Merging
 
 **Symptoms**: Similar objects remain separate
 
@@ -491,7 +491,7 @@ class ItemAggregator {
 - Check label matching: If `labelMatchRequired = true`, ensure labels are present
 - Review logs: Enable DEBUG logging to see similarity scores
 
-***REMOVED******REMOVED******REMOVED*** Performance Issues
+### Performance Issues
 
 **Symptoms**: Slow frame processing, UI lag
 
@@ -502,9 +502,9 @@ class ItemAggregator {
 - Consider spatial indexing for large item counts (>100)
 - Profile using Android Studio Profiler
 
-***REMOVED******REMOVED*** References
+## References
 
-***REMOVED******REMOVED******REMOVED*** Source Files
+### Source Files
 
 - `app/src/main/java/com/scanium/app/aggregation/AggregatedItem.kt`
 - `app/src/main/java/com/scanium/app/aggregation/ItemAggregator.kt`
@@ -512,7 +512,7 @@ class ItemAggregator {
 - `app/src/test/java/com/scanium/app/aggregation/ItemAggregatorTest.kt`
 - `app/src/test/java/com/scanium/app/items/ItemsViewModelAggregationTest.kt`
 
-***REMOVED******REMOVED******REMOVED*** Related Documentation
+### Related Documentation
 
 - `docs/DEDUPLICATION.md` - Previous deduplication approach
 - `docs/TRACKING.md` - ObjectTracker frame-level logic

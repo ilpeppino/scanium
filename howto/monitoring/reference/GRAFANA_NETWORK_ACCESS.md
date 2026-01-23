@@ -1,11 +1,11 @@
-***REMOVED*** Grafana Network Access Solutions
+# Grafana Network Access Solutions
 
 **Issue**: `ERR_CONNECTION_REFUSED` when accessing http://REDACTED_INTERNAL_IP:3000
 **Cause**: Network routing/firewall issue preventing direct access to Grafana
 
 ---
 
-***REMOVED******REMOVED*** Diagnosis
+## Diagnosis
 
 ✅ **Grafana is running correctly**:
 
@@ -25,11 +25,11 @@
 
 ---
 
-***REMOVED******REMOVED*** Solution 1: SSH Tunnel (Recommended)
+## Solution 1: SSH Tunnel (Recommended)
 
 Create an SSH tunnel to access Grafana through localhost:
 
-***REMOVED******REMOVED******REMOVED*** Mac/Linux:
+### Mac/Linux:
 
 ```bash
 ssh -L 3000:localhost:3000 nas
@@ -43,7 +43,7 @@ http://localhost:3000
 
 Keep the SSH session running while using Grafana.
 
-***REMOVED******REMOVED******REMOVED*** Alternative Port (if 3000 is in use):
+### Alternative Port (if 3000 is in use):
 
 ```bash
 ssh -L 8080:localhost:3000 nas
@@ -53,29 +53,29 @@ Then access at: http://localhost:8080
 
 ---
 
-***REMOVED******REMOVED*** Solution 2: Background SSH Tunnel
+## Solution 2: Background SSH Tunnel
 
 Run the tunnel in the background:
 
 ```bash
-***REMOVED*** Create background tunnel
+# Create background tunnel
 ssh -f -N -L 3000:localhost:3000 nas
 
-***REMOVED*** Access Grafana
+# Access Grafana
 open http://localhost:3000
 
-***REMOVED*** When done, kill the tunnel
+# When done, kill the tunnel
 pkill -f "ssh.*3000:localhost:3000"
 ```
 
 ---
 
-***REMOVED******REMOVED*** Solution 3: Check Your Network
+## Solution 3: Check Your Network
 
 Find out what network you're on:
 
 ```bash
-***REMOVED*** Get your device's IP address
+# Get your device's IP address
 ifconfig | grep "inet " | grep -v 127.0.0.1
 ```
 
@@ -92,7 +92,7 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 
 ---
 
-***REMOVED******REMOVED*** Solution 4: Access via NAS Hostname
+## Solution 4: Access via NAS Hostname
 
 Try accessing via hostname:
 
@@ -110,13 +110,13 @@ Test hostname resolution:
 
 ```bash
 ping DSPlay418
-***REMOVED*** or
+# or
 ping DSPlay418.local
 ```
 
 ---
 
-***REMOVED******REMOVED*** Solution 5: Port Forward from Router
+## Solution 5: Port Forward from Router
 
 If your router supports it, set up port forwarding:
 
@@ -130,22 +130,22 @@ configured with anonymous access.
 
 ---
 
-***REMOVED******REMOVED*** Quick Test Commands
+## Quick Test Commands
 
-***REMOVED******REMOVED******REMOVED*** From Mac - Test if you can reach the NAS IP:
+### From Mac - Test if you can reach the NAS IP:
 
 ```bash
-***REMOVED*** Test TCP connection
+# Test TCP connection
 nc -zv REDACTED_INTERNAL_IP 3000
 
-***REMOVED*** Test HTTP
+# Test HTTP
 curl -v http://REDACTED_INTERNAL_IP:3000/api/health
 
-***REMOVED*** Test via SSH tunnel
+# Test via SSH tunnel
 ssh nas "curl -s http://localhost:3000/api/health"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check NAS network configuration:
+### Check NAS network configuration:
 
 ```bash
 ssh nas "ip addr show eth1"
@@ -154,50 +154,50 @@ ssh nas "ip route"
 
 ---
 
-***REMOVED******REMOVED*** Recommended: Use SSH Tunnel
+## Recommended: Use SSH Tunnel
 
 **For regular access**, I recommend setting up a permanent SSH tunnel:
 
-***REMOVED******REMOVED******REMOVED*** Create alias in ~/.zshrc or ~/.bashrc:
+### Create alias in ~/.zshrc or ~/.bashrc:
 
 ```bash
-***REMOVED*** Add this to your shell config
+# Add this to your shell config
 alias grafana-tunnel='ssh -L 3000:localhost:3000 nas'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Then use it:
+### Then use it:
 
 ```bash
-***REMOVED*** Start tunnel
+# Start tunnel
 grafana-tunnel
 
-***REMOVED*** In another terminal or browser
+# In another terminal or browser
 open http://localhost:3000
 ```
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "Port 3000 already in use"
+### "Port 3000 already in use"
 
 ```bash
-***REMOVED*** Find what's using port 3000
+# Find what's using port 3000
 lsof -i :3000
 
-***REMOVED*** Use a different port
+# Use a different port
 ssh -L 8080:localhost:3000 nas
-***REMOVED*** Then access: http://localhost:8080
+# Then access: http://localhost:8080
 ```
 
-***REMOVED******REMOVED******REMOVED*** "SSH tunnel keeps disconnecting"
+### "SSH tunnel keeps disconnecting"
 
 ```bash
-***REMOVED*** Keep tunnel alive with keep-alive option
+# Keep tunnel alive with keep-alive option
 ssh -o ServerAliveInterval=60 -L 3000:localhost:3000 nas
 ```
 
-***REMOVED******REMOVED******REMOVED*** "Cannot resolve hostname 'nas'"
+### "Cannot resolve hostname 'nas'"
 
 Update your SSH config (`~/.ssh/config`):
 
@@ -210,7 +210,7 @@ Host nas
 
 ---
 
-***REMOVED******REMOVED*** Current Grafana Status
+## Current Grafana Status
 
 ✅ **Container Running**:
 
@@ -237,7 +237,7 @@ tcp  0  0  0.0.0.0:3000  0.0.0.0:*  LISTEN
 
 ---
 
-***REMOVED******REMOVED*** All Dashboard URLs (via SSH Tunnel)
+## All Dashboard URLs (via SSH Tunnel)
 
 Once tunnel is running, access dashboards at:
 
@@ -248,7 +248,7 @@ Once tunnel is running, access dashboards at:
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. **Open terminal**
 2. **Run**: `ssh -L 3000:localhost:3000 nas`

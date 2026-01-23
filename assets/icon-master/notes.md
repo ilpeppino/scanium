@@ -1,14 +1,14 @@
-***REMOVED*** Scanium Android Icon Assets - Integration Guide
+# Scanium Android Icon Assets - Integration Guide
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This document describes the generated Android icon assets for Scanium, derived from the camera lens
 logo design. The assets follow Android Material Design guidelines and support both legacy and
 adaptive icon formats.
 
-***REMOVED******REMOVED*** Asset Composition
+## Asset Composition
 
-***REMOVED******REMOVED******REMOVED*** Master Files (Icon Sources)
+### Master Files (Icon Sources)
 
 Located in `assets/icon-master/`:
 
@@ -19,9 +19,9 @@ Located in `assets/icon-master/`:
 - **scanium_foreground.svg** — Centered foreground layer with safe-zone padding (66% canvas). Used
   for adaptive icon generation.
 - **scanium_background.svg** — Subtle blue gradient background for adaptive icons (matches brand
-  primary color ***REMOVED***0052cc).
+  primary color #0052cc).
 
-***REMOVED******REMOVED******REMOVED*** Design Decisions
+### Design Decisions
 
 1. **Lens Elements**: Two stacked circular camera lenses (upper and lower) with concentric rings,
    metallic chrome highlights, and colored glass effect (green-to-purple gradient).
@@ -30,15 +30,15 @@ Located in `assets/icon-master/`:
 3. **Simplification**: For small sizes (24-48dp), lens rings and gradients are simplified to
    maintain clarity without visual noise.
 4. **Color Palette**:
-    - Primary Blue: `***REMOVED***0052cc` (background)
-    - Lens Core: `***REMOVED***6400FF` (purple-blue)
-    - Curved S: `***REMOVED***0066FF` to `***REMOVED***00ccff` (blue gradient)
-    - Chrome Rings: `***REMOVED***e8e8e8` to `***REMOVED***ffffff` (metallic white)
-    - Monochrome: `***REMOVED***000000` (pure black for themed icons)
+    - Primary Blue: `#0052cc` (background)
+    - Lens Core: `#6400FF` (purple-blue)
+    - Curved S: `#0066FF` to `#00ccff` (blue gradient)
+    - Chrome Rings: `#e8e8e8` to `#ffffff` (metallic white)
+    - Monochrome: `#000000` (pure black for themed icons)
 
-***REMOVED******REMOVED*** Generated Assets
+## Generated Assets
 
-***REMOVED******REMOVED******REMOVED*** 1. Adaptive Launcher Icons (Android 8.0+)
+### 1. Adaptive Launcher Icons (Android 8.0+)
 
 **Directory**: `androidApp/src/main/res/mipmap-anydpi-v26/`
 
@@ -47,11 +47,11 @@ Located in `assets/icon-master/`:
 
 **Drawable Layers**:
 
-- `drawable/ic_launcher_background.xml` — Solid blue background (***REMOVED***0052cc).
+- `drawable/ic_launcher_background.xml` — Solid blue background (#0052cc).
 - `drawable/ic_launcher_foreground.xml` — Full-color lens + S mark (VectorDrawable).
 - `drawable/ic_launcher_monochrome.xml** — Single-color variant for Android 13+ themed icon support.
 
-***REMOVED******REMOVED******REMOVED*** 2. Legacy Launcher Icons (Pre-Oreo)
+### 2. Legacy Launcher Icons (Pre-Oreo)
 
 **Raster PNG files** at density-specific directories:
 
@@ -73,7 +73,7 @@ Located in `assets/icon-master/`:
 | xxhdpi  | `mipmap-xxhdpi/ic_launcher_round.png`  |
 | xxxhdpi | `mipmap-xxxhdpi/ic_launcher_round.png` |
 
-***REMOVED******REMOVED******REMOVED*** 3. Notification Small Icons
+### 3. Notification Small Icons
 
 **Monochrome white icons** for status bar and notifications:
 
@@ -88,7 +88,7 @@ Located in `assets/icon-master/`:
 **Usage**: `android:icon="@drawable/ic_notification"` in `AndroidManifest.xml` for the notification
 service.
 
-***REMOVED******REMOVED******REMOVED*** 4. Play Store Icon
+### 4. Play Store Icon
 
 **File**: `assets/android/ic_launcher_playstore.png`
 
@@ -96,12 +96,12 @@ service.
 - **Format**: PNG (no transparency)
 - **Design**: Full-color with safe padding (no corner radius; Google Play applies masking).
 
-***REMOVED******REMOVED*** Integration Instructions
+## Integration Instructions
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Copy Files to Android Project
+### Step 1: Copy Files to Android Project
 
 ```bash
-***REMOVED*** From repo root:
+# From repo root:
 cp -r assets/android/res/* androidApp/src/main/res/
 ```
 
@@ -111,7 +111,7 @@ Directory mapping:
 - `assets/android/res/mipmap-*/*` → `androidApp/src/main/res/mipmap-*/`
 - `assets/android/res/drawable/*` → `androidApp/src/main/res/drawable/`
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Update AndroidManifest.xml
+### Step 2: Update AndroidManifest.xml
 
 In `androidApp/src/main/AndroidManifest.xml`, ensure the `<application>` tag includes:
 
@@ -123,7 +123,7 @@ In `androidApp/src/main/AndroidManifest.xml`, ensure the `<application>` tag inc
     ...>
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 3: Update Notification Icon (if applicable)
+### Step 3: Update Notification Icon (if applicable)
 
 In your notification code (e.g., `NotificationCompat.Builder`):
 
@@ -134,23 +134,23 @@ notificationBuilder
     ...
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 4: Verify Play Store Icon
+### Step 4: Verify Play Store Icon
 
 Upload `ic_launcher_playstore.png` (512×512) to Google Play Console:
 
 - Go to **Release** → **Edit release** → **App releases** → **Browse files** → **App icon**
 - Verify preview shows correct aspect ratio (no cropping of lens marks).
 
-***REMOVED******REMOVED*** Design Rationale & Simplifications
+## Design Rationale & Simplifications
 
-***REMOVED******REMOVED******REMOVED*** Why These Choices?
+### Why These Choices?
 
 1. **Two Stacked Lenses**: Core brand identity from the source logo.
 2. **Curved Blue S**: Connects the lenses and clearly indicates "Scanium."
 3. **Chrome Rings**: Suggest camera lens optics while maintaining legibility at small sizes.
 4. **Gradient Lens**: Green-to-purple gradient provides visual depth without complexity.
 
-***REMOVED******REMOVED******REMOVED*** Small Size Optimization (24–48dp)
+### Small Size Optimization (24–48dp)
 
 At very small sizes (mdpi notification icon = 24×24 px):
 
@@ -158,13 +158,13 @@ At very small sizes (mdpi notification icon = 24×24 px):
 - Gradient simplified to solid fill to prevent banding.
 - Highlight points removed (not visible at <32px).
 
-***REMOVED******REMOVED******REMOVED*** Color & Contrast
+### Color & Contrast
 
-- **Dark theme compatibility**: Icon background (***REMOVED***0052cc) works well on light status bars;
+- **Dark theme compatibility**: Icon background (#0052cc) works well on light status bars;
   notification icon (white) works on dark bars.
 - **Light theme compatibility**: Same design visible on dark app drawer backgrounds.
 
-***REMOVED******REMOVED******REMOVED*** Adaptive Icon Safe Zone
+### Adaptive Icon Safe Zone
 
 The adaptive icon foreground is padded to the 66% safe zone:
 
@@ -172,7 +172,7 @@ The adaptive icon foreground is padded to the 66% safe zone:
 - Critical lens and S elements stay well within safe zone.
 - Icon remains recognizable under squircle and rounded square masks.
 
-***REMOVED******REMOVED*** Verification Checklist
+## Verification Checklist
 
 - [ ] All PNG files are crisp and properly sized (use `identify` to verify dimensions).
 - [ ] `ic_launcher.xml` references correct drawable resources.
@@ -187,7 +187,7 @@ The adaptive icon foreground is padded to the 66% safe zone:
 - [ ] Notification icon appears white in status bar (test with `adb shell`).
 - [ ] Google Play Console preview shows full icon (no clipping).
 
-***REMOVED******REMOVED*** File Manifest
+## File Manifest
 
 ```
 assets/
@@ -234,7 +234,7 @@ assets/
 │           └── ic_launcher_monochrome.xml
 ```
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. Copy all files to `androidApp/src/main/res/`.
 2. Update `AndroidManifest.xml` with icon and roundIcon references.
@@ -242,7 +242,7 @@ assets/
 4. Upload Play Store icon to Google Play Console.
 5. Commit assets to repository with clear commit message.
 
-***REMOVED******REMOVED*** Support
+## Support
 
 For issues or questions:
 

@@ -1,17 +1,17 @@
-***REMOVED*** Camera UI Refactor
+# Camera UI Refactor
 
 **Date**: 2025-12-12
 **Goal**: Create a decluttered Android-style camera experience with a single shutter button
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Camera UI has been refactored to provide a clean, minimal interface similar to native Android
 camera apps. The primary control is now a single shutter button, with advanced controls hidden by
 default and revealed on demand.
 
-***REMOVED******REMOVED*** Key Changes
+## Key Changes
 
-***REMOVED******REMOVED******REMOVED*** 1. Camera State Machine
+### 1. Camera State Machine
 
 **New File**: `app/src/main/java/com/scanium/app/camera/CameraState.kt`
 
@@ -32,7 +32,7 @@ enum class CameraState {
 - `SCANNING` → `IDLE`: When user taps shutter button while scanning
 - `CAPTURING` → `IDLE`: When single capture completes
 
-***REMOVED******REMOVED******REMOVED*** 2. Android-Style Shutter Button
+### 2. Android-Style Shutter Button
 
 **New File**: `app/src/main/java/com/scanium/app/camera/ShutterButton.kt`
 
@@ -69,7 +69,7 @@ A composable that implements the primary camera control with the following behav
 - Press animation (scale down to 0.9)
 - Contextual hint text below button
 
-***REMOVED******REMOVED******REMOVED*** 3. Advanced Controls Auto-Hide System
+### 3. Advanced Controls Auto-Hide System
 
 **Implementation**: `CameraScreen.kt`
 
@@ -93,7 +93,7 @@ Advanced controls (threshold slider and classification mode toggle) are now hidd
 - Threshold slider: Right side (as before)
 - Classification toggle: Left side (vertical chips)
 
-***REMOVED******REMOVED******REMOVED*** 4. Refactored Camera Screen
+### 4. Refactored Camera Screen
 
 **Modified File**: `app/src/main/java/com/scanium/app/camera/CameraScreen.kt`
 
@@ -116,9 +116,9 @@ Advanced controls (threshold slider and classification mode toggle) are now hidd
 - Items list integration
 - All existing detection accuracy and performance
 
-***REMOVED******REMOVED*** User Experience Flow
+## User Experience Flow
 
-***REMOVED******REMOVED******REMOVED*** Single Capture Flow
+### Single Capture Flow
 
 1. User opens camera → sees clean preview with only shutter button
 2. User taps shutter button
@@ -127,7 +127,7 @@ Advanced controls (threshold slider and classification mode toggle) are now hidd
 5. Items are added to list with toast notification
 6. Returns to IDLE state immediately
 
-***REMOVED******REMOVED******REMOVED*** Continuous Scanning Flow
+### Continuous Scanning Flow
 
 1. User opens camera → sees clean preview
 2. User long-presses shutter button (500ms)
@@ -139,7 +139,7 @@ Advanced controls (threshold slider and classification mode toggle) are now hidd
 8. User taps shutter button → scanning stops
 9. Returns to IDLE state
 
-***REMOVED******REMOVED******REMOVED*** Advanced Controls Flow
+### Advanced Controls Flow
 
 1. User wants to adjust threshold or classification mode
 2. User taps anywhere on camera preview (not shutter)
@@ -149,9 +149,9 @@ Advanced controls (threshold slider and classification mode toggle) are now hidd
 6. After 3 seconds of no interaction → controls fade out
 7. User can repeat as needed
 
-***REMOVED******REMOVED*** Technical Details
+## Technical Details
 
-***REMOVED******REMOVED******REMOVED*** Gesture Handling
+### Gesture Handling
 
 **Preview Tap Detection**:
 
@@ -193,7 +193,7 @@ Advanced controls (threshold slider and classification mode toggle) are now hidd
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Auto-Hide Timer
+### Auto-Hide Timer
 
 ```kotlin
 fun startAutoHideTimer() {
@@ -211,7 +211,7 @@ fun resetAutoHideTimer() {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** State Management
+### State Management
 
 Camera state is managed with simple Compose state:
 
@@ -241,16 +241,16 @@ if (cameraState == CameraState.SCANNING) {
 }
 ```
 
-***REMOVED******REMOVED*** Testing Checklist
+## Testing Checklist
 
-***REMOVED******REMOVED******REMOVED*** Basic Functionality
+### Basic Functionality
 
 - [ ] Camera preview starts correctly
 - [ ] Shutter button appears at bottom center
 - [ ] Advanced controls are hidden on launch
 - [ ] Mode switcher is visible and functional
 
-***REMOVED******REMOVED******REMOVED*** Single Capture
+### Single Capture
 
 - [ ] Tap shutter → captures single frame
 - [ ] Shutter click sound plays
@@ -259,7 +259,7 @@ if (cameraState == CameraState.SCANNING) {
 - [ ] Returns to IDLE state immediately
 - [ ] Can capture again without delay
 
-***REMOVED******REMOVED******REMOVED*** Continuous Scanning
+### Continuous Scanning
 
 - [ ] Long-press shutter (500ms) → starts scanning
 - [ ] Button turns red and pulses
@@ -272,7 +272,7 @@ if (cameraState == CameraState.SCANNING) {
 - [ ] Returns to IDLE state
 - [ ] Detection overlay clears
 
-***REMOVED******REMOVED******REMOVED*** Advanced Controls
+### Advanced Controls
 
 - [ ] Tap preview (not shutter) → controls appear
 - [ ] Both slider and toggle appear together
@@ -283,7 +283,7 @@ if (cameraState == CameraState.SCANNING) {
 - [ ] Tapping toggle → resets timer
 - [ ] Controls remain functional during countdown
 
-***REMOVED******REMOVED******REMOVED*** Edge Cases
+### Edge Cases
 
 - [ ] Very quick tap → always single capture (never scanning)
 - [ ] Long press while scanning → ignored (or stops scanning)
@@ -293,7 +293,7 @@ if (cameraState == CameraState.SCANNING) {
 - [ ] App backgrounded while scanning → cleans up properly
 - [ ] Rapid tap/long-press → no glitches or crashes
 
-***REMOVED******REMOVED******REMOVED*** Visual Verification
+### Visual Verification
 
 - [ ] Shutter button resembles Android camera app
 - [ ] Pulsing animation smooth when scanning
@@ -302,7 +302,7 @@ if (cameraState == CameraState.SCANNING) {
 - [ ] Classification toggle compact on left side
 - [ ] Hint text updates correctly ("Tap to capture • Hold to scan" / "Scanning..." / "Tap to stop")
 
-***REMOVED******REMOVED*** Performance Notes
+## Performance Notes
 
 - **No ML/Detection Changes**: The refactor only touches UI/UX state management. All ML Kit
   detection, tracking, and aggregation logic remains unchanged.
@@ -311,9 +311,9 @@ if (cameraState == CameraState.SCANNING) {
 - **Auto-Hide Delay**: Advanced controls hide after 3000ms (3 seconds) of inactivity
 - **State Updates**: All state transitions use Compose state, ensuring efficient recomposition
 
-***REMOVED******REMOVED*** Migration Notes
+## Migration Notes
 
-***REMOVED******REMOVED******REMOVED*** For Future Development
+### For Future Development
 
 If you need to modify camera behavior:
 
@@ -323,7 +323,7 @@ If you need to modify camera behavior:
 4. **Add more advanced controls**: Place them in the `if (advancedControlsVisible)` block
 5. **Customize visuals**: Modify colors/animations in `ShutterButton.kt` Canvas code
 
-***REMOVED******REMOVED******REMOVED*** Backward Compatibility
+### Backward Compatibility
 
 - All existing detection modes (Object/Barcode/Document) work unchanged
 - ItemsViewModel integration unchanged
@@ -331,14 +331,14 @@ If you need to modify camera behavior:
 - Navigation unchanged
 - Permissions unchanged
 
-***REMOVED******REMOVED*** Known Limitations
+## Known Limitations
 
 - **Long-press threshold**: Fixed at 500ms (could be made configurable)
 - **Auto-hide delay**: Fixed at 3 seconds (could be made configurable)
 - **Control positions**: Fixed (left/right sides, could support drag-to-reposition)
 - **Single button**: No separate video/photo toggle (intentional simplification)
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
 Potential improvements for future iterations:
 
@@ -350,19 +350,19 @@ Potential improvements for future iterations:
 6. **Drag-to-Position**: Allow users to reposition advanced controls
 7. **Quick Settings**: Swipe from edges to reveal more controls
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
-***REMOVED******REMOVED******REMOVED*** New Files
+### New Files
 
 - `app/src/main/java/com/scanium/app/camera/CameraState.kt`
 - `app/src/main/java/com/scanium/app/camera/ShutterButton.kt`
 - `md/features/CAMERA_UI_REFACTOR.md` (this file)
 
-***REMOVED******REMOVED******REMOVED*** Modified Files
+### Modified Files
 
 - `app/src/main/java/com/scanium/app/camera/CameraScreen.kt`
 
-***REMOVED******REMOVED******REMOVED*** Unchanged Files
+### Unchanged Files
 
 - `app/src/main/java/com/scanium/app/camera/CameraXManager.kt` (ML pipeline)
 - `app/src/main/java/com/scanium/app/camera/VerticalThresholdSlider.kt`
@@ -372,7 +372,7 @@ Potential improvements for future iterations:
 - All tracking logic (`ObjectTracker`, `ObjectCandidate`, etc.)
 - All ViewModels and navigation
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This refactor successfully achieves the goal of creating a clean, decluttered camera experience
 while preserving all existing detection functionality. The single shutter button provides an

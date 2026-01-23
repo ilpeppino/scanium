@@ -1,11 +1,11 @@
-***REMOVED*** Android 15 Cloud Regression Test Suite
+# Android 15 Cloud Regression Test Suite
 
 This document describes the cloud regression test suite for Scanium Android, designed to validate
 camera lifecycle, cloud classification, and share/export functionality on Android 15+ devices.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
-***REMOVED******REMOVED******REMOVED*** What These Tests Cover
+### What These Tests Cover
 
 The regression test suite validates critical paths that involve cloud backend integration:
 
@@ -17,7 +17,7 @@ The regression test suite validates critical paths that involve cloud backend in
 | **ShareExportRegressionTest**          | Export functionality | CSV/ZIP creation, intent configuration             |
 | **BackgroundForegroundRegressionTest** | App lifecycle        | Background/foreground transitions, camera recovery |
 
-***REMOVED******REMOVED******REMOVED*** Regression vs Unit Tests
+### Regression vs Unit Tests
 
 | Aspect           | Unit Tests            | Regression Tests            |
 |------------------|-----------------------|-----------------------------|
@@ -29,16 +29,16 @@ The regression test suite validates critical paths that involve cloud backend in
 
 ---
 
-***REMOVED******REMOVED*** Running the Tests
+## Running the Tests
 
-***REMOVED******REMOVED******REMOVED*** Prerequisites
+### Prerequisites
 
 1. **Cloud Backend**: Tests require a running backend with the `/health` endpoint
 2. **Physical Device**: Android 15 device recommended (emulator may work but less reliable for
    camera tests)
 3. **Permissions**: Camera permission must be grantable
 
-***REMOVED******REMOVED******REMOVED*** Method 1: Instrumentation Arguments (Recommended)
+### Method 1: Instrumentation Arguments (Recommended)
 
 ```bash
 ./gradlew :androidApp:connectedDebugAndroidTest \
@@ -46,7 +46,7 @@ The regression test suite validates critical paths that involve cloud backend in
     -Pandroid.testInstrumentationRunnerArguments.SCANIUM_API_KEY=your-api-key
 ```
 
-***REMOVED******REMOVED******REMOVED*** Method 2: Environment Variables
+### Method 2: Environment Variables
 
 Set before running tests:
 
@@ -57,7 +57,7 @@ export SCANIUM_API_KEY=your-api-key
 ./gradlew :androidApp:connectedDebugAndroidTest
 ```
 
-***REMOVED******REMOVED******REMOVED*** Method 3: local.properties
+### Method 3: local.properties
 
 Add to `local.properties` (not committed to git):
 
@@ -72,34 +72,34 @@ Then run:
 ./gradlew :androidApp:connectedDebugAndroidTest
 ```
 
-***REMOVED******REMOVED******REMOVED*** Run Specific Tests
+### Run Specific Tests
 
 ```bash
-***REMOVED*** Run only backend health test
+# Run only backend health test
 ./gradlew :androidApp:connectedDebugAndroidTest \
     -Pandroid.testInstrumentationRunnerArguments.class=com.scanium.app.regression.BackendHealthRegressionTest
 
-***REMOVED*** Run only camera lifecycle test
+# Run only camera lifecycle test
 ./gradlew :androidApp:connectedDebugAndroidTest \
     -Pandroid.testInstrumentationRunnerArguments.class=com.scanium.app.regression.CameraLifecycleRegressionTest
 
-***REMOVED*** Run the full suite
+# Run the full suite
 ./gradlew :androidApp:connectedDebugAndroidTest \
     -Pandroid.testInstrumentationRunnerArguments.class=com.scanium.app.regression.CloudRegressionTestSuite
 ```
 
 ---
 
-***REMOVED******REMOVED*** Device Requirements
+## Device Requirements
 
-***REMOVED******REMOVED******REMOVED*** Recommended Configuration
+### Recommended Configuration
 
 - **OS**: Android 15 (API 35) physical device
 - **Camera**: Back-facing camera required for camera tests
 - **Network**: WiFi connection to reach cloud backend
 - **Storage**: Sufficient space for test artifacts
 
-***REMOVED******REMOVED******REMOVED*** Compatibility Notes
+### Compatibility Notes
 
 | API Level             | Support Level | Notes                                      |
 |-----------------------|---------------|--------------------------------------------|
@@ -107,7 +107,7 @@ Then run:
 | 30-34 (Android 11-14) | ✅ Full        | Fully compatible                           |
 | 24-29 (Android 7-10)  | ⚠️ Partial    | Camera tests may be flaky on older devices |
 
-***REMOVED******REMOVED******REMOVED*** Camera Requirements
+### Camera Requirements
 
 - Tests detect camera availability and skip if no camera is present
 - Emulator cameras may work but provide less reliable results
@@ -115,9 +115,9 @@ Then run:
 
 ---
 
-***REMOVED******REMOVED*** Test Details
+## Test Details
 
-***REMOVED******REMOVED******REMOVED*** TEST 1: Backend Health (BackendHealthRegressionTest)
+### TEST 1: Backend Health (BackendHealthRegressionTest)
 
 **Purpose**: Validate cloud backend is reachable and properly configured.
 
@@ -133,7 +133,7 @@ Then run:
 - Backend URL not configured
 - Backend not reachable (network error, timeout)
 
-***REMOVED******REMOVED******REMOVED*** TEST 2: Camera Lifecycle (CameraLifecycleRegressionTest)
+### TEST 2: Camera Lifecycle (CameraLifecycleRegressionTest)
 
 **Purpose**: Ensure camera pipeline doesn't freeze after navigation or lifecycle transitions.
 
@@ -154,7 +154,7 @@ Then run:
 - `fps` > 0 when camera active
 - Pipeline status is "OK" (not stalled)
 
-***REMOVED******REMOVED******REMOVED*** TEST 3: Cloud Classification (CloudClassificationRegressionTest)
+### TEST 3: Cloud Classification (CloudClassificationRegressionTest)
 
 **Purpose**: Validate cloud classification API works end-to-end without real camera captures.
 
@@ -171,7 +171,7 @@ Then run:
 - Deterministic inputs for reproducible results
 - Tests HTTP path, not ML accuracy
 
-***REMOVED******REMOVED******REMOVED*** TEST 4: Share/Export (ShareExportRegressionTest)
+### TEST 4: Share/Export (ShareExportRegressionTest)
 
 **Purpose**: Verify CSV and ZIP exports are created correctly with proper attachments.
 
@@ -189,7 +189,7 @@ Then run:
 - `FLAG_GRANT_READ_URI_PERMISSION` is set
 - MIME types are correct (`text/csv`, `application/zip`, `image/*`)
 
-***REMOVED******REMOVED******REMOVED*** TEST 5: Background/Foreground (BackgroundForegroundRegressionTest)
+### TEST 5: Background/Foreground (BackgroundForegroundRegressionTest)
 
 **Purpose**: Ensure camera pipeline recovers correctly after app backgrounding.
 
@@ -208,9 +208,9 @@ Then run:
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Backend Unreachable
+### Backend Unreachable
 
 **Symptom**: Tests skip with message "Backend not reachable"
 
@@ -218,7 +218,7 @@ Then run:
 
 1. **Backend not running**
    ```bash
-   ***REMOVED*** Start backend
+   # Start backend
    cd backend && npm run dev
    ```
 
@@ -235,7 +235,7 @@ Then run:
     - Regenerate API key in backend
     - Verify key is correctly passed
 
-***REMOVED******REMOVED******REMOVED*** Permission Prompts
+### Permission Prompts
 
 **Symptom**: Tests hang waiting for permission dialog
 
@@ -253,7 +253,7 @@ Then run:
    adb shell pm clear com.scanium.app.dev
    ```
 
-***REMOVED******REMOVED******REMOVED*** Intent Interception on Android 15
+### Intent Interception on Android 15
 
 **Symptom**: Espresso Intents tests fail on Android 15
 
@@ -268,7 +268,7 @@ Then run:
    adb shell appops set com.scanium.app.dev SYSTEM_ALERT_WINDOW allow
    ```
 
-***REMOVED******REMOVED******REMOVED*** Camera Tests Flaky
+### Camera Tests Flaky
 
 **Symptom**: Camera tests pass sometimes, fail sometimes
 
@@ -282,7 +282,7 @@ Then run:
 
 4. **Check for other apps using camera**
 
-***REMOVED******REMOVED******REMOVED*** Test Takes Too Long
+### Test Takes Too Long
 
 **Symptom**: Tests timeout before completing
 
@@ -300,9 +300,9 @@ Then run:
 
 ---
 
-***REMOVED******REMOVED*** Architecture Notes
+## Architecture Notes
 
-***REMOVED******REMOVED******REMOVED*** Test Configuration Flow
+### Test Configuration Flow
 
 ```
 Instrumentation Arguments
@@ -316,7 +316,7 @@ Instrumentation Arguments
        [Test runs or skips]
 ```
 
-***REMOVED******REMOVED******REMOVED*** Key Classes
+### Key Classes
 
 | Class                  | Purpose                                   |
 |------------------------|-------------------------------------------|
@@ -326,7 +326,7 @@ Instrumentation Arguments
 | `TestSemantics`        | Centralized test tag constants            |
 | `TestBridge`           | Debug-only test utilities (item creation) |
 
-***REMOVED******REMOVED******REMOVED*** Test Tag Locations
+### Test Tag Locations
 
 | Tag                  | Location                   | Purpose                |
 |----------------------|----------------------------|------------------------|
@@ -337,9 +337,9 @@ Instrumentation Arguments
 
 ---
 
-***REMOVED******REMOVED*** CI/CD Integration
+## CI/CD Integration
 
-***REMOVED******REMOVED******REMOVED*** GitHub Actions Example
+### GitHub Actions Example
 
 ```yaml
 jobs:
@@ -364,29 +364,29 @@ jobs:
             -Pandroid.testInstrumentationRunnerArguments.SCANIUM_API_KEY=$SCANIUM_API_KEY
 ```
 
-***REMOVED******REMOVED******REMOVED*** Required Secrets
+### Required Secrets
 
 - `SCANIUM_BASE_URL`: Cloud backend URL
 - `SCANIUM_API_KEY`: API key for authentication
 
 ---
 
-***REMOVED******REMOVED*** Extending the Suite
+## Extending the Suite
 
-***REMOVED******REMOVED******REMOVED*** Adding New Tests
+### Adding New Tests
 
 1. Create test class in `androidApp/src/androidTest/java/com/scanium/app/regression/`
 2. Extend pattern from existing tests
 3. Add to `CloudRegressionTestSuite.kt`
 4. Use `BackendHealthGate.checkBackendOrSkip()` if cloud required
 
-***REMOVED******REMOVED******REMOVED*** Adding New Test Tags
+### Adding New Test Tags
 
 1. Add constant to `TestSemantics.kt`
 2. Apply `.testTag()` modifier in UI component
 3. Use in tests with `onNodeWithTag()`
 
-***REMOVED******REMOVED******REMOVED*** Best Practices
+### Best Practices
 
 - Always skip (not fail) if prerequisites missing
 - Use generated data instead of binary assets

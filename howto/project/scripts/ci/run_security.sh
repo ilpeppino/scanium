@@ -1,10 +1,10 @@
-***REMOVED***!/bin/bash
-***REMOVED*** scripts/ci/run_security.sh - Run CVE security scan locally
-***REMOVED*** Mirrors: .github/workflows/security-cve-scan.yml
+#!/bin/bash
+# scripts/ci/run_security.sh - Run CVE security scan locally
+# Mirrors: .github/workflows/security-cve-scan.yml
 
 set -euo pipefail
 
-***REMOVED*** Colors
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -22,10 +22,10 @@ echo "Repo root: $REPO_ROOT"
 echo "Output: $OUTPUT_DIR"
 echo ""
 
-***REMOVED*** Ensure output directory exists
+# Ensure output directory exists
 mkdir -p "$OUTPUT_DIR" "$CACHE_DIR"
 
-***REMOVED*** Setup JDK 17 on macOS if available
+# Setup JDK 17 on macOS if available
 setup_java() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         if /usr/libexec/java_home -v 17 &>/dev/null; then
@@ -39,7 +39,7 @@ setup_java() {
     echo ""
 }
 
-***REMOVED*** Ensure gradlew is executable
+# Ensure gradlew is executable
 ensure_gradlew() {
     if [[ ! -x "$REPO_ROOT/gradlew" ]]; then
         echo "Making gradlew executable..."
@@ -47,7 +47,7 @@ ensure_gradlew() {
     fi
 }
 
-***REMOVED*** Check for NVD API key
+# Check for NVD API key
 check_nvd_key() {
     if [[ -n "${NVD_API_KEY:-}" ]]; then
         echo -e "${GREEN}NVD API key detected${NC} (faster downloads)"
@@ -62,7 +62,7 @@ check_nvd_key() {
     echo ""
 }
 
-***REMOVED*** Run OWASP Dependency-Check
+# Run OWASP Dependency-Check
 run_scan() {
     local scan_exit_code=0
 
@@ -73,7 +73,7 @@ run_scan() {
     echo -e "${YELLOW}Note: First run downloads NVD database (~2GB). This may take 10-30 minutes.${NC}"
     echo ""
 
-    ***REMOVED*** Run the scan (continue on error to collect reports)
+    # Run the scan (continue on error to collect reports)
     if "$REPO_ROOT/gradlew" -p "$REPO_ROOT" dependencyCheckAnalyze --no-daemon --stacktrace 2>&1 | tee "$LOG_FILE"; then
         echo -e "${GREEN}[OK]${NC} Dependency check completed"
     else
@@ -85,7 +85,7 @@ run_scan() {
     return $scan_exit_code
 }
 
-***REMOVED*** Check for HIGH/CRITICAL vulnerabilities (mirrors CI behavior)
+# Check for HIGH/CRITICAL vulnerabilities (mirrors CI behavior)
 check_vulnerabilities() {
     local json_report="$REPO_ROOT/androidApp/build/reports/dependency-check-report.json"
 
@@ -96,14 +96,14 @@ check_vulnerabilities() {
         return 1
     fi
 
-    ***REMOVED*** Check if jq is available
+    # Check if jq is available
     if ! command -v jq &>/dev/null; then
         echo -e "${YELLOW}[WARN]${NC} jq not installed; cannot parse vulnerability counts"
         echo "  Install: brew install jq (macOS) or apt install jq (Linux)"
         return 0
     fi
 
-    ***REMOVED*** Count vulnerabilities (matching CI logic)
+    # Count vulnerabilities (matching CI logic)
     HIGH_COUNT=$(jq '[.dependencies[]?.vulnerabilities[]? | select(.severity == "HIGH")] | length' "$json_report" 2>/dev/null || echo "0")
     CRITICAL_COUNT=$(jq '[.dependencies[]?.vulnerabilities[]? | select(.severity == "CRITICAL")] | length' "$json_report" 2>/dev/null || echo "0")
     TOTAL=$((HIGH_COUNT + CRITICAL_COUNT))
@@ -114,7 +114,7 @@ check_vulnerabilities() {
     if [[ $TOTAL -gt 0 ]]; then
         echo -e "${RED}[FAIL]${NC} $TOTAL HIGH/CRITICAL vulnerabilities found"
 
-        ***REMOVED*** Show summary of vulnerable dependencies
+        # Show summary of vulnerable dependencies
         echo ""
         echo "Affected dependencies:"
         jq -r '.dependencies[] | select(.vulnerabilities != null and .vulnerabilities != []) | select(.vulnerabilities[].severity == "HIGH" or .vulnerabilities[].severity == "CRITICAL") | "  - \(.fileName)"' "$json_report" 2>/dev/null | sort -u | head -20
@@ -127,26 +127,26 @@ check_vulnerabilities() {
     fi
 }
 
-***REMOVED*** Copy reports to output directory
+# Copy reports to output directory
 copy_reports() {
     echo -e "${BLUE}=== Security Reports ===${NC}"
     echo ""
 
     local report_dir="$REPO_ROOT/androidApp/build/reports"
 
-    ***REMOVED*** SARIF
+    # SARIF
     if [[ -f "$report_dir/dependency-check-report.sarif" ]]; then
         cp "$report_dir/dependency-check-report.sarif" "$OUTPUT_DIR/"
         echo "SARIF: $OUTPUT_DIR/dependency-check-report.sarif"
     fi
 
-    ***REMOVED*** HTML
+    # HTML
     if [[ -f "$report_dir/dependency-check-report.html" ]]; then
         cp "$report_dir/dependency-check-report.html" "$OUTPUT_DIR/"
         echo "HTML:  $OUTPUT_DIR/dependency-check-report.html"
     fi
 
-    ***REMOVED*** JSON
+    # JSON
     if [[ -f "$report_dir/dependency-check-report.json" ]]; then
         cp "$report_dir/dependency-check-report.json" "$OUTPUT_DIR/"
         echo "JSON:  $OUTPUT_DIR/dependency-check-report.json"
@@ -156,21 +156,21 @@ copy_reports() {
     echo "All reports copied to: $OUTPUT_DIR/"
 }
 
-***REMOVED*** Main
+# Main
 setup_java
 ensure_gradlew
 check_nvd_key
 
 START_TIME=$(date +%s)
 
-***REMOVED*** Run scan (don't exit on failure - we want to check results)
+# Run scan (don't exit on failure - we want to check results)
 SCAN_RESULT=0
 run_scan || SCAN_RESULT=$?
 
-***REMOVED*** Copy reports regardless of scan result
+# Copy reports regardless of scan result
 copy_reports
 
-***REMOVED*** Check vulnerabilities
+# Check vulnerabilities
 VULN_RESULT=0
 check_vulnerabilities || VULN_RESULT=$?
 
@@ -182,7 +182,7 @@ echo -e "${BLUE}=== Summary ===${NC}"
 echo "Duration: ${DURATION}s"
 echo "Log: $LOG_FILE"
 
-***REMOVED*** Exit with failure if vulnerabilities found (matching CI behavior)
+# Exit with failure if vulnerabilities found (matching CI behavior)
 if [[ $VULN_RESULT -ne 0 ]]; then
     echo -e "${RED}Result: FAIL (vulnerabilities found)${NC}"
     exit 1

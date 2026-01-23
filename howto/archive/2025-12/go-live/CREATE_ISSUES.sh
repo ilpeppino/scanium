@@ -1,41 +1,41 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Create prioritized GitHub issues for Scanium go-live readiness
-***REMOVED*** Prerequisites: Run CREATE_LABELS.sh first
-***REMOVED*** Usage: bash docs/go-live/CREATE_ISSUES.sh
+#!/bin/bash
+# Create prioritized GitHub issues for Scanium go-live readiness
+# Prerequisites: Run CREATE_LABELS.sh first
+# Usage: bash docs/go-live/CREATE_ISSUES.sh
 
 set -e
 
 echo "🚀 Creating go-live issues in priority order..."
 echo ""
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** P0 CRITICAL - Must be done before go-live
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+###########################################
+# P0 CRITICAL - Must be done before go-live
+###########################################
 
 echo "Creating P0 severity:critical issues..."
 
 gh issue create \
   --title "[GO-LIVE][CRITICAL] Backend production deployment configuration missing" \
   --label "severity:critical,epic:backend,area:backend,priority:p0" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P0** – must be done before any real go-live
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Backend currently runs in development mode only. No production deployment configuration exists for Kubernetes, Cloud Run, or containerized environments.
 
 **Why it matters:** Cannot deploy backend to production without containerization, health checks, resource limits, and scaling policies.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/ARCHITECTURE.md:470\` - Roadmap mentions \"Production deployment configuration (Kubernetes/Cloud Run)\" as TODO
 - \`backend/src/main.ts\` - Only development setup
 - No Dockerfile for backend application
 - No Kubernetes/Cloud Run manifests
 - \`backend/.env.example\` has dev defaults only
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Create production Dockerfile with multi-stage build
 - [ ] Create docker-compose.yml for full-stack local testing
 - [ ] Document deployment options (K8s/Cloud Run/Docker Swarm)
@@ -47,24 +47,24 @@ Backend currently runs in development mode only. No production deployment config
 - [ ] Document secret management (K8s secrets, Cloud Secret Manager)
 - [ ] Test deployment to staging environment
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
 docker build -t scanium-backend:prod -f backend/Dockerfile .
 docker run -p 8080:8080 --env-file backend/.env.prod scanium-backend:prod
-curl http://localhost:8080/healthz  ***REMOVED*** 200 OK
+curl http://localhost:8080/healthz  # 200 OK
 kubectl apply -f k8s/staging/ && kubectl get pods -n scanium-staging
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][CRITICAL] Implement backend authentication and authorization" \
   --label "severity:critical,epic:backend,area:backend,area:auth,priority:p0" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P0** – must be done before any real go-live
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Backend API endpoints have NO authentication or authorization beyond optional API keys for specific routes (/v1/classify, /v1/assist). All other endpoints are publicly accessible. User data (eBay tokens, listings) is not protected.
 
 **Why it matters:** Production API would allow anyone to:
@@ -73,14 +73,14 @@ Backend API endpoints have NO authentication or authorization beyond optional AP
 - Exhaust rate limits and quotas
 - Violate GDPR/privacy regulations
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/src/app.ts\` - Routes registered without auth middleware
 - \`backend/prisma/schema.prisma\` - User/EbayConnection models exist but no session/JWT auth
 - \`docs/ARCHITECTURE.md:471\` - \"Backend API authentication and authorization\" in roadmap
 - \`backend/src/config/index.ts\` - SESSION_SIGNING_SECRET configured but unused for auth
 - No JWT or session middleware in \`backend/src/infra/http/plugins/\`
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Choose auth strategy: JWT (stateless) vs sessions (stateful with Redis)
 - [ ] Implement auth middleware (verify JWT/session on protected routes)
 - [ ] Create auth endpoints: POST /v1/auth/register, POST /v1/auth/login, POST /v1/auth/logout
@@ -92,35 +92,35 @@ Backend API endpoints have NO authentication or authorization beyond optional AP
 - [ ] Add auth tests (unit + integration)
 - [ ] Update mobile app to handle auth tokens (store in secure storage)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Unauthenticated request should fail
+# Unauthenticated request should fail
 curl -X GET http://localhost:8080/auth/ebay/status
-***REMOVED*** Expected: 401 Unauthorized
+# Expected: 401 Unauthorized
 
-***REMOVED*** Register user
+# Register user
 curl -X POST http://localhost:8080/v1/auth/register -d '{\"email\":\"test@example.com\",\"password\":\"secure123\"}'
-***REMOVED*** Expected: 201 Created with JWT token
+# Expected: 201 Created with JWT token
 
-***REMOVED*** Authenticated request with token
+# Authenticated request with token
 curl -X GET http://localhost:8080/auth/ebay/status -H \"Authorization: Bearer <jwt_token>\"
-***REMOVED*** Expected: 200 OK with user's eBay connection status
+# Expected: 200 OK with user's eBay connection status
 
-***REMOVED*** User A cannot access User B's data
+# User A cannot access User B's data
 curl -X GET http://localhost:8080/auth/ebay/status -H \"Authorization: Bearer <userB_token>\"
-***REMOVED*** Expected: 403 Forbidden
+# Expected: 403 Forbidden
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][CRITICAL] Production observability: alerting and SLOs" \
   --label "severity:critical,epic:observability,area:backend,priority:p0" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:observability
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P0** – must be done before any real go-live
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Monitoring stack (Grafana, Loki, Tempo, Mimir) exists for DEV only with:
 - Anonymous Grafana access (no auth)
 - Local filesystem storage (no persistence, no backups)
@@ -130,14 +130,14 @@ Monitoring stack (Grafana, Loki, Tempo, Mimir) exists for DEV only with:
 
 **Why it matters:** Production outages would go undetected. No way to measure reliability or respond to incidents.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`monitoring/docker-compose.yml\` - Dev setup with anonymous auth
 - \`monitoring/grafana/provisioning/\` - No alerting rules configured
 - \`docs/ARCHITECTURE.md:73\` - Retention: 14d logs, 7d traces, 15d metrics (dev defaults)
 - No Grafana Cloud, Datadog, or production LGTM deployment documented
 - \`docs/DEV_GUIDE.md:353\` - \"Anonymous admin access for local dev (disable in production)\"
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Configure Grafana authentication (OAuth, LDAP, or Grafana Cloud)
 - [ ] Define SLOs: API latency (p95 < 500ms), error rate (< 1%), uptime (99.9%)
 - [ ] Create alerting rules for: API down, high error rate, high latency, database connection failures
@@ -149,47 +149,47 @@ Monitoring stack (Grafana, Loki, Tempo, Mimir) exists for DEV only with:
 - [ ] Create runbook for common incidents (database down, out of memory, high CPU)
 - [ ] Deploy monitoring stack to production (Grafana Cloud or self-hosted HA setup)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Trigger test alert
+# Trigger test alert
 curl -X POST http://localhost:8080/_test/trigger-alert
 
-***REMOVED*** Verify alert fires in Grafana
-***REMOVED*** Check PagerDuty/Slack for notification
+# Verify alert fires in Grafana
+# Check PagerDuty/Slack for notification
 
-***REMOVED*** Simulate API downtime
+# Simulate API downtime
 kubectl scale deployment scanium-backend --replicas=0 -n scanium-prod
 
-***REMOVED*** Verify \"API Down\" alert fires within 60 seconds
-***REMOVED*** Verify on-call engineer receives page
+# Verify \"API Down\" alert fires within 60 seconds
+# Verify on-call engineer receives page
 
-***REMOVED*** Check SLO dashboard
-***REMOVED*** Navigate to Grafana -> SLO Dashboard
-***REMOVED*** Verify p95 latency, error budget tracking
+# Check SLO dashboard
+# Navigate to Grafana -> SLO Dashboard
+# Verify p95 latency, error budget tracking
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][CRITICAL] PostgreSQL backup and disaster recovery strategy" \
   --label "severity:critical,epic:backend,area:backend,priority:p0" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P0** – must be done before any real go-live
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 PostgreSQL database has NO backup strategy. User data (eBay tokens, listings) would be lost permanently if database corrupts or container is destroyed.
 
 **Why it matters:** Data loss = loss of all user eBay connections, listings, and trust. Violates basic reliability expectations.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/docker-compose.yml\` - PostgreSQL container with no backup volumes
 - No pg_dump scheduled jobs
 - No point-in-time recovery (PITR) configured
 - No replication or high availability setup
 - \`docs/ARCHITECTURE.md\` - No backup strategy documented
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Configure automated daily backups (pg_dump or WAL archiving)
 - [ ] Store backups in durable remote storage (S3, GCS, or managed DB backups)
 - [ ] Configure point-in-time recovery (PITR) with WAL archiving
@@ -201,48 +201,48 @@ PostgreSQL database has NO backup strategy. User data (eBay tokens, listings) wo
 - [ ] Create disaster recovery runbook (restore from backup, failover to replica)
 - [ ] Monitor backup job success/failure with alerts
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Verify backup job ran
+# Verify backup job ran
 ls -lh /backups/postgres/scanium-2025-01-01.dump
 
-***REMOVED*** Test restore to staging
+# Test restore to staging
 createdb scanium_restore_test
 pg_restore -d scanium_restore_test /backups/postgres/scanium-2025-01-01.dump
 psql -d scanium_restore_test -c \"SELECT COUNT(*) FROM users;\"
 
-***REMOVED*** Simulate disaster: delete production DB
+# Simulate disaster: delete production DB
 docker stop scanium-postgres && docker rm scanium-postgres
 
-***REMOVED*** Restore from latest backup
+# Restore from latest backup
 ./scripts/restore-from-backup.sh --backup-file /backups/postgres/latest.dump
 
-***REMOVED*** Verify data integrity
-psql -d scanium -c \"SELECT COUNT(*) FROM users;\"  ***REMOVED*** Should match pre-disaster count
+# Verify data integrity
+psql -d scanium -c \"SELECT COUNT(*) FROM users;\"  # Should match pre-disaster count
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][CRITICAL] Environment separation: dev/staging/production" \
   --label "severity:critical,epic:backend,area:backend,area:ci,priority:p0" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P0** – must be done before any real go-live
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No environment separation exists. Single \`.env\` file mixes dev and would-be-prod config. No staging environment to test changes before production deployment.
 
 **Why it matters:** Deploying untested code directly to production = high risk of outages. Cannot safely test database migrations, API changes, or eBay integrations.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/.env.example\` - Single environment file
 - \`backend/src/config/index.ts:41\` - \`nodeEnv\` enum has 'development'|'production'|'test' but no staging
 - No \`.env.development\`, \`.env.staging\`, \`.env.production\` files
 - No environment-specific Kubernetes namespaces or Cloud Run services
 - \`docs/CI_CD.md\` - No staging deployment workflow
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Create environment-specific config files: \`.env.development\`, \`.env.staging\`, \`.env.production\`
 - [ ] Configure environment-specific resources:
   - Dev: Local Docker containers, anonymous Grafana, mock eBay, mock Google Vision
@@ -256,49 +256,49 @@ No environment separation exists. Single \`.env\` file mixes dev and would-be-pr
 - [ ] Use environment-specific API keys and secrets
 - [ ] Test full flow: commit → staging deployment → verification → prod deployment
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Deploy to staging
-git push origin main  ***REMOVED*** Auto-deploys to staging via CI
+# Deploy to staging
+git push origin main  # Auto-deploys to staging via CI
 kubectl get pods -n scanium-staging
 curl https://staging-api.scanium.com/healthz
 
-***REMOVED*** Verify staging uses sandbox eBay
-curl https://staging-api.scanium.com/ | jq '.environment'  ***REMOVED*** \"sandbox\"
+# Verify staging uses sandbox eBay
+curl https://staging-api.scanium.com/ | jq '.environment'  # \"sandbox\"
 
-***REMOVED*** Deploy to production (manual approval required)
+# Deploy to production (manual approval required)
 kubectl apply -f k8s/production/
 kubectl get pods -n scanium-production
 curl https://api.scanium.com/healthz
 
-***REMOVED*** Verify production uses production eBay
-curl https://api.scanium.com/ | jq '.environment'  ***REMOVED*** \"production\"
+# Verify production uses production eBay
+curl https://api.scanium.com/ | jq '.environment'  # \"production\"
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][HIGH] Verify Android release signing configuration" \
   --label "severity:high,epic:mobile,area:android,area:ci,priority:p0" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:mobile
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P0** – required before any release build
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Android release signing is configured in \`local.properties\` but not verified or documented. CI workflow only builds debug APK. No release APK workflow exists.
 
 **From Security Assessment (SEC-015):** \"No signing config verification\" - Release signing not enforced in build.
 
 **Why it matters:** Cannot publish to Play Store or distribute signed APKs without verified signing. Risk of losing keystore or publishing with wrong key.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/RELEASE_CHECKLIST.md:9-31\` - Keystore setup documented but not enforced
 - \`.github/workflows/android-debug-apk.yml\` - Only debug builds in CI
 - \`androidApp/build.gradle.kts\` - Signing config reads from local.properties (not in CI)
 - \`docs/_archive/2025-12/security/SECURITY_RISK_ASSESSMENT.md:1727\` - SEC-015 issue (P0)
 - No \`.github/workflows/android-release-apk.yml\`
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Document keystore location and backup strategy (encrypted off-site storage)
 - [ ] Verify keystore file exists and is backed up (multiple secure locations)
 - [ ] Verify signing config in \`androidApp/build.gradle.kts\` is correct
@@ -310,26 +310,26 @@ Android release signing is configured in \`local.properties\` but not verified o
 - [ ] Create release checklist (version bump, changelog, signing, upload)
 - [ ] Test end-to-end: build release APK → verify signature → install on device
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Verify keystore exists
+# Verify keystore exists
 ls -l /secure/keystore/release.jks
 
-***REMOVED*** Build release APK locally
+# Build release APK locally
 ./gradlew assembleRelease
 
-***REMOVED*** Verify APK is signed
+# Verify APK is signed
 jarsigner -verify -verbose -certs androidApp/build/outputs/apk/release/androidApp-release.apk
-***REMOVED*** Expected: jar verified
+# Expected: jar verified
 
-***REMOVED*** Check signature details
+# Check signature details
 keytool -printcert -jarfile androidApp/build/outputs/apk/release/androidApp-release.apk
-***REMOVED*** Verify: CN=Scanium, correct validity dates
+# Verify: CN=Scanium, correct validity dates
 
-***REMOVED*** Trigger CI release build (manual workflow)
+# Trigger CI release build (manual workflow)
 gh workflow run android-release-apk.yml
 
-***REMOVED*** Download release artifact and verify
+# Download release artifact and verify
 gh run download <run-id>
 jarsigner -verify androidApp-release.apk
 \`\`\`"
@@ -340,13 +340,13 @@ echo "Creating P0 severity:high issues..."
 gh issue create \
   --title "[GO-LIVE][HIGH] Implement backend rate limiting and cost controls" \
   --label "severity:high,epic:backend,area:backend,priority:p0" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P0** – must be done before any real go-live (cost and abuse prevention)
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Rate limiting exists per-API-key and per-IP, but NO cost controls or user quotas to prevent:
 - Runaway Google Vision API costs (current limit: 60 requests/min/key, no daily cap)
 - Runaway OpenAI API costs (current limit: 200 requests/day/device, no spend cap)
@@ -354,14 +354,14 @@ Rate limiting exists per-API-key and per-IP, but NO cost controls or user quotas
 
 **Why it matters:** Single malicious user could generate thousands in API costs. No kill switch to stop runaway usage.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/src/config/index.ts:60-61\` - \`rateLimitPerMinute: 60\`, no daily limit for classifier
 - \`backend/src/config/index.ts:110\` - \`dailyQuota: 200\` for assistant but stored in-memory (resets on restart)
 - \`backend/src/modules/usage/usage-store.ts\` - In-memory usage tracking (not persistent)
 - No cost monitoring for Google Vision or OpenAI API spend
 - No circuit breaker for total daily spend
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Implement persistent quota tracking (PostgreSQL or Redis)
 - [ ] Add daily spend limits per user/API key (e.g., $10/day Google Vision)
 - [ ] Add monthly spend limits (e.g., $500/month total budget)
@@ -373,13 +373,13 @@ Rate limiting exists per-API-key and per-IP, but NO cost controls or user quotas
 - [ ] Test: Simulate 1000 classification requests → verify quota enforcement
 - [ ] Monitor actual costs in Google Cloud Console and OpenAI dashboard
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Configure cost limits
+# Configure cost limits
 export GOOGLE_VISION_DAILY_BUDGET_USD=10
 export OPENAI_MONTHLY_BUDGET_USD=500
 
-***REMOVED*** Simulate high usage
+# Simulate high usage
 for i in {1..1000}; do
   curl -X POST http://localhost:8080/v1/classify \\
     -H \"X-API-Key: dev-key\" \\
@@ -387,39 +387,39 @@ for i in {1..1000}; do
     -F \"domainPackId=home_resale\"
 done
 
-***REMOVED*** Verify quota enforcement
+# Verify quota enforcement
 curl http://localhost:8080/v1/classify -H \"X-API-Key: dev-key\" -F \"image=@test.jpg\"
-***REMOVED*** Expected after daily quota: 429 Too Many Requests \"Daily quota exceeded\"
+# Expected after daily quota: 429 Too Many Requests \"Daily quota exceeded\"
 
-***REMOVED*** Check admin dashboard
+# Check admin dashboard
 curl http://localhost:8080/v1/admin/usage -H \"X-Admin-Key: admin-key\" | jq
-***REMOVED*** Expected: { \"today_cost\": 10.00, \"budget\": 10.00, \"status\": \"quota_exceeded\" }
+# Expected: { \"today_cost\": 10.00, \"budget\": 10.00, \"status\": \"quota_exceeded\" }
 
-***REMOVED*** Verify alert fired
-***REMOVED*** Check email/Slack for cost alert notification
+# Verify alert fired
+# Check email/Slack for cost alert notification
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][HIGH] Production TLS/SSL configuration and certificate management" \
   --label "severity:high,epic:backend,area:backend,area:network,priority:p0" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P0** – required before public internet exposure
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Backend binds to HTTP only (port 8080). No TLS termination configured. Security config enforces HTTPS (\`enforceHttps: true\`) but TLS termination strategy is undocumented.
 
 **Why it matters:** Cannot expose backend to public internet without TLS. eBay OAuth callbacks and API keys would be transmitted in plaintext.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/src/main.ts:23-26\` - Listens on port 8080 HTTP only
 - \`backend/src/config/index.ts:209\` - \`security.enforceHttps: true\` configured
 - \`docs/ARCHITECTURE.md\` - No TLS termination documented
 - \`backend/.env.example:8\` - \`PUBLIC_BASE_URL=http://localhost:8080\` (HTTP)
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Choose TLS termination strategy:
   - Option A: Load balancer termination (AWS ALB, GCP Load Balancer, Nginx, Traefik)
   - Option B: Application-level TLS (Fastify with \`https.createServer\`)
@@ -435,27 +435,27 @@ Backend binds to HTTP only (port 8080). No TLS termination configured. Security 
 - [ ] Test eBay OAuth callback with HTTPS URL
 - [ ] Verify security headers: HSTS, CSP, X-Frame-Options
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Production URL should use HTTPS
+# Production URL should use HTTPS
 curl -I https://api.scanium.com/healthz
-***REMOVED*** Expected: HTTP/2 200 with HSTS header
+# Expected: HTTP/2 200 with HSTS header
 
-***REMOVED*** Verify TLS version and cipher
+# Verify TLS version and cipher
 openssl s_client -connect api.scanium.com:443 -tls1_3
-***REMOVED*** Expected: TLSv1.3, strong cipher suite
+# Expected: TLSv1.3, strong cipher suite
 
-***REMOVED*** Test SSL configuration
+# Test SSL configuration
 curl https://www.ssllabs.com/ssltest/analyze.html?d=api.scanium.com
-***REMOVED*** Expected: A+ rating
+# Expected: A+ rating
 
-***REMOVED*** Verify HSTS header
+# Verify HSTS header
 curl -I https://api.scanium.com/healthz | grep Strict-Transport-Security
-***REMOVED*** Expected: max-age=15552000; includeSubDomains
+# Expected: max-age=15552000; includeSubDomains
 
-***REMOVED*** Test HTTP → HTTPS redirect
+# Test HTTP → HTTPS redirect
 curl -I http://api.scanium.com/healthz
-***REMOVED*** Expected: 301 Moved Permanently, Location: https://api.scanium.com/healthz
+# Expected: 301 Moved Permanently, Location: https://api.scanium.com/healthz
 \`\`\`"
 
 echo ""
@@ -464,13 +464,13 @@ echo "Creating P1 severity:high issues..."
 gh issue create \
   --title "[GO-LIVE][HIGH] Backend integration tests and E2E test suite" \
   --label "severity:high,epic:backend,area:backend,area:ci,priority:p1" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P1** – required shortly after beta/early launch
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Backend has unit tests (Vitest) but NO integration tests or end-to-end tests. Cannot verify:
 - API endpoints work end-to-end (HTTP request → database → response)
 - eBay OAuth flow works (redirect → callback → token exchange → database)
@@ -479,13 +479,13 @@ Backend has unit tests (Vitest) but NO integration tests or end-to-end tests. Ca
 
 **Why it matters:** Deployments could break API contracts, OAuth flows, or database interactions without detection.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/package.json:21-22\` - Only \`vitest run\` for unit tests
 - \`backend/src/**/*.test.ts\` - Unit tests only (mocked dependencies)
 - No \`backend/tests/integration/\` or \`backend/tests/e2e/\` directories
 - \`.github/workflows/\` - No backend test CI workflow
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Create integration test suite (tests with real Prisma + test database)
 - [ ] Create E2E test suite (Supertest or similar for full HTTP flows)
 - [ ] Test coverage:
@@ -502,48 +502,48 @@ Backend has unit tests (Vitest) but NO integration tests or end-to-end tests. Ca
 - [ ] Achieve 80%+ code coverage
 - [ ] Add E2E smoke tests for staging/production deployment verification
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Run integration tests locally
+# Run integration tests locally
 npm run test:integration
 
-***REMOVED*** Run E2E tests locally
+# Run E2E tests locally
 npm run test:e2e
 
-***REMOVED*** Verify coverage
+# Verify coverage
 npm run test:coverage
-***REMOVED*** Expected: Statements 80%+, Branches 75%+, Functions 80%+, Lines 80%+
+# Expected: Statements 80%+, Branches 75%+, Functions 80%+, Lines 80%+
 
-***REMOVED*** CI: Push code and verify tests pass
+# CI: Push code and verify tests pass
 git push origin feature-branch
-gh pr checks  ***REMOVED*** All tests should pass
+gh pr checks  # All tests should pass
 
-***REMOVED*** Staging deployment verification
+# Staging deployment verification
 npm run test:e2e:staging
-***REMOVED*** Hits https://staging-api.scanium.com endpoints
+# Hits https://staging-api.scanium.com endpoints
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][HIGH] Crash reporting and error tracking (Sentry integration)" \
   --label "severity:high,epic:mobile,area:android,area:logging,priority:p1" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:mobile
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P1** – required shortly after beta/early launch
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Android app has Sentry DSN configured in BuildConfig but unclear if Sentry is actually initialized or operational. No error tracking for production crashes.
 
 **Why it matters:** Production crashes would be invisible. Cannot diagnose user-reported issues without crash reports and stack traces.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - Sentry referenced in git commit history (TLS pinning for cloud classifier)
 - No \`androidApp/src/main/java/com/scanium/app/SentryInitializer.kt\` or similar
 - \`androidApp/build.gradle.kts\` - Needs verification if Sentry dependency exists
 - \`docs/DEV_GUIDE.md:182\` mentions crash test triggers in Developer Options but no Sentry integration documented
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Add Sentry Android SDK dependency (\`io.sentry:sentry-android\`)
 - [ ] Initialize Sentry in \`MainActivity.onCreate()\` or \`ScaniumApp.onCreate()\`
 - [ ] Configure Sentry DSN from BuildConfig (\`BuildConfig.SENTRY_DSN\`)
@@ -555,48 +555,48 @@ Android app has Sentry DSN configured in BuildConfig but unclear if Sentry is ac
 - [ ] Document Sentry workflow (viewing crashes, assigning, resolving)
 - [ ] Add Sentry performance monitoring (optional: track app start time, screen load time)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Build release APK with Sentry enabled
+# Build release APK with Sentry enabled
 ./gradlew assembleRelease
 
-***REMOVED*** Install on device
+# Install on device
 adb install androidApp/build/outputs/apk/release/androidApp-release.apk
 
-***REMOVED*** Trigger test crash (Developer Options → Crash Test)
+# Trigger test crash (Developer Options → Crash Test)
 adb shell am start -n com.scanium.app/.MainActivity
-***REMOVED*** Tap Settings → Developer Options → Send Test Exception to Sentry
+# Tap Settings → Developer Options → Send Test Exception to Sentry
 
-***REMOVED*** Verify crash appears in Sentry dashboard
-***REMOVED*** Navigate to sentry.io → Scanium project → Issues
-***REMOVED*** Expected: New issue \"Test Exception from Developer Options\"
+# Verify crash appears in Sentry dashboard
+# Navigate to sentry.io → Scanium project → Issues
+# Expected: New issue \"Test Exception from Developer Options\"
 
-***REMOVED*** Verify ProGuard mappings uploaded
-***REMOVED*** Sentry dashboard → Settings → ProGuard
-***REMOVED*** Expected: Mapping file for versionCode X uploaded
+# Verify ProGuard mappings uploaded
+# Sentry dashboard → Settings → ProGuard
+# Expected: Mapping file for versionCode X uploaded
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][HIGH] Backend API documentation (OpenAPI/Swagger)" \
   --label "severity:high,epic:backend,epic:docs,area:backend,area:docs,priority:p1" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend, epic:docs
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P1** – required shortly after beta (for third-party integrations)
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Backend API endpoints exist (\`/auth/ebay/*\`, \`/v1/classify\`, \`/v1/assist/chat\`) but NO API documentation. Mobile developers and future integrators must read source code to understand contracts.
 
 **Why it matters:** Cannot onboard new developers or support third-party integrations without API docs.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`backend/src/app.ts:103-120\` - Root endpoint lists routes but no schema
 - No \`backend/docs/api/\` or OpenAPI spec file
 - No Swagger UI or Redoc deployment
 - \`docs/ARCHITECTURE.md:302-307\` - Endpoints listed but not documented
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Generate OpenAPI 3.0 specification from Zod schemas
 - [ ] Use \`@fastify/swagger\` or \`fastify-zod-openapi\` plugin
 - [ ] Document all endpoints:
@@ -613,25 +613,25 @@ Backend API endpoints exist (\`/auth/ebay/*\`, \`/v1/classify\`, \`/v1/assist/ch
 - [ ] Create API changelog (version, date, breaking changes)
 - [ ] Document authentication (API key in X-API-Key header, JWT in Authorization)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Start dev server
+# Start dev server
 npm run dev
 
-***REMOVED*** Access Swagger UI
+# Access Swagger UI
 open http://localhost:8080/docs
 
-***REMOVED*** Verify all endpoints documented
-***REMOVED*** Try \"POST /v1/classify\" endpoint in Swagger UI with example image
+# Verify all endpoints documented
+# Try \"POST /v1/classify\" endpoint in Swagger UI with example image
 
-***REMOVED*** Export OpenAPI spec
+# Export OpenAPI spec
 curl http://localhost:8080/docs/json > backend/docs/openapi.json
 
-***REMOVED*** Validate spec
+# Validate spec
 npx @redocly/cli lint backend/docs/openapi.json
-***REMOVED*** Expected: No errors
+# Expected: No errors
 
-***REMOVED*** Generate API client (example)
+# Generate API client (example)
 npx @openapitools/openapi-generator-cli generate \\
   -i backend/docs/openapi.json \\
   -g typescript-fetch \\
@@ -644,13 +644,13 @@ echo "Creating P1 severity:medium issues..."
 gh issue create \
   --title "[GO-LIVE][MEDIUM] Feature flags system for gradual rollout" \
   --label "severity:medium,epic:mobile,epic:backend,area:android,area:backend,priority:p1" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:mobile, epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P1** – required for safe feature rollouts
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No feature flag system exists. All features are code-driven (hard-coded enabled/disabled). Cannot:
 - Gradually roll out new features (e.g., 10% → 50% → 100% of users)
 - Kill switch for problematic features without app update
@@ -659,12 +659,12 @@ No feature flag system exists. All features are code-driven (hard-coded enabled/
 
 **Why it matters:** Risky features (e.g., new cloud classifier, AI assistant changes) require controlled rollout. Cannot disable without emergency app update.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/PRODUCT.md:20-22\` - \"No other runtime feature-flag system is present; changes are code-driven\"
 - \`backend/src/modules/config/config.routes.ts\` - Remote config endpoint exists but not used
 - No LaunchDarkly, Firebase Remote Config, or custom feature flag service
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Choose feature flag provider: Firebase Remote Config (free), LaunchDarkly, or custom service
 - [ ] Implement backend feature flag service (GET /v1/config/features)
 - [ ] Return feature flags: \`{ \"assistant_enabled\": true, \"cloud_classifier_v2\": false }\`
@@ -676,52 +676,52 @@ No feature flag system exists. All features are code-driven (hard-coded enabled/
 - [ ] Create admin dashboard to manage flags (enable, disable, set rollout %)
 - [ ] Test gradual rollout: enable for 10% → verify only 10% see feature
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Backend: Set flag to 10% rollout
+# Backend: Set flag to 10% rollout
 curl -X POST http://localhost:8080/v1/admin/features \\
   -H \"X-Admin-Key: admin-key\" \\
   -d '{\"flag\":\"cloud_classifier_v2\",\"enabled\":true,\"rollout_percent\":10}'
 
-***REMOVED*** Mobile: Fetch flags
-***REMOVED*** App fetches on startup
-***REMOVED*** 10 requests to /v1/config/features → ~1 should get cloud_classifier_v2=true
+# Mobile: Fetch flags
+# App fetches on startup
+# 10 requests to /v1/config/features → ~1 should get cloud_classifier_v2=true
 
-***REMOVED*** Verify in logs
+# Verify in logs
 adb logcat | grep FeatureFlags
-***REMOVED*** Expected: 10% of app starts see cloud_classifier_v2=true
+# Expected: 10% of app starts see cloud_classifier_v2=true
 
-***REMOVED*** Developer Options: Force enable flag
-***REMOVED*** Settings → Developer Options → Feature Flags → Enable cloud_classifier_v2
-***REMOVED*** Verify feature is enabled regardless of rollout %
+# Developer Options: Force enable flag
+# Settings → Developer Options → Feature Flags → Enable cloud_classifier_v2
+# Verify feature is enabled regardless of rollout %
 
-***REMOVED*** Kill switch: Disable problematic feature
+# Kill switch: Disable problematic feature
 curl -X POST http://localhost:8080/v1/admin/features \\
   -d '{\"flag\":\"buggy_feature\",\"enabled\":false}'
-***REMOVED*** All users should see feature disabled within 24h (or on next app restart)
+# All users should see feature disabled within 24h (or on next app restart)
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][MEDIUM] Backend CI/CD pipeline for automated deployments" \
   --label "severity:medium,epic:backend,area:backend,area:ci,priority:p1" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P1** – required for reliable deployments
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Backend has NO CI/CD pipeline. Deployments are manual. No automated testing, building, or deployment to staging/production.
 
 **Why it matters:** Manual deployments = human error, forgotten migrations, untested code reaching production.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`.github/workflows/\` - Only Android workflows exist
 - No backend test, build, or deploy workflows
 - \`backend/package.json\` - \`build\` and \`start\` scripts exist but not used in CI
 - No deployment documentation
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Create \`.github/workflows/backend-ci.yml\`:
   - Run on PR: typecheck, lint, unit tests, integration tests
   - Fail PR if tests fail or coverage < 80%
@@ -742,50 +742,50 @@ Backend has NO CI/CD pipeline. Deployments are manual. No automated testing, bui
 - [ ] Document deployment process (PR → staging → approval → production)
 - [ ] Add rollback procedure (revert deployment, restore from backup)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Open PR
+# Open PR
 gh pr create --title \"Test backend CI\"
 
-***REMOVED*** Verify CI workflow runs
+# Verify CI workflow runs
 gh pr checks
-***REMOVED*** Expected: backend-ci ✓ All tests passed
+# Expected: backend-ci ✓ All tests passed
 
-***REMOVED*** Merge PR
+# Merge PR
 gh pr merge
 
-***REMOVED*** Verify staging deployment
+# Verify staging deployment
 gh run list --workflow=backend-deploy-staging.yml
 gh run view <run-id>
-***REMOVED*** Expected: ✓ Deploy to staging, ✓ Smoke tests passed
+# Expected: ✓ Deploy to staging, ✓ Smoke tests passed
 
-***REMOVED*** Verify staging API
+# Verify staging API
 curl https://staging-api.scanium.com/healthz
-***REMOVED*** Expected: 200 OK
+# Expected: 200 OK
 
-***REMOVED*** Trigger production deployment (manual approval)
+# Trigger production deployment (manual approval)
 gh workflow run backend-deploy-production.yml --ref main
 
-***REMOVED*** Approve deployment
+# Approve deployment
 gh run list --workflow=backend-deploy-production.yml
 gh run view <run-id>
-***REMOVED*** Approve in GitHub UI
+# Approve in GitHub UI
 
-***REMOVED*** Verify production API
+# Verify production API
 curl https://api.scanium.com/healthz
-***REMOVED*** Expected: 200 OK
+# Expected: 200 OK
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][MEDIUM] Privacy policy and terms of service" \
   --label "severity:medium,epic:docs,area:privacy,area:docs,priority:p1" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:docs
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P1** – required before Play Store submission
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No privacy policy or terms of service exist. Required by:
 - Google Play Store (mandatory for all apps)
 - GDPR (EU users)
@@ -796,12 +796,12 @@ No privacy policy or terms of service exist. Required by:
 
 **Why it matters:** Cannot publish to Play Store without privacy policy. Legal liability for GDPR/CCPA violations.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/_archive/2025-12/security/SECURITY_RISK_ASSESSMENT.md:1284\` - SEC-012 (P2)
 - No \`docs/PRIVACY_POLICY.md\` or \`docs/TERMS_OF_SERVICE.md\`
 - No privacy policy URL in app Settings or About screen
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Create privacy policy covering:
   - [ ] Data collection (camera frames, ML detections, eBay tokens, usage metrics)
   - [ ] Data usage (on-device ML, optional cloud classification, eBay API)
@@ -823,25 +823,25 @@ No privacy policy or terms of service exist. Required by:
 - [ ] Get legal review (GDPR/CCPA compliance)
 - [ ] Implement consent flow for cloud features (opt-in for Google Vision, eBay)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Verify privacy policy URL
+# Verify privacy policy URL
 curl https://scanium.com/privacy
-***REMOVED*** Expected: 200 OK, privacy policy HTML
+# Expected: 200 OK, privacy policy HTML
 
-***REMOVED*** Verify app links to privacy policy
-***REMOVED*** Settings → About → Privacy Policy
-***REMOVED*** Tap → Opens web view or browser with privacy policy
+# Verify app links to privacy policy
+# Settings → About → Privacy Policy
+# Tap → Opens web view or browser with privacy policy
 
-***REMOVED*** Verify first-time consent
-***REMOVED*** Uninstall app, reinstall
-***REMOVED*** On first launch → \"Allow cloud classification?\" with link to privacy policy
-***REMOVED*** User must consent before cloud features enabled
+# Verify first-time consent
+# Uninstall app, reinstall
+# On first launch → \"Allow cloud classification?\" with link to privacy policy
+# User must consent before cloud features enabled
 
-***REMOVED*** Play Store submission
-***REMOVED*** Google Play Console → Store Listing → Privacy Policy
-***REMOVED*** Enter: https://scanium.com/privacy
-***REMOVED*** Expected: No validation errors
+# Play Store submission
+# Google Play Console → Store Listing → Privacy Policy
+# Enter: https://scanium.com/privacy
+# Expected: No validation errors
 \`\`\`"
 
 echo ""
@@ -850,13 +850,13 @@ echo "Creating P2 severity:medium issues..."
 gh issue create \
   --title "[GO-LIVE][MEDIUM] Production log retention and archival policy" \
   --label "severity:medium,epic:observability,area:backend,area:logging,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:observability
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – scale-up / future-proofing
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Current log retention: 14 days (Loki), 7 days (Tempo), 15 days (Mimir). For production:
 - Compliance may require 30-90 day retention (GDPR, SOC 2)
 - Cost optimization needed (compress old logs, archive to S3)
@@ -864,12 +864,12 @@ Current log retention: 14 days (Loki), 7 days (Tempo), 15 days (Mimir). For prod
 
 **Why it matters:** May violate compliance requirements. Cannot investigate incidents older than 14 days.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/ARCHITECTURE.md:69-71\` - Dev retention: 14d logs, 7d traces, 15d metrics
 - \`monitoring/loki/loki.yaml\` - retention_period: 336h (14 days)
 - No S3/GCS archival configured
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Define retention policy:
   - Hot storage (queryable): 30 days
   - Warm storage (archived, slower queries): 90 days
@@ -884,38 +884,38 @@ Current log retention: 14 days (Loki), 7 days (Tempo), 15 days (Mimir). For prod
 - [ ] Add monitoring for storage usage (alert if approaching quota)
 - [ ] Test log restoration from archive (query logs from 60 days ago)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Verify retention config
+# Verify retention config
 kubectl exec -it loki-0 -n scanium-observability -- cat /etc/loki/loki.yaml | grep retention
-***REMOVED*** Expected: retention_period: 720h (30 days)
+# Expected: retention_period: 720h (30 days)
 
-***REMOVED*** Verify S3 archival
+# Verify S3 archival
 aws s3 ls s3://scanium-logs/archive/2025/01/
-***REMOVED*** Expected: Compressed log files older than 30 days
+# Expected: Compressed log files older than 30 days
 
-***REMOVED*** Query archived logs (via Loki)
+# Query archived logs (via Loki)
 curl -G 'http://localhost:3100/loki/api/v1/query_range' \\
   --data-urlencode 'query={app=\"scanium-backend\"}' \\
   --data-urlencode 'start=2024-11-01T00:00:00Z' \\
   --data-urlencode 'end=2024-11-02T00:00:00Z'
-***REMOVED*** Expected: Results from archived logs (slower query)
+# Expected: Results from archived logs (slower query)
 
-***REMOVED*** Check storage costs
+# Check storage costs
 aws s3 ls s3://scanium-logs/ --recursive --summarize
-***REMOVED*** Expected: Total size, estimate monthly cost
+# Expected: Total size, estimate monthly cost
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][MEDIUM] Android performance monitoring (baseline metrics)" \
   --label "severity:medium,epic:mobile,area:android,area:logging,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:mobile
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – scale-up / performance tracking
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No performance monitoring for Android app. Cannot measure:
 - App start time (cold start, warm start)
 - Frame rate / jank (screen stutters)
@@ -925,12 +925,12 @@ No performance monitoring for Android app. Cannot measure:
 
 **Why it matters:** Cannot detect performance regressions or optimize user experience.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/ARCHITECTURE.md\` - No performance monitoring documented
 - No Firebase Performance Monitoring or custom metrics
 - \`androidApp/src/main/java/com/scanium/app/ml/DetectionLogger.kt\` - Logs detection events but no performance metrics
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Add Firebase Performance Monitoring SDK (or custom metrics)
 - [ ] Track app start time (cold and warm start)
 - [ ] Track screen load time (CameraScreen, ItemsListScreen)
@@ -942,42 +942,42 @@ No performance monitoring for Android app. Cannot measure:
 - [ ] Configure alerts for performance regressions
 - [ ] Create performance dashboard (Firebase Console or Grafana)
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Build release APK with performance monitoring
+# Build release APK with performance monitoring
 ./gradlew assembleRelease
 
-***REMOVED*** Install on device
+# Install on device
 adb install androidApp/build/outputs/apk/release/androidApp-release.apk
 
-***REMOVED*** Launch app and measure start time
+# Launch app and measure start time
 adb shell am start -W -n com.scanium.app/.MainActivity
-***REMOVED*** Expected: TotalTime < 2000ms
+# Expected: TotalTime < 2000ms
 
-***REMOVED*** View performance metrics
-***REMOVED*** Firebase Console → Performance → Scanium → App Start
-***REMOVED*** Expected: p95 cold start < 2s, p95 warm start < 1s
+# View performance metrics
+# Firebase Console → Performance → Scanium → App Start
+# Expected: p95 cold start < 2s, p95 warm start < 1s
 
-***REMOVED*** Check frame rate
+# Check frame rate
 adb shell dumpsys gfxinfo com.scanium.app
-***REMOVED*** Expected: 95th percentile frame time < 16.6ms (60fps)
+# Expected: 95th percentile frame time < 16.6ms (60fps)
 
-***REMOVED*** Verify alerts
-***REMOVED*** Trigger performance regression (add 5s sleep in CameraScreen)
-***REMOVED*** Rebuild and deploy
-***REMOVED*** Expected: Alert fires \"App start time p95 > 3s (threshold: 2s)\"
+# Verify alerts
+# Trigger performance regression (add 5s sleep in CameraScreen)
+# Rebuild and deploy
+# Expected: Alert fires \"App start time p95 > 3s (threshold: 2s)\"
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][MEDIUM] Remaining security issues from assessment (7 issues)" \
   --label "severity:medium,epic:security,area:android,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:security
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – medium priority security hardening
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 Security Risk Assessment completed in Dec 2025 identified 18 issues. 9 fixed, 7 remain:
 - **SEC-014** (P1): No root/tamper detection
 - **SEC-018** (P1): No image encryption for captured images
@@ -989,11 +989,11 @@ Security Risk Assessment completed in Dec 2025 identified 18 issues. 9 fixed, 7 
 
 **Why it matters:** Remaining P1 issues leave app vulnerable to tampering and data leakage. P2 issues are documentation gaps that could lead to insecure implementations.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/_archive/2025-12/security/SECURITY_RISK_ASSESSMENT.md:1773-1789\` - Remediation status
 - \`docs/_archive/2025-12/security/SECURITY_RISK_ASSESSMENT.md:1263-1286\` - Prioritized risk backlog
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **SEC-014 (P1): Root/Tamper Detection**
 - [ ] Integrate RootBeer library or custom root detection
 - [ ] Show warning dialog on rooted devices (\"Running on rooted device may compromise security\")
@@ -1028,18 +1028,18 @@ Security Risk Assessment completed in Dec 2025 identified 18 issues. 9 fixed, 7 
 - [ ] Document secure API key storage (EncryptedSharedPreferences)
 - [ ] Update \`docs/DEV_GUIDE.md\` with cloud classifier API key security best practices
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** SEC-014: Test root detection
-***REMOVED*** Install on rooted device (Magisk)
+# SEC-014: Test root detection
+# Install on rooted device (Magisk)
 adb install app-release.apk
 adb shell am start -n com.scanium.app/.MainActivity
-***REMOVED*** Expected: Warning dialog \"Device appears to be rooted. This may compromise security.\"
+# Expected: Warning dialog \"Device appears to be rooted. This may compromise security.\"
 
-***REMOVED*** SEC-018: Test image encryption
+# SEC-018: Test image encryption
 adb pull /data/data/com.scanium.app/cache/captured_image_123.enc
 file captured_image_123.enc
-***REMOVED*** Expected: Binary data, NOT \"JPEG image data\"
+# Expected: Binary data, NOT \"JPEG image data\"
 \`\`\`"
 
 echo ""
@@ -1048,13 +1048,13 @@ echo "Creating P2 severity:low/future issues..."
 gh issue create \
   --title "[GO-LIVE][LOW] Incident response runbook and postmortem process" \
   --label "severity:low,epic:observability,epic:docs,area:docs,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:observability, epic:docs
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – operational maturity
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No incident response process documented. When production outage occurs:
 - No clear triage process
 - No communication plan (status page, user notifications)
@@ -1062,11 +1062,11 @@ No incident response process documented. When production outage occurs:
 
 **Why it matters:** Chaotic incident response leads to longer outages and repeated mistakes.
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/\` - No incident response runbook
 - No postmortem template or examples
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Create incident response runbook (\`docs/operations/INCIDENT_RESPONSE.md\`)
   - Severity levels (P0 = full outage, P1 = degraded, P2 = minor)
   - Triage checklist (check health endpoints, review alerts, check logs)
@@ -1082,48 +1082,48 @@ No incident response process documented. When production outage occurs:
 - [ ] Create status page (statuspage.io or custom) for user-facing outages
 - [ ] Test incident response: simulate outage → follow runbook → write postmortem
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Simulate incident: Scale backend to 0 replicas
+# Simulate incident: Scale backend to 0 replicas
 kubectl scale deployment scanium-backend --replicas=0 -n scanium-prod
 
-***REMOVED*** Follow runbook
-***REMOVED*** 1. Alert fires: \"API Down\"
-***REMOVED*** 2. On-call engineer pages
-***REMOVED*** 3. Triage: Check health endpoint (fails), review logs (no pods running)
-***REMOVED*** 4. Resolution: Scale back to 3 replicas
+# Follow runbook
+# 1. Alert fires: \"API Down\"
+# 2. On-call engineer pages
+# 3. Triage: Check health endpoint (fails), review logs (no pods running)
+# 4. Resolution: Scale back to 3 replicas
 kubectl scale deployment scanium-backend --replicas=3 -n scanium-prod
 
-***REMOVED*** 5. Communication: Update status page \"Investigating API outage\"
-***REMOVED*** 6. Resolution: Update status page \"Resolved\"
+# 5. Communication: Update status page \"Investigating API outage\"
+# 6. Resolution: Update status page \"Resolved\"
 
-***REMOVED*** 7. Postmortem (within 48h):
-***REMOVED*** Write postmortem using template
-***REMOVED*** Review with team
-***REMOVED*** Create action items (add pod disruption budget, improve monitoring)
+# 7. Postmortem (within 48h):
+# Write postmortem using template
+# Review with team
+# Create action items (add pod disruption budget, improve monitoring)
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][LOW] iOS app development (KMP shared brain)" \
   --label "severity:low,epic:scale-ios,area:backend,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:scale-ios
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – future platform expansion
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 iOS app does not exist. KMP preparation is complete (shared/core-* modules are Android-free), but no iOS implementation started.
 
 **Why it matters:** Limited to Android users only. Cannot reach iOS market (significant user base).
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/CODEX_CONTEXT.md:120-153\` - \"KMP/iOS Porting Status\" shows Phase 1 complete, Phase 2 not started
 - \`docs/_archive/2025-12/kmp-migration/PLAN.md\` - KMP migration plan exists but iOS not implemented
 - \`docs/_archive/2025-12/parity/\` - iOS parity plans from Dec 2025
 - \`shared/core-models\`, \`shared/core-tracking\` - Android-free but not converted to KMP yet
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 **Phase 1: Convert shared modules to KMP**
 - [ ] Convert \`shared/core-models\` to KMP with commonMain/androidMain/iosMain
 - [ ] Convert \`shared/core-tracking\` to KMP
@@ -1151,33 +1151,33 @@ iOS app does not exist. KMP preparation is complete (shared/core-* modules are A
 - [ ] Beta testing
 - [ ] Public release
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Phase 1: Verify KMP conversion
+# Phase 1: Verify KMP conversion
 ./gradlew :shared:core-models:build
 ./gradlew :shared:core-tracking:build
-./gradlew :androidApp:assembleDebug  ***REMOVED*** Should still work
+./gradlew :androidApp:assembleDebug  # Should still work
 
-***REMOVED*** Phase 2: Build iOS app
+# Phase 2: Build iOS app
 cd iosApp
 xcodebuild -scheme ScaniumApp -sdk iphonesimulator build
-***REMOVED*** Run on iOS simulator and verify object detection
+# Run on iOS simulator and verify object detection
 
-***REMOVED*** Phase 3: Feature parity check
-***REMOVED*** Compare Android and iOS side-by-side
-***REMOVED*** Verify: Camera, detection, tracking, eBay OAuth, cloud classification all work
+# Phase 3: Feature parity check
+# Compare Android and iOS side-by-side
+# Verify: Camera, detection, tracking, eBay OAuth, cloud classification all work
 \`\`\`"
 
 gh issue create \
   --title "[GO-LIVE][LOW] End-to-end testing framework (mobile + backend)" \
   --label "severity:low,epic:mobile,epic:backend,area:ci,priority:p2" \
-  --body "***REMOVED******REMOVED*** Epic
+  --body "## Epic
 epic:mobile, epic:backend
 
-***REMOVED******REMOVED*** Priority
+## Priority
 **P2** – test automation for confidence
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 No end-to-end tests exist. Cannot test full user flows:
 - Mobile app → Backend API → Database → Response
 - Camera scan → ML detection → Cloud classification → Item saved
@@ -1185,12 +1185,12 @@ No end-to-end tests exist. Cannot test full user flows:
 
 **Why it matters:** Integration bugs slip through (e.g., API contract mismatch, OAuth callback broken).
 
-***REMOVED******REMOVED*** Evidence
+## Evidence
 - \`docs/CI_CD.md\` - Only unit tests and Android Debug APK workflow
 - No E2E test framework (Detox, Maestro, Appium)
 - No \`androidApp/src/androidTest/e2e/\` directory
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 - [ ] Choose E2E framework: Maestro (recommended), Detox, or Appium
 - [ ] Set up E2E test environment:
   - Staging backend with test database
@@ -1205,23 +1205,23 @@ No end-to-end tests exist. Cannot test full user flows:
 - [ ] Generate E2E test reports (screenshots, videos on failure)
 - [ ] Document E2E test writing guide
 
-***REMOVED******REMOVED*** Verification Steps
+## Verification Steps
 \`\`\`bash
-***REMOVED*** Run E2E tests locally
+# Run E2E tests locally
 npm run test:e2e:android
 
-***REMOVED*** Output:
-***REMOVED*** ✓ Scan object and view in list (45s)
-***REMOVED*** ✓ eBay OAuth flow (30s)
-***REMOVED*** ✓ Export items to CSV (20s)
-***REMOVED*** 3 tests passed
+# Output:
+# ✓ Scan object and view in list (45s)
+# ✓ eBay OAuth flow (30s)
+# ✓ Export items to CSV (20s)
+# 3 tests passed
 
-***REMOVED*** CI: Trigger E2E tests
+# CI: Trigger E2E tests
 gh workflow run e2e-tests.yml --ref main
 
-***REMOVED*** View results
+# View results
 gh run view <run-id>
-***REMOVED*** Download failure screenshots/videos if tests fail
+# Download failure screenshots/videos if tests fail
 \`\`\`"
 
 echo ""

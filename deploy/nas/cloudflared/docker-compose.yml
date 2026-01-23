@@ -6,21 +6,21 @@ services:
     container_name: scanium-cloudflared
     restart: unless-stopped
 
-    ***REMOVED*** Use absolute path to .env (single source of truth for secrets)
-    ***REMOVED*** This file lives in /volume1/docker/cloudflared/.env and contains CLOUDFLARED_TOKEN
+    # Use absolute path to .env (single source of truth for secrets)
+    # This file lives in /volume1/docker/cloudflared/.env and contains CLOUDFLARED_TOKEN
     env_file:
       - /volume1/docker/cloudflared/.env
     environment:
       - TUNNEL_LOGLEVEL=debug
       - TUNNEL_TRANSPORT_LOGLEVEL=debug
 
-    ***REMOVED*** IMPORTANT:
-    ***REMOVED*** - Do NOT pass --loglevel/--transport-loglevel as flags.
-    ***REMOVED*** - Your image already has entrypoint ["cloudflared","--no-autoupdate"] (as seen in docker inspect).
-    ***REMOVED*** - We only provide the subcommand + token.
+    # IMPORTANT:
+    # - Do NOT pass --loglevel/--transport-loglevel as flags.
+    # - Your image already has entrypoint ["cloudflared","--no-autoupdate"] (as seen in docker inspect).
+    # - We only provide the subcommand + token.
     command: [ "tunnel","--config","/etc/cloudflared/config.yml","run","--token","${CLOUDFLARED_TOKEN}" ]
 
-    ***REMOVED*** Use absolute path to config.yml
+    # Use absolute path to config.yml
     volumes:
       - /volume1/docker/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
 

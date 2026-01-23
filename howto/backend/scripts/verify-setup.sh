@@ -1,7 +1,7 @@
-***REMOVED***!/bin/bash
+#!/bin/bash
 
-***REMOVED*** Scanium Backend Setup Verification Script
-***REMOVED*** Run this after initial setup to verify everything is configured correctly
+# Scanium Backend Setup Verification Script
+# Run this after initial setup to verify everything is configured correctly
 
 set -eo pipefail
 
@@ -14,7 +14,7 @@ echo "Working directory: $BACKEND_DIR"
 echo "🔍 Verifying Scanium Backend Setup..."
 echo ""
 
-***REMOVED*** Check Node version
+# Check Node version
 echo "📦 Checking Node.js version..."
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
 if [ "$NODE_VERSION" -lt 20 ]; then
@@ -24,7 +24,7 @@ fi
 echo "✅ Node.js version: $(node -v)"
 echo ""
 
-***REMOVED*** Check if .env exists
+# Check if .env exists
 echo "📄 Checking .env file..."
 if [ ! -f .env ]; then
     echo "❌ .env file not found!"
@@ -35,7 +35,7 @@ fi
 echo "✅ .env file found"
 echo ""
 
-***REMOVED*** Check required environment variables
+# Check required environment variables
 echo "🔑 Checking required environment variables..."
 REQUIRED_VARS=(
     "NODE_ENV"
@@ -60,9 +60,9 @@ done
 echo "✅ All required environment variables present"
 echo ""
 
-***REMOVED*** Check session secret length
+# Check session secret length
 echo "🔐 Checking SESSION_SIGNING_SECRET length..."
-SECRET_LENGTH=${***REMOVED***SESSION_SIGNING_SECRET}
+SECRET_LENGTH=${#SESSION_SIGNING_SECRET}
 if [ "$SECRET_LENGTH" -lt 64 ]; then
     echo "⚠️  SESSION_SIGNING_SECRET is too short ($SECRET_LENGTH chars)"
     echo "   Generate a strong secret with: openssl rand -base64 64"
@@ -70,7 +70,7 @@ fi
 echo "✅ Session secret length: $SECRET_LENGTH chars"
 echo ""
 
-***REMOVED*** Check if node_modules exists
+# Check if node_modules exists
 echo "📦 Checking dependencies..."
 if [ ! -d "node_modules" ]; then
     echo "⚠️  node_modules not found. Installing dependencies..."
@@ -79,13 +79,13 @@ fi
 echo "✅ Dependencies installed"
 echo ""
 
-***REMOVED*** Generate Prisma client
+# Generate Prisma client
 echo "🗄️  Generating Prisma client..."
 npm run prisma:generate > /dev/null 2>&1
 echo "✅ Prisma client generated"
 echo ""
 
-***REMOVED*** Type check
+# Type check
 echo "📝 Running TypeScript type check..."
 if npm run typecheck > /dev/null 2>&1; then
     echo "✅ TypeScript compilation successful"
@@ -96,7 +96,7 @@ else
 fi
 echo ""
 
-***REMOVED*** Run tests
+# Run tests
 echo "🧪 Running tests..."
 if npm run test > /dev/null 2>&1; then
     echo "✅ Tests passed"
@@ -106,7 +106,7 @@ else
 fi
 echo ""
 
-***REMOVED*** Build
+# Build
 echo "🔨 Building application..."
 if npm run build > /dev/null 2>&1; then
     echo "✅ Build successful"
@@ -117,7 +117,7 @@ else
 fi
 echo ""
 
-***REMOVED*** Docker build (if Docker is available)
+# Docker build (if Docker is available)
 if command -v docker &> /dev/null; then
     echo "🐳 Testing Docker build..."
     if docker build -t scanium-backend:test . > /dev/null 2>&1; then

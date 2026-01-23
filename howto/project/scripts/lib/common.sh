@@ -1,32 +1,32 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium Common Script Library
-***REMOVED*** =============================================================================
-***REMOVED*** Shared helpers for all Scanium scripts. Source this file:
-***REMOVED***   source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
-***REMOVED***
-***REMOVED*** Or from any script:
-***REMOVED***   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-***REMOVED***   source "$SCRIPT_DIR/../lib/common.sh" 2>/dev/null || source "$SCRIPT_DIR/lib/common.sh"
-***REMOVED***
-***REMOVED*** Features:
-***REMOVED***   - Platform detection (macOS/Linux/Termux)
-***REMOVED***   - Colored logging with timestamps
-***REMOVED***   - Command/environment checks
-***REMOVED***   - Secret redaction
-***REMOVED***   - Portable path resolution
-***REMOVED***   - HTTP helpers
-***REMOVED*** =============================================================================
+#!/usr/bin/env bash
+# =============================================================================
+# Scanium Common Script Library
+# =============================================================================
+# Shared helpers for all Scanium scripts. Source this file:
+#   source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
+#
+# Or from any script:
+#   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#   source "$SCRIPT_DIR/../lib/common.sh" 2>/dev/null || source "$SCRIPT_DIR/lib/common.sh"
+#
+# Features:
+#   - Platform detection (macOS/Linux/Termux)
+#   - Colored logging with timestamps
+#   - Command/environment checks
+#   - Secret redaction
+#   - Portable path resolution
+#   - HTTP helpers
+# =============================================================================
 
-***REMOVED*** Only set options if not already set by calling script
+# Only set options if not already set by calling script
 [[ -z "${COMMON_SH_LOADED:-}" ]] || return 0
 COMMON_SH_LOADED=1
 
 set -euo pipefail
 
-***REMOVED*** =============================================================================
-***REMOVED*** Platform Detection
-***REMOVED*** =============================================================================
+# =============================================================================
+# Platform Detection
+# =============================================================================
 is_macos() {
   [[ "$(uname -s)" == "Darwin" ]]
 }
@@ -55,9 +55,9 @@ get_platform() {
   fi
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Color Support (auto-disable if not TTY or CI without color support)
-***REMOVED*** =============================================================================
+# =============================================================================
+# Color Support (auto-disable if not TTY or CI without color support)
+# =============================================================================
 if [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; then
   COLOR_RED='\033[0;31m'
   COLOR_YELLOW='\033[0;33m'
@@ -78,9 +78,9 @@ else
   COLOR_RESET=''
 fi
 
-***REMOVED*** =============================================================================
-***REMOVED*** Logging Helpers
-***REMOVED*** =============================================================================
+# =============================================================================
+# Logging Helpers
+# =============================================================================
 timestamp() {
   date -u '+%Y-%m-%dT%H:%M:%SZ'
 }
@@ -114,9 +114,9 @@ die() {
   exit 1
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Command & Environment Checks
-***REMOVED*** =============================================================================
+# =============================================================================
+# Command & Environment Checks
+# =============================================================================
 require_cmd() {
   local cmd="$1"
   if ! command -v "$cmd" &>/dev/null; then
@@ -135,14 +135,14 @@ has_cmd() {
   command -v "$1" &>/dev/null
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Repo Root Detection (portable)
-***REMOVED*** =============================================================================
+# =============================================================================
+# Repo Root Detection (portable)
+# =============================================================================
 get_repo_root() {
   if has_cmd git && git rev-parse --show-toplevel &>/dev/null; then
     git rev-parse --show-toplevel
   else
-    ***REMOVED*** Fallback: search upward for .git directory
+    # Fallback: search upward for .git directory
     local dir="$PWD"
     while [[ "$dir" != "/" ]]; do
       if [[ -d "$dir/.git" ]]; then
@@ -155,7 +155,7 @@ get_repo_root() {
   fi
 }
 
-***REMOVED*** Cached repo root
+# Cached repo root
 _REPO_ROOT=""
 ensure_repo_root() {
   if [[ -z "$_REPO_ROOT" ]]; then
@@ -164,10 +164,10 @@ ensure_repo_root() {
   echo "$_REPO_ROOT"
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Portable Path Resolution
-***REMOVED*** =============================================================================
-***REMOVED*** Portable realpath alternative (works on macOS without coreutils)
+# =============================================================================
+# Portable Path Resolution
+# =============================================================================
+# Portable realpath alternative (works on macOS without coreutils)
 portable_realpath() {
   local path="$1"
   if has_cmd realpath; then
@@ -176,14 +176,14 @@ portable_realpath() {
   if has_cmd greadlink; then
     greadlink -f "$path" 2>/dev/null && return 0
   fi
-  ***REMOVED*** Python fallback
+  # Python fallback
   if has_cmd python3; then
     python3 -c "import os; print(os.path.realpath('$path'))" 2>/dev/null && return 0
   fi
   if has_cmd python; then
     python -c "import os; print(os.path.realpath('$path'))" 2>/dev/null && return 0
   fi
-  ***REMOVED*** Manual resolution
+  # Manual resolution
   if [[ -d "$path" ]]; then
     (cd "$path" && pwd)
   elif [[ -f "$path" ]]; then
@@ -196,9 +196,9 @@ portable_realpath() {
   fi
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Portable sed -i (handles macOS vs Linux difference)
-***REMOVED*** =============================================================================
+# =============================================================================
+# Portable sed -i (handles macOS vs Linux difference)
+# =============================================================================
 portable_sed_i() {
   local pattern="$1"
   local file="$2"
@@ -210,9 +210,9 @@ portable_sed_i() {
   fi
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Secret Redaction
-***REMOVED*** =============================================================================
+# =============================================================================
+# Secret Redaction
+# =============================================================================
 redact_secrets() {
   sed -E \
     -e 's/(API_KEY|APIKEY|api_key|apikey)[[:space:]]*[=:][[:space:]]*[^[:space:]"'\'']+/\1=[REDACTED]/gi' \
@@ -225,9 +225,9 @@ redact_secrets() {
     -e 's|://[^:/@]+:[^@]+@|://[REDACTED]:[REDACTED]@|g'
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** HTTP Helpers
-***REMOVED*** =============================================================================
+# =============================================================================
+# HTTP Helpers
+# =============================================================================
 http_get_status() {
   local url="$1"
   local timeout="${2:-10}"
@@ -240,25 +240,25 @@ http_get() {
   curl -s --max-time "$timeout" "$url" 2>/dev/null
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Utility Functions
-***REMOVED*** =============================================================================
+# =============================================================================
+# Utility Functions
+# =============================================================================
 truncate_string() {
   local str="$1"
   local max_len="${2:-200}"
-  if [[ ${***REMOVED***str} -gt $max_len ]]; then
+  if [[ ${#str} -gt $max_len ]]; then
     echo "${str:0:$max_len}..."
   else
     echo "$str"
   fi
 }
 
-***REMOVED*** Check if running in interactive mode
+# Check if running in interactive mode
 is_interactive() {
   [[ -t 0 ]] && [[ -t 1 ]]
 }
 
-***REMOVED*** Prompt for confirmation (returns 0 for yes, 1 for no)
+# Prompt for confirmation (returns 0 for yes, 1 for no)
 confirm() {
   local prompt="${1:-Continue?}"
   local default="${2:-n}"
@@ -274,9 +274,9 @@ confirm() {
   [[ "$reply" =~ ^[Yy]$ ]]
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Script Header/Banner
-***REMOVED*** =============================================================================
+# =============================================================================
+# Script Header/Banner
+# =============================================================================
 print_banner() {
   local title="$1"
   local width="${2:-60}"
@@ -290,9 +290,9 @@ print_banner() {
   echo ""
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Export for subshells
-***REMOVED*** =============================================================================
+# =============================================================================
+# Export for subshells
+# =============================================================================
 export -f is_macos is_linux is_termux is_ci get_platform 2>/dev/null || true
 export -f log_info log_warn log_error log_success log_fail log_debug die 2>/dev/null || true
 export -f require_cmd require_env has_cmd 2>/dev/null || true

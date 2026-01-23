@@ -6,7 +6,7 @@ package com.scanium.app.ui.motion
  * Brand motion rules (strict):
  * - Motion must be minimal, fast, and confidence-inspiring
  * - No bouncy/spring/elastic effects
- * - Yellow (***REMOVED***FFD400) is used ONLY as an action accent, not as dominant backgrounds
+ * - Yellow (#FFD400) is used ONLY as an action accent, not as dominant backgrounds
  * - No continuous looping animations for scanning
  */
 object MotionConstants {

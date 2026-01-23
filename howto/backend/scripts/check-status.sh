@@ -1,11 +1,11 @@
-***REMOVED***!/bin/bash
+#!/bin/bash
 
-***REMOVED*** Scanium Backend & Monitoring Stack Status Checker
-***REMOVED*** Checks health of all services and displays URLs for manual verification
+# Scanium Backend & Monitoring Stack Status Checker
+# Checks health of all services and displays URLs for manual verification
 
 set -eo pipefail
 
-***REMOVED*** Colors for output
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -14,15 +14,15 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 BOLD='\033[1m'
 DIM='\033[2m'
-NC='\033[0m' ***REMOVED*** No Color
+NC='\033[0m' # No Color
 
-***REMOVED*** Status indicators
+# Status indicators
 HEALTHY="${GREEN}●${NC}"
 UNHEALTHY="${RED}●${NC}"
 STARTING="${YELLOW}●${NC}"
 UNKNOWN="${DIM}○${NC}"
 
-***REMOVED*** Print functions
+# Print functions
 print_header() {
     echo ""
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -51,7 +51,7 @@ print_info() {
     echo -e "${DIM}  $1${NC}"
 }
 
-***REMOVED*** Health check via HTTP endpoint
+# Health check via HTTP endpoint
 check_http() {
     local url=$1
     local timeout=${2:-3}
@@ -68,7 +68,7 @@ check_http() {
     fi
 }
 
-***REMOVED*** Check TCP port connectivity
+# Check TCP port connectivity
 check_port() {
     local host=$1
     local port=$2
@@ -81,7 +81,7 @@ check_port() {
     fi
 }
 
-***REMOVED*** Get Docker container health status
+# Get Docker container health status
 get_container_health() {
     local container=$1
     local result
@@ -89,7 +89,7 @@ get_container_health() {
     echo "$result" | tr -d '\n'
 }
 
-***REMOVED*** Get Docker container running status
+# Get Docker container running status
 get_container_status() {
     local container=$1
     local result
@@ -97,7 +97,7 @@ get_container_status() {
     echo "$result" | tr -d '\n'
 }
 
-***REMOVED*** Format status with color
+# Format status with color
 format_status() {
     local status=$1
     case "$status" in
@@ -119,12 +119,12 @@ format_status() {
     esac
 }
 
-***REMOVED*** Counters for summary
+# Counters for summary
 TOTAL_CHECKS=0
 HEALTHY_CHECKS=0
 UNHEALTHY_CHECKS=0
 
-***REMOVED*** Track check result
+# Track check result
 track_check() {
     local status=$1
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -135,16 +135,16 @@ track_check() {
     fi
 }
 
-***REMOVED*** Main script
+# Main script
 echo ""
 echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════════════════╗"
 echo -e "║                    ${BOLD}Scanium Stack Health Check${NC}${GREEN}                            ║"
 echo -e "╚═══════════════════════════════════════════════════════════════════════════╝${NC}"
 echo -e "${DIM}  $(date '+%Y-%m-%d %H:%M:%S')${NC}"
 
-***REMOVED*** ============================================================================
-***REMOVED*** Backend Stack
-***REMOVED*** ============================================================================
+# ============================================================================
+# Backend Stack
+# ============================================================================
 print_header "Backend Stack"
 
 print_section "PostgreSQL Database"
@@ -163,7 +163,7 @@ API_CONTAINER=$(get_container_health "scanium-api")
 track_check "$API_CONTAINER"
 echo -e "  Container:    $(format_status "$API_CONTAINER")"
 
-***REMOVED*** Check various health endpoints
+# Check various health endpoints
 API_HEALTH=$(check_http "http://localhost:8080/health")
 track_check "$API_HEALTH"
 echo -e "  /health:      $(format_status "$API_HEALTH")"
@@ -178,12 +178,12 @@ echo -e "  /readyz:      $(format_status "$API_READYZ")"
 
 echo ""
 echo -e "  ${BLUE}Health Check URLs:${NC}"
-print_info "curl http://localhost:8080/health   ***REMOVED*** Full health with assistant status"
-print_info "curl http://localhost:8080/healthz  ***REMOVED*** Basic liveness probe"
-print_info "curl http://localhost:8080/readyz   ***REMOVED*** Readiness (includes DB check)"
+print_info "curl http://localhost:8080/health   # Full health with assistant status"
+print_info "curl http://localhost:8080/healthz  # Basic liveness probe"
+print_info "curl http://localhost:8080/readyz   # Readiness (includes DB check)"
 
 print_section "Assistant Endpoints"
-***REMOVED*** Note: Warmup requires API key, so we can only check it returns non-404
+# Note: Warmup requires API key, so we can only check it returns non-404
 WARMUP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 -X POST "http://localhost:8080/v1/assist/warmup" 2>/dev/null || echo "000")
 if [[ "$WARMUP_STATUS" == "401" || "$WARMUP_STATUS" == "200" ]]; then
     WARMUP_RESULT="healthy"
@@ -207,9 +207,9 @@ track_check "$CF_STATUS"
 echo -e "  Container:    $(format_status "$CF_STATUS")"
 print_info "Tunnel status is managed by Cloudflare dashboard"
 
-***REMOVED*** ============================================================================
-***REMOVED*** Monitoring Stack
-***REMOVED*** ============================================================================
+# ============================================================================
+# Monitoring Stack
+# ============================================================================
 print_header "Monitoring Stack (LGTM + Alloy)"
 
 print_section "Grafana (Dashboards & Visualization)"
@@ -279,9 +279,9 @@ echo -e "  ${BLUE}URLs:${NC}"
 print_info "Ready:      http://localhost:9009/ready"
 print_info "Config:     http://localhost:9009/config"
 
-***REMOVED*** ============================================================================
-***REMOVED*** Summary
-***REMOVED*** ============================================================================
+# ============================================================================
+# Summary
+# ============================================================================
 print_header "Summary"
 
 echo ""
@@ -311,7 +311,7 @@ echo -e "  ${CYAN}View monitoring logs:${NC}"
 echo -e "    docker compose -p scanium-monitoring logs -f"
 echo ""
 
-***REMOVED*** Exit with error code if any checks failed
+# Exit with error code if any checks failed
 if [ $UNHEALTHY_CHECKS -gt 0 ]; then
     exit 1
 fi

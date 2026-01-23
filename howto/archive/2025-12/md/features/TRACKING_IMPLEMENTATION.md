@@ -1,17 +1,17 @@
-***REMOVED*** Object Tracking and De-Duplication Implementation
+# Object Tracking and De-Duplication Implementation
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This document describes the implementation of a robust tracking and de-duplication system for the
 Scanium Android app. The system uses ML Kit's Object Detection & Tracking capabilities combined with
 custom spatial matching heuristics to ensure that each physical object is recognized only once per
 scanning session.
 
-***REMOVED******REMOVED*** Implementation Summary
+## Implementation Summary
 
-***REMOVED******REMOVED******REMOVED*** 1. New Components Created
+### 1. New Components Created
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectCandidate (`app/src/main/java/com/scanium/app/tracking/ObjectCandidate.kt`)
+#### ObjectCandidate (`app/src/main/java/com/scanium/app/tracking/ObjectCandidate.kt`)
 
 A data class representing a candidate object being tracked across multiple frames.
 
@@ -34,7 +34,7 @@ A data class representing a candidate object being tracked across multiple frame
 - `distanceTo()`: Calculates Euclidean distance to another box
 - `calculateIoU()`: Calculates Intersection over Union with another box
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectTracker (`app/src/main/java/com/scanium/app/tracking/ObjectTracker.kt`)
+#### ObjectTracker (`app/src/main/java/com/scanium/app/tracking/ObjectTracker.kt`)
 
 The core tracking component that manages candidate objects and applies confirmation logic.
 
@@ -64,7 +64,7 @@ The core tracking component that manages candidate objects and applies confirmat
 - `reset()`: Clears all candidates and state
 - `getStats()`: Returns tracking statistics for debugging
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** DetectionInfo (`app/src/main/java/com/scanium/app/tracking/ObjectTracker.kt`)
+#### DetectionInfo (`app/src/main/java/com/scanium/app/tracking/ObjectTracker.kt`)
 
 A data class holding raw detection information extracted from ML Kit.
 
@@ -78,9 +78,9 @@ A data class holding raw detection information extracted from ML Kit.
 - `thumbnail`: Cropped thumbnail
 - `normalizedBoxArea`: Normalized bounding box area
 
-***REMOVED******REMOVED******REMOVED*** 2. Updated Components
+### 2. Updated Components
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectDetectorClient (`app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`)
+#### ObjectDetectorClient (`app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`)
 
 **New Methods:**
 
@@ -94,7 +94,7 @@ A data class holding raw detection information extracted from ML Kit.
 - Uses STREAM_MODE by default for tracking (provides better trackingId availability)
 - Extracts all necessary metadata for spatial matching (bounding box as RectF, confidence, etc.)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** CameraXManager (`app/src/main/java/com/scanium/app/camera/CameraXManager.kt`)
+#### CameraXManager (`app/src/main/java/com/scanium/app/camera/CameraXManager.kt`)
 
 **New Components:**
 
@@ -131,7 +131,7 @@ when (scanMode) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ItemsViewModel (`app/src/main/java/com/scanium/app/items/ItemsViewModel.kt`)
+#### ItemsViewModel (`app/src/main/java/com/scanium/app/items/ItemsViewModel.kt`)
 
 **No changes required!** The existing ID-based de-duplication using `seenIds` set works perfectly
 with stable tracking IDs from ObjectTracker.
@@ -143,9 +143,9 @@ with stable tracking IDs from ObjectTracker.
 - `removeItem()`: Removes from both list and seenIds
 - `clearAllItems()`: Clears both list and seenIds
 
-***REMOVED******REMOVED******REMOVED*** 3. Data Flow
+### 3. Data Flow
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Previous Flow (Without Tracking)
+#### Previous Flow (Without Tracking)
 
 ```
 ImageProxy → ML Kit Detection → DetectedObject[]
@@ -154,7 +154,7 @@ ImageProxy → ML Kit Detection → DetectedObject[]
   → Result: Duplicates created for same physical object
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** New Flow (With Tracking)
+#### New Flow (With Tracking)
 
 ```
 ImageProxy → ML Kit Detection (STREAM_MODE) → DetectedObject[]
@@ -171,16 +171,16 @@ ImageProxy → ML Kit Detection (STREAM_MODE) → DetectedObject[]
   → Result: Each physical object appears once
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Tracking Logic
+### 4. Tracking Logic
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Candidate Lifecycle
+#### Candidate Lifecycle
 
 1. **Creation**: New detection creates candidate with initial metadata
 2. **Tracking**: Across frames, detection matched to candidate and updates it
 3. **Confirmation**: When candidate meets thresholds, it's promoted to ScannedItem
 4. **Expiry**: If not seen for `expiryFrames`, candidate is removed
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Matching Strategy
+#### Matching Strategy
 
 **Primary: Direct trackingId Match**
 
@@ -208,7 +208,7 @@ for (candidate in candidates.values) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Confirmation Criteria
+#### Confirmation Criteria
 
 A candidate is confirmed when ALL of these are met:
 
@@ -218,7 +218,7 @@ candidate.maxConfidence >= minConfidence &&
 candidate.averageBoxArea >= minBoxArea
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Key Benefits
+### 5. Key Benefits
 
 1. **Reduced Duplicates**: Same physical object tracked across frames with stable ID
 2. **Improved Accuracy**: Confirmation requires multiple frames and confidence threshold
@@ -227,7 +227,7 @@ candidate.averageBoxArea >= minBoxArea
 5. **Tunable**: All thresholds configurable via TrackerConfig
 6. **Debug-Friendly**: Comprehensive logging and statistics
 
-***REMOVED******REMOVED******REMOVED*** 6. Configuration Tuning
+### 6. Configuration Tuning
 
 The tracker can be tuned by adjusting `TrackerConfig` parameters:
 
@@ -249,7 +249,7 @@ TrackerConfig(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** 7. Logging and Debugging
+### 7. Logging and Debugging
 
 **Comprehensive logging added for tracking lifecycle:**
 
@@ -270,7 +270,7 @@ val stats = objectTracker.getStats()
 // stats.currentFrame - Current frame number
 ```
 
-***REMOVED******REMOVED******REMOVED*** 8. Mode Management
+### 8. Mode Management
 
 **Tracker is reset when:**
 
@@ -291,7 +291,7 @@ val stats = objectTracker.getStats()
 - Barcode scanning: Uses existing pipeline without tracking
 - Document text: Uses existing pipeline without tracking
 
-***REMOVED******REMOVED******REMOVED*** 9. Compatibility
+### 9. Compatibility
 
 **Backward Compatibility:**
 
@@ -307,7 +307,7 @@ val stats = objectTracker.getStats()
 - STREAM_MODE provides trackingId more reliably than SINGLE_IMAGE_MODE
 - Graceful fallback when trackingId is null
 
-***REMOVED******REMOVED******REMOVED*** 10. Testing Recommendations
+### 10. Testing Recommendations
 
 **Manual Testing:**
 
@@ -344,7 +344,7 @@ adb logcat | grep -E "ObjectTracker|CameraXManager|ObjectDetectorClient"
 - Proper tracking across frames (seenCount incrementing)
 - Spatial matching when trackingId unavailable
 
-***REMOVED******REMOVED******REMOVED*** 11. Known Limitations
+### 11. Known Limitations
 
 1. **Network Required**: ML Kit downloads models on first use
 2. **Performance**: Thumbnail cropping and IoU calculations add slight overhead
@@ -352,7 +352,7 @@ adb logcat | grep -E "ObjectTracker|CameraXManager|ObjectDetectorClient"
 4. **Tracking ID Availability**: SINGLE_IMAGE_MODE may not provide trackingId consistently
 5. **Memory**: Tracker keeps candidates in memory during scan session (cleared on reset)
 
-***REMOVED******REMOVED******REMOVED*** 12. Future Enhancements
+### 12. Future Enhancements
 
 **Potential improvements:**
 
@@ -363,7 +363,7 @@ adb logcat | grep -E "ObjectTracker|CameraXManager|ObjectDetectorClient"
 5. **Performance Metrics**: Track and log frame processing times
 6. **Custom Categories**: Expand beyond ML Kit's 5 categories with custom classifier
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 The tracking and de-duplication system is fully implemented and integrated into the Scanium app. It
 provides:

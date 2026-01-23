@@ -29,28 +29,28 @@ safe zone to prevent any cropping.
 
         <!-- Background filled rounded square - Blue for light mode -->
         <path
-            android:fillColor="***REMOVED***1F4BFF"
+            android:fillColor="#1F4BFF"
             android:pathData="M 27.5 11 H 80.5 A 16.5 16.5 0 0 1 97 27.5 V 80.5 A 16.5 16.5 0 0 1 80.5 97 H 27.5 A 16.5 16.5 0 0 1 11 80.5 V 27.5 A 16.5 16.5 0 0 1 27.5 11 Z" />
 
         <!-- White border frame -->
         <path
-            android:fillColor="***REMOVED***00000000"
+            android:fillColor="#00000000"
             android:pathData="M 27.5 11 H 80.5 A 16.5 16.5 0 0 1 97 27.5 V 80.5 A 16.5 16.5 0 0 1 80.5 97 H 27.5 A 16.5 16.5 0 0 1 11 80.5 V 27.5 A 16.5 16.5 0 0 1 27.5 11 Z"
             android:strokeWidth="6.5"
-            android:strokeColor="***REMOVED***FFFFFF" />
+            android:strokeColor="#FFFFFF" />
 
         <!-- Lightning Bolt S Symbol: Three geometric parallelograms -->
         <!-- Top bar -->
         <path
-            android:fillColor="***REMOVED***FFD400"
+            android:fillColor="#FFD400"
             android:pathData="M 29 27 L 75 27 L 69 37 L 29 37 Z" />
         <!-- Middle diagonal bar -->
         <path
-            android:fillColor="***REMOVED***FFD400"
+            android:fillColor="#FFD400"
             android:pathData="M 67 37 L 75 27 L 41 73 L 33 63 Z" />
         <!-- Bottom bar -->
         <path
-            android:fillColor="***REMOVED***FFD400"
+            android:fillColor="#FFD400"
             android:pathData="M 33 63 L 41 73 L 79 73 L 79 63 Z" />
 
     </group>

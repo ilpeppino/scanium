@@ -1,75 +1,75 @@
 > Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
 > state.
 
-***REMOVED*** eBay Domain Pack Generator
+# eBay Domain Pack Generator
 
 Auto-generate Scanium Domain Packs from eBay marketplace category trees.
 
-***REMOVED******REMOVED*** Quick Start
+## Quick Start
 
 ```bash
-***REMOVED*** Install dependencies
+# Install dependencies
 npm install
 
-***REMOVED*** Set eBay credentials
+# Set eBay credentials
 export EBAY_CLIENT_ID="your-client-id"
 export EBAY_CLIENT_SECRET="your-client-secret"
 
-***REMOVED*** Generate domain packs for Netherlands
+# Generate domain packs for Netherlands
 npm run gen -- generate --marketplace EBAY_NL
 
-***REMOVED*** Run tests
+# Run tests
 npm test
 ```
 
-***REMOVED******REMOVED*** Documentation
+## Documentation
 
 See [EBAY_GENERATOR.md](./EBAY_GENERATOR.md) for comprehensive documentation.
 
-***REMOVED******REMOVED*** Commands
+## Commands
 
 ```bash
-***REMOVED*** Development
-npm run dev              ***REMOVED*** Run in dev mode with tsx watch
-npm run build            ***REMOVED*** Build TypeScript to dist/
+# Development
+npm run dev              # Run in dev mode with tsx watch
+npm run build            # Build TypeScript to dist/
 
-***REMOVED*** Generation
-npm run gen              ***REMOVED*** Run the generator CLI
+# Generation
+npm run gen              # Run the generator CLI
 
-***REMOVED*** Testing
-npm test                 ***REMOVED*** Run unit tests
-npm run test:watch       ***REMOVED*** Run tests in watch mode
+# Testing
+npm test                 # Run unit tests
+npm run test:watch       # Run tests in watch mode
 ```
 
-***REMOVED******REMOVED*** Examples
+## Examples
 
 ```bash
-***REMOVED*** Generate for Germany with aspects
+# Generate for Germany with aspects
 npm run gen -- generate --marketplace EBAY_DE --enable-aspects
 
-***REMOVED*** List supported marketplaces
+# List supported marketplaces
 npm run gen -- list-marketplaces
 
-***REMOVED*** Dry run (preview without writing files)
+# Dry run (preview without writing files)
 npm run gen -- generate --marketplace EBAY_FR --dry-run
 ```
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
 ```
 src/
-├── cli/                    ***REMOVED*** CLI interface (Commander.js)
-├── lib/                    ***REMOVED*** Core library
-│   ├── ebay-auth.ts       ***REMOVED*** OAuth client credentials
-│   ├── ebay-taxonomy-client.ts  ***REMOVED*** Taxonomy API client
-│   ├── category-mapper.ts ***REMOVED*** eBay → Scanium category mapping
-│   ├── token-generator.ts ***REMOVED*** Keyword token generation
-│   ├── tree-traversal.ts  ***REMOVED*** Category tree extraction
-│   ├── cache.ts           ***REMOVED*** File-based caching
-│   └── domain-pack-generator.ts  ***REMOVED*** Main orchestrator
-└── types/                 ***REMOVED*** TypeScript type definitions
+├── cli/                    # CLI interface (Commander.js)
+├── lib/                    # Core library
+│   ├── ebay-auth.ts       # OAuth client credentials
+│   ├── ebay-taxonomy-client.ts  # Taxonomy API client
+│   ├── category-mapper.ts # eBay → Scanium category mapping
+│   ├── token-generator.ts # Keyword token generation
+│   ├── tree-traversal.ts  # Category tree extraction
+│   ├── cache.ts           # File-based caching
+│   └── domain-pack-generator.ts  # Main orchestrator
+└── types/                 # TypeScript type definitions
 ```
 
-***REMOVED******REMOVED*** License
+## License
 
 UNLICENSED

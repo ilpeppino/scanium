@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Extract Scanium subtypes from home_resale_domain_pack.json
 Output: scripts/output/ebay/scanium_subtypes_all.json
@@ -27,7 +27,7 @@ def extract_subtypes():
         print(f"ERROR: Failed to parse domain pack JSON: {e}", file=sys.stderr)
         return 1
 
-    ***REMOVED*** Extract category/subtype information
+    # Extract category/subtype information
     subtypes = []
     for category in domain_pack.get("categories", []):
         subtype = {
@@ -40,7 +40,7 @@ def extract_subtypes():
         }
         subtypes.append(subtype)
 
-    ***REMOVED*** Write output
+    # Write output
     output = {
         "source": "home_resale_domain_pack.json",
         "totalSubtypes": len(subtypes),

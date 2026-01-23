@@ -38,7 +38,7 @@ object DetectionLogger {
 
         Log.d(
             TAG,
-            "Frame ***REMOVED***$frameNumber | Detection: " +
+            "Frame #$frameNumber | Detection: " +
                 "id=${detection.trackingId.take(8)}, " +
                 "category=${detection.category.displayName}, " +
                 "label=${bestLabel?.text ?: "none"}, " +
@@ -118,7 +118,7 @@ object DetectionLogger {
 
         Log.i(
             TAG,
-            "Frame ***REMOVED***$frameNumber | Summary: " +
+            "Frame #$frameNumber | Summary: " +
                 "raw=$rawDetections, " +
                 "valid=$validDetections, " +
                 "promoted=$promotedItems, " +

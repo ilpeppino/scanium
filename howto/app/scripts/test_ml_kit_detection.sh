@@ -1,7 +1,7 @@
-***REMOVED***!/bin/bash
+#!/bin/bash
 
-***REMOVED*** Test script for verifying ML Kit detection fixes
-***REMOVED*** This script helps diagnose ML Kit zero detection issues
+# Test script for verifying ML Kit detection fixes
+# This script helps diagnose ML Kit zero detection issues
 
 set -euo pipefail
 
@@ -14,7 +14,7 @@ echo "ML Kit Detection Test Script"
 echo "========================================="
 echo ""
 
-***REMOVED*** Check if device is connected
+# Check if device is connected
 if ! adb devices | grep -q "device$"; then
     echo "ERROR: No Android device connected"
     echo "Please connect a device or start an emulator"
@@ -24,14 +24,14 @@ fi
 echo "Device connected: $(adb devices | grep 'device$' | awk '{print $1}')"
 echo ""
 
-***REMOVED*** Build and install app
+# Build and install app
 echo "Building and installing app..."
 ./gradlew :androidApp:installDebug --quiet
 
 echo "App installed successfully"
 echo ""
 
-***REMOVED*** Clear logcat
+# Clear logcat
 echo "Clearing logcat..."
 adb logcat -c
 
@@ -58,7 +58,7 @@ echo ""
 echo "========================================="
 echo ""
 
-***REMOVED*** Monitor logcat for relevant logs
+# Monitor logcat for relevant logs
 adb logcat -s \
     ObjectDetectorClient:* \
     CameraXManager:* \

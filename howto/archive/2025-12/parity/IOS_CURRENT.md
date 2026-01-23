@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** iOS Current State
+# iOS Current State
 
 **Last Updated:** 2025-12-19
 **iOS App Module:** `iosApp/ScaniumiOS`
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The iOS implementation is in **early scaffolding phase**. Platform-specific ML services (Vision,
 CoreML, AVFoundation) exist as isolated components, but there is **NO integrated UI, NO camera
@@ -23,14 +23,14 @@ CoreML (object detection)
 
 ---
 
-***REMOVED******REMOVED*** Capability Breakdown
+## Capability Breakdown
 
-***REMOVED******REMOVED******REMOVED*** 1. Camera Capture
+### 1. Camera Capture
 
 **Status:** 🟡 PARTIAL
 **Module:** `iosApp/ScaniumiOS/AVFoundationFrameSource.swift`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **AVFoundation Frame Source:**
     - `AVFoundationFrameSource.swift` - Basic camera session setup
@@ -39,7 +39,7 @@ CoreML (object detection)
     - JPEG encoding at 65% quality
     - Orientation handling for portrait mode
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Camera UI** - No SwiftUI view showing camera preview
 - ❌ **NO Capture Button** - No shutter button or capture controls
@@ -50,25 +50,25 @@ CoreML (object detection)
 - ❌ **NO Haptic Feedback** - No shutter sound or vibration
 - ❌ **NO Integration** - Frame source not connected to any UI or ML pipeline
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Implemented: `iosApp/ScaniumiOS/AVFoundationFrameSource.swift:1-102`
 - Missing UI: `iosApp/ScaniumiOS/ContentView.swift` - Only shows list, no camera view
 - Missing Integration: No `CameraView.swift` or equivalent
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Missing SwiftUI camera view
 - Missing wiring between frame source and UI
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. ML / Object Detection
+### 2. ML / Object Detection
 
 **Status:** 🟡 PARTIAL
 **Module:** `iosApp/ScaniumiOS/` (multiple ML service files)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **Vision Barcode Service:**
     - `VisionBarcodeService.swift` - Vision framework barcode detection
@@ -88,7 +88,7 @@ CoreML (object detection)
     - Returns `DetectedObject` with label, confidence, bounding box, tracking ID
     - Async/await API
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Pipeline Integration** - Services exist but are not called from any UI or camera flow
 - ❌ **NO Real-time Processing** - No frame-by-frame analysis loop
@@ -97,7 +97,7 @@ CoreML (object detection)
 - ❌ **NO Multi-mode Switching** - No toggle between object/barcode/text modes
 - ❌ **NO Performance Optimization** - No frame throttling or queue management
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Implemented:
     - `iosApp/ScaniumiOS/VisionBarcodeService.swift:1-31`
@@ -107,18 +107,18 @@ CoreML (object detection)
 - Missing Protocols: `PlatformContracts.swift:1-50` defines protocols but no concrete
   implementations are used
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Missing camera UI to drive frame analysis
 - Missing orchestration layer to coordinate ML services
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Classification
+### 3. Classification
 
 **Status:** ❌ NOT IMPLEMENTED
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO On-Device Classifier** - No Swift implementation of label-to-category mapping
 - ❌ **NO Cloud Classifier** - No HTTP client for backend API
@@ -126,31 +126,31 @@ CoreML (object detection)
 - ❌ **NO Settings** - No classification mode toggle in UI
 - ❌ **NO Persistence** - No UserDefaults for classification preferences
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - No classification files in `iosApp/ScaniumiOS/`
 - No HTTP client or URLSession usage for cloud API
 - No settings screen or settings model
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Not started - requires UI and backend integration
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Object Tracking & Aggregation
+### 4. Object Tracking & Aggregation
 
 **Status:** 🟡 PARTIAL (Shared Available, Not Integrated)
 **Shared Module:** `shared/core-tracking` (KMP XCFramework)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **Shared KMP Modules Available:**
     - `ObjectTracker` and `ItemAggregator` compiled to XCFramework
-    - Can be imported via `***REMOVED***if canImport(Shared)`
+    - Can be imported via `#if canImport(Shared)`
     - Basic bridging in `SharedBridge.swift`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Integration** - Tracker and aggregator not instantiated or called from iOS code
 - ❌ **NO Live Tracking** - No frame-by-frame detection feeding into tracker
@@ -158,25 +158,25 @@ CoreML (object detection)
 - ❌ **NO Threshold Control** - No UI or state management for similarity threshold
 - ❌ **NO State Management** - No ObservableObject or @Published properties for tracking state
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Shared available: `iosApp/ScaniumiOS/SharedBridge.swift:96-98` - Can load sample items from KMP
 - Not integrated: No calls to `ObjectTracker.processFrame()` or `ItemAggregator.processDetection()`
 - Static data only: `ContentView.swift:4-6` loads items once, no live updates
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Missing camera + ML integration to generate live detections
 - Missing SwiftUI state management for tracking pipeline
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. Items List & Details UI
+### 5. Items List & Details UI
 
 **Status:** 🟡 PARTIAL
 **Module:** `iosApp/ScaniumiOS/ContentView.swift`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **Basic Items List:**
     - `ContentView.swift` - SwiftUI List with NavigationStack
@@ -184,7 +184,7 @@ CoreML (object detection)
     - Shows: category, price range, confidence, recognized text, barcode, listing status
     - System icon placeholder (`shippingbox`)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Thumbnail Display** - No image loading or display
 - ❌ **NO Detail View** - No tap-to-expand detail modal
@@ -195,23 +195,23 @@ CoreML (object detection)
 - ❌ **NO Pull-to-Refresh** - No refresh gesture
 - ❌ **NO Navigation** - Single view, no navigation to camera or selling screens
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Implemented: `iosApp/ScaniumiOS/ContentView.swift:3-56` - Basic list
 - Missing: No `ItemDetailView.swift`, no swipe gestures, no action buttons
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - UI development paused at prototype stage
 - Missing navigation and state management architecture
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 6. Storage & Gallery Export
+### 6. Storage & Gallery Export
 
 **Status:** ❌ NOT IMPLEMENTED
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Photo Library Integration** - No PhotoKit or PHPhotoLibrary usage
 - ❌ **NO Save to Photos** - No batch save operation
@@ -219,22 +219,22 @@ CoreML (object detection)
 - ❌ **NO Error Handling** - No permission checks or failure reporting
 - ❌ **NO High-Res Export** - No image URI or file path handling
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - No PhotoKit imports in any Swift file
 - No save functionality in `ContentView.swift`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Not started - requires Photos framework integration and UI
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 7. eBay Selling Integration
+### 7. eBay Selling Integration
 
 **Status:** ❌ NOT IMPLEMENTED
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Selling Screen** - No SwiftUI view for listing creation
 - ❌ **NO Marketplace Service** - No Swift equivalent of `EbayMarketplaceService`
@@ -242,31 +242,31 @@ CoreML (object detection)
 - ❌ **NO Mock API** - No testing infrastructure for selling flow
 - ❌ **NO eBay API Client** - No OAuth or REST integration
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Only mention: `iosApp/ScaniumiOS/MockItems.swift:15` - `listingStatus` field in mock data
 - No selling files: `find iosApp -name "*Sell*" -o -name "*Listing*" -o -name "*Ebay*"` returns
   nothing
 - No navigation: `ContentView.swift` has no navigation to selling screen
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Not started - requires full UI flow, API client, and state management
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 8. Navigation
+### 8. Navigation
 
 **Status:** ❌ NOT IMPLEMENTED (Single View Only)
 **Module:** `iosApp/ScaniumiOS/ContentView.swift`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **NavigationStack:**
     - `ContentView.swift:9` - SwiftUI NavigationStack wrapper
     - Navigation title: "Scanium (iOS)"
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Routes** - No route definitions or navigation paths
 - ❌ **NO Camera Screen** - No camera destination
@@ -275,52 +275,52 @@ CoreML (object detection)
 - ❌ **NO Navigation State** - No NavigationPath or coordinator
 - ❌ **NO Deep Linking** - No URL scheme handling
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Single view: `ContentView.swift:3-56` - No `NavigationLink` or `.navigationDestination()`
 - No router: No `Router.swift` or equivalent
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - App architecture not yet defined for multi-screen navigation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 9. Theming & UI
+### 9. Theming & UI
 
 **Status:** 🟡 PARTIAL (System Defaults Only)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **SwiftUI System Theme:**
     - Automatic light/dark mode from iOS
     - Material icons from SF Symbols
     - Default fonts and spacing
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Custom Theme** - No brand colors or custom color palette
 - ❌ **NO Typography** - No custom fonts or type scale
 - ❌ **NO Design System** - No reusable components or style guide
 - ❌ **NO Icons** - Only system SF Symbols, no custom camera icons
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Default theme: `ContentView.swift:12-40` - Uses system colors and fonts
 - No theme file: No `Theme.swift` or `Colors.swift`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Design system not yet ported from Android
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 10. Data Models & Platform Adapters
+### 10. Data Models & Platform Adapters
 
 **Status:** 🟡 PARTIAL (Bridging Exists)
 **Module:** `iosApp/ScaniumiOS/` (multiple bridging files)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **Shared Bridge:**
     - `SharedBridge.swift` - Abstraction layer for KMP Shared framework
@@ -341,14 +341,14 @@ CoreML (object detection)
 - **Mock Data:**
     - `MockItems.swift` - Static sample items for testing
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Platform Adapters** - No Swift equivalent of `android-platform-adapters`
 - ❌ **NO Image Conversion Utilities** - No UIImage ↔ ImageRef helpers
 - ❌ **NO Rect Conversion** - No CGRect ↔ NormalizedRect utilities
 - ❌ **NO Async Bridging** - No Swift async/await bridges to KMP coroutines
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Implemented:
     - `iosApp/ScaniumiOS/SharedBridge.swift:1-173`
@@ -356,25 +356,25 @@ CoreML (object detection)
     - `iosApp/ScaniumiOS/PlatformContracts.swift:1-50` (assumed)
 - Missing: No `PlatformAdapters.swift` or image conversion utilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Bridging exists but not yet extended for full platform interop
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 11. Build & Security
+### 11. Build & Security
 
 **Status:** 🟡 PARTIAL (Basic Xcode Project)
 **Module:** `iosApp/ScaniumiOS.xcodeproj`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **Xcode Project:**
     - Basic iOS app target
     - SwiftUI lifecycle
     - `Info.plist` with bundle ID and version
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Shared Framework Linking** - XCFramework not yet integrated into build
 - ❌ **NO API Configuration** - No Info.plist keys for cloud classifier URL/API key
@@ -383,117 +383,117 @@ CoreML (object detection)
 - ❌ **NO SBOM** - No dependency scanning or supply chain security
 - ❌ **NO Code Signing** - Basic automatic signing only
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Basic plist: `iosApp/ScaniumiOS/Info.plist:1-30` - Minimal config
 - No Frameworks: `iosApp/Frameworks/` directory exists but likely empty or not linked
 - No build config: No `.xcconfig` files for environment-specific settings
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Project setup not yet finalized for production
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 12. Testing
+### 12. Testing
 
 **Status:** ❌ NOT IMPLEMENTED
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Unit Tests** - No XCTest files
 - ❌ **NO UI Tests** - No XCUI tests
 - ❌ **NO Shared Tests** - KMP shared tests exist but iOS may not run them
 - ❌ **NO Test Fixtures** - No test data or mocks beyond `MockItems.swift`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - No test files: `find iosApp -name "*Test*.swift" -o -name "*Tests.swift"` returns nothing
 - No test targets: Xcode project likely has no test targets configured
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Testing infrastructure not yet set up
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 13. Observability & Logging
+### 13. Observability & Logging
 
 **Status:** ❌ NOT IMPLEMENTED
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Crash Reporting** - No Sentry or Firebase Crashlytics
 - ❌ **NO Analytics** - No Firebase Analytics or Mixpanel
 - ❌ **NO Performance Monitoring** - No Firebase Performance or custom metrics
 - ❌ **NO Logging Framework** - Uses print() only, no OSLog or structured logging
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - No observability imports in any Swift file
 - No `os.log` usage
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Observability not yet prioritized
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 14. Permissions & Info.plist
+### 14. Permissions & Info.plist
 
 **Status:** ⚠️ INCOMPLETE (Camera Permission Missing)
 **Module:** `iosApp/ScaniumiOS/Info.plist`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **Basic Info.plist:**
     - Bundle ID, version, display name
     - Scene manifest (single scene)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Camera Permission** - Missing `NSCameraUsageDescription` key
 - ❌ **NO Photo Library Permission** - Missing `NSPhotoLibraryAddUsageDescription` (for saving)
 - ❌ **NO Background Modes** - No background processing entitlements (if needed)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Missing keys: `iosApp/ScaniumiOS/Info.plist:1-30` - No usage description keys
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Permissions not yet added because camera UI not implemented
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 15. Feature Flags
+### 15. Feature Flags
 
 **Status:** 🟡 PARTIAL
 **Module:** `iosApp/ScaniumiOS/FeatureFlags.swift`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Exists:
+#### What Exists:
 
 - **FeatureFlags:**
     - `FeatureFlags.swift` - Static flags for testing
     - `useMocks` flag to toggle between mock and shared data
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What's Missing:
+#### What's Missing:
 
 - ❌ **NO Remote Config** - No dynamic feature flags
 - ❌ **NO A/B Testing** - No experimentation framework
 - ❌ **NO Persistence** - Flags are hardcoded, not user-configurable
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence:
+#### Evidence:
 
 - Implemented: `iosApp/ScaniumiOS/FeatureFlags.swift` (assumed, referenced in `ContentView.swift:5`)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Root Cause:
+#### Root Cause:
 
 - Feature flag system exists but not yet extended
 
 ---
 
-***REMOVED******REMOVED*** Summary Table
+## Summary Table
 
 | Capability           | Status | Evidence                   | Notes                             |
 |----------------------|--------|----------------------------|-----------------------------------|
@@ -522,7 +522,7 @@ CoreML (object detection)
 
 ---
 
-***REMOVED******REMOVED*** Overall Assessment
+## Overall Assessment
 
 The iOS app is **~15% complete** compared to Android baseline:
 

@@ -11,14 +11,14 @@ import com.scanium.telemetry.ports.SpanContext
  * Provides a global access point for telemetry-based performance measurement,
  * eliminating the need to pass Telemetry instances through every constructor.
  *
- * ***REMOVED******REMOVED*** Metrics Tracked
+ * ## Metrics Tracked
  * - `ml_inference_latency_ms` - ML Kit detection duration
  * - `frame_analysis_latency_ms` - End-to-end frame processing
  * - `aggregation_latency_ms` - ItemAggregator duration
  * - `bitmap_decode_latency_ms` - Image decoding
  * - `overlay_draw_latency_ms` - Canvas draw calls
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  * ```kotlin
  * // Initialize in Application.onCreate()
  * PerformanceMonitor.init(telemetry)

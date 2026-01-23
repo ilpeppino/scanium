@@ -1,6 +1,6 @@
-***REMOVED*** ML Kit Object Detection Fix - Root Cause Analysis & Solution
+# ML Kit Object Detection Fix - Root Cause Analysis & Solution
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 ML Kit was returning **0 objects** during scanning, despite the camera pointing at actual objects.
 The logs showed:
@@ -11,9 +11,9 @@ I ObjectDetectorClient: >>> ML Kit returned 0 raw objects
 I ObjectDetectorClient: >>> Extracted 0 DetectionInfo objects
 ```
 
-***REMOVED******REMOVED*** Root Cause: Classification Mode Making Detection Too Conservative
+## Root Cause: Classification Mode Making Detection Too Conservative
 
-***REMOVED******REMOVED******REMOVED*** The Issue
+### The Issue
 
 The ML Kit Object Detector was configured with **classification enabled**:
 
@@ -25,7 +25,7 @@ ObjectDetectorOptions.Builder()
     .build()
 ```
 
-***REMOVED******REMOVED******REMOVED*** Why Classification Causes Fewer Detections
+### Why Classification Causes Fewer Detections
 
 According to ML Kit documentation and behavior:
 
@@ -41,7 +41,7 @@ According to ML Kit documentation and behavior:
     - This is why we were getting 0 detections - ML Kit was seeing objects but couldn't classify
       them confidently enough
 
-***REMOVED******REMOVED******REMOVED*** The Fix
+### The Fix
 
 **Disabled classification** in both detector configurations:
 
@@ -58,13 +58,13 @@ ObjectDetectorOptions.Builder()
 This makes ML Kit detect objects based on shape/prominence alone, without requiring classification
 confidence.
 
-***REMOVED******REMOVED*** Changes Made
+## Changes Made
 
-***REMOVED******REMOVED******REMOVED*** 1. ObjectDetectorClient.kt - Detector Configuration
+### 1. ObjectDetectorClient.kt - Detector Configuration
 
 **File**: `/Users/family/dev/objecta/app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Single Image Detector
+#### Single Image Detector
 
 ```kotlin
 private val singleImageDetector by lazy {
@@ -79,7 +79,7 @@ private val singleImageDetector by lazy {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Stream Detector
+#### Stream Detector
 
 ```kotlin
 private val streamDetector by lazy {
@@ -94,7 +94,7 @@ private val streamDetector by lazy {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Enhanced Error Logging & Diagnostics
+### 2. Enhanced Error Logging & Diagnostics
 
 Added comprehensive logging in `detectObjectsWithTracking()`:
 
@@ -122,9 +122,9 @@ if (detectedObjects.isEmpty()) {
 }
 ```
 
-***REMOVED******REMOVED*** Expected Behavior After Fix
+## Expected Behavior After Fix
 
-***REMOVED******REMOVED******REMOVED*** What Should Happen Now
+### What Should Happen Now
 
 1. **More objects detected**: ML Kit will detect object-like shapes even without classifying them
 2. **Empty or generic labels**: Detected objects may have:
@@ -141,7 +141,7 @@ if (detectedObjects.isEmpty()) {
    }
    ```
 
-***REMOVED******REMOVED******REMOVED*** Category Fallback Logic
+### Category Fallback Logic
 
 Since classification is disabled, most objects will map to `ItemCategory.UNKNOWN`, which still gets
 valid EUR pricing:
@@ -154,27 +154,27 @@ ItemCategory.UNKNOWN -> Pair(3.0, 15.0)
 This is acceptable for the PoC - the app focuses on **detecting that items exist** rather than
 perfect classification.
 
-***REMOVED******REMOVED*** Alternative Solutions Considered
+## Alternative Solutions Considered
 
-***REMOVED******REMOVED******REMOVED*** Option 1: Custom Trained Model (Rejected)
+### Option 1: Custom Trained Model (Rejected)
 
 - Use `object-detection-custom` dependency
 - Train custom TFLite model
 - **Rejected**: Too complex for PoC, requires training data
 
-***REMOVED******REMOVED******REMOVED*** Option 2: Lower Classification Confidence Threshold (Rejected)
+### Option 2: Lower Classification Confidence Threshold (Rejected)
 
 - ML Kit doesn't expose confidence threshold configuration
 - Classification is binary: enabled or disabled
 - **Rejected**: Not possible with current API
 
-***REMOVED******REMOVED******REMOVED*** Option 3: Hybrid Approach (Future Enhancement)
+### Option 3: Hybrid Approach (Future Enhancement)
 
 - Run detection without classification first (to get bounding boxes)
 - Run image classification separately on cropped regions
 - **Not implemented**: Adds complexity, can be done later if needed
 
-***REMOVED******REMOVED*** Testing Recommendations
+## Testing Recommendations
 
 1. **Build and install**:
    `./gradlew assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk`
@@ -196,27 +196,27 @@ perfect classification.
     - Bounding boxes appear reasonable
     - Items appear in list with UNKNOWN category and EUR pricing
 
-***REMOVED******REMOVED*** Performance & Tradeoffs
+## Performance & Tradeoffs
 
-***REMOVED******REMOVED******REMOVED*** Pros
+### Pros
 
 - **More objects detected**: Primary issue solved
 - **Faster processing**: No classification overhead
 - **Still uses tracking IDs**: Multi-frame deduplication still works
 
-***REMOVED******REMOVED******REMOVED*** Cons
+### Cons
 
 - **No category classification**: Most items will be UNKNOWN
 - **Less semantic info**: Can't distinguish Fashion vs Electronics automatically
 - **May detect noise**: Might pick up background elements as "objects"
 
-***REMOVED******REMOVED******REMOVED*** Mitigation
+### Mitigation
 
 - Confidence thresholds still filter weak detections
 - Tracking pipeline's confirmation threshold (3 frames) filters transients
 - User can still see thumbnails and decide if items are relevant
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 **Root Cause**: Enabled classification made ML Kit too conservative - it only returned objects it
 could classify confidently.

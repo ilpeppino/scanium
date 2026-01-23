@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
  * throughout the Scanium detection pipeline. All bbox operations use the
  * "upright detector space" as the canonical coordinate system.
  *
- * ***REMOVED******REMOVED*** Coordinate Spaces
+ * ## Coordinate Spaces
  *
  * 1. **Sensor Space**: Raw camera sensor coordinates (e.g., 1280×720 landscape)
  * 2. **Upright Space**: Post-rotation coordinates matching user's view (e.g., 720×1280 portrait)
@@ -25,14 +25,14 @@ import kotlin.math.roundToInt
  * 4. **Preview Space**: Composable screen coordinates with scale+offset applied
  * 5. **Bitmap Space**: Actual bitmap pixel coordinates (may differ from sensor due to resolution)
  *
- * ***REMOVED******REMOVED*** ML Kit Coordinate Contract
+ * ## ML Kit Coordinate Contract
  *
  * When using `InputImage.fromMediaImage(mediaImage, rotationDegrees)`:
  * - ML Kit applies rotation metadata internally
  * - Returned bboxes are in UPRIGHT pixel coordinates
  * - `InputImage.width/height` are the upright (post-rotation) dimensions
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  *
  * ```kotlin
  * // 1. Get bbox from ML Kit (already in upright space)

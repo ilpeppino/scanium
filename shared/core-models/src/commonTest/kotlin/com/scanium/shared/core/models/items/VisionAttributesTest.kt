@@ -37,7 +37,7 @@ class VisionAttributesTest {
     fun whenOnlyColorsPresent_thenIsEmptyFalse() {
         val attrs =
             VisionAttributes(
-                colors = listOf(VisionColor(name = "blue", hex = "***REMOVED***0000FF", score = 0.8f)),
+                colors = listOf(VisionColor(name = "blue", hex = "#0000FF", score = 0.8f)),
             )
 
         assertFalse(attrs.isEmpty)
@@ -97,7 +97,7 @@ class VisionAttributesTest {
 
     @Test
     fun whenSingleColor_thenPrimaryColorIsThatColor() {
-        val blue = VisionColor(name = "blue", hex = "***REMOVED***0000FF", score = 0.8f)
+        val blue = VisionColor(name = "blue", hex = "#0000FF", score = 0.8f)
         val attrs = VisionAttributes(colors = listOf(blue))
 
         assertEquals(blue, attrs.primaryColor)
@@ -105,9 +105,9 @@ class VisionAttributesTest {
 
     @Test
     fun whenMultipleColors_thenPrimaryColorIsHighestScore() {
-        val blue = VisionColor(name = "blue", hex = "***REMOVED***0000FF", score = 0.6f)
-        val white = VisionColor(name = "white", hex = "***REMOVED***FFFFFF", score = 0.9f)
-        val gray = VisionColor(name = "gray", hex = "***REMOVED***808080", score = 0.3f)
+        val blue = VisionColor(name = "blue", hex = "#0000FF", score = 0.6f)
+        val white = VisionColor(name = "white", hex = "#FFFFFF", score = 0.9f)
+        val gray = VisionColor(name = "gray", hex = "#808080", score = 0.3f)
         val attrs = VisionAttributes(colors = listOf(blue, white, gray))
 
         assertEquals(white, attrs.primaryColor)
@@ -209,10 +209,10 @@ class VisionAttributesTest {
 
     @Test
     fun whenCreatingVisionColor_thenPropertiesAreStored() {
-        val color = VisionColor(name = "blue", hex = "***REMOVED***1E40AF", score = 0.75f)
+        val color = VisionColor(name = "blue", hex = "#1E40AF", score = 0.75f)
 
         assertEquals("blue", color.name)
-        assertEquals("***REMOVED***1E40AF", color.hex)
+        assertEquals("#1E40AF", color.hex)
         assertEquals(0.75f, color.score)
     }
 
@@ -250,8 +250,8 @@ class VisionAttributesTest {
             VisionAttributes(
                 colors =
                     listOf(
-                        VisionColor("white", "***REMOVED***FFFFFF", 0.35f),
-                        VisionColor("brown", "***REMOVED***8B5A2B", 0.28f),
+                        VisionColor("white", "#FFFFFF", 0.35f),
+                        VisionColor("brown", "#8B5A2B", 0.28f),
                     ),
                 ocrText = "IKEA\nKALLAX\n77x77 cm\nMade in Poland\nArt. 802.758.87",
                 logos = listOf(VisionLogo("IKEA", 0.91f)),
@@ -280,7 +280,7 @@ class VisionAttributesTest {
             VisionAttributes(
                 ocrText = "Generic Product\nModel X100",
                 labels = listOf(VisionLabel("Table", 0.85f)),
-                colors = listOf(VisionColor("black", "***REMOVED***000000", 0.45f)),
+                colors = listOf(VisionColor("black", "#000000", 0.45f)),
                 // No logos, only candidates from OCR
                 brandCandidates = listOf("Generic Product"),
                 modelCandidates = listOf("X100"),

@@ -1,19 +1,19 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** Repo Switcher (portable: macOS Bash 3.2+, Linux, Termux)
-***REMOVED*** - Scans /Users/family/dev for git repos whose folder name starts with "scanium"
-***REMOVED*** - Interactive TUI (arrow keys) if fzf is available; otherwise select menu
-***REMOVED*** - main branch always first (if present)
-***REMOVED*** - If worktree is dirty: show uncommitted files, then ask commit/stash/discard/abort
-***REMOVED*** - Once a branch is selected (and handled), the script EXITS (main goal)
+#!/usr/bin/env bash
+# Repo Switcher (portable: macOS Bash 3.2+, Linux, Termux)
+# - Scans $SCANIUM_BASE_DIR (default: $HOME/dev) for git repos whose folder name starts with "scanium"
+# - Interactive TUI (arrow keys) if fzf is available; otherwise select menu
+# - main branch always first (if present)
+# - If worktree is dirty: show uncommitted files, then ask commit/stash/discard/abort
+# - Once a branch is selected (and handled), the script EXITS (main goal)
 
 set -euo pipefail
 IFS=$'\n\t'
 
-BASE_DIR="/Users/family/dev"
+BASE_DIR="${SCANIUM_BASE_DIR:-${HOME}/dev}"
 DEFAULT_REMOTE="origin"
 FZF_HEIGHT="${FZF_HEIGHT:-60%}"
 
-***REMOVED*** ---------- UI / Colors ----------
+# ---------- UI / Colors ----------
 if [[ -t 1 ]]; then
   C_RESET=$'\033[0m'
   C_DIM=$'\033[2m'
@@ -41,15 +41,15 @@ need_cmd() {
   command -v "$cmd" >/dev/null 2>&1 || { err "Missing required command: $cmd"; exit 1; }
 }
 
-***REMOVED*** ---------- Selection helpers ----------
+# ---------- Selection helpers ----------
 has_fzf() { command -v fzf >/dev/null 2>&1; }
 
 choose_from_list() {
-  ***REMOVED*** Usage: choose_from_list "Prompt" options...
+  # Usage: choose_from_list "Prompt" options...
   local prompt="$1"; shift
   local options=("$@")
 
-  [[ ${***REMOVED***options[@]} -gt 0 ]] || return 1
+  [[ ${#options[@]} -gt 0 ]] || return 1
 
   if has_fzf; then
     local selection=""
@@ -86,7 +86,7 @@ confirm_danger() {
   [[ "$confirm" == "$token" ]]
 }
 
-***REMOVED*** ---------- Git helpers ----------
+# ---------- Git helpers ----------
 is_git_repo() {
   local dir="$1"
   git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1
@@ -104,7 +104,7 @@ pick_remote() {
     [[ -n "$r" ]] && remotes+=("$r")
   done < <(git -C "$repo_path" remote || true)
 
-  if [[ ${***REMOVED***remotes[@]} -eq 0 ]]; then
+  if [[ ${#remotes[@]} -eq 0 ]]; then
     err "No git remotes found in: $repo_path"
     return 1
   fi
@@ -126,9 +126,9 @@ list_remote_branches_main_first() {
   local raw=()
   while IFS= read -r b; do
     [[ -n "$b" ]] && raw+=("$b")
-  done < <(git ls-remote --heads "$remote" | awk '{print $2}' | sed 's***REMOVED***refs/heads/***REMOVED******REMOVED***' || true)
+  done < <(git ls-remote --heads "$remote" | awk '{print $2}' | sed 's#refs/heads/##' || true)
 
-  [[ ${***REMOVED***raw[@]} -gt 0 ]] || return 1
+  [[ ${#raw[@]} -gt 0 ]] || return 1
 
   local has_main=false
   local rest=()
@@ -141,13 +141,13 @@ list_remote_branches_main_first() {
     fi
   done
 
-  if [[ ${***REMOVED***rest[@]} -gt 0 ]]; then
+  if [[ ${#rest[@]} -gt 0 ]]; then
     IFS=$'\n' rest=($(printf "%s\n" "${rest[@]}" | sort))
     unset IFS
   fi
 
   $has_main && printf "%s\n" "main"
-  [[ ${***REMOVED***rest[@]} -gt 0 ]] && printf "%s\n" "${rest[@]}"
+  [[ ${#rest[@]} -gt 0 ]] && printf "%s\n" "${rest[@]}"
 }
 
 ensure_branch_checked_out() {
@@ -170,14 +170,14 @@ pull_ff_only() { git pull --ff-only; }
 working_tree_clean() { [[ -z "$(git status --porcelain)" ]]; }
 
 print_dirty_files() {
-  ***REMOVED*** Show a clean list of uncommitted paths (staged + unstaged + untracked)
-  ***REMOVED*** Using porcelain v1 to stay compatible.
+  # Show a clean list of uncommitted paths (staged + unstaged + untracked)
+  # Using porcelain v1 to stay compatible.
   local lines=()
   while IFS= read -r l; do
     [[ -n "$l" ]] && lines+=("$l")
   done < <(git status --porcelain)
 
-  if [[ ${***REMOVED***lines[@]} -eq 0 ]]; then
+  if [[ ${#lines[@]} -eq 0 ]]; then
     return 0
   fi
 
@@ -186,8 +186,8 @@ print_dirty_files() {
   hr
   local l
   for l in "${lines[@]}"; do
-    ***REMOVED*** porcelain format: XY <path> OR ?? <path>
-    ***REMOVED*** strip first 3 chars (XY + space) -> path-ish
+    # porcelain format: XY <path> OR ?? <path>
+    # strip first 3 chars (XY + space) -> path-ish
     local path="${l:3}"
     local code="${l:0:2}"
     printf "%s- [%s]%s %s\n" "$C_DIM" "$code" "$C_RESET" "$path"
@@ -196,7 +196,7 @@ print_dirty_files() {
   echo
 }
 
-***REMOVED*** ---------- Repo scanning ----------
+# ---------- Repo scanning ----------
 scan_repos() {
   local repos=()
   local line top
@@ -209,11 +209,11 @@ scan_repos() {
     fi
   done < <(find "$BASE_DIR" -type d -name 'scanium*' -mindepth 1 2>/dev/null | sort)
 
-  [[ ${***REMOVED***repos[@]} -gt 0 ]] || return 1
+  [[ ${#repos[@]} -gt 0 ]] || return 1
   printf "%s\n" "${repos[@]}"
 }
 
-***REMOVED*** ---------- Main ----------
+# ---------- Main ----------
 main() {
   need_cmd git
 
@@ -231,7 +231,7 @@ main() {
     repos+=("$rp")
   done < <(scan_repos || true)
 
-  if [[ ${***REMOVED***repos[@]} -eq 0 ]]; then
+  if [[ ${#repos[@]} -eq 0 ]]; then
     err "No directories named 'scanium*' found under: $BASE_DIR"
     exit 1
   fi
@@ -257,7 +257,7 @@ main() {
     [[ -n "$b" ]] && branches+=("$b")
   done < <(list_remote_branches_main_first "$remote" || true)
 
-  if [[ ${***REMOVED***branches[@]} -eq 0 ]]; then
+  if [[ ${#branches[@]} -eq 0 ]]; then
     err "Remote '$remote' has no branches or is unreachable."
     exit 1
   fi
@@ -349,7 +349,7 @@ main() {
 
   echo "__REPO_PATH__=$repo_path"
 
-  ***REMOVED*** EXIT as requested (main goal)
+  # EXIT as requested (main goal)
   exit 0
 }
 

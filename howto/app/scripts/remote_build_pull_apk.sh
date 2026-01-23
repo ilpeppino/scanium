@@ -1,12 +1,12 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-***REMOVED*** Build debug APK on remote Mac via SSH, then pull to phone Downloads
+# Build debug APK on remote Mac via SSH, then pull to phone Downloads
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/remote_env"
 
-***REMOVED*** SSH options for mobile network resilience
+# SSH options for mobile network resilience
 SSH_OPTS=(
     -o ServerAliveInterval=30
     -o ServerAliveCountMax=3
@@ -14,7 +14,7 @@ SSH_OPTS=(
     -o BatchMode=yes
 )
 
-***REMOVED*** Colors
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -25,7 +25,7 @@ log_info()  { echo -e "${GREEN}[INFO]${NC} $*"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
-***REMOVED*** Load remote_env
+# Load remote_env
 if [[ ! -f "$ENV_FILE" ]]; then
     log_error "Remote environment not configured."
     echo ""
@@ -38,10 +38,10 @@ if [[ ! -f "$ENV_FILE" ]]; then
     exit 1
 fi
 
-***REMOVED*** shellcheck source=/dev/null
+# shellcheck source=/dev/null
 source "$ENV_FILE"
 
-***REMOVED*** Validate required variables
+# Validate required variables
 if [[ -z "${MAC_SSH_HOST:-}" || -z "${MAC_SSH_USER:-}" ]]; then
     log_error "MAC_SSH_HOST and MAC_SSH_USER must be set in remote_env"
     exit 1
@@ -52,7 +52,7 @@ MAC_REPO_DIR="${MAC_REPO_DIR:-~/dev/scanium}"
 PHONE_APK_DIR="${PHONE_APK_DIR:-/storage/emulated/0/Download/scanium-apk}"
 DRY_RUN="${DRY_RUN:-0}"
 
-***REMOVED*** Flavor Selection Menu
+# Flavor Selection Menu
 echo ""
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   Select Build Flavor                  ║${NC}"
@@ -93,7 +93,7 @@ run_cmd() {
     fi
 }
 
-***REMOVED*** Test SSH connection
+# Test SSH connection
 log_info "Testing SSH connection to $MAC_SSH..."
 if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "echo 'Connected to Mac'"; then
     log_error "SSH connection failed."
@@ -106,7 +106,7 @@ if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "echo 'Connected to Mac'"; then
     exit 1
 fi
 
-***REMOVED*** Build APK on Mac (try :androidApp first, then fall back to :app)
+# Build APK on Mac (try :androidApp first, then fall back to :app)
 log_info "Building ${FLAVOR_CAPITALIZED} debug APK on Mac..."
 echo ""
 
@@ -115,11 +115,11 @@ GRADLE_LOG="tmp/termux_remote_gradle.log"
 BUILD_SCRIPT='
 cd '"$MAC_REPO_DIR"'
 
-***REMOVED*** Force JDK 17 (project requirement)
+# Force JDK 17 (project requirement)
 export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 export PATH="$JAVA_HOME/bin:$PATH"
 
-***REMOVED*** Parse ANDROID_SDK_ROOT from local.properties
+# Parse ANDROID_SDK_ROOT from local.properties
 if [[ -f "local.properties" ]]; then
     SDK_DIR=$(grep "^sdk.dir=" local.properties | cut -d= -f2-)
     if [[ -n "$SDK_DIR" ]]; then
@@ -128,7 +128,7 @@ if [[ -f "local.properties" ]]; then
     fi
 fi
 
-***REMOVED*** Preflight: print environment info
+# Preflight: print environment info
 echo "=== Remote Environment Preflight ==="
 echo "JAVA_HOME=$JAVA_HOME"
 java -version 2>&1 | head -2
@@ -136,10 +136,10 @@ echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-<not set>}"
 echo "Building: '"$GRADLE_TASK"'"
 echo "===================================="
 
-***REMOVED*** Ensure tmp dir exists for logs
+# Ensure tmp dir exists for logs
 mkdir -p tmp
 
-***REMOVED*** Build with logging
+# Build with logging
 if ./gradlew :androidApp:'"$GRADLE_TASK"' 2>&1 | tee '"$GRADLE_LOG"'; then
     echo "BUILD_SUCCESS"
 elif ./gradlew '"$GRADLE_TASK"' 2>&1 | tee '"$GRADLE_LOG"'; then
@@ -160,29 +160,29 @@ if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$BUILD_SCRIPT"; then
     exit 1
 fi
 
-***REMOVED*** Find newest APK on Mac (robust search across all variants/flavors)
+# Find newest APK on Mac (robust search across all variants/flavors)
 log_info "Locating APK..."
 
 FIND_APK_SCRIPT='
 cd '"$MAC_REPO_DIR"'
 
-***REMOVED*** Priority-based APK selection for arm64 devices (e.g., Samsung S24 Ultra):
-***REMOVED***   1. arm64-v8a debug APK for selected flavor (preferred for modern 64-bit phones)
-***REMOVED***   2. universal debug APK for selected flavor (if ever present)
-***REMOVED***   3. newest debug APK for selected flavor by mtime (fallback)
+# Priority-based APK selection for arm64 devices (e.g., Samsung S24 Ultra):
+#   1. arm64-v8a debug APK for selected flavor (preferred for modern 64-bit phones)
+#   2. universal debug APK for selected flavor (if ever present)
+#   3. newest debug APK for selected flavor by mtime (fallback)
 
 APK_PATH=""
 APK_ABI=""
 FLAVOR="'"$FLAVOR"'"
 
-***REMOVED*** Priority 1: arm64-v8a debug APK for selected flavor
+# Priority 1: arm64-v8a debug APK for selected flavor
 ARM64_APK=$(find . -path "*/build/outputs/apk/${FLAVOR}/*" -type f -name "*arm64-v8a*debug*.apk" 2>/dev/null | head -1)
 if [[ -n "$ARM64_APK" ]]; then
     APK_PATH="$ARM64_APK"
     APK_ABI="arm64-v8a"
 fi
 
-***REMOVED*** Priority 2: universal debug APK for selected flavor
+# Priority 2: universal debug APK for selected flavor
 if [[ -z "$APK_PATH" ]]; then
     UNIVERSAL_APK=$(find . -path "*/build/outputs/apk/${FLAVOR}/*" -type f -name "*universal*debug*.apk" 2>/dev/null | head -1)
     if [[ -n "$UNIVERSAL_APK" ]]; then
@@ -191,13 +191,13 @@ if [[ -z "$APK_PATH" ]]; then
     fi
 fi
 
-***REMOVED*** Priority 3: newest debug APK for selected flavor by mtime
+# Priority 3: newest debug APK for selected flavor by mtime
 if [[ -z "$APK_PATH" ]]; then
     NEWEST_APK=$(find . -path "*/build/outputs/apk/${FLAVOR}/*" -type f -name "*debug*.apk" 2>/dev/null | \
         xargs ls -t 2>/dev/null | head -1)
     if [[ -n "$NEWEST_APK" ]]; then
         APK_PATH="$NEWEST_APK"
-        ***REMOVED*** Detect ABI from filename
+        # Detect ABI from filename
         case "$NEWEST_APK" in
             *x86_64*)    APK_ABI="x86_64" ;;
             *x86*)       APK_ABI="x86" ;;
@@ -215,17 +215,17 @@ if [[ -n "$APK_PATH" ]]; then
     exit 0
 fi
 
-***REMOVED*** No APK found - gather diagnostics
+# No APK found - gather diagnostics
 echo "APK_NOT_FOUND"
 
-***REMOVED*** Check for AAB files
+# Check for AAB files
 AAB_FILES=$(find . -path "*/build/outputs/bundle/*.aab" -type f 2>/dev/null)
 if [[ -n "$AAB_FILES" ]]; then
     echo "AAB_FILES_FOUND:"
     echo "$AAB_FILES"
 fi
 
-***REMOVED*** Show build/outputs directory structure for debugging
+# Show build/outputs directory structure for debugging
 echo "BUILD_OUTPUTS_SUMMARY:"
 find . -path "*/build/outputs" -type d 2>/dev/null | while read -r dir; do
     echo "  $dir:"
@@ -242,7 +242,7 @@ if echo "$FIND_RESULT" | grep -q "^APK_FOUND:"; then
     APK_ABI=$(echo "$FIND_RESULT" | grep "^APK_ABI:" | head -1 | sed 's/^APK_ABI://')
     log_info "Found ${FLAVOR_CAPITALIZED} APK: $APK_PATH (ABI: $APK_ABI)"
 
-    ***REMOVED*** Warn if not arm64-v8a (may be incompatible with modern phones)
+    # Warn if not arm64-v8a (may be incompatible with modern phones)
     if [[ "$APK_ABI" != "arm64-v8a" && "$APK_ABI" != "universal" ]]; then
         log_warn "Selected APK is $APK_ABI - may be incompatible with arm64 devices (e.g., Samsung S24)"
     fi
@@ -250,7 +250,7 @@ else
     log_error "No ${FLAVOR_CAPITALIZED} APK found on Mac"
     echo ""
 
-    ***REMOVED*** Parse and display diagnostics from remote
+    # Parse and display diagnostics from remote
     if echo "$FIND_RESULT" | grep -q "AAB_FILES_FOUND:"; then
         log_warn "Found AAB bundle(s) instead of APK:"
         echo "$FIND_RESULT" | sed -n '/AAB_FILES_FOUND:/,/BUILD_OUTPUTS_SUMMARY:/p' | \
@@ -269,16 +269,16 @@ else
     exit 1
 fi
 
-***REMOVED*** Create APK directory on phone
+# Create APK directory on phone
 run_cmd mkdir -p "$PHONE_APK_DIR"
 
-***REMOVED*** Pull APK to phone with flavor-specific name
+# Pull APK to phone with flavor-specific name
 APK_NAME=$(basename "$APK_PATH")
-***REMOVED*** Rename APK to include flavor for clarity
+# Rename APK to include flavor for clarity
 FLAVOR_APK_NAME="scanium-${FLAVOR}-debug-${APK_ABI}.apk"
 LOCAL_APK="$PHONE_APK_DIR/$FLAVOR_APK_NAME"
 
-***REMOVED*** Delete existing APK if present (fail fast if deletion fails)
+# Delete existing APK if present (fail fast if deletion fails)
 if [[ -f "$LOCAL_APK" ]]; then
     log_info "Found existing APK: $FLAVOR_APK_NAME"
     log_info "Deleting existing APK..."
@@ -286,7 +286,7 @@ if [[ -f "$LOCAL_APK" ]]; then
         log_error "Failed to delete existing APK: $LOCAL_APK"
         exit 1
     fi
-    ***REMOVED*** Verify deletion succeeded
+    # Verify deletion succeeded
     if [[ -f "$LOCAL_APK" ]]; then
         log_error "Existing APK still present after deletion attempt: $LOCAL_APK"
         exit 1

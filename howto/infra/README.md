@@ -1,8 +1,8 @@
-***REMOVED*** Infrastructure Documentation
+# Infrastructure Documentation
 
 Documentation for NAS operations, Docker, networking, and security.
 
-***REMOVED******REMOVED*** Subfolders
+## Subfolders
 
 | Folder                   | Contents                               |
 |--------------------------|----------------------------------------|
@@ -12,21 +12,21 @@ Documentation for NAS operations, Docker, networking, and security.
 | [scripts/](scripts/)     | Infrastructure automation scripts      |
 | [security/](security/)   | Security policies and remediation docs |
 
-***REMOVED******REMOVED*** Quick Links
+## Quick Links
 
-***REMOVED******REMOVED******REMOVED*** Deployment
+### Deployment
 
 - [NAS Deployment Guide](deploy/nas-README.md)
 - [Compose Configuration](deploy/nas-compose-README.md)
 
-***REMOVED******REMOVED******REMOVED*** Security
+### Security
 
 - [Security Overview](security/SECURITY.md)
 - [NAS Deployment Security Checklist](security/NAS_DEPLOYMENT_SECURITY_CHECKLIST.md)
 - [SEC-001 Remediation](security/SEC-001-remediation.md)
 - [SEC-002 Database Credentials](security/SEC-002-database-credentials.md)
 
-***REMOVED******REMOVED******REMOVED*** Scripts
+### Scripts
 
 - `deploy-backend-nas.sh` - Deploy backend to NAS
 - `rollback-backend-nas.sh` - Rollback backend on NAS

@@ -1,8 +1,8 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Security
+# Security
 
-***REMOVED******REMOVED*** Current posture (Updated 2025-12-20)
+## Current posture (Updated 2025-12-20)
 
 - Core scanning, tracking, and selling flows run fully on-device; mock marketplace avoids real
   network calls.
@@ -18,7 +18,7 @@
 - **Session secrets loaded from environment variables** without validation (SEC-002 - CRITICAL)
 - **API keys embedded in Android BuildConfig** extractable from APK (SEC-007 - HIGH)
 
-***REMOVED******REMOVED*** Security Strengths ✅
+## Security Strengths ✅
 
 - Network security config enforces HTTPS-only (cleartext blocked except localhost)
 - ProGuard/R8 code obfuscation and logging removal in release builds
@@ -28,9 +28,9 @@
 - EXIF metadata stripping from uploaded images
 - No image persistence by default (privacy-first)
 
-***REMOVED******REMOVED*** Critical Security Findings (From Comprehensive Audit 2025-12-20)
+## Critical Security Findings (From Comprehensive Audit 2025-12-20)
 
-***REMOVED******REMOVED******REMOVED*** CRITICAL Priority (Fix Immediately)
+### CRITICAL Priority (Fix Immediately)
 
 1. **SEC-001:** Database tokens stored unencrypted (`backend/prisma/schema.prisma:40-41`)
     - OAuth tokens in plaintext expose user accounts if database compromised
@@ -40,7 +40,7 @@
     - Weak default value enables session forgery
     - Action: Generate strong secrets, add validation, use secrets manager
 
-***REMOVED******REMOVED******REMOVED*** HIGH Priority (Fix This Week)
+### HIGH Priority (Fix This Week)
 
 3. **SEC-003:** API keys in headers without explicit TLS verification
 4. **SEC-004:** File upload size validated after buffer read (DoS risk)
@@ -51,7 +51,7 @@
 See [COMPREHENSIVE_AUDIT_REPORT](./COMPREHENSIVE_AUDIT_REPORT.md) for complete details and
 remediation steps.
 
-***REMOVED******REMOVED*** Prioritized follow-ups
+## Prioritized follow-ups
 
 - **URGENT:** Fix SEC-001 and SEC-002 before production deployment
 - **This Week:** Address all HIGH priority security findings (SEC-003 to SEC-007)
@@ -63,9 +63,9 @@ remediation steps.
   credentials.
 - Add security testing to CI/CD (SAST, DAST, penetration testing)
 
-***REMOVED******REMOVED*** Security Checklist for Production
+## Security Checklist for Production
 
-***REMOVED******REMOVED******REMOVED*** Authentication & Authorization
+### Authentication & Authorization
 
 - [ ] Encrypt OAuth tokens at rest (SEC-001)
 - [ ] Implement strong session secret generation (SEC-002)
@@ -73,7 +73,7 @@ remediation steps.
 - [ ] Implement CSRF protection
 - [ ] Add request signing for API calls
 
-***REMOVED******REMOVED******REMOVED*** Network Security
+### Network Security
 
 - [ ] Move API keys from BuildConfig to encrypted storage (SEC-007)
 - [ ] Implement certificate pinning
@@ -81,35 +81,35 @@ remediation steps.
 - [ ] Validate CORS origins strictly (SEC-006)
 - [ ] Add security headers (CSP, X-Frame-Options, etc.)
 
-***REMOVED******REMOVED******REMOVED*** Input Validation
+### Input Validation
 
 - [ ] Validate file size before buffering (SEC-004)
 - [ ] Implement comprehensive input sanitization
 - [ ] Add SQL injection prevention tests
 - [ ] Validate all user inputs client and server-side
 
-***REMOVED******REMOVED******REMOVED*** Rate Limiting & DDoS Protection
+### Rate Limiting & DDoS Protection
 
 - [ ] Add per-IP rate limiting (SEC-005)
 - [ ] Implement exponential backoff
 - [ ] Add distributed rate limiting with Redis
 - [ ] Monitor and alert on suspicious patterns
 
-***REMOVED******REMOVED******REMOVED*** Monitoring & Logging
+### Monitoring & Logging
 
 - [ ] Implement security event logging (SEC-013)
 - [ ] Set up centralized log aggregation
 - [ ] Add alerting for security events
 - [ ] Create security incident runbooks
 
-***REMOVED******REMOVED******REMOVED*** Code Security
+### Code Security
 
 - [ ] Refine ProGuard rules for better obfuscation (SEC-008)
 - [ ] Remove all debug logging in production
 - [ ] Implement runtime application self-protection (RASP)
 - [ ] Add code signing verification
 
-***REMOVED******REMOVED*** References
+## References
 
 - [COMPREHENSIVE_AUDIT_REPORT](./COMPREHENSIVE_AUDIT_REPORT.md) - Complete security audit with 19
   security findings
@@ -121,10 +121,10 @@ remediation steps.
 - `androidApp/proguard-rules.pro` for code obfuscation configuration
 - `backend/src/app.ts` for backend security middleware
 
-***REMOVED******REMOVED*** Security Contact
+## Security Contact
 
 [TODO: Add security contact email for vulnerability reports]
 
-***REMOVED******REMOVED*** Vulnerability Disclosure Policy
+## Vulnerability Disclosure Policy
 
 [TODO: Add responsible disclosure policy]

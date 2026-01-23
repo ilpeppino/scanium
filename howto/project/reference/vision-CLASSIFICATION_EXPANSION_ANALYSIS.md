@@ -1,4 +1,4 @@
-***REMOVED*** Scanium Object Classification Expansion Analysis
+# Scanium Object Classification Expansion Analysis
 
 > **Document Type**: Analysis & Design (No Code Changes)
 > **Date**: 2025-01-15
@@ -6,22 +6,22 @@
 
 ---
 
-***REMOVED******REMOVED*** Table of Contents
+## Table of Contents
 
-1. [Current State Analysis](***REMOVED***1-current-state-analysis)
-2. [Expanded "At-Home" Object Scope](***REMOVED***2-expanded-at-home-object-scope)
-3. [Subtype-First Strategy](***REMOVED***3-subtype-first-strategy)
-4. [Attributes: Direct vs Derived](***REMOVED***4-attributes-direct-vs-derived)
-5. [Prioritization Roadmap](***REMOVED***5-prioritization-roadmap)
-6. [Validation Strategy](***REMOVED***6-validation-strategy)
-7. [Risks & Tradeoffs](***REMOVED***7-risks--tradeoffs)
-8. [Summary Decision Matrix](***REMOVED***summary-decision-matrix)
+1. [Current State Analysis](#1-current-state-analysis)
+2. [Expanded "At-Home" Object Scope](#2-expanded-at-home-object-scope)
+3. [Subtype-First Strategy](#3-subtype-first-strategy)
+4. [Attributes: Direct vs Derived](#4-attributes-direct-vs-derived)
+5. [Prioritization Roadmap](#5-prioritization-roadmap)
+6. [Validation Strategy](#6-validation-strategy)
+7. [Risks & Tradeoffs](#7-risks--tradeoffs)
+8. [Summary Decision Matrix](#summary-decision-matrix)
 
 ---
 
-***REMOVED******REMOVED*** 1) Current State Analysis
+## 1) Current State Analysis
 
-***REMOVED******REMOVED******REMOVED*** What's Currently Working Well
+### What's Currently Working Well
 
 Scanium has a reasonably solid foundation based on the codebase architecture:
 
@@ -47,9 +47,9 @@ Scanium has a reasonably solid foundation based on the codebase architecture:
 - CLOUD: condition
 - BARCODE: sku, isbn
 
-***REMOVED******REMOVED******REMOVED*** Where the System Likely Fails
+### Where the System Likely Fails
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Problem 1: Coarse Fashion Classification
+#### Problem 1: Coarse Fashion Classification
 
 The `FASHION` category maps to a single label but covers wildly different item types. A t-shirt, a
 designer handbag, and sneakers are all "Fashion" - but their resale value, marketplace categories,
@@ -58,7 +58,7 @@ and buyer expectations differ enormously.
 **Impact**: Users see "Fashion" in their item list when they expect "Sneakers" or "Jacket". This
 erodes trust and increases manual editing.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Problem 2: Thin Subtype Coverage
+#### Problem 2: Thin Subtype Coverage
 
 The domain pack has only 21 subtypes for the entire home inventory universe. Missing coverage
 includes:
@@ -69,7 +69,7 @@ includes:
 - **Kitchen**: No coffee machines, toasters, mixers, knife sets
 - **Cleaning**: Only "vacuum" - no distinction between stick/robot/canister
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Problem 3: OCR Underutilization
+#### Problem 3: OCR Underutilization
 
 The `LocalVisionExtractor.kt` has sophisticated brand scoring heuristics (ALL CAPS bonus, trademark
 symbols, penalty for recycling text), but the system treats OCR as supplementary rather than primary
@@ -78,7 +78,7 @@ for many categories.
 **Specific issue**: Model codes (e.g., "RTX 4080", "iPhone 15 Pro Max") are often visible but not
 parsed into structured data that would dramatically improve search and pricing accuracy.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Problem 4: "UNKNOWN" Category Over-Assignment
+#### Problem 4: "UNKNOWN" Category Over-Assignment
 
 When ML Kit confidence is below 0.3 (threshold in `DetectionMapping.kt`), items fall to UNKNOWN. The
 backend taxonomy (`home-resale.json`) has fallback categories like "decor" (priority: 5) that could
@@ -91,7 +91,7 @@ catch these items but apparently aren't being leveraged effectively.
 - Cloud classifier may not have training data for lower-value items
 - Fallback categories have low priority scores, so they rarely "win"
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Problem 5: Missing "Common Home Objects"
+#### Problem 5: Missing "Common Home Objects"
 
 The taxonomy is optimized for high-value resale (electronics, furniture) but misses high-frequency,
 moderate-value items:
@@ -108,11 +108,11 @@ These items are commonly found in homes and frequently listed on classifieds pla
 
 ---
 
-***REMOVED******REMOVED*** 2) Expanded "At-Home" Object Scope
+## 2) Expanded "At-Home" Object Scope
 
-***REMOVED******REMOVED******REMOVED*** Proposed Coverage by Room/Context
+### Proposed Coverage by Room/Context
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** LIVING ROOM
+#### LIVING ROOM
 
 | Object Type   | Examples              | Why Common          | Why Valuable            | CV Distinctiveness |
 |---------------|-----------------------|---------------------|-------------------------|--------------------|
@@ -128,7 +128,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | Curtains      | Missing               | Every window        | Low ($10-100)           | Medium             |
 | Bookshelf     | ✓ exists              | Common              | Medium                  | High               |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** BEDROOM
+#### BEDROOM
 
 | Object Type | Examples | Why Common        | Why Valuable           | CV Distinctiveness     |
 |-------------|----------|-------------------|------------------------|------------------------|
@@ -140,7 +140,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | Bedding set | Missing  | Multiple per home | Low ($20-150)          | Medium                 |
 | Alarm clock | Missing  | Still common      | Very low ($5-30)       | High                   |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** KITCHEN
+#### KITCHEN
 
 | Object Type             | Examples                 | Why Common      | Why Valuable          | CV Distinctiveness |
 |-------------------------|--------------------------|-----------------|-----------------------|--------------------|
@@ -157,7 +157,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | Food storage containers | Missing                  | Every kitchen   | Very low ($5-30)      | Medium             |
 | Cutting board           | Missing                  | Universal       | Very low              | High               |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** BATHROOM
+#### BATHROOM
 
 | Object Type         | Examples             | Why Common | Why Valuable         | CV Distinctiveness |
 |---------------------|----------------------|------------|----------------------|--------------------|
@@ -168,7 +168,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | Towel set           | Missing              | Universal  | Very low ($10-50)    | Medium             |
 | Mirror (bathroom)   | Covered under mirror | Universal  | Medium               | High               |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** HOME OFFICE
+#### HOME OFFICE
 
 | Object Type   | Examples                   | Why Common           | Why Valuable          | CV Distinctiveness |
 |---------------|----------------------------|----------------------|-----------------------|--------------------|
@@ -184,7 +184,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | Monitor stand | Missing                    | Growing              | Low ($20-100)         | High               |
 | USB hub       | Missing                    | Very common          | Very low ($5-50)      | Medium             |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** KIDS ROOM / NURSERY
+#### KIDS ROOM / NURSERY
 
 | Object Type     | Examples                            | Why Common             | Why Valuable          | CV Distinctiveness |
 |-----------------|-------------------------------------|------------------------|-----------------------|--------------------|
@@ -197,7 +197,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | Stuffed animals | Missing                             | Universal              | Very low ($5-20)      | Low                |
 | Baby monitor    | Missing                             | 80%+ families          | Low-medium ($20-150)  | High               |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** GARAGE / UTILITY
+#### GARAGE / UTILITY
 
 | Object Type    | Examples           | Why Common          | Why Valuable          | CV Distinctiveness |
 |----------------|--------------------|---------------------|-----------------------|--------------------|
@@ -210,7 +210,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | Iron           | Missing            | 80%+ homes          | Low ($10-80)          | High               |
 | Sewing machine | Missing            | 15%+ homes          | Medium ($30-400)      | High               |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SPORTS / FITNESS
+#### SPORTS / FITNESS
 
 | Object Type   | Examples | Why Common | Why Valuable           | CV Distinctiveness |
 |---------------|----------|------------|------------------------|--------------------|
@@ -222,7 +222,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | Golf clubs    | Missing  | 10%+ homes | Medium-high ($50-1000) | High               |
 | Ski equipment | Missing  | Regional   | Medium-high            | High               |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ELECTRONICS (Expanded)
+#### ELECTRONICS (Expanded)
 
 | Object Type         | Current Status | Why Critical                      | CV Distinctiveness |
 |---------------------|----------------|-----------------------------------|--------------------|
@@ -245,7 +245,7 @@ These items are commonly found in homes and frequently listed on classifieds pla
 | **Power bank**      | Missing        | Very common                       | Low                |
 | **Charger**         | Missing        | Universal                         | Very low           |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** FASHION (Expanded Subtypes)
+#### FASHION (Expanded Subtypes)
 
 | Subtype        | Current Status       | Resale Value          | CV Distinctiveness |
 |----------------|----------------------|-----------------------|--------------------|
@@ -271,14 +271,14 @@ These items are commonly found in homes and frequently listed on classifieds pla
 
 ---
 
-***REMOVED******REMOVED*** 3) Subtype-First Strategy
+## 3) Subtype-First Strategy
 
-***REMOVED******REMOVED******REMOVED*** Why Subtypes > New Categories
+### Why Subtypes > New Categories
 
 Expanding subtypes within existing categories delivers more value than adding new top-level
 categories because:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Better Item List Labels
+#### 1. Better Item List Labels
 
 Current experience:
 
@@ -299,7 +299,7 @@ With subtypes:
 **User trust**: When users see accurate labels, they trust the app's intelligence. When they see
 generic labels, they assume the app is dumb and manually edit everything.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Attribute Prefill Accuracy
+#### 2. Attribute Prefill Accuracy
 
 Generic "Electronics" can't intelligently prefill attributes:
 
@@ -309,7 +309,7 @@ Generic "Electronics" can't intelligently prefill attributes:
 
 **With subtypes**, the domain pack can define category-specific attribute schemas that make sense.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Marketplace Export Alignment
+#### 3. Marketplace Export Alignment
 
 eBay, Facebook Marketplace, and classifieds sites have category taxonomies. "Electronics" maps
 poorly:
@@ -324,7 +324,7 @@ poorly:
 **Subtype-first** enables direct mapping to marketplace categories, reducing user friction during
 export.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Pricing Accuracy
+#### 4. Pricing Accuracy
 
 The `PricingEngine.kt` generates price ranges by category. Generic categories produce useless
 ranges:
@@ -333,14 +333,14 @@ ranges:
 - "Headphones": €15-€400 (actionable)
 - "Gaming Console": €100-€600 (actionable)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Search and Filtering
+#### 5. Search and Filtering
 
 If users can filter by subtype ("Show me all my headphones"), they can quickly find items. Generic
 categories make this impossible.
 
-***REMOVED******REMOVED******REMOVED*** Concrete Expansion Examples
+### Concrete Expansion Examples
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Fashion → Subtypes
+#### Fashion → Subtypes
 
 ```
 FASHION (current)
@@ -359,7 +359,7 @@ FASHION (current)
 ├── clothing_sunglasses (ADD)
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Electronics → Subtypes
+#### Electronics → Subtypes
 
 ```
 ELECTRONICS (current)
@@ -383,7 +383,7 @@ ELECTRONICS (current)
 ├── electronics_ereader (ADD)
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** HOME_GOOD → Subtypes
+#### HOME_GOOD → Subtypes
 
 ```
 HOME_GOOD (current)
@@ -417,9 +417,9 @@ HOME_GOOD (current)
 
 ---
 
-***REMOVED******REMOVED*** 4) Attributes: Direct vs Derived
+## 4) Attributes: Direct vs Derived
 
-***REMOVED******REMOVED******REMOVED*** A) Direct Attributes (Extractable from Images)
+### A) Direct Attributes (Extractable from Images)
 
 | Attribute                        | Extraction Method           | Current Status | Accuracy Level        | Cost                     |
 |----------------------------------|-----------------------------|----------------|-----------------------|--------------------------|
@@ -435,7 +435,7 @@ HOME_GOOD (current)
 | **product_line_text**            | OCR (e.g., "Pro", "Ultra")  | Partial        | Medium                | Low                      |
 | **year_marking**                 | OCR (e.g., "2023", "©2024") | Partial        | Medium                | Low                      |
 
-***REMOVED******REMOVED******REMOVED*** B) Derived Attributes (Computed from A + Heuristics/LLM)
+### B) Derived Attributes (Computed from A + Heuristics/LLM)
 
 | Attribute             | Derivation Method              | LLM Required? | Confidence Risk | Implementation Notes                                               |
 |-----------------------|--------------------------------|---------------|-----------------|--------------------------------------------------------------------|
@@ -451,7 +451,7 @@ HOME_GOOD (current)
 | **release_year**      | Product database lookup        | No            | Medium          | Requires model identification                                      |
 | **authenticity_risk** | Heuristic from brand + signals | Partial       | Very high       | Luxury brands with low price = warning                             |
 
-***REMOVED******REMOVED******REMOVED*** Derivation Details
+### Derivation Details
 
 **Condition (Current: CLOUD)**
 
@@ -472,7 +472,7 @@ if "Women's" in ocr_text or "Femme" in ocr_text:
 if subtype in ["dress", "skirt", "bra"]:
     return "Women"
 if color == "pink" and subtype in ["tshirt", "hoodie"]:
-    confidence = 0.6  ***REMOVED*** Weak signal
+    confidence = 0.6  # Weak signal
 ```
 
 - No LLM required
@@ -494,11 +494,11 @@ if color == "pink" and subtype in ["tshirt", "hoodie"]:
 
 ---
 
-***REMOVED******REMOVED*** 5) Prioritization Roadmap
+## 5) Prioritization Roadmap
 
-***REMOVED******REMOVED******REMOVED*** Top 5 Object Expansions (Highest ROI)
+### Top 5 Object Expansions (Highest ROI)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Headphones / Earbuds (`electronics_headphones`, `electronics_earbuds`)
+#### 1. Headphones / Earbuds (`electronics_headphones`, `electronics_earbuds`)
 
 **Why first**:
 
@@ -510,7 +510,7 @@ if color == "pink" and subtype in ["tshirt", "hoodie"]:
 
 **Expected impact**: 10-15% reduction in "Electronics" generic labels
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Fashion Subtypes: T-Shirt, Hoodie, Jeans (`clothing_tshirt`, `clothing_hoodie`,
+#### 2. Fashion Subtypes: T-Shirt, Hoodie, Jeans (`clothing_tshirt`, `clothing_hoodie`,
 `clothing_jeans`)
 
 **Why second**:
@@ -523,7 +523,7 @@ if color == "pink" and subtype in ["tshirt", "hoodie"]:
 
 **Expected impact**: 40-50% reduction in generic "Fashion" labels
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Keyboard + Mouse (`electronics_keyboard`, `electronics_mouse`)
+#### 3. Keyboard + Mouse (`electronics_keyboard`, `electronics_mouse`)
 
 **Why third**:
 
@@ -535,7 +535,7 @@ if color == "pink" and subtype in ["tshirt", "hoodie"]:
 
 **Expected impact**: 5-8% reduction in generic "Electronics" labels
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Coffee Machine + Air Fryer (`appliance_coffee_machine`, `appliance_air_fryer`)
+#### 4. Coffee Machine + Air Fryer (`appliance_coffee_machine`, `appliance_air_fryer`)
 
 **Why fourth**:
 
@@ -548,7 +548,7 @@ if color == "pink" and subtype in ["tshirt", "hoodie"]:
 **Expected impact**: 5-10% reduction in generic "Home Good" labels, significant improvement in
 attribute prefill
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Robot Vacuum vs Stick Vacuum (`cleaning_robot_vacuum`, `cleaning_stick_vacuum`)
+#### 5. Robot Vacuum vs Stick Vacuum (`cleaning_robot_vacuum`, `cleaning_stick_vacuum`)
 
 **Why fifth**:
 
@@ -560,9 +560,9 @@ attribute prefill
 
 **Expected impact**: Better pricing, better marketplace mapping for cleaning appliances
 
-***REMOVED******REMOVED******REMOVED*** What NOT to Do Yet (And Why)
+### What NOT to Do Yet (And Why)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ❌ Jewelry / Watches (Too Complex)
+#### ❌ Jewelry / Watches (Too Complex)
 
 - Extremely high variance in value ($10 to $100,000+)
 - Authenticity verification is critical and hard
@@ -570,7 +570,7 @@ attribute prefill
 - False positives have serious trust implications
 - **Wait until**: Core categories are solid, consider specialized mode later
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ❌ Art / Antiques (Out of Scope)
+#### ❌ Art / Antiques (Out of Scope)
 
 - No standardized taxonomy
 - Value is entirely subjective
@@ -578,7 +578,7 @@ attribute prefill
 - Not a "home inventory" item in the resale sense
 - **Recommendation**: Explicitly exclude or mark as "requires manual entry"
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ❌ Food Items (Low Value, High Complexity)
+#### ❌ Food Items (Low Value, High Complexity)
 
 - Already have FOOD category
 - Per-item value is very low
@@ -586,21 +586,21 @@ attribute prefill
 - Not typical resale app use case
 - **Recommendation**: Keep as-is, don't expand
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ❌ Musical Instruments (Niche)
+#### ❌ Musical Instruments (Niche)
 
 - Only 10-15% of homes have them
 - High value when present, but low frequency
 - Requires specialized knowledge (guitar types, piano brands)
 - **Wait until**: Core categories are mature
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ❌ Firearms / Weapons (Legal/Safety)
+#### ❌ Firearms / Weapons (Legal/Safety)
 
 - Extreme legal complexity across jurisdictions
 - Liability concerns
 - Most marketplaces prohibit
 - **Recommendation**: Explicitly unsupported, detect and warn
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ❌ Live Animals / Plants (Already Have PLANT)
+#### ❌ Live Animals / Plants (Already Have PLANT)
 
 - PLANT category exists
 - Animal listing is legally complex
@@ -609,38 +609,38 @@ attribute prefill
 
 ---
 
-***REMOVED******REMOVED*** 6) Validation Strategy
+## 6) Validation Strategy
 
-***REMOVED******REMOVED******REMOVED*** Golden Images Strategy
+### Golden Images Strategy
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Dataset Structure
+#### Dataset Structure
 
 ```
 golden_images/
 ├── electronics_headphones/
-│   ├── positive/           ***REMOVED*** Items that ARE headphones
-│   │   ├── over_ear/       ***REMOVED*** 20 images
-│   │   ├── on_ear/         ***REMOVED*** 20 images
-│   │   ├── earbuds/        ***REMOVED*** 20 images (to test distinction)
-│   │   └── with_brands/    ***REMOVED*** 20 images (Sony, Bose, Beats, etc.)
-│   └── negative/           ***REMOVED*** Items that are NOT headphones
-│       ├── speakers/       ***REMOVED*** 10 images (common confusion)
-│       ├── ear_protection/ ***REMOVED*** 10 images (industrial, not audio)
-│       └── stethoscopes/   ***REMOVED*** 5 images (shape similarity)
+│   ├── positive/           # Items that ARE headphones
+│   │   ├── over_ear/       # 20 images
+│   │   ├── on_ear/         # 20 images
+│   │   ├── earbuds/        # 20 images (to test distinction)
+│   │   └── with_brands/    # 20 images (Sony, Bose, Beats, etc.)
+│   └── negative/           # Items that are NOT headphones
+│       ├── speakers/       # 10 images (common confusion)
+│       ├── ear_protection/ # 10 images (industrial, not audio)
+│       └── stethoscopes/   # 5 images (shape similarity)
 ├── clothing_tshirt/
 │   ├── positive/
-│   │   ├── plain/          ***REMOVED*** 20 images
-│   │   ├── graphic/        ***REMOVED*** 20 images
-│   │   ├── with_visible_brand/  ***REMOVED*** 15 images
-│   │   └── folded/         ***REMOVED*** 10 images (different presentation)
+│   │   ├── plain/          # 20 images
+│   │   ├── graphic/        # 20 images
+│   │   ├── with_visible_brand/  # 15 images
+│   │   └── folded/         # 10 images (different presentation)
 │   └── negative/
-│       ├── polo_shirts/    ***REMOVED*** 10 images (collar distinction)
-│       ├── tank_tops/      ***REMOVED*** 10 images
-│       └── long_sleeves/   ***REMOVED*** 10 images
+│       ├── polo_shirts/    # 10 images (collar distinction)
+│       ├── tank_tops/      # 10 images
+│       └── long_sleeves/   # 10 images
 ...
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Sample Counts Per Subtype
+#### Sample Counts Per Subtype
 
 | Priority | Subtype                  | Positive Samples | Negative Samples | Total |
 |----------|--------------------------|------------------|------------------|-------|
@@ -658,16 +658,16 @@ golden_images/
 
 **Total minimum**: ~800 curated images for top 5 expansions
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Image Sourcing
+#### Image Sourcing
 
 - Internal test devices photographed in varied conditions
 - User-submitted images (anonymized, with consent)
 - Marketplace listings (public domain fair use for ML testing)
 - Stock photo datasets with appropriate licensing
 
-***REMOVED******REMOVED******REMOVED*** Success Metrics
+### Success Metrics
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Classification Accuracy
+#### Classification Accuracy
 
 | Metric                                 | Target | Measurement              |
 |----------------------------------------|--------|--------------------------|
@@ -676,7 +676,7 @@ golden_images/
 | **F1 Score**                           | ≥ 0.87 | 2 × (P × R) / (P + R)    |
 | **UNKNOWN rate**                       | ≤ 10%  | Items falling to UNKNOWN |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Attribute Accuracy
+#### Attribute Accuracy
 
 | Metric                              | Target | Measurement                         |
 |-------------------------------------|--------|-------------------------------------|
@@ -684,7 +684,7 @@ golden_images/
 | **Color accuracy**                  | ≥ 95%  | Correct primary color / total       |
 | **Model code extraction**           | ≥ 70%  | Correct model / visible model codes |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** User-Facing Metrics
+#### User-Facing Metrics
 
 | Metric                  | Target | Measurement                             |
 |-------------------------|--------|-----------------------------------------|
@@ -692,16 +692,16 @@ golden_images/
 | **Time to list**        | -20%   | Average time from scan to export        |
 | **Export success rate** | ≥ 95%  | Exports with valid marketplace category |
 
-***REMOVED******REMOVED******REMOVED*** Regression Detection
+### Regression Detection
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Automated Tests
+#### Automated Tests
 
 - Run golden image suite on every model/taxonomy change
 - Alert if any subtype drops below 85% recall
 - Alert if UNKNOWN rate increases by >2%
 - Alert if any existing category regresses by >3%
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A/B Testing (Production)
+#### A/B Testing (Production)
 
 - Ship to 5% of users first
 - Monitor manual edit rate vs control
@@ -710,9 +710,9 @@ golden_images/
 
 ---
 
-***REMOVED******REMOVED*** 7) Risks & Tradeoffs
+## 7) Risks & Tradeoffs
 
-***REMOVED******REMOVED******REMOVED*** False Positives vs False Negatives
+### False Positives vs False Negatives
 
 **False Positive** (Says "Headphones" when it's not):
 
@@ -731,7 +731,7 @@ golden_images/
 **Recommendation**: Bias toward false negatives initially. Generic labels are annoying but not
 harmful. Wrong specific labels damage trust.
 
-***REMOVED******REMOVED******REMOVED*** OCR Over-Reliance Risks
+### OCR Over-Reliance Risks
 
 **Risk 1: OCR Hallucination**
 
@@ -757,7 +757,7 @@ harmful. Wrong specific labels damage trust.
 - "iPhone15Pro" vs "iPhone 15 Pro Max"
 - Solution: Fuzzy matching, canonical model database lookup
 
-***REMOVED******REMOVED******REMOVED*** Brand Hallucination Risks
+### Brand Hallucination Risks
 
 **Risk**: LLM or rules infer brand from context that isn't there
 
@@ -776,7 +776,7 @@ harmful. Wrong specific labels damage trust.
 3. Never auto-fill brand for marketplace export without user confirmation
 4. Track brand accuracy as explicit metric
 
-***REMOVED******REMOVED******REMOVED*** User Trust Implications
+### User Trust Implications
 
 **Trust Builders**:
 
@@ -801,7 +801,7 @@ harmful. Wrong specific labels damage trust.
 **Recommendation**: Ship new subtypes with honest confidence indicators. "Headphones (High
 confidence)" vs "Electronics (Low confidence)" communicates the system's limitations transparently.
 
-***REMOVED******REMOVED******REMOVED*** Cost Explosion Risks
+### Cost Explosion Risks
 
 **Scenario 1: Per-Image LLM Calls**
 
@@ -833,7 +833,7 @@ confidence)" vs "Electronics (Low confidence)" communicates the system's limitat
 
 ---
 
-***REMOVED******REMOVED*** Summary Decision Matrix
+## Summary Decision Matrix
 
 | Decision                                                                                  | Recommendation   | Confidence | Risk Level   |
 |-------------------------------------------------------------------------------------------|------------------|------------|--------------|
@@ -850,7 +850,7 @@ confidence)" vs "Electronics (Low confidence)" communicates the system's limitat
 
 ---
 
-***REMOVED******REMOVED*** Appendix: Key File References
+## Appendix: Key File References
 
 | Component              | File Path                                                                                           |
 |------------------------|-----------------------------------------------------------------------------------------------------|

@@ -11,7 +11,7 @@
 export type DominantColor = {
   /** Basic color name (black, white, gray, red, orange, yellow, green, blue, purple, pink, brown) */
   name: string;
-  /** RGB hex value (e.g., "***REMOVED***FF5733") */
+  /** RGB hex value (e.g., "#FF5733") */
   rgbHex: string;
   /** Approximate percentage of the image covered by this color */
   pct: number;

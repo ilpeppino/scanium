@@ -8,20 +8,20 @@
     <!-- Upper Lens -->
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***000000"
+        android:strokeColor="#000000"
         android:strokeWidth="20"
         android:strokeLineCap="round"
         android:pathData="M 400,310 m -180,0 a 180,180 0 1,0 360,0 a 180,180 0 1,0 -360,0" />
 
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***000000"
+        android:strokeColor="#000000"
         android:strokeWidth="12"
         android:pathData="M 400,310 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0" />
 
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***000000"
+        android:strokeColor="#000000"
         android:strokeWidth="8"
         android:pathData="M 400,310 m -130,0 a 130,130 0 1,0 260,0 a 130,130 0 1,0 -260,0" />
 
@@ -29,25 +29,25 @@
         android:cx="400"
         android:cy="310"
         android:r="110"
-        android:fillColor="***REMOVED***000000" />
+        android:fillColor="#000000" />
 
     <!-- Lower Lens -->
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***000000"
+        android:strokeColor="#000000"
         android:strokeWidth="20"
         android:strokeLineCap="round"
         android:pathData="M 400,690 m -180,0 a 180,180 0 1,0 360,0 a 180,180 0 1,0 -360,0" />
 
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***000000"
+        android:strokeColor="#000000"
         android:strokeWidth="12"
         android:pathData="M 400,690 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0" />
 
     <path
         android:fillColor="none"
-        android:strokeColor="***REMOVED***000000"
+        android:strokeColor="#000000"
         android:strokeWidth="8"
         android:pathData="M 400,690 m -130,0 a 130,130 0 1,0 260,0 a 130,130 0 1,0 -260,0" />
 
@@ -55,11 +55,11 @@
         android:cx="400"
         android:cy="690"
         android:r="110"
-        android:fillColor="***REMOVED***000000" />
+        android:fillColor="#000000" />
 
     <!-- Curved S - Upper Part -->
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:strokeColor="#000000"
         android:strokeWidth="80"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
@@ -68,7 +68,7 @@
 
     <!-- Curved S - Lower Part -->
     <path
-        android:strokeColor="***REMOVED***000000"
+        android:strokeColor="#000000"
         android:strokeWidth="80"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"

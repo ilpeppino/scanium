@@ -1,13 +1,13 @@
-***REMOVED*** AI Assistant Item Signals Map
+# AI Assistant Item Signals Map
 
 > **Purpose**: Document the complete flow of item signals from Android app to backend assistant
 > endpoint. This map enables implementation of OCR/color/brand/size features with minimal ambiguity.
 
 ---
 
-***REMOVED******REMOVED*** A. Current Assistant Endpoints (Android → Backend)
+## A. Current Assistant Endpoints (Android → Backend)
 
-***REMOVED******REMOVED******REMOVED*** Endpoint Summary
+### Endpoint Summary
 
 | Endpoint                            | Method | Purpose                                                  | Source File                                   |
 |-------------------------------------|--------|----------------------------------------------------------|-----------------------------------------------|
@@ -15,7 +15,7 @@
 | `/v1/assist/chat`                   | POST   | Main AI assistant chat                                   | `backend/src/modules/assistant/routes.ts:260` |
 | `/v1/assist/chat/status/:requestId` | GET    | Staged request status                                    | `backend/src/modules/assistant/routes.ts:729` |
 
-***REMOVED******REMOVED******REMOVED*** Sequence Diagram
+### Sequence Diagram
 
 ```
 ┌─────────────────┐     ┌─────────────────────┐     ┌───────────────────────┐
@@ -54,7 +54,7 @@
          │                         │                            │
 ```
 
-***REMOVED******REMOVED******REMOVED*** Two AssistantRepository Implementations
+### Two AssistantRepository Implementations
 
 **CRITICAL**: There are TWO AssistantRepository classes in the codebase:
 
@@ -73,9 +73,9 @@ implementation that supports:
 
 ---
 
-***REMOVED******REMOVED*** B. Item Payload Schema Currently Sent
+## B. Item Payload Schema Currently Sent
 
-***REMOVED******REMOVED******REMOVED*** Request Body Structure (JSON)
+### Request Body Structure (JSON)
 
 ```json
 {
@@ -119,7 +119,7 @@ implementation that supports:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Code References
+### Code References
 
 **Android ItemContextSnapshotDto** (
 `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt:572-596`):
@@ -153,7 +153,7 @@ const itemContextSchema = z.object({
 });
 ```
 
-***REMOVED******REMOVED******REMOVED*** Multipart Request (with images)
+### Multipart Request (with images)
 
 When images are attached, the request uses `multipart/form-data`:
 
@@ -168,7 +168,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 ---
 
-***REMOVED******REMOVED*** C. Item Signals Matrix
+## C. Item Signals Matrix
 
 | Signal                    | Exists in Android? | Source                                          | Storage                                                 | Confidence?                     | Sent to Assistant?   | Notes                                  |
 |---------------------------|--------------------|-------------------------------------------------|---------------------------------------------------------|---------------------------------|----------------------|----------------------------------------|
@@ -192,7 +192,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 | **Export Profile ID**     | ✅ Yes              | User selection                                  | `ListingDraft.profile`                                  | ❌ N/A                           | ✅ Yes                | Marketplace context                    |
 | **Quality Score**         | ⚠️ Partial         | Not populated                                   | `ScannedItem.qualityScore`                              | ❌ N/A                           | ❌ No                 | Field exists but unused                |
 
-***REMOVED******REMOVED******REMOVED*** Signal Sources Detail
+### Signal Sources Detail
 
 **On-Device Classification** (
 `androidApp/src/main/java/com/scanium/app/ml/classification/OnDeviceClassifier.kt`):
@@ -218,9 +218,9 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 ---
 
-***REMOVED******REMOVED*** D. Gaps Preventing "Full AI Assistance"
+## D. Gaps Preventing "Full AI Assistance"
 
-***REMOVED******REMOVED******REMOVED*** 1. OCR Text Not Sent to Assistant
+### 1. OCR Text Not Sent to Assistant
 
 **Evidence**:
 
@@ -235,7 +235,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 **Impact**: Backend cannot use OCR-detected brand names, model numbers, or specifications.
 
-***REMOVED******REMOVED******REMOVED*** 2. Color Not Extracted on Android
+### 2. Color Not Extracted on Android
 
 **Evidence**:
 
@@ -248,7 +248,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 **Impact**: Color questions rely entirely on uploaded images being processed by backend vision.
 
-***REMOVED******REMOVED******REMOVED*** 3. Brand Extraction is Unreliable
+### 3. Brand Extraction is Unreliable
 
 **Evidence**:
 
@@ -259,7 +259,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 **Impact**: Brand is often wrong or missing; relying on generic ML Kit labels.
 
-***REMOVED******REMOVED******REMOVED*** 4. Images Not Currently Sent
+### 4. Images Not Currently Sent
 
 **Evidence**:
 
@@ -274,7 +274,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 **Impact**: Backend vision extraction (`VisualFacts`) never runs because no images are sent.
 
-***REMOVED******REMOVED******REMOVED*** 5. Model/Size Never Extracted
+### 5. Model/Size Never Extracted
 
 **Evidence**:
 
@@ -285,7 +285,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 **Impact**: Model numbers from labels/tags never captured.
 
-***REMOVED******REMOVED******REMOVED*** 6. Domain Category ID Not Sent
+### 6. Domain Category ID Not Sent
 
 **Evidence**:
 
@@ -300,9 +300,9 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 ---
 
-***REMOVED******REMOVED*** E. Minimal Changes Needed (High-Level)
+## E. Minimal Changes Needed (High-Level)
 
-***REMOVED******REMOVED******REMOVED*** E1. Send OCR Text to Assistant
+### E1. Send OCR Text to Assistant
 
 1. **Add field to shared model** (`shared/core-models/.../assistant/AssistantModels.kt`):
     - Add `ocrText: String?` to `ItemContextSnapshot`
@@ -315,7 +315,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 4. **Backend already handles text** via `attributes` parsing
 
-***REMOVED******REMOVED******REMOVED*** E2. Enable Image Sending
+### E2. Enable Image Sending
 
 1. **Wire up the toggle** in `AssistantViewModel`:
     - Check `settingsRepository.allowAssistantImagesFlow`
@@ -324,19 +324,19 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 2. **Test multipart upload** path already exists:
     - `CloudAssistantRepository.buildMultipartRequest()` at line 250
 
-***REMOVED******REMOVED******REMOVED*** E3. Extract Color on Android (Optional)
+### E3. Extract Color on Android (Optional)
 
 1. **Add color extraction** using Palette API or ML Kit
 2. **Populate** `DraftFieldKey.COLOR` in `ListingDraftBuilder`
 3. **Or** rely on backend vision when images are sent
 
-***REMOVED******REMOVED******REMOVED*** E4. Improve Brand Detection
+### E4. Improve Brand Detection
 
 1. **Use OCR text** to find brand names (regex/NLP)
 2. **Cross-reference** with domainpack brand lists
 3. **Fall back** to logo detection from images
 
-***REMOVED******REMOVED******REMOVED*** E5. Add Domain Category ID
+### E5. Add Domain Category ID
 
 1. **Add field** `domainCategoryId: String?` to `ItemContextSnapshot`
 2. **Map from** `ScannedItem.domainCategoryId` in builder
@@ -344,9 +344,9 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 ---
 
-***REMOVED******REMOVED*** F. Risks & Pitfalls
+## F. Risks & Pitfalls
 
-***REMOVED******REMOVED******REMOVED*** F1. Multiple AssistantRepository Versions
+### F1. Multiple AssistantRepository Versions
 
 **Risk**: Code changes may target the wrong repository class.
 
@@ -357,7 +357,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 **Mitigation**: Primary development should target `selling.assistant.AssistantRepository`.
 
-***REMOVED******REMOVED******REMOVED*** F2. API Key Provider Default Null
+### F2. API Key Provider Default Null
 
 **Risk**: Missing API key causes silent 401 failures.
 
@@ -370,7 +370,7 @@ const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
 
 **Mitigation**: Ensure DI provides `SecureApiKeyStore.getApiKey()` properly.
 
-***REMOVED******REMOVED******REMOVED*** F3. Conditional Headers
+### F3. Conditional Headers
 
 **Risk**: Headers may be missing in some conditions.
 
@@ -388,7 +388,7 @@ if (apiKey != null) {
 
 **Mitigation**: Fail fast if API key is null before making request.
 
-***REMOVED******REMOVED******REMOVED*** F4. Schema Drift Between Android/Backend
+### F4. Schema Drift Between Android/Backend
 
 **Risk**: Android DTO and backend Zod schema may diverge.
 
@@ -399,7 +399,7 @@ if (apiKey != null) {
 
 **Mitigation**: Add shared schema validation or TypeScript types generation.
 
-***REMOVED******REMOVED******REMOVED*** F5. Images Explicitly Disabled
+### F5. Images Explicitly Disabled
 
 **Risk**: Image-dependent features won't work until toggle is wired.
 
@@ -414,7 +414,7 @@ imageAttachments = emptyList(), // Explicit: no images sent
 
 **Mitigation**: Implement image attachment before testing vision features.
 
-***REMOVED******REMOVED******REMOVED*** F6. Build Config URL Variations
+### F6. Build Config URL Variations
 
 **Risk**: Different base URLs for debug vs release builds.
 
@@ -427,18 +427,18 @@ imageAttachments = emptyList(), // Explicit: no images sent
 
 ---
 
-***REMOVED******REMOVED*** G. Next PR-Ready Tasks
+## G. Next PR-Ready Tasks
 
 The following tasks are implementation-ready based on this analysis:
 
-***REMOVED******REMOVED******REMOVED*** Task 1: Enable Image Attachments
+### Task 1: Enable Image Attachments
 
 - [ ] Wire `allowAssistantImagesFlow` toggle in `AssistantViewModel`
 - [ ] Build `ItemImageAttachment` list from `ListingDraft.photos`
 - [ ] Test multipart upload end-to-end
 - [ ] Verify backend vision extraction works
 
-***REMOVED******REMOVED******REMOVED*** Task 2: Add OCR Text to Payload
+### Task 2: Add OCR Text to Payload
 
 - [ ] Add `ocrText: String?` to `ItemContextSnapshot` (shared)
 - [ ] Update `ItemContextSnapshotBuilder.fromDraft()` to map `recognizedText`
@@ -446,19 +446,19 @@ The following tasks are implementation-ready based on this analysis:
 - [ ] Update backend schema (if needed)
 - [ ] Add test for OCR text in request
 
-***REMOVED******REMOVED******REMOVED*** Task 3: Add Domain Category ID
+### Task 3: Add Domain Category ID
 
 - [ ] Add `domainCategoryId: String?` to `ItemContextSnapshot`
 - [ ] Map from `ScannedItem.domainCategoryId`
 - [ ] Backend can use for template pack selection
 
-***REMOVED******REMOVED******REMOVED*** Task 4: Improve Brand Extraction
+### Task 4: Improve Brand Extraction
 
 - [ ] Parse OCR text for brand patterns
 - [ ] Cross-reference domainpack brand lists
 - [ ] Update `ListingDraftBuilder` brand logic
 
-***REMOVED******REMOVED******REMOVED*** Task 5: Fix Android DTO Description Field
+### Task 5: Fix Android DTO Description Field
 
 - [ ] Add `description` to `ItemContextSnapshotDto`
 - [ ] Map from `ItemContextSnapshot.description`
@@ -466,7 +466,7 @@ The following tasks are implementation-ready based on this analysis:
 
 ---
 
-***REMOVED******REMOVED*** Appendix: Key File Locations
+## Appendix: Key File Locations
 
 | Component                                 | Path                                                                                                   | Key Lines |
 |-------------------------------------------|--------------------------------------------------------------------------------------------------------|-----------|

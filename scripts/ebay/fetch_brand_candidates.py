@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Fetch brand candidates from eBay listings for mapped subtypes.
 Requires: EBAY_CLIENT_ID, EBAY_CLIENT_SECRET (for real API usage)
@@ -18,13 +18,13 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from collections import Counter
 
-***REMOVED*** Mock brand data by eBay category for demonstration
+# Mock brand data by eBay category for demonstration
 MOCK_BRANDS_BY_CATEGORY = {
-    "11232": ["Apple", "Dell", "Lenovo", "HP", "ASUS", "Acer", "MSI"],  ***REMOVED*** Laptops
-    "111": ["Dell", "LG", "ASUS", "BenQ", "Acer", "Viewsonic"],  ***REMOVED*** Monitors
-    "15687": ["IKEA", "Wayfair", "Argos", "La-Z-Boy", "Next"],  ***REMOVED*** Furniture
-    "10058": ["Samsung", "LG", "Sony", "TCL", "Hisense", "Panasonic"],  ***REMOVED*** TVs
-    "9355": ["Apple", "Samsung", "Google", "OnePlus", "Xiaomi"],  ***REMOVED*** Phones
+    "11232": ["Apple", "Dell", "Lenovo", "HP", "ASUS", "Acer", "MSI"],  # Laptops
+    "111": ["Dell", "LG", "ASUS", "BenQ", "Acer", "Viewsonic"],  # Monitors
+    "15687": ["IKEA", "Wayfair", "Argos", "La-Z-Boy", "Next"],  # Furniture
+    "10058": ["Samsung", "LG", "Sony", "TCL", "Hisense", "Panasonic"],  # TVs
+    "9355": ["Apple", "Samsung", "Google", "OnePlus", "Xiaomi"],  # Phones
 }
 
 def check_credentials() -> tuple[Optional[str], Optional[str]]:
@@ -35,11 +35,11 @@ def check_credentials() -> tuple[Optional[str], Optional[str]]:
 
 def generate_mock_brands(subtype_id: str, ebay_category_id: str) -> List[str]:
     """Generate mock brand candidates for a subtype."""
-    ***REMOVED*** Simple mock based on category ID
+    # Simple mock based on category ID
     if ebay_category_id in MOCK_BRANDS_BY_CATEGORY:
         return MOCK_BRANDS_BY_CATEGORY[ebay_category_id]
 
-    ***REMOVED*** Default brands based on subtype keywords
+    # Default brands based on subtype keywords
     subtype_lower = subtype_id.lower()
 
     if "laptop" in subtype_lower or "computer" in subtype_lower:
@@ -91,7 +91,7 @@ def fetch_brand_candidates() -> int:
 
     mappings = mappings_data.get("mappings", [])
 
-    ***REMOVED*** Check credentials
+    # Check credentials
     client_id, client_secret = check_credentials()
     if not client_id or not client_secret:
         print("⚠️  eBay credentials not configured. Using MOCK brand data.")
@@ -100,7 +100,7 @@ def fetch_brand_candidates() -> int:
         print("✅ eBay credentials found.")
         print("   (Real eBay Browse API integration: https://developer.ebay.com/api-docs/static/browse-api.html)\n")
 
-    ***REMOVED*** Build brands by subtype
+    # Build brands by subtype
     brands_by_subtype = {}
     all_brands_count = Counter()
 
@@ -111,10 +111,10 @@ def fetch_brand_candidates() -> int:
         if not subtype_id:
             continue
 
-        ***REMOVED*** Fetch brands for this category
+        # Fetch brands for this category
         brands = generate_mock_brands(subtype_id, ebay_cat_id)
 
-        ***REMOVED*** Store brands with frequency
+        # Store brands with frequency
         brands_by_subtype[subtype_id] = {
             "displayName": mapping.get("scaniumDisplayName"),
             "ebayCategoryId": ebay_cat_id,
@@ -123,11 +123,11 @@ def fetch_brand_candidates() -> int:
             "brandCount": len(brands),
         }
 
-        ***REMOVED*** Track overall brand frequency
+        # Track overall brand frequency
         for brand in brands:
             all_brands_count[brand] += 1
 
-    ***REMOVED*** Write brand candidates JSON
+    # Write brand candidates JSON
     candidates_output = {
         "source": "eBay listing data (mock for now)",
         "marketplace": "EBAY_GB",
@@ -139,33 +139,33 @@ def fetch_brand_candidates() -> int:
     with open(candidates_path, 'w') as f:
         json.dump(candidates_output, f, indent=2)
 
-    ***REMOVED*** Generate markdown report
+    # Generate markdown report
     report_lines = [
-        "***REMOVED*** eBay Brand Frequency Report (UK)",
+        "# eBay Brand Frequency Report (UK)",
         "",
-        "***REMOVED******REMOVED*** Summary",
+        "## Summary",
         f"- Total mapped subtypes: {len(brands_by_subtype)}",
         f"- Total unique brands identified: {len(all_brands_count)}",
         f"- Data source: eBay listings (UK marketplace)",
         "",
-        "***REMOVED******REMOVED*** Top Brands Overall",
+        "## Top Brands Overall",
         "",
     ]
 
-    ***REMOVED*** Add top brands
+    # Add top brands
     for brand, count in all_brands_count.most_common(20):
         report_lines.append(f"- {brand}: {count} categories")
 
     report_lines.extend([
         "",
-        "***REMOVED******REMOVED*** Brands by Subtype",
+        "## Brands by Subtype",
         "",
     ])
 
-    ***REMOVED*** Add brands by subtype
+    # Add brands by subtype
     for subtype_id in sorted(brands_by_subtype.keys()):
         subtype_data = brands_by_subtype[subtype_id]
-        report_lines.append(f"***REMOVED******REMOVED******REMOVED*** {subtype_data['displayName']} (`{subtype_id}`)")
+        report_lines.append(f"### {subtype_data['displayName']} (`{subtype_id}`)")
         report_lines.append(f"eBay Category: {subtype_data['ebayName']} ({subtype_data['ebayCategoryId']})")
         report_lines.append("")
         for brand in subtype_data['brands']:
@@ -182,7 +182,7 @@ def fetch_brand_candidates() -> int:
     with open(report_path, 'w') as f:
         f.write("\n".join(report_lines))
 
-    ***REMOVED*** Print summary
+    # Print summary
     print(f"✅ Brand candidate analysis complete:")
     print(f"   Subtypes analyzed: {len(brands_by_subtype)}")
     print(f"   Unique brands identified: {len(all_brands_count)}")

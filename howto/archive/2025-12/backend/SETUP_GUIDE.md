@@ -1,12 +1,12 @@
 > Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
 > state.
 
-***REMOVED*** Scanium Backend Setup Guide
+# Scanium Backend Setup Guide
 
 Complete step-by-step guide for deploying the Scanium backend on a Synology NAS with Cloudflare
 Tunnel.
 
-***REMOVED******REMOVED*** 📋 Prerequisites
+## 📋 Prerequisites
 
 - Synology NAS with Container Manager installed
 - Domain name with DNS managed by Cloudflare
@@ -15,9 +15,9 @@ Tunnel.
 
 ---
 
-***REMOVED******REMOVED*** 🌐 Part A: Cloudflare Tunnel Setup
+## 🌐 Part A: Cloudflare Tunnel Setup
 
-***REMOVED******REMOVED******REMOVED*** 1. Create Cloudflare Tunnel
+### 1. Create Cloudflare Tunnel
 
 1. Log into [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com/)
 2. Navigate to **Networks > Tunnels**
@@ -26,7 +26,7 @@ Tunnel.
 5. Name your tunnel (e.g., `scanium-api`)
 6. Click **Next**
 
-***REMOVED******REMOVED******REMOVED*** 2. Get Tunnel Token
+### 2. Get Tunnel Token
 
 1. On the **Install and run a connector** page, select **Docker**
 2. Copy the tunnel token from the command:
@@ -35,7 +35,7 @@ Tunnel.
    ```
 3. Save this token - you'll need it for `CLOUDFLARED_TOKEN` environment variable
 
-***REMOVED******REMOVED******REMOVED*** 3. Configure Public Hostname
+### 3. Configure Public Hostname
 
 1. Click **Next** to go to **Route tunnel**
 2. Add a public hostname:
@@ -52,9 +52,9 @@ Your API will be accessible at: `https://api.yourdomain.com`
 
 ---
 
-***REMOVED******REMOVED*** 🌍 Part B: DNS Configuration
+## 🌍 Part B: DNS Configuration
 
-***REMOVED******REMOVED******REMOVED*** Verify DNS Setup
+### Verify DNS Setup
 
 1. Go to **Cloudflare Dashboard > DNS > Records**
 2. You should see a new CNAME record:
@@ -67,15 +67,15 @@ This is automatically created by the tunnel. No manual DNS changes needed!
 
 ---
 
-***REMOVED******REMOVED*** 🛒 Part C: eBay Developer Credentials
+## 🛒 Part C: eBay Developer Credentials
 
-***REMOVED******REMOVED******REMOVED*** 1. Create eBay Developer Account
+### 1. Create eBay Developer Account
 
 1. Go to [eBay Developers Program](https://developer.ebay.com/)
 2. Sign in with your eBay account (or create one)
 3. Complete the registration
 
-***REMOVED******REMOVED******REMOVED*** 2. Create Application Keys (Sandbox)
+### 2. Create Application Keys (Sandbox)
 
 1. Go to [My Account > Application Keys](https://developer.ebay.com/my/keys)
 2. Under **Sandbox Keys**, click **Create a Keyset**
@@ -83,7 +83,7 @@ This is automatically created by the tunnel. No manual DNS changes needed!
     - **App ID (Client ID)**
     - **Cert ID (Client Secret)**
 
-***REMOVED******REMOVED******REMOVED*** 3. Configure OAuth Redirect URL (RuName)
+### 3. Configure OAuth Redirect URL (RuName)
 
 1. Still on the Application Keys page, scroll to **User Tokens**
 2. Click **Get a Token from eBay**
@@ -94,7 +94,7 @@ This is automatically created by the tunnel. No manual DNS changes needed!
         - ⚠️ This MUST match your `PUBLIC_BASE_URL + EBAY_REDIRECT_PATH`
     - Click **Save**
 
-***REMOVED******REMOVED******REMOVED*** 4. Grant Application Access
+### 4. Grant Application Access
 
 1. After creating RuName, click **Get a Token from eBay via Your Application**
 2. Select your RuName from dropdown
@@ -102,7 +102,7 @@ This is automatically created by the tunnel. No manual DNS changes needed!
 4. Authorize the application
 5. You don't need the token shown - this is just to activate the RuName
 
-***REMOVED******REMOVED******REMOVED*** 5. Required OAuth Scopes
+### 5. Required OAuth Scopes
 
 When configuring `EBAY_SCOPES`, include these for listing functionality:
 
@@ -119,7 +119,7 @@ https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.i
 
 [Full scope reference](https://developer.ebay.com/api-docs/static/oauth-scopes.html)
 
-***REMOVED******REMOVED******REMOVED*** 6. Production Keys (Later)
+### 6. Production Keys (Later)
 
 To use production eBay:
 
@@ -130,9 +130,9 @@ To use production eBay:
 
 ---
 
-***REMOVED******REMOVED*** 🔐 Part D: Environment Variables Setup
+## 🔐 Part D: Environment Variables Setup
 
-***REMOVED******REMOVED******REMOVED*** 1. Create `.env` File
+### 1. Create `.env` File
 
 On your NAS, create `backend/.env`:
 
@@ -141,20 +141,20 @@ cd /path/to/scanium/backend
 nano .env
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Fill in Environment Variables
+### 2. Fill in Environment Variables
 
 ```bash
-***REMOVED*** Application
+# Application
 NODE_ENV=production
 PORT=8080
 
-***REMOVED*** Public URL - MUST match your Cloudflare Tunnel hostname
+# Public URL - MUST match your Cloudflare Tunnel hostname
 PUBLIC_BASE_URL=https://api.yourdomain.com
 
-***REMOVED*** Database
+# Database
 DATABASE_URL=postgresql://scanium:CHANGE_ME_STRONG_PASSWORD@postgres:5432/scanium
 
-***REMOVED*** eBay OAuth
+# eBay OAuth
 EBAY_ENV=sandbox
 EBAY_CLIENT_ID=your_ebay_app_id_from_developer_portal
 EBAY_CLIENT_SECRET=your_ebay_cert_id_from_developer_portal
@@ -162,28 +162,28 @@ EBAY_TOKEN_ENCRYPTION_KEY=change_me_to_32+_char_secret_for_tokens
 EBAY_REDIRECT_PATH=/auth/ebay/callback
 EBAY_SCOPES=https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.fulfillment https://api.ebay.com/oauth/api_scope/sell.account
 
-***REMOVED*** Session Security - Generate with: openssl rand -base64 64
+# Session Security - Generate with: openssl rand -base64 64
 SESSION_SIGNING_SECRET=CHANGE_ME_GENERATE_RANDOM_64_CHARS
 
-***REMOVED*** CORS Origins - Include your app scheme
+# CORS Origins - Include your app scheme
 CORS_ORIGINS=scanium://,http://localhost:3000
 
-***REMOVED*** Postgres Credentials
+# Postgres Credentials
 POSTGRES_USER=scanium
 POSTGRES_PASSWORD=CHANGE_ME_STRONG_PASSWORD
 POSTGRES_DB=scanium
 
-***REMOVED*** Cloudflare Tunnel Token (from Part A, step 2)
+# Cloudflare Tunnel Token (from Part A, step 2)
 CLOUDFLARED_TOKEN=your_tunnel_token_here
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Generate Secure Secrets
+### 3. Generate Secure Secrets
 
 ```bash
-***REMOVED*** Generate session secret
+# Generate session secret
 openssl rand -base64 64
 
-***REMOVED*** Generate PostgreSQL password
+# Generate PostgreSQL password
 openssl rand -base64 24
 ```
 
@@ -191,9 +191,9 @@ Replace `CHANGE_ME_*` values with generated secrets.
 
 ---
 
-***REMOVED******REMOVED*** 🐳 Part E: Deploy on Synology NAS
+## 🐳 Part E: Deploy on Synology NAS
 
-***REMOVED******REMOVED******REMOVED*** Method 1: Container Manager UI (Recommended)
+### Method 1: Container Manager UI (Recommended)
 
 1. **Upload Project**:
     - Open **File Station**
@@ -223,7 +223,7 @@ Replace `CHANGE_ME_*` values with generated secrets.
     - Click **Done**
     - Project will build and start automatically
 
-***REMOVED******REMOVED******REMOVED*** Method 2: SSH/Terminal
+### Method 2: SSH/Terminal
 
 1. **SSH into NAS**:
    ```bash
@@ -247,26 +247,26 @@ Replace `CHANGE_ME_*` values with generated secrets.
    exit
    ```
 
-***REMOVED******REMOVED******REMOVED*** Initial Database Migration
+### Initial Database Migration
 
 After first deployment:
 
 ```bash
-***REMOVED*** Connect to API container
+# Connect to API container
 docker exec -it scanium-api sh
 
-***REMOVED*** Run migrations
+# Run migrations
 npx prisma migrate deploy
 
-***REMOVED*** Exit
+# Exit
 exit
 ```
 
 ---
 
-***REMOVED******REMOVED*** ✅ Part F: Verify Deployment
+## ✅ Part F: Verify Deployment
 
-***REMOVED******REMOVED******REMOVED*** 1. Check Container Status
+### 1. Check Container Status
 
 In Container Manager or via SSH:
 
@@ -280,20 +280,20 @@ You should see three containers running:
 - `scanium-api`
 - `scanium-cloudflared`
 
-***REMOVED******REMOVED******REMOVED*** 2. Check Logs
+### 2. Check Logs
 
 ```bash
-***REMOVED*** API logs
+# API logs
 docker logs scanium-api
 
-***REMOVED*** Cloudflared logs
+# Cloudflared logs
 docker logs scanium-cloudflared
 
-***REMOVED*** Postgres logs
+# Postgres logs
 docker logs scanium-postgres
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Test Endpoints
+### 3. Test Endpoints
 
 **Health Check**:
 
@@ -351,7 +351,7 @@ Expected response (before OAuth):
 
 ---
 
-***REMOVED******REMOVED*** 📱 Part G: Mobile App Integration (Summary)
+## 📱 Part G: Mobile App Integration (Summary)
 
 See [MOBILE_APP_INTEGRATION.md](../md/backend/MOBILE_APP_INTEGRATION.md) for detailed Android
 implementation.
@@ -371,9 +371,9 @@ implementation.
 
 ---
 
-***REMOVED******REMOVED*** 🔧 Troubleshooting
+## 🔧 Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Container won't start
+### Container won't start
 
 **Check logs**:
 
@@ -387,7 +387,7 @@ docker logs scanium-api
 - Database not ready (check postgres logs)
 - Port conflict (ensure 8080 is free)
 
-***REMOVED******REMOVED******REMOVED*** Database connection failed
+### Database connection failed
 
 **Check DATABASE_URL**:
 
@@ -401,7 +401,7 @@ docker logs scanium-api
 docker exec -it scanium-postgres psql -U scanium -d scanium
 ```
 
-***REMOVED******REMOVED******REMOVED*** Cloudflare Tunnel not connecting
+### Cloudflare Tunnel not connecting
 
 **Check token**:
 
@@ -419,7 +419,7 @@ docker exec -it scanium-postgres psql -U scanium -d scanium
 docker logs scanium-cloudflared
 ```
 
-***REMOVED******REMOVED******REMOVED*** OAuth fails with "redirect_uri_mismatch"
+### OAuth fails with "redirect_uri_mismatch"
 
 **Verify RuName configuration**:
 
@@ -432,7 +432,7 @@ docker logs scanium-cloudflared
 - `PUBLIC_BASE_URL` must match tunnel URL
 - `EBAY_REDIRECT_PATH` default is `/auth/ebay/callback`
 
-***REMOVED******REMOVED******REMOVED*** OAuth state mismatch
+### OAuth state mismatch
 
 **Cause**: Cookie issues or multiple OAuth attempts
 
@@ -442,7 +442,7 @@ docker logs scanium-cloudflared
 - Retry from fresh OAuth start
 - Check that `SESSION_SIGNING_SECRET` is set
 
-***REMOVED******REMOVED******REMOVED*** Can't access API from internet
+### Can't access API from internet
 
 **Check Cloudflare Tunnel**:
 
@@ -458,23 +458,23 @@ nslookup api.yourdomain.com
 
 ---
 
-***REMOVED******REMOVED*** 🔄 Updating the Backend
+## 🔄 Updating the Backend
 
-***REMOVED******REMOVED******REMOVED*** Pull new code:
+### Pull new code:
 
 ```bash
 cd /volume1/docker/scanium-backend
 git pull origin main
 ```
 
-***REMOVED******REMOVED******REMOVED*** Rebuild and restart:
+### Rebuild and restart:
 
 ```bash
 sudo docker-compose down
 sudo docker-compose up -d --build
 ```
 
-***REMOVED******REMOVED******REMOVED*** Run new migrations (if any):
+### Run new migrations (if any):
 
 ```bash
 docker exec -it scanium-api npx prisma migrate deploy
@@ -482,7 +482,7 @@ docker exec -it scanium-api npx prisma migrate deploy
 
 ---
 
-***REMOVED******REMOVED*** 🛡️ Security Checklist
+## 🛡️ Security Checklist
 
 - [ ] Strong `SESSION_SIGNING_SECRET` (min 32 chars)
 - [ ] Strong `POSTGRES_PASSWORD`
@@ -497,21 +497,21 @@ docker exec -it scanium-api npx prisma migrate deploy
 
 ---
 
-***REMOVED******REMOVED*** 📊 Monitoring
+## 📊 Monitoring
 
-***REMOVED******REMOVED******REMOVED*** Check system resources:
+### Check system resources:
 
 ```bash
 docker stats
 ```
 
-***REMOVED******REMOVED******REMOVED*** View real-time logs:
+### View real-time logs:
 
 ```bash
 docker-compose logs -f api
 ```
 
-***REMOVED******REMOVED******REMOVED*** Database backup:
+### Database backup:
 
 ```bash
 docker exec scanium-postgres pg_dump -U scanium scanium > backup_$(date +%Y%m%d).sql
@@ -519,7 +519,7 @@ docker exec scanium-postgres pg_dump -U scanium scanium > backup_$(date +%Y%m%d)
 
 ---
 
-***REMOVED******REMOVED*** 🎯 Next Steps
+## 🎯 Next Steps
 
 1. ✅ Backend deployed and accessible
 2. ✅ eBay OAuth working
@@ -530,7 +530,7 @@ docker exec scanium-postgres pg_dump -U scanium scanium > backup_$(date +%Y%m%d)
 
 ---
 
-***REMOVED******REMOVED*** 📚 Additional Resources
+## 📚 Additional Resources
 
 - [Backend README](README.md)
 - [Mobile App Integration Guide](../md/backend/MOBILE_APP_INTEGRATION.md)
@@ -541,7 +541,7 @@ docker exec scanium-postgres pg_dump -U scanium scanium > backup_$(date +%Y%m%d)
 
 ---
 
-***REMOVED******REMOVED*** 🆘 Getting Help
+## 🆘 Getting Help
 
 If you encounter issues:
 

@@ -13,21 +13,21 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Android implementation of [MetricPort] that exports metrics via OTLP.
  *
- * ***REMOVED******REMOVED*** Metric Types
+ * ## Metric Types
  * - Counters: Cumulative monotonic sum (e.g., total scans)
  * - Timers: Reported as gauge (last value)
  * - Gauges: Current value (e.g., items in memory)
  *
- * ***REMOVED******REMOVED*** Aggregation Strategy
+ * ## Aggregation Strategy
  * - Counters: Sum delta values between exports
  * - Timers: Track last value only
  * - Gauges: Track last value only
  *
- * ***REMOVED******REMOVED*** Batching
+ * ## Batching
  * - Exports all metrics periodically (batch timeout)
  * - No max batch size (metrics are lightweight)
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * Uses ConcurrentHashMap for thread-safe metric updates.
  */
 class AndroidMetricPortOtlp(

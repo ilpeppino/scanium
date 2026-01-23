@@ -1,10 +1,10 @@
-***REMOVED*** Comparison: Current Solution vs v1.1.0
+# Comparison: Current Solution vs v1.1.0
 
 **Date:** 2025-01-14
 **Baseline Tag:** v1.1.0
 **Current:** main (post-fix)
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The current solution fixes three critical issues that existed in v1.1.0:
 
@@ -12,11 +12,11 @@ The current solution fixes three critical issues that existed in v1.1.0:
 2. Preview/ImageAnalysis aspect ratio mismatch
 3. Cross-capture item aggregation (NEW - not in v1.1.0)
 
-***REMOVED******REMOVED*** Detailed Comparison
+## Detailed Comparison
 
-***REMOVED******REMOVED******REMOVED*** 1. ObjectDetectorClient.kt - Bbox Normalization
+### 1. ObjectDetectorClient.kt - Bbox Normalization
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** v1.1.0 (Broken)
+#### v1.1.0 (Broken)
 
 ```kotlin
 // Used raw InputImage dimensions (wrong for rotated images)
@@ -24,7 +24,7 @@ val uprightWidth = image.width   // 1440 (sensor width)
 val uprightHeight = image.height // 1080 (sensor height)
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current (Fixed)
+#### Current (Fixed)
 
 ```kotlin
 // Swap dimensions for 90°/270° rotation to match ML Kit's rotated coordinate space
@@ -38,9 +38,9 @@ of 1080x1440), causing ~32% Y-coordinate offset.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. CameraXManager.kt - Preview/ImageAnalysis Configuration
+### 2. CameraXManager.kt - Preview/ImageAnalysis Configuration
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** v1.1.0
+#### v1.1.0
 
 ```kotlin
 // Preview: No explicit aspect ratio (CameraX auto-selects)
@@ -54,7 +54,7 @@ imageAnalysis = ImageAnalysis.Builder()
     .build()
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current (Fixed)
+#### Current (Fixed)
 
 ```kotlin
 // Preview: Explicit 4:3 aspect ratio
@@ -75,9 +75,9 @@ causing WYSIWYG violation - objects outside visible area were detected.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. ItemAggregator.kt - Timestamp Guard (NEW)
+### 3. ItemAggregator.kt - Timestamp Guard (NEW)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** v1.1.0
+#### v1.1.0
 
 ```kotlin
 private fun calculateSimilarity(detection: ScannedItem, item: AggregatedItem): Float {
@@ -89,7 +89,7 @@ private fun calculateSimilarity(detection: ScannedItem, item: AggregatedItem): F
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current (Fixed)
+#### Current (Fixed)
 
 ```kotlin
 private fun calculateSimilarity(detection: ScannedItem, item: AggregatedItem): Float {
@@ -116,7 +116,7 @@ objects appear at different positions even when centered.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. OverlayTransforms.kt - No Functional Change
+### 4. OverlayTransforms.kt - No Functional Change
 
 Both v1.1.0 and current use the same `mapBboxToPreview()` logic:
 
@@ -136,7 +136,7 @@ passed to this function.
 
 ---
 
-***REMOVED******REMOVED*** Summary Table
+## Summary Table
 
 | Component                   | v1.1.0           | Current                | Change Type   |
 |-----------------------------|------------------|------------------------|---------------|
@@ -146,7 +146,7 @@ passed to this function.
 | Aggregation timestamp guard | None             | 2-second threshold     | New feature   |
 | Overlay transform           | Correct          | Correct                | No change     |
 
-***REMOVED******REMOVED*** Why v1.1.0 "Worked" (Sort Of)
+## Why v1.1.0 "Worked" (Sort Of)
 
 In v1.1.0, the broken coordinate normalization caused bboxes to appear offset, but the system was "
 consistently wrong":
@@ -161,7 +161,7 @@ After fixing the normalization, bboxes became correct but:
 - This caused the aggregation to incorrectly merge different objects
 - The timestamp guard was added to prevent this side effect
 
-***REMOVED******REMOVED*** Files Changed Summary
+## Files Changed Summary
 
 ```
 androidApp/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt
@@ -175,7 +175,7 @@ shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ItemAggrega
   - Added timestamp guard (>2s = no merge)
 ```
 
-***REMOVED******REMOVED*** Regression Risk Assessment
+## Regression Risk Assessment
 
 | Change             | Risk   | Mitigation                                                       |
 |--------------------|--------|------------------------------------------------------------------|
@@ -183,7 +183,7 @@ shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ItemAggrega
 | Aspect ratio match | Low    | Both use 4:3; sensor native ratio                                |
 | Timestamp guard    | Medium | May prevent legitimate fast merges; 2s threshold is conservative |
 
-***REMOVED******REMOVED*** Testing Checklist
+## Testing Checklist
 
 - [ ] Portrait mode: bbox appears on object (not offset)
 - [ ] Landscape mode: bbox still works correctly

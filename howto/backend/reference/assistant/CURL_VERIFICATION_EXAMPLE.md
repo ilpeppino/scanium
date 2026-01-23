@@ -1,9 +1,9 @@
-***REMOVED*** Assistant API Curl Verification Example
+# Assistant API Curl Verification Example
 
 This document provides curl examples for verifying the `/v1/assist/chat` endpoint with multipart
 requests.
 
-***REMOVED******REMOVED*** Backend Contract
+## Backend Contract
 
 The backend expects:
 
@@ -20,17 +20,17 @@ The backend expects:
     - `exportProfile`: Optional object with `id` and `displayName`
     - `assistantPrefs`: Optional preferences object
 
-***REMOVED******REMOVED*** Example 1: Multipart Request with Images
+## Example 1: Multipart Request with Images
 
 ```bash
-***REMOVED***!/bin/bash
+#!/bin/bash
 
-***REMOVED*** Configuration
+# Configuration
 API_KEY="your-api-key-here"
 DEVICE_ID="test-device-123"
 BASE_URL="https://your-nas-url/api"
 
-***REMOVED*** Create a temporary JSON payload file
+# Create a temporary JSON payload file
 cat > /tmp/payload.json <<'EOF'
 {
   "message": "Generate a marketplace-ready listing for this item",
@@ -87,10 +87,10 @@ cat > /tmp/payload.json <<'EOF'
 }
 EOF
 
-***REMOVED*** Create a dummy image file (1x1 black pixel PNG)
+# Create a dummy image file (1x1 black pixel PNG)
 echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > /tmp/test-image.jpg
 
-***REMOVED*** Send multipart request
+# Send multipart request
 curl -X POST "${BASE_URL}/v1/assist/chat" \
   -H "X-API-Key: ${API_KEY}" \
   -H "X-Scanium-Device-Id: ${DEVICE_ID}" \
@@ -101,20 +101,20 @@ curl -X POST "${BASE_URL}/v1/assist/chat" \
   -F "itemImages[item-abc123]=@/tmp/test-image.jpg;type=image/jpeg" \
   -v
 
-***REMOVED*** Cleanup
+# Cleanup
 rm -f /tmp/payload.json /tmp/test-image.jpg
 ```
 
-***REMOVED******REMOVED*** Example 2: Multiple Images for Multiple Items
+## Example 2: Multiple Images for Multiple Items
 
 ```bash
-***REMOVED***!/bin/bash
+#!/bin/bash
 
 API_KEY="your-api-key-here"
 DEVICE_ID="test-device-456"
 BASE_URL="https://your-nas-url/api"
 
-***REMOVED*** Create payload with multiple items
+# Create payload with multiple items
 cat > /tmp/payload-multi.json <<'EOF'
 {
   "message": "Compare these items and provide listing advice",
@@ -164,12 +164,12 @@ cat > /tmp/payload-multi.json <<'EOF'
 }
 EOF
 
-***REMOVED*** Create dummy images
+# Create dummy images
 echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > /tmp/image1.jpg
 echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > /tmp/image2.jpg
 echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > /tmp/image3.jpg
 
-***REMOVED*** Send request with multiple images
+# Send request with multiple images
 curl -X POST "${BASE_URL}/v1/assist/chat" \
   -H "X-API-Key: ${API_KEY}" \
   -H "X-Scanium-Device-Id: ${DEVICE_ID}" \
@@ -181,20 +181,20 @@ curl -X POST "${BASE_URL}/v1/assist/chat" \
   -F "itemImages[item-002]=@/tmp/image3.jpg;type=image/jpeg" \
   -v
 
-***REMOVED*** Cleanup
+# Cleanup
 rm -f /tmp/payload-multi.json /tmp/image1.jpg /tmp/image2.jpg /tmp/image3.jpg
 ```
 
-***REMOVED******REMOVED*** Example 3: With Conversation History
+## Example 3: With Conversation History
 
 ```bash
-***REMOVED***!/bin/bash
+#!/bin/bash
 
 API_KEY="your-api-key-here"
 DEVICE_ID="test-device-789"
 BASE_URL="https://your-nas-url/api"
 
-***REMOVED*** Create payload with conversation history
+# Create payload with conversation history
 cat > /tmp/payload-history.json <<'EOF'
 {
   "message": "Can you make the title more catchy?",
@@ -245,7 +245,7 @@ cat > /tmp/payload-history.json <<'EOF'
 }
 EOF
 
-***REMOVED*** Send request
+# Send request
 curl -X POST "${BASE_URL}/v1/assist/chat" \
   -H "X-API-Key: ${API_KEY}" \
   -H "X-Scanium-Device-Id: ${DEVICE_ID}" \
@@ -254,13 +254,13 @@ curl -X POST "${BASE_URL}/v1/assist/chat" \
   -F "payload=<./payload-history.json" \
   -v
 
-***REMOVED*** Cleanup
+# Cleanup
 rm -f /tmp/payload-history.json
 ```
 
-***REMOVED******REMOVED*** Expected Responses
+## Expected Responses
 
-***REMOVED******REMOVED******REMOVED*** Success (200 OK)
+### Success (200 OK)
 
 ```json
 {
@@ -307,7 +307,7 @@ rm -f /tmp/payload-history.json
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Validation Error (400 Bad Request)
+### Validation Error (400 Bad Request)
 
 ```json
 {
@@ -331,7 +331,7 @@ rm -f /tmp/payload-history.json
 }
 ```
 
-***REMOVED******REMOVED*** Common Validation Errors
+## Common Validation Errors
 
 1. **Missing itemId**:
    ```
@@ -353,18 +353,18 @@ rm -f /tmp/payload-history.json
    Error: Missing payload field in multipart request
    ```
 
-***REMOVED******REMOVED*** NAS Verification
+## NAS Verification
 
 To verify the backend is working correctly:
 
 ```bash
-***REMOVED*** SSH into NAS
+# SSH into NAS
 ssh nas "docker exec scanium-backend-prod node dist/cli.js health"
 
-***REMOVED*** Check backend logs
+# Check backend logs
 ssh nas "docker logs -f --tail 50 scanium-backend-prod | grep assist"
 
-***REMOVED*** Test with actual image
+# Test with actual image
 curl -X POST "https://your-nas-url/api/v1/assist/chat" \
   -H "X-API-Key: your-key" \
   -H "X-Scanium-Device-Id: test-device" \
@@ -373,9 +373,9 @@ curl -X POST "https://your-nas-url/api/v1/assist/chat" \
   2>&1 | grep -E "(HTTP|error|reply)"
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Issue: 400 VALIDATION_ERROR
+### Issue: 400 VALIDATION_ERROR
 
 **Check:**
 
@@ -384,21 +384,21 @@ curl -X POST "https://your-nas-url/api/v1/assist/chat" \
 3. Ensure history roles are valid (USER, ASSISTANT, SYSTEM)
 4. Ensure multipart has `payload` field
 
-***REMOVED******REMOVED******REMOVED*** Issue: 401 UNAUTHORIZED
+### Issue: 401 UNAUTHORIZED
 
 **Check:**
 
 1. `X-API-Key` header is present and valid
 2. API key matches backend configuration
 
-***REMOVED******REMOVED******REMOVED*** Issue: 429 RATE_LIMITED
+### Issue: 429 RATE_LIMITED
 
 **Check:**
 
 1. Device/IP rate limits not exceeded
 2. Wait for `Retry-After` seconds before retrying
 
-***REMOVED******REMOVED******REMOVED*** Issue: Image not processed
+### Issue: Image not processed
 
 **Check:**
 

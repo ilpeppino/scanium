@@ -1,13 +1,13 @@
-***REMOVED*** Release Freeze: main Branch
+# Release Freeze: main Branch
 
 **Effective:** January 20, 2026
 **Release:** v1.6.0 (Build 100016)
 
-***REMOVED******REMOVED*** Freeze Status
+## Freeze Status
 
 The `main` branch is now **FROZEN** for the v1.6.0 production release.
 
-***REMOVED******REMOVED*** Release Commit
+## Release Commit
 
 | Property | Value     |
 |----------|-----------|
@@ -16,7 +16,7 @@ The `main` branch is now **FROZEN** for the v1.6.0 production release.
 | Branch   | `main`    |
 | Build    | 100016    |
 
-***REMOVED******REMOVED*** Artifact Location
+## Artifact Location
 
 ```
 androidApp/build/outputs/bundle/prodRelease/androidApp-prod-release.aab
@@ -26,75 +26,75 @@ androidApp/build/outputs/bundle/prodRelease/androidApp-prod-release.aab
 - Signed: SHA256withRSA (Giuseppe Tempone)
 - Certificate valid: 2026-01-05 to 2050-12-30
 
-***REMOVED******REMOVED*** Rebuild Instructions
+## Rebuild Instructions
 
 ```bash
-***REMOVED*** Option 1: Using automated build script (recommended)
+# Option 1: Using automated build script (recommended)
 git checkout v1.6.0
 ./scripts/dev/build_release_aab.sh prod --version-name 1.6.0 --skip-increment
 
-***REMOVED*** Option 2: Manual build with Gradle
-***REMOVED*** 1. Checkout the release tag
+# Option 2: Manual build with Gradle
+# 1. Checkout the release tag
 git checkout v1.6.0
 
-***REMOVED*** 2. Ensure local.properties has correct version
+# 2. Ensure local.properties has correct version
 cat >> local.properties << 'EOF'
 scanium.version.code=100016
 scanium.version.name=1.6.0
 EOF
 
-***REMOVED*** 3. Clean and build
+# 3. Clean and build
 ./gradlew clean test bundleRelease
 
-***REMOVED*** 4. Verify artifact
+# 4. Verify artifact
 ls -la androidApp/build/outputs/bundle/prodRelease/androidApp-prod-release.aab
 ```
 
-***REMOVED******REMOVED*** Rollback Procedure
+## Rollback Procedure
 
-***REMOVED******REMOVED******REMOVED*** Halt Current Rollout
+### Halt Current Rollout
 
 1. Go to Google Play Console > Release > Production
 2. Click "Halt rollout"
 3. Confirm halt
 
-***REMOVED******REMOVED******REMOVED*** Promote Previous Version
+### Promote Previous Version
 
 1. Go to Release history
 2. Find previous stable release (v1.3.1 or earlier)
 3. Create new release with that artifact
 4. Set rollout percentage to 100%
 
-***REMOVED******REMOVED******REMOVED*** Hotfix Procedure
+### Hotfix Procedure
 
 **NEVER commit directly to main during freeze.**
 
 ```bash
-***REMOVED*** 1. Create hotfix branch from release tag
+# 1. Create hotfix branch from release tag
 git checkout -b hotfix/v1.6.1 v1.6.0
 
-***REMOVED*** 2. Make minimal fix
-***REMOVED*** ... edit files ...
+# 2. Make minimal fix
+# ... edit files ...
 
-***REMOVED*** 3. Test thoroughly
+# 3. Test thoroughly
 ./gradlew test
 
-***REMOVED*** 4. Bump version in local.properties and version.properties
-***REMOVED*** scanium.version.code=100017
-***REMOVED*** scanium.version.name=1.6.1
+# 4. Bump version in local.properties and version.properties
+# scanium.version.code=100017
+# scanium.version.name=1.6.1
 
-***REMOVED*** 5. Build and verify
+# 5. Build and verify
 ./gradlew bundleRelease
 
-***REMOVED*** 6. Create PR for review (do NOT push directly)
+# 6. Create PR for review (do NOT push directly)
 git push -u origin hotfix/v1.6.1
 gh pr create --title "Hotfix v1.6.1: [description]" --body "..."
 
-***REMOVED*** 7. After review and approval, merge to main
-***REMOVED*** 8. Tag and release
+# 7. After review and approval, merge to main
+# 8. Tag and release
 ```
 
-***REMOVED******REMOVED*** Branch Policy (Post-Freeze)
+## Branch Policy (Post-Freeze)
 
 | Branch      | Purpose                      | Direct Push |
 |-------------|------------------------------|-------------|
@@ -103,11 +103,11 @@ gh pr create --title "Hotfix v1.6.1: [description]" --body "..."
 | `hotfix/*`  | Critical fixes only          | Via PR      |
 | `feature/*` | New development              | Via PR      |
 
-***REMOVED******REMOVED*** Recommended Repository Guardrails
+## Recommended Repository Guardrails
 
 Configure in GitHub Settings > Branches > Branch protection rules:
 
-***REMOVED******REMOVED******REMOVED*** For `main` branch:
+### For `main` branch:
 
 - [x] Require pull request before merging
 - [x] Require approvals (1+)
@@ -117,19 +117,19 @@ Configure in GitHub Settings > Branches > Branch protection rules:
 - [x] Restrict force pushes
 - [x] Restrict deletions
 
-***REMOVED******REMOVED*** Experimental Work
+## Experimental Work
 
 All new development should happen on feature branches:
 
 ```bash
-***REMOVED*** For eBay integration work
+# For eBay integration work
 git checkout ebay
 
-***REMOVED*** For new features
+# For new features
 git checkout -b feature/my-feature main
 ```
 
-***REMOVED******REMOVED*** Contact
+## Contact
 
 Release manager: Giuseppe Tempone
 Repository: github.com/ilpeppino/scanium

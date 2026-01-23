@@ -1,16 +1,16 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** Portable build script for Scanium that works across all platforms
-***REMOVED*** Automatically finds and uses Java 17 for building
+#!/usr/bin/env bash
+# Portable build script for Scanium that works across all platforms
+# Automatically finds and uses Java 17 for building
 
-set -euo pipefail  ***REMOVED*** Exit on error, undefined var, or pipeline failure
+set -euo pipefail  # Exit on error, undefined var, or pipeline failure
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$REPO_ROOT"
 
-***REMOVED*** Function to find Java 17 on different platforms
+# Function to find Java 17 on different platforms
 find_java17() {
-    ***REMOVED*** Try macOS java_home utility
+    # Try macOS java_home utility
     if command -v /usr/libexec/java_home &> /dev/null; then
         JAVA17=$(/usr/libexec/java_home -v 17 2>/dev/null || echo "")
         if [ -n "$JAVA17" ] && [ -x "$JAVA17/bin/java" ]; then
@@ -19,7 +19,7 @@ find_java17() {
         fi
     fi
 
-    ***REMOVED*** Try common Linux paths - verify bin/java exists and is executable
+    # Try common Linux paths - verify bin/java exists and is executable
     for path in /usr/lib/jvm/java-17-* /usr/lib/jvm/jdk-17* /opt/java/jdk-17*; do
         if [ -d "$path" ] && [ -x "$path/bin/java" ]; then
             echo "$path"
@@ -27,7 +27,7 @@ find_java17() {
         fi
     done
 
-    ***REMOVED*** Try SDKMAN
+    # Try SDKMAN
     if [ -n "$SDKMAN_DIR" ] && [ -d "$SDKMAN_DIR/candidates/java" ]; then
         for path in "$SDKMAN_DIR/candidates/java"/17*; do
             if [ -d "$path" ] && [ -x "$path/bin/java" ]; then
@@ -37,7 +37,7 @@ find_java17() {
         done
     fi
 
-    ***REMOVED*** Try mise
+    # Try mise
     if command -v mise &> /dev/null; then
         MISE_JAVA=$(mise where java@17 2>/dev/null || echo "")
         if [ -n "$MISE_JAVA" ] && [ -x "$MISE_JAVA/bin/java" ]; then
@@ -46,18 +46,18 @@ find_java17() {
         fi
     fi
 
-    ***REMOVED*** Not found
+    # Not found
     return 1
 }
 
 echo "🔍 Looking for Java 17..."
 
-***REMOVED*** Find Java 17
+# Find Java 17
 if JAVA17_HOME=$(find_java17); then
     echo "✅ Found Java 17 at: $JAVA17_HOME"
     export JAVA_HOME="$JAVA17_HOME"
 
-    ***REMOVED*** Verify Java version
+    # Verify Java version
     echo "☕ Using Java: $("$JAVA_HOME/bin/java" -version 2>&1 | head -n 1)"
 else
     echo "❌ Java 17 not found!"
@@ -72,7 +72,7 @@ else
     exit 1
 fi
 
-***REMOVED*** Run Gradle command
+# Run Gradle command
 echo "🔨 Building Scanium..."
 ./gradlew "$@"
 

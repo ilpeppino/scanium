@@ -32,24 +32,24 @@ import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
  * - ClassificationTelemetry: Manages spans, metrics, and error tracking
  * - CloudClassifier: Coordinates API calls, telemetry, and result conversion
  *
- * ***REMOVED******REMOVED*** Privacy
+ * ## Privacy
  * - Only uploads cropped item thumbnails (not full frames)
  * - Strips EXIF metadata by re-compressing to JPEG
  * - No location or device information sent
  *
- * ***REMOVED******REMOVED*** API Contract
+ * ## API Contract
  * - Endpoint: POST {SCANIUM_API_BASE_URL}/v1/classify
  * - Request: multipart/form-data
  *   - `image`: JPEG file (cropped item)
  *   - `domainPackId`: string (default: "home_resale")
  * - Response: JSON (see CloudClassificationResponse in CloudClassifierApi)
  *
- * ***REMOVED******REMOVED*** Error Handling
+ * ## Error Handling
  * - Retryable: 408, 429, 5xx, network I/O errors
  * - Non-retryable: 400, 401, 403, 404
  * - Timeouts: 10s connect, 30s read, 30s write (aligned Phase 3 policy)
  *
- * ***REMOVED******REMOVED*** Configuration
+ * ## Configuration
  * Set in local.properties (not committed):
  * ```
  * scanium.api.base.url=https://your-backend.com/api/v1

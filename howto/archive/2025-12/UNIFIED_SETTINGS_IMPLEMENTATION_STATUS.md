@@ -1,8 +1,8 @@
-***REMOVED*** Unified "Primary Region & Language" Settings - Implementation Status
+# Unified "Primary Region & Language" Settings - Implementation Status
 
-***REMOVED******REMOVED*** ✅ COMPLETED: Core Data Model & Backend (Phase 1)
+## ✅ COMPLETED: Core Data Model & Backend (Phase 1)
 
-***REMOVED******REMOVED******REMOVED*** 1. Data Models Created
+### 1. Data Models Created
 
 **File:** `androidApp/src/main/java/com/scanium/app/model/UnifiedSettings.kt`
 
@@ -11,11 +11,11 @@
 - ✅ `TtsLanguageChoice` sealed class - Follow AI, follow primary, or custom for TTS
 - ✅ `UnifiedSettingsState` data class - Complete settings state representation
 
-***REMOVED******REMOVED******REMOVED*** 2. SettingsRepository Enhanced
+### 2. SettingsRepository Enhanced
 
 **File:** `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** New Preference Keys
+#### New Preference Keys
 
 - ✅ Schema version tracking (`SETTINGS_SCHEMA_VERSION_KEY`)
 - ✅ Primary region country (`PRIMARY_REGION_COUNTRY_KEY`)
@@ -26,7 +26,7 @@
 - ✅ TTS language setting (`TTS_LANGUAGE_SETTING_KEY`)
 - ✅ Last detected spoken language (`LAST_DETECTED_SPOKEN_LANGUAGE_KEY`)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Migration Logic (Lines 945-1025)
+#### Migration Logic (Lines 945-1025)
 
 - ✅ `runMigrationIfNeeded()` - Automatic migration on app start
 - ✅ `migrateToUnifiedSettings()` - Preserves existing user preferences:
@@ -36,7 +36,7 @@
     - Defaults new installs to "Follow primary" for clean UX
     - Logs migration for debugging
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** New Flows & Setters (Lines 1027-1134)
+#### New Flows & Setters (Lines 1027-1134)
 
 - ✅ `primaryRegionCountryFlow` / `setPrimaryRegionCountry()`
 - ✅ `primaryLanguageFlow` / `setPrimaryLanguage()`
@@ -46,28 +46,28 @@
 - ✅ `ttsLanguageSettingFlow` / `setTtsLanguageSetting()`
 - ✅ `lastDetectedSpokenLanguageFlow` / `setLastDetectedSpokenLanguage()`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Effective Value Resolvers (Lines 1136-1189)
+#### Effective Value Resolvers (Lines 1136-1189)
 
 - ✅ `effectiveAppLanguageFlow` - Resolves app language from primary + override
 - ✅ `effectiveAiOutputLanguageFlow` - Resolves AI language (with AutoDetect support)
 - ✅ `effectiveMarketplaceCountryFlow` - Resolves marketplace country
 - ✅ `effectiveTtsLanguageFlow` - Resolves TTS language (Follow AI / Follow Primary / Custom)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Serialization Helpers (Lines 1191-1252)
+#### Serialization Helpers (Lines 1191-1252)
 
 - ✅ Parse/serialize functions for all override types
 - ✅ Safe string encoding for DataStore storage
 
-***REMOVED******REMOVED******REMOVED*** 3. SettingsViewModel Enhanced
+### 3. SettingsViewModel Enhanced
 
 **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** New StateFlows (Lines 409-454)
+#### New StateFlows (Lines 409-454)
 
 - ✅ Exposes all primary, override, and effective value flows as StateFlows
 - ✅ Ready for UI consumption with proper coroutine scoping
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** New Setters (Lines 456-513)
+#### New Setters (Lines 456-513)
 
 - ✅ `setPrimaryRegionCountry()` / `setPrimaryLanguage()`
 - ✅ `setAppLanguageSetting()` - Also updates AppCompatDelegate for immediate UI effect
@@ -75,7 +75,7 @@
 - ✅ `setLastDetectedSpokenLanguage()` - For AutoDetect fallback
 - ✅ `setPrimaryRegionAndLanguage()` - Helper to set both at once
 
-***REMOVED******REMOVED******REMOVED*** 4. TTS Manager Created
+### 4. TTS Manager Created
 
 **File:** `androidApp/src/main/java/com/scanium/app/assistant/tts/TtsManager.kt`
 
@@ -88,11 +88,11 @@
 
 ---
 
-***REMOVED******REMOVED*** ⏳ TODO: UI Implementation (Phase 2)
+## ⏳ TODO: UI Implementation (Phase 2)
 
-***REMOVED******REMOVED******REMOVED*** 5. Settings UI Updates Required
+### 5. Settings UI Updates Required
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. SettingsGeneralScreen
+#### A. SettingsGeneralScreen
 
 **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsGeneralScreen.kt`
 
@@ -124,7 +124,7 @@
    )
    ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. SettingsAssistantScreen
+#### B. SettingsAssistantScreen
 
 **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsAssistantScreen.kt`
 
@@ -176,9 +176,9 @@
    )
    ```
 
-***REMOVED******REMOVED******REMOVED*** 6. TTS Controller Integration Required
+### 6. TTS Controller Integration Required
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Update TtsController Usage Sites
+#### Update TtsController Usage Sites
 
 **Files to update:**
 
@@ -197,7 +197,7 @@ val tts = remember { TtsController(context) }
 // Use ttsManager.speak(text) instead of tts.speakOnce(text)
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Update VoiceController
+#### Update VoiceController
 
 **File:** `androidApp/src/main/java/com/scanium/app/voice/VoiceController.kt`
 
@@ -222,7 +222,7 @@ LaunchedEffect(effectiveTtsLanguage) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 7. String Resources Required
+### 7. String Resources Required
 
 **File:** `androidApp/src/main/res/values/strings.xml` (and translations)
 
@@ -257,9 +257,9 @@ LaunchedEffect(effectiveTtsLanguage) {
 
 ---
 
-***REMOVED******REMOVED*** 🔬 Testing Checklist
+## 🔬 Testing Checklist
 
-***REMOVED******REMOVED******REMOVED*** Fresh Install Tests
+### Fresh Install Tests
 
 - [ ] Default state: Region & language set from system
 - [ ] App language defaults to "Follow primary"
@@ -267,14 +267,14 @@ LaunchedEffect(effectiveTtsLanguage) {
 - [ ] Marketplace country defaults to "Follow primary"
 - [ ] TTS defaults to "Follow AI language"
 
-***REMOVED******REMOVED******REMOVED*** Change Primary Language Test
+### Change Primary Language Test
 
 - [ ] Change primary language to Italian
 - [ ] Verify app UI becomes Italian (if app language follows primary)
 - [ ] Verify AI language follows Italian
 - [ ] Verify TTS speaks Italian (or shows fallback message)
 
-***REMOVED******REMOVED******REMOVED*** Custom Override Tests
+### Custom Override Tests
 
 - [ ] Set AI language to Custom French
     - [ ] AI uses French
@@ -286,7 +286,7 @@ LaunchedEffect(effectiveTtsLanguage) {
     - [ ] Primary language unchanged
     - [ ] AI language still follows primary (if not customized)
 
-***REMOVED******REMOVED******REMOVED*** Migration Test (Existing Install)
+### Migration Test (Existing Install)
 
 - [ ] Install version WITHOUT unified settings, set:
     - App language = Italian
@@ -297,13 +297,13 @@ LaunchedEffect(effectiveTtsLanguage) {
 - [ ] Verify migration preserves all settings as Custom overrides
 - [ ] Verify no crashes or data loss
 
-***REMOVED******REMOVED******REMOVED*** Missing Voice Package Test
+### Missing Voice Package Test
 
 - [ ] Set TTS to a language with no voice data installed
 - [ ] Verify graceful fallback to English or device default
 - [ ] Verify user-friendly message shown (non-blocking)
 
-***REMOVED******REMOVED******REMOVED*** Build Tests
+### Build Tests
 
 - [x] `./gradlew :androidApp:assembleDevDebug` - PASSED ✓
 - [ ] `./gradlew :androidApp:assembleBetaDebug`
@@ -311,28 +311,28 @@ LaunchedEffect(effectiveTtsLanguage) {
 
 ---
 
-***REMOVED******REMOVED*** 📐 Architecture Decisions
+## 📐 Architecture Decisions
 
-***REMOVED******REMOVED******REMOVED*** Why FollowOrCustom<T> Pattern?
+### Why FollowOrCustom<T> Pattern?
 
 - Type-safe representation of "use default" vs "use override"
 - Prevents null confusion (null = missing vs null = intentionally blank)
 - Extensible for future settings
 
-***REMOVED******REMOVED******REMOVED*** Why Separate TTS Language Setting?
+### Why Separate TTS Language Setting?
 
 - TTS output language often differs from AI input language (auto-detect)
 - Users may want AI to detect speech language but speak answers in native language
 - Provides flexibility: Follow AI (for consistency) vs Follow Primary (for comfort)
 
-***REMOVED******REMOVED******REMOVED*** Why Effective Value Resolvers?
+### Why Effective Value Resolvers?
 
 - Single source of truth for all consumers (UI, AI, TTS, etc.)
 - Settings complexity hidden behind simple `effectiveXxx()` accessors
 - Easier to test and reason about
 - No duplication of resolution logic
 
-***REMOVED******REMOVED******REMOVED*** Migration Strategy
+### Migration Strategy
 
 - Version-gated with schema version tracking
 - Preserves user intent: explicit choices → Custom, defaults → Follow
@@ -341,7 +341,7 @@ LaunchedEffect(effectiveTtsLanguage) {
 
 ---
 
-***REMOVED******REMOVED*** 🚀 Quick Start for Completing Implementation
+## 🚀 Quick Start for Completing Implementation
 
 1. **Update Settings UI** (2-3 hours):
     - Add Primary Region & Language picker (custom bottom sheet or navigation)
@@ -369,7 +369,7 @@ LaunchedEffect(effectiveTtsLanguage) {
 
 ---
 
-***REMOVED******REMOVED*** 📝 Notes
+## 📝 Notes
 
 - The migration logic is **defensive**: existing user settings are preserved as Custom overrides
 - New users get a **clean "Follow primary" experience** with one setting to rule them all
@@ -379,7 +379,7 @@ LaunchedEffect(effectiveTtsLanguage) {
 
 ---
 
-***REMOVED******REMOVED*** 🎯 Success Criteria
+## 🎯 Success Criteria
 
 - [x] No data loss during migration
 - [x] Builds successfully without errors

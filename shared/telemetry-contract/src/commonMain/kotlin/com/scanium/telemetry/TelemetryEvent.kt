@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
  * All events must follow the naming conventions defined in [TelemetryEventNaming].
  * All attributes are sanitized by [AttributeSanitizer] to ensure PII safety.
  *
- * ***REMOVED******REMOVED*** Required Attributes
+ * ## Required Attributes
  * Events must include these required attributes:
  * - `platform`: "android" or "ios"
  * - `app_version`: Semantic version (e.g., "1.2.3")
@@ -19,10 +19,10 @@ import kotlinx.serialization.Serializable
  * - `session_id`: Unique session identifier
  * - `data_region`: Data residency region ("EU", "US")
  *
- * ***REMOVED******REMOVED*** Optional Attributes
+ * ## Optional Attributes
  * - `trace_id`: Distributed tracing identifier (for correlating events)
  *
- * ***REMOVED******REMOVED*** Example
+ * ## Example
  * ```kotlin
  * val event = TelemetryEvent(
  *     name = "scan.completed",

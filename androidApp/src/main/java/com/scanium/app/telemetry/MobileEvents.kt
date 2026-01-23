@@ -9,7 +9,7 @@ import com.scanium.telemetry.facade.Telemetry
  * using the OTLP Telemetry facade. Events are sent directly to Grafana Alloy on the
  * NAS, which then forwards them to Loki with appropriate labels.
  *
- * ***REMOVED******REMOVED*** Event Naming Convention
+ * ## Event Naming Convention
  * Events follow the pattern: `<domain>.<action>`
  * - app.*: Application lifecycle events
  * - scan.*: Scanning workflow events
@@ -17,7 +17,7 @@ import com.scanium.telemetry.facade.Telemetry
  * - ai.*: AI assistant events
  * - error.*: Error and exception events
  *
- * ***REMOVED******REMOVED*** Dashboard Integration
+ * ## Dashboard Integration
  * Events are designed to populate the "Scanium - Mobile App Health" dashboard
  * with metrics like:
  * - App launches and session counts
@@ -25,14 +25,14 @@ import com.scanium.telemetry.facade.Telemetry
  * - Feature usage (AI, sharing)
  * - Error rates and types
  *
- * ***REMOVED******REMOVED*** Privacy & PII
+ * ## Privacy & PII
  * All events are automatically sanitized by the Telemetry facade to ensure:
  * - No user-generated content (names, prompts, responses)
  * - No device identifiers (IMEI, Android ID)
  * - No location data (GPS, IP)
  * - Session IDs are random UUIDs per app launch
  *
- * ***REMOVED******REMOVED*** Usage Example
+ * ## Usage Example
  * ```kotlin
  * // In your Activity or ViewModel
  * val app = context.applicationContext as ScaniumApplication

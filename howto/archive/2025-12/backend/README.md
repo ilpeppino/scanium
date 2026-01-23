@@ -1,13 +1,13 @@
 > Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
 > state.
 
-***REMOVED*** Scanium Backend – Vision Proxy
+# Scanium Backend – Vision Proxy
 
 Cloud classification proxy for Scanium mobile apps. Provides `/v1/classify` that forwards images to
 Google Cloud Vision (or deterministic mock), maps signals to Scanium’s domain pack, and returns a
 normalized payload. Images are processed **in-memory only** and EXIF is stripped on ingestion.
 
-***REMOVED******REMOVED*** What it ships
+## What it ships
 
 - `GET /health` – liveness with version
 - `POST /v1/classify` – multipart image → Vision/mock → domain category/attributes
@@ -18,26 +18,26 @@ normalized payload. Images are processed **in-memory only** and EXIF is stripped
 - Request size guard (default 5 MB) and EXIF stripping via in-memory re-encode
 - Legacy eBay OAuth routes remain available under `/auth/ebay/*` for future listing flows
 
-***REMOVED******REMOVED*** Quickstart (mock mode)
+## Quickstart (mock mode)
 
 ```bash
 cd backend
 npm install
 cp .env.example .env
-***REMOVED*** set SCANIUM_API_KEYS=dev-key
+# set SCANIUM_API_KEYS=dev-key
 npm run dev
 
-***REMOVED*** Test health
+# Test health
 curl http://localhost:8080/health
 
-***REMOVED*** Classify (mock)
+# Classify (mock)
 curl -X POST http://localhost:8080/v1/classify \
   -H "X-API-Key: dev-key" \
   -F "image=@fixtures/chair.jpg" \
   -F "domainPackId=home_resale"
 ```
 
-***REMOVED******REMOVED*** Google Vision mode
+## Google Vision mode
 
 Set in `.env`:
 
@@ -45,12 +45,12 @@ Set in `.env`:
 SCANIUM_CLASSIFIER_PROVIDER=google
 SCANIUM_API_KEYS=your-key
 GOOGLE_APPLICATION_CREDENTIALS=/secrets/vision-sa.json
-VISION_FEATURE=LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES   ***REMOVED*** CSV supported
+VISION_FEATURE=LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES   # CSV supported
 ```
 
 Run: `npm run build && npm start`
 
-***REMOVED******REMOVED*** Environment variables (required unless noted)
+## Environment variables (required unless noted)
 
 - `SCANIUM_API_KEYS` – comma-separated API keys for `X-API-Key`
 - `SCANIUM_CLASSIFIER_PROVIDER` – `mock` (default) | `google`
@@ -65,7 +65,7 @@ Run: `npm run build && npm start`
 - `SESSION_SIGNING_SECRET` – required for Fastify cookies
 - `PUBLIC_BASE_URL`, `DATABASE_URL`, `EBAY_*`, `CORS_ORIGINS` – kept for legacy eBay auth endpoints
 
-***REMOVED******REMOVED*** API reference (classifier)
+## API reference (classifier)
 
 **POST /v1/classify**
 
@@ -82,7 +82,7 @@ Run: `npm run build && npm start`
   "confidence": 0.82,
   "attributes": {"segment": "seating"},
   "visionAttributes": {
-    "colors": [{"name": "red", "hex": "***REMOVED***FF0000", "score": 0.62}],
+    "colors": [{"name": "red", "hex": "#FF0000", "score": 0.62}],
     "ocrText": "IKEA KALLAX",
     "logos": [{"name": "IKEA", "score": 0.88}],
     "brandCandidates": ["IKEA"],
@@ -103,15 +103,15 @@ Run: `npm run build && npm start`
 { "status": "ok", "ts": "2024-01-01T00:00:00Z", "version": "1.0.0" }
 ```
 
-***REMOVED******REMOVED*** Build, test, and lint
+## Build, test, and lint
 
 ```bash
-npm test          ***REMOVED*** vitest (mock mode, includes request validation + mapper)
-npm run build     ***REMOVED*** tsc
-npm run start     ***REMOVED*** runs dist/main.js
+npm test          # vitest (mock mode, includes request validation + mapper)
+npm run build     # tsc
+npm run start     # runs dist/main.js
 ```
 
-***REMOVED******REMOVED*** Docker (NAS-friendly)
+## Docker (NAS-friendly)
 
 ```bash
 docker build -t scanium-backend .
@@ -122,14 +122,14 @@ docker-compose up -d
 - API key + rate limit enforced; images never persisted
 - Cloudflare Tunnel supported via `cloudflared` service in compose
 
-***REMOVED******REMOVED*** Deployment notes
+## Deployment notes
 
 - Run behind Cloudflare Tunnel; keep `/v1/classify` private via API key
 - Use Service Account credentials mounted at `GOOGLE_APPLICATION_CREDENTIALS`
 - Only one Vision feature enabled by default to control cost; change via `VISION_FEATURE`
 - Logs (pino) include `requestId`, provider, timings; raw images are never logged
 
-***REMOVED******REMOVED*** Legacy eBay flow
+## Legacy eBay flow
 
 Routes under `/auth/ebay/*` stay intact; Postgres/Prisma remain in the stack for future listing
 work. They do not block classifier startup when unused.
@@ -137,7 +137,7 @@ work. They do not block classifier startup when unused.
 - Go to **User Tokens > Get a Token from eBay**
 - Add redirect URL: `https://api.yourdomain.com/auth/ebay/callback`
 
-***REMOVED******REMOVED******REMOVED*** Step 5: Configure eBay Scopes
+### Step 5: Configure eBay Scopes
 
 Add required scopes to `.env`:
 
@@ -154,7 +154,7 @@ EBAY_SCOPES=https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_
 
 Find all scopes: [eBay OAuth Scopes](https://developer.ebay.com/api-docs/static/oauth-scopes.html)
 
-***REMOVED******REMOVED******REMOVED*** Step 6: Deploy on Synology NAS
+### Step 6: Deploy on Synology NAS
 
 1. **Upload backend folder** to NAS (via File Station or SSH)
 
@@ -171,35 +171,35 @@ Find all scopes: [eBay OAuth Scopes](https://developer.ebay.com/api-docs/static/
 
 5. **Start Project**:
    ```bash
-   ***REMOVED*** Via UI: Click "Start"
-   ***REMOVED*** OR via SSH:
+   # Via UI: Click "Start"
+   # OR via SSH:
    cd /path/to/backend
    docker-compose up -d
    ```
 
 6. **Run Database Migrations**:
    ```bash
-   ***REMOVED*** Connect to API container
+   # Connect to API container
    docker exec -it scanium-api sh
 
-   ***REMOVED*** Run migrations
+   # Run migrations
    npx prisma migrate deploy
    ```
 
-***REMOVED******REMOVED******REMOVED*** Step 7: Verify Deployment
+### Step 7: Verify Deployment
 
 ```bash
-***REMOVED*** Check health
+# Check health
 curl https://api.yourdomain.com/healthz
 
-***REMOVED*** Check readiness (DB connectivity)
+# Check readiness (DB connectivity)
 curl https://api.yourdomain.com/readyz
 
-***REMOVED*** Check eBay connection status
+# Check eBay connection status
 curl https://api.yourdomain.com/auth/ebay/status
 ```
 
-***REMOVED******REMOVED*** 🔐 Security Checklist
+## 🔐 Security Checklist
 
 - [ ] Strong `SESSION_SIGNING_SECRET` (min 64 chars, random)
 - [ ] Strong `POSTGRES_PASSWORD`
@@ -210,44 +210,44 @@ curl https://api.yourdomain.com/auth/ebay/status
 - [ ] CORS origins restricted to app scheme + trusted domains
 - [ ] Firewall rules on NAS (block direct access to ports)
 
-***REMOVED******REMOVED*** 📊 Database Management
+## 📊 Database Management
 
-***REMOVED******REMOVED******REMOVED*** View data:
+### View data:
 
 ```bash
 npm run prisma:studio
 ```
 
-***REMOVED******REMOVED******REMOVED*** Create migration:
+### Create migration:
 
 ```bash
 npm run prisma:migrate
 ```
 
-***REMOVED******REMOVED******REMOVED*** Deploy migrations (production):
+### Deploy migrations (production):
 
 ```bash
 docker exec -it scanium-api npx prisma migrate deploy
 ```
 
-***REMOVED******REMOVED*** 🧪 Available Scripts
+## 🧪 Available Scripts
 
 ```bash
-npm run dev           ***REMOVED*** Start dev server with hot reload
-npm run build         ***REMOVED*** Build TypeScript to dist/
-npm run start         ***REMOVED*** Run built application
-npm run lint          ***REMOVED*** Lint TypeScript
-npm run format        ***REMOVED*** Format code with Prettier
-npm run typecheck     ***REMOVED*** Type check without building
-npm run prisma:generate  ***REMOVED*** Generate Prisma client
-npm run prisma:migrate   ***REMOVED*** Run migrations (dev)
-npm run prisma:deploy    ***REMOVED*** Deploy migrations (prod)
-npm run prisma:studio    ***REMOVED*** Open Prisma Studio (DB GUI)
-npm run test          ***REMOVED*** Run tests
-npm run test:watch    ***REMOVED*** Run tests in watch mode
+npm run dev           # Start dev server with hot reload
+npm run build         # Build TypeScript to dist/
+npm run start         # Run built application
+npm run lint          # Lint TypeScript
+npm run format        # Format code with Prettier
+npm run typecheck     # Type check without building
+npm run prisma:generate  # Generate Prisma client
+npm run prisma:migrate   # Run migrations (dev)
+npm run prisma:deploy    # Deploy migrations (prod)
+npm run prisma:studio    # Open Prisma Studio (DB GUI)
+npm run test          # Run tests
+npm run test:watch    # Run tests in watch mode
 ```
 
-***REMOVED******REMOVED*** 🔧 Configuration Reference
+## 🔧 Configuration Reference
 
 See `.env.example` for all environment variables.
 
@@ -272,9 +272,9 @@ See `.env.example` for all environment variables.
 - `POSTGRES_PASSWORD`
 - `POSTGRES_DB`
 
-***REMOVED******REMOVED*** 📱 Mobile App Integration
+## 📱 Mobile App Integration
 
-***REMOVED******REMOVED******REMOVED*** eBay OAuth Flow
+### eBay OAuth Flow
 
 1. **User taps "Connect eBay" in app**
 2. App calls `POST /auth/ebay/start`
@@ -287,7 +287,7 @@ See `.env.example` for all environment variables.
 
 See `src/modules/auth/ebay/README.md` for detailed API documentation.
 
-***REMOVED******REMOVED*** 🚧 Future Enhancements
+## 🚧 Future Enhancements
 
 - [ ] Token refresh logic (automatic renewal)
 - [ ] Multi-user authentication (replace default user)
@@ -300,9 +300,9 @@ See `src/modules/auth/ebay/README.md` for detailed API documentation.
 - [ ] Rate limiting
 - [ ] API versioning
 
-***REMOVED******REMOVED*** 🐛 Troubleshooting
+## 🐛 Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Database connection failed
+### Database connection failed
 
 Check `DATABASE_URL` and ensure PostgreSQL is running:
 
@@ -311,25 +311,25 @@ docker-compose ps postgres
 docker-compose logs postgres
 ```
 
-***REMOVED******REMOVED******REMOVED*** OAuth state mismatch
+### OAuth state mismatch
 
 - Clear cookies and retry
 - Ensure `PUBLIC_BASE_URL` matches the actual URL
 - Check that cookies are enabled in browser
 
-***REMOVED******REMOVED******REMOVED*** Cloudflare Tunnel not connecting
+### Cloudflare Tunnel not connecting
 
 - Verify `CLOUDFLARED_TOKEN` is correct
 - Check tunnel status in Cloudflare Dashboard
 - View logs: `docker-compose logs cloudflared`
 
-***REMOVED******REMOVED******REMOVED*** eBay token exchange failed
+### eBay token exchange failed
 
 - Verify `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`
 - Ensure redirect URI matches eBay app configuration
 - Check `EBAY_ENV` (sandbox vs production)
 - View logs: `docker-compose logs api`
 
-***REMOVED******REMOVED*** 📝 License
+## 📝 License
 
 UNLICENSED - Proprietary to Scanium

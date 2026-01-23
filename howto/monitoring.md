@@ -1,6 +1,6 @@
-***REMOVED*** Monitoring Stack HOWTO
+# Monitoring Stack HOWTO
 
-***REMOVED******REMOVED*** 1. Overview
+## 1. Overview
 
 Scanium uses a Grafana LGTM stack with Grafana Alloy as the OTLP receiver and router. It captures:
 
@@ -10,7 +10,7 @@ Scanium uses a Grafana LGTM stack with Grafana Alloy as the OTLP receiver and ro
 
 Key configs live under `monitoring/` and are provisioned via Docker Compose.
 
-***REMOVED******REMOVED*** 2. Stack Components
+## 2. Stack Components
 
 Core services (see `monitoring/docker-compose.yml`):
 
@@ -25,7 +25,7 @@ OTLP receivers in `monitoring/alloy/config.alloy`:
 - Mobile OTLP: `0.0.0.0:4318` (HTTP) and `0.0.0.0:4317` (gRPC).
 - Backend OTLP: `0.0.0.0:4319` (HTTP) for NAS deployments.
 
-***REMOVED******REMOVED*** 3. Metrics
+## 3. Metrics
 
 Sources and flows:
 
@@ -40,7 +40,7 @@ Retention:
 
 - Mimir retention is 15 days (`monitoring/mimir/mimir.yaml`).
 
-***REMOVED******REMOVED*** 4. Logs
+## 4. Logs
 
 Sources:
 
@@ -58,7 +58,7 @@ PII considerations:
   `androidApp/src/main/java/com/scanium/app/telemetry/`).
 - Backend logging redacts sensitive headers (`backend/src/app.ts`).
 
-***REMOVED******REMOVED*** 5. Dashboards
+## 5. Dashboards
 
 Provisioned dashboards live in `monitoring/grafana/dashboards/`, including:
 
@@ -73,7 +73,7 @@ Provisioned dashboards live in `monitoring/grafana/dashboards/`, including:
 Datasources are provisioned in `monitoring/grafana/provisioning/datasources/datasources.yaml` with
 Loki, Tempo, and Mimir wired for trace/log/metrics correlations.
 
-***REMOVED******REMOVED*** 6. Alerts & Health
+## 6. Alerts & Health
 
 Alerting is provisioned via Grafana:
 
@@ -89,7 +89,7 @@ Health endpoints:
 - Alloy: `/-/ready` on port 12345 (container-only).
 - Loki/Tempo/Mimir: `/ready` endpoints (localhost-bound in compose).
 
-***REMOVED******REMOVED*** 7. Security
+## 7. Security
 
 Port exposure (local dev `monitoring/docker-compose.yml`):
 
@@ -107,7 +107,7 @@ NAS hardening:
 - Use Cloudflare Tunnel or VPN for Grafana access; avoid exposing Loki/Tempo/Mimir to the public
   internet.
 
-***REMOVED******REMOVED*** 8. Interaction With Other Components
+## 8. Interaction With Other Components
 
 Android app -> Monitoring:
 
@@ -125,7 +125,7 @@ Config mismatch to note:
   expects backend OTLP on `:4319`.
 - NAS compose uses `http://scanium-alloy:4319` and matches `config.alloy`.
 
-***REMOVED******REMOVED*** 9. Operational Notes
+## 9. Operational Notes
 
 Disk usage:
 

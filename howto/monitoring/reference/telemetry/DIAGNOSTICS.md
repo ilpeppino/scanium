@@ -1,17 +1,17 @@
-***REMOVED*** Diagnostics Ring Buffer
+# Diagnostics Ring Buffer
 
 **Module:** `shared:diagnostics`
 **Package:** `com.scanium.diagnostics`
 **Depends on:** `shared:telemetry-contract`
 **Status:** Stable (v1.0)
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The diagnostics module provides bounded in-memory storage for recent telemetry events (breadcrumbs)
 and the ability to build compact diagnostic bundles for crash reports or "send report"
 functionality.
 
-***REMOVED******REMOVED*** Key Features
+## Key Features
 
 - **Ring Buffer Storage:** FIFO eviction with configurable limits (event count + byte size)
 - **Thread-Safe:** All operations synchronized for concurrent access
@@ -19,7 +19,7 @@ functionality.
 - **PII-Safe:** Events stored are already sanitized (from telemetry-contract)
 - **JSON Export:** Compact, deterministic bundle format
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────┐
@@ -53,9 +53,9 @@ functionality.
          ByteArray (JSON)
 ```
 
-***REMOVED******REMOVED*** Components
+## Components
 
-***REMOVED******REMOVED******REMOVED*** 1. DiagnosticsBuffer
+### 1. DiagnosticsBuffer
 
 Thread-safe ring buffer with dual limits:
 
@@ -75,7 +75,7 @@ val snapshot = buffer.snapshot()  // Immutable copy
 buffer.clear()
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. DiagnosticsBundleBuilder
+### 2. DiagnosticsBundleBuilder
 
 Builds JSON bundles for crash reports:
 
@@ -122,7 +122,7 @@ val jsonBytes = builder.buildJsonBytes(context, events)
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. DiagnosticsPort
+### 3. DiagnosticsPort
 
 Interface for diagnostics collection:
 
@@ -140,9 +140,9 @@ interface DiagnosticsPort {
 - `DefaultDiagnosticsPort`: Uses DiagnosticsBuffer + DiagnosticsBundleBuilder
 - `NoOpDiagnosticsPort`: Discards all breadcrumbs (testing/disabled)
 
-***REMOVED******REMOVED*** Usage
+## Usage
 
-***REMOVED******REMOVED******REMOVED*** 1. Setup (Platform Code)
+### 1. Setup (Platform Code)
 
 ```kotlin
 // In Android app initialization
@@ -160,7 +160,7 @@ val diagnosticsPort = DefaultDiagnosticsPort(
     maxBytes = 256 * 1024
 )
 
-// Integrate with Telemetry facade (see PR ***REMOVED***2)
+// Integrate with Telemetry facade (see PR #2)
 val telemetry = Telemetry(
     defaultAttributesProvider = ...,
     logPort = ...,
@@ -170,7 +170,7 @@ val telemetry = Telemetry(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Auto-Capture in Telemetry Facade
+### 2. Auto-Capture in Telemetry Facade
 
 The telemetry facade can automatically append breadcrumbs:
 
@@ -180,7 +180,7 @@ telemetry.info("scan.started", mapOf("mode" to "continuous"))
 // ↓ Automatically captured as breadcrumb by diagnosticsPort
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Crash Report Integration
+### 3. Crash Report Integration
 
 ```kotlin
 // In platform-specific crash handler
@@ -205,7 +205,7 @@ class CrashHandler(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Manual "Send Report" Feature
+### 4. Manual "Send Report" Feature
 
 ```kotlin
 // User clicks "Send Report" button
@@ -232,9 +232,9 @@ class ReportSender(
 }
 ```
 
-***REMOVED******REMOVED*** Ring Buffer Behavior
+## Ring Buffer Behavior
 
-***REMOVED******REMOVED******REMOVED*** Event Count Limit
+### Event Count Limit
 
 When the buffer reaches `maxEvents`, the oldest event is evicted:
 
@@ -247,7 +247,7 @@ buffer.append(event3)  // Buffer: [event1, event2, event3]
 buffer.append(event4)  // Buffer: [event2, event3, event4] (event1 evicted)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Byte Size Limit
+### Byte Size Limit
 
 When adding an event would exceed `maxBytes`, old events are evicted:
 
@@ -259,7 +259,7 @@ buffer.append(largeEvent2)  // 400 bytes - would exceed limit
                             // → event1 evicted first, then event2 added
 ```
 
-***REMOVED******REMOVED******REMOVED*** Single Large Event
+### Single Large Event
 
 If a single event is larger than `maxBytes`, it's silently dropped:
 
@@ -270,7 +270,7 @@ val hugeEvent = createEvent(attributes = "x".repeat(10000))
 buffer.append(hugeEvent)  // Silently dropped, buffer remains empty
 ```
 
-***REMOVED******REMOVED*** Thread Safety
+## Thread Safety
 
 All operations are synchronized:
 
@@ -287,7 +287,7 @@ val bundle = diagnosticsPort.buildDiagnosticsBundle()
 // All operations are safe
 ```
 
-***REMOVED******REMOVED*** Best Practices
+## Best Practices
 
 1. **Set Appropriate Limits:**
     - `maxEvents = 200` captures ~10 minutes of activity at ~20 events/min
@@ -310,14 +310,14 @@ val bundle = diagnosticsPort.buildDiagnosticsBundle()
     - Reduce limits for memory-constrained environments
     - Monitor `breadcrumbCount()` in development
 
-***REMOVED******REMOVED*** Limitations
+## Limitations
 
 - **Memory-Only:** Breadcrumbs are lost if app is force-killed before crash handling
 - **No Persistence:** No disk storage (by design for crash safety)
 - **Approximate Byte Size:** Size estimation uses JSON serialization (slight overhead)
 - **Single Buffer:** No separate buffers for different event types
 
-***REMOVED******REMOVED*** Future Enhancements (Post-PR ***REMOVED***3)
+## Future Enhancements (Post-PR #3)
 
 - Persistent breadcrumb storage (optional, for non-crash scenarios)
 - Breadcrumb sampling strategies (e.g., keep all errors, sample info)
@@ -325,11 +325,11 @@ val bundle = diagnosticsPort.buildDiagnosticsBundle()
 - Compression for large bundles
 - Automatic bundle size limits in builder
 
-***REMOVED******REMOVED*** Migration Notes
+## Migration Notes
 
-This module is new as of PR ***REMOVED***3. No migration required.
+This module is new as of PR #3. No migration required.
 
-***REMOVED******REMOVED*** API Stability
+## API Stability
 
 This module is **stable** as of v1.0. Breaking changes will require:
 

@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
  * - Controlling trace sampling rates
  * - Managing queue sizes and flush behavior
  *
- * ***REMOVED******REMOVED*** Usage Example
+ * ## Usage Example
  * ```kotlin
  * val config = TelemetryConfig(
  *     enabled = true,
@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
  * )
  * ```
  *
- * ***REMOVED******REMOVED*** Recommended Defaults for Mobile
+ * ## Recommended Defaults for Mobile
  * - **Development**: enabled=true, minSeverity=DEBUG, traceSampleRate=0.1, maxQueueSize=1000
  * - **Production**: enabled=true, minSeverity=INFO, traceSampleRate=0.01, maxQueueSize=500
  * - **Offline/Testing**: enabled=false

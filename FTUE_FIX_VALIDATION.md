@@ -1,12 +1,12 @@
-***REMOVED*** FTUE Fix - Validation Plan
+# FTUE Fix - Validation Plan
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 Fixed critical initialization bugs preventing FTUE from ever showing on any screen.
 
-***REMOVED******REMOVED*** Root Causes Fixed
+## Root Causes Fixed
 
-***REMOVED******REMOVED******REMOVED*** Bug ***REMOVED***1 (Primary): Initial value mismatch blocks FTUE
+### Bug #1 (Primary): Initial value mismatch blocks FTUE
 
 - **Files**: CameraScreen.kt, ItemsListScreen.kt, EditItemScreenV3.kt, SettingsGeneralScreen.kt
 - **Issue**: All screens used `collectAsState(initial = true)` for completion flags
@@ -14,16 +14,16 @@ Fixed critical initialization bugs preventing FTUE from ever showing on any scre
   triggering
 - **Fix**: Changed all to `initial = false` to match DataStore defaults
 
-***REMOVED******REMOVED******REMOVED*** Bug ***REMOVED***2 (Secondary): Replay guide incomplete
+### Bug #2 (Secondary): Replay guide incomplete
 
 - **File**: SettingsViewModel.kt
 - **Issue**: resetFtueTour() called `reset()` instead of `resetAll()`
 - **Impact**: Only reset old tour flag, not screen-specific FTUE flags
 - **Fix**: Changed to call `resetAll()` to reset all FTUE state
 
-***REMOVED******REMOVED*** Changes Made
+## Changes Made
 
-***REMOVED******REMOVED******REMOVED*** Files Modified
+### Files Modified
 
 1. `androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt`
     - Line 237: `initial = true` → `initial = false`
@@ -45,15 +45,15 @@ Fixed critical initialization bugs preventing FTUE from ever showing on any scre
     - Line 354: `reset()` → `resetAll()`
     - Added dev-only debug log for replay action
 
-***REMOVED******REMOVED*** Validation Steps (Manual Testing)
+## Validation Steps (Manual Testing)
 
-***REMOVED******REMOVED******REMOVED*** Prerequisites
+### Prerequisites
 
 - Dev build flavor (for debug logs)
 - Fresh install OR reset FTUE via "Replay first-time guide"
 - adb logcat filtered to tag "FTUE"
 
-***REMOVED******REMOVED******REMOVED*** Test 1: Camera FTUE (First Run)
+### Test 1: Camera FTUE (First Run)
 
 1. Fresh install or clear app data
 2. Launch app → grant camera permission
@@ -68,7 +68,7 @@ Fixed critical initialization bugs preventing FTUE from ever showing on any scre
 7. Capture item
 8. **Expected**: Shutter pulse hint appears
 
-***REMOVED******REMOVED******REMOVED*** Test 2: Items List FTUE
+### Test 2: Items List FTUE
 
 1. With items from Test 1, navigate to items list
 2. **Expected**: Tap edit hint appears on first item
@@ -79,7 +79,7 @@ Fixed critical initialization bugs preventing FTUE from ever showing on any scre
    ```
 4. Follow hints through swipe, long-press, and share hints
 
-***REMOVED******REMOVED******REMOVED*** Test 3: Edit Item FTUE
+### Test 3: Edit Item FTUE
 
 1. Tap item to open edit screen
 2. **Expected**: Details field hint appears
@@ -90,7 +90,7 @@ Fixed critical initialization bugs preventing FTUE from ever showing on any scre
    ```
 4. Edit field → see condition/price hint
 
-***REMOVED******REMOVED******REMOVED*** Test 4: Settings FTUE
+### Test 4: Settings FTUE
 
 1. Navigate to Settings → General
 2. **Expected**: Language hint appears
@@ -101,7 +101,7 @@ Fixed critical initialization bugs preventing FTUE from ever showing on any scre
    ```
 4. Change language → see replay guide hint
 
-***REMOVED******REMOVED******REMOVED*** Test 5: Replay FTUE
+### Test 5: Replay FTUE
 
 1. In Settings → General, tap "Replay first-time guide"
 2. **Logs**: Should see:
@@ -111,9 +111,9 @@ Fixed critical initialization bugs preventing FTUE from ever showing on any scre
 3. Return to camera screen
 4. **Expected**: All FTUE sequences replay as if fresh install
 
-***REMOVED******REMOVED*** Verification Without Device
+## Verification Without Device
 
-***REMOVED******REMOVED******REMOVED*** Code Review Checklist
+### Code Review Checklist
 
 - [x] All `cameraFtueCompletedFlow` uses `initial = false`
 - [x] All `listFtueCompletedFlow` uses `initial = false`
@@ -124,35 +124,35 @@ Fixed critical initialization bugs preventing FTUE from ever showing on any scre
 - [x] No changes to camera/scanning logic
 - [x] No changes to overlay rendering logic
 
-***REMOVED******REMOVED******REMOVED*** Log Commands
+### Log Commands
 
 ```bash
-***REMOVED*** Monitor FTUE logs in real-time
+# Monitor FTUE logs in real-time
 adb logcat -s FTUE:D
 
-***REMOVED*** Clear logs and start fresh
+# Clear logs and start fresh
 adb logcat -c && adb logcat -s FTUE:D
 
-***REMOVED*** Full debug log with timestamps
+# Full debug log with timestamps
 adb logcat -v time -s FTUE:D
 ```
 
-***REMOVED******REMOVED*** Expected Outcomes
+## Expected Outcomes
 
-***REMOVED******REMOVED******REMOVED*** Before Fix
+### Before Fix
 
 - ✗ No FTUE ever shows (flags always true at initialization)
 - ✗ Replay button doesn't reset screen-specific FTUE
 - ✗ No debug visibility into FTUE state
 
-***REMOVED******REMOVED******REMOVED*** After Fix
+### After Fix
 
 - ✓ FTUE initializes on first run (flags start as false)
 - ✓ Replay button resets all FTUE flags correctly
 - ✓ Dev logs show FTUE state transitions
 - ✓ All 4 FTUE sequences work as designed
 
-***REMOVED******REMOVED*** Rollback Plan
+## Rollback Plan
 
 If issues occur, revert commits:
 
@@ -164,7 +164,7 @@ git diff HEAD -- androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt
                  androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt
 ```
 
-***REMOVED******REMOVED*** Notes
+## Notes
 
 - Build issues exist on main branch (Italian strings, launcher icons) - unrelated to FTUE fix
 - Changes are minimal and surgical - only fix verified bugs

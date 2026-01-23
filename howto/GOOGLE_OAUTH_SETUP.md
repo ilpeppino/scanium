@@ -1,6 +1,6 @@
-***REMOVED*** Google OAuth Setup for Scanium Android
+# Google OAuth Setup for Scanium Android
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
 - Google Cloud Console access: https://console.cloud.google.com
 - Package name: `com.scanium.app.dev` (dev) or `com.scanium.app` (prod)
@@ -8,7 +8,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Step 1: Create OAuth 2.0 Credentials
+## Step 1: Create OAuth 2.0 Credentials
 
 1. **Go to Google Cloud Console:**
     - Navigate to: https://console.cloud.google.com/apis/credentials
@@ -36,7 +36,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Step 2: Configure Android App
+## Step 2: Configure Android App
 
 **File:** `androidApp/src/main/java/com/scanium/app/auth/CredentialManagerAuthLauncher.kt`
 
@@ -54,7 +54,7 @@ private const val GOOGLE_SERVER_CLIENT_ID = "123456789-abcdefg.apps.googleuserco
 
 ---
 
-***REMOVED******REMOVED*** Step 3: Configure Backend
+## Step 3: Configure Backend
 
 **File (on NAS):** `/volume1/docker/scanium/repo/backend/.env`
 
@@ -66,9 +66,9 @@ GOOGLE_OAUTH_CLIENT_ID=123456789-abcdefg.apps.googleusercontent.com
 
 ---
 
-***REMOVED******REMOVED*** Step 4: Restart Services
+## Step 4: Restart Services
 
-***REMOVED******REMOVED******REMOVED*** On Mac:
+### On Mac:
 
 ```bash
 cd /Users/family/dev/scanium
@@ -77,7 +77,7 @@ git commit -m "feat(auth): configure Google OAuth credentials"
 git push origin main
 ```
 
-***REMOVED******REMOVED******REMOVED*** On NAS:
+### On NAS:
 
 ```bash
 ssh nas
@@ -89,7 +89,7 @@ docker-compose restart api
 
 ---
 
-***REMOVED******REMOVED*** Step 5: Test
+## Step 5: Test
 
 1. **Rebuild Android app:**
    ```bash
@@ -107,33 +107,33 @@ docker-compose restart api
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "No credentials available"
+### "No credentials available"
 
 - Verify SHA-1 fingerprint matches in Google Cloud Console
 - Verify package name matches (`com.scanium.app.dev`)
 - Wait 5-10 minutes after creating credentials (Google propagation delay)
 
-***REMOVED******REMOVED******REMOVED*** "Invalid client"
+### "Invalid client"
 
 - Verify GOOGLE_SERVER_CLIENT_ID matches Web OAuth Client ID
 - Verify backend has GOOGLE_OAUTH_CLIENT_ID in .env
 - Restart backend: `docker-compose restart api`
 
-***REMOVED******REMOVED******REMOVED*** Check logs:
+### Check logs:
 
 ```bash
-***REMOVED*** Android logs
+# Android logs
 adb logcat -s CredentialManagerAuthLauncher AuthRepository
 
-***REMOVED*** Backend logs
+# Backend logs
 ssh nas "cd /volume1/docker/scanium && docker-compose logs -f api | grep -i auth"
 ```
 
 ---
 
-***REMOVED******REMOVED*** Production Setup (Later)
+## Production Setup (Later)
 
 When ready for production, repeat for `com.scanium.app`:
 
@@ -148,7 +148,7 @@ When ready for production, repeat for `com.scanium.app`:
 
 ---
 
-***REMOVED******REMOVED*** Security Notes
+## Security Notes
 
 - **Never commit OAuth secrets to git** (add to .gitignore)
 - **Use environment variables** for credentials

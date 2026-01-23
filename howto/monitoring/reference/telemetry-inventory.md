@@ -1,11 +1,11 @@
-***REMOVED*** Telemetry Inventory Report
+# Telemetry Inventory Report
 
 > Auto-generated reference based on configuration analysis.
 > Re-run `./howto/monitoring/scripts/verify-monitoring.sh` with running stack for live data.
 
 **Generated:** 2025-12-30 (configuration-based, not live)
 
-***REMOVED******REMOVED*** Datasources
+## Datasources
 
 | Name  | Type       | UID     | Default |
 |-------|------------|---------|---------|
@@ -13,9 +13,9 @@
 | Tempo | tempo      | `TEMPO` | false   |
 | Mimir | prometheus | `MIMIR` | true    |
 
-***REMOVED******REMOVED*** Metrics (Mimir)
+## Metrics (Mimir)
 
-***REMOVED******REMOVED******REMOVED*** Expected Backend HTTP Metrics
+### Expected Backend HTTP Metrics
 
 When the backend is running and sending telemetry via OTLP, expect:
 
@@ -29,7 +29,7 @@ When the backend is running and sending telemetry via OTLP, expect:
 - `http_route` - Route pattern (e.g., `/api/v1/users/{id}`)
 - `http_response_status_code` - HTTP status code (200, 400, 500, etc.)
 
-***REMOVED******REMOVED******REMOVED*** Pipeline Self-Observability Metrics
+### Pipeline Self-Observability Metrics
 
 Alloy scrapes metrics from LGTM components with `source="pipeline"` label.
 
@@ -52,7 +52,7 @@ Alloy scrapes metrics from LGTM components with `source="pipeline"` label.
 | Mimir | `cortex_ingester_memory_series`, `cortex_request_duration_seconds_count` |
 | Process | `up`, `process_cpu_seconds_total`, `process_resident_memory_bytes` |
 
-***REMOVED******REMOVED******REMOVED*** Mobile App Metrics
+### Mobile App Metrics
 
 When the mobile app sends telemetry via OTLP:
 
@@ -61,9 +61,9 @@ When the mobile app sends telemetry via OTLP:
 - `source` = `scanium-mobile`
 - `env` = `dev`
 
-***REMOVED******REMOVED*** Logs (Loki)
+## Logs (Loki)
 
-***REMOVED******REMOVED******REMOVED*** Expected Labels
+### Expected Labels
 
 **From Alloy external_labels:**
 
@@ -75,7 +75,7 @@ When the mobile app sends telemetry via OTLP:
 - `service_name` - Service name
 - `deployment_environment` - Environment
 
-***REMOVED******REMOVED******REMOVED*** Expected JSON Fields in Log Body
+### Expected JSON Fields in Log Body
 
 | Field           | Description          | Example Values                            |
 |-----------------|----------------------|-------------------------------------------|
@@ -84,22 +84,22 @@ When the mobile app sends telemetry via OTLP:
 | `trace_id`      | Trace correlation ID | Hexadecimal trace ID                      |
 | `event_name`    | Event type (mobile)  | Event identifier                          |
 
-***REMOVED******REMOVED******REMOVED*** Sample LogQL Queries
+### Sample LogQL Queries
 
 ```logql
-***REMOVED*** All error logs
+# All error logs
 {source="scanium-backend"} |= `error` | json | level = `error`
 
-***REMOVED*** Logs with trace correlation
+# Logs with trace correlation
 {source="scanium-backend"} | json | trace_id != ""
 
-***REMOVED*** Mobile app events
+# Mobile app events
 {source="scanium-mobile"} | json | event_name != ""
 ```
 
-***REMOVED******REMOVED*** Traces (Tempo)
+## Traces (Tempo)
 
-***REMOVED******REMOVED******REMOVED*** Expected Resource Attributes
+### Expected Resource Attributes
 
 - `service.name` - Service name
 - `deployment.environment` - Environment
@@ -107,7 +107,7 @@ When the mobile app sends telemetry via OTLP:
 - `telemetry.sdk.name` - SDK name (e.g., `opentelemetry`)
 - `telemetry.sdk.version` - SDK version
 
-***REMOVED******REMOVED******REMOVED*** Expected Span Attributes
+### Expected Span Attributes
 
 - `http.method` - HTTP method
 - `http.route` - HTTP route pattern
@@ -116,7 +116,7 @@ When the mobile app sends telemetry via OTLP:
 - `db.system` - Database system (e.g., `postgresql`)
 - `db.statement` - Database query
 
-***REMOVED******REMOVED******REMOVED*** Tempo Metrics Generator
+### Tempo Metrics Generator
 
 Tempo exports span metrics to Mimir:
 
@@ -137,20 +137,20 @@ Tempo exports span metrics to Mimir:
 - `span_kind` - `SPAN_KIND_SERVER`, `SPAN_KIND_CLIENT`, etc.
 - `status_code` - `STATUS_CODE_OK`, `STATUS_CODE_ERROR`, `STATUS_CODE_UNSET`
 
-***REMOVED******REMOVED******REMOVED*** Sample TraceQL Queries
+### Sample TraceQL Queries
 
 ```traceql
-***REMOVED*** Slow HTTP spans (>500ms)
+# Slow HTTP spans (>500ms)
 { span.http.status_code >= 200 } | duration > 500ms
 
-***REMOVED*** Error spans
+# Error spans
 { status = error }
 
-***REMOVED*** Specific service
+# Specific service
 { resource.service.name = "scanium-backend" }
 ```
 
-***REMOVED******REMOVED*** Existing Dashboards
+## Existing Dashboards
 
 | Title                               | UID                        | Tags                                  |
 |-------------------------------------|----------------------------|---------------------------------------|
@@ -166,9 +166,9 @@ Tempo exports span metrics to Mimir:
 | Scanium - Errors (Mobile)           | `scanium-errors`           | scanium, mobile, errors               |
 | Scanium - Pipeline Health           | `scanium-pipeline-health`  | scanium, pipeline, health             |
 
-***REMOVED******REMOVED*** Dashboard Data Requirements
+## Dashboard Data Requirements
 
-***REMOVED******REMOVED******REMOVED*** Backend Dashboards (require backend telemetry)
+### Backend Dashboards (require backend telemetry)
 
 These dashboards require the backend to be running and sending OTLP data:
 
@@ -178,7 +178,7 @@ These dashboards require the backend to be running and sending OTLP data:
 | Backend API Performance | `http_server_request_duration_seconds_*`            | Needs backend |
 | Backend Errors          | `http_server_request_duration_seconds_*`, Loki logs | Needs backend |
 
-***REMOVED******REMOVED******REMOVED*** Infrastructure Dashboards (self-contained)
+### Infrastructure Dashboards (self-contained)
 
 These dashboards work with just the LGTM stack running:
 
@@ -187,7 +187,7 @@ These dashboards work with just the LGTM stack running:
 | LGTM Stack Health | `up{source="pipeline"}`, `otelcol_*`, `loki_*`, `tempo_*`, `cortex_*` | Self-sufficient |
 | Pipeline Health   | `otelcol_*` metrics                                                   | Self-sufficient |
 
-***REMOVED******REMOVED******REMOVED*** Mobile Dashboards (require mobile app telemetry)
+### Mobile Dashboards (require mobile app telemetry)
 
 These dashboards require the mobile app to be sending OTLP data:
 
@@ -198,7 +198,7 @@ These dashboards require the mobile app to be sending OTLP data:
 | Scan Performance (Mobile) | Mobile metrics                           | Needs mobile app |
 | Errors (Mobile)           | `{source="scanium-mobile"}` error logs   | Needs mobile app |
 
-***REMOVED******REMOVED*** Validation Checklist
+## Validation Checklist
 
 After starting the monitoring stack, verify:
 

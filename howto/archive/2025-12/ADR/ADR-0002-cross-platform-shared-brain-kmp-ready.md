@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/DECISIONS.md.
 
-***REMOVED*** ADR-0002: Cross-Platform “Shared Brain” (KMP-Ready) without Blocking Android
+# ADR-0002: Cross-Platform “Shared Brain” (KMP-Ready) without Blocking Android
 
 **Status:** Accepted  
 **Date:** 2025-01-12  
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Context
+## Context
 
 - We must keep Android shipping while preparing for iOS.
 - Business logic (tracking, aggregation, classification contracts, domain mapping) should be shared
@@ -19,7 +19,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Decision
+## Decision
 
 - Keep the **shared brain** in KMP modules (`shared/core-models`, `shared/core-tracking`) and add
   portable contracts (classification, config) there.
@@ -33,7 +33,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Consequences
+## Consequences
 
 **Positive**
 
@@ -48,7 +48,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 - Adapt classification orchestration to the shared contracts and add JVM tests with mocks.
 - Gradually migrate more use-cases (pricing, mapping) into shared modules once Android behavior is

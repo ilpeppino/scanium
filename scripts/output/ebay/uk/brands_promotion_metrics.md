@@ -1,12 +1,12 @@
-***REMOVED*** eBay UK Brand Promotion Metrics (Aggressive)
+# eBay UK Brand Promotion Metrics (Aggressive)
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 - **Total subtypes with brands**: 28
 - **Total brands to add**: 149
 - **Average brands per subtype**: 5.3
 
-***REMOVED******REMOVED*** Top 10 Subtypes by Brand Count
+## Top 10 Subtypes by Brand Count
 
 | Rank | Subtype                    | Display Name        | Brands |
 |------|----------------------------|---------------------|--------|
@@ -21,7 +21,7 @@
 | 9    | `gaming_laptop`            | Gaming Laptop       | 6      |
 | 10   | `appliance_coffee_machine` | Coffee Machine      | 5      |
 
-***REMOVED******REMOVED*** All Subtypes (sorted by brand count)
+## All Subtypes (sorted by brand count)
 
 | Subtype                    | Display Name        | Brands |
 |----------------------------|---------------------|--------|

@@ -1,14 +1,14 @@
-***REMOVED***!/bin/bash
-***REMOVED***
-***REMOVED*** Minimal OpenAI traffic generator for dashboard testing
-***REMOVED*** Generates controlled traffic to /assist/chat endpoint
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   ./scripts/monitoring/generate-openai-traffic.sh [BASE_URL]
-***REMOVED***
-***REMOVED*** Environment:
-***REMOVED***   SCANIUM_API_KEY - API key for backend (required)
-***REMOVED***   BASE_URL - Backend URL (default: http://127.0.0.1:8080)
+#!/bin/bash
+#
+# Minimal OpenAI traffic generator for dashboard testing
+# Generates controlled traffic to /assist/chat endpoint
+#
+# Usage:
+#   ./scripts/monitoring/generate-openai-traffic.sh [BASE_URL]
+#
+# Environment:
+#   SCANIUM_API_KEY - API key for backend (required)
+#   BASE_URL - Backend URL (default: http://127.0.0.1:8080)
 
 set -euo pipefail
 
@@ -26,7 +26,7 @@ echo "Target: $BASE_URL"
 echo "Start time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo ""
 
-***REMOVED*** Warmup check
+# Warmup check
 echo "[1/4] Checking backend availability..."
 HEALTH_RESPONSE=$(curl -s "$BASE_URL/" | jq -r '.name // "unknown"')
 
@@ -38,7 +38,7 @@ fi
 echo "✓ Backend: $HEALTH_RESPONSE"
 echo ""
 
-***REMOVED*** Generate valid traffic
+# Generate valid traffic
 echo "[2/4] Generating 3 valid requests (20s apart)..."
 SUCCESS_COUNT=0
 
@@ -77,7 +77,7 @@ done
 
 echo ""
 
-***REMOVED*** Generate one error
+# Generate one error
 echo "[3/4] Generating 1 error request (invalid payload)..."
 ERROR_COUNT=0
 
@@ -97,7 +97,7 @@ fi
 
 echo ""
 
-***REMOVED*** Summary
+# Summary
 echo "[4/4] Summary"
 echo "─────────────────────────────────"
 echo "Success requests: $SUCCESS_COUNT"

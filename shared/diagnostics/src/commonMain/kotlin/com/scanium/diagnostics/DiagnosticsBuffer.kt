@@ -13,7 +13,7 @@ import kotlinx.serialization.json.Json
  *
  * Events are assumed to be already sanitized (PII removed) before being appended.
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  * ```kotlin
  * val buffer = DiagnosticsBuffer(
  *     maxEvents = 200,
@@ -25,7 +25,7 @@ import kotlinx.serialization.json.Json
  * buffer.clear()
  * ```
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * All methods are synchronized for thread-safe access from multiple threads.
  *
  * @param maxEvents Maximum number of events to store (default: 200)

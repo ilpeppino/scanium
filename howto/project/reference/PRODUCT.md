@@ -1,6 +1,6 @@
-***REMOVED*** Product Overview
+# Product Overview
 
-***REMOVED******REMOVED*** What the app does now
+## What the app does now
 
 - Live camera scanning with on-device ML Kit for object, barcode/QR, and document OCR modes (API
   24+).
@@ -13,9 +13,9 @@
 - Export Assistant chat helps draft listings with suggestions and quick actions.
 - Paywall + billing flow gates advanced assistant features and cloud classification entitlements.
 
-***REMOVED******REMOVED*** User flows & screens
+## User flows & screens
 
-***REMOVED******REMOVED******REMOVED*** Primary Screens
+### Primary Screens
 
 - **Home/Camera**: `CameraScreen` hosts preview, overlays, and scan mode switching.
 - **Items List**: `ItemsListScreen` displays aggregated items from `ItemsViewModel`.
@@ -23,14 +23,14 @@
 - **Assistant**: `AssistantScreen` provides an export-focused chat experience for selected items.
 - **Paywall/Billing**: `PaywallScreen` presents subscription details and purchase/restore actions.
 
-***REMOVED******REMOVED******REMOVED*** Selling Flow (flavor-gated)
+### Selling Flow (flavor-gated)
 
 - **Generate Listing**: `GenerateListingScreen` - AI-generated listing creation for single items.
 - **Sell on eBay**: `SellOnEbayScreen` - marketplace selection and listing initiation.
 - **Draft Review**: `DraftReviewScreen` - review and edit listing drafts.
 - **Posting Assist**: `PostingAssistScreen` - AI-assisted listing optimization.
 
-***REMOVED******REMOVED******REMOVED*** Settings (6-category IA)
+### Settings (6-category IA)
 
 - **Settings Home**: `SettingsHomeScreen` - navigation hub for all settings categories.
 - **General**: `SettingsGeneralScreen` - app-wide preferences.
@@ -41,7 +41,7 @@
 - **Developer Options**: `DeveloperOptionsScreen` - debug tools, diagnostics, and system health (dev
   flavor only).
 
-***REMOVED******REMOVED******REMOVED*** Legal & Info Screens
+### Legal & Info Screens
 
 - **Data Usage**: `DataUsageScreen` - data usage disclosure.
 - **Privacy Policy**: `PrivacyPolicyScreen` - privacy policy display.
@@ -50,7 +50,7 @@
 
 **Total Routes:** 21 defined in `NavGraph.kt`.
 
-***REMOVED******REMOVED*** Feature flags / modes
+## Feature flags / modes
 
 - Scan modes: object, barcode/QR, document (switchable in camera UI).
 - Cloud classification pipeline lives in `ml/classification/CloudClassifier.kt` and activates only

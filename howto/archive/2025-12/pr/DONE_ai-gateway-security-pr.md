@@ -1,21 +1,21 @@
-***REMOVED*** Pull Request: AI Gateway Security Framework
+# Pull Request: AI Gateway Security Framework
 
-***REMOVED******REMOVED*** Title
+## Title
 
 Security: AI Gateway with abuse controls and prompt-injection defenses
 
-***REMOVED******REMOVED*** Branch
+## Branch
 
 `claude/security-framework-chat-Fk3Ln`
 
-***REMOVED******REMOVED*** Description
+## Description
 
-***REMOVED******REMOVED******REMOVED*** Summary
+### Summary
 
 This PR implements a comprehensive security framework for the AI Assistant feature, ensuring all LLM
 interactions go through a secure backend gateway with multiple layers of protection.
 
-***REMOVED******REMOVED******REMOVED*** Changes
+### Changes
 
 **Backend AI Gateway (`backend/src/modules/assistant/`)**
 
@@ -53,7 +53,7 @@ interactions go through a secure backend gateway with multiple layers of protect
 - `safety.test.ts`: 37 tests for injection detection, PII redaction, validation
 - `quota-store.test.ts`: 12 tests for quota enforcement
 
-***REMOVED******REMOVED******REMOVED*** Security Controls Implemented
+### Security Controls Implemented
 
 | Control                    | Description                                              |
 |----------------------------|----------------------------------------------------------|
@@ -66,14 +66,14 @@ interactions go through a secure backend gateway with multiple layers of protect
 | Safe Error Handling        | Stable reason codes, no internal details leaked          |
 | Secure Logging             | Metadata only by default, content logging opt-in         |
 
-***REMOVED******REMOVED******REMOVED*** Test Results
+### Test Results
 
 All 49 new security tests pass:
 
 - 37 tests in `safety.test.ts`
 - 12 tests in `quota-store.test.ts`
 
-***REMOVED******REMOVED******REMOVED*** Environment Variables
+### Environment Variables
 
 New configuration options (all have sensible defaults):
 
@@ -90,30 +90,30 @@ ASSIST_PROVIDER_TIMEOUT_MS=30000
 ASSIST_LOG_CONTENT=false
 ```
 
-***REMOVED******REMOVED******REMOVED*** Breaking Changes
+### Breaking Changes
 
 None. The response format is backwards compatible (`content` field still works, `reply` is the new
 canonical field).
 
-***REMOVED******REMOVED*** Manual PR Creation Commands
+## Manual PR Creation Commands
 
 ```bash
-***REMOVED*** Push branch if not already pushed
+# Push branch if not already pushed
 git push -u origin claude/security-framework-chat-Fk3Ln
 
-***REMOVED*** Create PR using GitHub CLI
+# Create PR using GitHub CLI
 gh pr create \
   --title "Security: AI Gateway with abuse controls and prompt-injection defenses" \
   --body "$(cat docs/pr/ai-gateway-security-pr.md)" \
   --base main
 
-***REMOVED*** Or create via GitHub web UI:
-***REMOVED*** 1. Go to https://github.com/[org]/scanium/compare/main...claude/security-framework-chat-Fk3Ln
-***REMOVED*** 2. Click "Create pull request"
-***REMOVED*** 3. Use the title and description from this document
+# Or create via GitHub web UI:
+# 1. Go to https://github.com/[org]/scanium/compare/main...claude/security-framework-chat-Fk3Ln
+# 2. Click "Create pull request"
+# 3. Use the title and description from this document
 ```
 
-***REMOVED******REMOVED*** Checklist
+## Checklist
 
 - [x] Backend security controls implemented
 - [x] Android client updated

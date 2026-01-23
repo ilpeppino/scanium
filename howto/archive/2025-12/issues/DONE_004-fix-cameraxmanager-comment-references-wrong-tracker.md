@@ -1,4 +1,4 @@
-***REMOVED*** Fix Incorrect Tracker Reference in CameraXManager Comment
+# Fix Incorrect Tracker Reference in CameraXManager Comment
 
 **Labels:** `documentation`, `priority:p2`, `area:camera`
 **Type:** Documentation Bug
@@ -6,17 +6,17 @@
 
 **Status:** Resolved
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 CameraXManager.kt line 192 has a KDoc comment that says "uses CandidateTracker" but the actual code
 uses **ObjectTracker**.
 
-***REMOVED******REMOVED*** Location
+## Location
 
 File: `/app/src/main/java/com/scanium/app/camera/CameraXManager.kt`
 Line: 192
 
-***REMOVED******REMOVED*** Updated Code
+## Updated Code
 
 ```kotlin
 /**
@@ -28,16 +28,16 @@ private fun startScanning(scanMode: ScanMode, onResult: (List<ScannedItem>) -> U
 }
 ```
 
-***REMOVED******REMOVED*** Expected Behavior
+## Expected Behavior
 
 Comment should say "ObjectTracker" since that's what's actually used.
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 
 - [x] Update comment to reference ObjectTracker instead of CandidateTracker
 - [x] Ensure comment accurately describes the tracking system
 
-***REMOVED******REMOVED*** Suggested Fix
+## Suggested Fix
 
 ```kotlin
 /**
@@ -47,11 +47,11 @@ Comment should say "ObjectTracker" since that's what's actually used.
  */
 ```
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
-- Issue ***REMOVED***001 (Remove duplicate CandidateTracker dead code)
+- Issue #001 (Remove duplicate CandidateTracker dead code)
 
-***REMOVED******REMOVED*** Resolution Notes
+## Resolution Notes
 
 - Updated the KDoc in `CameraXManager.startScanning` to reference **ObjectTracker** and align with
   the current tracking pipeline.

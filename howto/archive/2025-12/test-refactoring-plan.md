@@ -1,8 +1,8 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Unit Test Refactoring Plan - KMP Migration
+# Unit Test Refactoring Plan - KMP Migration
 
-***REMOVED******REMOVED*** Scanium Project - Test Suite Alignment
+## Scanium Project - Test Suite Alignment
 
 **Status**: Draft
 **Created**: 2025-12-18
@@ -11,7 +11,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The KMP (Kotlin Multiplatform) migration has moved core business logic from Android-only modules (
 `com.scanium.app.*`) to shared KMP modules (`com.scanium.core.*`). This has created a critical
@@ -29,9 +29,9 @@ coverage for shared business logic, and eliminate the legacy test duplication.
 
 ---
 
-***REMOVED******REMOVED*** Current State Analysis
+## Current State Analysis
 
-***REMOVED******REMOVED******REMOVED*** Test Distribution
+### Test Distribution
 
 | Location                           | Files | Framework             | Status        | Issue                  |
 |------------------------------------|-------|-----------------------|---------------|------------------------|
@@ -41,7 +41,7 @@ coverage for shared business logic, and eliminate the legacy test duplication.
 | `core-*/src/test/`                 | 6     | JUnit 4               | ⚠️ Deprecated | Duplicate legacy tests |
 | `androidApp/src/androidTest/`      | 3     | Espresso              | ⚠️ Unknown    | UI tests               |
 
-***REMOVED******REMOVED******REMOVED*** Import Conflicts Detected
+### Import Conflicts Detected
 
 **Tests with LEGACY imports (need migration)**:
 
@@ -69,28 +69,28 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED*** Root Causes
+## Root Causes
 
-***REMOVED******REMOVED******REMOVED*** 1. **Package Structure Change**
+### 1. **Package Structure Change**
 
 - **Before**: All business logic in `com.scanium.app.*` (Android-only)
 - **After**: Core logic moved to `com.scanium.core.*` (KMP shared)
 - **Impact**: All test imports are now invalid
 
-***REMOVED******REMOVED******REMOVED*** 2. **Dual Module System**
+### 2. **Dual Module System**
 
 - Both `/core-tracking` (legacy) and `/shared/core-tracking` (KMP) exist
 - Gradle dependencies may resolve to wrong module
 - Tests may accidentally compile against deprecated modules
 
-***REMOVED******REMOVED******REMOVED*** 3. **Insufficient KMP Test Coverage**
+### 3. **Insufficient KMP Test Coverage**
 
 - Only 3 tests in `commonTest` for shared modules
 - Complex logic (ObjectTracker, ItemAggregator) has ~30 tests in androidApp but only 1-2 in
   commonTest
 - Risk of losing test coverage during migration
 
-***REMOVED******REMOVED******REMOVED*** 4. **Platform-Specific Test Dependencies**
+### 4. **Platform-Specific Test Dependencies**
 
 - Tests use `RectF`, `Bitmap` (Android-specific) via Robolectric
 - KMP tests must use portable types (`NormalizedRect`, `ImageRef`)
@@ -98,9 +98,9 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED*** Migration Strategy
+## Migration Strategy
 
-***REMOVED******REMOVED******REMOVED*** Guiding Principles
+### Guiding Principles
 
 1. **Zero Regression**: Maintain or improve test coverage during migration
 2. **KMP First**: Maximize tests in `commonTest` for cross-platform validation
@@ -110,21 +110,21 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED*** Phase Breakdown
+## Phase Breakdown
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 1: Audit & Categorization** ✋ (Start Here)
+### **PHASE 1: Audit & Categorization** ✋ (Start Here)
 
 **Duration**: 1-2 hours
 **Risk**: Low
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Create comprehensive inventory of all test files
 - Categorize each test as: KMP-portable, Android-specific, or UI-only
 - Identify which tests cover migrated vs. legacy code
 - Document dependencies between tests
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [ ] **1.1** Run current test suite to capture baseline failures
   ```bash
@@ -141,13 +141,13 @@ against the migrated codebase.
     - Example: `androidApp/.../ObjectTrackerTest.kt` → `shared/core-tracking/commonTest/`
 - [ ] **1.4** Identify tests requiring Robolectric (RectF, Bitmap) - these need test helpers
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - `docs/test-inventory.csv` - Full test audit
 - `docs/test-migration-mapping.md` - Source → Target mapping
 - `test_baseline.log` - Current failure log for regression detection
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - 100% of test files categorized
 - Clear migration path identified for each file
@@ -155,27 +155,27 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 2: KMP Test Infrastructure** 🛠️
+### **PHASE 2: KMP Test Infrastructure** 🛠️
 
 **Duration**: 2-3 hours
 **Risk**: Medium
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Set up robust KMP testing infrastructure
 - Create portable test helpers to replace Android-specific utilities
 - Establish test conventions and patterns for commonTest
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [ ] **2.1** Create shared test utilities module structure:
   ```
   shared/test-utils/
   ├── src/commonMain/kotlin/com/scanium/test/
-  │   ├── Builders.kt          ***REMOVED*** Factory functions for test data
-  │   ├── Matchers.kt          ***REMOVED*** Custom assertions
-  │   └── Fixtures.kt          ***REMOVED*** Reusable test fixtures
-  ├── src/commonTest/kotlin/   ***REMOVED*** Self-tests for test utils
+  │   ├── Builders.kt          # Factory functions for test data
+  │   ├── Matchers.kt          # Custom assertions
+  │   └── Fixtures.kt          # Reusable test fixtures
+  ├── src/commonTest/kotlin/   # Self-tests for test utils
   └── build.gradle.kts
   ```
 
@@ -214,20 +214,20 @@ against the migrated codebase.
 
 - [ ] **2.5** Set up CI validation for KMP tests:
   ```yaml
-  ***REMOVED*** .github/workflows/test-kmp.yml
+  # .github/workflows/test-kmp.yml
   - name: Run KMP tests
     run: |
       ./gradlew :shared:core-models:test
       ./gradlew :shared:core-tracking:test
   ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - `shared/test-utils/` module with portable test helpers
 - `docs/kmp-testing-guide.md` - Migration patterns and conventions
 - Updated CI workflow for KMP test validation
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - All test helper functions available in pure Kotlin
 - Example test migrated successfully to commonTest
@@ -235,23 +235,23 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 3: Core Models Tests Migration** 📦
+### **PHASE 3: Core Models Tests Migration** 📦
 
 **Duration**: 3-4 hours
 **Risk**: Low
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Migrate all tests for data models to `shared/core-models/commonTest/`
 - Achieve comprehensive coverage for portable types
 - Remove legacy model tests from androidApp
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current Coverage
+#### Current Coverage
 
 - **KMP**: 2 files, 10 tests (NormalizedRect, ImageRef)
 - **Legacy Android**: 6 files scattered across androidApp and core-models
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [ ] **3.1** Migrate `NormalizedRectTest.kt`:
     - Source: `androidApp/src/test/.../model/NormalizedRectTest.kt`
@@ -293,13 +293,13 @@ against the migrated codebase.
     - `core-models/src/test/.../ImageRefTest.kt`
     - `core-models/src/test/.../NormalizedRectTest.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - 10+ test files in `shared/core-models/commonTest/`
 - 60+ tests covering all model types
 - Zero legacy model tests remaining
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - `./gradlew :shared:core-models:test` passes 100%
 - Code coverage ≥ 85% for core-models module
@@ -307,23 +307,23 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 4: Core Tracking Tests Migration** 🎯
+### **PHASE 4: Core Tracking Tests Migration** 🎯
 
 **Duration**: 4-6 hours
 **Risk**: High (complex business logic)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Migrate ObjectTracker, ItemAggregator, and tracking pipeline tests
 - Preserve all existing test scenarios (~40+ tests)
 - Add KMP-specific coverage (iOS compatibility)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current Coverage
+#### Current Coverage
 
 - **KMP**: 1 file, 2 golden vector tests
 - **Legacy**: 3 files, ~40 tests (ObjectTracker, ItemAggregator, integration)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [ ] **4.1** Expand `ObjectTrackerTest.kt` in commonTest:
     - Source: `androidApp/src/test/.../tracking/ObjectTrackerTest.kt` (20+ tests)
@@ -382,13 +382,13 @@ against the migrated codebase.
     - `androidApp/src/test/.../tracking/TrackingPipelineIntegrationTest.kt`
     - `core-tracking/src/test/.../ObjectTrackerNormalizedMatchingTest.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - 6+ test files in `shared/core-tracking/commonTest/`
 - 50+ tests covering all tracking scenarios
 - Integration tests validating end-to-end behavior
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - `./gradlew :shared:core-tracking:test` passes 100%
 - Code coverage ≥ 80% for core-tracking module
@@ -397,28 +397,28 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 5: Android-Specific Test Refactoring** 🤖
+### **PHASE 5: Android-Specific Test Refactoring** 🤖
 
 **Duration**: 3-4 hours
 **Risk**: Medium
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Update Android-specific tests to use KMP imports
 - Keep platform-specific tests in androidApp (ViewModel, Camera, ML Kit)
 - Remove duplication with KMP tests
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current Coverage
+#### Current Coverage
 
 - **androidApp tests**: 20 files, many testing already-migrated logic
 - **Need to keep**: ViewModel, Camera, ML Kit adapter, Platform converters
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [ ] **5.1** Update import statements in androidApp tests:
     - Script to replace all legacy imports with KMP equivalents:
       ```bash
-      ***REMOVED*** Example sed script
+      # Example sed script
       find androidApp/src/test -name "*.kt" -exec sed -i \
         's/import com.scanium.app.ml.ItemCategory/import com.scanium.core.models.ml.ItemCategory/g' {} \;
       ```
@@ -466,13 +466,13 @@ against the migrated codebase.
   ./gradlew :androidApp:testDebugUnitTest
   ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - All androidApp tests using KMP imports
 - Reduced test count (remove duplicates)
 - Clear separation: Business logic (KMP) vs. Android integration (androidApp)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - `./gradlew :androidApp:test` passes 100%
 - No imports from legacy `com.scanium.app.tracking`, `com.scanium.app.aggregation`, etc.
@@ -480,18 +480,18 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 6: Legacy Module Cleanup** 🧹
+### **PHASE 6: Legacy Module Cleanup** 🧹
 
 **Duration**: 2-3 hours
 **Risk**: Low
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Remove deprecated legacy test modules
 - Clean up obsolete test files
 - Update Gradle configuration to prevent accidental legacy usage
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [ ] **6.1** Delete legacy test directories:
   ```bash
@@ -538,13 +538,13 @@ against the migrated codebase.
 
 - [ ] **6.6** Verify no tests reference deleted modules
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - Legacy test directories deleted
 - Gradle validation preventing legacy imports
 - Clean test suite with no obsolete files
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - Zero files in deleted directories
 - `./gradlew test` passes for all modules
@@ -552,22 +552,22 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 7: Instrumented Tests Alignment** 📱
+### **PHASE 7: Instrumented Tests Alignment** 📱
 
 **Duration**: 2-3 hours
 **Risk**: Low
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Update instrumented (UI) tests to use KMP imports
 - Ensure Compose UI tests work with refactored models
 - Validate end-to-end flows
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Current Coverage
+#### Current Coverage
 
 - 3 instrumented test files in `androidApp/src/androidTest/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [ ] **7.1** Update `ItemsViewModelInstrumentedTest.kt`:
     - Change imports to KMP modules
@@ -588,30 +588,30 @@ against the migrated codebase.
 
 - [ ] **7.5** Verify CI can run instrumented tests (if configured)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - All instrumented tests updated
 - Tests pass on physical device/emulator
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - `connectedAndroidTest` passes 100%
 - No legacy imports in androidTest/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 8: Test Coverage & Quality Assurance** ✅
+### **PHASE 8: Test Coverage & Quality Assurance** ✅
 
 **Duration**: 3-4 hours
 **Risk**: Low
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Measure test coverage across all modules
 - Identify and fill coverage gaps
 - Establish coverage baselines for CI
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [x] **8.1** Generate coverage reports:
   ```bash
@@ -663,13 +663,13 @@ against the migrated codebase.
     run: ./gradlew koverVerify
   ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - Coverage reports for all modules
 - TESTING.md documentation
 - CI enforcement of coverage thresholds
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - core-models: ≥ 85% coverage
 - core-tracking: ≥ 80% coverage
@@ -678,18 +678,18 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** **PHASE 9: Documentation & CI Integration** 📚
+### **PHASE 9: Documentation & CI Integration** 📚
 
 **Duration**: 2 hours
 **Risk**: Low
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Objectives
+#### Objectives
 
 - Document the new test architecture
 - Update developer onboarding guides
 - Ensure CI validates tests on every PR
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Tasks
+#### Tasks
 
 - [x] **9.1** Create `docs/TESTING.md`:
     - Test architecture overview
@@ -708,18 +708,18 @@ against the migrated codebase.
 
 - [ ] **9.4** Create test command cheat sheet:
   ```markdown
-  ***REMOVED******REMOVED*** Quick Test Commands
+  ## Quick Test Commands
 
-  ***REMOVED*** Run all KMP tests
+  # Run all KMP tests
   ./gradlew :shared:core-models:test :shared:core-tracking:test
 
-  ***REMOVED*** Run Android unit tests
+  # Run Android unit tests
   ./gradlew :androidApp:testDebugUnitTest
 
-  ***REMOVED*** Run instrumented tests
+  # Run instrumented tests
   ./gradlew :androidApp:connectedDebugAndroidTest
 
-  ***REMOVED*** Run all tests with coverage
+  # Run all tests with coverage
   ./gradlew test koverHtmlReport
   ```
 
@@ -760,13 +760,13 @@ against the migrated codebase.
 - [ ] **9.6** Add PR checklist template:
     - `.github/pull_request_template.md` with test verification steps
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Deliverables
+#### Deliverables
 
 - Complete TESTING.md documentation
 - Updated CI workflows
 - PR template with test checklist
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Success Criteria
+#### Success Criteria
 
 - CI runs all tests on every PR
 - Documentation is clear and comprehensive
@@ -774,7 +774,7 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED*** Risk Assessment & Mitigation
+## Risk Assessment & Mitigation
 
 | Risk                                    | Probability | Impact   | Mitigation                                                          |
 |-----------------------------------------|-------------|----------|---------------------------------------------------------------------|
@@ -787,9 +787,9 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED*** Success Metrics
+## Success Metrics
 
-***REMOVED******REMOVED******REMOVED*** Quantitative
+### Quantitative
 
 - ✅ **100% test migration**: All 32 test files migrated or deleted
 - ✅ **Zero legacy imports**: No `com.scanium.app.tracking`, etc. in codebase
@@ -799,7 +799,7 @@ against the migrated codebase.
 - ✅ **Test pass rate**: 100% on `./gradlew test`
 - ✅ **CI integration**: All tests run automatically on PR
 
-***REMOVED******REMOVED******REMOVED*** Qualitative
+### Qualitative
 
 - ✅ **Clear separation**: Business logic tests in KMP, platform tests in androidApp
 - ✅ **Developer experience**: Easy to understand where to add new tests
@@ -808,7 +808,7 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED*** Timeline Estimate
+## Timeline Estimate
 
 | Phase                   | Duration  | Dependencies | Can Parallelize?                |
 |-------------------------|-----------|--------------|---------------------------------|
@@ -828,7 +828,7 @@ against the migrated codebase.
 
 ---
 
-***REMOVED******REMOVED*** Rollback Plan
+## Rollback Plan
 
 If critical issues arise during any phase:
 
@@ -846,9 +846,9 @@ If critical issues arise during any phase:
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
-***REMOVED******REMOVED******REMOVED*** Immediate Actions (Before Starting Phase 1)
+### Immediate Actions (Before Starting Phase 1)
 
 1. ✅ Review this plan with team
 2. ⏸️ Get approval to proceed
@@ -856,7 +856,7 @@ If critical issues arise during any phase:
 4. ⏸️ Ensure CI is stable before starting
 5. ⏸️ Allocate dedicated time (minimize context switching)
 
-***REMOVED******REMOVED******REMOVED*** Communication
+### Communication
 
 - Daily progress updates in standup/Slack
 - Document blockers immediately in this plan
@@ -864,9 +864,9 @@ If critical issues arise during any phase:
 
 ---
 
-***REMOVED******REMOVED*** Appendix
+## Appendix
 
-***REMOVED******REMOVED******REMOVED*** A. Key File Locations
+### A. Key File Locations
 
 **KMP Test Targets**:
 
@@ -883,7 +883,7 @@ If critical issues arise during any phase:
 - `core-models/src/test/`
 - `core-tracking/src/test/`
 
-***REMOVED******REMOVED******REMOVED*** B. Import Mapping Reference
+### B. Import Mapping Reference
 
 | Old (Legacy)                                 | New (KMP)                                         |
 |----------------------------------------------|---------------------------------------------------|
@@ -895,7 +895,7 @@ If critical issues arise during any phase:
 | `com.scanium.app.tracking.DetectionInfo`     | `com.scanium.core.tracking.DetectionInfo`         |
 | `com.scanium.app.aggregation.ItemAggregator` | `com.scanium.core.tracking.ItemAggregator`        |
 
-***REMOVED******REMOVED******REMOVED*** C. Test Helper Migration Examples
+### C. Test Helper Migration Examples
 
 **Before (Android-specific with RectF)**:
 

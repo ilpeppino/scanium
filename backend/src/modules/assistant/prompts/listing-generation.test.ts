@@ -292,8 +292,8 @@ describe('Listing Generation Prompts', () => {
       visualFacts.set('item-1', {
         itemId: 'item-1',
         dominantColors: [
-          { name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 50 },
-          { name: 'white', rgbHex: '***REMOVED***FFFFFF', pct: 30 },
+          { name: 'blue', rgbHex: '#0000FF', pct: 50 },
+          { name: 'white', rgbHex: '#FFFFFF', pct: 30 },
         ],
         ocrSnippets: [{ text: 'MODEL X100', confidence: 0.9 }],
         labelHints: [{ label: 'Furniture', score: 0.85 }],

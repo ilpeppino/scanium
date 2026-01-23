@@ -1,14 +1,14 @@
-***REMOVED*** Multilingual AI Assistant - Developer Guide
+# Multilingual AI Assistant - Developer Guide
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This guide documents the multilingual AI output enforcement system implemented to ensure
 AI-generated content (ready-to-sell descriptions, titles, etc.) is fully language-consistent with
 the user's selected app language.
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Language Enforcement Flow
+### Language Enforcement Flow
 
 ```
 [Android App]                    [Backend]
@@ -44,9 +44,9 @@ the user's selected app language.
      Response in Italian
 ```
 
-***REMOVED******REMOVED*** Key Files
+## Key Files
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 | File                                                           | Purpose                                             |
 |----------------------------------------------------------------|-----------------------------------------------------|
@@ -56,14 +56,14 @@ the user's selected app language.
 | `backend/src/modules/assistant/openai-provider.ts`             | OpenAI integration with language verification       |
 | `backend/src/modules/assistant/claude-provider.ts`             | Claude integration with language verification       |
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 | File                                                                  | Purpose                                              |
 |-----------------------------------------------------------------------|------------------------------------------------------|
 | `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt` | `assistantLanguageFlow` - user's language preference |
 | `androidApp/src/main/res/values-{lang}/strings.xml`                   | Localized UI strings                                 |
 
-***REMOVED******REMOVED*** Supported Languages
+## Supported Languages
 
 | Code  | Language            | Native Name          |
 |-------|---------------------|----------------------|
@@ -75,9 +75,9 @@ the user's selected app language.
 | ES    | Spanish             | Español              |
 | PT_BR | Portuguese (Brazil) | Português Brasileiro |
 
-***REMOVED******REMOVED*** Debugging
+## Debugging
 
-***REMOVED******REMOVED******REMOVED*** Android Logcat Filter
+### Android Logcat Filter
 
 To see language-related logs on Android:
 
@@ -85,12 +85,12 @@ To see language-related logs on Android:
 adb logcat -s "AssistantViewModel" | grep -E "(language|lang|prefs)"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Backend DEV Logging
+### Backend DEV Logging
 
 In development mode (`NODE_ENV=development`), language mismatches are logged:
 
 ```bash
-***REMOVED*** Filter for language mismatch warnings
+# Filter for language mismatch warnings
 grep -E "(LANG_MISMATCH|RESPONSE_LANG_MISMATCH)" backend.log
 ```
 
@@ -106,7 +106,7 @@ Log format:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Metrics
+### Metrics
 
 Language mismatch metrics are tracked in-memory:
 
@@ -122,15 +122,15 @@ const metrics = getLanguageMetrics();
 // }
 ```
 
-***REMOVED******REMOVED*** Manual Test Plan
+## Manual Test Plan
 
-***REMOVED******REMOVED******REMOVED*** Prerequisites
+### Prerequisites
 
 1. Build and install the app
 2. Ensure backend is running
 3. Have network connectivity
 
-***REMOVED******REMOVED******REMOVED*** Test Case 1: Italian Language
+### Test Case 1: Italian Language
 
 1. **Setup**
     - Open Settings > General > Language
@@ -167,7 +167,7 @@ const metrics = getLanguageMetrics();
    • Condizione: Usato - Ottime Condizioni
    ```
 
-***REMOVED******REMOVED******REMOVED*** Test Case 2: German Language
+### Test Case 2: German Language
 
 1. **Setup**
     - Set app language to "Deutsch"
@@ -182,7 +182,7 @@ const metrics = getLanguageMetrics();
     - [ ] Attribute labels are German (Marke, Modell, Farbe)
     - [ ] No English leakage
 
-***REMOVED******REMOVED******REMOVED*** Test Case 3: Language Switching
+### Test Case 3: Language Switching
 
 1. **Test**
     - Generate a listing in Italian
@@ -194,7 +194,7 @@ const metrics = getLanguageMetrics();
     - [ ] Second response is in French
     - [ ] No mixing of languages
 
-***REMOVED******REMOVED******REMOVED*** Test Case 4: Edge Cases
+### Test Case 4: Edge Cases
 
 1. **Very Short Input**
     - Send just "OK" or "Si"
@@ -208,7 +208,7 @@ const metrics = getLanguageMetrics();
     - Item with brand name (Nike, Apple, IKEA)
     - Verify brand names are preserved as-is
 
-***REMOVED******REMOVED*** Adding a New Language
+## Adding a New Language
 
 To add support for a new language:
 
@@ -247,9 +247,9 @@ To add support for a new language:
     - `listing-generation.test.ts`
     - `language-consistency.test.ts`
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Issue: AI response contains English
+### Issue: AI response contains English
 
 **Cause**: System prompt or user prompt may have leaked English content.
 
@@ -261,7 +261,7 @@ To add support for a new language:
 
 **Fix**: Ensure all prompt construction uses `getLocalizedContent(language)`.
 
-***REMOVED******REMOVED******REMOVED*** Issue: Attribute labels in wrong language
+### Issue: Attribute labels in wrong language
 
 **Cause**: Language parameter not being passed to `buildListingUserPrompt`.
 
@@ -270,20 +270,20 @@ To add support for a new language:
 1. Check provider code passes language to prompt builder
 2. Verify `getLocalizedAttributeLabel` is being called
 
-***REMOVED******REMOVED******REMOVED*** Issue: Low confidence language detection
+### Issue: Low confidence language detection
 
 **Cause**: Short text or mixed content.
 
 **Note**: Language detection is best-effort for logging/metrics. The prompt localization ensures
 correct output regardless of detection accuracy.
 
-***REMOVED******REMOVED*** Performance Considerations
+## Performance Considerations
 
 - Stopword detection is O(n) where n = word count
 - Prompt localization adds no overhead (static content)
 - Language metrics are in-memory (reset on server restart)
 
-***REMOVED******REMOVED*** Future Improvements
+## Future Improvements
 
 1. **Output Retry**: If response language doesn't match, auto-retry with stronger enforcement
 2. **Client-side Validation**: Add Android-side language check before displaying

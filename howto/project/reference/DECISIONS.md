@@ -1,4 +1,4 @@
-***REMOVED*** Decisions (ADR-lite)
+# Decisions (ADR-lite)
 
 - **2025-12** – Adopt Java 17 toolchain across builds to match Gradle config and CI setup (
   `settings.gradle.kts`, Android Debug APK workflow). Reason: align with modern Android requirements

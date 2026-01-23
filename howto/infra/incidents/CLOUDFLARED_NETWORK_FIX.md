@@ -1,10 +1,10 @@
-***REMOVED*** Cloudflared Network Fix - Structural Solution
+# Cloudflared Network Fix - Structural Solution
 
-***REMOVED******REMOVED*** The Problem
+## The Problem
 
 Cloudflared tunnel was experiencing two critical issues:
 
-***REMOVED******REMOVED******REMOVED*** Issue 1: Network Connectivity (502 Errors)
+### Issue 1: Network Connectivity (502 Errors)
 
 The tunnel was repeatedly losing connection to the `scanium_net` Docker network, causing 502 errors.
 This happened because:
@@ -17,7 +17,7 @@ This happened because:
 
 3. **No automated verification** that networks were properly connected
 
-***REMOVED******REMOVED******REMOVED*** Issue 2: Token Substitution (Error 1033)
+### Issue 2: Token Substitution (Error 1033)
 
 After implementing the single source of truth deployment, the tunnel failed with error 1033. The
 root cause was:
@@ -29,9 +29,9 @@ root cause was:
 - Deploying from `/volume1/docker/scanium/repo/deploy/nas/cloudflared/` without a local `.env` file
   meant the token was empty in the command
 
-***REMOVED******REMOVED*** The Structural Fix
+## The Structural Fix
 
-***REMOVED******REMOVED******REMOVED*** 1. Updated Active docker-compose.yml
+### 1. Updated Active docker-compose.yml
 
 Updated `/volume1/docker/cloudflared/docker-compose.yml` to include all required networks:
 
@@ -39,11 +39,11 @@ Updated `/volume1/docker/cloudflared/docker-compose.yml` to include all required
 networks:
   - backend_scanium-network
   - compose_scanium_net
-  - scanium_net              ***REMOVED*** ← CRITICAL for backend connectivity
-  - scanium-observability    ***REMOVED*** ← For monitoring
+  - scanium_net              # ← CRITICAL for backend connectivity
+  - scanium-observability    # ← For monitoring
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Created Automated Deployment Script
+### 2. Created Automated Deployment Script
 
 **From Mac:**
 
@@ -58,10 +58,10 @@ cd /Users/family/dev/scanium
 cd /volume1/docker/cloudflared
 docker-compose down
 docker-compose up -d
-***REMOVED*** The compose file will ensure all networks are connected
+# The compose file will ensure all networks are connected
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. .env Symlink for Variable Substitution
+### 3. .env Symlink for Variable Substitution
 
 Fixed the token substitution issue by creating a symlink:
 
@@ -72,7 +72,7 @@ ln -s /volume1/docker/cloudflared/.env /volume1/docker/scanium/repo/deploy/nas/c
 This allows docker-compose to substitute `${CLOUDFLARED_TOKEN}` during deployment while keeping
 secrets in a single location.
 
-***REMOVED******REMOVED******REMOVED*** 4. Deployment Script Features
+### 4. Deployment Script Features
 
 The `deploy-cloudflared.sh` script:
 
@@ -85,23 +85,23 @@ The `deploy-cloudflared.sh` script:
 - ✅ Tests DNS resolution
 - ✅ Works from Mac or NAS
 
-***REMOVED******REMOVED*** Usage
+## Usage
 
-***REMOVED******REMOVED******REMOVED*** Deploy from Mac (Recommended)
+### Deploy from Mac (Recommended)
 
 ```bash
 cd /Users/family/dev/scanium
 ./deploy-cloudflared.sh
 ```
 
-***REMOVED******REMOVED******REMOVED*** Directly on NAS
+### Directly on NAS
 
 ```bash
 cd /volume1/docker/scanium/repo/deploy/nas/cloudflared
 bash redeploy.sh
 ```
 
-***REMOVED******REMOVED******REMOVED*** Quick Manual Fix (If Needed)
+### Quick Manual Fix (If Needed)
 
 If tunnel returns 502 and you need immediate fix:
 
@@ -109,43 +109,43 @@ If tunnel returns 502 and you need immediate fix:
 ssh nas "docker network connect scanium_net scanium-cloudflared"
 ```
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
 ```bash
-***REMOVED*** Check connected networks
+# Check connected networks
 ssh nas "docker inspect scanium-cloudflared --format '{{json .NetworkSettings.Networks}}' | jq 'keys'"
-***REMOVED*** Should include: scanium_net
+# Should include: scanium_net
 
-***REMOVED*** Test tunnel
+# Test tunnel
 curl https://scanium.gtemp1.com/health
 
-***REMOVED*** Check for errors
+# Check for errors
 ssh nas "docker logs scanium-cloudflared --tail 20 | grep -E 'ERR|no such host'"
-***REMOVED*** Should see no "no such host" errors
+# Should see no "no such host" errors
 ```
 
-***REMOVED******REMOVED*** Prevention Strategy
+## Prevention Strategy
 
-***REMOVED******REMOVED******REMOVED*** DO:
+### DO:
 
 ✅ Use `./deploy-cloudflared.sh` when redeploying
 ✅ Keep both docker-compose.yml files in sync (script handles this)
 ✅ Make changes in git first, then deploy
 
-***REMOVED******REMOVED******REMOVED*** DON'T:
+### DON'T:
 
 ❌ Manually edit `/volume1/docker/cloudflared/docker-compose.yml`
 ❌ Use `docker stop/start` directly (use docker-compose)
 ❌ Remove networks manually
 
-***REMOVED******REMOVED*** Files Created
+## Files Created
 
 1. `/deploy-cloudflared.sh` - Mac wrapper script
 2. `/deploy/nas/cloudflared/redeploy.sh` - Main deployment script
 3. `/deploy/nas/cloudflared/README.md` - Detailed documentation
 4. `/docs/cloudflared-tunnel-troubleshooting.md` - Troubleshooting guide
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 Deployment was tested and verified:
 
@@ -158,7 +158,7 @@ Deployment was tested and verified:
 - ✅ No DNS resolution errors
 - ✅ No error 1033 or other tunnel errors
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 **Before:**
 

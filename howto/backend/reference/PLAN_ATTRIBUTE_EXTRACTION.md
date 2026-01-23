@@ -1,4 +1,4 @@
-***REMOVED*** Implementation Plan: Enhanced Attribute Extraction & Marketplace Description Generation
+# Implementation Plan: Enhanced Attribute Extraction & Marketplace Description Generation
 
 **Version:** 1.0
 **Author:** Claude (Architecture Review)
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 This plan enhances Scanium's item classification pipeline with:
 
@@ -23,9 +23,9 @@ This plan enhances Scanium's item classification pipeline with:
 
 ---
 
-***REMOVED******REMOVED*** A. Current State Architecture
+## A. Current State Architecture
 
-***REMOVED******REMOVED******REMOVED*** Scan Pipeline Flow
+### Scan Pipeline Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -84,7 +84,7 @@ This plan enhances Scanium's item classification pipeline with:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Key File Locations
+### Key File Locations
 
 | Component                      | File                                                                   | Lines   |
 |--------------------------------|------------------------------------------------------------------------|---------|
@@ -107,9 +107,9 @@ This plan enhances Scanium's item classification pipeline with:
 
 ---
 
-***REMOVED******REMOVED*** B. Attribute Extraction Gap Analysis
+## B. Attribute Extraction Gap Analysis
 
-***REMOVED******REMOVED******REMOVED*** Desired Attributes
+### Desired Attributes
 
 | Attribute     | Exists in Domain Pack | Extraction Method             | Backend Support                                                    | Android Support               |
 |---------------|-----------------------|-------------------------------|--------------------------------------------------------------------|-------------------------------|
@@ -122,7 +122,7 @@ This plan enhances Scanium's item classification pipeline with:
 | **year**      | Yes (lines 393-402)   | OCR                           | **PARTIAL** (OCR exists)                                           | **NO**                        |
 | **sku/isbn**  | Yes (lines 406-423)   | BARCODE                       | **NO** (ML Kit on device)                                          | **YES** (barcodeValue exists) |
 
-***REMOVED******REMOVED******REMOVED*** Current Gaps
+### Current Gaps
 
 1. **ScannedItem model** (`shared/core-models/.../items/ScannedItem.kt:66-88`):
     - **Missing:** `attributes: Map<String, String>` field
@@ -144,9 +144,9 @@ This plan enhances Scanium's item classification pipeline with:
 
 ---
 
-***REMOVED******REMOVED*** C. Target Design: 3-Stage Intelligence Pipeline
+## C. Target Design: 3-Stage Intelligence Pipeline
 
-***REMOVED******REMOVED******REMOVED*** Stage 1: Category Classification (EXISTING)
+### Stage 1: Category Classification (EXISTING)
 
 ```
 Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryId
@@ -154,7 +154,7 @@ Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryI
 
 **No changes needed.** Already works with cloud classification.
 
-***REMOVED******REMOVED******REMOVED*** Stage 2: Attribute Extraction (NEW)
+### Stage 2: Attribute Extraction (NEW)
 
 ```
                                 ┌──────────────────────────┐
@@ -214,7 +214,7 @@ Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryI
 - Batch multiple images per item in single Vision call
 - Rate limit: 30 enrichments/minute/API key
 
-***REMOVED******REMOVED******REMOVED*** Stage 3: Marketplace Description Generation
+### Stage 3: Marketplace Description Generation
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -279,9 +279,9 @@ Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryI
 
 ---
 
-***REMOVED******REMOVED*** D. PR Implementation Plan
+## D. PR Implementation Plan
 
-***REMOVED******REMOVED******REMOVED*** PR 1: Data Model - Add Attributes to ScannedItem
+### PR 1: Data Model - Add Attributes to ScannedItem
 
 **Scope:** Add `attributes` field to item models across all layers.
 
@@ -313,7 +313,7 @@ Image → GoogleVisionClassifier → Labels → DomainMapper → domainCategoryI
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR 2: Backend - Integrate VisionExtractor into /v1/classify
+### PR 2: Backend - Integrate VisionExtractor into /v1/classify
 
 **Scope:** Enhance classification endpoint to extract attributes using existing VisionExtractor.
 
@@ -367,7 +367,7 @@ if (request.enrichAttributes && config.classifier.enableAttributeEnrichment) {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR 3: Android - Store and Pass Attributes Through Pipeline
+### PR 3: Android - Store and Pass Attributes Through Pipeline
 
 **Scope:** Update Android classification pipeline to persist attributes from backend.
 
@@ -414,7 +414,7 @@ stateManager.applyEnhancedClassification(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR 4: Android UI - Display Attributes in Item Details
+### PR 4: Android UI - Display Attributes in Item Details
 
 **Scope:** Show extracted attributes in item detail view with edit capability.
 
@@ -466,7 +466,7 @@ stateManager.applyEnhancedClassification(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR 5: Android UI - "Generate Description" Action
+### PR 5: Android UI - "Generate Description" Action
 
 **Scope:** Add button to generate marketplace listing using Assistant API.
 
@@ -528,7 +528,7 @@ stateManager.applyEnhancedClassification(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR 6: Backend - Real LLM Provider for Assistant
+### PR 6: Backend - Real LLM Provider for Assistant
 
 **Scope:** Replace mock assistant with real Claude/GPT integration.
 
@@ -595,7 +595,7 @@ CRITICAL RULES:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR 7: Observability - Metrics and Logging
+### PR 7: Observability - Metrics and Logging
 
 **Scope:** Add metrics for attribute extraction and assistant performance.
 
@@ -649,9 +649,9 @@ CRITICAL RULES:
 
 ---
 
-***REMOVED******REMOVED*** E. Testing Strategy
+## E. Testing Strategy
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests (Per PR)
+### Unit Tests (Per PR)
 
 | PR  | Test File                              | Coverage Target           |
 |-----|----------------------------------------|---------------------------|
@@ -663,7 +663,7 @@ CRITICAL RULES:
 | PR6 | `ClaudeProviderTest.ts`                | Prompt construction       |
 | PR7 | `MetricsTest.ts`                       | Metric recording          |
 
-***REMOVED******REMOVED******REMOVED*** Integration Tests
+### Integration Tests
 
 1. **End-to-End Classification with Attributes:**
     - Upload test image (IKEA bookshelf)
@@ -682,7 +682,7 @@ CRITICAL RULES:
     - Verify generated text includes attributes
     - Verify no hallucinated specs
 
-***REMOVED******REMOVED******REMOVED*** Manual Test Checklist
+### Manual Test Checklist
 
 **Before Each PR Merge:**
 
@@ -696,7 +696,7 @@ CRITICAL RULES:
 
 ---
 
-***REMOVED******REMOVED*** F. Sequenced Rollout
+## F. Sequenced Rollout
 
 | Week | PR  | Milestone                   |
 |------|-----|-----------------------------|
@@ -715,7 +715,7 @@ CRITICAL RULES:
 
 ---
 
-***REMOVED******REMOVED*** G. Open Questions / Decisions Needed
+## G. Open Questions / Decisions Needed
 
 1. **LLM Provider:** Claude vs OpenAI vs Azure OpenAI?
     - Recommendation: Claude (Anthropic) for consistency with Claude Code tooling
@@ -736,9 +736,9 @@ CRITICAL RULES:
 
 ---
 
-***REMOVED******REMOVED*** Appendix: Existing Code References
+## Appendix: Existing Code References
 
-***REMOVED******REMOVED******REMOVED*** Backend Vision Extractor (already built)
+### Backend Vision Extractor (already built)
 
 **Location:** `backend/src/modules/vision/extractor.ts:172-396`
 
@@ -758,7 +758,7 @@ class VisionExtractor {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Backend Attribute Resolver (already built)
+### Backend Attribute Resolver (already built)
 
 **Location:** `backend/src/modules/vision/attribute-resolver.ts:407-428`
 
@@ -776,7 +776,7 @@ export function resolveAttributes(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Brand Dictionary (already built)
+### Brand Dictionary (already built)
 
 **Location:** `backend/src/modules/vision/attribute-resolver.ts:52-85`
 

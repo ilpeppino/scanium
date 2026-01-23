@@ -1,29 +1,29 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** verify-monitoring.sh
-***REMOVED***
-***REMOVED*** Verifies the Scanium monitoring stack is operational.
-***REMOVED*** Checks: Grafana, Mimir (metrics), Tempo (traces), Loki (logs).
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   bash scripts/monitoring/verify-monitoring.sh
-***REMOVED***
-***REMOVED*** Exit codes:
-***REMOVED***   0 - All critical checks passed (warnings OK)
-***REMOVED***   1 - One or more critical checks failed
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+##############################################################################
+# verify-monitoring.sh
+#
+# Verifies the Scanium monitoring stack is operational.
+# Checks: Grafana, Mimir (metrics), Tempo (traces), Loki (logs).
+#
+# Usage:
+#   bash scripts/monitoring/verify-monitoring.sh
+#
+# Exit codes:
+#   0 - All critical checks passed (warnings OK)
+#   1 - One or more critical checks failed
+##############################################################################
 
 DOCKER="/usr/local/bin/docker"
 FAIL_COUNT=0
 WARN_COUNT=0
 
-***REMOVED*** Colors for output
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' ***REMOVED*** No Color
+NC='\033[0m' # No Color
 
 print_status() {
   local status=$1
@@ -49,20 +49,20 @@ echo "Scanium Monitoring Stack Verification"
 echo "════════════════════════════════════════════════════════════"
 echo ""
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** A) GRAFANA CHECKS
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+##############################################################################
+# A) GRAFANA CHECKS
+##############################################################################
 echo "[1/4] Grafana Health..."
 
-***REMOVED*** Check if container is running
+# Check if container is running
 if ! $DOCKER ps --format '{{.Names}}' | grep -q '^scanium-grafana$'; then
   print_status FAIL "Grafana: Container not running"
 else
-  ***REMOVED*** Check HTTP endpoint
+  # Check HTTP endpoint
   if $DOCKER exec scanium-grafana wget -q -O- --timeout=5 http://localhost:3000/api/health 2>/dev/null | grep -q '"database"'; then
     print_status OK "Grafana: API healthy"
 
-    ***REMOVED*** Check datasources (optional - requires API access)
+    # Check datasources (optional - requires API access)
     DATASOURCES=$($DOCKER exec scanium-grafana wget -q -O- --timeout=5 http://localhost:3000/api/datasources 2>/dev/null || echo "[]")
 
     MIMIR_DS=$(echo "$DATASOURCES" | grep -c '"name":"Mimir"' || echo "0")
@@ -80,19 +80,19 @@ else
 fi
 echo ""
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** B) MIMIR CHECKS (METRICS)
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+##############################################################################
+# B) MIMIR CHECKS (METRICS)
+##############################################################################
 echo "[2/4] Mimir Metrics..."
 
 if ! $DOCKER ps --format '{{.Names}}' | grep -q '^scanium-mimir$'; then
   print_status FAIL "Mimir: Container not running"
 else
-  ***REMOVED*** Check ready endpoint
+  # Check ready endpoint
   if $DOCKER exec scanium-mimir wget -q -O- --timeout=5 http://localhost:9009/ready 2>/dev/null | grep -q 'ready'; then
     print_status OK "Mimir: Ready endpoint OK"
 
-    ***REMOVED*** Query pipeline metrics (up{source="pipeline"})
+    # Query pipeline metrics (up{source="pipeline"})
     PIPELINE_QUERY='up{source="pipeline"}'
     PIPELINE_RESULT=$($DOCKER exec scanium-mimir wget -q -O- --timeout=10 "http://localhost:9009/prometheus/api/v1/query?query=${PIPELINE_QUERY}" 2>/dev/null || echo "{}")
 
@@ -107,7 +107,7 @@ else
       print_status WARN "Mimir: Query failed for pipeline metrics"
     fi
 
-    ***REMOVED*** Query backend metrics (up{job="scanium-backend"})
+    # Query backend metrics (up{job="scanium-backend"})
     BACKEND_QUERY='up{job="scanium-backend"}'
     BACKEND_RESULT=$($DOCKER exec scanium-mimir wget -q -O- --timeout=10 "http://localhost:9009/prometheus/api/v1/query?query=${BACKEND_QUERY}" 2>/dev/null || echo "{}")
 
@@ -127,24 +127,24 @@ else
 fi
 echo ""
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** C) TEMPO CHECKS (TRACES)
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+##############################################################################
+# C) TEMPO CHECKS (TRACES)
+##############################################################################
 echo "[3/4] Tempo Traces..."
 
 if ! $DOCKER ps --format '{{.Names}}' | grep -q '^scanium-tempo$'; then
   print_status FAIL "Tempo: Container not running"
 else
-  ***REMOVED*** Check ready endpoint
+  # Check ready endpoint
   if $DOCKER exec scanium-tempo wget -q -O- --timeout=5 http://localhost:3200/ready 2>/dev/null | grep -q 'ready'; then
     print_status OK "Tempo: Ready endpoint OK"
 
-    ***REMOVED*** Query services
+    # Query services
     SERVICES=$($DOCKER exec scanium-tempo wget -q -O- --timeout=10 http://localhost:3200/api/search/tags 2>/dev/null || echo "{}")
 
     if echo "$SERVICES" | grep -q '"tagNames"'; then
       print_status OK "Tempo: API responding"
-      ***REMOVED*** Note: Empty services is expected if no traces have been sent
+      # Note: Empty services is expected if no traces have been sent
       print_status WARN "Tempo: No traffic validation (empty trace store is normal initially)"
     else
       print_status WARN "Tempo: API may not be fully ready"
@@ -155,19 +155,19 @@ else
 fi
 echo ""
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** D) LOKI CHECKS (LOGS)
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+##############################################################################
+# D) LOKI CHECKS (LOGS)
+##############################################################################
 echo "[4/4] Loki Logs..."
 
 if ! $DOCKER ps --format '{{.Names}}' | grep -q '^scanium-loki$'; then
   print_status FAIL "Loki: Container not running"
 else
-  ***REMOVED*** Check ready endpoint
+  # Check ready endpoint
   if $DOCKER exec scanium-loki wget -q -O- --timeout=5 http://localhost:3100/ready 2>/dev/null | grep -q 'ready'; then
     print_status OK "Loki: Ready endpoint OK"
 
-    ***REMOVED*** Query labels
+    # Query labels
     LABELS=$($DOCKER exec scanium-loki wget -q -O- --timeout=10 http://localhost:3100/loki/api/v1/labels 2>/dev/null || echo "{}")
 
     if echo "$LABELS" | grep -q '"status":"success"'; then
@@ -186,9 +186,9 @@ else
 fi
 echo ""
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** SUMMARY
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+##############################################################################
+# SUMMARY
+##############################################################################
 echo "════════════════════════════════════════════════════════════"
 echo "Verification Summary"
 echo "════════════════════════════════════════════════════════════"

@@ -1,19 +1,19 @@
-***REMOVED*** eBay Selling Integration (Mock)
+# eBay Selling Integration (Mock)
 
 **Status**: ✅ Implemented and working
 **Version**: 1.0
 **Date**: December 2024
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Complete end-to-end marketplace integration that connects real on-device ML Kit scanning with a
 mocked eBay API for demonstration and testing purposes. Users can scan items with the camera, select
 multiple items, review listing drafts, and post them to a simulated eBay marketplace with realistic
 behavior.
 
-***REMOVED******REMOVED*** Features
+## Features
 
-***REMOVED******REMOVED******REMOVED*** User-Facing Features
+### User-Facing Features
 
 - ✅ **Multi-selection UI**: Long-press to enter selection mode, tap to toggle items (defaults to *
   *Sell on eBay** action for quicker listing flows)
@@ -23,7 +23,7 @@ behavior.
 - ✅ **View listings**: Open mock listing URLs in browser
 - ✅ **High-quality images**: Automatic preparation for web/mobile viewing
 
-***REMOVED******REMOVED******REMOVED*** Technical Features
+### Technical Features
 
 - ✅ **Background image processing**: All heavy work on `Dispatchers.IO`
 - ✅ **Realistic mock behavior**: Configurable delays and failure modes
@@ -31,38 +31,38 @@ behavior.
 - ✅ **Debug settings**: Test various scenarios without code changes
 - ✅ **Comprehensive logging**: Detailed logs for debugging and verification
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Package Structure
+### Package Structure
 
 ```
 selling/
 ├── data/
-│   ├── EbayApi.kt                    ***REMOVED*** Interface for eBay operations
-│   ├── MockEbayApi.kt                ***REMOVED*** Mock implementation with realistic behavior
-│   ├── MockEbayConfigManager.kt      ***REMOVED*** Singleton config manager
-│   ├── EbayMarketplaceService.kt     ***REMOVED*** Orchestration layer
-│   └── ListingRepository.kt          ***REMOVED*** In-memory listing cache
+│   ├── EbayApi.kt                    # Interface for eBay operations
+│   ├── MockEbayApi.kt                # Mock implementation with realistic behavior
+│   ├── MockEbayConfigManager.kt      # Singleton config manager
+│   ├── EbayMarketplaceService.kt     # Orchestration layer
+│   └── ListingRepository.kt          # In-memory listing cache
 ├── domain/
-│   ├── Listing.kt                    ***REMOVED*** Listing and ListingDraft models
-│   ├── ListingStatus.kt              ***REMOVED*** DRAFT, CREATING, ACTIVE, FAILED, ENDED
-│   ├── ListingCondition.kt           ***REMOVED*** NEW, USED, REFURBISHED
-│   ├── ListingImage.kt               ***REMOVED*** Image source and URI
-│   ├── ListingError.kt               ***REMOVED*** Error types
-│   └── ListingId.kt                  ***REMOVED*** Type-safe listing ID
+│   ├── Listing.kt                    # Listing and ListingDraft models
+│   ├── ListingStatus.kt              # DRAFT, CREATING, ACTIVE, FAILED, ENDED
+│   ├── ListingCondition.kt           # NEW, USED, REFURBISHED
+│   ├── ListingImage.kt               # Image source and URI
+│   ├── ListingError.kt               # Error types
+│   └── ListingId.kt                  # Type-safe listing ID
 ├── ui/
-│   ├── SellOnEbayScreen.kt           ***REMOVED*** Main sell screen UI
-│   ├── ListingViewModel.kt           ***REMOVED*** Manages drafts and posting
-│   ├── ListingViewModelFactory.kt    ***REMOVED*** Factory with dependencies
-│   └── DebugSettingsDialog.kt        ***REMOVED*** Mock configuration UI
+│   ├── SellOnEbayScreen.kt           # Main sell screen UI
+│   ├── ListingViewModel.kt           # Manages drafts and posting
+│   ├── ListingViewModelFactory.kt    # Factory with dependencies
+│   └── DebugSettingsDialog.kt        # Mock configuration UI
 └── util/
-    ├── ListingImagePreparer.kt       ***REMOVED*** Image quality optimization
-    └── ListingDraftMapper.kt         ***REMOVED*** ScannedItem → ListingDraft
+    ├── ListingImagePreparer.kt       # Image quality optimization
+    └── ListingDraftMapper.kt         # ScannedItem → ListingDraft
 ```
 
-***REMOVED******REMOVED******REMOVED*** Key Components
+### Key Components
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. ListingImagePreparer
+#### 1. ListingImagePreparer
 
 Prepares high-quality images for listings with proper resolution and quality.
 
@@ -113,7 +113,7 @@ when (result) {
 ╚═══════════════════════════════════════════════════════════════
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. MockEbayApi
+#### 2. MockEbayApi
 
 Realistic eBay API simulation with configurable behavior.
 
@@ -155,7 +155,7 @@ val api = MockEbayApi(
 val listing = api.createListing(draft, image) // May throw on failure
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. MockEbayConfigManager
+#### 3. MockEbayConfigManager
 
 Singleton configuration manager with reactive updates.
 
@@ -184,7 +184,7 @@ MockEbayConfigManager.config.collect { config ->
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. EbayMarketplaceService
+#### 4. EbayMarketplaceService
 
 Orchestrates the listing creation workflow.
 
@@ -221,7 +221,7 @@ when (val result = service.createListingForItem(item)) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. ListingViewModel
+#### 5. ListingViewModel
 
 Manages listing drafts and posting workflow.
 
@@ -267,7 +267,7 @@ itemsViewModel.updateListingStatus(
 itemsViewModel.updateListingStatus(itemId, ItemListingStatus.LISTING_FAILED)
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6. ItemsViewModel (Enhanced)
+#### 6. ItemsViewModel (Enhanced)
 
 Added listing status tracking methods.
 
@@ -305,9 +305,9 @@ enum class ItemListingStatus {
 }
 ```
 
-***REMOVED******REMOVED*** User Journey
+## User Journey
 
-***REMOVED******REMOVED******REMOVED*** Complete Flow
+### Complete Flow
 
 1. **Scan Items**
     - Point camera at objects
@@ -347,11 +347,11 @@ enum class ItemListingStatus {
     - Tap "View" button on listed items
     - Opens mock listing URL in browser
 
-***REMOVED******REMOVED*** Debug Settings
+## Debug Settings
 
 Access debug settings to test different scenarios.
 
-***REMOVED******REMOVED******REMOVED*** Configurable Options
+### Configurable Options
 
 1. **Network Delay Simulation**
     - Toggle on/off
@@ -369,7 +369,7 @@ Access debug settings to test different scenarios.
     - Controls probability of failure
     - Only active when failure mode ≠ NONE
 
-***REMOVED******REMOVED******REMOVED*** Testing Scenarios
+### Testing Scenarios
 
 **Test successful posting**:
 
@@ -403,11 +403,11 @@ Failure Mode: NONE
 Result: Instant posting without delays
 ```
 
-***REMOVED******REMOVED*** Logging
+## Logging
 
 Comprehensive logging for debugging and verification.
 
-***REMOVED******REMOVED******REMOVED*** Image Preparation Logs
+### Image Preparation Logs
 
 ```
 ListingImagePreparer: ╔═══════════════════════════════════════════════
@@ -422,7 +422,7 @@ ListingImagePreparer: ║   Quality: 85
 ListingImagePreparer: ╚═══════════════════════════════════════════════
 ```
 
-***REMOVED******REMOVED******REMOVED*** Mock eBay API Logs
+### Mock eBay API Logs
 
 ```
 MockEbayApi: Creating listing for item: item-123 (title: Used Laptop)
@@ -431,7 +431,7 @@ MockEbayApi: ✓ Listing created successfully: EBAY-MOCK-1702483920000-4567
 MockEbayApi:   URL: https://mock.ebay.local/listing/EBAY-MOCK-1702483920000-4567
 ```
 
-***REMOVED******REMOVED******REMOVED*** Marketplace Service Logs
+### Marketplace Service Logs
 
 ```
 EbayMarketplaceService: ═════════════════════════════════════════════════════
@@ -441,7 +441,7 @@ EbayMarketplaceService: ✓ Listing created: EBAY-MOCK-1702483920000-4567
 EbayMarketplaceService: ═════════════════════════════════════════════════════
 ```
 
-***REMOVED******REMOVED******REMOVED*** Listing ViewModel Logs
+### Listing ViewModel Logs
 
 ```
 ListingViewModel: ══════════════════════════════════════════════════════════
@@ -454,9 +454,9 @@ ListingViewModel: Batch complete: 2 success, 1 failed
 ListingViewModel: ══════════════════════════════════════════════════════════
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 **ListingImagePreparerTest.kt**:
 
@@ -482,7 +482,7 @@ ListingViewModel: ════════════════════�
 - ✅ Only affects target item
 - ✅ Get methods work correctly
 
-***REMOVED******REMOVED******REMOVED*** Manual Testing
+### Manual Testing
 
 **Checklist**:
 
@@ -499,16 +499,16 @@ ListingViewModel: ════════════════════�
 - [ ] Test with failure mode enabled
 - [ ] Verify error handling
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** Short-term
+### Short-term
 
 - [ ] Add retry mechanism for failed listings
 - [ ] Support batch editing (set same price for all)
 - [ ] Add listing preview before posting
 - [ ] Persist listing status across app restarts
 
-***REMOVED******REMOVED******REMOVED*** Medium-term
+### Medium-term
 
 - [ ] Real eBay API integration
 - [ ] OAuth authentication
@@ -518,7 +518,7 @@ ListingViewModel: ════════════════════�
 - [ ] Shipping options
 - [ ] Return policy configuration
 
-***REMOVED******REMOVED******REMOVED*** Long-term
+### Long-term
 
 - [ ] Analytics dashboard
 - [ ] Price recommendations from eBay sold listings
@@ -527,7 +527,7 @@ ListingViewModel: ════════════════════�
 - [ ] Listing templates
 - [ ] Scheduled listings
 
-***REMOVED******REMOVED*** Migration to Real eBay API
+## Migration to Real eBay API
 
 To replace the mock with real eBay API:
 
@@ -566,6 +566,6 @@ To replace the mock with real eBay API:
     - Implement listing updates and deletions
     - Add error recovery
 
-***REMOVED******REMOVED*** License
+## License
 
 [Same as main project]

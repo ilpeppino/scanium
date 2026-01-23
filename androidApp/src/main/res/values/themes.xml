@@ -5,7 +5,7 @@
     Works on all Android versions (pre-12 uses compat shim, 12+ uses native API).
 
     Splash Requirements:
-    - Background: White (***REMOVED***FFFFFF) in light mode, dark slate (***REMOVED***0F172A) in dark mode
+    - Background: White (#FFFFFF) in light mode, dark slate (#0F172A) in dark mode
     - Icon: Centered "S" mark (Scan Beam symbol) with proper safe zone padding
     - Transition: Fast (<= 600ms), no delay on camera start
     -->

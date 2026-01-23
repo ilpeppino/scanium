@@ -1,22 +1,22 @@
-***REMOVED*** Incident Report: Dashboard Data Feed Issues - 2026-01-10
+# Incident Report: Dashboard Data Feed Issues - 2026-01-10
 
 **Status:** RESOLVED (Metrics), DOCUMENTED (Logs)
 **Date:** 2026-01-10
 **Duration:** ~3 hours investigation + remediation
 **Severity:** High (Complete loss of dashboard visibility)
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 Grafana dashboards showed no data due to two critical issues:
 
 1. **Mimir metrics**: Orphaned container + misconfigured querier (FIXED)
 2. **Loki logs**: Docker source not ingesting logs (DOCUMENTED)
 
-***REMOVED******REMOVED*** Root Causes
+## Root Causes
 
-***REMOVED******REMOVED******REMOVED*** 1. Mimir Metrics Issue (FIXED)
+### 1. Mimir Metrics Issue (FIXED)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Problem Chain
+#### Problem Chain
 
 1. **Orphaned Container**: Old `c8a6ca9c65cf_scanium-mimir` container remained on
    `compose_scanium_net` network after previous deployments
@@ -27,7 +27,7 @@ Grafana dashboards showed no data due to two critical issues:
 4. **Querier Misconfiguration**: Even if data reached Mimir, querier wasn't configured to read from
    ingesters for recent data
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence
+#### Evidence
 
 - **PHASE 0 Baseline**:
     - Queries returned empty despite series existing in label index
@@ -44,7 +44,7 @@ Grafana dashboards showed no data due to two critical issues:
     - Alloy resolving to old container at 172.21.0.7
     - Alloy WAL had 15k+ samples but wasn't sending to Mimir
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Solution Applied
+#### Solution Applied
 
 1. **Removed orphaned containers**:
    ```bash
@@ -71,53 +71,53 @@ Grafana dashboards showed no data due to two critical issues:
 
 5. **Restarted services**: Mimir → Alloy (to trigger WAL replay)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Verification (POST-FIX)
+#### Verification (POST-FIX)
 
 ```bash
-***REMOVED*** Ingestion restored
+# Ingestion restored
 curl http://127.0.0.1:9009/metrics | grep cortex_distributor_ingestion_rate
 cortex_distributor_ingestion_rate_samples_per_second 354.7
 
-***REMOVED*** Queries now work
+# Queries now work
 curl "http://127.0.0.1:9009/prometheus/api/v1/query?query=up%7Bjob%3D%22scanium-backend%22%7D"
-***REMOVED*** Returns: {"status":"success","data":{"result":[...]}}
+# Returns: {"status":"success","data":{"result":[...]}}
 
-***REMOVED*** Backend metrics available
+# Backend metrics available
 curl "http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_http_requests_total"
-***REMOVED*** Returns: 7+ series with detailed route/method/status breakdowns
+# Returns: 7+ series with detailed route/method/status breakdowns
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Loki Logs Issue (DOCUMENTED - Not Fixed)
+### 2. Loki Logs Issue (DOCUMENTED - Not Fixed)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Problem
+#### Problem
 
 - Loki has zero labels and returns no data for all LogQL queries
 - `loki_source_docker_target_entries_total: 0` (Alloy docker source sent 0 entries)
 - Manual push to Loki API failed with JSON parsing error
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Investigation Findings
+#### Investigation Findings
 
 - Docker socket accessible in Alloy container (verified)
 - `loki.source.docker.backend` component healthy (no errors in logs)
 - Backend container producing logs (verified via `docker logs`)
 - Loki `/api/v1/labels` returns `{"status":"success"}` with no data array
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Hypothesis
+#### Hypothesis
 
 - Docker source configuration may need adjustment (container label selectors, target filters)
 - OR Loki API version incompatibility (manual push failed with parse error)
 - OR Docker event stream not being monitored correctly
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Recommended Next Steps
+#### Recommended Next Steps
 
 1. Enable Alloy debug logging for `loki.source.docker` component
 2. Test with OTLP logs export from backend instead of Docker source
 3. Verify Loki 2.9.3 API compatibility with Alloy v1.0.0
 4. Consider upgrading to `loki.source.docker` with explicit event filtering
 
-***REMOVED******REMOVED*** Impact Assessment
+## Impact Assessment
 
-***REMOVED******REMOVED******REMOVED*** Fixed (Metrics)
+### Fixed (Metrics)
 
 ✅ **Backend API Performance Dashboard**
 
@@ -135,7 +135,7 @@ curl "http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_http_requests_
 - `up{source="pipeline"}` → All 4 components (alloy, loki, mimir, tempo) showing
 - Monitoring stack self-observability restored
 
-***REMOVED******REMOVED******REMOVED*** Known Limitation (Logs)
+### Known Limitation (Logs)
 
 ❌ **Logs Explorer Dashboard**
 
@@ -143,7 +143,7 @@ curl "http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_http_requests_
 - Log-based alerts not functioning
 - Requires separate investigation
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 1. `monitoring/docker-compose.yml`
     - Added Mimir querier CLI flags
@@ -156,7 +156,7 @@ curl "http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_http_requests_
 3. `monitoring/incident_data/INCIDENT_DASHBOARDS_NO_DATA_20260110.md`
     - This report
 
-***REMOVED******REMOVED*** Lessons Learned
+## Lessons Learned
 
 1. **Container Lifecycle Management**: Orphaned containers from
    `docker-compose up -d --force-recreate` can persist if not explicitly pruned. Use
@@ -174,7 +174,7 @@ curl "http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_http_requests_
 5. **Healthcheck Endpoints**: Verify exact endpoint paths (`/-/ready` vs `/ready`) against official
    documentation.
 
-***REMOVED******REMOVED*** Prevention Measures
+## Prevention Measures
 
 1. Add pre-deployment cleanup step:
    ```bash
@@ -187,13 +187,13 @@ curl "http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_http_requests_
 
 4. Consider using explicit container IPs in scrape configs instead of DNS
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
 - Alloy unhealthy status (healthcheck endpoint) - FIXED
 - Old Mimir/Loki/Tempo containers not cleaned up - FIXED
 - Loki ingestion from Docker source - OPEN (see hypothesis section)
 
-***REMOVED******REMOVED*** Sign-off
+## Sign-off
 
 **Root Cause Confirmed**: Yes (orphaned container + querier misconfiguration)
 **Fix Validated**: Yes (354.7 samples/sec ingestion, queries returning data)

@@ -1,12 +1,12 @@
-***REMOVED*** PR ***REMOVED***4: Android Sentry Integration behind CrashPort
+# PR #4: Android Sentry Integration behind CrashPort
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This PR introduces a **vendor-neutral CrashPort interface** in the shared Kotlin Multiplatform code
 and implements it using the Sentry Android SDK. This architecture keeps crash reporting abstracted
 from the shared business logic while allowing platform-specific implementations.
 
-***REMOVED******REMOVED******REMOVED*** Key Features
+### Key Features
 
 ✅ **Vendor-neutral CrashPort interface** in `shared/telemetry`
 ✅ **Android Sentry adapter** implementing CrashPort
@@ -17,9 +17,9 @@ from the shared business logic while allowing platform-specific implementations.
 
 ---
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Hexagonal Architecture (Ports & Adapters)
+### Hexagonal Architecture (Ports & Adapters)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -56,7 +56,7 @@ from the shared business logic while allowing platform-specific implementations.
 └─────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Breadcrumb Flow
+### Breadcrumb Flow
 
 1. Business logic calls `telemetry.warn("ml.classification_failed", attrs)`
 2. Telemetry facade emits event to LogPort (existing behavior)
@@ -66,16 +66,16 @@ from the shared business logic while allowing platform-specific implementations.
 
 ---
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
-***REMOVED******REMOVED******REMOVED*** Shared Code (Kotlin Multiplatform)
+### Shared Code (Kotlin Multiplatform)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** New Files
+#### New Files
 
 - **`shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/ports/CrashPort.kt`**
   Vendor-neutral interface for crash reporting (setTag, addBreadcrumb, captureException)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Modified Files
+#### Modified Files
 
 - **`shared/telemetry/src/commonMain/kotlin/com/scanium/telemetry/ports/NoOpPorts.kt`**
   Added `NoOpCrashPort` for testing and disabled builds
@@ -85,14 +85,14 @@ from the shared business logic while allowing platform-specific implementations.
     - Auto-forwards WARN/ERROR events as breadcrumbs
     - Filters out redundant attributes (platform, app_version, etc.) from breadcrumbs
 
-***REMOVED******REMOVED******REMOVED*** Android App
+### Android App
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** New Files
+#### New Files
 
 - **`androidApp/src/main/java/com/scanium/app/crash/AndroidCrashPortAdapter.kt`**
   Sentry Android SDK implementation of CrashPort
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Modified Files
+#### Modified Files
 
 - **`androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt`**
     - Refactored to use CrashPort adapter
@@ -120,18 +120,18 @@ from the shared business logic while allowing platform-specific implementations.
 
 ---
 
-***REMOVED******REMOVED*** Sentry DSN Configuration
+## Sentry DSN Configuration
 
-***REMOVED******REMOVED******REMOVED*** Method 1: local.properties (Recommended for Development)
+### Method 1: local.properties (Recommended for Development)
 
 Create or edit `local.properties` in the project root:
 
 ```properties
-***REMOVED*** Sentry DSN for crash reporting
+# Sentry DSN for crash reporting
 sentry.dsn=https://your-sentry-dsn@sentry.io/project-id
 ```
 
-***REMOVED******REMOVED******REMOVED*** Method 2: Environment Variable (Recommended for CI/CD)
+### Method 2: Environment Variable (Recommended for CI/CD)
 
 Set the environment variable before building:
 
@@ -140,7 +140,7 @@ export SENTRY_DSN="https://your-sentry-dsn@sentry.io/project-id"
 ./gradlew assembleDebug
 ```
 
-***REMOVED******REMOVED******REMOVED*** Build Configuration
+### Build Configuration
 
 The Sentry DSN is loaded in `androidApp/build.gradle.kts`:
 
@@ -153,7 +153,7 @@ If no DSN is configured, the app will use `NoOpCrashPort` (no crash reporting).
 
 ---
 
-***REMOVED******REMOVED*** User Consent
+## User Consent
 
 Crash reporting respects the **"Share Diagnostics"** setting in the app:
 
@@ -166,9 +166,9 @@ Crash reporting respects the **"Share Diagnostics"** setting in the app:
 
 ---
 
-***REMOVED******REMOVED*** Testing Crash Reporting
+## Testing Crash Reporting
 
-***REMOVED******REMOVED******REMOVED*** Manual Test (DEBUG builds only)
+### Manual Test (DEBUG builds only)
 
 1. **Build and install the debug APK:**
    ```bash
@@ -193,24 +193,24 @@ Crash reporting respects the **"Share Diagnostics"** setting in the app:
     - Verify tags: `platform=android`, `app_version`, `build`, `env=dev`, `crash_test=true`
     - Check breadcrumbs: Should include "User triggered crash test"
 
-***REMOVED******REMOVED******REMOVED*** Expected Tags in Sentry
+### Expected Tags in Sentry
 
 ```yaml
 platform: android
-app_version: 1.0  ***REMOVED*** From BuildConfig.VERSION_NAME
-build: 1          ***REMOVED*** From BuildConfig.VERSION_CODE
-env: dev          ***REMOVED*** "dev" in DEBUG builds, "prod" in RELEASE
-build_type: debug ***REMOVED*** "debug" or "release"
+app_version: 1.0  # From BuildConfig.VERSION_NAME
+build: 1          # From BuildConfig.VERSION_CODE
+env: dev          # "dev" in DEBUG builds, "prod" in RELEASE
+build_type: debug # "debug" or "release"
 session_id: <uuid>
 scan_mode: <LOCAL|CLOUD|HYBRID>
 cloud_allowed: true
-domain_pack_version: unknown  ***REMOVED*** Placeholder for future
-crash_test: true  ***REMOVED*** Only on manual test crashes
+domain_pack_version: unknown  # Placeholder for future
+crash_test: true  # Only on manual test crashes
 ```
 
 ---
 
-***REMOVED******REMOVED*** Breadcrumb Volume Control
+## Breadcrumb Volume Control
 
 To keep breadcrumb volume low (as per requirements):
 
@@ -226,7 +226,7 @@ Future optimization options:
 
 ---
 
-***REMOVED******REMOVED*** Future Work (Out of Scope for This PR)
+## Future Work (Out of Scope for This PR)
 
 - [ ] **OTLP export:** Add OpenTelemetry export alongside Sentry
 - [ ] **iOS implementation:** Create `IOSCrashPortAdapter` using Sentry iOS SDK
@@ -237,7 +237,7 @@ Future optimization options:
 
 ---
 
-***REMOVED******REMOVED*** Rollback Plan
+## Rollback Plan
 
 If this integration causes issues:
 
@@ -254,7 +254,7 @@ If this integration causes issues:
 
 ---
 
-***REMOVED******REMOVED*** Security Considerations
+## Security Considerations
 
 ✅ **PII protection:** Telemetry events are already sanitized by `AttributeSanitizer` before reaching
 CrashPort
@@ -264,21 +264,21 @@ CrashPort
 
 ---
 
-***REMOVED******REMOVED*** Build Verification
+## Build Verification
 
 ```bash
-***REMOVED*** Clean build from scratch
+# Clean build from scratch
 ./gradlew clean
 
-***REMOVED*** Build debug APK
+# Build debug APK
 ./gradlew :androidApp:assembleDebug
 
-***REMOVED*** Verify no compiler errors (✅ Build successful)
+# Verify no compiler errors (✅ Build successful)
 ```
 
 ---
 
-***REMOVED******REMOVED*** PR Review Checklist
+## PR Review Checklist
 
 - [x] CrashPort interface is vendor-neutral (no Sentry imports in shared code)
 - [x] AndroidCrashPortAdapter properly wraps Sentry SDK
@@ -292,7 +292,7 @@ CrashPort
 
 ---
 
-***REMOVED******REMOVED*** Questions?
+## Questions?
 
 **Q: Why not use Sentry SDK directly in shared code?**
 A: Keeping shared code vendor-neutral allows us to:

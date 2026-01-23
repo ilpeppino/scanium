@@ -1,6 +1,6 @@
-***REMOVED*** Scanium App Sounds
+# Scanium App Sounds
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium provides subtle, non-disruptive UI sound cues for key user actions. Sounds are enabled by
 default and can be toggled off in **Settings → Sounds → Enable sounds**.
@@ -11,7 +11,7 @@ Sounds are suppressed when:
 - Device ringer mode is **silent** or **vibrate**.
 - Do Not Disturb is active (interruption filter not `ALL`).
 
-***REMOVED******REMOVED*** Sound Map
+## Sound Map
 
 | Action                                                                        | Sound        |
 |-------------------------------------------------------------------------------|--------------|
@@ -24,7 +24,7 @@ Sounds are suppressed when:
 | Assistant reply received (when on screen & not typing)                        | `RECEIVED`   |
 | Export/share initiated                                                        | `EXPORT`     |
 
-***REMOVED******REMOVED*** Anti-spam / Rate Limiting
+## Anti-spam / Rate Limiting
 
 Some sounds are rate-limited to prevent “machine-gun” audio during scanning or rapid taps.
 
@@ -32,7 +32,7 @@ Some sounds are rate-limited to prevent “machine-gun” audio during scanning 
 - `SELECT`: minimum 150 ms between plays.
 - `RECEIVED`: minimum 500 ms between plays.
 
-***REMOVED******REMOVED*** Adding New Cues
+## Adding New Cues
 
 1. Add a new `AppSound` entry in `androidApp/src/main/java/com/scanium/app/audio/AppSound.kt`.
 2. Map it to a resource in `AndroidSoundManager` (`SOUND_RESOURCES`).
@@ -40,7 +40,7 @@ Some sounds are rate-limited to prevent “machine-gun” audio during scanning 
 4. Wire the cue to a discrete, user-perceived action in the UI or ViewModel.
 5. Ensure the action is not a continuous loop and won’t spam the user.
 
-***REMOVED******REMOVED*** Assets & Licensing
+## Assets & Licensing
 
 Sounds are generated at runtime using `ToneGenerator` (no bundled assets, no external licensing
 required).

@@ -1,26 +1,26 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium Script Verification Tool
-***REMOVED*** =============================================================================
-***REMOVED*** Validates all scripts in the repository:
-***REMOVED***   - Checks shebang lines
-***REMOVED***   - Verifies file is executable
-***REMOVED***   - Tests --help flag (if supported)
-***REMOVED***   - Checks for common portability issues
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   ./scripts/dev/verify_scripts.sh [--help] [--fix] [--verbose]
-***REMOVED***
-***REMOVED*** =============================================================================
+#!/usr/bin/env bash
+# =============================================================================
+# Scanium Script Verification Tool
+# =============================================================================
+# Validates all scripts in the repository:
+#   - Checks shebang lines
+#   - Verifies file is executable
+#   - Tests --help flag (if supported)
+#   - Checks for common portability issues
+#
+# Usage:
+#   ./scripts/dev/verify_scripts.sh [--help] [--fix] [--verbose]
+#
+# =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-***REMOVED*** Source common library
+# Source common library
 source "$SCRIPT_DIR/../lib/common.sh" 2>/dev/null || {
-  ***REMOVED*** Fallback logging if common.sh not available
+  # Fallback logging if common.sh not available
   log_info() { echo "[INFO] $*"; }
   log_success() { echo "[OK] $*"; }
   log_warn() { echo "[WARN] $*" >&2; }
@@ -28,21 +28,21 @@ source "$SCRIPT_DIR/../lib/common.sh" 2>/dev/null || {
   log_fail() { echo "[FAIL] $*"; }
 }
 
-***REMOVED*** Configuration
+# Configuration
 MANIFEST_FILE="$REPO_ROOT/scripts/scripts_manifest.json"
 REPORT_FILE="$REPO_ROOT/tmp/scripts_verify_report.md"
 FIX_MODE=false
 VERBOSE=false
 
-***REMOVED*** Counters
+# Counters
 TOTAL=0
 PASSED=0
 FAILED=0
 SKIPPED=0
 
-***REMOVED*** =============================================================================
-***REMOVED*** Help
-***REMOVED*** =============================================================================
+# =============================================================================
+# Help
+# =============================================================================
 show_help() {
   cat <<EOF
 verify_scripts.sh - Validate all Scanium scripts
@@ -68,10 +68,10 @@ Output:
 EOF
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Parse Arguments
-***REMOVED*** =============================================================================
-while [[ $***REMOVED*** -gt 0 ]]; do
+# =============================================================================
+# Parse Arguments
+# =============================================================================
+while [[ $# -gt 0 ]]; do
   case "$1" in
     --fix)
       FIX_MODE=true
@@ -93,31 +93,31 @@ while [[ $***REMOVED*** -gt 0 ]]; do
   esac
 done
 
-***REMOVED*** =============================================================================
-***REMOVED*** Validation Functions
-***REMOVED*** =============================================================================
+# =============================================================================
+# Validation Functions
+# =============================================================================
 check_shebang() {
   local file="$1"
   local first_line
   first_line=$(head -1 "$file" 2>/dev/null || echo "")
 
-  if [[ ! "$first_line" =~ ^***REMOVED***! ]]; then
+  if [[ ! "$first_line" =~ ^#! ]]; then
     echo "missing"
     return 1
   fi
 
-  ***REMOVED*** Check for problematic shebangs
+  # Check for problematic shebangs
   if [[ "$first_line" =~ /data/data/com.termux ]]; then
     echo "termux-hardcoded"
     return 1
   fi
 
-  if [[ "$first_line" =~ ^***REMOVED***!/usr/bin/env\ (bash|sh|python|python3|node) ]]; then
+  if [[ "$first_line" =~ ^#!/usr/bin/env\ (bash|sh|python|python3|node) ]]; then
     echo "portable"
     return 0
   fi
 
-  if [[ "$first_line" =~ ^***REMOVED***!/bin/(bash|sh) ]]; then
+  if [[ "$first_line" =~ ^#!/bin/(bash|sh) ]]; then
     echo "absolute"
     return 0
   fi
@@ -136,7 +136,7 @@ check_crlf() {
   if file "$file" | grep -q "CRLF"; then
     return 1
   fi
-  ***REMOVED*** Also check with grep
+  # Also check with grep
   if grep -q $'\r' "$file" 2>/dev/null; then
     return 1
   fi
@@ -152,7 +152,7 @@ check_help_flag() {
     return 0
   fi
 
-  ***REMOVED*** Try running with --help (with timeout)
+  # Try running with --help (with timeout)
   local output
   if output=$(timeout 5 "$file" --help 2>&1); then
     if [[ -n "$output" ]]; then
@@ -170,12 +170,12 @@ fix_shebang() {
   local first_line
   first_line=$(head -1 "$file")
 
-  ***REMOVED*** Fix Termux hardcoded path
+  # Fix Termux hardcoded path
   if [[ "$first_line" =~ /data/data/com.termux.*bash ]]; then
     if [[ "$(uname)" == "Darwin" ]]; then
-      sed -i '' '1s|.*|***REMOVED***!/usr/bin/env bash|' "$file"
+      sed -i '' '1s|.*|#!/usr/bin/env bash|' "$file"
     else
-      sed -i '1s|.*|***REMOVED***!/usr/bin/env bash|' "$file"
+      sed -i '1s|.*|#!/usr/bin/env bash|' "$file"
     fi
     log_success "Fixed shebang in $(basename "$file")"
     return 0
@@ -204,9 +204,9 @@ fix_crlf() {
   fi
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Script Verification
-***REMOVED*** =============================================================================
+# =============================================================================
+# Script Verification
+# =============================================================================
 verify_script() {
   local path="$1"
   local supports_help="${2:-false}"
@@ -223,7 +223,7 @@ verify_script() {
     return 1
   fi
 
-  ***REMOVED*** Check shebang
+  # Check shebang
   local shebang_status
   shebang_status=$(check_shebang "$full_path")
   case "$shebang_status" in
@@ -238,7 +238,7 @@ verify_script() {
       ;;
   esac
 
-  ***REMOVED*** Check executable
+  # Check executable
   if ! check_executable "$full_path"; then
     issues+=("not executable")
     if $FIX_MODE; then
@@ -246,7 +246,7 @@ verify_script() {
     fi
   fi
 
-  ***REMOVED*** Check CRLF
+  # Check CRLF
   if ! check_crlf "$full_path"; then
     issues+=("CRLF line endings")
     if $FIX_MODE; then
@@ -254,9 +254,9 @@ verify_script() {
     fi
   fi
 
-  ***REMOVED*** Determine final status
-  if [[ ${***REMOVED***issues[@]} -gt 0 ]]; then
-    ***REMOVED*** Check if all issues were fixed
+  # Determine final status
+  if [[ ${#issues[@]} -gt 0 ]]; then
+    # Check if all issues were fixed
     local unfixed=0
     for issue in "${issues[@]}"; do
       if [[ ! "$issue" =~ ^fixed ]]; then
@@ -283,23 +283,23 @@ verify_script() {
   echo "| $path | $status | ${issues[*]:-OK} |" >> "$REPORT_FILE"
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Main
-***REMOVED*** =============================================================================
+# =============================================================================
+# Main
+# =============================================================================
 main() {
   print_banner "Scanium Script Verification"
 
   mkdir -p "$(dirname "$REPORT_FILE")"
 
-  ***REMOVED*** Initialize report
+  # Initialize report
   cat > "$REPORT_FILE" <<EOF
-***REMOVED*** Script Verification Report
+# Script Verification Report
 
 Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
 Platform: $(get_platform)
 Fix mode: $FIX_MODE
 
-***REMOVED******REMOVED*** Results
+## Results
 
 | Script | Status | Notes |
 |--------|--------|-------|
@@ -308,17 +308,17 @@ EOF
   log_info "Scanning scripts from manifest..."
   echo ""
 
-  ***REMOVED*** Check if manifest exists
+  # Check if manifest exists
   if [[ ! -f "$MANIFEST_FILE" ]]; then
     log_warn "Manifest not found, scanning scripts/ directory directly"
 
-    ***REMOVED*** Find all shell scripts
+    # Find all shell scripts
     while IFS= read -r -d '' file; do
-      local rel_path="${file***REMOVED***$REPO_ROOT/}"
+      local rel_path="${file#$REPO_ROOT/}"
       verify_script "$rel_path" false
     done < <(find "$REPO_ROOT/scripts" -type f \( -name "*.sh" -o -name "*.bash" \) -print0 2>/dev/null)
   else
-    ***REMOVED*** Use manifest
+    # Use manifest
     local scripts
     scripts=$(jq -r '.areas[].scripts[] | "\(.path)|\(.supports_help)"' "$MANIFEST_FILE")
 
@@ -327,9 +327,9 @@ EOF
     done <<< "$scripts"
   fi
 
-  ***REMOVED*** Summary
+  # Summary
   echo ""
-  echo "***REMOVED******REMOVED*** Summary" >> "$REPORT_FILE"
+  echo "## Summary" >> "$REPORT_FILE"
   echo "" >> "$REPORT_FILE"
   echo "- Total: $TOTAL" >> "$REPORT_FILE"
   echo "- Passed: $PASSED" >> "$REPORT_FILE"

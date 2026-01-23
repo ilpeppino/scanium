@@ -1,10 +1,10 @@
-***REMOVED*** Startup Crash-Loop Root Cause Analysis
+# Startup Crash-Loop Root Cause Analysis
 
 **Date:** 2026-01-08
 **Status:** Fixed
 **Severity:** High (intermittent app launch failure)
 
-***REMOVED******REMOVED*** Symptom
+## Symptom
 
 The app occasionally crash-loops immediately after install:
 
@@ -12,7 +12,7 @@ The app occasionally crash-loops immediately after install:
 - Re-opening triggers Android warning "app keeps stopping"
 - Intermittent (not every install) - depends on DataStore state
 
-***REMOVED******REMOVED*** How to Reproduce
+## How to Reproduce
 
 1. Install fresh APK (any flavor: dev/beta/prod)
 2. If DataStore preferences file becomes corrupted (e.g., due to process kill during write, disk
@@ -26,7 +26,7 @@ The app occasionally crash-loops immediately after install:
 ./scripts/dev/capture_startup_crash.sh --clear --loop 10 --stop-on-crash
 ```
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
 **Location:** `ScaniumApplication.onCreate()` (line 55-62)
 
@@ -39,7 +39,7 @@ val initialLanguage = runBlocking {
 
 **Two issues combined to cause the crash:**
 
-***REMOVED******REMOVED******REMOVED*** 1. Missing DataStore Corruption Handler
+### 1. Missing DataStore Corruption Handler
 
 `SettingsRepository.kt` used `preferencesDataStore` without a `corruptionHandler`:
 
@@ -53,7 +53,7 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 If the preferences file becomes corrupted (possible after process kill, disk issues, or app
 updates), `dataStore.data.first()` throws an `IOException`.
 
-***REMOVED******REMOVED******REMOVED*** 2. Unprotected runBlocking in Application.onCreate()
+### 2. Unprotected runBlocking in Application.onCreate()
 
 The locale loading code blocked the main thread with `runBlocking` and had no error handling:
 
@@ -70,9 +70,9 @@ If DataStore threw, this crashed the app **before Sentry was initialized**, so:
 - Android showed "app keeps stopping" on subsequent launches
 - The crash loop continued until the user cleared app data
 
-***REMOVED******REMOVED*** Fix
+## Fix
 
-***REMOVED******REMOVED******REMOVED*** 1. Added DataStore Corruption Handler
+### 1. Added DataStore Corruption Handler
 
 `SettingsRepository.kt` now includes a corruption handler that resets to defaults:
 
@@ -86,7 +86,7 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Added Safe Flow Helper
+### 2. Added Safe Flow Helper
 
 All startup-critical flows now use a `.safeMap()` helper that catches IO exceptions:
 
@@ -109,7 +109,7 @@ private fun <T> Flow<Preferences>.safeMap(
         }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Added Defensive Error Handling in Application
+### 3. Added Defensive Error Handling in Application
 
 `ScaniumApplication.onCreate()` now wraps the locale loading in `runCatching`:
 
@@ -122,7 +122,7 @@ val initialLanguage = runCatching {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Added Crash-Loop Detection (StartupGuard)
+### 4. Added Crash-Loop Detection (StartupGuard)
 
 New `StartupGuard` class detects crash loops and enables safe mode:
 
@@ -137,9 +137,9 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 - `app/startup/StartupGuard.kt` - Crash-loop detection
 - `app/startup/StartupOrchestrator.kt` - Phased initialization framework
 
-***REMOVED******REMOVED*** Regression Guards
+## Regression Guards
 
-***REMOVED******REMOVED******REMOVED*** 1. Instrumented Tests
+### 1. Instrumented Tests
 
 `StartupReliabilityRegressionTest.kt` validates:
 
@@ -156,7 +156,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
     --tests "com.scanium.app.regression.StartupReliabilityRegressionTest"
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Unit Tests
+### 2. Unit Tests
 
 `StartupGuardTest.kt` validates crash-loop detection logic:
 
@@ -173,7 +173,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
     --tests "com.scanium.app.startup.StartupGuardTest"
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Capture Script
+### 3. Capture Script
 
 `scripts/dev/capture_startup_crash.sh` provides:
 
@@ -185,17 +185,17 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 **Usage:**
 
 ```bash
-***REMOVED*** Single capture
+# Single capture
 ./scripts/dev/capture_startup_crash.sh
 
-***REMOVED*** Loop mode (catch intermittent)
+# Loop mode (catch intermittent)
 ./scripts/dev/capture_startup_crash.sh --clear --loop 10 --stop-on-crash
 
-***REMOVED*** With APK install
+# With APK install
 ./scripts/dev/capture_startup_crash.sh --flavor beta --install app.apk
 ```
 
-***REMOVED******REMOVED*** Remaining Risks and Mitigations
+## Remaining Risks and Mitigations
 
 | Risk                                                  | Mitigation                                                      |
 |-------------------------------------------------------|-----------------------------------------------------------------|
@@ -204,7 +204,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 | Hilt DI initialization failures                       | Compile-time safety from KSP; no known issues                   |
 | Network security config issues                        | Build-time validation by AGP                                    |
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 | File                                             | Change                                                        |
 |--------------------------------------------------|---------------------------------------------------------------|
@@ -217,7 +217,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
 | `regression/StartupReliabilityRegressionTest.kt` | New instrumented tests                                        |
 | `startup/StartupGuardTest.kt`                    | New unit tests                                                |
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
 1. Build and install fresh:
    ```bash
@@ -235,7 +235,7 @@ New `StartupGuard` class detects crash loops and enables safe mode:
    ./scripts/dev/capture_startup_crash.sh --clear --loop 5
    ```
 
-***REMOVED******REMOVED*** Future Improvements
+## Future Improvements
 
 1. **Add Phase 2/3 initialization** to StartupOrchestrator for ML warmup, caches
 2. **Add safe mode UI** to show diagnostic info in dev builds

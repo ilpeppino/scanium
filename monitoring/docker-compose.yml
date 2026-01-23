@@ -1,20 +1,20 @@
-***REMOVED*** Scanium Observability Stack (LGTM + Alloy)
-***REMOVED*** - Loki: Logs storage
-***REMOVED*** - Grafana: Visualization
-***REMOVED*** - Tempo: Distributed tracing
-***REMOVED*** - Mimir: Metrics storage
-***REMOVED*** - Alloy: OTLP receiver & routing
+# Scanium Observability Stack (LGTM + Alloy)
+# - Loki: Logs storage
+# - Grafana: Visualization
+# - Tempo: Distributed tracing
+# - Mimir: Metrics storage
+# - Alloy: OTLP receiver & routing
 
 services:
-  ***REMOVED*** Grafana Alloy - OTLP receiver and telemetry router
+  # Grafana Alloy - OTLP receiver and telemetry router
   alloy:
     image: grafana/alloy:v1.0.0
     container_name: scanium-alloy
     restart: unless-stopped
     ports:
-      - "4317:4317"           ***REMOVED*** OTLP gRPC (public - app telemetry ingestion)
-      - "4318:4318"           ***REMOVED*** OTLP HTTP (public - app telemetry ingestion)
-      - "127.0.0.1:12345:12345" ***REMOVED*** Alloy UI/metrics (localhost only - debugging)
+      - "4317:4317"           # OTLP gRPC (public - app telemetry ingestion)
+      - "4318:4318"           # OTLP HTTP (public - app telemetry ingestion)
+      - "127.0.0.1:12345:12345" # Alloy UI/metrics (localhost only - debugging)
     volumes:
       - ./alloy/alloy.hcl:/etc/alloy/config.alloy:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -34,13 +34,13 @@ services:
       retries: 3
       start_period: 15s
 
-  ***REMOVED*** Loki - Log aggregation
+  # Loki - Log aggregation
   loki:
     image: grafana/loki:2.9.3
     container_name: scanium-loki
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3100:3100"  ***REMOVED*** HTTP/metrics (localhost only - debugging)
+      - "127.0.0.1:3100:3100"  # HTTP/metrics (localhost only - debugging)
     volumes:
       - ./loki/loki.yaml:/etc/loki/config.yaml:ro
       - ./data/loki:/loki
@@ -54,15 +54,15 @@ services:
       retries: 3
       start_period: 15s
 
-  ***REMOVED*** Tempo - Distributed tracing
+  # Tempo - Distributed tracing
   tempo:
     image: grafana/tempo:2.7.0
     container_name: scanium-tempo
     restart: unless-stopped
-    user: "0:0"  ***REMOVED*** Run as root to fix permission denied errors during compaction (GH-409)
+    user: "0:0"  # Run as root to fix permission denied errors during compaction (GH-409)
     ports:
-      - "127.0.0.1:3200:3200"  ***REMOVED*** HTTP/metrics (localhost only - debugging)
-      - "4317"                 ***REMOVED*** OTLP gRPC (internal only - no host binding)
+      - "127.0.0.1:3200:3200"  # HTTP/metrics (localhost only - debugging)
+      - "4317"                 # OTLP gRPC (internal only - no host binding)
     volumes:
       - ./tempo/tempo.yaml:/etc/tempo/config.yaml:ro
       - ./tempo/overrides.yaml:/etc/tempo/overrides.yaml:ro
@@ -77,20 +77,20 @@ services:
       retries: 3
       start_period: 15s
 
-  ***REMOVED*** Mimir - Metrics storage (Prometheus-compatible)
+  # Mimir - Metrics storage (Prometheus-compatible)
   mimir:
     image: grafana/mimir:2.11.0
     container_name: scanium-mimir
     restart: unless-stopped
     ports:
-      - "127.0.0.1:9009:9009"  ***REMOVED*** HTTP/metrics (localhost only - debugging)
+      - "127.0.0.1:9009:9009"  # HTTP/metrics (localhost only - debugging)
     volumes:
       - ./mimir/mimir.yaml:/etc/mimir/config.yaml:ro
       - ./data/mimir:/data
     command:
       - -config.file=/etc/mimir/config.yaml
       - -target=all
-      ***REMOVED*** Querier config: ensure recent data from ingesters is queryable
+      # Querier config: ensure recent data from ingesters is queryable
       - -querier.query-ingesters-within=12h
       - -querier.query-store-after=0s
     networks:
@@ -102,7 +102,7 @@ services:
       retries: 3
       start_period: 20s
 
-  ***REMOVED*** Grafana - Visualization and dashboards
+  # Grafana - Visualization and dashboards
   grafana:
     build:
       context: ./grafana
@@ -111,26 +111,26 @@ services:
     container_name: scanium-grafana
     restart: unless-stopped
     ports:
-      - "3000:3000"  ***REMOVED*** Grafana UI (publicly exposed)
+      - "3000:3000"  # Grafana UI (publicly exposed)
     environment:
-      ***REMOVED*** Anonymous auth for easy local dev (change for production)
+      # Anonymous auth for easy local dev (change for production)
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_DISABLE_LOGIN_FORM=true
 
-      ***REMOVED*** Paths
+      # Paths
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_PATHS_DATA=/var/lib/grafana
 
-      ***REMOVED*** Server
+      # Server
       - GF_SERVER_ROOT_URL=https://grafana.gtemp1.com
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
 
-      ***REMOVED*** Disable usage stats
+      # Disable usage stats
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
 
-      ***REMOVED*** Feature toggles
+      # Feature toggles
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
@@ -138,7 +138,7 @@ services:
       - ./data/grafana:/var/lib/grafana
     networks:
       - observability
-      - backend_scanium-network  ***REMOVED*** Connect to backend network for cloudflared access
+      - backend_scanium-network  # Connect to backend network for cloudflared access
     depends_on:
       loki:
         condition: service_healthy
@@ -161,7 +161,7 @@ networks:
     external: true
 
 volumes:
-  ***REMOVED*** Named volumes for easier backup/restore
+  # Named volumes for easier backup/restore
   loki_data:
     driver: local
     driver_opts:

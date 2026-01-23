@@ -137,7 +137,7 @@ object ScanPipelineDiagnostics {
             Log.d(
                 TAG,
                 buildString {
-                    append("[FRAME ***REMOVED***$fid] ")
+                    append("[FRAME #$fid] ")
                     append("motion=${"%.3f".format(motionScore)} ")
                     append("interval=${analysisIntervalMs}ms ")
                     append("sinceLast=${timeSinceLastAnalysis}ms ")

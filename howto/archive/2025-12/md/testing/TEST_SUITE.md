@@ -1,20 +1,20 @@
-***REMOVED*** Test Suite Documentation
+# Test Suite Documentation
 
 This document provides a comprehensive overview of the Scanium test suite, organized by test file.
 
-***REMOVED******REMOVED*** Table of Contents
+## Table of Contents
 
-- [ItemsViewModel Tests](***REMOVED***itemsviewmodel-tests)
-- [DetectionResult Tests](***REMOVED***detectionresult-tests)
-- [PricingEngine Tests](***REMOVED***pricingengine-tests)
-- [ObjectCandidate Tests](***REMOVED***objectcandidate-tests)
-- [ObjectTracker Tests](***REMOVED***objecttracker-tests)
-- [TrackingPipeline Integration Tests](***REMOVED***trackingpipeline-integration-tests)
-- [SessionDeduplicator Tests](***REMOVED***sessiondeduplicator-tests)
+- [ItemsViewModel Tests](#itemsviewmodel-tests)
+- [DetectionResult Tests](#detectionresult-tests)
+- [PricingEngine Tests](#pricingengine-tests)
+- [ObjectCandidate Tests](#objectcandidate-tests)
+- [ObjectTracker Tests](#objecttracker-tests)
+- [TrackingPipeline Integration Tests](#trackingpipeline-integration-tests)
+- [SessionDeduplicator Tests](#sessiondeduplicator-tests)
 
 ---
 
-***REMOVED******REMOVED*** ItemsViewModel Tests
+## ItemsViewModel Tests
 
 **File:** `app/src/test/java/com/scanium/app/items/ItemsViewModelTest.kt`
 
@@ -51,7 +51,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ---
 
-***REMOVED******REMOVED*** DetectionResult Tests
+## DetectionResult Tests
 
 **File:** `app/src/test/java/com/scanium/app/ml/DetectionResultTest.kt`
 
@@ -72,7 +72,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ---
 
-***REMOVED******REMOVED*** PricingEngine Tests
+## PricingEngine Tests
 
 **File:** `app/src/test/java/com/scanium/app/ml/PricingEngineTest.kt`
 
@@ -102,7 +102,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ---
 
-***REMOVED******REMOVED*** ObjectCandidate Tests
+## ObjectCandidate Tests
 
 **File:** `app/src/test/java/com/scanium/app/tracking/ObjectCandidateTest.kt`
 
@@ -127,7 +127,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ---
 
-***REMOVED******REMOVED*** ObjectTracker Tests
+## ObjectTracker Tests
 
 **File:** `app/src/test/java/com/scanium/app/tracking/ObjectTrackerTest.kt`
 
@@ -157,7 +157,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ---
 
-***REMOVED******REMOVED*** TrackingPipeline Integration Tests
+## TrackingPipeline Integration Tests
 
 **File:** `app/src/test/java/com/scanium/app/tracking/TrackingPipelineIntegrationTest.kt`
 
@@ -176,7 +176,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ---
 
-***REMOVED******REMOVED*** SessionDeduplicator Tests
+## SessionDeduplicator Tests
 
 **File:** `app/src/test/java/com/scanium/app/items/SessionDeduplicatorTest.kt`
 
@@ -213,9 +213,9 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ---
 
-***REMOVED******REMOVED*** Test Coverage Summary
+## Test Coverage Summary
 
-***REMOVED******REMOVED******REMOVED*** Key Testing Areas
+### Key Testing Areas
 
 1. **State Management** - ItemsViewModel tests verify CRUD operations and StateFlow emissions
 2. **Multi-Frame Detection** - ObjectTracker ensures stable object detection over time
@@ -224,12 +224,12 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 5. **Pricing** - PricingEngine validates category-based and size-adjusted price generation
 6. **Integration** - TrackingPipeline tests verify end-to-end scenarios
 
-***REMOVED******REMOVED******REMOVED*** Test Statistics
+### Test Statistics
 
 - **Testing Framework**: JUnit 4 with Robolectric
 - **Assertion Library**: Google Truth
 
-***REMOVED******REMOVED******REMOVED*** Testing Patterns
+### Testing Patterns
 
 - **Arrange-Act-Assert** pattern used throughout
 - **Helper functions** to create test data

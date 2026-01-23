@@ -1,15 +1,15 @@
-***REMOVED*** Live Scanning vs Picture Capture Assessment
+# Live Scanning vs Picture Capture Assessment
 
-***REMOVED******REMOVED*** Issue Summary
+## Issue Summary
 
 **Problem**: Live scanning sometimes produces NO detection/status (e.g., phone/toy while camera is
 steady), while "take picture" on the same scene works and correctly adds/classifies items.
 
 **Status**: Root cause IDENTIFIED - Motion-based throttling too aggressive
 
-***REMOVED******REMOVED*** Phase 0: Reproduction
+## Phase 0: Reproduction
 
-***REMOVED******REMOVED******REMOVED*** Exact Repro Steps
+### Exact Repro Steps
 
 1. **Device**: Any Android device with camera (tested on typical setup)
 2. **Lighting**: Normal indoor lighting
@@ -18,7 +18,7 @@ steady), while "take picture" on the same scene works and correctly adds/classif
 5. **Mode**: OBJECT_DETECTION
 6. **Cloud/On-device**: Both affected (issue is pre-detection)
 
-***REMOVED******REMOVED******REMOVED*** Reproduction Scenario
+### Reproduction Scenario
 
 1. Open camera screen
 2. Long-press shutter to start continuous scanning
@@ -29,7 +29,7 @@ steady), while "take picture" on the same scene works and correctly adds/classif
 7. Tap shutter to take picture of same scene
 8. Observe: Picture immediately detects and classifies the object
 
-***REMOVED******REMOVED******REMOVED*** Expected vs Actual
+### Expected vs Actual
 
 | Scenario                 | Expected               | Actual                      |
 |--------------------------|------------------------|-----------------------------|
@@ -37,9 +37,9 @@ steady), while "take picture" on the same scene works and correctly adds/classif
 | Steady camera, picture   | Detection immediately  | Works correctly             |
 | Moving camera, live scan | Detection within 500ms | Works (motion > 0.1)        |
 
-***REMOVED******REMOVED*** Phase 1: Pipeline Mapping
+## Phase 1: Pipeline Mapping
 
-***REMOVED******REMOVED******REMOVED*** Pipeline A: Picture Capture (`captureSingleFrame`)
+### Pipeline A: Picture Capture (`captureSingleFrame`)
 
 ```
 CameraScreen → captureSingleFrame() → ImageAnalysis.setAnalyzer()
@@ -68,7 +68,7 @@ CameraScreen → captureSingleFrame() → ImageAnalysis.setAnalyzer()
 - Direct detection path (no tracking)
 - Uses `useStreamMode = false` (SINGLE_IMAGE_MODE)
 
-***REMOVED******REMOVED******REMOVED*** Pipeline B: Live Scanning (`startScanning`)
+### Pipeline B: Live Scanning (`startScanning`)
 
 ```
 CameraScreen → startScanning() → ImageAnalysis.setAnalyzer()
@@ -117,7 +117,7 @@ CameraScreen → startScanning() → ImageAnalysis.setAnalyzer()
 - Uses tracking pipeline with candidate confirmation
 - Uses `useStreamMode = true` passed to detector, BUT detector uses SINGLE_IMAGE_MODE anyway
 
-***REMOVED******REMOVED******REMOVED*** Diff Table
+### Diff Table
 
 | Aspect                | Picture Capture                    | Live Scanning            | Issue?   |
 |-----------------------|------------------------------------|--------------------------|----------|
@@ -132,9 +132,9 @@ CameraScreen → startScanning() → ImageAnalysis.setAnalyzer()
 | **Detector mode**     | SINGLE_IMAGE_MODE                  | SINGLE_IMAGE_MODE        | No       |
 | **Tracking**          | No (direct)                        | Yes (ObjectTracker)      | Minor    |
 
-***REMOVED******REMOVED*** Phase 2: Root Cause Analysis
+## Phase 2: Root Cause Analysis
 
-***REMOVED******REMOVED******REMOVED*** CONFIRMED ROOT CAUSE: Aggressive Motion-Based Throttling
+### CONFIRMED ROOT CAUSE: Aggressive Motion-Based Throttling
 
 **Location**: `CameraXManager.kt:585-589`
 
@@ -162,7 +162,7 @@ private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
     - Runs immediately on next frame
     - That's why it "works" and live scanning "doesn't"
 
-***REMOVED******REMOVED******REMOVED*** Evidence in Code
+### Evidence in Code
 
 From `CameraXManager.kt:480-481`:
 
@@ -173,7 +173,7 @@ if (currentTime - lastAnalysisTime >= analysisIntervalMs && !isProcessing) {
 
 When `analysisIntervalMs = 2000`, frames are dropped for 2 seconds!
 
-***REMOVED******REMOVED******REMOVED*** Hypothesis Verification
+### Hypothesis Verification
 
 | Hypothesis                | Status          | Evidence                          |
 |---------------------------|-----------------|-----------------------------------|
@@ -186,7 +186,7 @@ When `analysisIntervalMs = 2000`, frames are dropped for 2 seconds!
 | H7: Backpressure drops    | ❌ N/A           | Using KEEP_ONLY_LATEST correctly  |
 | H8: Status UI issue       | ❌ DISPROVED     | Detection itself not running      |
 
-***REMOVED******REMOVED*** Phase 3: Diagnostics Added
+## Phase 3: Diagnostics Added
 
 See Phase 2 implementation for diagnostic code:
 
@@ -195,9 +195,9 @@ See Phase 2 implementation for diagnostic code:
 3. **Frame drop counter**: Track how many frames are being dropped
 4. **Developer overlay** (optional): Show fps, inference rate, motion score
 
-***REMOVED******REMOVED*** Phase 4: The Fix
+## Phase 4: The Fix
 
-***REMOVED******REMOVED******REMOVED*** Minimal Change
+### Minimal Change
 
 Reduce the max throttle interval for steady scenes from 2000ms to 600ms:
 
@@ -216,14 +216,14 @@ private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
 - User experience: detection within 600ms instead of 2000ms
 - Falls back to faster rates when motion detected
 
-***REMOVED******REMOVED******REMOVED*** Alternative Considered: Time-since-last-detection boost
+### Alternative Considered: Time-since-last-detection boost
 
 Could temporarily boost detection rate after no detections for N seconds, but this adds complexity.
 The simple interval reduction is sufficient.
 
-***REMOVED******REMOVED*** Phase 5: Validation
+## Phase 5: Validation
 
-***REMOVED******REMOVED******REMOVED*** Manual Test Matrix
+### Manual Test Matrix
 
 | Scenario              | Before Fix      | After Fix  | Status |
 |-----------------------|-----------------|------------|--------|
@@ -233,7 +233,7 @@ The simple interval reduction is sufficient.
 | Cluttered background  | Variable        | Consistent | ✅      |
 | Different distances   | Variable        | Consistent | ✅      |
 
-***REMOVED******REMOVED******REMOVED*** Performance Validation
+### Performance Validation
 
 | Metric              | Before  | After           | Acceptable?  |
 |---------------------|---------|-----------------|--------------|
@@ -242,7 +242,7 @@ The simple interval reduction is sufficient.
 | Battery impact      | Minimal | Slight increase | ✅ Acceptable |
 | Classification spam | N/A     | Rate limited    | ✅ OK         |
 
-***REMOVED******REMOVED*** Deliverables Checklist
+## Deliverables Checklist
 
 - [x] docs/SCAN_VS_PICTURE_ASSESSMENT.md (this file)
 - [x] Diagnostic instrumentation (debug-only)
@@ -256,11 +256,11 @@ The simple interval reduction is sufficient.
         - High motion: 400ms (unchanged)
 - [x] Unit test for throttle logic
     - `MotionThrottleTest.kt` - Regression tests for interval values
-- [x] Build and test validation (PR ***REMOVED***319 merged)
+- [x] Build and test validation (PR #319 merged)
 
-***REMOVED******REMOVED*** Code Changes Summary
+## Code Changes Summary
 
-***REMOVED******REMOVED******REMOVED*** Files Modified
+### Files Modified
 
 1. `CameraXManager.kt`
     - Fixed `analysisIntervalMsForMotion()` intervals
@@ -278,7 +278,7 @@ The simple interval reduction is sufficient.
 4. `CameraScreen.kt`
     - Added diagnostics setting integration
 
-***REMOVED******REMOVED******REMOVED*** Files Created
+### Files Created
 
 1. `ScanPipelineDiagnostics.kt`
     - Structured logging with `ScanPipeline` tag

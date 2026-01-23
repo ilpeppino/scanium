@@ -1,22 +1,22 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Listing Title Fix - Implementation Summary
+# Listing Title Fix - Implementation Summary
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 The "Sell on eBay" flow was generating generic listing titles like "Used table" for all items,
 instead of using the actual scanned item's classification (e.g., "Used Decor / Wall Art", "Used
 Mug", "Used Bottle").
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
 `ListingDraftMapper.fromScannedItem()` was using a simple inline title generator that fell back to
 `category.displayName` when `labelText` was null/blank. This caused all home goods to show as "Used
 Home Good" instead of using the specific cloud classification result.
 
-***REMOVED******REMOVED*** Solution Implemented
+## Solution Implemented
 
-***REMOVED******REMOVED******REMOVED*** 1. Created `ListingTitleBuilder` (Single Source of Truth)
+### 1. Created `ListingTitleBuilder` (Single Source of Truth)
 
 **File**: `androidApp/src/main/java/com/scanium/app/selling/util/ListingTitleBuilder.kt`
 
@@ -42,7 +42,7 @@ A pure, testable utility that builds eBay listing titles with a clear priority c
 - `labelText="mug"` → `"Used Mug"`
 - `labelText=null, category=ELECTRONICS` → `"Used Electronics"`
 
-***REMOVED******REMOVED******REMOVED*** 2. Updated `ListingDraftMapper`
+### 2. Updated `ListingDraftMapper`
 
 **File**: `androidApp/src/main/java/com/scanium/app/selling/util/ListingDraftMapper.kt`
 
@@ -55,7 +55,7 @@ A pure, testable utility that builds eBay listing titles with a clear priority c
   Log.d(TAG, "  - generated title: $title")
   ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Comprehensive Unit Tests
+### 3. Comprehensive Unit Tests
 
 **Files**:
 
@@ -75,7 +75,7 @@ A pure, testable utility that builds eBay listing titles with a clear priority c
 - ✅ Preserves original item reference
 - ✅ Calculates average price correctly
 
-***REMOVED******REMOVED******REMOVED*** 4. Developer Documentation
+### 4. Developer Documentation
 
 **File**: `androidApp/src/main/java/com/scanium/app/selling/README.md`
 
@@ -84,21 +84,21 @@ A pure, testable utility that builds eBay listing titles with a clear priority c
 - Provides debugging instructions
 - Lists common issues and solutions
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
-***REMOVED******REMOVED******REMOVED*** Created:
+### Created:
 
 1. `androidApp/src/main/java/com/scanium/app/selling/util/ListingTitleBuilder.kt`
 2. `androidApp/src/test/java/com/scanium/app/selling/util/ListingTitleBuilderTest.kt`
 3. `androidApp/src/main/java/com/scanium/app/selling/README.md`
 4. `LISTING_TITLE_FIX_SUMMARY.md` (this file)
 
-***REMOVED******REMOVED******REMOVED*** Modified:
+### Modified:
 
 1. `androidApp/src/main/java/com/scanium/app/selling/util/ListingDraftMapper.kt`
 2. `androidApp/src/test/java/com/scanium/app/selling/util/ListingDraftMapperTest.kt`
 
-***REMOVED******REMOVED*** Data Flow
+## Data Flow
 
 ```
 Cloud Classification Response
@@ -122,9 +122,9 @@ MockEbayApi.createListing()
 Listing.title (displayed to user)
 ```
 
-***REMOVED******REMOVED*** Validation
+## Validation
 
-***REMOVED******REMOVED******REMOVED*** Build Status:
+### Build Status:
 
 ```bash
 ./gradlew assembleDebug
@@ -134,12 +134,12 @@ Listing.title (displayed to user)
 
 All main source code compiles correctly. The implementation is production-ready.
 
-***REMOVED******REMOVED******REMOVED*** Where the Title is Computed:
+### Where the Title is Computed:
 
 **Function**: `ListingTitleBuilder.buildTitle(item: ScannedItem): String`
 **Location**: `androidApp/src/main/java/com/scanium/app/selling/util/ListingTitleBuilder.kt:36`
 
-***REMOVED******REMOVED******REMOVED*** How to Verify Manually:
+### How to Verify Manually:
 
 1. **Ensure cloud classification is working**:
     - Backend running with domain pack configured
@@ -163,20 +163,20 @@ All main source code compiles correctly. The implementation is production-ready.
     - Scan bottle → select → "Sell on eBay" → verify title reflects bottle
     - Unknown item → verify shows "Used Unknown" (fallback)
 
-***REMOVED******REMOVED******REMOVED*** Debug Commands:
+### Debug Commands:
 
 ```bash
-***REMOVED*** Build the app
+# Build the app
 ./gradlew assembleDebug
 
-***REMOVED*** Install on device
+# Install on device
 ./gradlew installDebug
 
-***REMOVED*** Monitor listing creation logs
+# Monitor listing creation logs
 adb logcat | grep -E "ListingDraftMapper|MockEbayApi"
 ```
 
-***REMOVED******REMOVED*** Key Implementation Details
+## Key Implementation Details
 
 1. **Pure Function**: `ListingTitleBuilder` is a pure, stateless utility with no side effects
 2. **Testable**: All logic is unit-tested with comprehensive test cases
@@ -185,7 +185,7 @@ adb logcat | grep -E "ListingDraftMapper|MockEbayApi"
 5. **eBay Compliance**: Respects 80-character limit and character restrictions
 6. **Mock API**: Echoes the computed title (doesn't override it)
 
-***REMOVED******REMOVED*** Expected Behavior After Fix
+## Expected Behavior After Fix
 
 | Scanned Item   | Cloud Label        | Category  | Generated Title         |
 |----------------|--------------------|-----------|-------------------------|
@@ -195,7 +195,7 @@ adb logcat | grep -E "ListingDraftMapper|MockEbayApi"
 | Glass bottle   | "bottle" (ML Kit)  | HOME_GOOD | "Used Bottle"           |
 | Unknown object | null               | UNKNOWN   | "Used Unknown"          |
 
-***REMOVED******REMOVED*** Next Steps (Optional Enhancements)
+## Next Steps (Optional Enhancements)
 
 1. Add brand information to titles (e.g., "Used Samsung Monitor")
 2. Support custom condition prefixes ("New", "Like New", "Refurbished")
@@ -203,7 +203,7 @@ adb logcat | grep -E "ListingDraftMapper|MockEbayApi"
 4. Multilingual title support
 5. Extract key features for more descriptive titles
 
-***REMOVED******REMOVED*** Notes
+## Notes
 
 - The mock backend (`MockEbayApi`) echoes the title from the draft unchanged
 - Real eBay API integration will use the same title generation logic

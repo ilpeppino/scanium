@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
  * - Persisting listing status updates
  * - Providing listing status queries
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * Uses StateFlow for thread-safe state updates.
  * Persistence operations run on the worker dispatcher.
  *

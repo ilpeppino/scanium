@@ -1,9 +1,9 @@
-***REMOVED*** Beta Validation Guide
+# Beta Validation Guide
 
 This document describes manual test scenarios and exit criteria for validating the scanning
 experience.
 
-***REMOVED******REMOVED*** Purpose
+## Purpose
 
 Validate that:
 
@@ -12,9 +12,9 @@ Validate that:
 3. No background items are added
 4. Testers can self-correct without instructions
 
-***REMOVED******REMOVED*** Test Scenarios
+## Test Scenarios
 
-***REMOVED******REMOVED******REMOVED*** Scenario 1: Immediate Detection Feedback
+### Scenario 1: Immediate Detection Feedback
 
 **Steps:**
 
@@ -31,7 +31,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 2: Distance Warning (Too Close)
+### Scenario 2: Distance Warning (Too Close)
 
 **Steps:**
 
@@ -48,7 +48,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 3: Distance Warning (Too Far)
+### Scenario 3: Distance Warning (Too Far)
 
 **Steps:**
 
@@ -65,7 +65,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 4: Correct Distance + Steady = Ready
+### Scenario 4: Correct Distance + Steady = Ready
 
 **Steps:**
 
@@ -84,7 +84,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 5: Shutter Without Eligible Bbox
+### Scenario 5: Shutter Without Eligible Bbox
 
 **Steps:**
 
@@ -101,7 +101,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 6: Live Scan vs Picture Consistency
+### Scenario 6: Live Scan vs Picture Consistency
 
 **Steps:**
 
@@ -120,7 +120,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 7: Multiple Objects - Only Centered Selected
+### Scenario 7: Multiple Objects - Only Centered Selected
 
 **Steps:**
 
@@ -138,7 +138,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 8: Motion Breaks Lock
+### Scenario 8: Motion Breaks Lock
 
 **Steps:**
 
@@ -155,7 +155,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 9: State Transitions are Obvious
+### Scenario 9: State Transitions are Obvious
 
 **Steps:**
 
@@ -172,7 +172,7 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Scenario 10: Hints Don't Stack
+### Scenario 10: Hints Don't Stack
 
 **Steps:**
 
@@ -188,11 +188,11 @@ Validate that:
 
 ---
 
-***REMOVED******REMOVED*** Exit Criteria
+## Exit Criteria
 
 The beta release is ready when:
 
-***REMOVED******REMOVED******REMOVED*** Must Pass
+### Must Pass
 
 - [ ] No background items added (Scenarios 7, 8)
 - [ ] Users can self-correct distance without explanation (Scenarios 2, 3)
@@ -200,19 +200,19 @@ The beta release is ready when:
 - [ ] Shutter tap provides feedback when no bbox (Scenario 5)
 - [ ] Live and picture modes are consistent (Scenario 6)
 
-***REMOVED******REMOVED******REMOVED*** Should Pass
+### Should Pass
 
 - [ ] Immediate bbox feedback (< 500ms) (Scenario 1)
 - [ ] State differences are obvious to new users (Scenario 9)
 - [ ] Hints never stack or flicker (Scenario 10)
 
-***REMOVED******REMOVED******REMOVED*** Nice to Have
+### Nice to Have
 
 - [ ] Avg time-to-lock < 800ms in good conditions
 - [ ] Lock success rate > 70% of attempts
 - [ ] < 20% shutter taps without eligible bbox
 
-***REMOVED******REMOVED*** Metrics to Monitor
+## Metrics to Monitor
 
 Check `ScanGuidanceManager.metrics` during testing:
 
@@ -229,7 +229,7 @@ Key metrics:
 - `shutterWithoutBboxPct`: Monitor for UX issues
 - `unlockReasons`: Identify most common failure modes
 
-***REMOVED******REMOVED*** Reporting Issues
+## Reporting Issues
 
 When reporting scanning issues, include:
 
@@ -239,7 +239,7 @@ When reporting scanning issues, include:
 4. Steps to reproduce
 5. Metrics snapshot if available (from debug overlay)
 
-***REMOVED******REMOVED*** Related Documents
+## Related Documents
 
 - [SCANNING_GUIDANCE.md](./SCANNING_GUIDANCE.md) - Technical details
 - [REVIEW_REPORT.md](./REVIEW_REPORT.md) - Code review findings

@@ -1,25 +1,25 @@
-***REMOVED*** Manual Verification Checklist: AI-Generated Notes Persistence Fix
+# Manual Verification Checklist: AI-Generated Notes Persistence Fix
 
-***REMOVED******REMOVED*** Bug Description
+## Bug Description
 
 AI-generated Notes were not persisted when reopening an item. The Notes field was initialized from a
 computed property (`displayLabel`) and saved to the wrong database field (`labelText`).
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
 1. **EditItemScreenV3.kt:116** - `notesField` initialized from `item?.displayLabel` (a computed
    property, not stored)
 2. **EditItemScreenV3.kt:648** - `notesField` saved to `labelText` (ML classification field, not
    user notes)
 
-***REMOVED******REMOVED*** Fix Applied
+## Fix Applied
 
 1. Changed initialization to read from `item?.attributesSummaryText` (proper persisted notes field)
 2. Changed save to use `updateSummaryText()` which persists to `attributesSummaryText`
 
-***REMOVED******REMOVED*** Manual Testing Steps
+## Manual Testing Steps
 
-***REMOVED******REMOVED******REMOVED*** Test 1: AI Assistant Notes Persistence
+### Test 1: AI Assistant Notes Persistence
 
 1. Open Scanium app
 2. Navigate to any item in the list
@@ -33,7 +33,7 @@ computed property (`displayLabel`) and saved to the wrong database field (`label
 10. **ACTUAL (before fix)**: Notes field was empty
 11. **ACTUAL (after fix)**: Notes field contains AI-generated text
 
-***REMOVED******REMOVED******REMOVED*** Test 2: Manual Notes Persistence
+### Test 2: Manual Notes Persistence
 
 1. Open any item → Edit
 2. Manually type text in the Notes field (e.g., "Test notes for verification")
@@ -43,7 +43,7 @@ computed property (`displayLabel`) and saved to the wrong database field (`label
 6. **EXPECTED**: Manual notes should persist
 7. **ACTUAL**: Notes field shows "Test notes for verification"
 
-***REMOVED******REMOVED******REMOVED*** Test 3: App Restart Persistence
+### Test 3: App Restart Persistence
 
 1. Open item → Edit → Add notes
 2. Save and close app completely (swipe away from recents)
@@ -52,7 +52,7 @@ computed property (`displayLabel`) and saved to the wrong database field (`label
 5. **EXPECTED**: Notes persist through app restart
 6. **ACTUAL**: Notes field contains the saved text
 
-***REMOVED******REMOVED******REMOVED*** Test 4: Empty Notes Handling
+### Test 4: Empty Notes Handling
 
 1. Open item → Edit → Clear any existing notes
 2. Save with empty Notes field
@@ -60,7 +60,7 @@ computed property (`displayLabel`) and saved to the wrong database field (`label
 4. **EXPECTED**: Notes remain empty (no phantom text appears)
 5. **ACTUAL**: Notes field is empty
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 - `androidApp/src/main/java/com/scanium/app/items/edit/EditItemScreenV3.kt`
     - Line 116: Changed `notesField` initialization from `displayLabel` to `attributesSummaryText`
@@ -69,7 +69,7 @@ computed property (`displayLabel`) and saved to the wrong database field (`label
 - `androidApp/src/test/java/com/scanium/app/items/state/ItemsStateManagerTest.kt`
     - Added `whenSummaryTextUpdated_thenItemIsPersistedWithNewSummaryText()` test
 
-***REMOVED******REMOVED*** Database Schema
+## Database Schema
 
 Notes are now correctly persisted in:
 
@@ -77,6 +77,6 @@ Notes are now correctly persisted in:
 - **Flag**: `summaryTextUserEdited` (tracks if user manually edited)
 - **Migration**: Already exists (v7 schema), no migration needed
 
-***REMOVED******REMOVED*** Backend Impact
+## Backend Impact
 
 None. Backend assistant API unchanged. Fix is purely Android data flow.

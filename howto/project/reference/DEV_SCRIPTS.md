@@ -1,23 +1,23 @@
-***REMOVED*** Scanium Developer Scripts
+# Scanium Developer Scripts
 
 This document describes the script infrastructure in the Scanium repository, including the Script
 Master launcher and all available development scripts.
 
-***REMOVED******REMOVED*** Quick Start
+## Quick Start
 
 ```bash
-***REMOVED*** Launch interactive Script Master
+# Launch interactive Script Master
 ./script-master
 
-***REMOVED*** List all scripts for your platform
+# List all scripts for your platform
 ./script-master --list
 
-***REMOVED*** Run a specific script directly
+# Run a specific script directly
 ./script-master --run dev run-tests
 ./script-master --run backend start-dev
 ```
 
-***REMOVED******REMOVED*** Script Master
+## Script Master
 
 The **Script Master** (`./script-master`) is an interactive menu-driven launcher for all Scanium
 scripts. It provides:
@@ -28,19 +28,19 @@ scripts. It provides:
 - **Logging**: All script output is saved to `tmp/script-master/`
 - **Help integration**: Displays script descriptions and can show `--help` output
 
-***REMOVED******REMOVED******REMOVED*** Usage
+### Usage
 
 ```bash
-***REMOVED*** Interactive mode (recommended)
+# Interactive mode (recommended)
 ./script-master
 
-***REMOVED*** Non-interactive mode
-./script-master --list                    ***REMOVED*** List all scripts
-./script-master --run <area> <script>     ***REMOVED*** Run specific script
-./script-master --help                    ***REMOVED*** Show help
+# Non-interactive mode
+./script-master --list                    # List all scripts
+./script-master --run <area> <script>     # Run specific script
+./script-master --help                    # Show help
 ```
 
-***REMOVED******REMOVED******REMOVED*** Adding a New Script to Script Master
+### Adding a New Script to Script Master
 
 1. Create your script in the appropriate directory (e.g., `scripts/dev/`)
 2. Add an entry to `scripts/scripts_manifest.json`:
@@ -60,9 +60,9 @@ scripts. It provides:
 
 3. The script will appear in Script Master on next launch
 
-***REMOVED******REMOVED*** Script Areas
+## Script Areas
 
-***REMOVED******REMOVED******REMOVED*** Development (Mac)
+### Development (Mac)
 
 Local development tools for macOS.
 
@@ -73,7 +73,7 @@ Local development tools for macOS.
 | `scripts/dev/autofix_tests.sh` | AI-assisted test fixing loop                     |
 | `scripts/dev/install-hooks.sh` | Install git pre-commit/pre-push hooks            |
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 Build and device tools for Android development.
 
@@ -84,7 +84,7 @@ Build and device tools for Android development.
 | `scripts/dev/verify-backend-config.sh`          | Verify Android backend configuration    |
 | `scripts/dev/test_ml_kit_detection.sh`          | Test ML Kit barcode detection           |
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 Backend development server management.
 
@@ -95,7 +95,7 @@ Backend development server management.
 | `scripts/backend/check-status.sh` | Comprehensive health check of stack          |
 | `scripts/backend/verify-setup.sh` | Verify backend .env, deps, Prisma            |
 
-***REMOVED******REMOVED******REMOVED*** CI / Quality
+### CI / Quality
 
 Continuous integration and code quality tools.
 
@@ -106,7 +106,7 @@ Continuous integration and code quality tools.
 | `scripts/ci/run_coverage.sh` | Run test coverage analysis                     |
 | `scripts/ci/run_security.sh` | Run CVE security scan                          |
 
-***REMOVED******REMOVED******REMOVED*** Monitoring
+### Monitoring
 
 Observability stack management (LGTM + Alloy).
 
@@ -117,7 +117,7 @@ Observability stack management (LGTM + Alloy).
 | `scripts/monitoring/print-urls.sh`          | Print monitoring stack URLs  |
 | `scripts/monitoring/inventory-telemetry.sh` | Discover available telemetry |
 
-***REMOVED******REMOVED******REMOVED*** Ops / NAS
+### Ops / NAS
 
 Operations, Docker, and NAS management.
 
@@ -128,7 +128,7 @@ Operations, Docker, and NAS management.
 | `scripts/ops/collect_support_bundle.sh` | Collect diagnostic bundle    |
 | `scripts/ops/nas_vision_preflight.sh`   | NAS vision preflight checks  |
 
-***REMOVED******REMOVED******REMOVED*** Termux (Phone)
+### Termux (Phone)
 
 Scripts for running on Android via Termux.
 
@@ -139,19 +139,19 @@ Scripts for running on Android via Termux.
 | `scripts/termux/remote_autofix_tests.sh`     | Run AI test fixer on remote Mac      |
 | `scripts/termux/termux-storage-setup.sh`     | Configure Termux storage permissions |
 
-***REMOVED******REMOVED*** Script Standards
+## Script Standards
 
 All bash scripts in this repository follow these conventions:
 
-***REMOVED******REMOVED******REMOVED*** Shebang
+### Shebang
 
 ```bash
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 ```
 
 Use `env bash` for portability across macOS, Linux, and Termux.
 
-***REMOVED******REMOVED******REMOVED*** Error Handling
+### Error Handling
 
 ```bash
 set -euo pipefail
@@ -161,7 +161,7 @@ set -euo pipefail
 - `-u`: Error on undefined variables
 - `-o pipefail`: Pipeline fails if any command fails
 
-***REMOVED******REMOVED******REMOVED*** Common Library
+### Common Library
 
 Scripts can source the shared library for common functionality:
 
@@ -178,7 +178,7 @@ This provides:
 - **Portable operations**: `portable_realpath`, `portable_sed_i`
 - **Security**: `redact_secrets`
 
-***REMOVED******REMOVED******REMOVED*** Help Flag
+### Help Flag
 
 Scripts should support `--help`:
 
@@ -191,7 +191,7 @@ case "${1:-}" in
 esac
 ```
 
-***REMOVED******REMOVED*** Verifying Scripts
+## Verifying Scripts
 
 Run the verification tool to check all scripts for common issues:
 
@@ -213,55 +213,55 @@ The tool checks:
 
 Results are saved to `tmp/scripts_verify_report.md`.
 
-***REMOVED******REMOVED*** Directory Structure
+## Directory Structure
 
 ```
 scripts/
 ├── lib/
-│   └── common.sh           ***REMOVED*** Shared library
-├── android/                ***REMOVED*** Android build tools
-├── backend/                ***REMOVED*** Backend server management
-├── ci/                     ***REMOVED*** CI and quality checks
-├── dev/                    ***REMOVED*** Development tools
-├── monitoring/             ***REMOVED*** Observability stack
+│   └── common.sh           # Shared library
+├── android/                # Android build tools
+├── backend/                # Backend server management
+├── ci/                     # CI and quality checks
+├── dev/                    # Development tools
+├── monitoring/             # Observability stack
 ├── ops/
 │   └── lib/
-│       └── common.sh       ***REMOVED*** Ops-specific library
-├── termux/                 ***REMOVED*** Termux phone scripts
-├── tools/                  ***REMOVED*** Utility scripts
-├── scripts_manifest.json   ***REMOVED*** Script Master manifest
-├── build.sh               ***REMOVED*** Main build script
-└── *.py                    ***REMOVED*** Python asset generators
+│       └── common.sh       # Ops-specific library
+├── termux/                 # Termux phone scripts
+├── tools/                  # Utility scripts
+├── scripts_manifest.json   # Script Master manifest
+├── build.sh               # Main build script
+└── *.py                    # Python asset generators
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Script Master Not Finding Scripts
+### Script Master Not Finding Scripts
 
 - Ensure `jq` is installed: `brew install jq` (macOS) or `pkg install jq` (Termux)
 - Check that `scripts/scripts_manifest.json` exists
 - Verify scripts are compatible with your platform
 
-***REMOVED******REMOVED******REMOVED*** SSH Authentication Issues (Termux Scripts)
+### SSH Authentication Issues (Termux Scripts)
 
 - Ensure SSH keys are set up: `ssh-keygen -t ed25519`
 - Copy key to Mac: `ssh-copy-id user@mac-hostname`
 - Test connection: `ssh user@mac-hostname`
 
-***REMOVED******REMOVED******REMOVED*** Backend Not Starting
+### Backend Not Starting
 
 1. Check Docker/Colima is running: `docker info`
 2. Check port availability: `lsof -i :8080`
 3. Verify `.env` file exists in `backend/`
 4. Run doctor: `./scripts/ci/doctor.sh`
 
-***REMOVED******REMOVED******REMOVED*** Monitoring Stack Issues
+### Monitoring Stack Issues
 
 1. Check Docker context: `docker context show`
 2. Verify Colima (if using): `colima status`
 3. Check container health: `./scripts/ops/docker_status.sh`
 
-***REMOVED******REMOVED*** See Also
+## See Also
 
 - [Backend Setup Guide](./ops/BACKEND_SETUP.md)
 - [Termux Development](./ops/TERMUX_SETUP.md)
