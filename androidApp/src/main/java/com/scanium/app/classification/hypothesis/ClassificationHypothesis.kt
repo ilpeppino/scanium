@@ -1,6 +1,6 @@
 package com.scanium.app.classification.hypothesis
 
-import android.net.Uri
+import com.scanium.shared.core.models.model.ImageRef
 
 /**
  * Represents a single classification hypothesis from the reasoning layer.
@@ -33,7 +33,7 @@ sealed class HypothesisSelectionState {
     data class Showing(
         val result: MultiHypothesisResult,
         val itemId: String,
-        val thumbnailUri: Uri?
+        val thumbnailRef: ImageRef?
     ) : HypothesisSelectionState()
 }
 

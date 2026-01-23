@@ -1132,7 +1132,7 @@ fun CameraScreen(
                 result = state.result,
                 itemId = state.itemId, // Detection ID
                 imageHash = "", // TODO: Compute from RawDetection
-                thumbnailUri = state.thumbnailUri,
+                thumbnailRef = state.thumbnailRef,
                 onHypothesisConfirmed = { hypothesis ->
                     itemsViewModel.confirmPendingDetection(state.itemId, hypothesis)
                 },

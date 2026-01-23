@@ -1,6 +1,6 @@
 package com.scanium.app.classification.hypothesis
 
-import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,10 +33,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.model.toImageBitmap
+import com.scanium.shared.core.models.model.ImageRef
 
 /**
  * Bottom sheet showing 3 ranked classification hypotheses.
@@ -48,7 +51,7 @@ fun HypothesisSelectionSheet(
     result: MultiHypothesisResult,
     itemId: String,
     imageHash: String,
-    thumbnailUri: Uri?,
+    thumbnailRef: ImageRef?,
     onHypothesisConfirmed: (ClassificationHypothesis) -> Unit,
     onNoneOfThese: (String, String?, Float?) -> Unit, // (imageHash, predictedCategory, confidence)
     onAddPhoto: () -> Unit,
@@ -81,10 +84,24 @@ fun HypothesisSelectionSheet(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // TODO: Add thumbnail display when image loading library is available
-                // thumbnailUri?.let { uri ->
-                //     AsyncImage(...)
-                // }
+                // Display WYSIWYG thumbnail (matches what user saw in camera overlay)
+                thumbnailRef?.toImageBitmap()?.let { imageBitmap ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Image(
+                            bitmap = imageBitmap,
+                            contentDescription = "Detected object thumbnail",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                }
 
                 HorizontalDivider()
 

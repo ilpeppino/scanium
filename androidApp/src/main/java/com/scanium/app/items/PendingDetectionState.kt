@@ -1,6 +1,5 @@
 package com.scanium.app.items
 
-import android.net.Uri
 import com.scanium.app.ItemCategory
 import com.scanium.app.classification.hypothesis.MultiHypothesisResult
 import com.scanium.shared.core.models.model.ImageRef
@@ -44,13 +43,13 @@ sealed class PendingDetectionState {
      * @property detectionId Unique identifier for this pending detection
      * @property rawDetection Raw detection data from ML Kit/ObjectTracker
      * @property hypothesisResult Multi-hypothesis classification result from backend
-     * @property thumbnailUri Android Uri for displaying thumbnail in hypothesis sheet
+     * @property thumbnailRef WYSIWYG thumbnail image reference for displaying in hypothesis sheet
      */
     data class ShowingHypotheses(
         val detectionId: String,
         val rawDetection: RawDetection,
         val hypothesisResult: MultiHypothesisResult,
-        val thumbnailUri: Uri?
+        val thumbnailRef: ImageRef?
     ) : PendingDetectionState()
 }
 

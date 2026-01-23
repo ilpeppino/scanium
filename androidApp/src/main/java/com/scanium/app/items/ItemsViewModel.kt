@@ -24,6 +24,7 @@ import com.scanium.app.ml.VisionInsightsPrefiller
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
+import com.scanium.app.model.toBitmap
 import com.scanium.core.export.ExportPayload
 import com.scanium.core.models.scanning.ScanRoi
 import com.scanium.telemetry.facade.Telemetry
@@ -696,13 +697,13 @@ class ItemsViewModel
         fun showHypothesisSelection(
             result: MultiHypothesisResult,
             itemId: String,
-            thumbnailUri: Uri?
+            thumbnailRef: com.scanium.shared.core.models.model.ImageRef?
         ) {
             _hypothesisSelectionState.value =
                 HypothesisSelectionState.Showing(
                     result = result,
                     itemId = itemId,
-                    thumbnailUri = thumbnailUri,
+                    thumbnailRef = thumbnailRef,
                 )
         }
 
@@ -852,10 +853,10 @@ class ItemsViewModel
         ) {
             withContext(workerDispatcher) {
                 try {
-                    // Get bitmap for classification
-                    val bitmap = rawDetection.fullFrameBitmap
+                    // Get WYSIWYG thumbnail for classification (matches what user sees in bounding box)
+                    val bitmap = rawDetection.thumbnailRef?.toBitmap()
                     if (bitmap == null) {
-                        Log.w(TAG, "No bitmap available for classification, using fallback")
+                        Log.w(TAG, "No WYSIWYG thumbnail available for classification, using fallback")
                         createItemFromDetection(detectionId, rawDetection, hypothesis = null)
                         removeFromPendingQueue(detectionId)
                         return@withContext
@@ -870,7 +871,7 @@ class ItemsViewModel
                         return@withContext
                     }
 
-                    Log.d(TAG, "Triggering multi-hypothesis classification for detection $detectionId")
+                    Log.d(TAG, "Triggering multi-hypothesis classification for detection $detectionId with WYSIWYG thumbnail ${bitmap.width}x${bitmap.height}")
 
                     // Call cloud classifier with multi-hypothesis mode
                     val result = cloudClassifierImpl.classifyMultiHypothesis(bitmap)
@@ -897,7 +898,7 @@ class ItemsViewModel
                                             detectionId = detectionId,
                                             rawDetection = rawDetection,
                                             hypothesisResult = result,
-                                            thumbnailUri = null
+                                            thumbnailRef = rawDetection.thumbnailRef
                                         )
                                     } else {
                                         pending
@@ -912,7 +913,7 @@ class ItemsViewModel
                                     showHypothesisSelection(
                                         result = result,
                                         itemId = detectionId,
-                                        thumbnailUri = null
+                                        thumbnailRef = rawDetection.thumbnailRef
                                     )
                                 }
                             }
@@ -933,7 +934,7 @@ class ItemsViewModel
                                             detectionId = detectionId,
                                             rawDetection = rawDetection,
                                             hypothesisResult = result,
-                                            thumbnailUri = null // TODO: Get from thumbnail cache
+                                            thumbnailRef = rawDetection.thumbnailRef
                                         )
                                     } else {
                                         pending
@@ -949,7 +950,7 @@ class ItemsViewModel
                                     showHypothesisSelection(
                                         result = result,
                                         itemId = detectionId, // Using detectionId as itemId temporarily
-                                        thumbnailUri = null // TODO: Get from thumbnail cache
+                                        thumbnailRef = rawDetection.thumbnailRef
                                     )
                                 }
                             }

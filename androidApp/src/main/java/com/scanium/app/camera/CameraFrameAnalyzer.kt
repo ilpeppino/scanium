@@ -402,8 +402,7 @@ internal class CameraFrameAnalyzer(
                     frameSharpness = 1.0f, // TODO: Get actual sharpness if available
                     captureType = CaptureType.SINGLE_SHOT,
                     thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
-                    fullFrameBitmap = bitmapCopy,
-                    captureId = captureId
+                    fullFrameBitmap = bitmapCopy
                 )
             }
 
@@ -595,8 +594,7 @@ internal class CameraFrameAnalyzer(
                             frameSharpness = frameSharpness,
                             captureType = CaptureType.TRACKING,
                             thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
-                            fullFrameBitmap = bitmapCopy,
-                            captureId = captureId
+                            fullFrameBitmap = bitmapCopy
                         )
                         objectTracker.markCandidateConsumed(candidate.internalId)
                         Log.i(TAG, ">>> Created RawDetection from candidate ${candidate.internalId}, marked as consumed")
