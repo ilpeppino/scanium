@@ -25,6 +25,7 @@ captures/
 
 ***REMOVED*** Signing / keys (none should be committed)
 *.keystore
+*.bak
 *.jks
 
 ***REMOVED*** Logs and temp files
