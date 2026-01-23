@@ -42,16 +42,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Android-style camera shutter button with tap/long-press gestures.
+ * Android-style camera shutter button with tap gesture.
  *
  * Behavior:
- * - Tap (quick press): Single frame capture
- * - Long press: Start scanning mode (continues after finger lifts)
+ * - Tap: Single frame capture
  * - Tap while scanning: Stop scanning
  *
  * @param cameraState Current camera state (IDLE, CAPTURING, SCANNING)
  * @param onTap Callback for single tap (capture)
- * @param onLongPress Callback for long press (start scanning)
+ * @param onLongPress Callback for long press (disabled)
  * @param onStopScanning Callback for stopping scanning
  * @param modifier Modifier for positioning
  */
@@ -64,9 +63,7 @@ fun ShutterButton(
     showHint: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
     var isPressed by remember { mutableStateOf(false) }
-    var longPressTriggered by remember { mutableStateOf(false) }
 
     // Pulsing animation when scanning
     val infiniteTransition = rememberInfiniteTransition(label = "scanning_pulse")
@@ -99,7 +96,7 @@ fun ShutterButton(
     ) {
         if (showHint && cameraState == CameraState.IDLE) {
             Text(
-                text = "Tap to capture, hold to scan",
+                text = "Tap to capture",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White,
                 modifier =
@@ -133,7 +130,7 @@ fun ShutterButton(
                         role = Role.Button
                         contentDescription =
                             when (cameraState) {
-                                CameraState.IDLE -> "Capture button. Double tap to take photo. Long press to scan continuously"
+                                CameraState.IDLE -> "Capture button. Double tap to take photo"
                                 CameraState.SCANNING -> "Stop scanning. Double tap to stop"
                                 CameraState.CAPTURING -> "Processing capture"
                                 CameraState.ERROR -> "Camera error"
@@ -144,30 +141,16 @@ fun ShutterButton(
                                 // Only handle press for IDLE and SCANNING states
                                 if (cameraState == CameraState.IDLE || cameraState == CameraState.SCANNING) {
                                     isPressed = true
-                                    longPressTriggered = false
-
-                                    // Start long press timer (500ms threshold)
-                                    val longPressJob =
-                                        scope.launch {
-                                            delay(500)
-                                            if (isPressed && cameraState == CameraState.IDLE) {
-                                                longPressTriggered = true
-                                                onLongPress()
-                                            }
-                                        }
 
                                     // Wait for release
                                     tryAwaitRelease()
-                                    longPressJob.cancel()
                                     isPressed = false
 
-                                    // Handle tap if long press wasn't triggered
-                                    if (!longPressTriggered) {
-                                        if (cameraState == CameraState.SCANNING) {
-                                            onStopScanning()
-                                        } else if (cameraState == CameraState.IDLE) {
-                                            onTap()
-                                        }
+                                    // Handle tap - long press scanning disabled
+                                    if (cameraState == CameraState.SCANNING) {
+                                        onStopScanning()
+                                    } else if (cameraState == CameraState.IDLE) {
+                                        onTap()
                                     }
                                 }
                             },

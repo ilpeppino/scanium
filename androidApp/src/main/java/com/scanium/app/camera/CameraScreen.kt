@@ -78,8 +78,6 @@ import kotlinx.coroutines.launch
  * Features:
  * - Single shutter button for all capture interactions
  * - Tap to capture single frame
- * - Long-press to start continuous scanning
- * - Tap while scanning to stop
  * - Slide-in settings overlay for tuning and processing controls
  */
 @OptIn(ExperimentalPermissionsApi::class)
