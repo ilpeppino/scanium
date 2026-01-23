@@ -172,6 +172,14 @@ internal class CameraFrameAnalyzer(
         rotationDegrees: Int = 0,
     ): ImageRef.Bytes? {
         return try {
+            Log.d(
+                TAG,
+                "WYSIWYG: Creating thumbnail from ${sourceBitmap.width}x${sourceBitmap.height} bitmap, " +
+                    "bbox=(${"%.3f".format(normalizedBbox.left)},${"%.3f".format(normalizedBbox.top)})-" +
+                    "(${"%.3f".format(normalizedBbox.right)},${"%.3f".format(normalizedBbox.bottom)}), " +
+                    "rotation=$rotationDegrees°"
+            )
+
             // Convert normalized bbox to pixel coordinates
             val pixelBbox = normalizedBbox.toRect(sourceBitmap.width, sourceBitmap.height)
 
@@ -180,6 +188,11 @@ internal class CameraFrameAnalyzer(
             val top = pixelBbox.top.coerceIn(0, sourceBitmap.height - 1)
             val width = pixelBbox.width().coerceIn(1, sourceBitmap.width - left)
             val height = pixelBbox.height().coerceIn(1, sourceBitmap.height - top)
+
+            Log.d(
+                TAG,
+                "WYSIWYG: Pixel bbox ($left,$top) ${width}x$height from ${sourceBitmap.width}x${sourceBitmap.height} frame"
+            )
 
             // Limit thumbnail size to save memory (match ML Kit's MAX_THUMBNAIL_DIMENSION_PX)
             val maxDimension = 512
