@@ -698,7 +698,8 @@ private fun ExportErrorContent(
     onNavigateToSettingsGeneral: () -> Unit = {},
 ) {
     // Detect error type to navigate to the correct settings page
-    val isAiDisabledError = message.contains("AI assistant is disabled", ignoreCase = true)
+    val aiDisabledPrefix = stringResource(R.string.assistant_disabled_title)
+    val isAiDisabledError = message.contains(aiDisabledPrefix, ignoreCase = true)
     val isUnauthorizedError = message.contains("Authentication required", ignoreCase = true) ||
         message.contains("unauthorized", ignoreCase = true) ||
         message.contains("sign in", ignoreCase = true)

@@ -197,6 +197,13 @@ fun CameraScreen(
     val classificationMode by classificationModeViewModel.classificationMode.collectAsState()
     val captureResolution by cameraViewModel.captureResolution.collectAsState()
     val saveCloudCrops by classificationModeViewModel.saveCloudCrops.collectAsState()
+
+    // Pending detection state for multi-hypothesis workflow
+    val currentPendingDetection by itemsViewModel.currentPendingDetection.collectAsState()
+    val pendingDetectionCount by itemsViewModel.pendingDetectionCount.collectAsState()
+
+    // Hypothesis selection state
+    val hypothesisSelectionState by itemsViewModel.hypothesisSelectionState.collectAsState()
     val lowDataMode by classificationModeViewModel.lowDataMode.collectAsState()
     val verboseLogging by classificationModeViewModel.verboseLogging.collectAsState()
     val analysisFps by cameraManager.analysisFps.collectAsState()
@@ -910,10 +917,10 @@ fun CameraScreen(
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             cameraManager.captureSingleFrame(
                                 scanMode = currentScanMode,
-                                onResult = { items ->
+                                onResult = { rawDetections ->
                                     cameraState = CameraState.IDLE
-                                    if (items.isEmpty()) {
-                                        // PHASE 3: More specific message based on what we detected
+                                    if (rawDetections.isEmpty()) {
+                                        // No detections found
                                         val message =
                                             if (hasOutsideRoiOnly) {
                                                 context.getString(R.string.camera_hint_outside_scan_zone)
@@ -923,50 +930,18 @@ fun CameraScreen(
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                         soundManager.play(AppSound.ERROR)
                                     } else {
-                                        // Capture high-res image and update items with it
-                                        scope.launch {
-                                            val highResUri = cameraManager.captureHighResImage()
-                                            soundManager.play(AppSound.CAPTURE)
-
-                                            if (autoSaveEnabled && saveDirectoryUri != null && highResUri != null) {
-                                                try {
-                                                    context.contentResolver.openInputStream(highResUri)?.use { input ->
-                                                        val savedUri =
-                                                            StorageHelper.saveToDirectory(
-                                                                context,
-                                                                Uri.parse(saveDirectoryUri),
-                                                                input,
-                                                                "image/jpeg",
-                                                                "Scanium",
-                                                            )
-                                                        if (savedUri == null) {
-                                                            Log.e("CameraScreen", "Failed to auto-save image")
-                                                        }
-                                                    }
-                                                } catch (e: Exception) {
-                                                    Log.e("CameraScreen", "Error auto-saving image", e)
-                                                }
-                                            }
-
-                                            val itemsWithHighRes =
-                                                if (highResUri != null) {
-                                                    items.map { item ->
-                                                        item.copy(
-                                                            fullImageUri = highResUri,
-                                                        )
-                                                    }
-                                                } else {
-                                                    // Fallback: use original items if high-res capture failed
-                                                    items
-                                                }
-                                            itemsViewModel.addItemsWithVisionPrefill(context, itemsWithHighRes)
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    context.getString(R.string.camera_detected_items, items.size),
-                                                    Toast.LENGTH_SHORT,
-                                                ).show()
+                                        // Route raw detections to pending queue
+                                        rawDetections.forEach { rawDetection ->
+                                            itemsViewModel.onDetectionReady(rawDetection)
                                         }
+
+                                        soundManager.play(AppSound.CAPTURE)
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                context.getString(R.string.camera_detected_items, rawDetections.size),
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
                                     }
                                 },
                                 onDetectionResult = { detections ->
@@ -998,42 +973,14 @@ fun CameraScreen(
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                             cameraManager.startScanning(
                                 scanMode = currentScanMode,
-                                onResult = { items ->
-                                    if (items.isNotEmpty()) {
-                                        // Capture high-res image for continuous scan items
-                                        scope.launch {
-                                            val highResUri = cameraManager.captureHighResImage()
-
-                                            if (autoSaveEnabled && saveDirectoryUri != null && highResUri != null) {
-                                                try {
-                                                    context.contentResolver.openInputStream(highResUri)?.use { input ->
-                                                        val savedUri =
-                                                            StorageHelper.saveToDirectory(
-                                                                context,
-                                                                Uri.parse(saveDirectoryUri),
-                                                                input,
-                                                                "image/jpeg",
-                                                                "Scanium",
-                                                            )
-                                                        if (savedUri == null) {
-                                                            Log.e("CameraScreen", "Failed to auto-save image")
-                                                        }
-                                                    }
-                                                } catch (e: Exception) {
-                                                    Log.e("CameraScreen", "Error auto-saving image", e)
-                                                }
-                                            }
-
-                                            val itemsWithHighRes =
-                                                if (highResUri != null) {
-                                                    items.map { item ->
-                                                        item.copy(fullImageUri = highResUri)
-                                                    }
-                                                } else {
-                                                    items
-                                                }
-                                            itemsViewModel.addItemsWithVisionPrefill(context, itemsWithHighRes)
+                                onResult = { rawDetections ->
+                                    if (rawDetections.isNotEmpty()) {
+                                        // Route raw detections to pending queue
+                                        rawDetections.forEach { rawDetection ->
+                                            itemsViewModel.onDetectionReady(rawDetection)
                                         }
+
+                                        soundManager.play(AppSound.CAPTURE)
                                     }
                                 },
                                 onDetectionResult = { detections ->
@@ -1175,6 +1122,30 @@ fun CameraScreen(
                             .setApplicationLocales(localeList)
                     }
                 },
+            )
+        }
+
+        // Hypothesis selection sheet (Phase 3: shown when pending detection classification completes)
+        if (hypothesisSelectionState is com.scanium.app.classification.hypothesis.HypothesisSelectionState.Showing) {
+            val state = hypothesisSelectionState as com.scanium.app.classification.hypothesis.HypothesisSelectionState.Showing
+            com.scanium.app.classification.hypothesis.HypothesisSelectionSheet(
+                result = state.result,
+                itemId = state.itemId, // Detection ID
+                imageHash = "", // TODO: Compute from RawDetection
+                thumbnailRef = state.thumbnailRef,
+                onHypothesisConfirmed = { hypothesis ->
+                    itemsViewModel.confirmPendingDetection(state.itemId, hypothesis)
+                },
+                onNoneOfThese = { imageHash, predicted, confidence ->
+                    itemsViewModel.showCorrectionDialog(state.itemId, imageHash, predicted, confidence)
+                },
+                onAddPhoto = {
+                    // Return to camera to capture additional angle
+                    itemsViewModel.dismissPendingDetection(state.itemId)
+                },
+                onDismiss = {
+                    itemsViewModel.dismissPendingDetection(state.itemId)
+                }
             )
         }
     }

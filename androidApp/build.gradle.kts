@@ -250,7 +250,7 @@ android {
             buildConfigField("boolean", "FEATURE_SCREENSHOTS", "true")
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
-            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
+            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
 
             // Google OAuth Client ID for production
             buildConfigField(
@@ -296,7 +296,7 @@ android {
             buildConfigField("boolean", "FEATURE_SCREENSHOTS", "true")
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
-            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
+            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
 
             // Google OAuth Client ID for beta (shared with prod)
             buildConfigField(

@@ -66,13 +66,19 @@ if [[ -z "$DEVICE_ABI" ]]; then
 fi
 echo -e "Device ABI: ${GREEN}$DEVICE_ABI${NC}"
 
-# Step 4: Build the APK (force rebuild to ensure current git SHA)
-echo -e "\n${BLUE}[4/7] Building $VARIANT variant...${NC}"
+# Step 4: Stop gradle daemons and clean
+echo -e "\n${BLUE}[4/7] Stopping gradle daemons and cleaning...${NC}"
+./gradlew --stop
+./gradlew clean --console=plain
+echo -e "${GREEN}Gradle daemons stopped and build outputs cleaned${NC}"
+
+# Step 5: Build the APK (force rebuild to ensure current git SHA)
+echo -e "\n${BLUE}[5/7] Building $VARIANT variant...${NC}"
 echo -e "${YELLOW}Note: Using --rerun-tasks to ensure git SHA matches current HEAD${NC}"
 ./gradlew ":$APP_MODULE:assemble$VARIANT" --no-daemon --console=plain --rerun-tasks
 
-# Step 5: Locate the APK deterministically
-echo -e "\n${BLUE}[5/7] Locating APK...${NC}"
+# Step 6: Locate the APK deterministically
+echo -e "\n${BLUE}[6/8] Locating APK...${NC}"
 APK_OUTPUT_DIR="$PROJECT_ROOT/$APP_MODULE/build/outputs/apk/$FLAVOR/$BUILD_TYPE"
 APK_FILE="$APK_OUTPUT_DIR/$APP_MODULE-$FLAVOR-$DEVICE_ABI-$BUILD_TYPE.apk"
 
@@ -87,9 +93,9 @@ fi
 APK_SIZE=$(du -h "$APK_FILE" | awk '{print $1}')
 echo -e "APK: ${GREEN}$APK_FILE${NC} (${APK_SIZE})"
 
-# Step 6: Optionally uninstall, then install
+# Step 7: Optionally uninstall, then install
 if [[ "$UNINSTALL" == "true" ]]; then
-    echo -e "\n${BLUE}[6/7] Uninstalling existing app...${NC}"
+    echo -e "\n${BLUE}[7/8] Uninstalling existing app...${NC}"
     if adb shell pm list packages | grep -q "^package:$APPLICATION_ID\$"; then
         adb uninstall "$APPLICATION_ID" || true
         echo -e "${GREEN}Uninstalled $APPLICATION_ID${NC}"
@@ -97,15 +103,15 @@ if [[ "$UNINSTALL" == "true" ]]; then
         echo -e "${YELLOW}App not installed, skipping uninstall${NC}"
     fi
 else
-    echo -e "\n${BLUE}[6/7] Installing APK (upgrade)...${NC}"
+    echo -e "\n${BLUE}[7/8] Installing APK (upgrade)...${NC}"
 fi
 
 echo -e "${BLUE}Installing $APK_FILE...${NC}"
 adb install -r "$APK_FILE"
 echo -e "${GREEN}Install completed${NC}"
 
-# Step 7: Verify installed SHA matches expected SHA
-echo -e "\n${BLUE}[7/7] Verifying installed build SHA...${NC}"
+# Step 8: Verify installed SHA matches expected SHA
+echo -e "\n${BLUE}[8/8] Verifying installed build SHA...${NC}"
 
 # Clear logcat buffer
 adb logcat -c

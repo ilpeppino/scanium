@@ -247,7 +247,7 @@ class ExportAssistantViewModel
                     Log.w(TAG, "Export generation blocked: AI assistant is disabled")
                     _state.value =
                         ExportAssistantState.Error(
-                            message = "AI assistant is disabled. Enable it in Settings to continue.",
+                            message = context.getString(com.scanium.app.R.string.assistant_disabled_error_message),
                             isRetryable = false,
                         )
                     return@launch

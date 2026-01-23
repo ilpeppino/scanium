@@ -14,6 +14,7 @@ Start here for up-to-date context. Keep reads under 3 minutes; follow links for 
 ### Core Reference
 
 - [ARCHITECTURE](./ARCHITECTURE.md) – system + app architecture, modules, flows, key code locations.
+- [CLASSIFICATION_BASELINE](./CLASSIFICATION_BASELINE.md) – authoritative first-shot classification requirements and UX contract.
 - [CODEX_CONTEXT](./CODEX_CONTEXT.md) – agent quickmap for AI assistants.
 - [DEV_GUIDE](./DEV_GUIDE.md) – local setup, commands, debugging, container dos/don'ts.
 - [PRODUCT](./PRODUCT.md) – current app behavior, screens, and user flows.

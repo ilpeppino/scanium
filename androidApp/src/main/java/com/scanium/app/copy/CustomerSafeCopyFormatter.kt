@@ -56,7 +56,7 @@ object CustomerSafeCopyFormatter {
             }
 
         return CustomerSafeCopy(
-            title = sanitizedTitle,
+            title = capitalizeFirstLetter(sanitizedTitle),
             pricing = pricing,
             highlights = highlights,
             tags = tags,
@@ -249,4 +249,21 @@ object CustomerSafeCopyFormatter {
         mode: CopyDisplayMode = CopyDisplayMode.ITEM_CARD,
         dropIfWeak: Boolean = false,
     ): List<CustomerSafeCopy> = items.mapNotNull { format(it, mode, dropIfWeak) }
+
+    /**
+     * Capitalize the first letter of a string.
+     * Ensures product type strings are properly capitalized.
+     *
+     * @param text The text to capitalize
+     * @return Text with first letter capitalized
+     */
+    private fun capitalizeFirstLetter(text: String): String {
+        if (text.isEmpty()) return text
+        val first = text[0].uppercaseChar()
+        return if (text.length == 1) {
+            first.toString()
+        } else {
+            first.toString() + text.substring(1)
+        }
+    }
 }

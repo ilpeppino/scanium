@@ -34,17 +34,25 @@ internal class CameraImageConverter {
         val yRowStride = yPlane.rowStride
         val yPixelStride = yPlane.pixelStride
 
+        // Rewind buffer to ensure we start from the beginning
+        yBuffer.rewind()
+
         var pos = 0
         if (yPixelStride == 1 && yRowStride == width) {
             // Fast path: Y plane is tightly packed, copy entire buffer
-            yBuffer.get(nv21, 0, width * height)
-            pos = width * height
+            val size = minOf(yBuffer.remaining(), width * height)
+            yBuffer.get(nv21, 0, size)
+            pos = size
         } else {
             // Slow path: Y plane has padding, copy row by row
             for (row in 0 until height) {
-                yBuffer.position(row * yRowStride)
-                yBuffer.get(nv21, pos, width)
-                pos += width
+                val rowPos = row * yRowStride
+                if (rowPos + width <= yBuffer.capacity()) {
+                    yBuffer.position(rowPos)
+                    val bytesToRead = minOf(yBuffer.remaining(), width)
+                    yBuffer.get(nv21, pos, bytesToRead)
+                    pos += bytesToRead
+                }
             }
         }
 
@@ -55,6 +63,10 @@ internal class CameraImageConverter {
         val vBuffer = vPlane.buffer
         val uBuffer = uPlane.buffer
 
+        // Rewind UV buffers
+        vBuffer.rewind()
+        uBuffer.rewind()
+
         val uvWidth = (width + 1) / 2
         val uvHeight = (height + 1) / 2
 
@@ -62,14 +74,17 @@ internal class CameraImageConverter {
             // Semi-planar UV: already interleaved and tightly packed
             // This is the common case for many devices
             vBuffer.position(0)
-            vBuffer.get(nv21, pos, uvWidth * uvHeight * 2)
+            val uvSize = minOf(vBuffer.remaining(), uvWidth * uvHeight * 2)
+            vBuffer.get(nv21, pos, uvSize)
         } else {
             // Manual interleaving: copy row by row, interleaving V and U
             for (row in 0 until uvHeight) {
                 for (col in 0 until uvWidth) {
                     val vuPos = row * uvRowStride + col * uvPixelStride
-                    nv21[pos++] = vBuffer.get(vuPos) // V comes first in NV21
-                    nv21[pos++] = uBuffer.get(vuPos) // U comes second
+                    if (vuPos < vBuffer.capacity() && vuPos < uBuffer.capacity()) {
+                        nv21[pos++] = vBuffer.get(vuPos) // V comes first in NV21
+                        nv21[pos++] = uBuffer.get(vuPos) // U comes second
+                    }
                 }
             }
         }

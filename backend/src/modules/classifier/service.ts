@@ -113,6 +113,17 @@ export class ClassifierService {
     }
   }
 
+  /**
+   * Get perception from Google Vision without domain mapping.
+   * Used by reasoning service for multi-hypothesis classification.
+   */
+  async getPerception(request: ClassificationRequest): Promise<{
+    providerResponse: ProviderResponse;
+    providerUnavailable: boolean;
+  }> {
+    return await this.runProvider(request);
+  }
+
   async classify(request: ClassificationRequest): Promise<ClassificationResult> {
     const started = performance.now();
     const { providerResponse, providerUnavailable } = await this.runProvider(request);
