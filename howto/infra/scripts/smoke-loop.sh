@@ -1,16 +1,16 @@
-***REMOVED***!/bin/sh
-***REMOVED*** =============================================================================
-***REMOVED*** Smoke Test Loop - runs smoke.sh every 5 minutes
-***REMOVED*** =============================================================================
-***REMOVED*** Used by the smoke-monitor Docker container.
-***REMOVED*** Logs to /logs/smoke.log with automatic rotation.
-***REMOVED***
-***REMOVED*** Environment variables:
-***REMOVED***   SMOKE_BASE_URL  - Base URL to test (default: https://scanium.gtemp1.com)
-***REMOVED***   SCANIUM_API_KEY - API key for authenticated tests
-***REMOVED***   SMOKE_INTERVAL  - Seconds between tests (default: 300)
-***REMOVED***   LOG_DIR         - Log directory (default: /logs)
-***REMOVED*** =============================================================================
+#!/bin/sh
+# =============================================================================
+# Smoke Test Loop - runs smoke.sh every 5 minutes
+# =============================================================================
+# Used by the smoke-monitor Docker container.
+# Logs to /logs/smoke.log with automatic rotation.
+#
+# Environment variables:
+#   SMOKE_BASE_URL  - Base URL to test (default: https://scanium.gtemp1.com)
+#   SCANIUM_API_KEY - API key for authenticated tests
+#   SMOKE_INTERVAL  - Seconds between tests (default: 300)
+#   LOG_DIR         - Log directory (default: /logs)
+# =============================================================================
 
 SCRIPT_DIR="$(dirname "$0")"
 LOG_FILE="${LOG_DIR:-/logs}/smoke.log"
@@ -26,10 +26,10 @@ log() {
 log "Smoke monitor started (interval=${INTERVAL}s, url=${BASE_URL})"
 
 while true; do
-  ***REMOVED*** Run smoke test
+  # Run smoke test
   "${SCRIPT_DIR}/smoke.sh" --base-url "$BASE_URL" >> "$LOG_FILE" 2>&1
 
-  ***REMOVED*** Rotate log if too large
+  # Rotate log if too large
   if [ -f "$LOG_FILE" ]; then
     lines=$(wc -l < "$LOG_FILE")
     if [ "$lines" -gt "$MAX_LINES" ]; then

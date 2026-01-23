@@ -1,8 +1,8 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <style>
-            .mono-mark { fill: ***REMOVED***000000; }
-            .mono-ring { fill: none; stroke: ***REMOVED***000000; }
+            .mono-mark { fill: #000000; }
+            .mono-ring { fill: none; stroke: #000000; }
         </style>
     </defs>
 

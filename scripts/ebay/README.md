@@ -1,9 +1,9 @@
-***REMOVED*** eBay Domain Pack Generator
+# eBay Domain Pack Generator
 
 This directory contains Python scripts for generating eBay-derived candidate domain packs for
 Scanium.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The eBay domain pack generator produces **candidate** domain packs from eBay UK (EBAY_GB) taxonomy
 and listing data. All outputs are **read-only** - they do NOT modify Scanium's localization files or
@@ -12,12 +12,12 @@ existing domain pack configurations.
 **Key Principle:** This is a data generation tool, not a deployment tool. All outputs must be
 manually reviewed and curated before integration into the app.
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
 - Python 3.8+
 - eBay Developer Account (for real API usage, optional for mock data)
 
-***REMOVED******REMOVED*** eBay API Credentials (Optional)
+## eBay API Credentials (Optional)
 
 To fetch real data from eBay (instead of mock data), set these environment variables:
 
@@ -28,9 +28,9 @@ export EBAY_CLIENT_SECRET="your_app_secret"
 
 Get these from https://developer.ebay.com/
 
-***REMOVED******REMOVED*** Scripts
+## Scripts
 
-***REMOVED******REMOVED******REMOVED*** 1. `extract_subtypes.py`
+### 1. `extract_subtypes.py`
 
 Extracts Scanium subtypes from `home_resale_domain_pack.json`.
 
@@ -41,7 +41,7 @@ Extracts Scanium subtypes from `home_resale_domain_pack.json`.
 python3 scripts/ebay/extract_subtypes.py
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. `fetch_taxonomy.py`
+### 2. `fetch_taxonomy.py`
 
 Fetches eBay UK category tree structure.
 
@@ -54,7 +54,7 @@ python3 scripts/ebay/fetch_taxonomy.py
 
 **Note:** Uses mock data by default. With eBay credentials, will fetch real data.
 
-***REMOVED******REMOVED******REMOVED*** 3. `flatten_taxonomy.py`
+### 3. `flatten_taxonomy.py`
 
 Flattens hierarchical eBay category tree into flat list with full paths.
 
@@ -65,7 +65,7 @@ Flattens hierarchical eBay category tree into flat list with full paths.
 python3 scripts/ebay/flatten_taxonomy.py
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. `map_to_scanium.py`
+### 4. `map_to_scanium.py`
 
 Maps eBay categories to Scanium subtypes using rule-based token matching + synonyms.
 
@@ -83,7 +83,7 @@ Maps eBay categories to Scanium subtypes using rule-based token matching + synon
 python3 scripts/ebay/map_to_scanium.py
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. `generate_strings_pack.py`
+### 5. `generate_strings_pack.py`
 
 Generates English-only strings catalog for mapped eBay categories.
 
@@ -97,7 +97,7 @@ python3 scripts/ebay/generate_strings_pack.py
 **Important:** This is a **candidate pack only**. It is NOT wired into the app and localization
 files remain untouched.
 
-***REMOVED******REMOVED******REMOVED*** 6. `fetch_brand_candidates.py`
+### 6. `fetch_brand_candidates.py`
 
 Generates brand candidate lists from eBay listing data (or mock data).
 
@@ -111,7 +111,7 @@ Generates brand candidate lists from eBay listing data (or mock data).
 python3 scripts/ebay/fetch_brand_candidates.py
 ```
 
-***REMOVED******REMOVED*** Running the Full Pipeline
+## Running the Full Pipeline
 
 Execute all scripts in sequence:
 
@@ -127,10 +127,10 @@ python3 scripts/ebay/fetch_brand_candidates.py
 Or run the one-liner:
 
 ```bash
-./scripts/ebay/run_all.sh  ***REMOVED*** (if created)
+./scripts/ebay/run_all.sh  # (if created)
 ```
 
-***REMOVED******REMOVED*** Output Files
+## Output Files
 
 All outputs are written to `scripts/output/ebay/uk/`:
 
@@ -145,7 +145,7 @@ All outputs are written to `scripts/output/ebay/uk/`:
 | `brand_candidates_by_subtype.json`     | Brands by subtype         | JSON     |
 | `brand_frequency_report.md`            | Brand frequency analysis  | Markdown |
 
-***REMOVED******REMOVED*** Localization Guardrails
+## Localization Guardrails
 
 All outputs are protected by `scripts/checks/verify_no_localization_changes.sh`. This script
 verifies:
@@ -167,7 +167,7 @@ verifies:
 bash scripts/checks/verify_no_localization_changes.sh
 ```
 
-***REMOVED******REMOVED*** Next Steps: Integration
+## Next Steps: Integration
 
 Once candidate files are generated, the manual next steps are:
 
@@ -176,7 +176,7 @@ Once candidate files are generated, the manual next steps are:
 3. **Validate brands:** Review `brand_frequency_report.md` for brand relevance
 4. **Integrate:** Move approved files to production catalogs (manual step, not automated)
 
-***REMOVED******REMOVED*** Real API Integration
+## Real API Integration
 
 Currently, the scripts use mock data for demonstration. To integrate real eBay API:
 
@@ -190,7 +190,7 @@ See eBay developer docs:
 - https://developer.ebay.com/api-docs/static/categories-api.html
 - https://developer.ebay.com/api-docs/static/browse-api.html
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
 **Q: Mock data is being used instead of real eBay data**
 A: Set `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` environment variables.
@@ -201,7 +201,7 @@ A: Run the scripts in order. Each script depends on previous outputs.
 **Q: Mapping confidence is always low**
 A: Adjust synonym mappings in `map_to_scanium.py` if needed.
 
-***REMOVED******REMOVED*** Files Not Modified
+## Files Not Modified
 
 ✅ The following files are **NEVER** modified by this tool:
 

@@ -1,6 +1,6 @@
-***REMOVED*** Cloud Classification for Scanium
+# Cloud Classification for Scanium
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium implements **cloud-first classification** that uploads cropped item images to a backend API
 for high-quality category recognition and attribute extraction. This system:
@@ -11,7 +11,7 @@ for high-quality category recognition and attribute extraction. This system:
 - ✅ Never blocks camera or scanning pipeline
 - ✅ Integrates with Domain Pack for 23 fine-grained categories
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
 ```
 Camera → ML Kit → ObjectTracker → ItemAggregator (stable items)
@@ -27,9 +27,9 @@ Camera → ML Kit → ObjectTracker → ItemAggregator (stable items)
                           ItemsViewModel (UI update)
 ```
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
-***REMOVED******REMOVED******REMOVED*** 1. Set up local.properties
+### 1. Set up local.properties
 
 Copy the template and fill in your API details:
 
@@ -46,7 +46,7 @@ scanium.api.key=your-api-key-here
 
 **IMPORTANT**: `local.properties` is gitignored. Never commit secrets!
 
-***REMOVED******REMOVED******REMOVED*** 2. Verify BuildConfig
+### 2. Verify BuildConfig
 
 The gradle build automatically reads from `local.properties` and exposes:
 
@@ -60,22 +60,22 @@ export SCANIUM_API_BASE_URL=https://api.scanium.example.com/v1
 export SCANIUM_API_KEY=prod_key_from_secrets_manager
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Build and Run
+### 3. Build and Run
 
 ```bash
 ./build.sh assembleDebug
 ./gradlew installDebug
 ```
 
-***REMOVED******REMOVED*** Backend API Contract
+## Backend API Contract
 
-***REMOVED******REMOVED******REMOVED*** Endpoint
+### Endpoint
 
 ```
 POST {SCANIUM_API_BASE_URL}/classify
 ```
 
-***REMOVED******REMOVED******REMOVED*** Request
+### Request
 
 **Content-Type**: `multipart/form-data`
 
@@ -99,7 +99,7 @@ curl -X POST https://your-backend.com/api/v1/classify \
   -F "domainPackId=home_resale"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Response
+### Response
 
 **Success (HTTP 200)**:
 
@@ -134,9 +134,9 @@ curl -X POST https://your-backend.com/api/v1/classify \
 - `429 Too Many Requests`: Rate limit exceeded (retryable)
 - `500 Internal Server Error`: Backend error (retryable)
 
-***REMOVED******REMOVED*** Retry Logic
+## Retry Logic
 
-***REMOVED******REMOVED******REMOVED*** Automatic Retry
+### Automatic Retry
 
 The `ClassificationOrchestrator` automatically retries transient errors:
 
@@ -166,14 +166,14 @@ The `ClassificationOrchestrator` automatically retries transient errors:
 - HTTP 403 Forbidden
 - HTTP 404 Not Found
 
-***REMOVED******REMOVED******REMOVED*** Manual Retry
+### Manual Retry
 
 If classification fails after automatic retries, the item remains visible with status "
 Unclassified (tap to retry)". Users can tap the retry button to reattempt classification.
 
-***REMOVED******REMOVED*** Privacy
+## Privacy
 
-***REMOVED******REMOVED******REMOVED*** Data Uploaded
+### Data Uploaded
 
 - ✅ **Cropped item thumbnail only** (not full camera frame)
 - ✅ **EXIF metadata stripped** (re-compressed to JPEG)
@@ -181,13 +181,13 @@ Unclassified (tap to retry)". Users can tap the retry button to reattempt classi
 - ❌ **No device identifiers**
 - ❌ **No user information**
 
-***REMOVED******REMOVED******REMOVED*** Headers Sent
+### Headers Sent
 
 - `X-Client: Scanium-Android` (generic client type)
 - `X-App-Version: 1.0` (app version for backend analytics)
 - `X-API-Key: <key>` (authentication)
 
-***REMOVED******REMOVED******REMOVED*** Privacy Notice
+### Privacy Notice
 
 The app should display a privacy notice in Settings:
 
@@ -202,7 +202,7 @@ The app should display a privacy notice in Settings:
 >
 > All images are processed server-side and deleted after classification.
 
-***REMOVED******REMOVED*** Concurrency Control
+## Concurrency Control
 
 The `ClassificationOrchestrator` limits classification requests to **2 concurrent uploads** to:
 
@@ -212,33 +212,33 @@ The `ClassificationOrchestrator` limits classification requests to **2 concurren
 
 Requests beyond the limit are queued and processed as slots become available.
 
-***REMOVED******REMOVED*** Performance
+## Performance
 
-***REMOVED******REMOVED******REMOVED*** Timeouts
+### Timeouts
 
 - **Connect timeout**: 10 seconds
 - **Read timeout**: 10 seconds
 - **Total max time** (with retries): ~32 seconds (4 attempts × 8s avg)
 
-***REMOVED******REMOVED******REMOVED*** Image Compression
+### Image Compression
 
 - **Format**: JPEG
 - **Quality**: 85%
 - **Typical size**: 50-200 KB per item
 
-***REMOVED******REMOVED******REMOVED*** Non-Blocking
+### Non-Blocking
 
 - Classification runs on `Dispatchers.IO` (background thread)
 - **Never blocks** camera preview or scanning
 - UI updates asynchronously via StateFlow
 
-***REMOVED******REMOVED*** Switching Between Modes
+## Switching Between Modes
 
-***REMOVED******REMOVED******REMOVED*** Default Mode
+### Default Mode
 
 Cloud classification is **enabled by default** (as of this implementation).
 
-***REMOVED******REMOVED******REMOVED*** User Control
+### User Control
 
 Users can switch between ON_DEVICE and CLOUD modes in Settings (future UI):
 
@@ -247,16 +247,16 @@ classificationModeViewModel.updateMode(ClassificationMode.CLOUD)
 classificationModeViewModel.updateMode(ClassificationMode.ON_DEVICE)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Persistence
+### Persistence
 
 Mode selection is persisted via DataStore:
 
 - Survives app restarts
 - User preference is remembered
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 Test retry logic and error handling:
 
@@ -264,7 +264,7 @@ Test retry logic and error handling:
 ./gradlew test --tests "*ClassificationOrchestrator*"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Mock Backend
+### Mock Backend
 
 For local development without a real backend, you can:
 
@@ -272,7 +272,7 @@ For local development without a real backend, you can:
 2. Use a mock server (e.g., `http://localhost:8080/api/v1`)
 3. Return mock responses for testing
 
-***REMOVED******REMOVED******REMOVED*** Real Backend Testing
+### Real Backend Testing
 
 Set up staging environment:
 
@@ -281,9 +281,9 @@ scanium.api.base.url=https://staging-api.scanium.example.com/v1
 scanium.api.key=staging_test_key_12345
 ```
 
-***REMOVED******REMOVED*** Domain Pack Integration
+## Domain Pack Integration
 
-***REMOVED******REMOVED******REMOVED*** Category Mapping
+### Category Mapping
 
 Cloud responses include `domainCategoryId` (e.g., "furniture_sofa") which maps to:
 
@@ -300,7 +300,7 @@ Domain Pack lookup: DomainCategory(id="furniture_sofa", itemCategoryName="HOME_G
 ItemCategory: HOME_GOOD (for pricing, icons, etc.)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Unknown Categories
+### Unknown Categories
 
 If backend returns an unknown `domainCategoryId`:
 
@@ -310,7 +310,7 @@ If backend returns an unknown `domainCategoryId`:
    specific noun
 4. Do **not** crash
 
-***REMOVED******REMOVED******REMOVED*** Matched Tokens
+### Matched Tokens
 
 - The backend now returns a `label` string alongside `domainCategoryId`
 - `label` is the exact domain-pack token that matched (e.g., `"mug"`, `"remote"`)
@@ -318,21 +318,21 @@ If backend returns an unknown `domainCategoryId`:
 - Generic categories (e.g., `"Drinkware"`) are only used when no specific token exists
 - Matched tokens are capitalized on-device before rendering or building listing titles
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "Cloud endpoint not configured"
+### "Cloud endpoint not configured"
 
 **Symptom**: Items not being classified, logs show "SCANIUM_API_BASE_URL is empty"
 
 **Fix**: Add `scanium.api.base.url` to `local.properties` and rebuild
 
-***REMOVED******REMOVED******REMOVED*** "HTTP 401 Unauthorized"
+### "HTTP 401 Unauthorized"
 
 **Symptom**: All classifications fail with 401 errors
 
 **Fix**: Verify `scanium.api.key` in `local.properties` matches your backend API key
 
-***REMOVED******REMOVED******REMOVED*** "Request timeout" errors
+### "Request timeout" errors
 
 **Symptom**: Frequent timeout errors, retries exhaust
 
@@ -343,7 +343,7 @@ If backend returns an unknown `domainCategoryId`:
 - Check backend response time (should be <10s)
 - Consider increasing timeout in `CloudClassifier.kt`
 
-***REMOVED******REMOVED******REMOVED*** Items stuck as "Pending"
+### Items stuck as "Pending"
 
 **Symptom**: Items show as pending but never complete
 
@@ -353,7 +353,7 @@ If backend returns an unknown `domainCategoryId`:
 - Verify backend is returning HTTP 200 responses
 - Check response JSON format matches contract
 
-***REMOVED******REMOVED******REMOVED*** High memory usage
+### High memory usage
 
 **Symptom**: App memory usage increases during classification
 
@@ -362,9 +362,9 @@ If backend returns an unknown `domainCategoryId`:
 - Check for bitmap leaks in custom code
 - Verify `AggregatedItem.cleanup()` is called on removal
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** On-Device CLIP
+### On-Device CLIP
 
 When implementing on-device classification:
 
@@ -373,7 +373,7 @@ When implementing on-device classification:
 3. Update `ClassificationOrchestrator` (already supports ON_DEVICE mode)
 4. Add model download/update mechanism
 
-***REMOVED******REMOVED******REMOVED*** Batching
+### Batching
 
 For better throughput, implement batch classification:
 
@@ -388,7 +388,7 @@ POST /classify/batch
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Caching
+### Caching
 
 Add persistent cache for classification results:
 
@@ -396,9 +396,9 @@ Add persistent cache for classification results:
 - Keyed by image hash
 - Survives app restarts
 
-***REMOVED******REMOVED*** API Example Implementation
+## API Example Implementation
 
-***REMOVED******REMOVED******REMOVED*** Python FastAPI Backend (Example)
+### Python FastAPI Backend (Example)
 
 ```python
 from fastapi import FastAPI, File, Form, UploadFile
@@ -418,13 +418,13 @@ async def classify(
     image: UploadFile = File(...),
     domainPackId: str = Form(...)
 ):
-    ***REMOVED*** 1. Load image
+    # 1. Load image
     img_bytes = await image.read()
 
-    ***REMOVED*** 2. Run your classifier model
+    # 2. Run your classifier model
     result = your_classifier_model.predict(img_bytes, domainPackId)
 
-    ***REMOVED*** 3. Return response
+    # 3. Return response
     return ClassificationResponse(
         domainCategoryId=result.category_id,
         confidence=result.confidence,
@@ -434,14 +434,14 @@ async def classify(
     )
 ```
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - **Architecture**: `/md/architecture/ARCHITECTURE.md`
 - **Domain Pack**: `/md/architecture/DOMAIN_PACK_ARCHITECTURE.md`
 - **Testing**: `/md/testing/TEST_SUITE.md`
 - **Setup**: `/SETUP.md`
 
-***REMOVED******REMOVED*** Support
+## Support
 
 For issues or questions:
 

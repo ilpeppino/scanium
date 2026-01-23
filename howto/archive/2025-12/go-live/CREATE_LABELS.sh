@@ -1,6 +1,6 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Create GitHub labels for go-live backlog
-***REMOVED*** Run this script first before creating issues
+#!/bin/bash
+# Create GitHub labels for go-live backlog
+# Run this script first before creating issues
 
 set -e
 

@@ -1,9 +1,9 @@
-***REMOVED*** Marketplace Listing Generation (PR4)
+# Marketplace Listing Generation (PR4)
 
 This document explains the marketplace-ready title and description generation feature in the
 `/v1/assist/chat` endpoint.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The assistant endpoint generates marketplace-ready listings using:
 
@@ -11,7 +11,7 @@ The assistant endpoint generates marketplace-ready listings using:
 2. **Detected attributes** from vision analysis (with confidence levels)
 3. **Visual evidence** from images (OCR, logos, colors)
 
-***REMOVED******REMOVED*** Key Concept: User Overrides
+## Key Concept: User Overrides
 
 When a user manually edits an attribute (brand, model, color, condition), that value becomes *
 *authoritative**. The system will:
@@ -23,9 +23,9 @@ When a user manually edits an attribute (brand, model, color, condition), that v
 
 This ensures the final listing reflects the seller's knowledge of the item.
 
-***REMOVED******REMOVED*** Request Payload
+## Request Payload
 
-***REMOVED******REMOVED******REMOVED*** Item Context Snapshot
+### Item Context Snapshot
 
 ```json
 {
@@ -71,7 +71,7 @@ This ensures the final listing reflects the seller's knowledge of the item.
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Attribute Source Values
+### Attribute Source Values
 
 | Source     | Description                  | Handling                                  |
 |------------|------------------------------|-------------------------------------------|
@@ -80,7 +80,7 @@ This ensures the final listing reflects the seller's knowledge of the item.
 | `DEFAULT`  | System default value         | Use with context                          |
 | `UNKNOWN`  | Source not specified         | Treat as DETECTED for safety              |
 
-***REMOVED******REMOVED*** Response Format
+## Response Format
 
 The response includes structured `suggestedDraftUpdates` with title and description:
 
@@ -136,7 +136,7 @@ The response includes structured `suggestedDraftUpdates` with title and descript
 }
 ```
 
-***REMOVED******REMOVED*** Title Generation Rules
+## Title Generation Rules
 
 Titles are generated following these rules:
 
@@ -151,7 +151,7 @@ Titles are generated following these rules:
 - `IKEA KALLAX Bookshelf - White, 4x4 Cube Storage` (47 chars)
 - `Sony WH-1000XM4 Headphones - Wireless, Noise Canceling` (54 chars)
 
-***REMOVED******REMOVED*** Description Generation Rules
+## Description Generation Rules
 
 Descriptions follow a structured format:
 
@@ -174,7 +174,7 @@ Premium Dell XPS 15 laptop in like-new condition. Powerful performance for profe
 Includes original charger. Local pickup preferred, shipping available.
 ```
 
-***REMOVED******REMOVED*** Confidence Levels
+## Confidence Levels
 
 | Confidence | Meaning                                 | Handling                        |
 |------------|-----------------------------------------|---------------------------------|
@@ -182,7 +182,7 @@ Includes original charger. Local pickup preferred, shipping available.
 | `MED`      | Moderate evidence                       | Include "Please verify" warning |
 | `LOW`      | Insufficient evidence                   | Mark as "Possibly" or omit      |
 
-***REMOVED******REMOVED*** Prompt Template
+## Prompt Template
 
 The system prompt instructs the LLM to:
 
@@ -191,7 +191,7 @@ The system prompt instructs the LLM to:
 3. **Never hallucinate** specifications not provided
 4. **Generate marketplace-ready** titles and descriptions
 
-***REMOVED******REMOVED******REMOVED*** Example Prompt (User Section)
+### Example Prompt (User Section)
 
 ```
 **User-provided attributes (use as-is):**
@@ -203,9 +203,9 @@ Detected attributes:
 - color: "Silver" [DETECTED] [HIGH] (from: color extraction)
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** cURL Example
+### cURL Example
 
 ```bash
 curl -X POST "https://api.scanium.app/v1/assist/chat" \
@@ -225,7 +225,7 @@ curl -X POST "https://api.scanium.app/v1/assist/chat" \
   }'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 Tests are located in `backend/src/modules/assistant/prompts/listing-generation.test.ts`:
 
@@ -241,7 +241,7 @@ Key test scenarios:
 - Vision attributes don't override user-provided ones
 - Condition included when user-edited
 
-***REMOVED******REMOVED*** Android Integration
+## Android Integration
 
 The Android app sends attributes with source via `ItemContextSnapshotBuilder`:
 
@@ -263,24 +263,24 @@ draft = draft.copy(
 - `DEFAULT` → `DEFAULT`
 - `UNKNOWN` → `UNKNOWN`
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
 No additional configuration is required. The feature is enabled by default when using the assistant
 endpoint.
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** User attributes not being treated as authoritative
+### User attributes not being treated as authoritative
 
 **Check:** Ensure `source: "USER"` is set in the attribute
 **Verify:** Look for `[USER]` tag in server logs
 
-***REMOVED******REMOVED******REMOVED*** Low confidence despite user input
+### Low confidence despite user input
 
 **Check:** The `source` field must be `"USER"`, not just high `confidence` value
 **Fix:** Update client to set source when user edits a field
 
-***REMOVED******REMOVED******REMOVED*** Vision attributes overriding user values
+### Vision attributes overriding user values
 
 **Check:** This should not happen if `source: "USER"` is set correctly
 **Debug:** Enable `ASSISTANT_LOG_CONTENT=true` to see the full prompt

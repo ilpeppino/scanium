@@ -1,14 +1,14 @@
-***REMOVED*** Backend API Performance Dashboard Fix
+# Backend API Performance Dashboard Fix
 
-***REMOVED******REMOVED*** Status: BLOCKED - Infrastructure Issue
+## Status: BLOCKED - Infrastructure Issue
 
-***REMOVED******REMOVED*** Root Cause Analysis
+## Root Cause Analysis
 
 The "Scanium - Backend API Performance" dashboard cannot show real data due to a **Prometheus
 scraping failure** in the Alloy telemetry pipeline. This is an infrastructure issue, not a dashboard
 configuration problem.
 
-***REMOVED******REMOVED******REMOVED*** Evidence
+### Evidence
 
 1. **Dashboard Configuration: CORRECT**
     - Dashboard queries: `scanium_http_request_duration_ms_bucket` and `scanium_http_requests_total`
@@ -33,7 +33,7 @@ configuration problem.
     - No metrics from backend reaching Mimir despite correct config
     - Other scrape targets (alloy, loki, tempo, mimir) all work fine (up=1)
 
-***REMOVED******REMOVED******REMOVED*** Investigation Summary
+### Investigation Summary
 
 **Verified Working:**
 
@@ -60,7 +60,7 @@ configuration problem.
 - No error logs in Alloy explaining why scrape fails
 - `up=0` persists despite backend being accessible
 
-***REMOVED******REMOVED*** Hypothesis
+## Hypothesis
 
 Possible causes (needs further investigation):
 
@@ -70,7 +70,7 @@ Possible causes (needs further investigation):
 4. **Metrics endpoint authentication** requirement not configured
 5. **Backend listening address** - despite config showing `0.0.0.0`, logs show `127.0.0.1:8080`
 
-***REMOVED******REMOVED*** Required Fix
+## Required Fix
 
 **Immediate Action:**
 
@@ -92,7 +92,7 @@ Possible causes (needs further investigation):
 - Configure backend to push metrics to Alloy OTLP endpoint instead of pull-based scraping
 - Expose backend metrics on host network temporarily for debugging
 
-***REMOVED******REMOVED*** Dashboard Impact
+## Dashboard Impact
 
 **Current State:**
 
@@ -106,24 +106,24 @@ Possible causes (needs further investigation):
 - Route and method breakdowns populate
 - Variables (service, route, method) show available values
 
-***REMOVED******REMOVED*** Verification Steps (when fixed)
+## Verification Steps (when fixed)
 
 1. **Confirm scrape working:**
    ```bash
    curl -s 'http://127.0.0.1:9009/prometheus/api/v1/query?query=up{job="scanium-backend"}' | jq '.data.result[0].value[1]'
-   ***REMOVED*** Should return: "1"
+   # Should return: "1"
    ```
 
 2. **Confirm metrics exist:**
    ```bash
    curl -s 'http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_http_requests_total' | jq '.data.result | length'
-   ***REMOVED*** Should return: >0
+   # Should return: >0
    ```
 
 3. **Check metric labels:**
    ```bash
    curl -s 'http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_http_requests_total' | jq '.data.result[0].metric'
-   ***REMOVED*** Should include: service_name, deployment_environment, method, route, status_code
+   # Should include: service_name, deployment_environment, method, route, status_code
    ```
 
 4. **Verify in Grafana:**
@@ -132,15 +132,15 @@ Possible causes (needs further investigation):
     - Panels should show data
     - Variables dropdowns should populate
 
-***REMOVED******REMOVED*** Traffic Generation (for testing)
+## Traffic Generation (for testing)
 
 If metrics exist but need fresh data:
 
 ```bash
-***REMOVED*** Run from NAS
+# Run from NAS
 docker exec scanium-backend node /tmp/traffic.js
 
-***REMOVED*** Or manually:
+# Or manually:
 for i in {1..180}; do
   docker exec scanium-backend node -e "require('http').get('http://localhost:8080/healthz')"
   sleep 0.3
@@ -149,14 +149,14 @@ done
 
 Wait 90 seconds after traffic generation for scrape and ingestion.
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
 - `monitoring/grafana/dashboards/backend-api-performance.json` - Dashboard definition (NO CHANGES
   NEEDED)
 - `monitoring/alloy/config.alloy` - Alloy config (attempted fix with docker discovery, may need
   revert)
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. **Diagnose scraping failure** - Determine why Alloy cannot reach backend metrics
 2. **Fix root cause** - Implement proper solution (not workaround)

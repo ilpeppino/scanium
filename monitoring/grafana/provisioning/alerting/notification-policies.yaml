@@ -1,11 +1,11 @@
-***REMOVED*** Grafana Alerting - Notification Policies Provisioning
-***REMOVED*** Routes alerts to appropriate contact points based on environment labels
+# Grafana Alerting - Notification Policies Provisioning
+# Routes alerts to appropriate contact points based on environment labels
 
 apiVersion: 1
 
 policies:
   - orgId: 1
-    ***REMOVED*** Root notification policy
+    # Root notification policy
     receiver: scanium-default
     group_by:
       - alertname
@@ -14,7 +14,7 @@ policies:
     group_interval: 5m
     repeat_interval: 4h
     routes:
-      ***REMOVED*** Production alerts -> high priority
+      # Production alerts -> high priority
       - receiver: scanium-high-priority
         matchers:
           - env = prod
@@ -24,7 +24,7 @@ policies:
         continue: false
         mute_time_intervals: [ ]
 
-      ***REMOVED*** Staging alerts -> low priority
+      # Staging alerts -> low priority
       - receiver: scanium-low-priority
         matchers:
           - env = stage
@@ -33,7 +33,7 @@ policies:
         repeat_interval: 8h
         continue: false
 
-      ***REMOVED*** Development alerts -> low priority (with longer intervals)
+      # Development alerts -> low priority (with longer intervals)
       - receiver: scanium-low-priority
         matchers:
           - env = dev

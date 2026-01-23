@@ -1,4 +1,4 @@
-***REMOVED*** CVE Scanning & Vulnerability Management (SEC-003)
+# CVE Scanning & Vulnerability Management (SEC-003)
 
 **Security Finding:** SEC-003 - No Automated CVE Scanning
 **Priority:** P1 (High)
@@ -8,12 +8,12 @@
 
 ---
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This document describes the automated CVE (Common Vulnerabilities and Exposures) scanning system
 implemented in Scanium to detect and prevent vulnerable dependencies from being deployed.
 
-***REMOVED******REMOVED******REMOVED*** Security Mechanisms
+### Security Mechanisms
 
 1. **OWASP Dependency-Check** - Gradle plugin scanning against NVD database
 2. **GitHub Actions CI/CD** - Automated scanning on every PR and weekly
@@ -22,9 +22,9 @@ implemented in Scanium to detect and prevent vulnerable dependencies from being 
 
 ---
 
-***REMOVED******REMOVED*** 1. OWASP Dependency-Check
+## 1. OWASP Dependency-Check
 
-***REMOVED******REMOVED******REMOVED*** What It Does
+### What It Does
 
 OWASP Dependency-Check scans project dependencies against the National Vulnerability Database (NVD)
 to identify known security vulnerabilities. It:
@@ -35,7 +35,7 @@ to identify known security vulnerabilities. It:
 - Generates HTML, JSON, and SARIF reports
 - Can fail builds if vulnerabilities exceed threshold
 
-***REMOVED******REMOVED******REMOVED*** Configuration
+### Configuration
 
 Added to `app/build.gradle.kts`:
 
@@ -73,37 +73,37 @@ dependencyCheck {
 
 ---
 
-***REMOVED******REMOVED*** 2. Running CVE Scans
+## 2. Running CVE Scans
 
-***REMOVED******REMOVED******REMOVED*** Local Scans
+### Local Scans
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Basic Scan
+#### Basic Scan
 
 ```bash
-***REMOVED*** Run dependency check
+# Run dependency check
 ./gradlew dependencyCheckAnalyze
 
-***REMOVED*** View report
+# View report
 open app/build/reports/dependency-check-report.html
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Advanced Options
+#### Advanced Options
 
 ```bash
-***REMOVED*** Scan with verbose output
+# Scan with verbose output
 ./gradlew dependencyCheckAnalyze --info
 
-***REMOVED*** Update NVD data only (no scan)
+# Update NVD data only (no scan)
 ./gradlew dependencyCheckUpdate
 
-***REMOVED*** Purge cached NVD data
+# Purge cached NVD data
 ./gradlew dependencyCheckPurge
 
-***REMOVED*** With NVD API key (faster)
+# With NVD API key (faster)
 DEPENDENCY_CHECK_NVD_API_KEY=your-key-here ./gradlew dependencyCheckAnalyze
 ```
 
-***REMOVED******REMOVED******REMOVED*** CI/CD Scans (Automated)
+### CI/CD Scans (Automated)
 
 **GitHub Actions Workflow:** `.github/workflows/security-cve-scan.yml`
 
@@ -124,20 +124,20 @@ DEPENDENCY_CHECK_NVD_API_KEY=your-key-here ./gradlew dependencyCheckAnalyze
 
 ---
 
-***REMOVED******REMOVED*** 3. Understanding CVE Reports
+## 3. Understanding CVE Reports
 
-***REMOVED******REMOVED******REMOVED*** Report Locations
+### Report Locations
 
 After running `./gradlew dependencyCheckAnalyze`:
 
 ```
 app/build/reports/
-├── dependency-check-report.html    ***REMOVED*** Human-readable report
-├── dependency-check-report.json    ***REMOVED*** Machine-readable (for automation)
-└── dependency-check-report.sarif   ***REMOVED*** GitHub Security integration
+├── dependency-check-report.html    # Human-readable report
+├── dependency-check-report.json    # Machine-readable (for automation)
+└── dependency-check-report.sarif   # GitHub Security integration
 ```
 
-***REMOVED******REMOVED******REMOVED*** Report Structure
+### Report Structure
 
 **HTML Report Sections:**
 
@@ -156,7 +156,7 @@ References: https://nvd.nist.gov/vuln/detail/CVE-2024-XXXXX
 Fix: Upgrade to okhttp:4.12.1 or later
 ```
 
-***REMOVED******REMOVED******REMOVED*** CVSS Severity Levels
+### CVSS Severity Levels
 
 | Score Range | Severity     | Build Action    |
 |-------------|--------------|-----------------|
@@ -169,30 +169,30 @@ Fix: Upgrade to okhttp:4.12.1 or later
 
 ---
 
-***REMOVED******REMOVED*** 4. Handling Vulnerabilities
+## 4. Handling Vulnerabilities
 
-***REMOVED******REMOVED******REMOVED*** Workflow
+### Workflow
 
 1. **CVE Detected** → Build fails or PR comment appears
 2. **Assess Impact** → Read CVE description and determine if exploitable
 3. **Fix or Suppress** → Upgrade dependency OR suppress false positive
 4. **Verify** → Re-run scan to confirm resolution
 
-***REMOVED******REMOVED******REMOVED*** Fixing Vulnerabilities
+### Fixing Vulnerabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 1: Identify Vulnerable Dependency
+#### Step 1: Identify Vulnerable Dependency
 
 ```bash
-***REMOVED*** Run scan
+# Run scan
 ./gradlew dependencyCheckAnalyze
 
-***REMOVED*** Open report
+# Open report
 open app/build/reports/dependency-check-report.html
 
-***REMOVED*** Find: Dependency name, current version, fixed version
+# Find: Dependency name, current version, fixed version
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 2: Upgrade Dependency
+#### Step 2: Upgrade Dependency
 
 ```kotlin
 // Before (vulnerable)
@@ -202,32 +202,32 @@ implementation("com.squareup.okhttp3:okhttp:4.12.0")
 implementation("com.squareup.okhttp3:okhttp:4.12.1")
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 3: Update Verification Metadata
+#### Step 3: Update Verification Metadata
 
 ```bash
-***REMOVED*** Regenerate checksums for new version
+# Regenerate checksums for new version
 ./gradlew --write-verification-metadata sha256 help
 
-***REMOVED*** Commit updated metadata
+# Commit updated metadata
 git add gradle/verification-metadata.xml
 git commit -m "security: upgrade okhttp to fix CVE-2024-XXXXX"
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Step 4: Verify Fix
+#### Step 4: Verify Fix
 
 ```bash
-***REMOVED*** Re-run scan
+# Re-run scan
 ./gradlew dependencyCheckAnalyze
 
-***REMOVED*** Confirm CVE is gone
+# Confirm CVE is gone
 open app/build/reports/dependency-check-report.html
 ```
 
-***REMOVED******REMOVED******REMOVED*** Suppressing False Positives
+### Suppressing False Positives
 
 Sometimes Dependency-Check reports CVEs that don't apply to your usage. You can suppress these.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Create Suppression File
+#### Create Suppression File
 
 Create `app/dependency-check-suppressions.xml`:
 
@@ -258,9 +258,9 @@ Create `app/dependency-check-suppressions.xml`:
 
 ---
 
-***REMOVED******REMOVED*** 5. GitHub Security Integration
+## 5. GitHub Security Integration
 
-***REMOVED******REMOVED******REMOVED*** Security Tab
+### Security Tab
 
 CVE scan results are automatically uploaded to GitHub's Security tab via SARIF format.
 
@@ -277,7 +277,7 @@ CVE scan results are automatically uploaded to GitHub's Security tab via SARIF f
 - ✅ Security advisories visible to team
 - ✅ Integration with GitHub Projects
 
-***REMOVED******REMOVED******REMOVED*** Dependabot (Optional Enhancement)
+### Dependabot (Optional Enhancement)
 
 Enable Dependabot for automatic dependency updates:
 
@@ -304,9 +304,9 @@ Dependabot will:
 
 ---
 
-***REMOVED******REMOVED*** 6. CI/CD Integration Details
+## 6. CI/CD Integration Details
 
-***REMOVED******REMOVED******REMOVED*** GitHub Actions Workflow
+### GitHub Actions Workflow
 
 **File:** `.github/workflows/security-cve-scan.yml`
 
@@ -318,17 +318,17 @@ Dependabot will:
 4. **PR Comments:** Automatic summary comment with vulnerability counts
 5. **Build Gates:** Fails PR if HIGH/CRITICAL CVEs found
 
-***REMOVED******REMOVED******REMOVED*** Workflow Triggers
+### Workflow Triggers
 
 ```yaml
 on:
-  pull_request:  ***REMOVED*** On every PR touching dependencies
-  push:          ***REMOVED*** On push to main branch
-  schedule:      ***REMOVED*** Weekly (Monday 2am UTC)
-  workflow_dispatch:  ***REMOVED*** Manual trigger
+  pull_request:  # On every PR touching dependencies
+  push:          # On push to main branch
+  schedule:      # Weekly (Monday 2am UTC)
+  workflow_dispatch:  # Manual trigger
 ```
 
-***REMOVED******REMOVED******REMOVED*** Workflow Steps
+### Workflow Steps
 
 1. **Checkout** → Clone repository
 2. **Setup Java 17** → Required for Gradle
@@ -342,9 +342,9 @@ on:
 
 ---
 
-***REMOVED******REMOVED*** 7. Performance Optimization
+## 7. Performance Optimization
 
-***REMOVED******REMOVED******REMOVED*** NVD API Key (Recommended)
+### NVD API Key (Recommended)
 
 The NVD database download can take 30+ minutes. Get a free API key to reduce this to seconds.
 
@@ -357,24 +357,24 @@ The NVD database download can take 30+ minutes. Get a free API key to reduce thi
 **Local Usage:**
 
 ```bash
-***REMOVED*** Export API key
+# Export API key
 export DEPENDENCY_CHECK_NVD_API_KEY="your-key-here"
 
-***REMOVED*** Run scan (much faster)
+# Run scan (much faster)
 ./gradlew dependencyCheckAnalyze
 ```
 
 **GitHub Actions:**
 Already configured in workflow - just add secret to repository.
 
-***REMOVED******REMOVED******REMOVED*** Caching Strategy
+### Caching Strategy
 
 **Local Cache:**
 
 ```
 app/build/dependency-check-data/
-├── odc.mv.db        ***REMOVED*** NVD database (cached)
-├── nvdcve-1.1-*.json.gz  ***REMOVED*** CVE data files
+├── odc.mv.db        # NVD database (cached)
+├── nvdcve-1.1-*.json.gz  # CVE data files
 ```
 
 **CI Cache:**
@@ -387,9 +387,9 @@ GitHub Actions caches `~/.gradle/dependency-check-data` across runs.
 
 ---
 
-***REMOVED******REMOVED*** 8. Best Practices
+## 8. Best Practices
 
-***REMOVED******REMOVED******REMOVED*** Development Workflow
+### Development Workflow
 
 1. **Before Adding Dependency:**
     - Check dependency age and maintenance status
@@ -398,13 +398,13 @@ GitHub Actions caches `~/.gradle/dependency-check-data` across runs.
 
 2. **After Adding Dependency:**
    ```bash
-   ***REMOVED*** Run CVE scan immediately
+   # Run CVE scan immediately
    ./gradlew dependencyCheckAnalyze
 
-   ***REMOVED*** Update verification metadata
+   # Update verification metadata
    ./gradlew --write-verification-metadata sha256 help
 
-   ***REMOVED*** Commit both changes together
+   # Commit both changes together
    git add app/build.gradle.kts gradle/verification-metadata.xml
    git commit -m "deps: add library X (no CVEs)"
    ```
@@ -414,31 +414,31 @@ GitHub Actions caches `~/.gradle/dependency-check-data` across runs.
     - Fix or suppress within 1 week (HIGH/CRITICAL)
     - Fix or suppress within 1 month (MEDIUM)
 
-***REMOVED******REMOVED******REMOVED*** Release Workflow
+### Release Workflow
 
 **Before Every Release:**
 
 ```bash
-***REMOVED*** 1. Update NVD data
+# 1. Update NVD data
 ./gradlew dependencyCheckUpdate
 
-***REMOVED*** 2. Run full scan
+# 2. Run full scan
 ./gradlew dependencyCheckAnalyze
 
-***REMOVED*** 3. Check report
+# 3. Check report
 open app/build/reports/dependency-check-report.html
 
-***REMOVED*** 4. Fix any HIGH/CRITICAL vulnerabilities
-***REMOVED*** 5. Generate SBOM
+# 4. Fix any HIGH/CRITICAL vulnerabilities
+# 5. Generate SBOM
 ./gradlew cyclonedxBom
 
-***REMOVED*** 6. Archive both reports with release
+# 6. Archive both reports with release
 mkdir -p releases/v1.0/security/
 cp app/build/reports/dependency-check-report.html releases/v1.0/security/
 cp app/build/reports/scanium-bom.json releases/v1.0/security/
 ```
 
-***REMOVED******REMOVED******REMOVED*** Team Practices
+### Team Practices
 
 - **Security Champion:** Assign one team member to monitor CVE alerts
 - **Weekly Review:** Review GitHub Security tab every Monday
@@ -451,24 +451,24 @@ cp app/build/reports/scanium-bom.json releases/v1.0/security/
 
 ---
 
-***REMOVED******REMOVED*** 9. Troubleshooting
+## 9. Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Issue: "NVD data download takes forever"
+### Issue: "NVD data download takes forever"
 
 **Cause:** No API key, slow network
 
 **Solution:**
 
 ```bash
-***REMOVED*** Get NVD API key (free)
-***REMOVED*** https://nvd.nist.gov/developers/request-an-api-key
+# Get NVD API key (free)
+# https://nvd.nist.gov/developers/request-an-api-key
 
-***REMOVED*** Use key
+# Use key
 export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 ./gradlew dependencyCheckAnalyze
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue: "False positive CVE reported"
+### Issue: "False positive CVE reported"
 
 **Cause:** Dependency-Check matches CVEs conservatively
 
@@ -480,19 +480,19 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 4. Set expiration date
 5. Get security team approval
 
-***REMOVED******REMOVED******REMOVED*** Issue: "Build fails on CI but passes locally"
+### Issue: "Build fails on CI but passes locally"
 
 **Cause:** Different NVD data versions, cached data
 
 **Solution:**
 
 ```bash
-***REMOVED*** Purge and re-download NVD data
+# Purge and re-download NVD data
 ./gradlew dependencyCheckPurge
 ./gradlew dependencyCheckAnalyze
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue: "Scan is too slow (30+ minutes)"
+### Issue: "Scan is too slow (30+ minutes)"
 
 **Solutions:**
 
@@ -503,9 +503,9 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 
 ---
 
-***REMOVED******REMOVED*** 10. Alternative Tools
+## 10. Alternative Tools
 
-***REMOVED******REMOVED******REMOVED*** Snyk
+### Snyk
 
 **Pros:**
 
@@ -524,7 +524,7 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 2. Add `SNYK_TOKEN` to GitHub Secrets
 3. Enable Snyk workflow in `.github/workflows/security-cve-scan.yml`
 
-***REMOVED******REMOVED******REMOVED*** Grype (by Anchore)
+### Grype (by Anchore)
 
 **Pros:**
 
@@ -540,64 +540,64 @@ export DEPENDENCY_CHECK_NVD_API_KEY="your-key"
 **Usage:**
 
 ```bash
-***REMOVED*** Install Grype
-brew install grype  ***REMOVED*** macOS
-***REMOVED*** OR
+# Install Grype
+brew install grype  # macOS
+# OR
 curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
 
-***REMOVED*** Scan SBOM
+# Scan SBOM
 ./gradlew cyclonedxBom
 grype sbom:app/build/reports/scanium-bom.json
 ```
 
 ---
 
-***REMOVED******REMOVED*** 11. Metrics & Reporting
+## 11. Metrics & Reporting
 
-***REMOVED******REMOVED******REMOVED*** Key Metrics to Track
+### Key Metrics to Track
 
 1. **Mean Time to Detect (MTTD):** Time from CVE disclosure to detection in your app
 2. **Mean Time to Remediate (MTTR):** Time from detection to fix deployed
 3. **Vulnerability Backlog:** Count of open HIGH/CRITICAL CVEs
 4. **Dependency Age:** Average age of dependencies (older = riskier)
 
-***REMOVED******REMOVED******REMOVED*** Monthly Security Report
+### Monthly Security Report
 
 Generate monthly reports:
 
 ```bash
-***REMOVED*** Run scan
+# Run scan
 ./gradlew dependencyCheckAnalyze
 
-***REMOVED*** Extract metrics
+# Extract metrics
 jq '.dependencies | length' app/build/reports/dependency-check-report.json
-***REMOVED*** → Total dependencies scanned
+# → Total dependencies scanned
 
 jq '[.dependencies[].vulnerabilities[]? | select(.severity == "HIGH" or .severity == "CRITICAL")] | length' app/build/reports/dependency-check-report.json
-***REMOVED*** → High/Critical vulnerabilities
+# → High/Critical vulnerabilities
 
-***REMOVED*** Archive report
+# Archive report
 cp app/build/reports/dependency-check-report.html reports/2025-12-cve-scan.html
 ```
 
 ---
 
-***REMOVED******REMOVED*** 12. References
+## 12. References
 
-***REMOVED******REMOVED******REMOVED*** Documentation
+### Documentation
 
 - **OWASP Dependency-Check:** https://owasp.org/www-project-dependency-check/
 - **NVD Database:** https://nvd.nist.gov/
 - **CVSS Scoring:** https://www.first.org/cvss/
 - **GitHub Security:** https://docs.github.com/en/code-security
 
-***REMOVED******REMOVED******REMOVED*** Tools
+### Tools
 
 - **Snyk:** https://snyk.io/
 - **Grype:** https://github.com/anchore/grype
 - **Dependabot:** https://github.com/dependabot
 
-***REMOVED******REMOVED******REMOVED*** Scanium Security Docs
+### Scanium Security Docs
 
 - **DEPENDENCY_SECURITY.md** - SBOM generation (SEC-002)
 - **SECURITY_RISK_ASSESSMENT.md** - Comprehensive assessment
@@ -605,13 +605,13 @@ cp app/build/reports/dependency-check-report.html reports/2025-12-cve-scan.html
 
 ---
 
-***REMOVED******REMOVED*** 13. Implementation Summary
+## 13. Implementation Summary
 
 **Implemented:** 2025-12-15
 **Implemented By:** Codex Security Team
 **Branch:** `claude/fix-android-security-findings-TccHR`
 
-***REMOVED******REMOVED******REMOVED*** Changes Made
+### Changes Made
 
 1. ✅ Added OWASP Dependency-Check plugin v10.0.4 to `app/build.gradle.kts`
 2. ✅ Configured CVE scanning (HTML/JSON/SARIF reports, CVSS threshold)
@@ -619,7 +619,7 @@ cp app/build/reports/dependency-check-report.html reports/2025-12-cve-scan.html
 4. ✅ Configured automatic PR comments and GitHub Security integration
 5. ✅ Created comprehensive documentation (this file)
 
-***REMOVED******REMOVED******REMOVED*** Next Steps
+### Next Steps
 
 1. **Generate NVD Data** (requires network - first run only):
    ```bash
@@ -640,7 +640,7 @@ cp app/build/reports/dependency-check-report.html reports/2025-12-cve-scan.html
     - Define response SLAs
     - Create escalation path
 
-***REMOVED******REMOVED******REMOVED*** Security Impact
+### Security Impact
 
 - ✅ Automatic detection of vulnerable dependencies
 - ✅ Prevents HIGH/CRITICAL CVEs from reaching production

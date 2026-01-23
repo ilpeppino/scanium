@@ -1,4 +1,4 @@
-***REMOVED*** Play Console Data Safety Form - Scanium
+# Play Console Data Safety Form - Scanium
 
 **Last Updated:** 2026-01-13
 **Prepared for:** Google Play Console Data Safety Declaration
@@ -9,7 +9,7 @@ production-ready with Google OAuth and account deletion).
 
 ---
 
-***REMOVED******REMOVED*** Quick Reference Links
+## Quick Reference Links
 
 - **Privacy Policy URL:** `https://scanium-site-url/PRIVACY.html` (update with actual deployed URL)
 - **Account Deletion URL:** `https://scanium-site-url/account-deletion.html` (for Play Console
@@ -18,9 +18,9 @@ production-ready with Google OAuth and account deletion).
 
 ---
 
-***REMOVED******REMOVED*** Section 1: Data Collection and Security
+## Section 1: Data Collection and Security
 
-***REMOVED******REMOVED******REMOVED*** Does your app collect or share any of the required user data types?
+### Does your app collect or share any of the required user data types?
 
 **Answer:** ✅ **Yes**
 
@@ -33,11 +33,11 @@ Scanium collects:
 
 ---
 
-***REMOVED******REMOVED*** Section 2: Data Types Collected
+## Section 2: Data Types Collected
 
-***REMOVED******REMOVED******REMOVED*** Personal Information
+### Personal Information
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Account Info
+#### Account Info
 
 - **Collected:** ✅ Yes
 - **Data Type:** Email address, name, user account ID
@@ -50,9 +50,9 @@ Scanium collects:
 - **Encryption at rest:** ✅ Yes (tokens encrypted with AES-256-GCM)
 - **User can request deletion:** ✅ Yes (in-app + web form)
 
-***REMOVED******REMOVED******REMOVED*** Photos and Videos
+### Photos and Videos
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Photos
+#### Photos
 
 - **Collected:** ✅ Yes
 - **Data Type:** Photos (captured via camera for item scanning)
@@ -68,9 +68,9 @@ Scanium collects:
 - **User can request deletion:** ✅ Yes (local images in app can be deleted; backend images not
   retained)
 
-***REMOVED******REMOVED******REMOVED*** App Activity
+### App Activity
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** App interactions
+#### App interactions
 
 - **Collected:** ✅ Yes
 - **Data Type:** User actions within app, usage data
@@ -82,9 +82,9 @@ Scanium collects:
 - **Encrypted in transit:** ✅ Yes
 - **User can request deletion:** ✅ Yes
 
-***REMOVED******REMOVED******REMOVED*** Device or other IDs
+### Device or other IDs
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Device or other IDs
+#### Device or other IDs
 
 - **Collected:** ✅ Yes
 - **Data Type:** IP address, device identifiers
@@ -98,13 +98,13 @@ Scanium collects:
 
 ---
 
-***REMOVED******REMOVED*** Section 3: Data Sharing
+## Section 3: Data Sharing
 
-***REMOVED******REMOVED******REMOVED*** Do you share user data with third parties?
+### Do you share user data with third parties?
 
 **Answer:** ✅ **Yes** (for core app functionality only)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Third Party Services Used:
+#### Third Party Services Used:
 
 1. **Google Cloud Vision API**
     - **Purpose:** Image classification and OCR
@@ -126,17 +126,17 @@ Scanium collects:
 
 ---
 
-***REMOVED******REMOVED*** Section 4: Data Security Practices
+## Section 4: Data Security Practices
 
-***REMOVED******REMOVED******REMOVED*** Encryption in transit
+### Encryption in transit
 
 ✅ **Yes** - All data transmitted between app and backend uses HTTPS (TLS 1.2+)
 
-***REMOVED******REMOVED******REMOVED*** Encryption at rest
+### Encryption at rest
 
 ✅ **Yes** - Sensitive data (OAuth tokens, session tokens) encrypted with AES-256-GCM
 
-***REMOVED******REMOVED******REMOVED*** Data deletion
+### Data deletion
 
 ✅ **Yes** - Users can delete their data through:
 
@@ -147,16 +147,16 @@ Scanium collects:
 
 ---
 
-***REMOVED******REMOVED*** Section 5: Data Retention and Deletion
+## Section 5: Data Retention and Deletion
 
-***REMOVED******REMOVED******REMOVED*** Data Retention Policy
+### Data Retention Policy
 
 - **Account data:** Retained until user deletes account
 - **Images:** Not retained long-term; processed and discarded immediately after analysis
 - **Session tokens:** Retained until expiry or logout (30-90 days)
 - **Usage logs:** Aggregated/anonymized logs retained up to 90 days for security and compliance
 
-***REMOVED******REMOVED******REMOVED*** What gets deleted when user deletes account:
+### What gets deleted when user deletes account:
 
 ✅ Account profile (email, name, picture)
 ✅ All authentication sessions and tokens
@@ -164,7 +164,7 @@ Scanium collects:
 ✅ All draft and published listings
 ✅ Scan history and item data
 
-***REMOVED******REMOVED******REMOVED*** What may be retained (anonymized):
+### What may be retained (anonymized):
 
 ⚠️ Aggregated usage statistics (not linked to identity)
 ⚠️ Security logs (IP addresses, anonymized identifiers) for fraud prevention
@@ -174,9 +174,9 @@ Scanium collects:
 
 ---
 
-***REMOVED******REMOVED*** Section 6: App Access for Review (if applicable)
+## Section 6: App Access for Review (if applicable)
 
-***REMOVED******REMOVED******REMOVED*** Does your app restrict access that would prevent review?
+### Does your app restrict access that would prevent review?
 
 **Answer:** ❌ **No**
 
@@ -192,9 +192,9 @@ If reviewer needs to test signed-in features:
 
 ---
 
-***REMOVED******REMOVED*** Section 7: Advertising ID
+## Section 7: Advertising ID
 
-***REMOVED******REMOVED******REMOVED*** Does your app use the Advertising ID?
+### Does your app use the Advertising ID?
 
 **Answer:** ❌ **No**
 
@@ -209,7 +209,7 @@ advertising identifiers.
 
 ---
 
-***REMOVED******REMOVED*** Section 8: Declaration Checklist
+## Section 8: Declaration Checklist
 
 Before submitting to Play Console:
 
@@ -225,7 +225,7 @@ Before submitting to Play Console:
 
 ---
 
-***REMOVED******REMOVED*** Common Mistakes to Avoid
+## Common Mistakes to Avoid
 
 1. ❌ **Don't claim "no data collected" if using Google Sign-In** - account info must be declared
 2. ❌ **Don't forget to provide account deletion URL** - mandatory for apps with user accounts
@@ -236,7 +236,7 @@ Before submitting to Play Console:
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - **Play Console Data Safety Help:
   ** https://support.google.com/googleplay/android-developer/answer/10787469
@@ -247,7 +247,7 @@ Before submitting to Play Console:
 
 ---
 
-***REMOVED******REMOVED*** Updates and Maintenance
+## Updates and Maintenance
 
 This document should be updated whenever:
 

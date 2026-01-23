@@ -1,9 +1,9 @@
-***REMOVED*** Phase A: Google Authentication - Implementation Status
+# Phase A: Google Authentication - Implementation Status
 
 **Date**: January 13, 2026
 **Status**: Implementation Complete ✅ | Configuration Required ⚠️
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Phase A implementation is **95% complete**. All backend infrastructure, Android storage, API
 clients, dependency injection, and UI integration are functional. **Remaining work**:
@@ -11,11 +11,11 @@ Configuration (Google OAuth Client ID), optional testing, and end-to-end verific
 
 ---
 
-***REMOVED******REMOVED*** ✅ Completed Components
+## ✅ Completed Components
 
-***REMOVED******REMOVED******REMOVED*** Backend (100% Complete)
+### Backend (100% Complete)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Database Schema & Migration
+#### 1. Database Schema & Migration
 
 - **File**: `backend/prisma/schema.prisma`
 - **Changes**:
@@ -23,7 +23,7 @@ Configuration (Google OAuth Client ID), optional testing, and end-to-end verific
     - Created `Session` model with SHA-256 tokenHash, expiry tracking
     - Migration: `backend/prisma/migrations/20260113143429_add_google_auth/migration.sql`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Configuration
+#### 2. Configuration
 
 - **Files**:
     - `backend/src/config/index.ts` - Auth schema validation
@@ -35,14 +35,14 @@ Configuration (Google OAuth Client ID), optional testing, and end-to-end verific
 ```bash
 GOOGLE_OAUTH_CLIENT_ID=your_android_client_id.apps.googleusercontent.com
 AUTH_SESSION_SECRET=base64_32_bytes_min
-AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
+AUTH_SESSION_EXPIRY_SECONDS=2592000  # 30 days
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Dependencies
+#### 3. Dependencies
 
 - Installed `google-auth-library@9.x` with `--legacy-peer-deps`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Core Modules
+#### 4. Core Modules
 
 - **`backend/src/modules/auth/google/token-verifier.ts`**
     - GoogleOAuth2Verifier: Verifies Google ID tokens (signature + claims)
@@ -62,13 +62,13 @@ AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
     - Attaches `request.userId` when valid token present
     - Optional in Phase A (no endpoint gating)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Integration
+#### 5. Integration
 
 - **File**: `backend/src/app.ts`
     - Registered `authMiddleware` after correlationPlugin
     - Registered `googleAuthRoutes` at `/v1/auth` prefix
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6. Tests
+#### 6. Tests
 
 - **`backend/src/modules/auth/google/routes.test.ts`**
     - Tests: missing idToken (400), empty idToken (400), invalid token (401)
@@ -80,9 +80,9 @@ AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Android (100% Complete)
+### Android (100% Complete)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Dependencies
+#### 1. Dependencies
 
 - **File**: `androidApp/build.gradle.kts`
 - **Added**:
@@ -92,7 +92,7 @@ AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
   implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
   ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Secure Storage
+#### 2. Secure Storage
 
 - **File**: `androidApp/src/main/java/com/scanium/app/config/SecureApiKeyStore.kt`
 - **New Methods**:
@@ -100,14 +100,14 @@ AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
     - `getUserInfo()`, `setUserInfo()` with `UserInfo` data class
     - All stored in Android Keystore-backed encrypted SharedPreferences
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. API Client
+#### 3. API Client
 
 - **File**: `androidApp/src/main/java/com/scanium/app/auth/GoogleAuthApi.kt`
 - **Purpose**: Calls `POST /v1/auth/google` with Google ID token
 - **Returns**: `GoogleAuthResponse` with accessToken + user info
 - Uses kotlinx.serialization with `ignoreUnknownKeys = true`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Auth Repository
+#### 4. Auth Repository
 
 - **File**: `androidApp/src/main/java/com/scanium/app/auth/AuthRepository.kt`
 - **Methods**:
@@ -117,12 +117,12 @@ AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
     - `getUserInfo()`: Retrieves stored user data
 - **Note**: `GOOGLE_SERVER_CLIENT_ID` constant needs to be updated with actual client ID
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Network Interceptor
+#### 5. Network Interceptor
 
 - **File**: `androidApp/src/main/java/com/scanium/app/network/AuthTokenInterceptor.kt`
 - **Purpose**: Adds `Authorization: Bearer <token>` header to all requests (when token present)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6. Dependency Injection
+#### 6. Dependency Injection
 
 - **File**: `androidApp/src/main/java/com/scanium/app/di/AuthModule.kt`
 - **Provides**:
@@ -131,7 +131,7 @@ AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
     - GoogleAuthApi (singleton)
     - AuthRepository (singleton)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 7. String Resources
+#### 7. String Resources
 
 - **File**: `androidApp/src/main/res/values/strings.xml`
 - **Added**:
@@ -142,9 +142,9 @@ AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
 
 ---
 
-***REMOVED******REMOVED*** ⚠️ Remaining Work
+## ⚠️ Remaining Work
 
-***REMOVED******REMOVED******REMOVED*** 1. ✅ UI Integration (COMPLETED)
+### 1. ✅ UI Integration (COMPLETED)
 
 **SettingsGeneralScreen.kt** and **SettingsViewModel.kt** have been updated with:
 
@@ -154,9 +154,9 @@ AUTH_SESSION_EXPIRY_SECONDS=2592000  ***REMOVED*** 30 days
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Configuration (Required - 5 minutes)
+### 2. Configuration (Required - 5 minutes)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Update AuthRepository.kt
+#### Update AuthRepository.kt
 
 **File**: `androidApp/src/main/java/com/scanium/app/auth/AuthRepository.kt`
 
@@ -180,20 +180,20 @@ private const val GOOGLE_SERVER_CLIENT_ID = "YOUR_ACTUAL_CLIENT_ID.apps.googleus
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Testing (Optional - 30 minutes)
+### 3. Testing (Optional - 30 minutes)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Backend Tests
+#### Backend Tests
 
 **Run**: `cd backend && npm test`
 
 **Note**: Tests may require database connection. To run without DB:
 
 ```bash
-***REMOVED*** Skip integration tests that need DB
+# Skip integration tests that need DB
 npm test -- --exclude routes.test.ts
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Android Unit Tests
+#### Android Unit Tests
 
 **SecureApiKeyStore Tests**:
 
@@ -213,9 +213,9 @@ npm test -- --exclude routes.test.ts
 
 ---
 
-***REMOVED******REMOVED*** 📋 Verification Checklist
+## 📋 Verification Checklist
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 - [x] Prisma schema updated with auth fields
 - [x] Migration file created
@@ -230,7 +230,7 @@ npm test -- --exclude routes.test.ts
 - [ ] **TODO**: Run backend tests (requires DB)
 - [ ] **TODO**: Run Prisma migration on dev/prod DB
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 - [x] Credential Manager dependencies added
 - [x] SecureApiKeyStore extended with auth methods
@@ -247,39 +247,39 @@ npm test -- --exclude routes.test.ts
 
 ---
 
-***REMOVED******REMOVED*** 🚀 Quick Start Guide
+## 🚀 Quick Start Guide
 
-***REMOVED******REMOVED******REMOVED*** 1. ✅ UI Integration (COMPLETED)
+### 1. ✅ UI Integration (COMPLETED)
 
 UI integration in SettingsGeneralScreen and SettingsViewModel is complete.
 
-***REMOVED******REMOVED******REMOVED*** 2. Configure Google OAuth (5 min)
+### 2. Configure Google OAuth (5 min)
 
 ```bash
-***REMOVED*** 1. Get Android OAuth Client ID from Google Cloud Console
-***REMOVED*** 2. Update AuthRepository.kt line 70 with actual client ID
+# 1. Get Android OAuth Client ID from Google Cloud Console
+# 2. Update AuthRepository.kt line 70 with actual client ID
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Test Locally
+### 3. Test Locally
 
 ```bash
-***REMOVED*** Backend (optional, requires DB)
+# Backend (optional, requires DB)
 cd backend && npm test
 
-***REMOVED*** Android
+# Android
 ./gradlew :androidApp:testDevDebugUnitTest
 ./gradlew :androidApp:assembleDevDebug
 
-***REMOVED*** Install and test
+# Install and test
 adb install androidApp/build/outputs/apk/dev/debug/*.apk
-***REMOVED*** Open app → Settings → General → Continue with Google
+# Open app → Settings → General → Continue with Google
 ```
 
 ---
 
-***REMOVED******REMOVED*** 📚 API Contract
+## 📚 API Contract
 
-***REMOVED******REMOVED******REMOVED*** POST /v1/auth/google
+### POST /v1/auth/google
 
 **Endpoint**: `${SCANIUM_API_BASE_URL}/v1/auth/google`
 
@@ -322,7 +322,7 @@ adb install androidApp/build/outputs/apk/dev/debug/*.apk
 
 ---
 
-***REMOVED******REMOVED*** 🔐 Security Notes
+## 🔐 Security Notes
 
 1. **Never commit secrets**: Google Client ID (Android OAuth) is OK to embed in APK, but backend
    secrets (AUTH_SESSION_SECRET) must not be committed
@@ -333,9 +333,9 @@ adb install androidApp/build/outputs/apk/dev/debug/*.apk
 
 ---
 
-***REMOVED******REMOVED*** 📁 Files Created/Modified
+## 📁 Files Created/Modified
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 ```
 backend/prisma/schema.prisma                                      (modified)
@@ -353,7 +353,7 @@ backend/src/app.ts                                                (modified)
 backend/package.json                                              (modified - google-auth-library)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 ```
 androidApp/build.gradle.kts                                       (modified)
@@ -369,7 +369,7 @@ androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt      (
 
 ---
 
-***REMOVED******REMOVED*** 🎯 Success Criteria
+## 🎯 Success Criteria
 
 - [x] Backend accepts Google ID token and returns session token
 - [x] Backend verifies token signature and claims (iss, aud, exp)
@@ -383,7 +383,7 @@ androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt      (
 
 ---
 
-***REMOVED******REMOVED*** Next Phase (Phase B - Not Started)
+## Next Phase (Phase B - Not Started)
 
 Phase B will add:
 

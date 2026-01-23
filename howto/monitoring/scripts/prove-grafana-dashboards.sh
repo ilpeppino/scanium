@@ -1,11 +1,11 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Prove Grafana dashboards are provisioned and datasources exist
-***REMOVED*** Usage: bash prove-grafana-dashboards.sh [grafana_url]
-***REMOVED***
-***REMOVED*** This script:
-***REMOVED*** 1. Lists dashboards via Grafana API
-***REMOVED*** 2. Verifies target dashboards (backend, mobile) exist
-***REMOVED*** 3. Checks that datasources (LOKI, MIMIR, TEMPO) are configured
+#!/bin/bash
+# Prove Grafana dashboards are provisioned and datasources exist
+# Usage: bash prove-grafana-dashboards.sh [grafana_url]
+#
+# This script:
+# 1. Lists dashboards via Grafana API
+# 2. Verifies target dashboards (backend, mobile) exist
+# 3. Checks that datasources (LOKI, MIMIR, TEMPO) are configured
 
 set -euo pipefail
 
@@ -15,7 +15,7 @@ echo "[prove-dashboards] ==========================================="
 echo "[prove-dashboards] Proving Grafana Dashboards Provisioned"
 echo "[prove-dashboards] ==========================================="
 
-***REMOVED*** Step 1: Check Grafana health
+# Step 1: Check Grafana health
 echo "[prove-dashboards] Step 1: Checking Grafana health..."
 HEALTH=$(curl -sf "$GRAFANA_URL/api/health" || echo '{"database":"error"}')
 
@@ -27,7 +27,7 @@ else
   exit 1
 fi
 
-***REMOVED*** Step 2: List dashboards
+# Step 2: List dashboards
 echo "[prove-dashboards] Step 2: Listing dashboards..."
 DASHBOARDS=$(curl -sf "$GRAFANA_URL/api/search?type=dash-db" || echo '[]')
 
@@ -41,7 +41,7 @@ else
   exit 1
 fi
 
-***REMOVED*** Step 3: Verify target dashboards exist
+# Step 3: Verify target dashboards exist
 echo "[prove-dashboards] Step 3: Verifying target dashboards..."
 REQUIRED_DASHBOARDS=("backend-health" "mobile-app-health" "backend-api-performance")
 
@@ -53,7 +53,7 @@ for DASH in "${REQUIRED_DASHBOARDS[@]}"; do
   fi
 done
 
-***REMOVED*** Step 4: Check datasources
+# Step 4: Check datasources
 echo "[prove-dashboards] Step 4: Checking datasources..."
 DATASOURCES=$(curl -sf "$GRAFANA_URL/api/datasources" || echo '[]')
 

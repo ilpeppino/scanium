@@ -26,7 +26,7 @@ val SurfaceVariantLight = Color(0xFFE8ECF4)
 
 // Motion Language Colors (Brand-aligned)
 
-/** Primary brand blue for scan frames - spec: ***REMOVED***1F4BFF */
+/** Primary brand blue for scan frames - spec: #1F4BFF */
 val ScaniumBluePrimary = Color(0xFF1F4BFF)
 
 /** Lightning/action accent yellow - used ONLY for scan pulse/confirmation, not backgrounds */

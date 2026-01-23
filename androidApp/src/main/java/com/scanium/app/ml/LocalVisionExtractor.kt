@@ -345,7 +345,7 @@ class LocalVisionExtractor
                 if (colorName in seenColorNames) continue
                 seenColorNames.add(colorName)
 
-                val hex = String.format("***REMOVED***%06X", 0xFFFFFF and swatch.rgb)
+                val hex = String.format("#%06X", 0xFFFFFF and swatch.rgb)
                 val score = swatch.population.toFloat() / (palette.swatches.sumOf { it.population } + 1)
 
                 colors.add(

@@ -32,7 +32,7 @@ metrics_generator:
     path: /var/tempo/generator
   traces_storage:
     path: /var/tempo/generator/traces
-  ***REMOVED*** Important: ship generated metrics somewhere queryable (Mimir/Prometheus)
+  # Important: ship generated metrics somewhere queryable (Mimir/Prometheus)
   remote_write:
     - url: http://mimir:9009/api/v1/push
 

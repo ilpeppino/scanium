@@ -1,9 +1,9 @@
-***REMOVED*** Camera UI FTUE Diagnostics & Testing Guide
+# Camera UI FTUE Diagnostics & Testing Guide
 
 This document explains how to use the diagnostics tools to debug and validate the Camera UI FTUE (
 First-Time User Experience) feature.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Camera UI FTUE teaches users about 4 main camera buttons:
 
@@ -18,9 +18,9 @@ Each step should display:
 - Tooltip with instruction text and "Next" button
 - **Pulsating animation** on the actual button (scale 1.0 → 1.08 → 1.0, 900ms)
 
-***REMOVED******REMOVED*** Enabling Diagnostics (DEV Flavor Only)
+## Enabling Diagnostics (DEV Flavor Only)
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Enable the FTUE Diagnostics Toggle
+### Step 1: Enable the FTUE Diagnostics Toggle
 
 1. Build and install the **dev** flavor: `./gradlew :androidApp:installDevDebug`
 2. Open the app and grant camera permission
@@ -28,18 +28,18 @@ Each step should display:
 4. Find the **"Camera UI FTUE"** section
 5. Enable **"Show Camera UI FTUE Bounds"**
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Reset FTUE to Start Fresh
+### Step 2: Reset FTUE to Start Fresh
 
 In the same Developer Options screen:
 
 - Tap **"Reset Camera UI FTUE"** to clear completion flag
 - Return to Camera screen
 
-***REMOVED******REMOVED*** Diagnostics Panel Features
+## Diagnostics Panel Features
 
 Once "Show Camera UI FTUE Bounds" is enabled, you'll see two diagnostic panels on the camera screen:
 
-***REMOVED******REMOVED******REMOVED*** 1. Anchor Inspector Panel (Top-Left)
+### 1. Anchor Inspector Panel (Top-Left)
 
 Shows real-time status:
 
@@ -65,7 +65,7 @@ Settings: OK (48x48)
 - Button may be in a lazy layout that hasn't been measured yet
 - `onGloballyPositioned` may not have fired (button has size 0)
 
-***REMOVED******REMOVED******REMOVED*** 2. Force Step Buttons Panel (Bottom-Left)
+### 2. Force Step Buttons Panel (Bottom-Left)
 
 Four buttons to manually trigger each step:
 
@@ -81,16 +81,16 @@ Four buttons to manually trigger each step:
 - Confirm each button anchor exists and spotlight appears correctly
 - Verify pulse animation is visible on the button
 
-***REMOVED******REMOVED******REMOVED*** 3. Debug Borders (Magenta Rectangles)
+### 3. Debug Borders (Magenta Rectangles)
 
 When "Show Camera UI FTUE Bounds" is enabled, you'll see:
 
 - **Magenta borders** drawn around each registered anchor
 - This immediately shows whether anchors exist and where they are positioned
 
-***REMOVED******REMOVED*** Testing Procedure
+## Testing Procedure
 
-***REMOVED******REMOVED******REMOVED*** PHASE 1: Verify All Anchors Exist
+### PHASE 1: Verify All Anchors Exist
 
 1. Enable diagnostics (see above)
 2. Open Camera screen
@@ -105,7 +105,7 @@ When "Show Camera UI FTUE Bounds" is enabled, you'll see:
 - Verify the button is actually visible on screen
 - Check if button is conditionally rendered (flavor/orientation)
 
-***REMOVED******REMOVED******REMOVED*** PHASE 2: Verify Each Step Renders Correctly
+### PHASE 2: Verify Each Step Renders Correctly
 
 Use the Force Step buttons to test each step individually:
 
@@ -130,7 +130,7 @@ Use the Force Step buttons to test each step individually:
     - ✓ Settings button should **pulsate**
     - ✓ Tooltip: "Adjust how Scanium works."
 
-***REMOVED******REMOVED******REMOVED*** PHASE 3: Verify Normal Step Progression
+### PHASE 3: Verify Normal Step Progression
 
 1. Reset Camera UI FTUE in Developer Options
 2. Return to Camera screen
@@ -140,7 +140,7 @@ Use the Force Step buttons to test each step individually:
 
 **Expected**: Each step shows in order with pulsating button.
 
-***REMOVED******REMOVED******REMOVED*** PHASE 4: Check Initialization Logs
+### PHASE 4: Check Initialization Logs
 
 Enable verbose logging:
 
@@ -162,9 +162,9 @@ FTUE_CAMERA_UI: FTUE starting: stepIndex=0, stepId=SHUTTER
 - `Missing anchors: [...]` (lists which anchors are NULL)
 - `allAnchors=false` (not all 4 anchors registered)
 
-***REMOVED******REMOVED*** Common Issues & Solutions
+## Common Issues & Solutions
 
-***REMOVED******REMOVED******REMOVED*** Issue 1: FTUE Never Starts
+### Issue 1: FTUE Never Starts
 
 **Symptoms**: No overlay appears, Anchor Inspector shows all OK.
 
@@ -176,7 +176,7 @@ FTUE_CAMERA_UI: FTUE starting: stepIndex=0, stepId=SHUTTER
 
 **Solution**: Enable "Force Camera UI FTUE" to bypass completion check.
 
-***REMOVED******REMOVED******REMOVED*** Issue 2: Only SHUTTER and ITEMS Show, FLIP and SETTINGS Skipped
+### Issue 2: Only SHUTTER and ITEMS Show, FLIP and SETTINGS Skipped
 
 **Symptoms**: Overlay shows for SHUTTER, then jumps to ITEMS, skipping FLIP/SETTINGS.
 
@@ -193,7 +193,7 @@ FTUE_CAMERA_UI: FTUE starting: stepIndex=0, stepId=SHUTTER
 
 **Solution**: May need to add delay or retry logic in initialization to wait for all anchors.
 
-***REMOVED******REMOVED******REMOVED*** Issue 3: Pulse Animation Not Visible
+### Issue 3: Pulse Animation Not Visible
 
 **Symptoms**: Overlay and spotlight work, but button doesn't pulsate.
 
@@ -206,7 +206,7 @@ FTUE_CAMERA_UI: FTUE starting: stepIndex=0, stepId=SHUTTER
 **Solution**: This PR adds `ftuePulse` modifier to all buttons. If still not visible, increase
 scale (1.08 → 1.12) or duration.
 
-***REMOVED******REMOVED******REMOVED*** Issue 4: Anchor is NULL for Specific Button
+### Issue 4: Anchor is NULL for Specific Button
 
 **Symptoms**: Anchor Inspector shows NULL for one specific button (e.g., FLIP).
 
@@ -220,7 +220,7 @@ scale (1.08 → 1.12) or duration.
 **Solution**: Ensure `ftueAnchor` is applied to the actual button surface, not a parent container
 that might be size 0.
 
-***REMOVED******REMOVED*** Code Locations
+## Code Locations
 
 **Diagnostics**:
 
@@ -244,7 +244,7 @@ that might be size 0.
 
 - `/androidApp/src/main/java/com/scanium/app/ftue/CameraUiFtueViewModel.kt`
 
-***REMOVED******REMOVED*** Validation Checklist
+## Validation Checklist
 
 On **DEV build** with diagnostics enabled:
 
@@ -266,7 +266,7 @@ On **beta/prod build** (no diagnostics):
 - [ ] All 4 steps show with pulse animation
 - [ ] User can complete FTUE by tapping "Next" through all steps
 
-***REMOVED******REMOVED*** Next Steps After Diagnostics
+## Next Steps After Diagnostics
 
 Once diagnostics confirm the issue:
 

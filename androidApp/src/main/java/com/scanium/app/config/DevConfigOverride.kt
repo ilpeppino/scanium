@@ -24,13 +24,13 @@ private val Context.devConfigDataStore: DataStore<Preferences> by preferencesDat
  * Provides an EXPLICIT way to override the backend URL for development/testing purposes.
  * This is separate from BuildConfig and is stored in DataStore.
  *
- * ***REMOVED******REMOVED*** Key Behaviors:
+ * ## Key Behaviors:
  * - **Debug only**: All overrides are ignored in non-debug builds
  * - **Explicit opt-in**: Overrides must be explicitly set, not auto-applied
  * - **Versioned**: Tracks when override was set to detect stale configs
  * - **Observable**: Provides flows for UI to react to changes
  *
- * ***REMOVED******REMOVED*** Usage:
+ * ## Usage:
  * ```kotlin
  * // Set an override
  * devConfigOverride.setBaseUrlOverride("https://staging.example.com")
@@ -45,12 +45,12 @@ private val Context.devConfigDataStore: DataStore<Preferences> by preferencesDat
  * devConfigOverride.clearBaseUrlOverride()
  * ```
  *
- * ***REMOVED******REMOVED*** ADB Commands:
+ * ## ADB Commands:
  * ```bash
- * ***REMOVED*** View current override
+ * # View current override
  * adb shell "run-as com.scanium.app.dev cat /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
  *
- * ***REMOVED*** Clear all dev config overrides
+ * # Clear all dev config overrides
  * adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
  * ```
  */

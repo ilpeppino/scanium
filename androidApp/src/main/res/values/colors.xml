@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Scanium Brand Colors -->
-    <color name="scanium_blue">***REMOVED***1F4BFF</color>
-    <color name="deep_navy">***REMOVED***050B18</color>
-    <color name="cyan_glow">***REMOVED***00D4FF</color>
-    <color name="support_purple">***REMOVED***A259FF</color>
+    <color name="scanium_blue">#1F4BFF</color>
+    <color name="deep_navy">#050B18</color>
+    <color name="cyan_glow">#00D4FF</color>
+    <color name="support_purple">#A259FF</color>
 
     <!-- Splash screen backgrounds -->
-    <color name="splash_background">***REMOVED***FFFFFF</color>
-    <color name="splash_background_white">***REMOVED***FFFFFF</color>
-    <color name="splash_background_dark">***REMOVED***0F172A</color>
+    <color name="splash_background">#FFFFFF</color>
+    <color name="splash_background_white">#FFFFFF</color>
+    <color name="splash_background_dark">#0F172A</color>
 
     <!-- Launcher icon background -->
-    <color name="ic_launcher_background">***REMOVED***1F4BFF</color>
-    <color name="scanium_yellow">***REMOVED***FFD400</color>
+    <color name="ic_launcher_background">#1F4BFF</color>
+    <color name="scanium_yellow">#FFD400</color>
 </resources>

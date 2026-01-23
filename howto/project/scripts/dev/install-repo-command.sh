@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -23,7 +23,7 @@ fi
 if ! grep -q "^repo() { ~/bin/repo\\.sh; }$" "${ZSHRC}" 2>/dev/null; then
   {
     echo ""
-    echo "***REMOVED*** scanium repo command"
+    echo "# scanium repo command"
     echo "repo() { ~/bin/repo.sh; }"
   } >> "${ZSHRC}"
 fi

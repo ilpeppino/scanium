@@ -6,7 +6,7 @@ package com.scanium.app.telemetry
  * Controls where and how telemetry data (logs, metrics, traces) is exported
  * to an OTLP-compatible backend like Grafana Alloy.
  *
- * ***REMOVED******REMOVED*** Endpoints
+ * ## Endpoints
  * - HTTP: http://localhost:4318 (default for Alloy)
  * - gRPC: http://localhost:4317 (not currently supported)
  *
@@ -15,7 +15,7 @@ package com.scanium.app.telemetry
  * - Metrics: {baseUrl}/v1/metrics
  * - Traces: {baseUrl}/v1/traces
  *
- * ***REMOVED******REMOVED*** Example Configuration
+ * ## Example Configuration
  * ```kotlin
  * val config = OtlpConfiguration(
  *     enabled = true,

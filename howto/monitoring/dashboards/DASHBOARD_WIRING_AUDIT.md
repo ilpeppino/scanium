@@ -1,6 +1,6 @@
-***REMOVED*** Dashboard Wiring Audit
+# Dashboard Wiring Audit
 
-***REMOVED******REMOVED*** Dashboard inventory
+## Dashboard inventory
 
 - monitoring/grafana/dashboards/backend-api-performance.json
 - monitoring/grafana/dashboards/backend-errors.json
@@ -16,13 +16,13 @@
 - monitoring/grafana/dashboards/system-overview.json
 - monitoring/grafana/dashboards/traces-drilldown.json
 
-***REMOVED******REMOVED*** Datasource UID mapping
+## Datasource UID mapping
 
 - MIMIR: prometheus
 - LOKI: loki
 - TEMPO: tempo
 
-***REMOVED******REMOVED*** Fixes applied
+## Fixes applied
 
 - monitoring/grafana/dashboards/backend-errors.json: updated TraceQL drilldown query and Explore
   link to use `status = error` and regex match for `resource.service.name`.

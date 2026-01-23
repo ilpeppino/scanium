@@ -1,6 +1,6 @@
-***REMOVED***!/bin/bash
-***REMOVED*** update-submodule.sh
-***REMOVED*** Updates the dataset submodule working tree to a requested ref.
+#!/bin/bash
+# update-submodule.sh
+# Updates the dataset submodule working tree to a requested ref.
 
 set -euo pipefail
 

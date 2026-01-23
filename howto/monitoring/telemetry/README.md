@@ -1,17 +1,17 @@
-***REMOVED*** Telemetry Setup Guides
+# Telemetry Setup Guides
 
 This directory contains guides for configuring telemetry collection from various sources.
 
-***REMOVED******REMOVED*** Available Guides
+## Available Guides
 
-***REMOVED******REMOVED******REMOVED*** [Mobile OTLP Setup](./mobile-otlp-setup.md)
+### [Mobile OTLP Setup](./mobile-otlp-setup.md)
 
 **Source:** Android mobile app
 **Protocol:** OTLP (OpenTelemetry Protocol)
 **Destination:** Alloy → Loki/Mimir/Tempo
 **Covers:** Mobile telemetry pipeline configuration, log shipping, metrics collection
 
-***REMOVED******REMOVED*** Telemetry Architecture
+## Telemetry Architecture
 
 ```
 Mobile App → OTLP/HTTP (4318) → Alloy → Batch Processing → LGTM Stack
@@ -20,7 +20,7 @@ Mobile App → OTLP/HTTP (4318) → Alloy → Batch Processing → LGTM Stack
                                                             └─ Tempo (traces)
 ```
 
-***REMOVED******REMOVED*** Adding New Telemetry Sources
+## Adding New Telemetry Sources
 
 1. Configure receiver in `monitoring/alloy/config.alloy`
 2. Add processor (batching, filtering)

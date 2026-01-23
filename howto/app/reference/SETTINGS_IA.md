@@ -1,9 +1,9 @@
-***REMOVED*** Scanium Settings Information Architecture
+# Scanium Settings Information Architecture
 
 This document inventories every persistent setting in the Android app, notes the original UI
 surface, and maps each item to the proposed category in the redesigned Settings experience.
 
-***REMOVED******REMOVED*** Inventory
+## Inventory
 
 | Setting / Feature                        | Storage (DataStore key or source)                                         | Screen Path (New IA)                                                                | Notes                                                                                                            |
 |------------------------------------------|---------------------------------------------------------------------------|-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
@@ -45,7 +45,7 @@ surface, and maps each item to the proposed category in the redesigned Settings 
 | System Health / Diagnostics              | `DiagnosticsRepository`, `AssistantDiagnosticsState`                      | Settings › Developer Options › System Health & Assistant Diagnostics                | Cards show backend/network/permissions plus assistant readiness actions (refresh, copy).                         |
 | Keep screen on while scanning            | Derived flag inside `CameraScreen`                                        | Not user-facing                                                                     | Behavior left on camera surface; no toggle in Settings.                                                          |
 
-***REMOVED******REMOVED*** Navigation routes
+## Navigation routes
 
 All settings destinations live on dedicated routes inside `NavGraph`:
 
@@ -61,7 +61,7 @@ All settings destinations live on dedicated routes inside `NavGraph`:
 Legal/info sub-routes remain (`data_usage`, `privacy`, `terms`, `about`) plus the existing `paywall`
 route for upgrades.
 
-***REMOVED******REMOVED******REMOVED*** Scattered entry points before redesign
+### Scattered entry points before redesign
 
 - **SettingsScreen** (single scroll list) – mix of storage, privacy, assistant, legal, developer
   entry.

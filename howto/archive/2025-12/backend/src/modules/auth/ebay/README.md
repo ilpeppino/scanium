@@ -1,13 +1,13 @@
 > Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
 > state.
 
-***REMOVED*** eBay OAuth Module
+# eBay OAuth Module
 
 Server-side eBay OAuth 2.0 implementation for Scanium backend.
 
-***REMOVED******REMOVED*** Endpoints
+## Endpoints
 
-***REMOVED******REMOVED******REMOVED*** POST /auth/ebay/start
+### POST /auth/ebay/start
 
 Initiates the eBay OAuth flow.
 
@@ -35,7 +35,7 @@ Content-Type: application/json
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** GET /auth/ebay/callback
+### GET /auth/ebay/callback
 
 OAuth callback endpoint - receives authorization code from eBay.
 
@@ -80,7 +80,7 @@ If `Accept: application/json` header is present:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** GET /auth/ebay/status
+### GET /auth/ebay/status
 
 Returns current eBay connection status.
 
@@ -120,7 +120,7 @@ GET /auth/ebay/status
 
 ---
 
-***REMOVED******REMOVED*** Security Features
+## Security Features
 
 1. **CSRF Protection**: State parameter validated against signed cookie
 2. **Secure Cookies**: HTTP-only, signed, SameSite=Lax
@@ -130,7 +130,7 @@ GET /auth/ebay/status
 
 ---
 
-***REMOVED******REMOVED*** Mobile App Integration Flow
+## Mobile App Integration Flow
 
 ```
 ┌─────────────┐                  ┌─────────────┐                  ┌─────────────┐
@@ -176,7 +176,7 @@ GET /auth/ebay/status
 
 ---
 
-***REMOVED******REMOVED*** Environment Variables
+## Environment Variables
 
 See `backend/.env.example` for required configuration:
 
@@ -191,7 +191,7 @@ See `backend/.env.example` for required configuration:
 
 ---
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
 - [ ] Token refresh logic (automatic renewal before expiry)
 - [ ] Multi-user support (replace default user with real authentication)

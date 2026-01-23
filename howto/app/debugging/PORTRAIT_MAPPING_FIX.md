@@ -1,11 +1,11 @@
-***REMOVED*** Portrait Mode Bounding Box Mapping Fix
+# Portrait Mode Bounding Box Mapping Fix
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This document describes the root cause analysis and fix for portrait-mode coordinate/cropping bugs
 in the Scanium Android app.
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 In PORTRAIT mode:
 
@@ -16,9 +16,9 @@ In LANDSCAPE mode:
 
 - Bbox overlay and preview were correct (reference behavior)
 
-***REMOVED******REMOVED*** Root Cause Analysis
+## Root Cause Analysis
 
-***REMOVED******REMOVED******REMOVED*** Coordinate Pipeline Overview
+### Coordinate Pipeline Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -48,7 +48,7 @@ In LANDSCAPE mode:
   (needs rotation fix)     (already correct)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue 1: Missing Rotation in Overlay Transform
+### Issue 1: Missing Rotation in Overlay Transform
 
 **Before (Broken):**
 The `calculateTransform` function in `OverlayTransforms.kt` did NOT account for `rotationDegrees`:
@@ -88,7 +88,7 @@ val transform = calculateTransformWithRotation(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue 2: Scale Type Mismatch
+### Issue 2: Scale Type Mismatch
 
 **Before (Broken):**
 The transform used FIT_CENTER (letterbox) math, but CameraX PreviewView uses FILL_CENTER (
@@ -99,9 +99,9 @@ center-crop).
 - Added `PreviewScaleType` enum with `FIT_CENTER` and `FILL_CENTER`
 - Default to `FILL_CENTER` to match PreviewView behavior
 
-***REMOVED******REMOVED*** Coordinate Transformation Math
+## Coordinate Transformation Math
 
-***REMOVED******REMOVED******REMOVED*** Rotation Transformations (Normalized 0-1 Coordinates)
+### Rotation Transformations (Normalized 0-1 Coordinates)
 
 | Rotation | Transform           | Description              |
 |----------|---------------------|--------------------------|
@@ -110,14 +110,14 @@ center-crop).
 | 180°     | (x, y) → (1-x, 1-y) | Flip both axes           |
 | 270°     | (x, y) → (1-y, x)   | Rotate counter-clockwise |
 
-***REMOVED******REMOVED******REMOVED*** Scale Type Comparison
+### Scale Type Comparison
 
 | Scale Type  | Behavior                                | Use Case                          |
 |-------------|-----------------------------------------|-----------------------------------|
 | FIT_CENTER  | Scale to fit within bounds, add padding | Letterbox                         |
 | FILL_CENTER | Scale to fill bounds, crop overflow     | Center-crop (PreviewView default) |
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
 | File                   | Changes                                                                                                     |
 |------------------------|-------------------------------------------------------------------------------------------------------------|
@@ -126,7 +126,7 @@ center-crop).
 | `CameraXManager.kt`    | Added `onRotation` callback to pass rotation from ImageProxy                                                |
 | `CameraScreen.kt`      | Track `imageRotationDegrees` state, pass to DetectionOverlay                                                |
 
-***REMOVED******REMOVED*** Thumbnail Cropping (No Changes Needed)
+## Thumbnail Cropping (No Changes Needed)
 
 The thumbnail cropping in `ObjectDetectorClient.cropThumbnail()` was already correct:
 
@@ -134,7 +134,7 @@ The thumbnail cropping in `ObjectDetectorClient.cropThumbnail()` was already cor
 2. Rotates the cropped result by `rotationDegrees`
 3. Displays with `ContentScale.Fit` (no additional crop)
 
-***REMOVED******REMOVED*** Debug Diagnostics
+## Debug Diagnostics
 
 Rate-limited logging (once per second) is available via `logBboxMappingDebug()`:
 
@@ -143,9 +143,9 @@ Rate-limited logging (once per second) is available via `logBboxMappingDebug()`:
 [BboxMap] [MAPPING] input=(0.25,0.25)-(0.375,0.5) -> output=(200,320)-(380,680)
 ```
 
-***REMOVED******REMOVED*** Validation Matrix
+## Validation Matrix
 
-***REMOVED******REMOVED******REMOVED*** Manual Tests (Must Pass)
+### Manual Tests (Must Pass)
 
 1. **Portrait Mode:**
     - [ ] Open camera → bboxes align with objects
@@ -158,7 +158,7 @@ Rate-limited logging (once per second) is available via `logBboxMappingDebug()`:
 3. **Multiple Devices/Resolutions:**
     - [ ] Repeat with low/normal/high resolution settings
 
-***REMOVED******REMOVED******REMOVED*** Automated Tests
+### Automated Tests
 
 Unit tests for `OverlayTransforms.kt`:
 
@@ -166,15 +166,15 @@ Unit tests for `OverlayTransforms.kt`:
 - `calculateTransformWithRotation()` for FIT vs FILL
 - `mapBboxToPreview()` end-to-end mapping
 
-***REMOVED******REMOVED*** Architecture Notes
+## Architecture Notes
 
-***REMOVED******REMOVED******REMOVED*** Eye vs Focus Mode (Preserved)
+### Eye vs Focus Mode (Preserved)
 
 - **Eye Mode:** Global bboxes shown everywhere (very subtle styling)
 - **Focus Mode:** ROI selection + actions (highlighted styling)
 - Both modes use the same rotation-aware mapping
 
-***REMOVED******REMOVED******REMOVED*** Data Flow
+### Data Flow
 
 ```
 ImageProxy.rotationDegrees

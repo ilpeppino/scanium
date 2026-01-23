@@ -1,8 +1,8 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Phase 1: Test Inventory and Analysis
+# Phase 1: Test Inventory and Analysis
 
-***REMOVED******REMOVED*** Scanium KMP Test Migration - Baseline Assessment
+## Scanium KMP Test Migration - Baseline Assessment
 
 **Date**: 2025-12-18
 **Branch**: `claude/plan-kmp-test-refactor-EugFw`
@@ -10,7 +10,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 **Total Test Files**: 39
 **Total Test Methods**: 389
@@ -30,9 +30,9 @@
 
 ---
 
-***REMOVED******REMOVED*** Detailed Test Inventory
+## Detailed Test Inventory
 
-***REMOVED******REMOVED******REMOVED*** 1. KMP Shared Module Tests ✅ (Already KMP)
+### 1. KMP Shared Module Tests ✅ (Already KMP)
 
 | File                                                                    | Tests | Status    | Notes                    |
 |-------------------------------------------------------------------------|-------|-----------|--------------------------|
@@ -52,7 +52,7 @@
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Legacy KMP Module Tests ❌ (To Be Deleted)
+### 2. Legacy KMP Module Tests ❌ (To Be Deleted)
 
 | File                                                            | Tests | Migration Action                        | Target                                        |
 |-----------------------------------------------------------------|-------|-----------------------------------------|-----------------------------------------------|
@@ -66,11 +66,11 @@
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Android App Unit Tests - **Core Business Logic** (MIGRATE TO KMP)
+### 3. Android App Unit Tests - **Core Business Logic** (MIGRATE TO KMP)
 
 These tests cover business logic that has been moved to KMP and should be migrated to `commonTest`.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3a. Tracking Tests → `shared/core-tracking/commonTest/`
+#### 3a. Tracking Tests → `shared/core-tracking/commonTest/`
 
 | File                                                                | Tests | Portability         | Migration Priority | Target                                                                    |
 |---------------------------------------------------------------------|-------|---------------------|--------------------|---------------------------------------------------------------------------|
@@ -101,7 +101,7 @@ These tests cover business logic that has been moved to KMP and should be migrat
 6. Update assertions to use Kotlin Test (already using `assertEquals` etc.)
 7. Delete original files from androidApp/test/
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3b. Model Tests → `shared/core-models/commonTest/`
+#### 3b. Model Tests → `shared/core-models/commonTest/`
 
 | File                                            | Tests | Portability         | Migration Priority | Target                                                        |
 |-------------------------------------------------|-------|---------------------|--------------------|---------------------------------------------------------------|
@@ -118,7 +118,7 @@ These tests cover business logic that has been moved to KMP and should be migrat
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Android App Unit Tests - **ViewModel Layer** (UPDATE IMPORTS)
+### 4. Android App Unit Tests - **ViewModel Layer** (UPDATE IMPORTS)
 
 These tests should stay in androidApp but need import updates to use KMP modules.
 
@@ -143,7 +143,7 @@ These tests should stay in androidApp but need import updates to use KMP modules
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. Android App Unit Tests - **Platform Adapters** (KEEP IN ANDROIDAPP)
+### 5. Android App Unit Tests - **Platform Adapters** (KEEP IN ANDROIDAPP)
 
 These tests are inherently Android-specific and should remain.
 
@@ -160,7 +160,7 @@ These tests are inherently Android-specific and should remain.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 6. Android App Unit Tests - **ML/Classification** (UPDATE IMPORTS)
+### 6. Android App Unit Tests - **ML/Classification** (UPDATE IMPORTS)
 
 | File                                                                      | Tests | Action                | Notes                                               |
 |---------------------------------------------------------------------------|-------|-----------------------|-----------------------------------------------------|
@@ -171,7 +171,7 @@ These tests are inherently Android-specific and should remain.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 7. Android App Unit Tests - **Domain/Config** (UPDATE IMPORTS)
+### 7. Android App Unit Tests - **Domain/Config** (UPDATE IMPORTS)
 
 | File                                                                     | Tests | Action                | Notes                                           |
 |--------------------------------------------------------------------------|-------|-----------------------|-------------------------------------------------|
@@ -185,7 +185,7 @@ These tests are inherently Android-specific and should remain.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 8. Android App Unit Tests - **Selling/eBay** (UPDATE IMPORTS)
+### 8. Android App Unit Tests - **Selling/eBay** (UPDATE IMPORTS)
 
 | File                                                             | Tests | Action                | Notes                              |
 |------------------------------------------------------------------|-------|-----------------------|------------------------------------|
@@ -199,7 +199,7 @@ These tests are inherently Android-specific and should remain.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 9. Android Instrumented Tests (KEEP, UPDATE IMPORTS)
+### 9. Android Instrumented Tests (KEEP, UPDATE IMPORTS)
 
 | File                                                                 | Tests | Action                | Notes                     |
 |----------------------------------------------------------------------|-------|-----------------------|---------------------------|
@@ -211,9 +211,9 @@ These tests are inherently Android-specific and should remain.
 
 ---
 
-***REMOVED******REMOVED*** Migration Priority Matrix
+## Migration Priority Matrix
 
-***REMOVED******REMOVED******REMOVED*** 🔴 **CRITICAL Priority** (Phase 3-4)
+### 🔴 **CRITICAL Priority** (Phase 3-4)
 
 Migrate ASAP - Core business logic already in KMP:
 
@@ -225,7 +225,7 @@ Migrate ASAP - Core business logic already in KMP:
 
 **Total**: 3 files, 60 tests, ~6-8 hours
 
-***REMOVED******REMOVED******REMOVED*** 🟡 **Medium Priority** (Phase 4-5)
+### 🟡 **Medium Priority** (Phase 4-5)
 
 Important but less critical:
 
@@ -240,7 +240,7 @@ Important but less critical:
 
 **Total**: 6 files, 67 tests, ~4-6 hours
 
-***REMOVED******REMOVED******REMOVED*** 🟢 **Low Priority** (Phase 5)
+### 🟢 **Low Priority** (Phase 5)
 
 Update imports only (no migration):
 
@@ -252,9 +252,9 @@ Update imports only (no migration):
 
 ---
 
-***REMOVED******REMOVED*** Import Conflict Analysis
+## Import Conflict Analysis
 
-***REMOVED******REMOVED******REMOVED*** Broken Imports (Need Fix)
+### Broken Imports (Need Fix)
 
 **Pattern 1: Legacy tracking imports**
 
@@ -294,7 +294,7 @@ import com.scanium.app.aggregation.ItemAggregator
 import com.scanium.core.tracking.ItemAggregator
 ```
 
-***REMOVED******REMOVED******REMOVED*** Files with Import Conflicts
+### Files with Import Conflicts
 
 **Critical (25 files)**:
 
@@ -307,9 +307,9 @@ import com.scanium.core.tracking.ItemAggregator
 
 ---
 
-***REMOVED******REMOVED*** Portability Analysis
+## Portability Analysis
 
-***REMOVED******REMOVED******REMOVED*** 100% Portable (Can Move to KMP commonTest)
+### 100% Portable (Can Move to KMP commonTest)
 
 **Criteria**:
 
@@ -330,14 +330,14 @@ import com.scanium.core.tracking.ItemAggregator
 8. ItemCategoryTest.kt (17)
 9. ScanModeTest.kt (7)
 
-***REMOVED******REMOVED******REMOVED*** Partially Portable (Split Tests)
+### Partially Portable (Split Tests)
 
 **ItemsViewModelAggregationTest.kt** (13 tests):
 
 - 6 tests: Pure aggregation logic → Migrate to KMP
 - 7 tests: ViewModel interaction → Keep in androidApp
 
-***REMOVED******REMOVED******REMOVED*** Android-Specific (Keep in androidApp)
+### Android-Specific (Keep in androidApp)
 
 **Reasons**:
 
@@ -352,9 +352,9 @@ import com.scanium.core.tracking.ItemAggregator
 
 ---
 
-***REMOVED******REMOVED*** Test Helper Migration
+## Test Helper Migration
 
-***REMOVED******REMOVED******REMOVED*** Current Android-Specific Helpers (To Replace)
+### Current Android-Specific Helpers (To Replace)
 
 **File**: `androidApp/src/test/.../test/TestHelpers.kt`
 
@@ -374,7 +374,7 @@ fun createTestDetection(boundingBox: RectF, ...): DetectionInfo {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** New KMP Helpers (Already Created)
+### New KMP Helpers (Already Created)
 
 **File**: `shared/test-utils/src/commonMain/.../Builders.kt`
 
@@ -409,9 +409,9 @@ val detection = testDetectionInfo(
 
 ---
 
-***REMOVED******REMOVED*** Coverage Analysis
+## Coverage Analysis
 
-***REMOVED******REMOVED******REMOVED*** Current Coverage by Module
+### Current Coverage by Module
 
 | Module                      | Test Files | Test Methods | Line Coverage (Est.) |
 |-----------------------------|------------|--------------|----------------------|
@@ -423,7 +423,7 @@ val detection = testDetectionInfo(
 | `core-models` (legacy)      | 2          | 10           | **DEPRECATED**       |
 | `core-tracking` (legacy)    | 1          | 3            | **DEPRECATED**       |
 
-***REMOVED******REMOVED******REMOVED*** Coverage Gaps in KMP Modules
+### Coverage Gaps in KMP Modules
 
 **shared/core-tracking** (CRITICAL GAPS):
 
@@ -440,7 +440,7 @@ val detection = testDetectionInfo(
 - ✅ NormalizedRect: 6 tests (good coverage)
 - ✅ ImageRef: 4 tests (good coverage)
 
-***REMOVED******REMOVED******REMOVED*** Target Coverage Post-Migration
+### Target Coverage Post-Migration
 
 | Module                 | Target Line Coverage | Target Test Count |
 |------------------------|----------------------|-------------------|
@@ -450,9 +450,9 @@ val detection = testDetectionInfo(
 
 ---
 
-***REMOVED******REMOVED*** Risk Assessment
+## Risk Assessment
 
-***REMOVED******REMOVED******REMOVED*** High Risk Items
+### High Risk Items
 
 1. **ObjectTracker Migration** (Risk: 🔴 High)
     - 19 tests with complex logic
@@ -470,7 +470,7 @@ val detection = testDetectionInfo(
     - Risk of missing some imports
     - **Mitigation**: Use automated script + manual verification
 
-***REMOVED******REMOVED******REMOVED*** Low Risk Items
+### Low Risk Items
 
 1. **NormalizedRect/ImageRef** (Risk: 🟢 Low)
     - Already migrated and working
@@ -482,9 +482,9 @@ val detection = testDetectionInfo(
 
 ---
 
-***REMOVED******REMOVED*** Next Steps Recommendations
+## Next Steps Recommendations
 
-***REMOVED******REMOVED******REMOVED*** Immediate (This Week)
+### Immediate (This Week)
 
 1. ✅ **Phase 1 Complete**: Inventory and analysis ← YOU ARE HERE
 2. 🔧 **Phase 2 Complete**: Test-utils infrastructure ← DONE
@@ -494,7 +494,7 @@ val detection = testDetectionInfo(
     - DetectionResultTest.kt (10 tests)
     - **Estimated**: 3-4 hours
 
-***REMOVED******REMOVED******REMOVED*** Short-Term (Next 2-3 Days)
+### Short-Term (Next 2-3 Days)
 
 4. 🚀 **Phase 4**: Migrate core-tracking tests
     - ObjectTrackerTest.kt (19 tests) ← CRITICAL
@@ -502,7 +502,7 @@ val detection = testDetectionInfo(
     - ObjectCandidateTest.kt (14 tests)
     - **Estimated**: 6-8 hours
 
-***REMOVED******REMOVED******REMOVED*** Medium-Term (Next Week)
+### Medium-Term (Next Week)
 
 5. 🔧 **Phase 5**: Update imports in androidApp tests
     - Automated script for 21 files
@@ -515,16 +515,16 @@ val detection = testDetectionInfo(
 
 ---
 
-***REMOVED******REMOVED*** Appendix A: Automated Import Replacement Script
+## Appendix A: Automated Import Replacement Script
 
 ```bash
-***REMOVED***!/bin/bash
-***REMOVED*** Script to update imports from legacy to KMP packages
+#!/bin/bash
+# Script to update imports from legacy to KMP packages
 
-***REMOVED*** Backup first
+# Backup first
 git checkout -b test-import-updates
 
-***REMOVED*** Define replacements
+# Define replacements
 declare -A REPLACEMENTS=(
   ["com.scanium.app.ml.ItemCategory"]="com.scanium.core.models.ml.ItemCategory"
   ["com.scanium.app.items.ScannedItem"]="com.scanium.core.models.items.ScannedItem"
@@ -538,7 +538,7 @@ declare -A REPLACEMENTS=(
   ["com.scanium.app.aggregation.ItemAggregator"]="com.scanium.core.tracking.ItemAggregator"
 )
 
-***REMOVED*** Apply replacements to all androidApp test files
+# Apply replacements to all androidApp test files
 for old in "${!REPLACEMENTS[@]}"; do
   new="${REPLACEMENTS[$old]}"
   echo "Replacing: $old → $new"
@@ -552,7 +552,7 @@ echo "Import updates complete. Please review changes before committing."
 
 ---
 
-***REMOVED******REMOVED*** Appendix B: Test Count by Category
+## Appendix B: Test Count by Category
 
 | Category                         | Files  | Tests   | % of Total |
 |----------------------------------|--------|---------|------------|
@@ -565,7 +565,7 @@ echo "Import updates complete. Please review changes before committing."
 
 ---
 
-***REMOVED******REMOVED*** Conclusion
+## Conclusion
 
 Phase 1 audit reveals:
 

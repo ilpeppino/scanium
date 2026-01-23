@@ -1,13 +1,13 @@
-***REMOVED*** Scanium Subtypes: Source of Truth
+# Scanium Subtypes: Source of Truth
 
-***REMOVED******REMOVED*** Primary Authoritative Source
+## Primary Authoritative Source
 
 **File**: `/home/user/scanium/core-domainpack/src/main/res/raw/home_resale_domain_pack.json`
 
 This is THE single source of truth for all domain-pack categories (subtypes) used by the Scanium app
 at runtime.
 
-***REMOVED******REMOVED*** Schema Structure
+## Schema Structure
 
 ```json
 {
@@ -38,7 +38,7 @@ at runtime.
 }
 ```
 
-***REMOVED******REMOVED*** Runtime Access
+## Runtime Access
 
 | Component      | File                                               | Role                                           |
 |----------------|----------------------------------------------------|------------------------------------------------|
@@ -49,7 +49,7 @@ at runtime.
 **Flow**: ML Kit detection → `BasicCategoryEngine` → `domainCategoryId` → `ClassificationResult` →
 `ScannedItem`
 
-***REMOVED******REMOVED*** Related Data Models
+## Related Data Models
 
 - `DomainPack.kt` - Root config object
 - `DomainCategory.kt` - Single subtype definition
@@ -57,12 +57,12 @@ at runtime.
 - `ClassificationResult.kt` - Runtime classification result (includes `domainCategoryId`)
 - `ScannedItem.kt` - Persisted item (includes `domainCategoryId`, `attributes`)
 
-***REMOVED******REMOVED*** Test References
+## Test References
 
 - `GoldenDataset.kt` - Defines `ExpectedSubtype` with `subtypeId` for validation
 - `GoldenDatasetRegressionTest.kt` - Validates cloud classifier returns matching `domainCategoryId`
 
-***REMOVED******REMOVED*** Key Constraints
+## Key Constraints
 
 1. **ID Format**: Snake_case, typically `{parent}_{item}` (e.g., `furniture_sofa`,
    `electronics_laptop`)
@@ -72,7 +72,7 @@ at runtime.
 4. **Attributes**: Brand extraction is OCR-based; applicable to select categories via
    `appliesToCategoryIds`
 
-***REMOVED******REMOVED*** Validation
+## Validation
 
 - `LocalDomainPackRepository` validates:
     - All category IDs are unique

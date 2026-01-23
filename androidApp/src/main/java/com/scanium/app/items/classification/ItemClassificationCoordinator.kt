@@ -52,7 +52,7 @@ import kotlinx.coroutines.withContext
  * - Price estimation coordination
  * - Cloud classification alerts
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * Classification operations are performed on background dispatchers.
  * The cloud call gate handles its own synchronization.
  *

@@ -1,11 +1,11 @@
-***REMOVED*** Security Risk Assessment - Scanium Android App
+# Security Risk Assessment - Scanium Android App
 
 **Assessment Date:** 2025-12-14
 **App Version:** 1.0
 **Assessed By:** Codex Security Assessment Agent
 **Target SDK:** Android 14 (API 34), Min SDK: Android 7.0 (API 24)
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 This security risk assessment evaluates the Scanium Android application against the **OWASP Mobile
 Top 10 (Final 2024)**, **OWASP MASVS (latest)**, and **NIST SP 800-163r1** vetting guidelines.
@@ -13,7 +13,7 @@ Scanium is a privacy-first camera application that performs on-device object det
 scanning, and OCR using Google ML Kit. While the app currently operates without cloud connectivity,
 it includes a mocked eBay integration preparing for future network communication.
 
-***REMOVED******REMOVED******REMOVED*** Overall Security Posture
+### Overall Security Posture
 
 **Risk Level:** MEDIUM-HIGH
 
@@ -22,14 +22,14 @@ permission model, no exported components beyond launcher) but has **critical gap
 hardening, data backup configuration, and network security preparation that must be addressed before
 production deployment or real backend integration.
 
-***REMOVED******REMOVED******REMOVED*** Critical Findings Summary
+### Critical Findings Summary
 
 - **5 Critical** severity issues (P0 priority)
 - **4 High** severity issues (P1 priority)
 - **6 Medium** severity issues (P1-P2 priority)
 - **3 Low** severity issues (P2 priority)
 
-***REMOVED******REMOVED******REMOVED*** Top 10 Security Risks
+### Top 10 Security Risks
 
 1. **[CRITICAL] Code obfuscation disabled in release builds** - Enables reverse engineering
 2. **[CRITICAL] No Network Security Config** - Allows cleartext traffic, no certificate validation
@@ -47,9 +47,9 @@ production deployment or real backend integration.
 
 ---
 
-***REMOVED******REMOVED*** 1. Baseline Inventory
+## 1. Baseline Inventory
 
-***REMOVED******REMOVED******REMOVED*** 1.1 Entry Points & Attack Surface
+### 1.1 Entry Points & Attack Surface
 
 **AndroidManifest.xml Analysis** (`app/src/main/AndroidManifest.xml`)
 
@@ -77,7 +77,7 @@ production deployment or real backend integration.
 - Auto-download models: `ocr`, `object_custom` (line 21-23)
 - **Note:** No validation of model integrity/signature
 
-***REMOVED******REMOVED******REMOVED*** 1.2 Data Inventory
+### 1.2 Data Inventory
 
 **Data Types Handled:**
 
@@ -107,7 +107,7 @@ production deployment or real backend integration.
 - **No Database:** Room/SQLite not used (per CLAUDE.md)
 - **No SharedPreferences/DataStore** for sensitive data (verified via grep)
 
-***REMOVED******REMOVED******REMOVED*** 1.3 Network Code Paths
+### 1.3 Network Code Paths
 
 **Current State:** No active network connectivity (all processing on-device)
 
@@ -131,7 +131,7 @@ production deployment or real backend integration.
     - "View listing" URLs may open external browser
     - No validation of intent data found
 
-***REMOVED******REMOVED******REMOVED*** 1.4 Third-Party Dependencies
+### 1.4 Third-Party Dependencies
 
 **Key Dependencies** (from `app/build.gradle.kts`):
 
@@ -158,9 +158,9 @@ tracked.
 
 ---
 
-***REMOVED******REMOVED*** 2. OWASP Mobile Top 10 (2024) Assessment
+## 2. OWASP Mobile Top 10 (2024) Assessment
 
-***REMOVED******REMOVED******REMOVED*** M1: Improper Credential Usage
+### M1: Improper Credential Usage
 
 **Status:** ✅ LOW RISK (current), ⚠️ MEDIUM RISK (future)
 
@@ -185,7 +185,7 @@ tracked.
 **Tests:**
 
 ```bash
-***REMOVED*** Verify no secrets in source (already run)
+# Verify no secrets in source (already run)
 rg -i "api.?key|secret|password|token" --type kotlin --type xml
 ```
 
@@ -193,7 +193,7 @@ rg -i "api.?key|secret|password|token" --type kotlin --type xml
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M2: Inadequate Supply Chain Security
+### M2: Inadequate Supply Chain Security
 
 **Status:** 🔴 HIGH RISK
 
@@ -239,7 +239,7 @@ rg -i "api.?key|secret|password|token" --type kotlin --type xml
 **Tests:**
 
 ```bash
-***REMOVED*** Generate dependency report (attempted, blocked by network)
+# Generate dependency report (attempted, blocked by network)
 ./gradlew :app:dependencies --write-verification-metadata sha256
 ./gradlew :app:dependencies > sbom.txt
 ```
@@ -248,7 +248,7 @@ rg -i "api.?key|secret|password|token" --type kotlin --type xml
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M3: Insecure Authentication/Authorization
+### M3: Insecure Authentication/Authorization
 
 **Status:** ⚠️ MEDIUM RISK (future readiness)
 
@@ -286,7 +286,7 @@ rg -i "api.?key|secret|password|token" --type kotlin --type xml
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M4: Insufficient Input/Output Validation
+### M4: Insufficient Input/Output Validation
 
 **Status:** ⚠️ MEDIUM RISK
 
@@ -368,7 +368,7 @@ fun `malicious javascript URL in barcode is blocked`() {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M5: Insecure Communication
+### M5: Insecure Communication
 
 **Status:** 🔴 CRITICAL RISK
 
@@ -470,13 +470,13 @@ fun `malicious javascript URL in barcode is blocked`() {
 **Tests:**
 
 ```bash
-***REMOVED*** Verify cleartext blocked (after fix)
+# Verify cleartext blocked (after fix)
 adb shell am start -a android.intent.action.VIEW -d "http://example.com"
-***REMOVED*** Expected: Network error, not loaded
+# Expected: Network error, not loaded
 
-***REMOVED*** TLS version test
+# TLS version test
 openssl s_client -connect api.ebay.com:443 -tls1
-***REMOVED*** Should fail after TLS 1.2 enforcement
+# Should fail after TLS 1.2 enforcement
 ```
 
 **GitHub Issues:** `SEC-008` (CRITICAL), `SEC-009` (cert pinning guidance)
@@ -488,7 +488,7 @@ openssl s_client -connect api.ebay.com:443 -tls1
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M6: Inadequate Privacy Controls
+### M6: Inadequate Privacy Controls
 
 **Status:** ⚠️ MEDIUM RISK
 
@@ -570,16 +570,16 @@ openssl s_client -connect api.ebay.com:443 -tls1
 **Tests:**
 
 ```bash
-***REMOVED*** Verify FLAG_SECURE blocks screenshots
+# Verify FLAG_SECURE blocks screenshots
 adb shell screencap /sdcard/test.png
-***REMOVED*** Expected: Black screen or error for protected screens
+# Expected: Black screen or error for protected screens
 ```
 
 **GitHub Issues:** `SEC-010`, `SEC-011`, `SEC-012`
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M7: Insufficient Binary Protections
+### M7: Insufficient Binary Protections
 
 **Status:** 🔴 CRITICAL RISK
 
@@ -665,16 +665,16 @@ adb shell screencap /sdcard/test.png
 
 2. **Improve ProGuard Rules:**
    ```proguard
-   ***REMOVED*** Keep only public API entry points
+   # Keep only public API entry points
    -keep class com.scanium.app.MainActivity { *; }
 
-   ***REMOVED*** ML Kit - keep only what's needed
+   # ML Kit - keep only what's needed
    -keep class com.google.mlkit.vision.objects.DetectedObject { *; }
 
-   ***REMOVED*** Obfuscate all internal classes
+   # Obfuscate all internal classes
    -keep,allowobfuscation class com.scanium.app.** { *; }
 
-   ***REMOVED*** Remove logging in release
+   # Remove logging in release
    -assumenosideeffects class android.util.Log {
        public static *** d(...);
        public static *** v(...);
@@ -710,20 +710,20 @@ adb shell screencap /sdcard/test.png
 **Tests:**
 
 ```bash
-***REMOVED*** Before fix: Verify strings are readable
+# Before fix: Verify strings are readable
 strings app-release.apk | grep "ItemsViewModel"
-***REMOVED*** Expected: Should find class names
+# Expected: Should find class names
 
-***REMOVED*** After fix: Verify obfuscation
+# After fix: Verify obfuscation
 strings app-release.apk | grep "ItemsViewModel"
-***REMOVED*** Expected: Should NOT find class names (obfuscated to 'a', 'b', etc.)
+# Expected: Should NOT find class names (obfuscated to 'a', 'b', etc.)
 
-***REMOVED*** Verify APK signed
+# Verify APK signed
 jarsigner -verify -verbose -certs app-release.apk
 
-***REMOVED*** Check for debuggable
+# Check for debuggable
 aapt dump badging app-release.apk | grep debuggable
-***REMOVED*** Expected: No output or debuggable='false'
+# Expected: No output or debuggable='false'
 ```
 
 **GitHub Issues:** `SEC-013` (CRITICAL), `SEC-014`, `SEC-015`
@@ -732,7 +732,7 @@ aapt dump badging app-release.apk | grep debuggable
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M8: Security Misconfiguration
+### M8: Security Misconfiguration
 
 **Status:** 🔴 CRITICAL RISK
 
@@ -808,8 +808,8 @@ aapt dump badging app-release.apk | grep debuggable
 1. **ADB Backup Extraction:**
    ```bash
    adb backup -f backup.ab -noapk com.scanium.app
-   ***REMOVED*** Extract with Android Backup Extractor
-   ***REMOVED*** Access all cached images, app state
+   # Extract with Android Backup Extractor
+   # Access all cached images, app state
    ```
 
 2. **Malicious Backup Restore:**
@@ -820,7 +820,7 @@ aapt dump badging app-release.apk | grep debuggable
 3. **Log Scraping (rooted device):**
    ```bash
    adb logcat | grep "MockEbayApi"
-   ***REMOVED*** Capture listing titles, URLs, API interactions
+   # Capture listing titles, URLs, API interactions
    ```
 
 **Recommendations:**
@@ -888,17 +888,17 @@ aapt dump badging app-release.apk | grep debuggable
 **Tests:**
 
 ```bash
-***REMOVED*** Before fix: Extract backup
+# Before fix: Extract backup
 adb backup -f backup.ab -noapk com.scanium.app
-***REMOVED*** Expected: Succeeds with app data
+# Expected: Succeeds with app data
 
-***REMOVED*** After fix: Verify backup disabled or selective
+# After fix: Verify backup disabled or selective
 adb backup -f backup.ab -noapk com.scanium.app
-***REMOVED*** Expected: Empty or excludes sensitive files
+# Expected: Empty or excludes sensitive files
 
-***REMOVED*** Verify logs stripped in release
+# Verify logs stripped in release
 adb logcat | grep "MockEbayApi"
-***REMOVED*** Expected: No log output in release build
+# Expected: No log output in release build
 ```
 
 **GitHub Issues:** `SEC-016` (CRITICAL), `SEC-017` (CRITICAL)
@@ -907,7 +907,7 @@ adb logcat | grep "MockEbayApi"
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M9: Insecure Data Storage
+### M9: Insecure Data Storage
 
 **Status:** 🔴 CRITICAL RISK (backup issue) + ⚠️ MEDIUM RISK (encryption)
 
@@ -963,13 +963,13 @@ adb logcat | grep "MockEbayApi"
    adb shell
    su
    cd /data/data/com.scanium.app/cache
-   ***REMOVED*** Extract captured images, ML models
+   # Extract captured images, ML models
    ```
 
 2. **Physical Device Access (ADB enabled):**
    ```bash
    adb pull /data/data/com.scanium.app/files/
-   ***REMOVED*** Extract all app files without root (if USB debugging enabled)
+   # Extract all app files without root (if USB debugging enabled)
    ```
 
 3. **Backup Extraction:** (See M8)
@@ -1036,18 +1036,18 @@ adb logcat | grep "MockEbayApi"
 **Tests:**
 
 ```bash
-***REMOVED*** Verify private storage permissions
+# Verify private storage permissions
 adb shell ls -la /data/data/com.scanium.app/files/
-***REMOVED*** Expected: drwxrwx--x (0771) owned by app UID
+# Expected: drwxrwx--x (0771) owned by app UID
 
-***REMOVED*** Attempt to read files without root
+# Attempt to read files without root
 adb shell cat /data/data/com.scanium.app/files/image.jpg
-***REMOVED*** Expected: Permission denied (unless device rooted or USB debugging)
+# Expected: Permission denied (unless device rooted or USB debugging)
 
-***REMOVED*** Verify encryption (after implementation)
+# Verify encryption (after implementation)
 adb pull /data/data/com.scanium.app/files/encrypted_image.jpg
 file encrypted_image.jpg
-***REMOVED*** Expected: Binary data, not valid JPEG
+# Expected: Binary data, not valid JPEG
 ```
 
 **GitHub Issues:** `SEC-018`, `SEC-019`
@@ -1056,7 +1056,7 @@ file encrypted_image.jpg
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** M10: Insufficient Cryptography
+### M10: Insufficient Cryptography
 
 **Status:** ✅ LOW RISK (current), ⚠️ MEDIUM RISK (future)
 
@@ -1138,48 +1138,48 @@ fun `SecureRandom generates unique IVs`() {
 
 ---
 
-***REMOVED******REMOVED*** 3. MASVS Control Mapping
+## 3. MASVS Control Mapping
 
-***REMOVED******REMOVED******REMOVED*** MASVS-STORAGE (Data Storage and Privacy)
+### MASVS-STORAGE (Data Storage and Privacy)
 
 - **MASVS-STORAGE-1:** ❌ FAIL - Unrestricted backup enabled (M8, M9)
 - **MASVS-STORAGE-2:** ⚠️ PARTIAL - No encryption for sensitive data (M9)
 
-***REMOVED******REMOVED******REMOVED*** MASVS-CRYPTO (Cryptography)
+### MASVS-CRYPTO (Cryptography)
 
 - **MASVS-CRYPTO-1:** ✅ PASS - No insecure crypto (M10)
 - **MASVS-CRYPTO-2:** N/A - No crypto implemented yet
 
-***REMOVED******REMOVED******REMOVED*** MASVS-AUTH (Authentication and Session Management)
+### MASVS-AUTH (Authentication and Session Management)
 
 - **MASVS-AUTH-1:** N/A - No authentication implemented (M3)
 - **MASVS-AUTH-2:** N/A - No sessions
 
-***REMOVED******REMOVED******REMOVED*** MASVS-NETWORK (Network Communication)
+### MASVS-NETWORK (Network Communication)
 
 - **MASVS-NETWORK-1:** ❌ FAIL - No Network Security Config (M5)
 - **MASVS-NETWORK-2:** ❌ FAIL - Cleartext allowed on API 24-27 (M5)
 
-***REMOVED******REMOVED******REMOVED*** MASVS-PLATFORM (Platform Interaction)
+### MASVS-PLATFORM (Platform Interaction)
 
 - **MASVS-PLATFORM-1:** ✅ PASS - Proper permission model (camera only)
 - **MASVS-PLATFORM-2:** ✅ PASS - No over-exported components (M8)
 - **MASVS-PLATFORM-3:** ⚠️ PARTIAL - Input validation gaps (M4)
 
-***REMOVED******REMOVED******REMOVED*** MASVS-CODE (Code Quality and Build Settings)
+### MASVS-CODE (Code Quality and Build Settings)
 
 - **MASVS-CODE-1:** ❌ FAIL - No third-party library scanning (M2)
 - **MASVS-CODE-2:** ⚠️ PARTIAL - Debug logs in production (M8)
 - **MASVS-CODE-3:** ✅ PASS - No known vulnerable dependencies (needs continuous monitoring)
 
-***REMOVED******REMOVED******REMOVED*** MASVS-RESILIENCE (Resilience Against Reverse Engineering)
+### MASVS-RESILIENCE (Resilience Against Reverse Engineering)
 
 - **MASVS-RESILIENCE-1:** ❌ FAIL - No code obfuscation (M7)
 - **MASVS-RESILIENCE-2:** ❌ FAIL - No tamper detection (M7)
 - **MASVS-RESILIENCE-3:** ❌ FAIL - No root detection (M7)
 - **MASVS-RESILIENCE-4:** ⚠️ PARTIAL - No debugging prevention (M7)
 
-***REMOVED******REMOVED******REMOVED*** MASVS-PRIVACY (Privacy)
+### MASVS-PRIVACY (Privacy)
 
 - **MASVS-PRIVACY-1:** ✅ PASS - Minimal data collection
 - **MASVS-PRIVACY-2:** ⚠️ PARTIAL - No screenshot protection (M6)
@@ -1187,9 +1187,9 @@ fun `SecureRandom generates unique IVs`() {
 
 ---
 
-***REMOVED******REMOVED*** 4. NIST SP 800-163r1 Vetting Checklist
+## 4. NIST SP 800-163r1 Vetting Checklist
 
-***REMOVED******REMOVED******REMOVED*** 4.1 Threat Modeling
+### 4.1 Threat Modeling
 
 **Asset Identification:**
 
@@ -1212,7 +1212,7 @@ fun `SecureRandom generates unique IVs`() {
 - Dependency poisoning (M2)
 - Input injection (M4)
 
-***REMOVED******REMOVED******REMOVED*** 4.2 Static Analysis
+### 4.2 Static Analysis
 
 **Tools Used:**
 
@@ -1236,19 +1236,19 @@ fun `SecureRandom generates unique IVs`() {
 **Commands:**
 
 ```bash
-***REMOVED*** Android Lint (comprehensive)
+# Android Lint (comprehensive)
 ./gradlew lint
 cat app/build/reports/lint-results.html
 
-***REMOVED*** Dependency vulnerabilities
+# Dependency vulnerabilities
 ./gradlew dependencyCheckAnalyze
 
-***REMOVED*** MobSF (Docker)
+# MobSF (Docker)
 docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf
-***REMOVED*** Upload APK via web UI
+# Upload APK via web UI
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4.3 Dynamic Analysis
+### 4.3 Dynamic Analysis
 
 **Not Performed (requires APK build + device)**
 
@@ -1256,46 +1256,46 @@ docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf
 
 1. **Network Traffic Analysis:**
    ```bash
-   ***REMOVED*** Proxy all traffic through Burp Suite/mitmproxy
+   # Proxy all traffic through Burp Suite/mitmproxy
    adb shell settings put global http_proxy <proxy_ip>:8080
 
-   ***REMOVED*** Verify TLS pinning/validation (after implementing)
-   ***REMOVED*** Expected: App blocks MITM certificate
+   # Verify TLS pinning/validation (after implementing)
+   # Expected: App blocks MITM certificate
    ```
 
 2. **Backup/Restore Testing:**
    ```bash
-   ***REMOVED*** Test backup extraction
+   # Test backup extraction
    adb backup -f test.ab -noapk com.scanium.app
-   ***REMOVED*** Analyze contents for sensitive data
+   # Analyze contents for sensitive data
    ```
 
 3. **Intent Fuzzing:**
    ```bash
-   ***REMOVED*** Drozer or IntentFuzzer
+   # Drozer or IntentFuzzer
    run app.activity.start --component com.scanium.app/.MainActivity --extra string title "'; DROP TABLE items; --"
    ```
 
 4. **Root Detection Bypass:**
    ```bash
-   ***REMOVED*** After implementing root detection
-   ***REMOVED*** Use Magisk Hide or Xposed to bypass
+   # After implementing root detection
+   # Use Magisk Hide or Xposed to bypass
    ```
 
 5. **Frida Hooking:**
    ```bash
-   ***REMOVED*** Hook ML detection to verify tamper resistance
+   # Hook ML detection to verify tamper resistance
    frida -U -f com.scanium.app -l hook_detection.js
    ```
 
 6. **Logcat Monitoring:**
    ```bash
-   adb logcat -c  ***REMOVED*** Clear
-   ***REMOVED*** Use app
+   adb logcat -c  # Clear
+   # Use app
    adb logcat | grep -i "password\|token\|api\|secret\|key"
    ```
 
-***REMOVED******REMOVED******REMOVED*** 4.4 Supply Chain Review
+### 4.4 Supply Chain Review
 
 **Dependencies Analyzed:**
 
@@ -1312,17 +1312,17 @@ docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf
 
 1. **Generate SBOM (Software Bill of Materials):**
    ```bash
-   ***REMOVED*** Using CycloneDX Gradle plugin
+   # Using CycloneDX Gradle plugin
    ./gradlew cyclonedxBom
-   ***REMOVED*** Output: build/reports/bom.json
+   # Output: build/reports/bom.json
    ```
 
 2. **CVE Scanning:**
    ```bash
-   ***REMOVED*** OWASP Dependency-Check
+   # OWASP Dependency-Check
    ./gradlew dependencyCheckAnalyze
 
-   ***REMOVED*** Snyk (requires account)
+   # Snyk (requires account)
    snyk test --all-projects
    ```
 
@@ -1335,51 +1335,51 @@ docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf
     - Enable Dependabot/Renovate on GitHub
     - Integrate Snyk or WhiteSource in CI/CD
 
-***REMOVED******REMOVED******REMOVED*** 4.5 Verification Commands
+### 4.5 Verification Commands
 
 **Evidence Collection (already executed):**
 
 ```bash
-***REMOVED*** Tests (failed - network)
+# Tests (failed - network)
 ./gradlew test > docs/security/evidence/tests.txt
 
-***REMOVED*** Lint (failed - network)
+# Lint (failed - network)
 ./gradlew lint > docs/security/evidence/lint.txt
 
-***REMOVED*** Dependencies (failed - network)
+# Dependencies (failed - network)
 ./gradlew :app:dependencies > docs/security/evidence/dependencies.txt
 
-***REMOVED*** Secrets scan (completed)
+# Secrets scan (completed)
 rg -i "api.?key|secret|password" > docs/security/evidence/secrets_scan.txt
 
-***REMOVED*** Keystore files (completed)
+# Keystore files (completed)
 find . -name "*.keystore" > docs/security/evidence/keystore_files.txt
 ```
 
 **Post-Fix Verification:**
 
 ```bash
-***REMOVED*** Verify obfuscation enabled
+# Verify obfuscation enabled
 grep "isMinifyEnabled" app/build.gradle.kts
-***REMOVED*** Expected: isMinifyEnabled = true
+# Expected: isMinifyEnabled = true
 
-***REMOVED*** Verify backup restricted
+# Verify backup restricted
 grep "allowBackup" app/src/main/AndroidManifest.xml
-***REMOVED*** Expected: android:allowBackup="false" OR android:fullBackupContent="@xml/backup_rules"
+# Expected: android:allowBackup="false" OR android:fullBackupContent="@xml/backup_rules"
 
-***REMOVED*** Verify network security config
+# Verify network security config
 cat app/src/main/res/xml/network_security_config.xml
-***REMOVED*** Expected: cleartextTrafficPermitted="false"
+# Expected: cleartextTrafficPermitted="false"
 
-***REMOVED*** Build release APK and analyze
+# Build release APK and analyze
 ./gradlew assembleRelease
 apkanalyzer dex packages --proguard-mapping app/build/outputs/mapping/release/mapping.txt app/build/outputs/apk/release/app-release.apk
-***REMOVED*** Expected: Obfuscated class names (a, b, c, etc.)
+# Expected: Obfuscated class names (a, b, c, etc.)
 ```
 
 ---
 
-***REMOVED******REMOVED*** 5. Prioritized Risk Backlog
+## 5. Prioritized Risk Backlog
 
 | ID      | Title                                             | Severity | Priority | OWASP | MASVS          | Component      | Effort | Owner    |
 |---------|---------------------------------------------------|----------|----------|-------|----------------|----------------|--------|----------|
@@ -1408,7 +1408,7 @@ apkanalyzer dex packages --proguard-mapping app/build/outputs/mapping/release/ma
 - **Priority:** P0 (must fix before production/backend), P1 (fix soon), P2 (backlog)
 - **Effort:** S (small, <1 day), M (medium, 1-3 days), L (large, >3 days)
 
-***REMOVED******REMOVED******REMOVED*** Suggested Implementation Order (P0 First)
+### Suggested Implementation Order (P0 First)
 
 **Week 1 (P0 - Critical):**
 
@@ -1440,28 +1440,28 @@ apkanalyzer dex packages --proguard-mapping app/build/outputs/mapping/release/ma
 
 ---
 
-***REMOVED******REMOVED*** 6. GitHub Issues (Formatted)
+## 6. GitHub Issues (Formatted)
 
 **Note:** Issues will be created via `gh` CLI. If not authenticated, commands are provided below for
 manual creation.
 
-***REMOVED******REMOVED******REMOVED*** Quick Reference
+### Quick Reference
 
 ```bash
-***REMOVED*** Create all issues (requires gh authenticated)
+# Create all issues (requires gh authenticated)
 bash docs/security/create_issues.sh
 
-***REMOVED*** Or manually via:
+# Or manually via:
 gh issue create --title "[SECURITY][CRITICAL] ..." --body "..." --label "severity:critical,area:..."
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue Creation Script
+### Issue Creation Script
 
 See `docs/security/ISSUES_TO_CREATE.md` for the exact `gh` commands ready to paste.
 
 ---
 
-***REMOVED******REMOVED*** 7. Needs Verification Items
+## 7. Needs Verification Items
 
 The following items could not be fully verified from repository inspection alone and require:
 
@@ -1485,10 +1485,10 @@ The following items could not be fully verified from repository inspection alone
 
    **Verification Steps:**
    ```bash
-   ***REMOVED*** Install app, capture image
+   # Install app, capture image
    adb shell ls -la /data/data/com.scanium.app/cache/
    adb shell ls -la /data/data/com.scanium.app/files/
-   ***REMOVED*** Force stop app, check if files remain
+   # Force stop app, check if files remain
    ```
 
 3. **Gradle Dependency Tree (blocked by network)**
@@ -1498,7 +1498,7 @@ The following items could not be fully verified from repository inspection alone
 
    **Verification Steps:**
    ```bash
-   ***REMOVED*** Retry with network access
+   # Retry with network access
    ./gradlew :app:dependencies --configuration releaseRuntimeClasspath
    ./gradlew dependencyCheckAnalyze
    ```
@@ -1521,20 +1521,20 @@ The following items could not be fully verified from repository inspection alone
 
    **Verification Steps:**
    ```bash
-   ***REMOVED*** Install release APK
+   # Install release APK
    adb install app-release.apk
    adb logcat -c
-   ***REMOVED*** Use app
+   # Use app
    adb logcat | grep -i "scanium\|ebay\|api"
    ```
 
 ---
 
-***REMOVED******REMOVED*** 8. Quick Wins (Low-Risk Immediate Fixes)
+## 8. Quick Wins (Low-Risk Immediate Fixes)
 
 The following fixes are safe to implement immediately without product decisions:
 
-***REMOVED******REMOVED******REMOVED*** Quick Win 1: Network Security Config
+### Quick Win 1: Network Security Config
 
 **File:** `app/src/main/res/xml/network_security_config.xml` (create)
 
@@ -1565,7 +1565,7 @@ The following fixes are safe to implement immediately without product decisions:
     ...>
 ```
 
-***REMOVED******REMOVED******REMOVED*** Quick Win 2: Disable Backup
+### Quick Win 2: Disable Backup
 
 **File:** `app/src/main/AndroidManifest.xml` (line 13)
 
@@ -1573,7 +1573,7 @@ The following fixes are safe to implement immediately without product decisions:
 android:allowBackup="false"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Quick Win 3: Enable R8 Obfuscation
+### Quick Win 3: Enable R8 Obfuscation
 
 **File:** `app/build.gradle.kts` (lines 30-36)
 
@@ -1590,12 +1590,12 @@ buildTypes {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Quick Win 4: Improve ProGuard Rules
+### Quick Win 4: Improve ProGuard Rules
 
 **File:** `app/proguard-rules.pro` (append)
 
 ```proguard
-***REMOVED*** Remove all logging in release
+# Remove all logging in release
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
     public static *** v(...);
@@ -1604,14 +1604,14 @@ buildTypes {
     public static *** e(...);
 }
 
-***REMOVED*** Obfuscate internal classes while keeping structure
+# Obfuscate internal classes while keeping structure
 -keep,allowobfuscation class com.scanium.app.** { *; }
 
-***REMOVED*** Keep only necessary public APIs
+# Keep only necessary public APIs
 -keep class com.scanium.app.MainActivity { *; }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Quick Win 5: Explicitly Set Debuggable Flag
+### Quick Win 5: Explicitly Set Debuggable Flag
 
 **File:** `app/build.gradle.kts` (add to release buildType)
 
@@ -1623,15 +1623,15 @@ release {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Implementation (Separate Branch)
+### Implementation (Separate Branch)
 
 These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 
 ---
 
-***REMOVED******REMOVED*** 9. References
+## 9. References
 
-***REMOVED******REMOVED******REMOVED*** Standards & Guidelines
+### Standards & Guidelines
 
 - **OWASP Mobile Top 10 (Final 2024):** https://owasp.org/www-project-mobile-top-10/
 - **OWASP MASVS (v2.0+):** https://mas.owasp.org/MASVS/
@@ -1641,7 +1641,7 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
   ** https://developer.android.com/privacy-and-security/security-config
 - **Android TLS Guide:** https://developer.android.com/privacy-and-security/security-ssl
 
-***REMOVED******REMOVED******REMOVED*** Tools
+### Tools
 
 - **Android Lint:** Built into Android Studio
 - **MobSF:** https://github.com/MobSF/Mobile-Security-Framework-MobSF
@@ -1650,7 +1650,7 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 - **RootBeer (root detection):** https://github.com/scottyab/rootbeer
 - **Jetpack Security:** https://developer.android.com/jetpack/androidx/releases/security
 
-***REMOVED******REMOVED******REMOVED*** Scanium Documentation
+### Scanium Documentation
 
 - `CLAUDE.md` - Architecture guidance
 - `README.md` - Feature overview
@@ -1659,7 +1659,7 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 
 ---
 
-***REMOVED******REMOVED*** 10. Assessment Metadata
+## 10. Assessment Metadata
 
 **Evidence Files:**
 
@@ -1695,15 +1695,15 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 
 ---
 
-***REMOVED******REMOVED*** 11. REMEDIATION STATUS
+## 11. REMEDIATION STATUS
 
 **Remediation Date:** 2025-12-15
 **Remediated By:** Security Team
 **Branch:** `claude/fix-android-security-findings-C4QwM`
 
-***REMOVED******REMOVED******REMOVED*** 11.1 Completed Fixes (7 issues)
+### 11.1 Completed Fixes (7 issues)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** CRITICAL Fixes (Already Applied - 4 issues)
+#### CRITICAL Fixes (Already Applied - 4 issues)
 
 **SEC-008: Network Security Config** ✅ **FIXED**
 
@@ -1747,7 +1747,7 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 - **Verification:** Build release APK and verify no log output
 - **Impact:** Zero PII leakage via logcat in production
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** MEDIUM Fixes (Newly Implemented - 3 issues)
+#### MEDIUM Fixes (Newly Implemented - 3 issues)
 
 **SEC-006: OCR Text Length Limit** ✅ **FIXED**
 
@@ -1792,7 +1792,7 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
   screen)
 - **Impact:** Prevents screenshot leakage of sensitive data, blocks app switcher preview
 
-***REMOVED******REMOVED******REMOVED*** 11.2 Not Applicable / Deferred (2 issues)
+### 11.2 Not Applicable / Deferred (2 issues)
 
 **SEC-005: Barcode URL Validation** ❌ **NOT APPLICABLE**
 
@@ -1834,9 +1834,9 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
     - Estimated effort: 4 hours
 - **Defer Rationale:** Existing cache mechanism provides sufficient protection for v1.0
 
-***REMOVED******REMOVED******REMOVED*** 11.3 Remaining Issues (9 issues)
+### 11.3 Remaining Issues (9 issues)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** High Priority (P1) - 4 issues
+#### High Priority (P1) - 4 issues
 
 **SEC-002: No Dependency Lock File / SBOM** ✅ **IMPLEMENTED**
 
@@ -1889,7 +1889,7 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 - **Estimated Effort:** 1 hour
 - **Recommended Action:** Document release signing process, verify keystore backup
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Medium Priority (P2) - 4 issues
+#### Medium Priority (P2) - 4 issues
 
 **SEC-009: Certificate Pinning Guidance**
 
@@ -1917,7 +1917,7 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 - **Estimated Effort:** 8 hours
 - **Recommended Action:** Draft privacy policy covering camera usage, data retention, eBay sharing
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Low Priority (P3) - 1 issue
+#### Low Priority (P3) - 1 issue
 
 **SEC-001: API Key Storage Guidance**
 
@@ -1925,7 +1925,7 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 - **Priority:** P3 (future feature)
 - **Recommended Action:** Document secure API key storage strategy when cloud features implemented
 
-***REMOVED******REMOVED******REMOVED*** 11.4 Summary
+### 11.4 Summary
 
 **Issues Fixed:** 9 out of 18 (50%) 🎯
 
@@ -1970,34 +1970,34 @@ These quick wins will be implemented in branch: `security/quickwins-2025-12-14`
 
 ---
 
-***REMOVED******REMOVED*** Appendix A: Command Summary
+## Appendix A: Command Summary
 
 ```bash
-***REMOVED*** Evidence collection (run from project root)
+# Evidence collection (run from project root)
 mkdir -p docs/security/evidence
 
-***REMOVED*** Dependencies (requires network)
+# Dependencies (requires network)
 ./gradlew :app:dependencies --configuration releaseRuntimeClasspath > docs/security/evidence/dependencies.txt
 
-***REMOVED*** Lint (requires network)
+# Lint (requires network)
 ./gradlew lint --continue > docs/security/evidence/lint.txt
 
-***REMOVED*** Tests (requires network)
+# Tests (requires network)
 ./gradlew test --continue > docs/security/evidence/tests.txt
 
-***REMOVED*** Secrets scan (completed)
+# Secrets scan (completed)
 rg -i "api.?key|secret|password|token|bearer|authorization|private.?key|keystore" --type kotlin --type xml --no-heading > docs/security/evidence/secrets_scan.txt
 
-***REMOVED*** Keystore files (completed)
+# Keystore files (completed)
 find app/src -name "*.keystore" -o -name "*.jks" > docs/security/evidence/keystore_files.txt
 
-***REMOVED*** Log statement count
+# Log statement count
 grep -r "Log\." app/src/main/java --include="*.kt" | wc -l
-***REMOVED*** Result: 304 statements
+# Result: 304 statements
 
-***REMOVED*** Files importing Log
+# Files importing Log
 find app/src/main/java -name "*.kt" -exec grep -l "import android.util.Log" {} \;
-***REMOVED*** Result: 20+ files
+# Result: 20+ files
 ```
 
 ---

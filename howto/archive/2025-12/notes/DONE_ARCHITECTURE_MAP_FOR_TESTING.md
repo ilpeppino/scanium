@@ -1,6 +1,6 @@
-***REMOVED*** Architecture Map for Testing
+# Architecture Map for Testing
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 - **App shell**: `MainActivity` → `ScaniumApp` wires Compose, theming, ItemsViewModel,
   Settings/Developer stacks, OTLP telemetry (
@@ -23,7 +23,7 @@
 - **Test surface**: key hooks exist via DataStore flags (voice toggles, feature gating), Diagnostics
   API (System Health), classification preferences, FTUE repository, Items database.
 
-***REMOVED******REMOVED*** Modules & Responsibilities
+## Modules & Responsibilities
 
 | Module               | Path                                                               | Notes relevant to testing                                                                                                                        |
 |----------------------|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -33,7 +33,7 @@
 | Backend service      | `backend/`                                                         | Node server with `/health`, `/classify`, `/assist/chat`, eBay helpers. Used for diagnostics + remote classification.                             |
 | Supporting libraries | `core-domainpack`, `core-tracking`, `core-contracts`, `app/`       | Domain pack resolution, telemetry contracts, etc. Useful for stubbing.                                                                           |
 
-***REMOVED******REMOVED*** Key Entry Points & Screens
+## Key Entry Points & Screens
 
 | Screen / Component                                         | Path                                                                                                             | Primary ViewModel / State                                                                  | Notable interactions                                                                                                                             |
 |------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -50,7 +50,7 @@
 | DiagnosticsRepository                                      | `androidApp/src/main/java/com/scanium/app/diagnostics/DiagnosticsRepository.kt`                                  | Emits `DiagnosticsState`                                                                   | Checks `/health`, network transport, permission status (Camera/Microphone/Storage), capability detection (SpeechRecognizer, TTS, Camera facing). |
 | FTUE                                                       | `androidApp/src/main/java/com/scanium/app/ftue/TourViewModel.kt`, `FtueRepository.kt`                            | `TourViewModel` (step state), DataStore booleans                                           | Controls spotlight overlays on CameraScreen; developer option can force/resets.                                                                  |
 
-***REMOVED******REMOVED*** Key ViewModels & State Sources
+## Key ViewModels & State Sources
 
 | ViewModel                    | Path                                                                                | Provides                                                                                                            | Used by                                                       |
 |------------------------------|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
@@ -63,7 +63,7 @@
 | TourViewModel                | `androidApp/src/main/java/com/scanium/app/ftue/TourViewModel.kt`                    | `currentStep`, `isTourActive`, `targetBounds`                                                                       | CameraScreen overlays.                                        |
 | PaywallViewModel / Billing   | `androidApp/src/main/java/com/scanium/app/billing/ui/PaywallViewModel.kt`           | Entitlement gating                                                                                                  | Settings → Upgrade path.                                      |
 
-***REMOVED******REMOVED*** Repositories & Services
+## Repositories & Services
 
 | Repository / Service                   | Path                                                                                | Purpose                                                                                                |
 |----------------------------------------|-------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
@@ -79,7 +79,7 @@
 | AndroidRemoteConfigProvider            | `androidApp/src/main/java/com/scanium/app/data/AndroidRemoteConfigProvider.kt`      | Caches remote config from backend for gating features.                                                 |
 | FtueRepository                         | `androidApp/src/main/java/com/scanium/app/ftue/FtueRepository.kt`                   | DataStore for onboarding flags and permission education displays.                                      |
 
-***REMOVED******REMOVED*** Camera Pipeline Pointers
+## Camera Pipeline Pointers
 
 - `CameraScreen.kt` orchestrates CameraX via `CameraXManager` (
   `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt`), binding Preview +
@@ -90,7 +90,7 @@
 - FTUE overlays computed in `tourTarget` extensions highlight UI controls; tests should assert
   overlay coordinates.
 
-***REMOVED******REMOVED*** Items List Model
+## Items List Model
 
 - `ScannedItem` model in `androidApp/src/main/java/com/scanium/app/items/ScannedItem.kt` (imports
   from shared models).
@@ -100,7 +100,7 @@
 - Swipe actions implemented via `Modifier.swipeable` hooking into `ItemsListScreen`.
 - Assistant entry button anchored bottom-right (floating action button).
 
-***REMOVED******REMOVED*** Settings & DataStore Keys (Testing Focus)
+## Settings & DataStore Keys (Testing Focus)
 
 | Preference Key                                           | Default                                                                                            | Notes / Tests                                     |
 |----------------------------------------------------------|----------------------------------------------------------------------------------------------------|---------------------------------------------------|
@@ -120,7 +120,7 @@
 | Privacy Safe Mode composite                              | derived                                                                                            | Ensures sensitive toggles off.                    |
 | FTUE flags (`permissionEducationShown`, `tourCompleted`) | stored via `FtueRepository` file `androidApp/src/main/java/com/scanium/app/ftue/FtueRepository.kt` | Used by developer option to reset.                |
 
-***REMOVED******REMOVED*** Navigation Routes (from `Routes`)
+## Navigation Routes (from `Routes`)
 
 | Route                                     | Destination                                         |
 |-------------------------------------------|-----------------------------------------------------|
@@ -135,7 +135,7 @@
 | `data_usage`, `privacy`, `terms`, `about` | Legal/Transparency screens                          |
 | `paywall`                                 | `PaywallScreen`                                     |
 
-***REMOVED******REMOVED*** Backend & Diagnostics
+## Backend & Diagnostics
 
 - **Base URL**: `BuildConfig.SCANIUM_API_BASE_URL` (populated from `local.properties` keys
   `scanium.api.base.url`). Empty string disables network operations and surfaces alerts in Camera
@@ -146,7 +146,7 @@
 - **Telemetry**: `ScaniumApplication` wires OTLP + Sentry (enabled when DSNs present). Developer
   runbook should verify share-diagnostics toggles.
 
-***REMOVED******REMOVED*** Suggested Automation Tags / Hooks
+## Suggested Automation Tags / Hooks
 
 | Screen                       | Suggested `testTag` / Semantics label ideas                                                                                                                       |
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -161,7 +161,7 @@
 When adding instrumentation, prefer `Modifier.semantics { testTag = "..." }` on interactive
 controls. Compose lists (LazyColumn) should expose stable keys from item IDs for automation.
 
-***REMOVED******REMOVED*** Notes for Test Authors
+## Notes for Test Authors
 
 - Camera permissions & microphone gating live inside CameraScreen and Assistant voice toggles; tests
   should be aware of DataStore state (use SettingsRepository or developer toggles to preconfigure).

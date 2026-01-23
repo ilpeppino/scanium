@@ -1,11 +1,11 @@
-***REMOVED*** Assistant Availability State Model
+# Assistant Availability State Model
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This document describes the explicit availability state model for the AI Assistant feature, ensuring
 the UI never feels broken or confusing when the backend is unavailable.
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 Previously, when the assistant backend was unavailable:
 
@@ -14,9 +14,9 @@ Previously, when the assistant backend was unavailable:
 - No clear indication of what actions were possible
 - Silent failures led to confusion
 
-***REMOVED******REMOVED*** Solution: First-Class Availability State
+## Solution: First-Class Availability State
 
-***REMOVED******REMOVED******REMOVED*** AssistantAvailability Sealed Class
+### AssistantAvailability Sealed Class
 
 ```kotlin
 sealed class AssistantAvailability {
@@ -30,7 +30,7 @@ sealed class AssistantAvailability {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** UnavailableReason Enum
+### UnavailableReason Enum
 
 | Reason             | Description                 | Can Retry | User Action         |
 |--------------------|-----------------------------|-----------|---------------------|
@@ -42,16 +42,16 @@ sealed class AssistantAvailability {
 | `VALIDATION_ERROR` | Bad request                 | No        | Rephrase question   |
 | `LOADING`          | Request in progress         | No        | Wait                |
 
-***REMOVED******REMOVED*** UI Behavior
+## UI Behavior
 
-***REMOVED******REMOVED******REMOVED*** When Available
+### When Available
 
 - Text input enabled with normal placeholder
 - Send button enabled when text present
 - Smart suggestion chips clickable
 - Full assistant functionality
 
-***REMOVED******REMOVED******REMOVED*** When Unavailable
+### When Unavailable
 
 - Text input **disabled** with status-specific placeholder
 - Send button disabled
@@ -63,7 +63,7 @@ sealed class AssistantAvailability {
     - "Use local" / "OK" dismiss button
 - Local suggestions still visible for reference
 
-***REMOVED******REMOVED******REMOVED*** Placeholder Text by Reason
+### Placeholder Text by Reason
 
 | Reason             | Placeholder                                 |
 |--------------------|---------------------------------------------|
@@ -75,9 +75,9 @@ sealed class AssistantAvailability {
 | `VALIDATION_ERROR` | "Service error. Try again."                 |
 | `LOADING`          | "Processing..."                             |
 
-***REMOVED******REMOVED*** State Transitions
+## State Transitions
 
-***REMOVED******REMOVED******REMOVED*** Compute Availability
+### Compute Availability
 
 ```kotlin
 fun computeAvailability(
@@ -94,7 +94,7 @@ Evaluation order:
 3. If `failure != null` -> Map failure type to reason
 4. Otherwise -> `Available`
 
-***REMOVED******REMOVED******REMOVED*** Trigger Points
+### Trigger Points
 
 | Event               | Action                                   |
 |---------------------|------------------------------------------|
@@ -106,7 +106,7 @@ Evaluation order:
 | Retry button tap    | Clear failure, retry if has last message |
 | Dismiss button tap  | Clear failure state                      |
 
-***REMOVED******REMOVED******REMOVED*** Network Reconnection
+### Network Reconnection
 
 When device comes back online, if the last failure was network-related:
 
@@ -114,7 +114,7 @@ When device comes back online, if the last failure was network-related:
 - Availability is recalculated to `Available`
 - User can immediately retry
 
-***REMOVED******REMOVED*** Local-Only Fallback
+## Local-Only Fallback
 
 When assistant is unavailable:
 
@@ -123,9 +123,9 @@ When assistant is unavailable:
 3. Previous local assistant responses can still be viewed
 4. Items and metadata are still accessible
 
-***REMOVED******REMOVED*** Developer Diagnostics
+## Developer Diagnostics
 
-***REMOVED******REMOVED******REMOVED*** Logging (Tag: AssistantViewModel)
+### Logging (Tag: AssistantViewModel)
 
 ```
 I/AssistantViewModel: Assistant availability changed: Unavailable(OFFLINE, canRetry=true)
@@ -133,7 +133,7 @@ I/AssistantViewModel: Assistant availability restored: Available (success)
 I/AssistantViewModel: Assistant fallback mode=LIMITED availability=Unavailable(BACKEND_ERROR) [provider_unavailable/temporary/retryable]
 ```
 
-***REMOVED******REMOVED******REMOVED*** Developer Options
+### Developer Options
 
 The existing Assistant Diagnostics section in Developer Options shows:
 
@@ -142,14 +142,14 @@ The existing Assistant Diagnostics section in Developer Options shows:
 - Network connectivity
 - Last checked timestamp
 
-***REMOVED******REMOVED*** Invariants
+## Invariants
 
 1. **Input follows availability**: Text input is ONLY enabled when `availability.canSendMessages`
 2. **No silent failures**: User always knows what happened and what to do
 3. **Graceful degradation**: Local features work when online features don't
 4. **Clean recovery**: Coming back online auto-clears transient failures
 
-***REMOVED******REMOVED*** Testing Scenarios
+## Testing Scenarios
 
 | Scenario                       | Expected Behavior                     |
 |--------------------------------|---------------------------------------|
@@ -162,7 +162,7 @@ The existing Assistant Diagnostics section in Developer Options shows:
 | Rotate device                  | No broken layout                      |
 | Network drop mid-session       | Graceful fallback with banner         |
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 - `AssistantViewModel.kt`: Added `AssistantAvailability`, `UnavailableReason`,
   `computeAvailability()`, `refreshAvailability()`, `clearFailureState()`

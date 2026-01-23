@@ -1,8 +1,8 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Test Refactoring Progress Summary
+# Test Refactoring Progress Summary
 
-***REMOVED******REMOVED*** Scanium KMP Migration - Test Infrastructure Complete
+## Scanium KMP Migration - Test Infrastructure Complete
 
 **Status**: ✅ **Phase 1, 2, 4, 5 & 6 COMPLETE**
 **Date**: 2025-12-18
@@ -10,7 +10,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Phase 8: Coverage & QA
+## Phase 8: Coverage & QA
 
 - Coverage generation not executed locally due to environment constraints; rerun on CI or a
   non-sandbox host.
@@ -23,7 +23,7 @@
     - Analyze coverage gaps (tracking/model paths) and add missing tests if needed.
     - Update CI workflow to publish coverage artifacts.
 
-***REMOVED******REMOVED*** Phase 6 Execution (re-run verification)
+## Phase 6 Execution (re-run verification)
 
 - Confirmed legacy test directories remain removed: `core-models/src/test`,
   `core-tracking/src/test`, `core-scan/src/test`, `core-contracts/src/test`.
@@ -41,9 +41,9 @@
   “Could not determine a usable wildcard IP” (environment/network constraint). Re-run in CI or a
   non-sandboxed host to finalize Phase 6.5 validation.
 
-***REMOVED******REMOVED*** What We've Accomplished
+## What We've Accomplished
 
-***REMOVED******REMOVED******REMOVED*** ✅ Phase 4: Core Tracking Tests Migration (COMPLETE)
+### ✅ Phase 4: Core Tracking Tests Migration (COMPLETE)
 
 Core tracking coverage has been moved to the shared KMP module with Android-specific tests removed.
 
@@ -75,7 +75,7 @@ Core tracking coverage has been moved to the shared KMP module with Android-spec
 - Android test suite no longer duplicates tracking coverage
 - Aggregation logic now lives in `shared/core-tracking` with portable models
 
-***REMOVED******REMOVED******REMOVED*** ✅ Phase 5: AndroidApp Imports & Model Alignment (COMPLETE)
+### ✅ Phase 5: AndroidApp Imports & Model Alignment (COMPLETE)
 
 Android unit tests now target the shared KMP models and tracking APIs:
 
@@ -87,7 +87,7 @@ Android unit tests now target the shared KMP models and tracking APIs:
 - Fixed classification and deduplication flows to build against shared tracker/aggregator data
   classes.
 
-***REMOVED******REMOVED******REMOVED*** ✅ Phase 6: Legacy Module Cleanup (COMPLETE)
+### ✅ Phase 6: Legacy Module Cleanup (COMPLETE)
 
 Retired obsolete test scaffolding and added guardrails to prevent regressions:
 
@@ -98,7 +98,7 @@ Retired obsolete test scaffolding and added guardrails to prevent regressions:
 - Annotated `settings.gradle.kts` to flag the remaining legacy wrapper modules (`:core-models`,
   `:core-tracking`) as temporary while dependencies are migrated to shared modules.
 
-***REMOVED******REMOVED******REMOVED*** ✅ Phase 2: Test-Utils Infrastructure (COMPLETE)
+### ✅ Phase 2: Test-Utils Infrastructure (COMPLETE)
 
 Created a comprehensive KMP test utilities module to enable portable testing:
 
@@ -155,7 +155,7 @@ val detection = testDetectionInfo(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** ✅ Phase 1: Test Inventory & Analysis (COMPLETE)
+### ✅ Phase 1: Test Inventory & Analysis (COMPLETE)
 
 Created a comprehensive audit of the entire test suite:
 
@@ -229,7 +229,7 @@ import com.scanium.core.models.items.ScannedItem
 
 ---
 
-***REMOVED******REMOVED*** Documents Created
+## Documents Created
 
 1. **test-refactoring-plan.md** (870 lines)
     - 9-phase migration plan
@@ -251,9 +251,9 @@ import com.scanium.core.models.items.ScannedItem
 
 ---
 
-***REMOVED******REMOVED*** Next Steps - Ready to Execute
+## Next Steps - Ready to Execute
 
-***REMOVED******REMOVED******REMOVED*** Recommended Sequence
+### Recommended Sequence
 
 **Phase 3: Migrate Core Models Tests** (3-4 hours)
 
@@ -278,7 +278,7 @@ import com.scanium.core.models.items.ScannedItem
 
 ---
 
-***REMOVED******REMOVED*** Infrastructure Benefits
+## Infrastructure Benefits
 
 The test-utils infrastructure we built enables:
 
@@ -335,7 +335,7 @@ class ObjectTrackerTest {
 
 ---
 
-***REMOVED******REMOVED*** Risk Mitigation
+## Risk Mitigation
 
 **Built-in Safety**:
 
@@ -355,7 +355,7 @@ class ObjectTrackerTest {
 
 ---
 
-***REMOVED******REMOVED*** Success Metrics
+## Success Metrics
 
 **Phase 1 & 2 Metrics**:
 
@@ -375,7 +375,7 @@ class ObjectTrackerTest {
 
 ---
 
-***REMOVED******REMOVED*** Time Investment
+## Time Investment
 
 **Completed**:
 
@@ -395,9 +395,9 @@ class ObjectTrackerTest {
 
 ---
 
-***REMOVED******REMOVED*** How to Use This Work
+## How to Use This Work
 
-***REMOVED******REMOVED******REMOVED*** For Immediate Use:
+### For Immediate Use:
 
 **1. Use test-utils in new tests**:
 
@@ -425,7 +425,7 @@ class MyNewTest {
 - Each phase is independently valuable
 - Can pause between phases
 
-***REMOVED******REMOVED******REMOVED*** For Continuing the Migration:
+### For Continuing the Migration:
 
 **Ready to proceed with Phase 3**:
 
@@ -437,7 +437,7 @@ class MyNewTest {
 
 ---
 
-***REMOVED******REMOVED*** Repository Status
+## Repository Status
 
 **Branch**: `claude/plan-kmp-test-refactor-EugFw`
 **Latest Commit**: `a186576` (Phase 1 Complete)

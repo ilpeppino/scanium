@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/DECISIONS.md.
 
-***REMOVED*** ADR-0001: Cloud Classification via Google Vision (Backend Proxy)
+# ADR-0001: Cloud Classification via Google Vision (Backend Proxy)
 
 **Status:** Accepted  
 **Date:** 2025-01-12  
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Context
+## Context
 
 - ML Kit gives only 5 coarse labels; resale needs 20+ fine-grained categories and attributes.
 - The camera/overlay must stay responsive; classification cannot block detection/tracking.
@@ -17,7 +17,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Decision
+## Decision
 
 Use Google Vision through our **backend proxy** as the primary classifier. Only **stable aggregated
 items** (confirmed + thumbnail) are uploaded. BuildConfig-driven config (from `local.properties`
@@ -25,7 +25,7 @@ items** (confirmed + thumbnail) are uploaded. BuildConfig-driven config (from `l
 
 ---
 
-***REMOVED******REMOVED*** Consequences
+## Consequences
 
 **Positive**
 
@@ -39,7 +39,7 @@ items** (confirmed + thumbnail) are uploaded. BuildConfig-driven config (from `l
 
 ---
 
-***REMOVED******REMOVED*** Implementation Notes
+## Implementation Notes
 
 - Contracts: `shared/core-models/classification/ClassifierContracts.kt`,
   `shared/core-models/config/CloudClassifierConfig.kt`.

@@ -1,23 +1,23 @@
-***REMOVED***!/bin/bash
+#!/bin/bash
 
-***REMOVED*** Scanium Backend Development Startup Script
-***REMOVED*** Starts PostgreSQL, Backend Server, ngrok, and optional monitoring stack
+# Scanium Backend Development Startup Script
+# Starts PostgreSQL, Backend Server, ngrok, and optional monitoring stack
 
-set -eo pipefail  ***REMOVED*** Exit on error or pipeline failure
+set -eo pipefail  # Exit on error or pipeline failure
 
-***REMOVED*** Colors for output
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' ***REMOVED*** No Color
+NC='\033[0m' # No Color
 
-***REMOVED*** PID files for cleanup
+# PID files for cleanup
 BACKEND_PID=""
 NGROK_PID=""
 
-***REMOVED*** Parse command-line flags
-ENABLE_MONITORING="${MONITORING:-1}"  ***REMOVED*** Default to enabled (can be overridden by env var)
+# Parse command-line flags
+ENABLE_MONITORING="${MONITORING:-1}"  # Default to enabled (can be overridden by env var)
 
 for arg in "$@"; do
     case $arg in
@@ -50,7 +50,7 @@ for arg in "$@"; do
     esac
 done
 
-***REMOVED*** Cleanup function
+# Cleanup function
 cleanup() {
     echo ""
     echo -e "${YELLOW}🛑 Shutting down services...${NC}"
@@ -69,10 +69,10 @@ cleanup() {
     exit 0
 }
 
-***REMOVED*** Set up trap for Ctrl+C
+# Set up trap for Ctrl+C
 trap cleanup SIGINT SIGTERM
 
-***REMOVED*** Function to print status
+# Function to print status
 print_status() {
     echo -e "${BLUE}ℹ️  $1${NC}"
 }
@@ -89,24 +89,24 @@ print_warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
-***REMOVED*** Banner
+# Banner
 echo -e "${GREEN}"
 echo "╔═══════════════════════════════════════════╗"
 echo "║   Scanium Backend Development Startup    ║"
 echo "╚═══════════════════════════════════════════╝"
 echo -e "${NC}"
 
-***REMOVED*** Change to backend directory
+# Change to backend directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BACKEND_DIR="$(cd "${SCRIPT_DIR}/../../backend" && pwd)"
 cd "$BACKEND_DIR"
 print_status "Working directory: $BACKEND_DIR"
 echo ""
 
-***REMOVED*** 1. Check prerequisites
+# 1. Check prerequisites
 print_status "Checking prerequisites..."
 
-***REMOVED*** Check Node.js
+# Check Node.js
 if ! command -v node &> /dev/null; then
     print_error "Node.js is not installed"
     exit 1
@@ -114,14 +114,14 @@ fi
 NODE_VERSION=$(node --version)
 print_success "Node.js $NODE_VERSION"
 
-***REMOVED*** Check Docker/Colima
+# Check Docker/Colima
 if ! command -v docker &> /dev/null; then
     print_error "Docker is not installed"
     exit 1
 fi
 print_success "Docker installed"
 
-***REMOVED*** Check if using Colima
+# Check if using Colima
 if command -v colima &> /dev/null; then
     COLIMA_STATUS=$(colima status 2>&1 || echo "stopped")
     if [[ $COLIMA_STATUS == *"colima is running"* ]]; then
@@ -133,7 +133,7 @@ if command -v colima &> /dev/null; then
         print_success "Colima started"
     fi
 
-    ***REMOVED*** Check Docker context
+    # Check Docker context
     CURRENT_CONTEXT=$(docker context show)
     if [ "$CURRENT_CONTEXT" != "colima" ]; then
         print_warning "Docker context is '$CURRENT_CONTEXT', switching to 'colima'"
@@ -142,7 +142,7 @@ if command -v colima &> /dev/null; then
     fi
 fi
 
-***REMOVED*** Check ngrok
+# Check ngrok
 if ! command -v ngrok &> /dev/null; then
     print_error "ngrok is not installed"
     echo "Install with: brew install ngrok/ngrok/ngrok"
@@ -150,7 +150,7 @@ if ! command -v ngrok &> /dev/null; then
 fi
 print_success "ngrok installed"
 
-***REMOVED*** Check if ngrok is authenticated
+# Check if ngrok is authenticated
 if ! ngrok config check &> /dev/null; then
     print_warning "ngrok may not be authenticated"
     echo "Run: ngrok config add-authtoken YOUR_TOKEN"
@@ -158,7 +158,7 @@ fi
 
 echo ""
 
-***REMOVED*** 2. Check .env file
+# 2. Check .env file
 print_status "Checking .env file..."
 if [ ! -f .env ]; then
     print_error ".env file not found"
@@ -168,7 +168,7 @@ fi
 print_success ".env file exists"
 echo ""
 
-***REMOVED*** 3. Check if ports are available
+# 3. Check if ports are available
 print_status "Checking ports..."
 
 if lsof -Pi :8080 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
@@ -187,7 +187,7 @@ fi
 
 echo ""
 
-***REMOVED*** 4. Start PostgreSQL
+# 4. Start PostgreSQL
 print_status "Starting PostgreSQL..."
 
 if docker ps --filter name=scanium-postgres --format '{{.Names}}' | grep -q scanium-postgres; then
@@ -196,7 +196,7 @@ else
     docker compose up -d postgres
     print_status "Waiting for PostgreSQL to be ready..."
 
-    ***REMOVED*** Wait for PostgreSQL to be healthy
+    # Wait for PostgreSQL to be healthy
     MAX_WAIT=30
     WAITED=0
     while [ $WAITED -lt $MAX_WAIT ]; do
@@ -217,7 +217,7 @@ else
     fi
 fi
 
-***REMOVED*** Verify PostgreSQL is accessible
+# Verify PostgreSQL is accessible
 if docker exec scanium-postgres psql -U scanium -d scanium -c "SELECT 1" &> /dev/null; then
     print_success "PostgreSQL connection verified"
 else
@@ -227,17 +227,17 @@ fi
 
 echo ""
 
-***REMOVED*** 5. Start Backend Server
+# 5. Start Backend Server
 print_status "Starting backend server..."
 
-***REMOVED*** Start backend in background
+# Start backend in background
 npm run dev > .dev-server.log 2>&1 &
 BACKEND_PID=$!
 
 print_status "Backend server started (PID: $BACKEND_PID)"
 print_status "Waiting for server to be ready..."
 
-***REMOVED*** Wait for backend to be ready
+# Wait for backend to be ready
 MAX_WAIT=30
 WAITED=0
 while [ $WAITED -lt $MAX_WAIT ]; do
@@ -265,7 +265,7 @@ if [ $WAITED -eq $MAX_WAIT ]; then
     exit 1
 fi
 
-***REMOVED*** Test health endpoint
+# Test health endpoint
 HEALTH_RESPONSE=$(curl -s http://localhost:8080/healthz)
 if [[ $HEALTH_RESPONSE == *"ok"* ]]; then
     print_success "Health check passed"
@@ -277,13 +277,13 @@ fi
 
 echo ""
 
-***REMOVED*** 6. Start monitoring stack (optional)
+# 6. Start monitoring stack (optional)
 if [ "$ENABLE_MONITORING" = "1" ]; then
     print_status "Starting monitoring stack..."
 
-    ***REMOVED*** Check if Docker is available
+    # Check if Docker is available
     if command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
-        ***REMOVED*** Run monitoring startup script
+        # Run monitoring startup script
         MONITORING_SCRIPT="${SCRIPT_DIR}/../monitoring/start-monitoring.sh"
         if [ -f "$MONITORING_SCRIPT" ]; then
             if bash "$MONITORING_SCRIPT"; then
@@ -306,10 +306,10 @@ else
     echo ""
 fi
 
-***REMOVED*** 7. Start ngrok
+# 7. Start ngrok
 print_status "Starting ngrok tunnel..."
 
-***REMOVED*** Start ngrok in background
+# Start ngrok in background
 ngrok http 8080 --log=stdout > .ngrok.log 2>&1 &
 NGROK_PID=$!
 
@@ -322,7 +322,7 @@ WAITED=0
 NGROK_URL=""
 
 while [ $WAITED -lt $MAX_WAIT ]; do
-    ***REMOVED*** Try 1: Check API (silent fail if not ready)
+    # Try 1: Check API (silent fail if not ready)
     if API_RESPONSE=$(curl -s "$NGROK_API"); then
         NGROK_URL=$(echo "$API_RESPONSE" | grep -oE 'https://[^"]+' | head -n 1 || true)
         if [ -n "$NGROK_URL" ]; then
@@ -330,7 +330,7 @@ while [ $WAITED -lt $MAX_WAIT ]; do
         fi
     fi
 
-    ***REMOVED*** Try 2: Check log file
+    # Try 2: Check log file
     if [ -f .ngrok.log ]; then
         NGROK_URL=$(grep -o 'https://[a-zA-Z0-9\-]*\.ngrok-free\.dev' .ngrok.log | head -1)
         if [ -n "$NGROK_URL" ]; then
@@ -338,7 +338,7 @@ while [ $WAITED -lt $MAX_WAIT ]; do
         fi
     fi
 
-    ***REMOVED*** Check if ngrok died
+    # Check if ngrok died
     if ! kill -0 $NGROK_PID 2>/dev/null; then
         print_error "ngrok crashed"
         echo "ngrok log:"
@@ -365,7 +365,7 @@ fi
 print_success "ngrok tunnel established"
 echo ""
 
-***REMOVED*** 8. Check if PUBLIC_BASE_URL needs updating
+# 8. Check if PUBLIC_BASE_URL needs updating
 CURRENT_PUBLIC_URL=$(grep "^PUBLIC_BASE_URL=" .env | cut -d'=' -f2)
 
 if [ "$CURRENT_PUBLIC_URL" != "$NGROK_URL" ]; then
@@ -382,9 +382,9 @@ if [ "$CURRENT_PUBLIC_URL" != "$NGROK_URL" ]; then
     read -p "Update .env automatically? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        ***REMOVED*** Backup .env
+        # Backup .env
         cp .env .env.backup
-        ***REMOVED*** Update PUBLIC_BASE_URL
+        # Update PUBLIC_BASE_URL
         sed -i.tmp "s|^PUBLIC_BASE_URL=.*|PUBLIC_BASE_URL=$NGROK_URL|" .env
         rm .env.tmp 2>/dev/null || true
         print_success ".env updated (backup saved as .env.backup)"
@@ -404,7 +404,7 @@ if [ "$CURRENT_PUBLIC_URL" != "$NGROK_URL" ]; then
     fi
 fi
 
-***REMOVED*** 9. Test ngrok endpoint
+# 9. Test ngrok endpoint
 print_status "Testing ngrok endpoint..."
 NGROK_HEALTH=$(curl -s "$NGROK_URL/healthz" 2>&1)
 if [[ $NGROK_HEALTH == *"ok"* ]]; then
@@ -415,7 +415,7 @@ fi
 
 echo ""
 
-***REMOVED*** 10. Display summary
+# 10. Display summary
 echo -e "${GREEN}"
 echo "╔═══════════════════════════════════════════╗"
 echo "║          Services Running                 ║"
@@ -427,7 +427,7 @@ echo -e "${BLUE}Backend Server:${NC}  http://localhost:8080 (PID: $BACKEND_PID)"
 echo -e "${BLUE}ngrok Tunnel:${NC}    $NGROK_URL (PID: $NGROK_PID)"
 
 if [ "$ENABLE_MONITORING" = "1" ]; then
-    ***REMOVED*** Check if monitoring stack is actually running
+    # Check if monitoring stack is actually running
     MONITORING_RUNNING=$(docker compose -p scanium-monitoring ps -q 2>/dev/null | wc -l | tr -d ' ')
     if [ "$MONITORING_RUNNING" -gt 0 ]; then
         echo -e "${BLUE}Monitoring:${NC}      Enabled (LGTM Stack + Alloy)"
@@ -480,7 +480,7 @@ if [ "$CURRENT_PUBLIC_URL" != "$NGROK_URL" ]; then
     echo ""
 fi
 
-***REMOVED*** Display monitoring stack URLs if enabled
+# Display monitoring stack URLs if enabled
 if [ "$ENABLE_MONITORING" = "1" ]; then
     MONITORING_RUNNING=$(docker compose -p scanium-monitoring ps -q 2>/dev/null | wc -l | tr -d ' ')
     if [ "$MONITORING_RUNNING" -gt 0 ]; then
@@ -495,5 +495,5 @@ fi
 echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
 echo ""
 
-***REMOVED*** Wait for user to stop
+# Wait for user to stop
 wait $BACKEND_PID $NGROK_PID

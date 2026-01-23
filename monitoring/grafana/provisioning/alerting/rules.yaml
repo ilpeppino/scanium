@@ -1,29 +1,29 @@
-***REMOVED*** Grafana Alerting - Alert Rules Provisioning
-***REMOVED*** Baseline alerts for Scanium mobile app monitoring
-***REMOVED***
-***REMOVED*** Alerts defined:
-***REMOVED*** A) Error rate spike (Loki) - Detects unusual error log volume
-***REMOVED*** B) Telemetry drop (Loki) - Detects when no telemetry is received
-***REMOVED*** C) Inference latency regression (Mimir) - Detects ML inference slowdowns
-***REMOVED*** D) Crash spike (Sentry) - Not implemented here; see README for Sentry setup
+# Grafana Alerting - Alert Rules Provisioning
+# Baseline alerts for Scanium mobile app monitoring
+#
+# Alerts defined:
+# A) Error rate spike (Loki) - Detects unusual error log volume
+# B) Telemetry drop (Loki) - Detects when no telemetry is received
+# C) Inference latency regression (Mimir) - Detects ML inference slowdowns
+# D) Crash spike (Sentry) - Not implemented here; see README for Sentry setup
 
 apiVersion: 1
 
 groups:
-  ***REMOVED*** ============================================================================
-  ***REMOVED*** Error Rate Alerts (Loki-based)
-  ***REMOVED*** ============================================================================
+  # ============================================================================
+  # Error Rate Alerts (Loki-based)
+  # ============================================================================
   - orgId: 1
     name: Scanium - Error Rate
     folder: Scanium Alerts
     interval: 1m
     rules:
-      ***REMOVED*** A) Error Rate Spike - Production
+      # A) Error Rate Spike - Production
       - uid: error-rate-spike-prod
         title: "Error Rate Spike (prod)"
         condition: C
         data:
-          ***REMOVED*** Query A: Count error logs over 10m
+          # Query A: Count error logs over 10m
           - refId: A
             relativeTimeRange:
               from: 600
@@ -34,7 +34,7 @@ groups:
                 sum(count_over_time({source="scanium-mobile", env="prod"} |~ `(?i)error|exception|fatal|crash` [10m]))
               queryType: instant
               refId: A
-          ***REMOVED*** Query B: Reduce to single value
+          # Query B: Reduce to single value
           - refId: B
             relativeTimeRange:
               from: 600
@@ -45,7 +45,7 @@ groups:
               expression: A
               reducer: last
               refId: B
-          ***REMOVED*** Query C: Threshold check (> 50 errors in 10m = alert)
+          # Query C: Threshold check (> 50 errors in 10m = alert)
           - refId: C
             datasourceUid: __expr__
             model:
@@ -55,7 +55,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 50  ***REMOVED*** Threshold: > 50 errors/10min
+                      - 50  # Threshold: > 50 errors/10min
                   operator:
                     type: and
                   reducer:
@@ -73,7 +73,7 @@ groups:
           env: prod
           platform: android
 
-      ***REMOVED*** A) Error Rate Spike - Staging
+      # A) Error Rate Spike - Staging
       - uid: error-rate-spike-stage
         title: "Error Rate Spike (stage)"
         condition: C
@@ -107,7 +107,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 100  ***REMOVED*** Higher threshold for staging
+                      - 100  # Higher threshold for staging
                   operator:
                     type: and
                   reducer:
@@ -124,7 +124,7 @@ groups:
           env: stage
           platform: android
 
-      ***REMOVED*** A) Error Rate Spike - Dev (informational only)
+      # A) Error Rate Spike - Dev (informational only)
       - uid: error-rate-spike-dev
         title: "Error Rate Spike (dev)"
         condition: C
@@ -158,7 +158,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 200  ***REMOVED*** Higher threshold for dev
+                      - 200  # Higher threshold for dev
                   operator:
                     type: and
                   reducer:
@@ -175,20 +175,20 @@ groups:
           env: dev
           platform: android
 
-  ***REMOVED*** ============================================================================
-  ***REMOVED*** Telemetry Health Alerts (Loki-based)
-  ***REMOVED*** ============================================================================
+  # ============================================================================
+  # Telemetry Health Alerts (Loki-based)
+  # ============================================================================
   - orgId: 1
     name: Scanium - Telemetry Health
     folder: Scanium Alerts
     interval: 5m
     rules:
-      ***REMOVED*** B) Telemetry Drop - No events received (prod only)
+      # B) Telemetry Drop - No events received (prod only)
       - uid: telemetry-drop-prod
         title: "Telemetry Drop (prod)"
         condition: C
         data:
-          ***REMOVED*** Query A: Count ANY logs in last 15m
+          # Query A: Count ANY logs in last 15m
           - refId: A
             relativeTimeRange:
               from: 900
@@ -199,7 +199,7 @@ groups:
                 sum(count_over_time({source="scanium-mobile", env="prod"} [15m])) or vector(0)
               queryType: instant
               refId: A
-          ***REMOVED*** Query B: Reduce
+          # Query B: Reduce
           - refId: B
             relativeTimeRange:
               from: 900
@@ -210,7 +210,7 @@ groups:
               expression: A
               reducer: last
               refId: B
-          ***REMOVED*** Query C: Alert if count == 0
+          # Query C: Alert if count == 0
           - refId: C
             datasourceUid: __expr__
             model:
@@ -220,13 +220,13 @@ groups:
                 - evaluator:
                     type: lt
                     params:
-                      - 1  ***REMOVED*** Alert if < 1 event (i.e., 0 events)
+                      - 1  # Alert if < 1 event (i.e., 0 events)
                   operator:
                     type: and
                   reducer:
                     type: last
               refId: C
-        noDataState: Alerting  ***REMOVED*** Important: No data = telemetry problem!
+        noDataState: Alerting  # Important: No data = telemetry problem!
         execErrState: Error
         for: 15m
         annotations:
@@ -238,14 +238,14 @@ groups:
           env: prod
           type: availability
 
-      ***REMOVED*** B) Telemetry Drop - Check for session_started events specifically
+      # B) Telemetry Drop - Check for session_started events specifically
       - uid: no-sessions-prod
         title: "No Scan Sessions (prod)"
         condition: C
         data:
           - refId: A
             relativeTimeRange:
-              from: 1800  ***REMOVED*** 30 minutes
+              from: 1800  # 30 minutes
               to: 0
             datasourceUid: LOKI
             model:
@@ -289,22 +289,22 @@ groups:
           env: prod
           type: usage
 
-  ***REMOVED*** ============================================================================
-  ***REMOVED*** Performance Alerts (Mimir/Prometheus-based)
-  ***REMOVED*** ============================================================================
+  # ============================================================================
+  # Performance Alerts (Mimir/Prometheus-based)
+  # ============================================================================
   - orgId: 1
     name: Scanium - Performance
     folder: Scanium Alerts
     interval: 1m
     rules:
-      ***REMOVED*** C) Inference Latency Regression - Production
+      # C) Inference Latency Regression - Production
       - uid: inference-latency-prod
         title: "Inference Latency Regression (prod)"
         condition: C
         data:
-          ***REMOVED*** Query A: P95 latency over 15m
-          ***REMOVED*** Note: Assumes histogram metric 'ml_inference_latency_ms_bucket' or similar
-          ***REMOVED*** Adjust metric name based on actual telemetry
+          # Query A: P95 latency over 15m
+          # Note: Assumes histogram metric 'ml_inference_latency_ms_bucket' or similar
+          # Adjust metric name based on actual telemetry
           - refId: A
             relativeTimeRange:
               from: 900
@@ -319,7 +319,7 @@ groups:
                 )
               queryType: instant
               refId: A
-          ***REMOVED*** Query B: Reduce
+          # Query B: Reduce
           - refId: B
             relativeTimeRange:
               from: 900
@@ -330,7 +330,7 @@ groups:
               expression: A
               reducer: last
               refId: B
-          ***REMOVED*** Query C: Alert if p95 > 2000ms (2 seconds)
+          # Query C: Alert if p95 > 2000ms (2 seconds)
           - refId: C
             datasourceUid: __expr__
             model:
@@ -340,7 +340,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 2000  ***REMOVED*** Threshold: p95 > 2000ms
+                      - 2000  # Threshold: p95 > 2000ms
                   operator:
                     type: and
                   reducer:
@@ -358,7 +358,7 @@ groups:
           env: prod
           component: ml
 
-      ***REMOVED*** C) Inference Latency Regression - Staging (higher threshold)
+      # C) Inference Latency Regression - Staging (higher threshold)
       - uid: inference-latency-stage
         title: "Inference Latency Regression (stage)"
         condition: C
@@ -396,7 +396,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 3000  ***REMOVED*** Higher threshold for staging: 3s
+                      - 3000  # Higher threshold for staging: 3s
                   operator:
                     type: and
                   reducer:
@@ -413,16 +413,16 @@ groups:
           env: stage
           component: ml
 
-  ***REMOVED*** ============================================================================
-  ***REMOVED*** Pipeline Health Alerts (Self-Observability)
-  ***REMOVED*** ============================================================================
-  ***REMOVED*** Monitors the health of the observability pipeline itself (Alloy, Loki, Tempo, Mimir)
+  # ============================================================================
+  # Pipeline Health Alerts (Self-Observability)
+  # ============================================================================
+  # Monitors the health of the observability pipeline itself (Alloy, Loki, Tempo, Mimir)
   - orgId: 1
     name: Scanium - Pipeline Health
     folder: Scanium Alerts
     interval: 1m
     rules:
-      ***REMOVED*** Service Down - Alloy
+      # Service Down - Alloy
       - uid: pipeline-alloy-down
         title: "Alloy Down"
         condition: C
@@ -456,7 +456,7 @@ groups:
                 - evaluator:
                     type: lt
                     params:
-                      - 1  ***REMOVED*** up < 1 means down
+                      - 1  # up < 1 means down
                   operator:
                     type: and
                   reducer:
@@ -468,13 +468,13 @@ groups:
         annotations:
           summary: "Alloy collector is down"
           description: "Alloy OTLP receiver is not responding. No telemetry can be ingested."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#troubleshooting"
         labels:
           severity: critical
           component: alloy
           type: availability
 
-      ***REMOVED*** Service Down - Loki
+      # Service Down - Loki
       - uid: pipeline-loki-down
         title: "Loki Down"
         condition: C
@@ -520,13 +520,13 @@ groups:
         annotations:
           summary: "Loki is down"
           description: "Loki log storage is not responding. Logs cannot be ingested or queried."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#troubleshooting"
         labels:
           severity: critical
           component: loki
           type: availability
 
-      ***REMOVED*** Service Down - Tempo
+      # Service Down - Tempo
       - uid: pipeline-tempo-down
         title: "Tempo Down"
         condition: C
@@ -572,13 +572,13 @@ groups:
         annotations:
           summary: "Tempo is down"
           description: "Tempo trace storage is not responding. Traces cannot be ingested or queried."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#troubleshooting"
         labels:
           severity: critical
           component: tempo
           type: availability
 
-      ***REMOVED*** Service Down - Mimir
+      # Service Down - Mimir
       - uid: pipeline-mimir-down
         title: "Mimir Down"
         condition: C
@@ -624,13 +624,13 @@ groups:
         annotations:
           summary: "Mimir is down"
           description: "Mimir metrics storage is not responding. Metrics cannot be ingested or queried."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#troubleshooting"
         labels:
           severity: critical
           component: mimir
           type: availability
 
-      ***REMOVED*** Alloy Exporter Failures (logs)
+      # Alloy Exporter Failures (logs)
       - uid: pipeline-exporter-failed-logs
         title: "Alloy Log Export Failures"
         condition: C
@@ -664,7 +664,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 0  ***REMOVED*** Any failures trigger alert
+                      - 0  # Any failures trigger alert
                   operator:
                     type: and
                   reducer:
@@ -676,14 +676,14 @@ groups:
         annotations:
           summary: "Alloy failing to export logs"
           description: "Alloy has failed to export log records to Loki in the last 5 minutes. Check Loki health and connectivity."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#pipeline-troubleshooting"
         labels:
           severity: critical
           component: alloy
           signal: logs
           type: exporter
 
-      ***REMOVED*** Alloy Exporter Failures (metrics)
+      # Alloy Exporter Failures (metrics)
       - uid: pipeline-exporter-failed-metrics
         title: "Alloy Metric Export Failures"
         condition: C
@@ -729,14 +729,14 @@ groups:
         annotations:
           summary: "Alloy failing to export metrics"
           description: "Alloy has failed to export metric points to Mimir in the last 5 minutes. Check Mimir health and connectivity."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#pipeline-troubleshooting"
         labels:
           severity: critical
           component: alloy
           signal: metrics
           type: exporter
 
-      ***REMOVED*** Alloy Exporter Failures (traces)
+      # Alloy Exporter Failures (traces)
       - uid: pipeline-exporter-failed-spans
         title: "Alloy Span Export Failures"
         condition: C
@@ -782,14 +782,14 @@ groups:
         annotations:
           summary: "Alloy failing to export traces"
           description: "Alloy has failed to export spans to Tempo in the last 5 minutes. Check Tempo health and connectivity."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#pipeline-troubleshooting"
         labels:
           severity: critical
           component: alloy
           signal: traces
           type: exporter
 
-      ***REMOVED*** Alloy Receiver Refusing Data (indicates overload or errors)
+      # Alloy Receiver Refusing Data (indicates overload or errors)
       - uid: pipeline-receiver-refused
         title: "Alloy Receiver Refusing Data"
         condition: C
@@ -838,13 +838,13 @@ groups:
         annotations:
           summary: "Alloy OTLP receiver refusing data"
           description: "Alloy OTLP receiver is refusing incoming telemetry. This could indicate backpressure, malformed data, or resource constraints."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#pipeline-troubleshooting"
         labels:
           severity: warning
           component: alloy
           type: receiver
 
-      ***REMOVED*** Queue Backpressure Alert
+      # Queue Backpressure Alert
       - uid: pipeline-queue-backpressure
         title: "Alloy Queue Backpressure"
         condition: C
@@ -881,7 +881,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 80  ***REMOVED*** Alert at 80% queue capacity
+                      - 80  # Alert at 80% queue capacity
                   operator:
                     type: and
                   reducer:
@@ -893,27 +893,27 @@ groups:
         annotations:
           summary: "Alloy exporter queue is filling up"
           description: "One or more Alloy exporter queues are above 80% capacity. This indicates backpressure and potential data loss if it continues."
-          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md#pipeline-troubleshooting"
         labels:
           severity: warning
           component: alloy
           type: backpressure
 
-  ***REMOVED*** ============================================================================
-  ***REMOVED*** Backend API Alerts (HTTP-based)
-  ***REMOVED*** ============================================================================
-  ***REMOVED*** Monitors backend API health using OpenTelemetry HTTP semantic conventions
+  # ============================================================================
+  # Backend API Alerts (HTTP-based)
+  # ============================================================================
+  # Monitors backend API health using OpenTelemetry HTTP semantic conventions
   - orgId: 1
     name: Scanium - Backend API
     folder: Scanium Alerts
     interval: 1m
     rules:
-      ***REMOVED*** Backend 5xx Error Rate Spike - Production
+      # Backend 5xx Error Rate Spike - Production
       - uid: backend-5xx-error-rate-prod
         title: "Backend 5xx Error Rate Spike (prod)"
         condition: C
         data:
-          ***REMOVED*** Query A: Calculate 5xx error rate percentage
+          # Query A: Calculate 5xx error rate percentage
           - refId: A
             relativeTimeRange:
               from: 300
@@ -926,7 +926,7 @@ groups:
                 * 100 or vector(0)
               queryType: instant
               refId: A
-          ***REMOVED*** Query B: Reduce to single value
+          # Query B: Reduce to single value
           - refId: B
             relativeTimeRange:
               from: 300
@@ -937,7 +937,7 @@ groups:
               expression: A
               reducer: last
               refId: B
-          ***REMOVED*** Query C: Threshold check (> 5% error rate = alert)
+          # Query C: Threshold check (> 5% error rate = alert)
           - refId: C
             datasourceUid: __expr__
             model:
@@ -947,7 +947,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 5  ***REMOVED*** Threshold: > 5% 5xx error rate
+                      - 5  # Threshold: > 5% 5xx error rate
                   operator:
                     type: and
                   reducer:
@@ -967,7 +967,7 @@ groups:
           component: backend
           type: availability
 
-      ***REMOVED*** Backend 5xx Error Rate Spike - Staging
+      # Backend 5xx Error Rate Spike - Staging
       - uid: backend-5xx-error-rate-stage
         title: "Backend 5xx Error Rate Spike (stage)"
         condition: C
@@ -1003,7 +1003,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 10  ***REMOVED*** Higher threshold for staging
+                      - 10  # Higher threshold for staging
                   operator:
                     type: and
                   reducer:
@@ -1022,12 +1022,12 @@ groups:
           component: backend
           type: availability
 
-      ***REMOVED*** Backend Sustained High Latency (p95) - Production
+      # Backend Sustained High Latency (p95) - Production
       - uid: backend-high-latency-prod
         title: "Backend High Latency (prod)"
         condition: C
         data:
-          ***REMOVED*** Query A: Calculate p95 latency in milliseconds
+          # Query A: Calculate p95 latency in milliseconds
           - refId: A
             relativeTimeRange:
               from: 600
@@ -1042,7 +1042,7 @@ groups:
                 ) * 1000
               queryType: instant
               refId: A
-          ***REMOVED*** Query B: Reduce
+          # Query B: Reduce
           - refId: B
             relativeTimeRange:
               from: 600
@@ -1053,7 +1053,7 @@ groups:
               expression: A
               reducer: last
               refId: B
-          ***REMOVED*** Query C: Alert if p95 > 500ms
+          # Query C: Alert if p95 > 500ms
           - refId: C
             datasourceUid: __expr__
             model:
@@ -1063,7 +1063,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 500  ***REMOVED*** Threshold: p95 > 500ms
+                      - 500  # Threshold: p95 > 500ms
                   operator:
                     type: and
                   reducer:
@@ -1083,7 +1083,7 @@ groups:
           component: backend
           type: latency
 
-      ***REMOVED*** Backend Sustained High Latency (p95) - Staging
+      # Backend Sustained High Latency (p95) - Staging
       - uid: backend-high-latency-stage
         title: "Backend High Latency (stage)"
         condition: C
@@ -1121,7 +1121,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 1000  ***REMOVED*** Higher threshold for staging: 1s
+                      - 1000  # Higher threshold for staging: 1s
                   operator:
                     type: and
                   reducer:
@@ -1140,12 +1140,12 @@ groups:
           component: backend
           type: latency
 
-      ***REMOVED*** Backend Error Rate Spike (from logs) - Production
+      # Backend Error Rate Spike (from logs) - Production
       - uid: backend-log-error-spike-prod
         title: "Backend Log Error Spike (prod)"
         condition: C
         data:
-          ***REMOVED*** Query A: Count error logs over 10m
+          # Query A: Count error logs over 10m
           - refId: A
             relativeTimeRange:
               from: 600
@@ -1156,7 +1156,7 @@ groups:
                 sum(count_over_time({source="scanium-backend", env="prod"} | json | level=~"error|fatal" [10m]))
               queryType: instant
               refId: A
-          ***REMOVED*** Query B: Reduce to single value
+          # Query B: Reduce to single value
           - refId: B
             relativeTimeRange:
               from: 600
@@ -1167,7 +1167,7 @@ groups:
               expression: A
               reducer: last
               refId: B
-          ***REMOVED*** Query C: Threshold check (> 100 errors in 10m = alert)
+          # Query C: Threshold check (> 100 errors in 10m = alert)
           - refId: C
             datasourceUid: __expr__
             model:
@@ -1177,7 +1177,7 @@ groups:
                 - evaluator:
                     type: gt
                     params:
-                      - 100  ***REMOVED*** Threshold: > 100 errors/10min
+                      - 100  # Threshold: > 100 errors/10min
                   operator:
                     type: and
                   reducer:

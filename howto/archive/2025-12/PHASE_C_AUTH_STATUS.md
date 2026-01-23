@@ -1,9 +1,9 @@
-***REMOVED*** Phase C: Session Lifecycle & Polish - Implementation Status
+# Phase C: Session Lifecycle & Polish - Implementation Status
 
 **Status**: ✅ **IMPLEMENTED** (Pending Testing)
 **Date**: 2026-01-13
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Phase C builds upon Phase A/B authentication by adding:
 
@@ -17,17 +17,17 @@ Phase C builds upon Phase A/B authentication by adding:
 
 ---
 
-***REMOVED******REMOVED*** ✅ Backend Implementation
+## ✅ Backend Implementation
 
-***REMOVED******REMOVED******REMOVED*** 1. Session Lifecycle Enhancements
+### 1. Session Lifecycle Enhancements
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Prisma Schema Updates
+#### Prisma Schema Updates
 
 - ✅ Added `refreshTokenHash` and `refreshTokenExpiresAt` to `Session` model
 - ✅ Unique index on `refreshTokenHash` for efficient lookups
 - Migration: `backend/prisma/migrations/20260113143429_add_google_auth/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Session Service (`backend/src/modules/auth/google/session-service.ts`)
+#### Session Service (`backend/src/modules/auth/google/session-service.ts`)
 
 - ✅ `createSession()` - Enhanced to generate refresh tokens (90-day default)
 - ✅ `refreshSession()` - Exchange refresh token for new access token (with optional rotation)
@@ -35,23 +35,23 @@ Phase C builds upon Phase A/B authentication by adding:
 - ✅ `cleanupExpiredSessions()` - Remove expired sessions
 - Uses SHA-256 hashing for both access and refresh tokens
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Auth Routes (`backend/src/modules/auth/google/routes.ts`)
+#### Auth Routes (`backend/src/modules/auth/google/routes.ts`)
 
 - ✅ `POST /v1/auth/google` - Login (returns access + refresh tokens)
 - ✅ `POST /v1/auth/refresh` - Refresh access token using refresh token
 - ✅ `POST /v1/auth/logout` - Revoke session (requires auth)
 - ✅ `GET /v1/auth/me` - Get current user profile (requires auth)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Session Cleanup Job (`backend/src/modules/auth/google/cleanup-job.ts`)
+#### Session Cleanup Job (`backend/src/modules/auth/google/cleanup-job.ts`)
 
 - ✅ Runs on startup and then daily (24-hour interval)
 - ✅ Deletes sessions where access token OR refresh token is expired
 - ✅ Graceful shutdown via `app.addHook('onClose')`
 - ✅ Logs deleted count and duration
 
-***REMOVED******REMOVED******REMOVED*** 2. Observability
+### 2. Observability
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Metrics (`backend/src/infra/observability/metrics.ts`)
+#### Metrics (`backend/src/infra/observability/metrics.ts`)
 
 Added Prometheus counters:
 
@@ -60,7 +60,7 @@ Added Prometheus counters:
 - ✅ `scanium_auth_logout_total`
 - ✅ `scanium_auth_invalid_total` (labels: reason=expired|invalid|not_found)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Structured Logging
+#### Structured Logging
 
 All auth routes now emit structured logs:
 
@@ -69,24 +69,24 @@ All auth routes now emit structured logs:
 - ✅ Logout (includes userId, sessionRevoked, correlationId)
 - ✅ Token verification failures logged with reason
 
-***REMOVED******REMOVED******REMOVED*** 3. Configuration
+### 3. Configuration
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Environment Variables (`backend/.env.example`, `deploy/nas/compose/.env.example`)
+#### Environment Variables (`backend/.env.example`, `deploy/nas/compose/.env.example`)
 
 - ✅ `AUTH_REFRESH_TOKEN_EXPIRY_SECONDS` (default: 7776000 = 90 days)
 - ✅ `AUTH_SESSION_EXPIRY_SECONDS` (existing, default: 2592000 = 30 days)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Config Schema (`backend/src/config/index.ts`)
+#### Config Schema (`backend/src/config/index.ts`)
 
 - ✅ Added `refreshTokenExpirySeconds` to auth config with validation (min 7200s)
 
 ---
 
-***REMOVED******REMOVED*** ✅ Android Implementation
+## ✅ Android Implementation
 
-***REMOVED******REMOVED******REMOVED*** 1. Data Layer
+### 1. Data Layer
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SecureApiKeyStore (`androidApp/src/main/java/com/scanium/app/config/SecureApiKeyStore.kt`)
+#### SecureApiKeyStore (`androidApp/src/main/java/com/scanium/app/config/SecureApiKeyStore.kt`)
 
 Added encrypted storage for:
 
@@ -94,14 +94,14 @@ Added encrypted storage for:
 - ✅ `accessTokenExpiresAt` (timestamp in milliseconds)
 - ✅ `refreshTokenExpiresAt` (timestamp in milliseconds)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** GoogleAuthApi (`androidApp/src/main/java/com/scanium/app/auth/GoogleAuthApi.kt`)
+#### GoogleAuthApi (`androidApp/src/main/java/com/scanium/app/auth/GoogleAuthApi.kt`)
 
 - ✅ Updated `GoogleAuthResponse` to include optional `refreshToken` and `refreshTokenExpiresIn`
 - ✅ Added `RefreshTokenRequest` and `RefreshTokenResponse` data classes
 - ✅ `refreshSession(refreshToken)` - POST /v1/auth/refresh
 - ✅ `logout(accessToken)` - POST /v1/auth/logout
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** AuthRepository (`androidApp/src/main/java/com/scanium/app/auth/AuthRepository.kt`)
+#### AuthRepository (`androidApp/src/main/java/com/scanium/app/auth/AuthRepository.kt`)
 
 - ✅ `signInWithGoogle()` - Stores refresh token and expiry times
 - ✅ `refreshSession()` - Calls backend, updates tokens, clears auth state on failure
@@ -109,9 +109,9 @@ Added encrypted storage for:
 - ✅ `getAccessTokenExpiresAt()` - Returns expiry timestamp
 - ✅ `shouldRefreshToken()` - Returns true if < 7 days from expiry
 
-***REMOVED******REMOVED******REMOVED*** 2. Silent Session Renewal
+### 2. Silent Session Renewal
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** AuthTokenInterceptor (
+#### AuthTokenInterceptor (
 `androidApp/src/main/java/com/scanium/app/network/AuthTokenInterceptor.kt`)
 
 - ✅ Checks token expiry before each request
@@ -120,21 +120,21 @@ Added encrypted storage for:
 - ✅ Resets retry counter on successful refresh
 - ✅ Logs refresh attempts and results
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Dependency Injection (`androidApp/src/main/java/com/scanium/app/di/AuthModule.kt`)
+#### Dependency Injection (`androidApp/src/main/java/com/scanium/app/di/AuthModule.kt`)
 
 - ✅ Created separate `@AuthApiHttpClient` for auth API calls (no interceptor)
 - ✅ `@AuthHttpClient` for business APIs (includes AuthTokenInterceptor with renewal)
 - ✅ Resolved circular dependency by separating HTTP clients
 
-***REMOVED******REMOVED******REMOVED*** 3. Settings UI Polish
+### 3. Settings UI Polish
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SettingsViewModel (`androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt`)
+#### SettingsViewModel (`androidApp/src/main/java/com/scanium/app/ui/settings/SettingsViewModel.kt`)
 
 - ✅ `signOut()` - Async, calls backend logout
 - ✅ `refreshSession()` - Manual refresh for testing
 - ✅ `getAccessTokenExpiresAt()` - Exposes expiry timestamp
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SettingsGeneralScreen (
+#### SettingsGeneralScreen (
 `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsGeneralScreen.kt`)
 
 When signed in, displays:
@@ -147,7 +147,7 @@ When signed in, displays:
 - ✅ "Sign Out" button (calls backend logout)
 - ✅ "Refresh Session" button (for manual testing)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** String Resources (`androidApp/src/main/res/values/strings.xml`)
+#### String Resources (`androidApp/src/main/res/values/strings.xml`)
 
 - ✅ `settings_refresh_session`
 - ✅ `settings_session_expires_in_days` (with %d placeholder)
@@ -156,21 +156,21 @@ When signed in, displays:
 
 ---
 
-***REMOVED******REMOVED*** 🧪 Testing Status
+## 🧪 Testing Status
 
-***REMOVED******REMOVED******REMOVED*** Backend Tests
+### Backend Tests
 
 - ⏳ **Pending**: Auth lifecycle tests (login, refresh, logout, /me)
 - ⏳ **Pending**: Session cleanup job tests
 - ⏳ **Pending**: Metrics verification tests
 
-***REMOVED******REMOVED******REMOVED*** Android Tests
+### Android Tests
 
 - ⏳ **Pending**: AuthRepository tests (refresh, logout, expiry checks)
 - ⏳ **Pending**: AuthTokenInterceptor tests (silent renewal, retry guard)
 - ⏳ **Pending**: Settings UI tests (session expiry display)
 
-***REMOVED******REMOVED******REMOVED*** Smoke Testing
+### Smoke Testing
 
 - ⏳ **Pending**: Manual testing of full auth flow:
     1. Sign in with Google → verify refresh token stored
@@ -181,9 +181,9 @@ When signed in, displays:
 
 ---
 
-***REMOVED******REMOVED*** 📋 Phase C Checklist
+## 📋 Phase C Checklist
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 - [x] Add refresh token fields to Prisma schema
 - [x] Implement refresh token generation in `createSession()`
@@ -197,7 +197,7 @@ When signed in, displays:
 - [ ] Write backend auth lifecycle tests
 - [ ] Smoke test backend endpoints
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 - [x] Store refresh tokens in SecureApiKeyStore
 - [x] Store session expiry timestamps
@@ -213,23 +213,23 @@ When signed in, displays:
 
 ---
 
-***REMOVED******REMOVED*** 🚀 Deployment Notes
+## 🚀 Deployment Notes
 
-***REMOVED******REMOVED******REMOVED*** Environment Variables
+### Environment Variables
 
 Ensure these are set in production:
 
 ```bash
-***REMOVED*** Required
+# Required
 GOOGLE_OAUTH_CLIENT_ID=your_android_client_id.apps.googleusercontent.com
 AUTH_SESSION_SECRET=$(openssl rand -base64 32)
 
-***REMOVED*** Optional (defaults shown)
-AUTH_SESSION_EXPIRY_SECONDS=2592000        ***REMOVED*** 30 days
-AUTH_REFRESH_TOKEN_EXPIRY_SECONDS=7776000  ***REMOVED*** 90 days
+# Optional (defaults shown)
+AUTH_SESSION_EXPIRY_SECONDS=2592000        # 30 days
+AUTH_REFRESH_TOKEN_EXPIRY_SECONDS=7776000  # 90 days
 ```
 
-***REMOVED******REMOVED******REMOVED*** Database Migration
+### Database Migration
 
 Run Prisma migration to add refresh token fields:
 
@@ -238,7 +238,7 @@ cd backend
 npx prisma migrate deploy
 ```
 
-***REMOVED******REMOVED******REMOVED*** Monitoring
+### Monitoring
 
 Verify these metrics appear in Grafana:
 
@@ -256,7 +256,7 @@ Verify these logs appear in Loki:
 
 ---
 
-***REMOVED******REMOVED*** 🎯 Known Limitations & Future Work
+## 🎯 Known Limitations & Future Work
 
 1. **No token revocation list**: Logout deletes session from DB, but revoked tokens can still be
    valid until expiry if cached elsewhere. Future: Add Redis-backed revocation list.
@@ -277,39 +277,39 @@ Verify these logs appear in Loki:
 
 ---
 
-***REMOVED******REMOVED*** 📝 Smoke Test Checklist
+## 📝 Smoke Test Checklist
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 ```bash
-***REMOVED*** 1. Login
+# 1. Login
 curl -X POST https://api.scanium.example.com/v1/auth/google \
   -H "Content-Type: application/json" \
   -d '{"idToken":"GOOGLE_ID_TOKEN_HERE"}'
-***REMOVED*** Expected: 200 with accessToken, refreshToken, expiresIn, refreshTokenExpiresIn, user
+# Expected: 200 with accessToken, refreshToken, expiresIn, refreshTokenExpiresIn, user
 
-***REMOVED*** 2. Get profile
+# 2. Get profile
 curl -X GET https://api.scanium.example.com/v1/auth/me \
   -H "Authorization: Bearer ACCESS_TOKEN_HERE"
-***REMOVED*** Expected: 200 with user profile
+# Expected: 200 with user profile
 
-***REMOVED*** 3. Refresh session
+# 3. Refresh session
 curl -X POST https://api.scanium.example.com/v1/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{"refreshToken":"REFRESH_TOKEN_HERE"}'
-***REMOVED*** Expected: 200 with new accessToken, expiresIn
+# Expected: 200 with new accessToken, expiresIn
 
-***REMOVED*** 4. Logout
+# 4. Logout
 curl -X POST https://api.scanium.example.com/v1/auth/logout \
   -H "Authorization: Bearer ACCESS_TOKEN_HERE"
-***REMOVED*** Expected: 200 with success: true
+# Expected: 200 with success: true
 
-***REMOVED*** 5. Verify metrics
+# 5. Verify metrics
 curl https://api.scanium.example.com/metrics | grep scanium_auth
-***REMOVED*** Expected: See auth_login_total, auth_refresh_total, auth_logout_total counters
+# Expected: See auth_login_total, auth_refresh_total, auth_logout_total counters
 ```
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 1. Open Scanium app → Settings → Account section
 2. Tap "Continue with Google" → Complete Google sign-in
@@ -321,7 +321,7 @@ curl https://api.scanium.example.com/metrics | grep scanium_auth
 
 ---
 
-***REMOVED******REMOVED*** ✅ Summary
+## ✅ Summary
 
 **Phase C is fully implemented** and ready for testing. All backend endpoints (refresh, logout, /me)
 are functional with observability. Android has a polished Settings UX and silent session renewal

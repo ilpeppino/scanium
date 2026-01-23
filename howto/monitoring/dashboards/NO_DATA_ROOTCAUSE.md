@@ -1,6 +1,6 @@
-***REMOVED*** Grafana No-Data Root Cause and Fix
+# Grafana No-Data Root Cause and Fix
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
 - Backend metrics were not being scraped into Mimir, so dashboard queries returned empty series.
 - Backend HTTP metrics and traces were not emitted automatically (no request-level instrumentation
@@ -10,7 +10,7 @@
 - Loki logs are not ingested because the backend container uses the Synology `db` logging driver (
   not readable by `loki.source.docker`).
 
-***REMOVED******REMOVED*** Fix Applied
+## Fix Applied
 
 - Added Fastify hooks to emit HTTP metrics and request spans in `backend/src/app.ts`.
 - Added Alloy backend scrape and a dedicated remote_write with labels in
@@ -24,7 +24,7 @@
 - Added a docker socket mount for Alloy in `deploy/nas/compose/docker-compose.nas.monitoring.yml` to
   enable future log ingestion (requires a compatible logging driver).
 
-***REMOVED******REMOVED*** How to Validate
+## How to Validate
 
 1) Generate traffic:
     - `curl http://127.0.0.1:8080/v1/config` (repeat a few times)
@@ -35,12 +35,12 @@
 4) Dashboards:
     - System Overview / Backend API Performance / Backend Errors should now show data.
 
-***REMOVED******REMOVED*** Logs Status
+## Logs Status
 
 - Backend logs are now exported via OTLP and also available via Docker `json-file` logging.
 - Loki queries like `{source="scanium-backend"}` should return recent entries.
 
-***REMOVED******REMOVED*** Regression Prevention
+## Regression Prevention
 
 - Keep `/metrics` scrape active in Alloy for backend.
 - Ensure any new dashboards reference `scanium_*` metrics unless exporters are changed.

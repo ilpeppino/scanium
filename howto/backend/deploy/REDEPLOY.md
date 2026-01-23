@@ -1,58 +1,58 @@
-***REMOVED*** Redeploying Scanium Backend on NAS
+# Redeploying Scanium Backend on NAS
 
 This document provides step-by-step instructions for redeploying the Scanium backend on the Synology
 NAS.
 
-***REMOVED******REMOVED*** Quick Redeploy (Most Common)
+## Quick Redeploy (Most Common)
 
 When code changes have been pushed to the repository, follow these steps:
 
-***REMOVED******REMOVED******REMOVED*** 1. SSH into the NAS
+### 1. SSH into the NAS
 
 ```bash
 ssh admin@NAS_IP_ADDRESS
-***REMOVED*** Or if you have an alias:
+# Or if you have an alias:
 ssh nas
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Navigate to the Backend Directory
+### 2. Navigate to the Backend Directory
 
 ```bash
 cd /volume1/docker/scanium/backend
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Pull Latest Code
+### 3. Pull Latest Code
 
 ```bash
 git pull origin main
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Rebuild and Restart
+### 4. Rebuild and Restart
 
 ```bash
-***REMOVED*** Stop the API container
+# Stop the API container
 docker compose down api
 
-***REMOVED*** Rebuild with no cache (ensures fresh build)
+# Rebuild with no cache (ensures fresh build)
 docker compose build --no-cache api
 
-***REMOVED*** Start the API container
+# Start the API container
 docker compose up -d api
 
-***REMOVED*** Verify it's running
+# Verify it's running
 docker ps | grep scanium-api
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Verify the Deployment
+### 5. Verify the Deployment
 
 ```bash
-***REMOVED*** Check container health
+# Check container health
 docker inspect --format='{{.State.Health.Status}}' scanium-api
 
-***REMOVED*** Check logs
+# Check logs
 docker logs scanium-api --tail 50
 
-***REMOVED*** Test the warmup endpoint
+# Test the warmup endpoint
 curl -X POST http://localhost:8080/v1/assist/warmup \
   -H "X-API-Key: YOUR_API_KEY"
 ```
@@ -63,39 +63,39 @@ Expected output:
 {"status":"ok","provider":"claude","model":"...","ts":"...","correlationId":"..."}
 ```
 
-***REMOVED******REMOVED******REMOVED*** 6. Test via Cloudflare Tunnel
+### 6. Test via Cloudflare Tunnel
 
 ```bash
 curl -X POST https://scanium.gtemp1.com/v1/assist/warmup \
   -H "X-API-Key: YOUR_API_KEY"
 ```
 
-***REMOVED******REMOVED*** Full Stack Redeploy
+## Full Stack Redeploy
 
 When you need to redeploy all services:
 
 ```bash
 cd /volume1/docker/scanium/backend
 
-***REMOVED*** Stop all services
+# Stop all services
 docker compose down
 
-***REMOVED*** Pull latest code
+# Pull latest code
 git pull origin main
 
-***REMOVED*** Rebuild all services
+# Rebuild all services
 docker compose build --no-cache
 
-***REMOVED*** Start all services
+# Start all services
 docker compose up -d
 
-***REMOVED*** Verify all containers are running
+# Verify all containers are running
 docker compose ps
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Container Won't Start
+### Container Won't Start
 
 Check logs:
 
@@ -109,17 +109,17 @@ Common issues:
 - Database not reachable
 - Port conflicts
 
-***REMOVED******REMOVED******REMOVED*** Health Check Failing
+### Health Check Failing
 
 ```bash
-***REMOVED*** Check health status
+# Check health status
 docker inspect --format='{{json .State.Health}}' scanium-api | jq .
 
-***REMOVED*** Test health endpoint directly
+# Test health endpoint directly
 curl http://localhost:8080/health
 ```
 
-***REMOVED******REMOVED******REMOVED*** Old Image Still Running
+### Old Image Still Running
 
 Force rebuild:
 
@@ -130,62 +130,62 @@ docker compose build --no-cache api
 docker compose up -d api
 ```
 
-***REMOVED******REMOVED******REMOVED*** Database Connection Issues
+### Database Connection Issues
 
 ```bash
-***REMOVED*** Check PostgreSQL container
+# Check PostgreSQL container
 docker logs scanium-postgres --tail 50
 
-***REMOVED*** Test database connectivity
+# Test database connectivity
 docker exec scanium-postgres pg_isready -U scanium
 ```
 
-***REMOVED******REMOVED******REMOVED*** Cloudflare Tunnel Issues
+### Cloudflare Tunnel Issues
 
 ```bash
-***REMOVED*** Check tunnel container
+# Check tunnel container
 docker logs scanium-cloudflared --tail 50
 
-***REMOVED*** Verify tunnel is running
+# Verify tunnel is running
 docker ps | grep cloudflared
 ```
 
-***REMOVED******REMOVED*** Rollback
+## Rollback
 
 If deployment fails and you need to rollback:
 
 ```bash
 cd /volume1/docker/scanium/backend
 
-***REMOVED*** Find previous commit
+# Find previous commit
 git log --oneline -10
 
-***REMOVED*** Checkout previous version
+# Checkout previous version
 git checkout PREVIOUS_COMMIT_HASH
 
-***REMOVED*** Rebuild and restart
+# Rebuild and restart
 docker compose down api
 docker compose build --no-cache api
 docker compose up -d api
 ```
 
-***REMOVED******REMOVED*** Monitoring Commands
+## Monitoring Commands
 
 ```bash
-***REMOVED*** Real-time logs
+# Real-time logs
 docker logs -f scanium-api
 
-***REMOVED*** Container stats
+# Container stats
 docker stats scanium-api
 
-***REMOVED*** Inspect container
+# Inspect container
 docker inspect scanium-api
 
-***REMOVED*** Check all running Scanium containers
+# Check all running Scanium containers
 docker ps --filter "name=scanium"
 ```
 
-***REMOVED******REMOVED*** Pre-Deployment Checklist
+## Pre-Deployment Checklist
 
 Before deploying:
 
@@ -195,7 +195,7 @@ Before deploying:
 4. [ ] Docker builds locally: `docker build -t scanium-backend:test .`
 5. [ ] Changes committed and pushed to main
 
-***REMOVED******REMOVED*** Post-Deployment Verification
+## Post-Deployment Verification
 
 After deploying:
 

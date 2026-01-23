@@ -1,20 +1,20 @@
-***REMOVED*** Play Console Review Access - Scanium
+# Play Console Review Access - Scanium
 
 **Last Updated:** 2026-01-13
 **Purpose:** Provide guidance for Play Console review access requirements
 
 ---
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Google Play requires that reviewers can access and test all features of your app. For Scanium, most
 features are accessible without login, making review straightforward.
 
 ---
 
-***REMOVED******REMOVED*** App Access Strategy
+## App Access Strategy
 
-***REMOVED******REMOVED******REMOVED*** Public Features (No Login Required) ✅
+### Public Features (No Login Required) ✅
 
 Scanium's core features are available without sign-in:
 
@@ -26,7 +26,7 @@ Scanium's core features are available without sign-in:
 
 **Result:** Reviewers can test primary functionality immediately without credentials.
 
-***REMOVED******REMOVED******REMOVED*** Optional Sign-In Features (Google OAuth) ⚠️
+### Optional Sign-In Features (Google OAuth) ⚠️
 
 These features require Google Sign-In:
 
@@ -39,21 +39,21 @@ These features require Google Sign-In:
 
 ---
 
-***REMOVED******REMOVED*** Play Console Configuration
+## Play Console Configuration
 
-***REMOVED******REMOVED******REMOVED*** App Access Section
+### App Access Section
 
 When filling out **App access** in Play Console:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Question: "Do all features in your app require login?"
+#### Question: "Do all features in your app require login?"
 
 **Answer:** ❌ **No**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Question: "Does your app allow users to create an account?"
+#### Question: "Does your app allow users to create an account?"
 
 **Answer:** ✅ **Yes** (via Google Sign-In)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Provide Instructions for Review
+#### Provide Instructions for Review
 
 **Sample text:**
 
@@ -71,9 +71,9 @@ No test account needed - any Gmail account will work.
 
 ---
 
-***REMOVED******REMOVED*** Do You Need to Provide Test Credentials?
+## Do You Need to Provide Test Credentials?
 
-***REMOVED******REMOVED******REMOVED*** No Test Credentials Needed ✅
+### No Test Credentials Needed ✅
 
 Reasons:
 
@@ -82,7 +82,7 @@ Reasons:
 3. **No restricted access** - No approval process, roles, or membership levels
 4. **No payment required** - All features work in free tier
 
-***REMOVED******REMOVED******REMOVED*** If Play Requires Credentials Anyway
+### If Play Requires Credentials Anyway
 
 Some reviewers may still request access details. Provide this:
 
@@ -103,21 +103,21 @@ Some reviewers may still request access details. Provide this:
 
 ---
 
-***REMOVED******REMOVED*** Review Scenarios
+## Review Scenarios
 
-***REMOVED******REMOVED******REMOVED*** Scenario 1: Reviewer Tests Without Sign-In ✅
+### Scenario 1: Reviewer Tests Without Sign-In ✅
 
 - **Expected:** Full access to scanning, detection, classification
 - **Features tested:** 90% of app functionality
 - **Outcome:** Should approve if these work correctly
 
-***REMOVED******REMOVED******REMOVED*** Scenario 2: Reviewer Tests With Sign-In ✅
+### Scenario 2: Reviewer Tests With Sign-In ✅
 
 - **Expected:** Additional features like sync, AI assistant
 - **Reviewer uses:** Own Google account
 - **Outcome:** Full feature coverage
 
-***REMOVED******REMOVED******REMOVED*** Scenario 3: Reviewer Can't Sign In ❌
+### Scenario 3: Reviewer Can't Sign In ❌
 
 - **Likely cause:**
     - OAuth consent screen in "Testing" mode (not "In production")
@@ -127,9 +127,9 @@ Some reviewers may still request access details. Provide this:
 
 ---
 
-***REMOVED******REMOVED*** OAuth Consent Screen Configuration for Review
+## OAuth Consent Screen Configuration for Review
 
-***REMOVED******REMOVED******REMOVED*** Publishing Status
+### Publishing Status
 
 **Set to:** ✅ **In production**
 
@@ -139,7 +139,7 @@ If kept in "Testing" mode:
 - Reviewers will be blocked unless added to test user list
 - Google may reject app for restricted access
 
-***REMOVED******REMOVED******REMOVED*** Required Fields
+### Required Fields
 
 - ✅ App name: "Scanium"
 - ✅ User support email: `contact@scanium.app`
@@ -149,9 +149,9 @@ If kept in "Testing" mode:
 
 ---
 
-***REMOVED******REMOVED*** Testing Before Submission
+## Testing Before Submission
 
-***REMOVED******REMOVED******REMOVED*** Pre-Submit Checklist
+### Pre-Submit Checklist
 
 - [ ] OAuth consent screen set to "In production" (or all reviewers added to test users)
 - [ ] Sign-in works with fresh Google account (not previously used for testing)
@@ -161,7 +161,7 @@ If kept in "Testing" mode:
 - [ ] Privacy policy link is live and accessible
 - [ ] Account deletion works (in-app + web)
 
-***REMOVED******REMOVED******REMOVED*** Test With Fresh Account
+### Test With Fresh Account
 
 1. Create a new Google account (or use a friend's with permission)
 2. Install production build
@@ -172,7 +172,7 @@ If kept in "Testing" mode:
 
 ---
 
-***REMOVED******REMOVED*** Common Review Issues
+## Common Review Issues
 
 | Issue                               | Cause                           | Fix                                           |
 |-------------------------------------|---------------------------------|-----------------------------------------------|
@@ -183,7 +183,7 @@ If kept in "Testing" mode:
 
 ---
 
-***REMOVED******REMOVED*** Play Console App Access Form Template
+## Play Console App Access Form Template
 
 Copy this into Play Console → **App access**:
 
@@ -212,9 +212,9 @@ Not required - reviewers can use their own Google accounts
 
 ---
 
-***REMOVED******REMOVED*** App Content Rating & Target Audience
+## App Content Rating & Target Audience
 
-***REMOVED******REMOVED******REMOVED*** Content Rating
+### Content Rating
 
 **Recommended:** Everyone (all ages)
 
@@ -222,7 +222,7 @@ Not required - reviewers can use their own Google accounts
 - No violence, profanity, or adult themes
 - Primary use: item scanning for resale/organization
 
-***REMOVED******REMOVED******REMOVED*** Target Audience
+### Target Audience
 
 **Age group:** 18+ (due to marketplace features like eBay integration)
 
@@ -230,7 +230,7 @@ Not required - reviewers can use their own Google accounts
 
 ---
 
-***REMOVED******REMOVED*** Final Recommendations
+## Final Recommendations
 
 1. **Keep core features public** - Don't require login for main functionality
 2. **Make OAuth "In production"** - Critical for smooth review process
@@ -240,7 +240,7 @@ Not required - reviewers can use their own Google accounts
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - **Play Console App Access:
   ** https://support.google.com/googleplay/android-developer/answer/9859455

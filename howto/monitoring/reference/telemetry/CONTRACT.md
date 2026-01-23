@@ -1,25 +1,25 @@
-***REMOVED*** Telemetry Contract
+# Telemetry Contract
 
 **Module:** `shared:telemetry-contract`
 **Package:** `com.scanium.telemetry`
 **Status:** Stable (v1.0)
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The telemetry contract defines a stable, platform-agnostic schema for capturing observability events
 across Scanium's Android and iOS applications. This contract is PII-safe by default and designed to
 integrate with future telemetry backends (OpenTelemetry, Sentry, custom analytics).
 
-***REMOVED******REMOVED*** Key Principles
+## Key Principles
 
 1. **Platform-agnostic**: No Android or iOS platform imports in this module
 2. **PII-safe by default**: All attributes are sanitized before export
 3. **Stable API**: Changes to this contract require careful versioning
 4. **Minimal dependencies**: Only kotlinx.datetime and kotlinx.serialization
 
-***REMOVED******REMOVED*** Schema
+## Schema
 
-***REMOVED******REMOVED******REMOVED*** TelemetryEvent
+### TelemetryEvent
 
 The core event model:
 
@@ -33,7 +33,7 @@ data class TelemetryEvent(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Required Attributes
+### Required Attributes
 
 Every telemetry event **must** include these attributes:
 
@@ -45,13 +45,13 @@ Every telemetry event **must** include these attributes:
 | `env`         | Environment               | "dev", "staging", "prod" |
 | `session_id`  | Unique session identifier | "uuid-abc-123"           |
 
-***REMOVED******REMOVED******REMOVED*** Optional Attributes
+### Optional Attributes
 
 | Attribute  | Description                    | Example         |
 |------------|--------------------------------|-----------------|
 | `trace_id` | Distributed tracing identifier | "trace-xyz-789" |
 
-***REMOVED******REMOVED******REMOVED*** Example Event
+### Example Event
 
 ```kotlin
 val event = TelemetryEvent(
@@ -70,11 +70,11 @@ val event = TelemetryEvent(
 )
 ```
 
-***REMOVED******REMOVED*** Naming Conventions
+## Naming Conventions
 
 All event names follow the pattern: `<prefix>.<action>`
 
-***REMOVED******REMOVED******REMOVED*** Prefixes
+### Prefixes
 
 | Prefix      | Usage                               | Examples                                           |
 |-------------|-------------------------------------|----------------------------------------------------|
@@ -85,14 +85,14 @@ All event names follow the pattern: `<prefix>.<action>`
 | `ui.*`      | UI interactions                     | `ui.button_clicked`, `ui.screen_viewed`            |
 | `error.*`   | Error events                        | `error.network_timeout`, `error.parse_failed`      |
 
-***REMOVED******REMOVED******REMOVED*** Naming Rules
+### Naming Rules
 
 - Use lowercase with underscores for multi-word actions
 - Use past tense for completed actions: `completed`, `failed`
 - Use present tense for ongoing states: `started`, `in_progress`
 - Keep names concise and descriptive
 
-***REMOVED******REMOVED******REMOVED*** Validation
+### Validation
 
 Use `TelemetryEventNaming.isValidEventName(name)` to validate event names:
 
@@ -102,11 +102,11 @@ TelemetryEventNaming.isValidEventName("SCAN.STARTED")  // false (uppercase)
 TelemetryEventNaming.isValidEventName("scan")          // false (no action)
 ```
 
-***REMOVED******REMOVED*** PII Redaction
+## PII Redaction
 
 The `AttributeSanitizer` automatically redacts PII from event attributes before export.
 
-***REMOVED******REMOVED******REMOVED*** PII Denylist
+### PII Denylist
 
 The following attribute keys are **automatically redacted** (case-insensitive, substring match):
 
@@ -139,14 +139,14 @@ The following attribute keys are **automatically redacted** (case-insensitive, s
 
 - `ssn`, `passport`, `license`, `ip_address`, `ip`
 
-***REMOVED******REMOVED******REMOVED*** Sanitization Rules
+### Sanitization Rules
 
 1. **PII Removal**: Attributes matching the denylist are replaced with `[REDACTED]`
 2. **Value Truncation**: String values exceeding 1024 characters are truncated with `...`
 3. **Required Validation**: Use `AttributeSanitizer.validateRequiredAttributes()` to ensure all
    required fields are present
 
-***REMOVED******REMOVED******REMOVED*** Usage
+### Usage
 
 ```kotlin
 // Sanitize a raw attributes map
@@ -162,9 +162,9 @@ val event = TelemetryEvent(...)
 val sanitizedEvent = AttributeSanitizer.sanitizeEvent(event)
 ```
 
-***REMOVED******REMOVED*** Integration Guidelines
+## Integration Guidelines
 
-***REMOVED******REMOVED******REMOVED*** Creating Events
+### Creating Events
 
 ```kotlin
 import com.scanium.telemetry.*
@@ -192,7 +192,7 @@ fun logScanStarted(sessionId: String, platform: String) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Best Practices
+### Best Practices
 
 1. **Always sanitize** events before exporting to external systems
 2. **Validate required attributes** before creating events
@@ -201,7 +201,7 @@ fun logScanStarted(sessionId: String, platform: String) {
 5. **Keep attribute values concise** - aim for < 256 chars when possible
 6. **Use structured keys** - prefer `scan_duration_ms` over `duration` for clarity
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 Run module tests:
 
@@ -211,9 +211,9 @@ Run module tests:
 ./gradlew :shared:telemetry-contract:iosX64Test
 ```
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-This contract is intentionally minimal for PR ***REMOVED***1. Future PRs may add:
+This contract is intentionally minimal for PR #1. Future PRs may add:
 
 - OpenTelemetry integration (spans, traces)
 - Sentry integration (error tracking)
@@ -221,11 +221,11 @@ This contract is intentionally minimal for PR ***REMOVED***1. Future PRs may add
 - Event filtering/sampling
 - Custom backend adapters
 
-***REMOVED******REMOVED*** Migration Notes
+## Migration Notes
 
-This module is new as of PR ***REMOVED***1. No migration required.
+This module is new as of PR #1. No migration required.
 
-***REMOVED******REMOVED*** API Stability
+## API Stability
 
 This contract is **stable** as of v1.0. Breaking changes will require:
 
@@ -233,7 +233,7 @@ This contract is **stable** as of v1.0. Breaking changes will require:
 2. Deprecation period for removed fields
 3. Migration guide for consumers
 
-***REMOVED******REMOVED*** Event Catalog v1
+## Event Catalog v1
 
 The following events are emitted by the Shared Brain logic:
 

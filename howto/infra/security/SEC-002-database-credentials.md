@@ -1,10 +1,10 @@
-***REMOVED*** SEC-002 Remediation Plan – PostgreSQL Default Credentials
+# SEC-002 Remediation Plan – PostgreSQL Default Credentials
 
 Docker Compose currently provisions PostgreSQL with the fallback user/password `scanium:scanium`. If
 an operator forgets to override the variables, the container boots with trivial credentials that an
 attacker can guess instantly.
 
-***REMOVED******REMOVED*** Required Changes
+## Required Changes
 
 1. Compose now requires `POSTGRES_USER` and `POSTGRES_PASSWORD` to be explicitly provided; the stack
    will fail fast if they are missing.
@@ -12,7 +12,7 @@ attacker can guess instantly.
 3. `.env.example` documents strong password generation using `openssl rand -base64 32` and no longer
    suggests weak defaults.
 
-***REMOVED******REMOVED*** Operational Follow-Up
+## Operational Follow-Up
 
 1. Generate new credentials per environment and store them in the password manager (
    NAS/staging/prod/local).

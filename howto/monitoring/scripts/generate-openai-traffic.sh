@@ -1,29 +1,29 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED***
-***REMOVED*** Generate minimal OpenAI assistant traffic for dashboard testing
-***REMOVED*** Usage: ./generate-openai-traffic.sh [BASE_URL] [API_KEY]
-***REMOVED***
-***REMOVED*** Requirements:
-***REMOVED*** - Backend must be running with SCANIUM_ASSISTANT_PROVIDER=openai
-***REMOVED*** - Valid OPENAI_API_KEY configured in backend
-***REMOVED*** - Generates success + controlled error scenarios
-***REMOVED*** - Minimal token usage to reduce API costs
-***REMOVED***
-***REMOVED*** Output: Timestamps and request counts for validation
+#!/usr/bin/env bash
+#
+# Generate minimal OpenAI assistant traffic for dashboard testing
+# Usage: ./generate-openai-traffic.sh [BASE_URL] [API_KEY]
+#
+# Requirements:
+# - Backend must be running with SCANIUM_ASSISTANT_PROVIDER=openai
+# - Valid OPENAI_API_KEY configured in backend
+# - Generates success + controlled error scenarios
+# - Minimal token usage to reduce API costs
+#
+# Output: Timestamps and request counts for validation
 
 set -euo pipefail
 
-***REMOVED*** Configuration
+# Configuration
 BASE_URL="${1:-http://localhost:8080}"
 API_KEY="${2:-dev-key}"
 DURATION_SECONDS=90
-REQUEST_DELAY=5  ***REMOVED*** Seconds between requests (reduces rate limiting)
+REQUEST_DELAY=5  # Seconds between requests (reduces rate limiting)
 
-***REMOVED*** Colors for output
+# Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m' ***REMOVED*** No Color
+NC='\033[0m' # No Color
 
 echo "============================================================"
 echo "OpenAI Assistant Traffic Generator"
@@ -34,13 +34,13 @@ echo "Delay between requests: ${REQUEST_DELAY}s"
 echo "Start time: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 echo ""
 
-***REMOVED*** Track metrics
+# Track metrics
 SUCCESS_COUNT=0
 ERROR_COUNT=0
 START_TIME=$(date +%s)
 END_TIME=$((START_TIME + DURATION_SECONDS))
 
-***REMOVED*** Helper function to make assistant request
+# Helper function to make assistant request
 make_request() {
   local payload="$1"
   local description="$2"
@@ -80,7 +80,7 @@ make_request() {
   fi
 }
 
-***REMOVED*** Scenario 1: Successful request with minimal prompt
+# Scenario 1: Successful request with minimal prompt
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Scenario 1: Successful Assistant Request"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -105,7 +105,7 @@ EOF
 make_request "$payload_success" "Request: Suggest title for vintage camera"
 sleep "$REQUEST_DELAY"
 
-***REMOVED*** Scenario 2: Another successful request with different item
+# Scenario 2: Another successful request with different item
 if [[ $(date +%s) -lt $END_TIME ]]; then
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -133,7 +133,7 @@ EOF
   sleep "$REQUEST_DELAY"
 fi
 
-***REMOVED*** Scenario 3: Invalid input (empty message) - expect 400
+# Scenario 3: Invalid input (empty message) - expect 400
 if [[ $(date +%s) -lt $END_TIME ]]; then
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -156,7 +156,7 @@ EOF
   sleep "$REQUEST_DELAY"
 fi
 
-***REMOVED*** Scenario 4: Another successful request to get more metrics
+# Scenario 4: Another successful request to get more metrics
 if [[ $(date +%s) -lt $END_TIME ]]; then
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -183,12 +183,12 @@ EOF
   sleep "$REQUEST_DELAY"
 fi
 
-***REMOVED*** Continue generating traffic until duration expires
+# Continue generating traffic until duration expires
 REQUEST_NUM=5
 while [[ $(date +%s) -lt $END_TIME ]]; do
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "Additional Request ***REMOVED***${REQUEST_NUM}"
+  echo "Additional Request #${REQUEST_NUM}"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   payload_extra=$(cat <<EOF
@@ -207,10 +207,10 @@ while [[ $(date +%s) -lt $END_TIME ]]; do
 EOF
 )
 
-  make_request "$payload_extra" "Request ***REMOVED***${REQUEST_NUM}: Brief title" || true
+  make_request "$payload_extra" "Request #${REQUEST_NUM}: Brief title" || true
   ((REQUEST_NUM++)) || true
 
-  ***REMOVED*** Check if we have time for another request
+  # Check if we have time for another request
   if [[ $(($(date +%s) + REQUEST_DELAY)) -lt $END_TIME ]]; then
     sleep "$REQUEST_DELAY"
   else
@@ -218,7 +218,7 @@ EOF
   fi
 done
 
-***REMOVED*** Summary
+# Summary
 CURRENT_TIME=$(date +%s)
 ACTUAL_DURATION=$((CURRENT_TIME - START_TIME))
 

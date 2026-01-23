@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 COMPOSE_FILE="deploy/nas/compose/docker-compose.nas.monitoring.yml"

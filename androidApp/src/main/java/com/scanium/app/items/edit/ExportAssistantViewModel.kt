@@ -645,7 +645,7 @@ class ExportAssistantViewModel
                 listOf(
                     Regex("""(?:Title|TITLE):\s*(.+?)(?:\n|$)"""),
                     Regex("""\*\*Title\*\*:\s*(.+?)(?:\n|$)"""),
-                    Regex("""^***REMOVED***\s*(.+?)(?:\n|$)""", RegexOption.MULTILINE),
+                    Regex("""^#\s*(.+?)(?:\n|$)""", RegexOption.MULTILINE),
                 )
 
             for (pattern in titlePatterns) {

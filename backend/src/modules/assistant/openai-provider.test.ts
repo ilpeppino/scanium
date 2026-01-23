@@ -102,7 +102,7 @@ describe('OpenAIAssistantProvider', () => {
       const visualFacts = new Map<string, VisualFacts>();
       visualFacts.set('item-1', {
         itemId: 'item-1',
-        dominantColors: [{ name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 60 }],
+        dominantColors: [{ name: 'blue', rgbHex: '#0000FF', pct: 60 }],
         ocrSnippets: [],
         labelHints: [],
         logoHints: [{ brand: 'TestBrand', score: 0.9 }],

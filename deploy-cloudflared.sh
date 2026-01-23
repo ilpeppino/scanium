@@ -1,10 +1,10 @@
-***REMOVED***!/bin/bash
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** CLOUDFLARED ULTIMATE DEPLOYMENT (from Mac)
-***REMOVED***
-***REMOVED*** Deploys cloudflared with guaranteed network configuration.
-***REMOVED*** Uses single source of truth: git repo on NAS
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+#!/bin/bash
+##############################################################################
+# CLOUDFLARED ULTIMATE DEPLOYMENT (from Mac)
+#
+# Deploys cloudflared with guaranteed network configuration.
+# Uses single source of truth: git repo on NAS
+##############################################################################
 
 set -e
 
@@ -12,7 +12,7 @@ echo "🚀 ULTIMATE Cloudflared Deployment"
 echo "   Deploying from git repo (single source of truth)"
 echo ""
 
-***REMOVED*** Deploy directly from repo on NAS (no file copying needed!)
+# Deploy directly from repo on NAS (no file copying needed!)
 ssh nas "bash /volume1/docker/scanium/repo/deploy/nas/cloudflared/deploy-ultimate.sh"
 
 echo ""

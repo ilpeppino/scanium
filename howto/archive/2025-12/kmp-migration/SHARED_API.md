@@ -1,6 +1,6 @@
-***REMOVED*** Shared API Surface (pre-compile lock)
+# Shared API Surface (pre-compile lock)
 
-***REMOVED******REMOVED*** shared/core-models
+## shared/core-models
 
 - Exported portable models under `com.scanium.shared.core.models`:
     - `NormalizedRect` – normalized bounding-box geometry helper (`model/NormalizedRect.kt`).
@@ -15,7 +15,7 @@
   `com.scanium.app.*` continue compiling (e.g., ImageRef, NormalizedRect, ScannedItem, RawDetection,
   DetectionResult).
 
-***REMOVED******REMOVED*** shared/core-tracking
+## shared/core-tracking
 
 - Public API under `com.scanium.core.tracking`:
     - `Logger` interface with `NONE` no-op instance.
@@ -26,7 +26,7 @@
 - Legacy `core-tracking` module provides typealias wrappers that re-export the shared classes for
   compatibility with older packages.
 
-***REMOVED******REMOVED*** Android namespace audit
+## Android namespace audit
 
 - `shared/**/src/commonMain` contains no `android.*` or `androidx.*` imports; only guard comments
   reference these namespaces.

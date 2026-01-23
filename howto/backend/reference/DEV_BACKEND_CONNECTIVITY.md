@@ -1,23 +1,23 @@
-***REMOVED*** Developer Backend Connectivity Guide
+# Developer Backend Connectivity Guide
 
 This guide explains how to configure the Scanium Android app to connect to your backend server
 during development.
 
-***REMOVED******REMOVED*** Connect App to NAS Backend via Cloudflare
+## Connect App to NAS Backend via Cloudflare
 
 Quick checklist for connecting to the NAS-hosted backend at `https://scanium.gtemp1.com`:
 
 ```bash
-***REMOVED*** Step 1: Set your API key
+# Step 1: Set your API key
 export SCANIUM_API_KEY="your-api-key-here"
 
-***REMOVED*** Step 2: Configure local.properties for Cloudflare backend
+# Step 2: Configure local.properties for Cloudflare backend
 ./scripts/android/set-backend-cloudflare-dev.sh
 
-***REMOVED*** Step 3: Build, install, and test connectivity
+# Step 3: Build, install, and test connectivity
 ./scripts/android/build-install-devdebug.sh
 
-***REMOVED*** Step 4: Verify from device (optional)
+# Step 4: Verify from device (optional)
 adb shell curl -s https://scanium.gtemp1.com/health
 ```
 
@@ -28,22 +28,22 @@ The scripts will:
 - Build and install the devDebug APK
 - Run a connectivity smoke test from the device
 
-***REMOVED******REMOVED*** Quick Start (Generic)
+## Quick Start (Generic)
 
 ```bash
-***REMOVED*** 1. Configure backend URL and API key
+# 1. Configure backend URL and API key
 ./scripts/android-configure-backend-dev.sh \
     --url https://your-backend.example.com \
     --key your-api-key
 
-***REMOVED*** 2. Build and install
+# 2. Build and install
 ./scripts/android-build-install-dev.sh
 
-***REMOVED*** 3. Verify connectivity
+# 3. Verify connectivity
 ./scripts/dev/verify-backend-config.sh devDebug
 ```
 
-***REMOVED******REMOVED*** HTTPS Enforcement & Cloudflare Calls
+## HTTPS Enforcement & Cloudflare Calls
 
 - Backend containers run with `NODE_ENV=production` by default and reject plain HTTP with
   `HTTPS_REQUIRED`. This keeps Cloudflare-facing endpoints TLS-only.
@@ -75,41 +75,41 @@ disabled providers return an error payload and non-200 status so the app can sta
 - Missing or invalid API keys return `401 UNAUTHORIZED`; TLS violations return `403 HTTPS_REQUIRED`.
   Check logs for `reason=HTTPS_REQUIRED` if your curl fails.
 
-***REMOVED******REMOVED*** Configuration Methods
+## Configuration Methods
 
-***REMOVED******REMOVED******REMOVED*** Method 1: Configuration Script (Recommended)
+### Method 1: Configuration Script (Recommended)
 
 The configuration script writes settings to `local.properties` (never committed to git):
 
 ```bash
-***REMOVED*** Basic configuration with Cloudflare URL
+# Basic configuration with Cloudflare URL
 ./scripts/android-configure-backend-dev.sh \
     --url https://scanium-api.your-domain.com \
     --key your-api-key
 
-***REMOVED*** With separate LAN URL for faster debug builds
+# With separate LAN URL for faster debug builds
 ./scripts/android-configure-backend-dev.sh \
     --url https://scanium-api.your-domain.com \
     --debug-url http://192.168.1.100:3000 \
     --key your-api-key
 ```
 
-***REMOVED******REMOVED******REMOVED*** Method 2: Manual local.properties
+### Method 2: Manual local.properties
 
 Edit `local.properties` in the repository root:
 
 ```properties
-***REMOVED*** Backend URL for release builds (and debug if debug URL not set)
+# Backend URL for release builds (and debug if debug URL not set)
 scanium.api.base.url=https://scanium-api.your-domain.com
 
-***REMOVED*** Optional: Debug-specific URL (for LAN development)
+# Optional: Debug-specific URL (for LAN development)
 scanium.api.base.url.debug=http://192.168.1.100:3000
 
-***REMOVED*** API key for authentication
+# API key for authentication
 scanium.api.key=your-api-key-here
 ```
 
-***REMOVED******REMOVED******REMOVED*** Method 3: Environment Variables
+### Method 3: Environment Variables
 
 Set environment variables before building:
 
@@ -121,32 +121,32 @@ export SCANIUM_API_KEY=your-api-key
 ./gradlew :androidApp:installDevDebug
 ```
 
-***REMOVED******REMOVED*** Cloudflare Tunnel Setup
+## Cloudflare Tunnel Setup
 
 If your backend runs on a NAS or local server, you can expose it via Cloudflare Tunnel:
 
-***REMOVED******REMOVED******REMOVED*** 1. Install cloudflared on your NAS/server
+### 1. Install cloudflared on your NAS/server
 
 ```bash
-***REMOVED*** Linux (amd64)
+# Linux (amd64)
 curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
 chmod +x cloudflared
 sudo mv cloudflared /usr/local/bin/
 
-***REMOVED*** macOS
+# macOS
 brew install cloudflare/cloudflare/cloudflared
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Create a tunnel
+### 2. Create a tunnel
 
 ```bash
-***REMOVED*** Authenticate with Cloudflare
+# Authenticate with Cloudflare
 cloudflared tunnel login
 
-***REMOVED*** Create tunnel
+# Create tunnel
 cloudflared tunnel create scanium-backend
 
-***REMOVED*** Configure tunnel (creates ~/.cloudflared/config.yml)
+# Configure tunnel (creates ~/.cloudflared/config.yml)
 cat > ~/.cloudflared/config.yml << EOF
 tunnel: scanium-backend
 credentials-file: ~/.cloudflared/<tunnel-id>.json
@@ -157,14 +157,14 @@ ingress:
   - service: http_status:404
 EOF
 
-***REMOVED*** Add DNS record
+# Add DNS record
 cloudflared tunnel route dns scanium-backend scanium-api.your-domain.com
 
-***REMOVED*** Run tunnel
+# Run tunnel
 cloudflared tunnel run scanium-backend
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Configure Android app
+### 3. Configure Android app
 
 ```bash
 ./scripts/android-configure-backend-dev.sh \
@@ -172,7 +172,7 @@ cloudflared tunnel run scanium-backend
     --key your-api-key
 ```
 
-***REMOVED******REMOVED*** URL Configuration Behavior
+## URL Configuration Behavior
 
 | Build Type  | URL Source                   | Fallback               |
 |-------------|------------------------------|------------------------|
@@ -183,20 +183,20 @@ cloudflared tunnel run scanium-backend
 
 **Note:** Debug builds allow HTTP (cleartext) for LAN development. Release builds require HTTPS.
 
-***REMOVED******REMOVED*** Runtime URL Resolution (Debug Builds)
+## Runtime URL Resolution (Debug Builds)
 
 In debug builds, the base URL is resolved in this order:
 
 1. **DevConfigOverride** (if explicitly set and not stale) - Stored in DataStore
 2. **BuildConfig.SCANIUM_API_BASE_URL** - From `local.properties` at build time
 
-***REMOVED******REMOVED******REMOVED*** Override Behavior
+### Override Behavior
 
 - **Stale overrides** are automatically cleared on app startup (after 30 days or app version change)
 - **Release builds** ignore all overrides and always use BuildConfig
 - **Developer Options** shows whether an override is active and provides a reset button
 
-***REMOVED******REMOVED******REMOVED*** Viewing Override Status
+### Viewing Override Status
 
 In Developer Options → App Configuration:
 
@@ -204,33 +204,33 @@ In Developer Options → App Configuration:
 - `Base URL (OVERRIDE)` - Shown when override is active (red text indicates potential issue)
 - `BuildConfig URL` - Shows the original BuildConfig value when overridden
 
-***REMOVED******REMOVED******REMOVED*** Clearing Overrides via ADB
+### Clearing Overrides via ADB
 
 ```bash
-***REMOVED*** View override (debug builds)
+# View override (debug builds)
 adb shell "run-as com.scanium.app.dev cat /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
 
-***REMOVED*** Clear override
+# Clear override
 adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
 
-***REMOVED*** Force app restart
+# Force app restart
 adb shell am force-stop com.scanium.app.dev
 ```
 
-***REMOVED******REMOVED******REMOVED*** Reset via Developer Options
+### Reset via Developer Options
 
 1. Open Settings → Developer Options
 2. Find "App Configuration" section
 3. If "Base URL (OVERRIDE)" is shown, click "Reset to BuildConfig default"
 
-***REMOVED******REMOVED*** Build Validation
+## Build Validation
 
 The build system validates backend configuration:
 
 - **devDebug builds** fail if no backend URL is configured
 - Run `./gradlew :androidApp:validateBackendConfig` to check configuration
 
-***REMOVED******REMOVED******REMOVED*** Validation Task Output
+### Validation Task Output
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -242,9 +242,9 @@ The build system validates backend configuration:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED*** Verifying Connectivity from Device
+## Verifying Connectivity from Device
 
-***REMOVED******REMOVED******REMOVED*** Using the verification script
+### Using the verification script
 
 ```bash
 ./scripts/dev/verify-backend-config.sh devDebug
@@ -257,25 +257,25 @@ This checks:
 - Network connectivity from the device
 - Installed app versions
 
-***REMOVED******REMOVED******REMOVED*** Manual verification via adb
+### Manual verification via adb
 
 ```bash
-***REMOVED*** Test /health endpoint from device
+# Test /health endpoint from device
 adb shell curl -s https://scanium-api.your-domain.com/health
 
-***REMOVED*** Check app logs
+# Check app logs
 adb logcat | grep -i scanium
 
-***REMOVED*** Check network connectivity
+# Check network connectivity
 adb shell ping -c 3 scanium-api.your-domain.com
 ```
 
-***REMOVED******REMOVED*** Diagnostics Status States
+## Diagnostics Status States
 
 The Developer Options → Assistant / AI Diagnostics section shows detailed backend status that
 distinguishes between different failure modes.
 
-***REMOVED******REMOVED******REMOVED*** Status Classifications
+### Status Classifications
 
 | Status                                     | Color     | Meaning                                                   | Action Required                             |
 |--------------------------------------------|-----------|-----------------------------------------------------------|---------------------------------------------|
@@ -287,7 +287,7 @@ distinguishes between different failure modes.
 | **Backend Not Configured**                 | ⚪ Gray    | No URL or API key configured                              | Configure in `local.properties`             |
 | **No Network Connection**                  | 🔴 Red    | Device not connected to internet                          | Enable WiFi/cellular                        |
 
-***REMOVED******REMOVED******REMOVED*** Debug Details
+### Debug Details
 
 When there's an error, the diagnostics display shows:
 
@@ -301,7 +301,7 @@ Example debug strings:
 - `GET /health -> 502` - Cloudflare/proxy error
 - `GET /health` (no status) - Network error before HTTP response
 
-***REMOVED******REMOVED******REMOVED*** Endpoints Used by Scanium
+### Endpoints Used by Scanium
 
 | Feature              | Endpoint          | Method | Auth Required                           |
 |----------------------|-------------------|--------|-----------------------------------------|
@@ -309,9 +309,9 @@ Example debug strings:
 | Cloud classification | `/v1/classify`    | POST   | Yes                                     |
 | AI Assistant         | `/v1/assist/chat` | POST   | Yes                                     |
 
-***REMOVED******REMOVED******REMOVED*** Common Diagnostic Scenarios
+### Common Diagnostic Scenarios
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Health 200, but Assistant shows "Invalid API Key"
+#### ✅ Health 200, but Assistant shows "Invalid API Key"
 
 **Symptoms:**
 
@@ -334,7 +334,7 @@ key for better diagnostics. If the key is invalid or missing, you get 401.
    ```
 3. Regenerate key if needed and update `local.properties`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Health 200, but classifier returns 404
+#### ✅ Health 200, but classifier returns 404
 
 **Symptoms:**
 
@@ -352,7 +352,7 @@ key for better diagnostics. If the key is invalid or missing, you get 401.
 2. Test classify endpoint:
    ```bash
    curl -X POST -H "X-API-Key: KEY" https://scanium.gtemp1.com/v1/classify
-   ***REMOVED*** Should return 400 (missing image) not 404
+   # Should return 400 (missing image) not 404
    ```
 3. Check backend version supports classification
 
@@ -365,7 +365,7 @@ app can decide whether the assistant is “online”:
   "confidence": 0.81,
   "attributes": {"segment": "storage"},
   "visionAttributes": {
-    "colors": [{"name": "blue", "hex": "***REMOVED***1E40AF", "score": 0.44}],
+    "colors": [{"name": "blue", "hex": "#1E40AF", "score": 0.44}],
     "ocrText": "IKEA KALLAX 4X4",
     "logos": [{"name": "IKEA", "score": 0.88}],
     "brandCandidates": ["IKEA"],
@@ -375,7 +375,7 @@ app can decide whether the assistant is “online”:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Remote Config (`/v1/config`)
+### Remote Config (`/v1/config`)
 
 - Default config file lives in `backend/config/remote-config.json`. Update the `version` and
   `ttlSeconds` fields when you change it so devices know when to invalidate cached values.
@@ -392,7 +392,7 @@ app can decide whether the assistant is “online”:
   The API will log a warning if the file is missing and fall back to safe defaults so you can still
   access `/v1/config`.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Health returns 502/530 (Cloudflare errors)
+#### ✅ Health returns 502/530 (Cloudflare errors)
 
 **Symptoms:**
 
@@ -417,7 +417,7 @@ app can decide whether the assistant is “online”:
    docker compose restart scanium-backend
    ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Complete network failure
+#### ✅ Complete network failure
 
 **Symptoms:**
 
@@ -441,46 +441,46 @@ app can decide whether the assistant is “online”:
    openssl s_client -connect scanium.gtemp1.com:443 -servername scanium.gtemp1.com
    ```
 
-***REMOVED******REMOVED*** Quick Verification Commands
+## Quick Verification Commands
 
-***REMOVED******REMOVED******REMOVED*** From development machine
+### From development machine
 
 ```bash
-***REMOVED*** Health check (no auth)
+# Health check (no auth)
 curl -s https://scanium.gtemp1.com/health
 
-***REMOVED*** Health check with API key
+# Health check with API key
 curl -s -H "X-API-Key: YOUR_KEY" https://scanium.gtemp1.com/health
 
-***REMOVED*** Test classify endpoint
+# Test classify endpoint
 curl -s -X POST -H "X-API-Key: YOUR_KEY" \
      -H "Content-Type: multipart/form-data" \
      -F "image=@test.jpg" \
      https://scanium.gtemp1.com/v1/classify
 
-***REMOVED*** Check backend container logs
+# Check backend container logs
 docker logs scanium-backend --tail 50
 
-***REMOVED*** Check cloudflared tunnel logs
+# Check cloudflared tunnel logs
 docker logs scanium-cloudflared --tail 50
 ```
 
-***REMOVED******REMOVED******REMOVED*** From Android device
+### From Android device
 
 ```bash
-***REMOVED*** Test from device via adb
+# Test from device via adb
 adb shell curl -s https://scanium.gtemp1.com/health
 
-***REMOVED*** View app networking logs
+# View app networking logs
 adb logcat | grep -E "(DiagnosticsRepo|CloudClassifier|AssistantRepo|OkHttp)"
 
-***REMOVED*** View full app logs
+# View full app logs
 adb logcat -s ScaniumApplication DiagnosticsRepository CloudClassifier AssistantRepository
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Build fails with "Backend URL not configured"
+### Build fails with "Backend URL not configured"
 
 1. Verify `local.properties` exists and contains the URL:
    ```bash
@@ -492,7 +492,7 @@ adb logcat -s ScaniumApplication DiagnosticsRepository CloudClassifier Assistant
    ./scripts/android-configure-backend-dev.sh --url YOUR_URL --key YOUR_KEY
    ```
 
-***REMOVED******REMOVED******REMOVED*** App can't reach backend
+### App can't reach backend
 
 1. **Check device network**: Ensure the device is on a network that can reach the backend.
 
@@ -505,7 +505,7 @@ adb logcat -s ScaniumApplication DiagnosticsRepository CloudClassifier Assistant
 
 4. **Check certificate pinning**: If using certificate pinning, ensure the pin is correct:
    ```bash
-   ***REMOVED*** Get certificate pin
+   # Get certificate pin
    openssl s_client -servername YOUR_HOST -connect YOUR_HOST:443 \
        | openssl x509 -pubkey -noout \
        | openssl pkey -pubin -outform der \
@@ -513,14 +513,14 @@ adb logcat -s ScaniumApplication DiagnosticsRepository CloudClassifier Assistant
        | openssl enc -base64
    ```
 
-***REMOVED******REMOVED******REMOVED*** HTTP not working on device
+### HTTP not working on device
 
 Android blocks cleartext (HTTP) traffic by default. For debug builds:
 
 1. Verify `network_security_config_debug.xml` allows cleartext for your domain
 2. For LAN IPs, add them to the cleartext allowlist
 
-***REMOVED******REMOVED******REMOVED*** Environment variables not being read
+### Environment variables not being read
 
 Gradle may cache configuration. Try:
 
@@ -529,7 +529,7 @@ Gradle may cache configuration. Try:
 ./gradlew :androidApp:assembleDevDebug
 ```
 
-***REMOVED******REMOVED******REMOVED*** Developer Options shows wrong/old URL
+### Developer Options shows wrong/old URL
 
 This can happen if a runtime override was set previously (e.g., old ngrok URL):
 
@@ -539,9 +539,9 @@ This can happen if a runtime override was set previously (e.g., old ngrok URL):
 
 3. **Reset via ADB**:
    ```bash
-   ***REMOVED*** Clear override DataStore
+   # Clear override DataStore
    adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
-   ***REMOVED*** Force restart
+   # Force restart
    adb shell am force-stop com.scanium.app.dev
    ```
 
@@ -551,14 +551,14 @@ This can happen if a runtime override was set previously (e.g., old ngrok URL):
    ./gradlew :androidApp:installDevDebug
    ```
 
-***REMOVED******REMOVED*** Security Notes
+## Security Notes
 
 - **Never commit** `local.properties` to git (it's in `.gitignore`)
 - **API keys** are masked in script output (only first 8 characters shown)
 - **Release builds** enforce HTTPS and don't allow cleartext traffic
 - **Certificate pinning** is optional but recommended for production
 
-***REMOVED******REMOVED*** Scripts Reference
+## Scripts Reference
 
 | Script                                          | Purpose                                     |
 |-------------------------------------------------|---------------------------------------------|
@@ -568,7 +568,7 @@ This can happen if a runtime override was set previously (e.g., old ngrok URL):
 | `scripts/android-build-install-dev.sh`          | Build and install devDebug                  |
 | `scripts/dev/verify-backend-config.sh`          | Verify configuration and connectivity       |
 
-***REMOVED******REMOVED*** See Also
+## See Also
 
 - [Backend Deployment Guide](./BACKEND_DEPLOYMENT.md)
 - [Security Configuration](./SECURITY.md)

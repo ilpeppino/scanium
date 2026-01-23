@@ -26,8 +26,8 @@ vi.mock('../../infra/observability/metrics.js', () => ({
 const mockVisualFacts = {
   itemId: 'test-item',
   dominantColors: [
-    { name: 'blue', rgbHex: '***REMOVED***1E40AF', pct: 45 },
-    { name: 'white', rgbHex: '***REMOVED***FFFFFF', pct: 30 },
+    { name: 'blue', rgbHex: '#1E40AF', pct: 45 },
+    { name: 'white', rgbHex: '#FFFFFF', pct: 30 },
   ],
   ocrSnippets: [
     { text: 'Labello', confidence: 0.95 },
@@ -234,7 +234,7 @@ describe('Vision Insights Routes', () => {
         correlationId: 'test-corr',
         ocrSnippets: ['Labello', 'Lip Care'],
         logoHints: [{ name: 'Labello', confidence: 0.92 }],
-        dominantColors: [{ name: 'blue', hex: '***REMOVED***1E40AF', pct: 45 }],
+        dominantColors: [{ name: 'blue', hex: '#1E40AF', pct: 45 }],
         labelHints: ['cosmetics'],
         suggestedLabel: 'Labello Lip Care',
         categoryHint: 'cosmetics',
@@ -248,7 +248,7 @@ describe('Vision Insights Routes', () => {
       expect(mockResponse.success).toBe(true);
       expect(mockResponse.ocrSnippets).toHaveLength(2);
       expect(mockResponse.logoHints[0].name).toBe('Labello');
-      expect(mockResponse.dominantColors[0].hex).toBe('***REMOVED***1E40AF');
+      expect(mockResponse.dominantColors[0].hex).toBe('#1E40AF');
     });
   });
 

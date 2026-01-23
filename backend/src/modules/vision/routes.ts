@@ -5,21 +5,21 @@
  * This endpoint is designed for fast prefill of item attributes (OCR, brand, colors)
  * immediately after capture, without waiting for full classification.
  *
- * ***REMOVED******REMOVED*** Endpoint
+ * ## Endpoint
  * POST /v1/vision/insights
  *
- * ***REMOVED******REMOVED*** Request
+ * ## Request
  * Multipart form-data with:
  * - `image`: JPEG/PNG file (max 2MB)
  * - `itemId` (optional): Associate results with an item ID
  *
- * ***REMOVED******REMOVED*** Response
+ * ## Response
  * ```json
  * {
  *   "success": true,
  *   "ocrSnippets": ["text1", "text2"],
  *   "logoHints": [{"name": "Brand", "confidence": 0.95}],
- *   "dominantColors": [{"name": "blue", "hex": "***REMOVED***1E40AF", "pct": 45}],
+ *   "dominantColors": [{"name": "blue", "hex": "#1E40AF", "pct": 45}],
  *   "labelHints": ["Label1", "Label2"],
  *   "suggestedLabel": "Brand Model",
  *   "categoryHint": "electronics",

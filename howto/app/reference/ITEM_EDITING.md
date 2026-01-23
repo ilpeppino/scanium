@@ -1,15 +1,15 @@
-***REMOVED*** Item Editing Feature
+# Item Editing Feature
 
 This document describes the architecture and implementation of the item editing feature in Scanium.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Edit feature allows users to modify properties of scanned items directly from the Items List
 screen. Users can select one or more items and edit them using a swipe-based interface.
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Data Flow
+### Data Flow
 
 ```
 ItemsListScreen (selection)
@@ -29,7 +29,7 @@ ScannedItemStore.upsertAll()
 Room Database (scanned_items.db)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Storage Layer
+### Storage Layer
 
 Items are persisted using a multi-layer architecture:
 
@@ -38,7 +38,7 @@ Items are persisted using a multi-layer architecture:
 3. **Persistence**: `ScannedItemStore` interface with Room implementation
 4. **Database**: Room database (`scanned_items.db`) with `ScannedItemEntity`
 
-***REMOVED******REMOVED******REMOVED*** Update Path
+### Update Path
 
 Edits follow the established pattern used by `updateListingStatus()`:
 
@@ -46,7 +46,7 @@ Edits follow the established pattern used by `updateListingStatus()`:
 2. Update `_items` StateFlow
 3. Persist via `itemsStore.upsertAll()`
 
-***REMOVED******REMOVED*** Editable Fields
+## Editable Fields
 
 The following fields can be edited by users:
 
@@ -58,15 +58,15 @@ The following fields can be edited by users:
 
 Note: Fields like `category`, `priceRange`, `confidence` are ML-derived and not user-editable.
 
-***REMOVED******REMOVED*** UI Components
+## UI Components
 
-***REMOVED******REMOVED******REMOVED*** ItemsListScreen Changes
+### ItemsListScreen Changes
 
 - New "Edit" FAB button positioned at `Alignment.BottomCenter`
 - Shown only when `selectionMode && selectedIds.isNotEmpty()`
 - Uses `Icons.Default.Edit` icon
 
-***REMOVED******REMOVED******REMOVED*** EditItemsScreen
+### EditItemsScreen
 
 - **Route**: `items/edit?ids={itemIds}`
 - **Navigation**: Uses comma-separated item IDs in URL parameter
@@ -76,7 +76,7 @@ Note: Fields like `category`, `priceRange`, `confidence` are ML-derived and not 
     - Each page: Item thumbnail + editable TextFields
     - Bottom: Cancel and OK buttons (sticky)
 
-***REMOVED******REMOVED******REMOVED*** Draft State Management
+### Draft State Management
 
 - Local `Map<String, EditableDraft>` holds unsaved changes
 - Drafts are created on screen entry, initialized from current item values
@@ -84,9 +84,9 @@ Note: Fields like `category`, `priceRange`, `confidence` are ML-derived and not 
 - Cancel discards all drafts
 - OK applies all drafts atomically
 
-***REMOVED******REMOVED*** Navigation
+## Navigation
 
-***REMOVED******REMOVED******REMOVED*** Route Definition
+### Route Definition
 
 ```kotlin
 const val EDIT_ITEMS = "items/edit"
@@ -95,40 +95,40 @@ const val EDIT_ITEMS = "items/edit"
 "${Routes.EDIT_ITEMS}?ids={ids}"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Arguments
+### Arguments
 
 | Argument | Type   | Description                      |
 |----------|--------|----------------------------------|
 | `ids`    | String | Comma-separated list of item IDs |
 
-***REMOVED******REMOVED*** Implementation Notes
+## Implementation Notes
 
-***REMOVED******REMOVED******REMOVED*** Thread Safety
+### Thread Safety
 
 Updates go through `ItemsStateManager` which handles threading:
 
 - State modifications on `workerDispatcher`
 - UI updates on `mainDispatcher`
 
-***REMOVED******REMOVED******REMOVED*** Stable IDs
+### Stable IDs
 
 Items already have stable UUIDs generated via `generateRandomId()` at creation time. No migration
 needed.
 
-***REMOVED******REMOVED******REMOVED*** Error Handling
+### Error Handling
 
 - Empty field validation: allowed (fields are nullable)
 - Network errors: N/A (local persistence only)
 - Concurrent modification: Last write wins (acceptable for single-user app)
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 - `ItemsViewModelTest`: verify `updateItems()` updates state and persists
 - `EditItemsViewModelTest`: verify draft management and apply/discard logic
 
-***REMOVED******REMOVED******REMOVED*** Manual Test Cases
+### Manual Test Cases
 
 1. Select 1 item → Edit → change label → OK → verify list updates
 2. Select 3 items → Edit → swipe through all → edit each → OK → verify all update

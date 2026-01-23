@@ -1,12 +1,12 @@
-***REMOVED*** PR ***REMOVED***6: NAS Observability Sandbox (Docker Compose LGTM + Alloy)
+# PR #6: NAS Observability Sandbox (Docker Compose LGTM + Alloy)
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This PR adds a **complete observability stack** for local development and NAS deployment using
 Docker Compose. The stack includes **Grafana, Loki, Tempo, Mimir** (LGTM) plus **Grafana Alloy** as
 the OTLP receiver and router.
 
-***REMOVED******REMOVED******REMOVED*** Key Features
+### Key Features
 
 ✅ **Single-command deployment** via Docker Compose
 ✅ **LGTM stack** (Loki, Grafana, Tempo, Mimir) for complete observability
@@ -19,9 +19,9 @@ the OTLP receiver and router.
 
 ---
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Data Flow
+### Data Flow
 
 ```
 Android App (OTLP/HTTP:4318)
@@ -36,30 +36,30 @@ Grafana Alloy (Receiver + Router)
          └─→ All visualized in Grafana (Port 3000)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Network Architecture
+### Network Architecture
 
 - **External Ports:** Only Grafana UI (3000) exposed to host
 - **Internal Network:** All backend services communicate via Docker bridge network
 - **OTLP Ingress:** Ports 4317/4318 exposed for telemetry ingestion
 
-***REMOVED******REMOVED******REMOVED*** Storage Layout
+### Storage Layout
 
 ```
 monitoring/
-├── data/                    ***REMOVED*** Persistent data (gitignored)
-│   ├── grafana/            ***REMOVED*** Grafana dashboards & config
-│   ├── loki/               ***REMOVED*** Log chunks & indexes
-│   ├── tempo/              ***REMOVED*** Trace blocks
-│   └── mimir/              ***REMOVED*** Metric blocks
-├── config files...         ***REMOVED*** Service configurations
-└── docker-compose.yml      ***REMOVED*** Infrastructure definition
+├── data/                    # Persistent data (gitignored)
+│   ├── grafana/            # Grafana dashboards & config
+│   ├── loki/               # Log chunks & indexes
+│   ├── tempo/              # Trace blocks
+│   └── mimir/              # Metric blocks
+├── config files...         # Service configurations
+└── docker-compose.yml      # Infrastructure definition
 ```
 
 ---
 
-***REMOVED******REMOVED*** Files Created
+## Files Created
 
-***REMOVED******REMOVED******REMOVED*** Infrastructure
+### Infrastructure
 
 - **`monitoring/docker-compose.yml`**
   Complete stack definition with health checks and dependencies
@@ -67,7 +67,7 @@ monitoring/
 - **`monitoring/.gitignore`**
   Excludes data directories from version control
 
-***REMOVED******REMOVED******REMOVED*** Alloy Configuration
+### Alloy Configuration
 
 - **`monitoring/alloy/alloy.hcl`**
     - OTLP HTTP/gRPC receivers
@@ -75,7 +75,7 @@ monitoring/
     - Exporters to Loki/Tempo/Mimir
     - Retry logic and backpressure handling
 
-***REMOVED******REMOVED******REMOVED*** Backend Configurations
+### Backend Configurations
 
 - **`monitoring/loki/loki.yaml`**
     - Single-node mode
@@ -95,14 +95,14 @@ monitoring/
     - Filesystem storage
     - 100k samples/sec ingestion
 
-***REMOVED******REMOVED******REMOVED*** Grafana Provisioning
+### Grafana Provisioning
 
 - **`monitoring/grafana/provisioning/datasources/datasources.yaml`**
     - Loki datasource (logs)
     - Tempo datasource (traces) with trace-to-logs correlation
     - Mimir datasource (metrics) with exemplar-to-trace links
 
-***REMOVED******REMOVED******REMOVED*** Documentation
+### Documentation
 
 - **`monitoring/README.md`**
     - Quick start guide
@@ -116,16 +116,16 @@ monitoring/
 
 ---
 
-***REMOVED******REMOVED*** Quick Start
+## Quick Start
 
-***REMOVED******REMOVED******REMOVED*** 1. Start the Stack
+### 1. Start the Stack
 
 ```bash
 cd monitoring
 docker compose up -d
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Verify Services
+### 2. Verify Services
 
 ```bash
 docker compose ps
@@ -133,14 +133,14 @@ docker compose ps
 
 All services should show `running (healthy)` status within 30 seconds.
 
-***REMOVED******REMOVED******REMOVED*** 3. Access Grafana
+### 3. Access Grafana
 
 Open http://localhost:3000
 
 - **No login required** (anonymous admin access for local dev)
 - **3 datasources** pre-configured and healthy
 
-***REMOVED******REMOVED******REMOVED*** 4. Configure Android App
+### 4. Configure Android App
 
 Edit `androidApp/local.properties`:
 
@@ -149,15 +149,15 @@ scanium.otlp.enabled=true
 scanium.otlp.endpoint=http://10.0.2.2:4318
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Generate Telemetry
+### 5. Generate Telemetry
 
 Run the app and use it (scan items, navigate). Telemetry will flow to the stack.
 
 ---
 
-***REMOVED******REMOVED*** Smoke Tests
+## Smoke Tests
 
-***REMOVED******REMOVED******REMOVED*** Test 1: Verify Docker Compose Config
+### Test 1: Verify Docker Compose Config
 
 ```bash
 cd monitoring
@@ -166,7 +166,7 @@ docker compose config
 
 ✅ Should output valid YAML with no errors
 
-***REMOVED******REMOVED******REMOVED*** Test 2: Start Stack
+### Test 2: Start Stack
 
 ```bash
 docker compose up -d
@@ -174,28 +174,28 @@ docker compose up -d
 
 ✅ All 5 containers should start and become healthy
 
-***REMOVED******REMOVED******REMOVED*** Test 3: Check Service Health
+### Test 3: Check Service Health
 
 ```bash
-***REMOVED*** Alloy
+# Alloy
 curl -s http://localhost:12345/ready && echo " ✓ Alloy ready"
 
-***REMOVED*** Loki
+# Loki
 curl -s http://localhost:3100/ready && echo " ✓ Loki ready"
 
-***REMOVED*** Tempo
+# Tempo
 curl -s http://localhost:3200/ready && echo " ✓ Tempo ready"
 
-***REMOVED*** Mimir
+# Mimir
 curl -s http://localhost:9009/ready && echo " ✓ Mimir ready"
 
-***REMOVED*** Grafana
+# Grafana
 curl -s http://localhost:3000/api/health | jq -r '.database' && echo " ✓ Grafana ready"
 ```
 
 ✅ All services should respond with 200 OK
 
-***REMOVED******REMOVED******REMOVED*** Test 4: Send Test Log
+### Test 4: Send Test Log
 
 ```bash
 curl -X POST http://localhost:4318/v1/logs \
@@ -222,14 +222,14 @@ curl -X POST http://localhost:4318/v1/logs \
 
 ✅ Should return 200 OK
 
-***REMOVED******REMOVED******REMOVED*** Test 5: Query Test Log in Grafana
+### Test 5: Query Test Log in Grafana
 
 1. Open http://localhost:3000/explore
 2. Select **Loki** datasource
 3. Run query: `{service_name="smoke-test"}`
 4. ✅ Should see "Smoke test successful" log entry
 
-***REMOVED******REMOVED******REMOVED*** Test 6: Verify Datasources
+### Test 6: Verify Datasources
 
 ```bash
 curl -s http://localhost:3000/api/datasources | jq '.[].name'
@@ -239,9 +239,9 @@ curl -s http://localhost:3000/api/datasources | jq '.[].name'
 
 ---
 
-***REMOVED******REMOVED*** Configuration Details
+## Configuration Details
 
-***REMOVED******REMOVED******REMOVED*** Service Ports
+### Service Ports
 
 | Service | Port  | Purpose   | Exposed to Host  |
 |---------|-------|-----------|------------------|
@@ -256,7 +256,7 @@ curl -s http://localhost:3000/api/datasources | jq '.[].name'
 
 **Note:** Loki/Tempo/Mimir ports are exposed for debugging but can be removed for production.
 
-***REMOVED******REMOVED******REMOVED*** Data Retention
+### Data Retention
 
 | Service | Retention | Configuration File | Setting                                         |
 |---------|-----------|--------------------|-------------------------------------------------|
@@ -264,7 +264,7 @@ curl -s http://localhost:3000/api/datasources | jq '.[].name'
 | Tempo   | 7 days    | `tempo/tempo.yaml` | `compactor.compaction.block_retention: 168h`    |
 | Mimir   | 15 days   | `mimir/mimir.yaml` | `limits.compactor_blocks_retention_period: 15d` |
 
-***REMOVED******REMOVED******REMOVED*** Resource Limits
+### Resource Limits
 
 Current configuration is optimized for single-node deployment (dev laptop or NAS):
 
@@ -285,27 +285,27 @@ services:
 
 ---
 
-***REMOVED******REMOVED*** Integration with Android App
+## Integration with Android App
 
-The Android app (from PR ***REMOVED***5) is already configured to send OTLP data. Just enable it:
+The Android app (from PR #5) is already configured to send OTLP data. Just enable it:
 
-***REMOVED******REMOVED******REMOVED*** Configuration
+### Configuration
 
 Edit `androidApp/local.properties`:
 
 ```properties
-***REMOVED*** Enable OTLP export
+# Enable OTLP export
 scanium.otlp.enabled=true
 
-***REMOVED*** OTLP endpoint
-***REMOVED*** For Android emulator (maps to host localhost)
+# OTLP endpoint
+# For Android emulator (maps to host localhost)
 scanium.otlp.endpoint=http://10.0.2.2:4318
 
-***REMOVED*** For physical device (requires adb reverse)
-***REMOVED*** scanium.otlp.endpoint=http://localhost:4318
+# For physical device (requires adb reverse)
+# scanium.otlp.endpoint=http://localhost:4318
 ```
 
-***REMOVED******REMOVED******REMOVED*** For Physical Device
+### For Physical Device
 
 Set up port forwarding:
 
@@ -315,7 +315,7 @@ adb reverse tcp:4318 tcp:4318
 
 Then use `http://localhost:4318` in the app config.
 
-***REMOVED******REMOVED******REMOVED*** Verify Data Flow
+### Verify Data Flow
 
 1. Build and install debug APK
 2. Use the app (scan items, navigate)
@@ -326,25 +326,25 @@ Then use `http://localhost:4318` in the app config.
 
 ---
 
-***REMOVED******REMOVED*** Monitoring the Monitoring Stack
+## Monitoring the Monitoring Stack
 
-***REMOVED******REMOVED******REMOVED*** View Logs
+### View Logs
 
 ```bash
-***REMOVED*** All services
+# All services
 docker compose logs -f
 
-***REMOVED*** Specific service
+# Specific service
 docker compose logs -f alloy
 ```
 
-***REMOVED******REMOVED******REMOVED*** Resource Usage
+### Resource Usage
 
 ```bash
 docker compose stats
 ```
 
-***REMOVED******REMOVED******REMOVED*** Disk Usage
+### Disk Usage
 
 ```bash
 du -sh monitoring/data/*
@@ -352,11 +352,11 @@ du -sh monitoring/data/*
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
 See `monitoring/README.md` for comprehensive troubleshooting guide. Common issues:
 
-***REMOVED******REMOVED******REMOVED*** No Data in Grafana
+### No Data in Grafana
 
 **Solution:** Check datasource connectivity
 
@@ -364,7 +364,7 @@ See `monitoring/README.md` for comprehensive troubleshooting guide. Common issue
 docker exec scanium-grafana wget -qO- http://loki:3100/ready
 ```
 
-***REMOVED******REMOVED******REMOVED*** Alloy Not Receiving OTLP
+### Alloy Not Receiving OTLP
 
 **Solution:** Test OTLP endpoint
 
@@ -372,7 +372,7 @@ docker exec scanium-grafana wget -qO- http://loki:3100/ready
 curl -v http://localhost:4318/v1/logs -d '{"resourceLogs":[]}' -H "Content-Type: application/json"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Android App Connection Failed
+### Android App Connection Failed
 
 **For Emulator:**
 
@@ -385,11 +385,11 @@ curl -v http://localhost:4318/v1/logs -d '{"resourceLogs":[]}' -H "Content-Type:
 
 ---
 
-***REMOVED******REMOVED*** Production Considerations
+## Production Considerations
 
 This setup is for **local development and NAS deployment**. For production:
 
-***REMOVED******REMOVED******REMOVED*** Security
+### Security
 
 - [ ] Enable Grafana authentication (remove anonymous access)
 - [ ] Add TLS/SSL (reverse proxy with Let's Encrypt)
@@ -397,14 +397,14 @@ This setup is for **local development and NAS deployment**. For production:
 - [ ] Add firewall rules (restrict access to Grafana UI only)
 - [ ] Enable OTLP TLS between app and Alloy
 
-***REMOVED******REMOVED******REMOVED*** Scalability
+### Scalability
 
 - [ ] Use object storage (S3, GCS) instead of filesystem
 - [ ] Run services in distributed mode (not all-in-one)
 - [ ] Add load balancer for Alloy (multiple instances)
 - [ ] Implement horizontal scaling
 
-***REMOVED******REMOVED******REMOVED*** Reliability
+### Reliability
 
 - [ ] Set up automated backups
 - [ ] Configure alerting (Alertmanager integration)
@@ -413,9 +413,9 @@ This setup is for **local development and NAS deployment**. For production:
 
 ---
 
-***REMOVED******REMOVED*** Backup & Restore
+## Backup & Restore
 
-***REMOVED******REMOVED******REMOVED*** Backup
+### Backup
 
 ```bash
 docker compose stop
@@ -423,7 +423,7 @@ tar -czf scanium-monitoring-backup-$(date +%Y%m%d).tar.gz data/
 docker compose start
 ```
 
-***REMOVED******REMOVED******REMOVED*** Restore
+### Restore
 
 ```bash
 docker compose down
@@ -433,9 +433,9 @@ docker compose up -d
 
 ---
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** Out of Scope for This PR
+### Out of Scope for This PR
 
 - [ ] **Dashboards:** Pre-built Grafana dashboards for Scanium metrics
 - [ ] **Alerting:** Alert rules for error rates, latency, etc.
@@ -444,7 +444,7 @@ docker compose up -d
 - [ ] **Metrics exporters:** Node Exporter, cAdvisor for infrastructure metrics
 - [ ] **Log parsing:** Structured log extraction in Loki
 
-***REMOVED******REMOVED******REMOVED*** Potential Future Work
+### Potential Future Work
 
 - Add Grafana dashboards for:
     - App performance (scan latency, ML inference time)
@@ -462,7 +462,7 @@ docker compose up -d
 
 ---
 
-***REMOVED******REMOVED*** Testing Checklist
+## Testing Checklist
 
 - [x] Docker Compose config validates without errors
 - [x] All services start and become healthy
@@ -477,12 +477,12 @@ docker compose up -d
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This PR delivers a **production-quality observability stack** that:
 
 - ✅ Is **easy to deploy** (single docker-compose command)
-- ✅ Is **fully integrated** with Android OTLP export (PR ***REMOVED***5)
+- ✅ Is **fully integrated** with Android OTLP export (PR #5)
 - ✅ Is **well-documented** (README + troubleshooting guide)
 - ✅ Is **resource-efficient** (suitable for NAS deployment)
 - ✅ Is **production-ready** (with security hardening notes)
@@ -492,7 +492,7 @@ This PR delivers a **production-quality observability stack** that:
 
 ---
 
-***REMOVED******REMOVED*** Useful Links
+## Useful Links
 
 - **Grafana UI:** http://localhost:3000
 - **Alloy UI:** http://localhost:12345

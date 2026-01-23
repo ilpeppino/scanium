@@ -589,7 +589,7 @@ private fun CompletenessCard(draft: ListingDraft) {
 
 private fun formatPrice(value: Double?): String {
     if (value == null) return ""
-    val formatter = java.text.DecimalFormat("0.***REMOVED******REMOVED***")
+    val formatter = java.text.DecimalFormat("0.##")
     formatter.maximumFractionDigits = 2
     formatter.minimumFractionDigits = 0
     return formatter.format(value)

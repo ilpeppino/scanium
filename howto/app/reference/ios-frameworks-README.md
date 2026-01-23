@@ -1,4 +1,4 @@
-***REMOVED*** Kotlin Multiplatform framework drop location
+# Kotlin Multiplatform framework drop location
 
 This folder is intentionally kept in the repo so Xcode can reference the upcoming KMP framework
 without requiring a build yet.

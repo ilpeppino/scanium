@@ -1,9 +1,9 @@
-***REMOVED*** Phase B: Auth Enforcement + Per-User Rate Limiting - Implementation Status
+# Phase B: Auth Enforcement + Per-User Rate Limiting - Implementation Status
 
 **Date**: January 13, 2026
 **Status**: Implementation Complete ✅ | Testing Required ⚠️
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Phase B implementation is **complete**. All backend auth enforcement, per-user rate limiting, error
 standardization, Android error handling, and tests have been implemented. **Remaining work**: Run
@@ -11,11 +11,11 @@ tests and perform end-to-end verification with curl.
 
 ---
 
-***REMOVED******REMOVED*** ✅ Completed Components
+## ✅ Completed Components
 
-***REMOVED******REMOVED******REMOVED*** Backend (100% Complete)
+### Backend (100% Complete)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Error Types and Standardization
+#### 1. Error Types and Standardization
 
 - **File**: `backend/src/shared/errors/index.ts`
 - **Changes**:
@@ -26,7 +26,7 @@ tests and perform end-to-end verification with curl.
     - Created `AuthRequiredError`, `AuthInvalidError`, `RateLimitError` classes
     - `RateLimitError` includes `resetAt` ISO timestamp in response
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Auth Middleware Enhancement
+#### 2. Auth Middleware Enhancement
 
 - **File**: `backend/src/infra/http/plugins/auth-middleware.ts`
 - **Changes**:
@@ -36,14 +36,14 @@ tests and perform end-to-end verification with curl.
     - Added `hadAuthAttempt` tracking to distinguish error cases
     - Imported new error classes
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Error Handler Update
+#### 3. Error Handler Update
 
 - **File**: `backend/src/infra/http/plugins/error-handler.ts`
 - **Changes**:
     - Ensures `correlationId` is included in all error responses
     - Properly handles new `RateLimitError` with `resetAt` field
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Configuration
+#### 4. Configuration
 
 - **Files**:
     - `backend/src/config/index.ts` - Added per-user rate limit and quota settings
@@ -53,12 +53,12 @@ tests and perform end-to-end verification with curl.
 **New Environment Variables**:
 
 ```bash
-***REMOVED*** Phase B: Per-user rate limiting (authenticated requests only)
-ASSIST_USER_RATE_LIMIT_PER_MINUTE=20  ***REMOVED*** Default: 20 requests/min per user
-ASSIST_USER_DAILY_QUOTA=100           ***REMOVED*** Default: 100 requests/day per user
+# Phase B: Per-user rate limiting (authenticated requests only)
+ASSIST_USER_RATE_LIMIT_PER_MINUTE=20  # Default: 20 requests/min per user
+ASSIST_USER_DAILY_QUOTA=100           # Default: 100 requests/day per user
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Assistant Routes Enforcement
+#### 5. Assistant Routes Enforcement
 
 - **File**: `backend/src/modules/assistant/routes.ts`
 - **Changes**:
@@ -74,7 +74,7 @@ ASSIST_USER_DAILY_QUOTA=100           ***REMOVED*** Default: 100 requests/day pe
     - **POST /v1/assist/warmup**: Now requires authentication
     - Registered cleanup hooks for new quota store
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6. Error Response Contract
+#### 6. Error Response Contract
 
 All auth and rate limit errors follow this standardized format:
 
@@ -115,7 +115,7 @@ All auth and rate limit errors follow this standardized format:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 7. Backend Tests
+#### 7. Backend Tests
 
 - **File**: `backend/src/modules/assistant/routes.phase-b.test.ts` (new)
 - **Coverage**:
@@ -134,9 +134,9 @@ All auth and rate limit errors follow this standardized format:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Android (100% Complete)
+### Android (100% Complete)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Error Types
+#### 1. Error Types
 
 - **File**: `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt`
 - **Changes**:
@@ -149,7 +149,7 @@ All auth and rate limit errors follow this standardized format:
         - For 401: Distinguishes between `AUTH_REQUIRED` and `AUTH_INVALID`
         - For 429: Extracts `resetAt` timestamp and calculates `retryAfterSeconds`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Error Display
+#### 2. Error Display
 
 - **File**: `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantErrorDisplay.kt`
 - **Changes**:
@@ -167,7 +167,7 @@ All auth and rate limit errors follow this standardized format:
         - `AUTH_REQUIRED` → "Sign In Required"
         - `AUTH_INVALID` → "Session Expired"
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Android Tests
+#### 3. Android Tests
 
 - **File**:
   `androidApp/src/test/java/com/scanium/app/selling/assistant/AssistantErrorMappingTest.kt` (new)
@@ -185,9 +185,9 @@ All auth and rate limit errors follow this standardized format:
 
 ---
 
-***REMOVED******REMOVED*** ⚠️ Remaining Work
+## ⚠️ Remaining Work
 
-***REMOVED******REMOVED******REMOVED*** 1. Run Backend Tests
+### 1. Run Backend Tests
 
 ```bash
 cd backend
@@ -200,7 +200,7 @@ npm test
 - All Phase B contract tests pass
 - No regressions in existing tests
 
-***REMOVED******REMOVED******REMOVED*** 2. Run Android Tests
+### 2. Run Android Tests
 
 ```bash
 ./gradlew :androidApp:test
@@ -211,7 +211,7 @@ npm test
 - All error mapping tests pass
 - No regressions in existing tests
 
-***REMOVED******REMOVED******REMOVED*** 3. Smoke Test with curl
+### 3. Smoke Test with curl
 
 **Test 1: No auth header (AUTH_REQUIRED)**
 
@@ -221,7 +221,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
   -H "Content-Type: application/json" \
   -d '{"items":[{"itemId":"123","title":"Test"}],"message":"Hello"}'
 
-***REMOVED*** Expected: 401 with AUTH_REQUIRED
+# Expected: 401 with AUTH_REQUIRED
 ```
 
 **Test 2: Invalid token (AUTH_INVALID)**
@@ -233,31 +233,31 @@ curl -X POST http://localhost:8080/v1/assist/chat \
   -H "Content-Type: application/json" \
   -d '{"items":[{"itemId":"123","title":"Test"}],"message":"Hello"}'
 
-***REMOVED*** Expected: 401 with AUTH_INVALID
+# Expected: 401 with AUTH_INVALID
 ```
 
 **Test 3: Valid auth (200)**
 
 ```bash
-***REMOVED*** First, sign in to get a valid token
+# First, sign in to get a valid token
 TOKEN=$(curl -X POST http://localhost:8080/v1/auth/google \
   -H "Content-Type: application/json" \
   -d '{"idToken":"VALID_GOOGLE_ID_TOKEN"}' | jq -r '.accessToken')
 
-***REMOVED*** Then use it for assistant request
+# Then use it for assistant request
 curl -X POST http://localhost:8080/v1/assist/chat \
   -H "X-API-Key: assist-key" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"items":[{"itemId":"123","title":"Test"}],"message":"Hello"}'
 
-***REMOVED*** Expected: 200 with assistant response
+# Expected: 200 with assistant response
 ```
 
 **Test 4: Rate limit exceeded (429)**
 
 ```bash
-***REMOVED*** Make multiple requests rapidly with the same token
+# Make multiple requests rapidly with the same token
 for i in {1..25}; do
   curl -X POST http://localhost:8080/v1/assist/chat \
     -H "X-API-Key: assist-key" \
@@ -267,14 +267,14 @@ for i in {1..25}; do
   sleep 0.1
 done
 
-***REMOVED*** Expected: First 20 succeed, then 429 with RATE_LIMITED and resetAt
+# Expected: First 20 succeed, then 429 with RATE_LIMITED and resetAt
 ```
 
 ---
 
-***REMOVED******REMOVED*** 📋 Verification Checklist
+## 📋 Verification Checklist
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 - [x] Added AUTH_REQUIRED, AUTH_INVALID, RATE_LIMITED error codes
 - [x] Created AuthRequiredError, AuthInvalidError, RateLimitError classes
@@ -293,7 +293,7 @@ done
 - [ ] **TODO**: Run backend tests (`npm test`)
 - [ ] **TODO**: Smoke test with curl
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 - [x] Added AUTH_REQUIRED error type
 - [x] Added AUTH_INVALID error type
@@ -307,9 +307,9 @@ done
 
 ---
 
-***REMOVED******REMOVED*** 🔐 Security Model
+## 🔐 Security Model
 
-***REMOVED******REMOVED******REMOVED*** Phase B Auth Flow
+### Phase B Auth Flow
 
 1. **Client sends request** with `Authorization: Bearer <token>`
 2. **authMiddleware** validates token:
@@ -326,7 +326,7 @@ done
     - Within quota → proceed
     - Exceeded → throws `RateLimitError` with resetAt
 
-***REMOVED******REMOVED******REMOVED*** Rate Limiting Hierarchy
+### Rate Limiting Hierarchy
 
 Phase B adds per-user rate limiting **in addition to** existing limits:
 
@@ -338,7 +338,7 @@ Phase B adds per-user rate limiting **in addition to** existing limits:
 6. **API key rate limit** (existing) - 60 req/min per API key
 7. **Device rate limit** (existing) - 30 req/min per device ID
 
-***REMOVED******REMOVED******REMOVED*** Error Response Contract
+### Error Response Contract
 
 - All errors include `correlationId` for traceability
 - Rate limit errors include `resetAt` ISO timestamp
@@ -347,7 +347,7 @@ Phase B adds per-user rate limiting **in addition to** existing limits:
 
 ---
 
-***REMOVED******REMOVED*** 📊 Configuration Defaults
+## 📊 Configuration Defaults
 
 | Setting                               | Default | Description                               |
 |---------------------------------------|---------|-------------------------------------------|
@@ -360,9 +360,9 @@ Phase B adds per-user rate limiting **in addition to** existing limits:
 
 ---
 
-***REMOVED******REMOVED*** 📁 Files Created/Modified
+## 📁 Files Created/Modified
 
-***REMOVED******REMOVED******REMOVED*** Backend (8 files)
+### Backend (8 files)
 
 ```
 backend/src/shared/errors/index.ts                                    (modified)
@@ -375,7 +375,7 @@ backend/src/modules/assistant/routes.ts                               (modified)
 backend/src/modules/assistant/routes.phase-b.test.ts                  (new)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Android (3 files)
+### Android (3 files)
 
 ```
 androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt     (modified)
@@ -385,7 +385,7 @@ androidApp/src/test/java/com/scanium/app/selling/assistant/AssistantErrorMapping
 
 ---
 
-***REMOVED******REMOVED*** 🎯 Success Criteria
+## 🎯 Success Criteria
 
 - [x] Backend requires authentication for /assist/chat and /assist/warmup
 - [x] Backend returns AUTH_REQUIRED when no auth provided
@@ -406,28 +406,28 @@ androidApp/src/test/java/com/scanium/app/selling/assistant/AssistantErrorMapping
 
 ---
 
-***REMOVED******REMOVED*** 🚀 Quick Start Guide
+## 🚀 Quick Start Guide
 
-***REMOVED******REMOVED******REMOVED*** 1. Run Backend Tests
+### 1. Run Backend Tests
 
 ```bash
 cd backend
 npm test
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Run Android Tests
+### 2. Run Android Tests
 
 ```bash
 ./gradlew :androidApp:test
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Smoke Test (Manual)
+### 3. Smoke Test (Manual)
 
 Follow the curl examples in "Remaining Work" section above.
 
 ---
 
-***REMOVED******REMOVED*** 🔄 Differences from Phase A
+## 🔄 Differences from Phase A
 
 | Aspect               | Phase A                         | Phase B                                  |
 |----------------------|---------------------------------|------------------------------------------|
@@ -440,16 +440,16 @@ Follow the curl examples in "Remaining Work" section above.
 
 ---
 
-***REMOVED******REMOVED*** 📝 Implementation Notes
+## 📝 Implementation Notes
 
-***REMOVED******REMOVED******REMOVED*** Why Two Auth Error Types?
+### Why Two Auth Error Types?
 
 - **AUTH_REQUIRED**: User hasn't signed in at all → Show "Sign in to continue"
 - **AUTH_INVALID**: User was signed in but session expired → Show "Session expired, sign in again"
 
 This distinction prevents confusion when a user's session expires during use.
 
-***REMOVED******REMOVED******REMOVED*** Why Per-User Rate Limiting?
+### Why Per-User Rate Limiting?
 
 Phase A rate limiting was per-IP/device/API-key, which:
 
@@ -463,7 +463,7 @@ Phase B adds per-user rate limiting that:
 - Survives device/IP changes
 - Enables future per-plan rate limits
 
-***REMOVED******REMOVED******REMOVED*** Why Include resetAt?
+### Why Include resetAt?
 
 The `resetAt` timestamp enables:
 
@@ -473,21 +473,21 @@ The `resetAt` timestamp enables:
 
 ---
 
-***REMOVED******REMOVED*** 🐛 Troubleshooting
+## 🐛 Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "AUTH_REQUIRED but I'm signed in"
+### "AUTH_REQUIRED but I'm signed in"
 
 - Check that `Authorization: Bearer <token>` header is being sent
 - Verify token is stored in SecureApiKeyStore
 - Check backend logs for token validation errors
 
-***REMOVED******REMOVED******REMOVED*** "Rate limited immediately"
+### "Rate limited immediately"
 
 - Check `ASSIST_USER_RATE_LIMIT_PER_MINUTE` setting (default: 20)
 - Verify Redis is running if using distributed rate limiting
 - Check that requests aren't being duplicated by retry logic
 
-***REMOVED******REMOVED******REMOVED*** Tests failing with "User not found"
+### Tests failing with "User not found"
 
 - Ensure test database is set up with Prisma migrations
 - Check that beforeAll() creates test user successfully
@@ -495,7 +495,7 @@ The `resetAt` timestamp enables:
 
 ---
 
-***REMOVED******REMOVED*** Next Steps (Future Work)
+## Next Steps (Future Work)
 
 Potential Phase C features:
 

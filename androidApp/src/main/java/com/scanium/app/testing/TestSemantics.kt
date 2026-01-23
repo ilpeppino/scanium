@@ -7,7 +7,7 @@ package com.scanium.app.testing
  * All tags should be stable and not change between releases to ensure
  * test reliability.
  *
- * ***REMOVED******REMOVED*** Naming Convention
+ * ## Naming Convention
  * - Use snake_case for tag names
  * - Group by feature/screen with a prefix
  * - Keep names descriptive but concise

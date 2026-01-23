@@ -1,13 +1,13 @@
-***REMOVED*** ML Kit Fix - Testing Checklist
+# ML Kit Fix - Testing Checklist
 
-***REMOVED******REMOVED*** Build & Deploy
+## Build & Deploy
 
 - [x] Code changes implemented
 - [x] Push to `main` branch (CI builds APK automatically)
 - [ ] Download `scanium-app-debug-apk` artifact from GitHub Actions (see `docs/CI_TESTING.md`)
 - [ ] Install APK on device (enable "Install unknown apps" if needed)
 
-***REMOVED******REMOVED*** Expected Log Output (Success Case)
+## Expected Log Output (Success Case)
 
 When scanning objects, you should now see logs like:
 
@@ -28,25 +28,25 @@ I ObjectDetectorClient:     Object 2: trackingId=3, labels=[], box=Rect(50, 400 
 I ObjectDetectorClient: >>> Extracted 3 DetectionInfo objects
 ```
 
-***REMOVED******REMOVED*** Key Differences from Before
+## Key Differences from Before
 
-***REMOVED******REMOVED******REMOVED*** Before (0 objects)
+### Before (0 objects)
 
 ```
 I ObjectDetectorClient: >>> ML Kit returned 0 raw objects
 I ObjectDetectorClient: >>> Extracted 0 DetectionInfo objects
 ```
 
-***REMOVED******REMOVED******REMOVED*** After (should see objects)
+### After (should see objects)
 
 ```
 I ObjectDetectorClient: >>> ML Kit returned N raw objects  (N > 0)
 I ObjectDetectorClient:     Object 0: trackingId=X, labels=[], box=Rect(...)
 ```
 
-***REMOVED******REMOVED*** Testing Steps
+## Testing Steps
 
-***REMOVED******REMOVED******REMOVED*** 1. Basic Detection Test
+### 1. Basic Detection Test
 
 1. Launch app
 2. Point camera at 2-3 distinct objects (cup, phone, book, etc.)
@@ -56,14 +56,14 @@ I ObjectDetectorClient:     Object 0: trackingId=X, labels=[], box=Rect(...)
     - Logcat shows: `ML Kit returned N raw objects` where N > 0
     - After 3 frames, items appear in detected items list
 
-***REMOVED******REMOVED******REMOVED*** 2. Check Labels
+### 2. Check Labels
 
 - Open logcat filter for `ObjectDetectorClient`
 - Look for `labels=[]` in detection logs
 - **This is normal!** Classification is disabled, so labels will be empty
 - Objects should still be detected based on shape
 
-***REMOVED******REMOVED******REMOVED*** 3. Verify Item List
+### 3. Verify Item List
 
 1. Tap "Items (N)" button after scanning
 2. **Expected**:
@@ -71,7 +71,7 @@ I ObjectDetectorClient:     Object 0: trackingId=X, labels=[], box=Rect(...)
     - Category shows as "Unknown" (because labels are empty)
     - Price range shows EUR values (e.g., "€3 - €15")
 
-***REMOVED******REMOVED******REMOVED*** 4. Verify Tracking
+### 4. Verify Tracking
 
 1. Long-press and slowly move camera
 2. **Expected**:
@@ -79,9 +79,9 @@ I ObjectDetectorClient:     Object 0: trackingId=X, labels=[], box=Rect(...)
     - Only new unique objects get added (not duplicates)
     - Logcat shows tracking IDs reused: `trackingId=123` appears in multiple frames
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Still seeing 0 objects?
+### Still seeing 0 objects?
 
 Check these logs:
 
@@ -106,7 +106,7 @@ Check these logs:
    ```
    **Solution**: Check `extractDetectionInfo()` error logs
 
-***REMOVED******REMOVED******REMOVED*** False positives (too many objects)?
+### False positives (too many objects)?
 
 If detecting background/noise as objects:
 
@@ -115,7 +115,7 @@ If detecting background/noise as objects:
 - Only objects seen in 3+ frames are confirmed
 - Adjust `MIN_CONFIDENCE` threshold if needed (currently 0.3)
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 ✅ **Fix is working if**:
 
@@ -131,14 +131,14 @@ If detecting background/noise as objects:
 2. Seeing ML Kit process() FAILED errors
 3. No items ever appear in list after scanning
 
-***REMOVED******REMOVED*** Performance Notes
+## Performance Notes
 
 - Detection without classification is **faster** than with classification
 - Expect 30-50ms per frame on modern devices
 - Stream mode optimized for continuous scanning
 - Tracking IDs help avoid redundant processing
 
-***REMOVED******REMOVED*** Next Steps After Verification
+## Next Steps After Verification
 
 If fix works:
 
@@ -156,23 +156,23 @@ If fix doesn't work:
 
 ---
 
-***REMOVED******REMOVED*** TalkBack Accessibility Testing
+## TalkBack Accessibility Testing
 
-***REMOVED******REMOVED******REMOVED*** Pre-Test Setup
+### Pre-Test Setup
 
 - [ ] Enable TalkBack: Settings → Accessibility → TalkBack → ON
 - [ ] Enable "Explore by touch"
 - [ ] Familiarize with gestures: single finger swipe (navigate), double tap (activate)
 
-***REMOVED******REMOVED******REMOVED*** CameraScreen Tests
+### CameraScreen Tests
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Navigation Order
+#### Navigation Order
 
 - [ ] Swipe through elements in logical order: Settings → Mode icons → Logo → Items button →
   Shutter → Flip camera
 - [ ] Verify traversal order matches visual layout (top-to-bottom, left-to-right)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Content Descriptions
+#### Content Descriptions
 
 - [ ] Settings button: Announces "Open settings"
 - [ ] Mode icons: Announces mode name + selected state (e.g., "Items mode. Selected")
@@ -181,31 +181,31 @@ If fix doesn't work:
 - [ ] Flip camera: Announces "Flip camera"
 - [ ] Scanium logo: Announces "Scanium logo"
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Touch Targets
+#### Touch Targets
 
 - [ ] All buttons respond to double-tap gesture
 - [ ] No "Touch target too small" warnings in Accessibility Scanner
 
-***REMOVED******REMOVED******REMOVED*** ItemsListScreen Tests
+### ItemsListScreen Tests
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Touch Targets
+#### Touch Targets
 
 - [ ] All buttons respond to double-tap
 - [ ] Retry button meets 48dp minimum
 - [ ] View listing button meets 48dp minimum
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Card Navigation
+#### Card Navigation
 
 - [ ] Each item card announces: label, price, confidence, status
 - [ ] Selected state announced when toggling
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Action Buttons
+#### Action Buttons
 
 - [ ] Retry button: Announces "Retry classification for this item"
 - [ ] View listing button: Announces "View listing on marketplace"
 - [ ] Export button: Announces with context
 
-***REMOVED******REMOVED******REMOVED*** Validation Tools
+### Validation Tools
 
 - [ ] Run Android Accessibility Scanner on both screens
 - [ ] Verify no critical issues flagged

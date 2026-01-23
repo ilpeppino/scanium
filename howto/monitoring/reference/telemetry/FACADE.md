@@ -1,18 +1,18 @@
-***REMOVED*** Telemetry Facade
+# Telemetry Facade
 
 **Module:** `shared:telemetry`
 **Package:** `com.scanium.telemetry.facade`
 **Depends on:** `shared:telemetry-contract`
 **Status:** Stable (v1.0)
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The telemetry facade provides a clean, dependency-injection-friendly API for emitting telemetry from
 shared business logic. It abstracts backend implementations behind port interfaces, allowing
 platform-specific code to plug in OpenTelemetry, Sentry, or custom analytics without changing shared
 code.
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────┐
@@ -38,9 +38,9 @@ code.
        └─────────────────────────┘
 ```
 
-***REMOVED******REMOVED*** Key Concepts
+## Key Concepts
 
-***REMOVED******REMOVED******REMOVED*** 1. Port Interfaces
+### 1. Port Interfaces
 
 Ports define contracts for telemetry backends:
 
@@ -48,7 +48,7 @@ Ports define contracts for telemetry backends:
 - **MetricPort**: Records counters, timers, gauges
 - **TracePort**: Creates distributed tracing spans
 
-***REMOVED******REMOVED******REMOVED*** 2. Telemetry Facade
+### 2. Telemetry Facade
 
 The main API used by shared code. Responsibilities:
 
@@ -57,7 +57,7 @@ The main API used by shared code. Responsibilities:
 - Enforces required attribute presence (fail-fast)
 - Delegates to port implementations
 
-***REMOVED******REMOVED******REMOVED*** 3. Default Attributes Provider
+### 3. Default Attributes Provider
 
 Platform-specific code implements `DefaultAttributesProvider` to supply:
 
@@ -67,7 +67,7 @@ Platform-specific code implements `DefaultAttributesProvider` to supply:
 - `env`: Environment (dev, staging, prod)
 - `session_id`: Unique session identifier
 
-***REMOVED******REMOVED******REMOVED*** 4. NoOp Implementations
+### 4. NoOp Implementations
 
 Provided for testing and scenarios where telemetry is disabled:
 
@@ -75,9 +75,9 @@ Provided for testing and scenarios where telemetry is disabled:
 - `NoOpMetricPort`
 - `NoOpTracePort`
 
-***REMOVED******REMOVED*** Usage
+## Usage
 
-***REMOVED******REMOVED******REMOVED*** 1. Platform Setup (Android Example)
+### 1. Platform Setup (Android Example)
 
 ```kotlin
 // In Android-specific code (e.g., androidApp module)
@@ -113,9 +113,9 @@ val telemetry = Telemetry(
 // Make available to shared code (e.g., via dependency injection)
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Shared Code Usage
+### 2. Shared Code Usage
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Emitting Events
+#### Emitting Events
 
 ```kotlin
 // In shared business logic
@@ -137,7 +137,7 @@ class ScanProcessor(private val telemetry: Telemetry) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Recording Metrics
+#### Recording Metrics
 
 ```kotlin
 class MLClassifier(private val telemetry: Telemetry) {
@@ -163,7 +163,7 @@ class MLClassifier(private val telemetry: Telemetry) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Creating Spans
+#### Creating Spans
 
 ```kotlin
 class StorageManager(private val telemetry: Telemetry) {
@@ -204,9 +204,9 @@ class StorageManager(private val telemetry: Telemetry) {
 }
 ```
 
-***REMOVED******REMOVED*** Sanitization and Required Attributes
+## Sanitization and Required Attributes
 
-***REMOVED******REMOVED******REMOVED*** Automatic PII Sanitization
+### Automatic PII Sanitization
 
 All user-provided attributes are automatically sanitized:
 
@@ -227,7 +227,7 @@ telemetry.info("user.login", mapOf(
 // }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Required Attributes Enforcement
+### Required Attributes Enforcement
 
 The facade validates that required attributes are present. If missing, it throws
 `IllegalStateException`:
@@ -253,7 +253,7 @@ telemetry.info("test.event")
 // Exception: Missing required telemetry attributes: app_version, build, env, session_id
 ```
 
-***REMOVED******REMOVED******REMOVED*** Attribute Merging
+### Attribute Merging
 
 User attributes override default attributes:
 
@@ -265,9 +265,9 @@ telemetry.info("test.event", mapOf(
 // Result: env will be "staging"
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Using NoOp Ports
+### Using NoOp Ports
 
 ```kotlin
 class MyServiceTest {
@@ -288,7 +288,7 @@ class MyServiceTest {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Using Test Doubles
+### Using Test Doubles
 
 ```kotlin
 class CapturingLogPort : LogPort {
@@ -319,7 +319,7 @@ class MyServiceTest {
 }
 ```
 
-***REMOVED******REMOVED*** Best Practices
+## Best Practices
 
 1. **Dependency Injection**: Inject `Telemetry` into shared code classes rather than accessing a
    global instance
@@ -330,19 +330,19 @@ class MyServiceTest {
 6. **Span Lifecycle**: Always end spans, preferably using the `span { }` helper or try-finally
 7. **Platform Separation**: Keep backend implementations in platform-specific modules
 
-***REMOVED******REMOVED*** Future Enhancements (Post-PR ***REMOVED***2)
+## Future Enhancements (Post-PR #2)
 
-- OpenTelemetry port implementations (PR ***REMOVED***3)
-- Sentry port implementations (PR ***REMOVED***4)
+- OpenTelemetry port implementations (PR #3)
+- Sentry port implementations (PR #4)
 - Batching/buffering for high-volume metrics
 - Sampling strategies for traces
 - Context propagation for distributed tracing
 
-***REMOVED******REMOVED*** Migration Notes
+## Migration Notes
 
-This module is new as of PR ***REMOVED***2. No migration required.
+This module is new as of PR #2. No migration required.
 
-***REMOVED******REMOVED*** API Stability
+## API Stability
 
 This facade is **stable** as of v1.0. Breaking changes will require:
 

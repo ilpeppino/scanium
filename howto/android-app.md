@@ -1,6 +1,6 @@
-***REMOVED*** Android App HOWTO
+# Android App HOWTO
 
-***REMOVED******REMOVED*** 1. Overview
+## 1. Overview
 
 The Scanium Android app is a camera-first scanner that detects items, aggregates stable detections,
 and helps users produce export-ready listings (CSV/ZIP) with optional cloud enrichment. The core
@@ -19,7 +19,7 @@ Supported modes (from `core-models/src/main/java/com/scanium/app/camera/ScanMode
 - Capture modes: tap to capture, long-press to start continuous scanning (
   `androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt`).
 
-***REMOVED******REMOVED*** 2. High-Level Architecture
+## 2. High-Level Architecture
 
 Modules and packages used by the Android app:
 
@@ -45,7 +45,7 @@ Key layers and responsibilities:
 - Domain mapping: `DomainPackRepository` and `BasicCategoryEngine` map classification to domain
   categories.
 
-***REMOVED******REMOVED*** 3. Camera & Scanning Pipeline
+## 3. Camera & Scanning Pipeline
 
 Core pipeline components and flow:
 
@@ -75,7 +75,7 @@ Geometry filtering and crop behavior:
 - ML Kit does not honor cropRect for analysis, so the cropRect is used for filtering and overlay
   mapping rather than as an analysis input.
 
-***REMOVED******REMOVED*** 4. Tracking, Deduplication & Aggregation
+## 4. Tracking, Deduplication & Aggregation
 
 Tracking and aggregation are split between frame-level tracking and session-level aggregation:
 
@@ -97,7 +97,7 @@ Conceptually:
 - Aggregation merges multiple detections of the same physical item into one `AggregatedItem` for
   list/export/classification.
 
-***REMOVED******REMOVED*** 5. UI & UX
+## 5. UI & UX
 
 Navigation and screens (see `androidApp/src/main/java/com/scanium/app/navigation/NavGraph.kt`):
 
@@ -126,7 +126,7 @@ Accessibility considerations:
 - No explicit accessibility audit is documented in the repo; treat accessibility requirements as
   TBD.
 
-***REMOVED******REMOVED*** 6. Configuration & Feature Flags
+## 6. Configuration & Feature Flags
 
 Build-time configuration is injected via BuildConfig fields in `androidApp/build.gradle.kts`:
 
@@ -148,7 +148,7 @@ Remote config:
   `androidApp/src/main/java/com/scanium/app/data/AndroidRemoteConfigProvider.kt`) uses `/v1/config`
   to fetch remote config.
 
-***REMOVED******REMOVED*** 7. Interaction With Backend
+## 7. Interaction With Backend
 
 Backend calls are optional and gated by configuration. Primary integration points:
 
@@ -175,7 +175,7 @@ Known gap:
   endpoints are not present in the backend codebase. Treat those checks as best-effort until backend
   routes exist.
 
-***REMOVED******REMOVED*** 8. Interaction With Monitoring
+## 8. Interaction With Monitoring
 
 Mobile telemetry uses OTLP over HTTP when enabled:
 
@@ -193,7 +193,7 @@ Deprecated path:
 - `MobileTelemetryClient` (Option C) is deprecated in `ScaniumApplication`; OTLP is the primary
   pipeline.
 
-***REMOVED******REMOVED*** 9. Build & Run Notes
+## 9. Build & Run Notes
 
 Local run (Android Studio / device):
 

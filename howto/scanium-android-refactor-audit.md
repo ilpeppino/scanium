@@ -1,6 +1,6 @@
-***REMOVED*** Scanium Android Refactor/Readability/Performance Audit Report
+# Scanium Android Refactor/Readability/Performance Audit Report
 
-***REMOVED******REMOVED*** A) Executive Summary
+## A) Executive Summary
 
 - The largest risk to performance and maintainability is the camera pipeline concentration in
   `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt`, which mixes camera binding,
@@ -28,7 +28,7 @@
 
 ---
 
-***REMOVED******REMOVED*** B) Hotspot Inventory (Top 20 androidApp + large core-*)
+## B) Hotspot Inventory (Top 20 androidApp + large core-*)
 
 Hotspot candidates are all files >600 LOC.
 
@@ -58,9 +58,9 @@ Hotspot candidates are all files >600 LOC.
 
 ---
 
-***REMOVED******REMOVED*** C) Performance Findings (evidence, impact, recommendation)
+## C) Performance Findings (evidence, impact, recommendation)
 
-***REMOVED******REMOVED******REMOVED*** Camera pipeline: backpressure, frame closing, analyzer dispatchers
+### Camera pipeline: backpressure, frame closing, analyzer dispatchers
 
 - Evidence: `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt` uses
   `ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST` and `imageProxy.close()` in analyzer and in
@@ -71,7 +71,7 @@ Hotspot candidates are all files >600 LOC.
   logging findings below) and consider a dedicated “frame processor” that receives only needed data,
   minimizing `ImageProxy` lifetime.
 
-***REMOVED******REMOVED******REMOVED*** Allocation hotspots in hot loops
+### Allocation hotspots in hot loops
 
 - Evidence: `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt`
   `ImageProxy.toBitmap()` allocates NV21 `ByteArray`, `ByteArrayOutputStream`, compresses to JPEG,
@@ -85,7 +85,7 @@ Hotspot candidates are all files >600 LOC.
 - Impact: Small but frequent allocations in a hot path.
 - Recommendation: Reuse a cached `Rect` or pass dimensions to avoid per-frame object creation.
 
-***REMOVED******REMOVED******REMOVED*** Dispatchers/threads
+### Dispatchers/threads
 
 - Evidence: `CameraXManager.kt` uses `cameraExecutor` and launches `detectionScope` on
   `Dispatchers.Default` for each processed frame.
@@ -94,7 +94,7 @@ Hotspot candidates are all files >600 LOC.
 - Recommendation: Use a bounded dispatcher or single-threaded context for the detection loop to
   control concurrency and avoid thread pool contention with other CPU work.
 
-***REMOVED******REMOVED******REMOVED*** Compose performance risks
+### Compose performance risks
 
 - Evidence: Very large composables in `CameraScreen.kt`, `AssistantScreen.kt`, and
   `DeveloperOptionsScreen.kt` with multiple `collectAsState` and side effects.
@@ -102,7 +102,7 @@ Hotspot candidates are all files >600 LOC.
 - Recommendation: Split screens into smaller composables with explicit state holders, and use
   `derivedStateOf`/`remember` for derived values that are recomputed often.
 
-***REMOVED******REMOVED******REMOVED*** Telemetry overhead
+### Telemetry overhead
 
 - Evidence: `CameraXManager.kt` creates a span for every frame via `telemetry?.beginSpan` and
   records timers per frame.
@@ -111,7 +111,7 @@ Hotspot candidates are all files >600 LOC.
 - Recommendation: Add sampling or coarse aggregation for frame-level spans, and only enable detailed
   spans for debugging sessions.
 
-***REMOVED******REMOVED******REMOVED*** Persistence overhead in scanning loop
+### Persistence overhead in scanning loop
 
 - Evidence: `ItemsStateManager.kt` calls `persistItems` from `updateItemsState` on every update, and
   copies item lists for caching.
@@ -121,7 +121,7 @@ Hotspot candidates are all files >600 LOC.
 
 ---
 
-***REMOVED******REMOVED*** D) Readability & Architecture Findings
+## D) Readability & Architecture Findings
 
 - **Responsibility mixing in camera pipeline**  
   Evidence: `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt` handles camera
@@ -166,16 +166,16 @@ Hotspot candidates are all files >600 LOC.
 
 ---
 
-***REMOVED******REMOVED*** E) Test Gaps & Safety Plan
+## E) Test Gaps & Safety Plan
 
-***REMOVED******REMOVED******REMOVED*** Current coverage snapshot
+### Current coverage snapshot
 
 - Unit tests: ~110 Kotlin test files under `androidApp/src/test/java`.
 - Instrumented tests: ~18 Kotlin test files under `androidApp/src/androidTest/java`.
 - Core tracking has tests in
   `shared/core-tracking/src/commonTest/kotlin/com/scanium/core/tracking/ItemAggregatorTest.kt`.
 
-***REMOVED******REMOVED******REMOVED*** Gaps
+### Gaps
 
 - Camera pipeline (`CameraXManager.kt`) lacks direct unit or instrumentation tests for analyzer
   throttling, frame closure behavior, and watchdog recovery.
@@ -184,7 +184,7 @@ Hotspot candidates are all files >600 LOC.
 - `ItemsStateManager.kt` has broad behavior but minimal focused tests for persistence frequency and
   aggregation boundary conditions.
 
-***REMOVED******REMOVED******REMOVED*** Minimal tests to add before refactor (no code changes now)
+### Minimal tests to add before refactor (no code changes now)
 
 - **Unit tests**:
     - `ItemsStateManager` persistence batching and aggregation invariants.
@@ -198,9 +198,9 @@ Hotspot candidates are all files >600 LOC.
 
 ---
 
-***REMOVED******REMOVED*** F) Proposed Refactor Plan (Phased)
+## F) Proposed Refactor Plan (Phased)
 
-***REMOVED******REMOVED******REMOVED*** Phase 1 (1-2 days): Quick wins, low risk
+### Phase 1 (1-2 days): Quick wins, low risk
 
 - **Objective**: Improve readability and reduce recomposition/boilerplate without altering logic.
 - **Files impacted**:  
@@ -214,7 +214,7 @@ Hotspot candidates are all files >600 LOC.
   `./gradlew :androidApp:assembleDevDebug`  
   `./gradlew :androidApp:lint`
 
-***REMOVED******REMOVED******REMOVED*** Phase 2 (3-5 days): Core pipeline and state separation
+### Phase 2 (3-5 days): Core pipeline and state separation
 
 - **Objective**: Clarify boundaries and reduce hot-path complexity.
 - **Files impacted**:  
@@ -231,7 +231,7 @@ Hotspot candidates are all files >600 LOC.
   `./gradlew test`  
   `./gradlew :androidApp:lint`
 
-***REMOVED******REMOVED******REMOVED*** Phase 3 (Larger): Architecture consolidation
+### Phase 3 (Larger): Architecture consolidation
 
 - **Objective**: Reduce long-term complexity and improve module boundaries.
 - **Files impacted**:  
@@ -250,9 +250,9 @@ Hotspot candidates are all files >600 LOC.
 
 ---
 
-***REMOVED******REMOVED*** G) Appendix
+## G) Appendix
 
-***REMOVED******REMOVED******REMOVED*** Commands Run
+### Commands Run
 
 - `rg --files -g "*.kt" androidApp core-*`
 - Python LOC/complexity scan for top 20 and core-* large files
@@ -268,7 +268,7 @@ Hotspot candidates are all files >600 LOC.
 - `rg --files -g "*Aggregator*Test*.kt"`
 - Python count of unit and instrumentation tests
 
-***REMOVED******REMOVED******REMOVED*** Metrics Gathered (Top 20 androidApp + core)
+### Metrics Gathered (Top 20 androidApp + core)
 
 Format: `file | LOC | functions | classes/objects | @Composable | branching`
 
@@ -305,7 +305,7 @@ Format: `file | LOC | functions | classes/objects | @Composable | branching`
 -
 `core-tracking/src/main/java/com/scanium/app/aggregation/ItemAggregator.kt | 807 | 30 | 7 | 0 | 65`
 
-***REMOVED******REMOVED******REMOVED*** Assumptions & Limitations
+### Assumptions & Limitations
 
 - Static analysis only; no runtime profiling or tracing was performed.
 - Complexity proxies are regex-based approximations.

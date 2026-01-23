@@ -1,4 +1,4 @@
-***REMOVED*** Dependency Security & SBOM (SEC-002)
+# Dependency Security & SBOM (SEC-002)
 
 **Security Finding:** SEC-002 - No Dependency Lock File / SBOM
 **Priority:** P1 (High)
@@ -8,12 +8,12 @@
 
 ---
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This document describes the dependency security mechanisms implemented in Scanium to protect against
 supply chain attacks and enable vulnerability tracking.
 
-***REMOVED******REMOVED******REMOVED*** Security Mechanisms
+### Security Mechanisms
 
 1. **Gradle Dependency Verification** - Cryptographic checksums for all dependencies
 2. **CycloneDX SBOM Generation** - Software Bill of Materials for release builds
@@ -21,9 +21,9 @@ supply chain attacks and enable vulnerability tracking.
 
 ---
 
-***REMOVED******REMOVED*** 1. Gradle Dependency Verification
+## 1. Gradle Dependency Verification
 
-***REMOVED******REMOVED******REMOVED*** What It Does
+### What It Does
 
 Gradle dependency verification ensures that every dependency downloaded from Maven repositories
 matches expected cryptographic checksums (SHA-256). This protects against:
@@ -33,20 +33,20 @@ matches expected cryptographic checksums (SHA-256). This protects against:
 - **Man-in-the-Middle Attacks** - Modified packages during download
 - **Transitive Dependency Attacks** - Malicious indirect dependencies
 
-***REMOVED******REMOVED******REMOVED*** Setup
+### Setup
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Initial Generation
+#### Initial Generation
 
 Generate the verification metadata file (requires network access):
 
 ```bash
-***REMOVED*** Generate SHA-256 checksums for all dependencies
+# Generate SHA-256 checksums for all dependencies
 ./gradlew --write-verification-metadata sha256 help
 
-***REMOVED*** This creates: gradle/verification-metadata.xml
+# This creates: gradle/verification-metadata.xml
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** What Gets Generated
+#### What Gets Generated
 
 The `gradle/verification-metadata.xml` file contains:
 
@@ -67,41 +67,41 @@ The `gradle/verification-metadata.xml` file contains:
 </verification-metadata>
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Updating Verification Metadata
+#### Updating Verification Metadata
 
 When adding new dependencies or upgrading versions:
 
 ```bash
-***REMOVED*** Add new checksums without removing existing ones
+# Add new checksums without removing existing ones
 ./gradlew --write-verification-metadata sha256 help
 
-***REMOVED*** Review the diff
+# Review the diff
 git diff gradle/verification-metadata.xml
 
-***REMOVED*** Commit the updated file
+# Commit the updated file
 git add gradle/verification-metadata.xml
 git commit -m "security: update dependency verification metadata"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Verification in Action
+### Verification in Action
 
 Once `gradle/verification-metadata.xml` exists, Gradle **automatically verifies** every dependency:
 
 ```bash
-***REMOVED*** This build will verify checksums
+# This build will verify checksums
 ./gradlew assembleDebug
 
-***REMOVED*** If a checksum doesn't match, build FAILS with error:
-***REMOVED*** > Dependency verification failed for configuration ':app:debugRuntimeClasspath'
-***REMOVED*** > Artifact core-ktx-1.12.0.jar (androidx.core:core-ktx:1.12.0) has wrong checksum
+# If a checksum doesn't match, build FAILS with error:
+# > Dependency verification failed for configuration ':app:debugRuntimeClasspath'
+# > Artifact core-ktx-1.12.0.jar (androidx.core:core-ktx:1.12.0) has wrong checksum
 ```
 
-***REMOVED******REMOVED******REMOVED*** CI/CD Integration
+### CI/CD Integration
 
 Add verification checks to GitHub Actions:
 
 ```yaml
-***REMOVED*** .github/workflows/security.yml
+# .github/workflows/security.yml
 name: Security Checks
 
 on: [pull_request]
@@ -118,15 +118,15 @@ jobs:
       - name: Verify dependency checksums
         run: |
           ./gradlew --no-daemon help
-          ***REMOVED*** Gradle will automatically verify all checksums
-          ***REMOVED*** Build fails if any checksum doesn't match
+          # Gradle will automatically verify all checksums
+          # Build fails if any checksum doesn't match
 ```
 
 ---
 
-***REMOVED******REMOVED*** 2. SBOM Generation (CycloneDX)
+## 2. SBOM Generation (CycloneDX)
 
-***REMOVED******REMOVED******REMOVED*** What It Does
+### What It Does
 
 A Software Bill of Materials (SBOM) is a comprehensive inventory of all dependencies used in the
 application. It enables:
@@ -137,7 +137,7 @@ application. It enables:
 - **Incident Response** - Quickly determine if affected by supply chain compromises (e.g.,
   Log4Shell)
 
-***REMOVED******REMOVED******REMOVED*** Configuration
+### Configuration
 
 Added to `app/build.gradle.kts`:
 
@@ -157,19 +157,19 @@ cyclonedxBom {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Generating SBOM
+### Generating SBOM
 
 ```bash
-***REMOVED*** Generate SBOM for release build
+# Generate SBOM for release build
 ./gradlew cyclonedxBom
 
-***REMOVED*** Output location:
-***REMOVED*** app/build/reports/bom.json
-***REMOVED*** OR
-***REMOVED*** app/build/reports/scanium-bom.json
+# Output location:
+# app/build/reports/bom.json
+# OR
+# app/build/reports/scanium-bom.json
 ```
 
-***REMOVED******REMOVED******REMOVED*** SBOM Format (CycloneDX 1.5)
+### SBOM Format (CycloneDX 1.5)
 
 Example SBOM structure:
 
@@ -208,48 +208,48 @@ Example SBOM structure:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Using SBOM for CVE Scanning
+### Using SBOM for CVE Scanning
 
 Upload SBOM to vulnerability databases:
 
 ```bash
-***REMOVED*** Option 1: Snyk CLI
+# Option 1: Snyk CLI
 snyk test --file=app/build/reports/bom.json
 
-***REMOVED*** Option 2: OWASP Dependency-Check
+# Option 2: OWASP Dependency-Check
 dependency-check --scan app/build/reports/bom.json
 
-***REMOVED*** Option 3: Grype (by Anchore)
+# Option 3: Grype (by Anchore)
 grype sbom:app/build/reports/bom.json
 ```
 
-***REMOVED******REMOVED******REMOVED*** Release Process Integration
+### Release Process Integration
 
 Include SBOM generation in release builds:
 
 ```bash
-***REMOVED*** 1. Build release APK
+# 1. Build release APK
 ./gradlew assembleRelease
 
-***REMOVED*** 2. Generate SBOM
+# 2. Generate SBOM
 ./gradlew cyclonedxBom
 
-***REMOVED*** 3. Archive SBOM with release artifacts
+# 3. Archive SBOM with release artifacts
 mkdir -p releases/v1.0/
 cp app/build/outputs/apk/release/app-release.apk releases/v1.0/
 cp app/build/reports/scanium-bom.json releases/v1.0/
 
-***REMOVED*** 4. Scan SBOM for vulnerabilities BEFORE release
+# 4. Scan SBOM for vulnerabilities BEFORE release
 grype sbom:releases/v1.0/scanium-bom.json --fail-on high
 ```
 
 ---
 
-***REMOVED******REMOVED*** 3. Dependency Locking (Optional)
+## 3. Dependency Locking (Optional)
 
 Gradle dependency locking pins transitive dependency versions to prevent unexpected updates.
 
-***REMOVED******REMOVED******REMOVED*** Enable Dependency Locking
+### Enable Dependency Locking
 
 Add to `app/build.gradle.kts`:
 
@@ -260,32 +260,32 @@ dependencyLocking {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Generate Lock Files
+### Generate Lock Files
 
 ```bash
-***REMOVED*** Generate lock files for all configurations
+# Generate lock files for all configurations
 ./gradlew dependencies --write-locks
 
-***REMOVED*** This creates:
-***REMOVED*** gradle/dependency-locks/releaseRuntimeClasspath.lockfile
-***REMOVED*** gradle/dependency-locks/debugRuntimeClasspath.lockfile
+# This creates:
+# gradle/dependency-locks/releaseRuntimeClasspath.lockfile
+# gradle/dependency-locks/debugRuntimeClasspath.lockfile
 ```
 
-***REMOVED******REMOVED******REMOVED*** Update Locked Dependencies
+### Update Locked Dependencies
 
 ```bash
-***REMOVED*** Update a specific dependency
+# Update a specific dependency
 ./gradlew dependencies --update-locks androidx.core:core-ktx
 
-***REMOVED*** Update all dependencies
+# Update all dependencies
 ./gradlew dependencies --write-locks
 ```
 
 ---
 
-***REMOVED******REMOVED*** 4. Security Benefits
+## 4. Security Benefits
 
-***REMOVED******REMOVED******REMOVED*** Attack Mitigation
+### Attack Mitigation
 
 | Attack Vector                    | Without Protection                                | With Protection                              |
 |----------------------------------|---------------------------------------------------|----------------------------------------------|
@@ -295,7 +295,7 @@ dependencyLocking {
 | **Version Downgrade**            | Attacker forces older vulnerable version          | ✅ Verification metadata pins exact versions  |
 | **Unknown Vulnerabilities**      | CVE disclosed, unclear if app affected            | ✅ SBOM lookup shows affected dependency      |
 
-***REMOVED******REMOVED******REMOVED*** Compliance Benefits
+### Compliance Benefits
 
 - **OWASP MASVS MASVS-CODE-1:** ✅ Build process verifies authenticity of dependencies
 - **NIST SSDF:** ✅ Software Bill of Materials documented
@@ -304,9 +304,9 @@ dependencyLocking {
 
 ---
 
-***REMOVED******REMOVED*** 5. Maintenance
+## 5. Maintenance
 
-***REMOVED******REMOVED******REMOVED*** When to Update Verification Metadata
+### When to Update Verification Metadata
 
 Update `gradle/verification-metadata.xml` whenever:
 
@@ -321,7 +321,7 @@ git add gradle/verification-metadata.xml
 git commit -m "security: update dependency checksums"
 ```
 
-***REMOVED******REMOVED******REMOVED*** When to Generate SBOM
+### When to Generate SBOM
 
 Generate SBOM:
 
@@ -330,77 +330,77 @@ Generate SBOM:
 3. **On security incidents** (check if affected)
 4. **Quarterly** (proactive vulnerability scanning)
 
-***REMOVED******REMOVED******REMOVED*** File Locations
+### File Locations
 
 ```
 scanium/
 ├── gradle/
-│   ├── verification-metadata.xml         ***REMOVED*** Dependency checksums (COMMIT THIS)
-│   └── dependency-locks/                 ***REMOVED*** Lock files (optional, COMMIT THIS)
+│   ├── verification-metadata.xml         # Dependency checksums (COMMIT THIS)
+│   └── dependency-locks/                 # Lock files (optional, COMMIT THIS)
 │       ├── releaseRuntimeClasspath.lockfile
 │       └── debugRuntimeClasspath.lockfile
 ├── app/
 │   └── build/
 │       └── reports/
-│           └── scanium-bom.json          ***REMOVED*** SBOM (DO NOT COMMIT, generate for each release)
-└── .gitignore                            ***REMOVED*** Ensure build/ is ignored
+│           └── scanium-bom.json          # SBOM (DO NOT COMMIT, generate for each release)
+└── .gitignore                            # Ensure build/ is ignored
 ```
 
-***REMOVED******REMOVED******REMOVED*** .gitignore Configuration
+### .gitignore Configuration
 
 Ensure these rules exist in `.gitignore`:
 
 ```gitignore
-***REMOVED*** Build outputs (don't commit)
+# Build outputs (don't commit)
 build/
 app/build/
 
-***REMOVED*** Dependency verification (DO commit)
+# Dependency verification (DO commit)
 !gradle/verification-metadata.xml
 !gradle/dependency-locks/
 
-***REMOVED*** SBOM generated per-build (don't commit, archive separately)
+# SBOM generated per-build (don't commit, archive separately)
 *.bom.json
 ```
 
 ---
 
-***REMOVED******REMOVED*** 6. Troubleshooting
+## 6. Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Issue: "Dependency verification failed"
+### Issue: "Dependency verification failed"
 
 **Cause:** Checksum mismatch (dependency changed or verification metadata outdated)
 
 **Solution:**
 
 ```bash
-***REMOVED*** Regenerate checksums (use with caution - verify changes are legitimate)
+# Regenerate checksums (use with caution - verify changes are legitimate)
 ./gradlew --write-verification-metadata sha256 help
 
-***REMOVED*** Review what changed
+# Review what changed
 git diff gradle/verification-metadata.xml
 
-***REMOVED*** If suspicious, investigate before committing
+# If suspicious, investigate before committing
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue: "SBOM generation fails"
+### Issue: "SBOM generation fails"
 
 **Cause:** Network issues or plugin version incompatibility
 
 **Solution:**
 
 ```bash
-***REMOVED*** Verify plugin version
+# Verify plugin version
 grep "cyclonedx.bom" app/build.gradle.kts
 
-***REMOVED*** Try standalone generation
+# Try standalone generation
 ./gradlew cyclonedxBom --stacktrace
 
-***REMOVED*** Check output directory
+# Check output directory
 ls -la app/build/reports/
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue: Build is slow with verification enabled
+### Issue: Build is slow with verification enabled
 
 **Cause:** Gradle verifies checksums on every dependency resolution
 
@@ -412,9 +412,9 @@ ls -la app/build/reports/
 
 ---
 
-***REMOVED******REMOVED*** 7. References
+## 7. References
 
-***REMOVED******REMOVED******REMOVED*** Documentation
+### Documentation
 
 - **Gradle Dependency Verification:
   ** https://docs.gradle.org/current/userguide/dependency_verification.html
@@ -422,33 +422,33 @@ ls -la app/build/reports/
 - **OWASP Dependency-Check:** https://owasp.org/www-project-dependency-check/
 - **SLSA Framework:** https://slsa.dev/
 
-***REMOVED******REMOVED******REMOVED*** Tools
+### Tools
 
 - **Snyk:** https://snyk.io/ (CVE scanning)
 - **Grype:** https://github.com/anchore/grype (open-source SBOM scanner)
 - **Dependabot:** https://github.com/dependabot (GitHub-native dependency updates)
 
-***REMOVED******REMOVED******REMOVED*** Scanium Security Docs
+### Scanium Security Docs
 
 - **SECURITY_RISK_ASSESSMENT.md** - Comprehensive security assessment
 - **ASSESSMENT_SUMMARY.md** - Executive summary of security posture
 
 ---
 
-***REMOVED******REMOVED*** 8. Implementation Summary
+## 8. Implementation Summary
 
 **Implemented:** 2025-12-15
 **Implemented By:** Codex Security Team
 **Branch:** `claude/fix-android-security-findings-TccHR`
 
-***REMOVED******REMOVED******REMOVED*** Changes Made
+### Changes Made
 
 1. ✅ Added CycloneDX BOM plugin v1.8.2 to `app/build.gradle.kts`
 2. ✅ Configured SBOM generation for release and debug builds
 3. ✅ Created comprehensive documentation (this file)
 4. ⏸️ Dependency verification metadata generation (requires network - documented)
 
-***REMOVED******REMOVED******REMOVED*** Next Steps
+### Next Steps
 
 1. **Generate verification metadata** (requires one-time network access):
    ```bash
@@ -466,7 +466,7 @@ ls -la app/build/reports/
 
 4. **Document in release process** (update CONTRIBUTING.md or RELEASE.md)
 
-***REMOVED******REMOVED******REMOVED*** Security Impact
+### Security Impact
 
 - ✅ Protects against dependency confusion attacks
 - ✅ Enables CVE vulnerability tracking

@@ -1,11 +1,11 @@
-***REMOVED*** Dashboard Troubleshooting Guides
+# Dashboard Troubleshooting Guides
 
 Detailed guides for fixing "No data" issues and troubleshooting Grafana dashboards in the Scanium
 monitoring stack.
 
-***REMOVED******REMOVED*** Recently Fixed Dashboards
+## Recently Fixed Dashboards
 
-***REMOVED******REMOVED******REMOVED*** [OpenAI Runtime Dashboard](./openai-runtime-dashboard.md) ✅
+### [OpenAI Runtime Dashboard](./openai-runtime-dashboard.md) ✅
 
 - **Dashboard:** Scanium - OpenAI Runtime
 - **File:** `monitoring/grafana/dashboards/openai-runtime.json`
@@ -16,27 +16,27 @@ monitoring stack.
     - Backend metrics scraping via Alloy
 - **Status:** Fully operational with all panels showing data
 
-***REMOVED******REMOVED******REMOVED*** [Backend API Performance Dashboard](./backend-api-performance-dashboard.md)
+### [Backend API Performance Dashboard](./backend-api-performance-dashboard.md)
 
 - **Dashboard:** Scanium - Backend API Performance
 - **File:** `monitoring/grafana/dashboards/backend-api-performance.json`
 - **Metrics:** HTTP request rate, latency, error rate by endpoint
 
-***REMOVED******REMOVED******REMOVED*** [Backend Errors Dashboard](./backend-errors-dashboard.md)
+### [Backend Errors Dashboard](./backend-errors-dashboard.md)
 
 - **Dashboard:** Scanium - Backend Errors
 - **File:** `monitoring/grafana/dashboards/backend-errors.json`
 - **Metrics:** Error rate, error types, error distribution
 
-***REMOVED******REMOVED******REMOVED*** [Errors and Failures Dashboard](./errors-and-failures-dashboard.md)
+### [Errors and Failures Dashboard](./errors-and-failures-dashboard.md)
 
 - **Dashboard:** Scanium - Errors & Failures
 - **File:** `monitoring/grafana/dashboards/errors.json`
 - **Metrics:** System-wide error tracking across mobile and backend
 
-***REMOVED******REMOVED*** Common Dashboard Issues
+## Common Dashboard Issues
 
-***REMOVED******REMOVED******REMOVED*** "No data" in panels
+### "No data" in panels
 
 **Diagnosis checklist:**
 
@@ -53,7 +53,7 @@ monitoring stack.
 
 3. **Verify label names match queries:**
    ```bash
-   ***REMOVED*** List all labels for a metric
+   # List all labels for a metric
    curl -sG 'http://127.0.0.1:9009/prometheus/api/v1/series' \
      --data-urlencode 'match[]=your_metric_name'
    ```
@@ -62,17 +62,17 @@ monitoring stack.
    ```bash
    curl -sG 'http://127.0.0.1:9009/prometheus/api/v1/query' \
      --data-urlencode 'query=up{job="scanium-backend"}'
-   ***REMOVED*** Expected: value = "1"
+   # Expected: value = "1"
    ```
 
-***REMOVED******REMOVED******REMOVED*** Incorrect time series
+### Incorrect time series
 
 1. **Verify scrape interval:** Check `monitoring/alloy/config.alloy` for `scrape_interval` settings
 2. **Check retention:** See `monitoring/mimir/mimir.yaml` for retention period
 3. **Validate time range:** Dashboard time picker must match data availability (default is last 6
    hours)
 
-***REMOVED******REMOVED******REMOVED*** Variables not populating
+### Variables not populating
 
 **Common causes:**
 
@@ -88,9 +88,9 @@ monitoring stack.
 3. Check for errors in browser console (F12)
 4. Verify labels exist: `curl -s 'http://127.0.0.1:9009/prometheus/api/v1/labels'`
 
-***REMOVED******REMOVED*** Testing Tools
+## Testing Tools
 
-***REMOVED******REMOVED******REMOVED*** Traffic Generator
+### Traffic Generator
 
 Generate test traffic for OpenAI/Assistant metrics:
 
@@ -98,17 +98,17 @@ Generate test traffic for OpenAI/Assistant metrics:
 ssh nas
 cd /volume1/docker/scanium/repo
 
-***REMOVED*** Get API key and backend IP
+# Get API key and backend IP
 API_KEY=$(grep SCANIUM_API_KEYS backend/.env | cut -d= -f2 | cut -d, -f1)
 BACKEND_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' scanium-backend)
 
-***REMOVED*** Run traffic generator (3 requests + 1 error over ~60 seconds)
+# Run traffic generator (3 requests + 1 error over ~60 seconds)
 SCANIUM_API_KEY=$API_KEY bash howto/monitoring/testing/generate-openai-traffic.sh http://$BACKEND_IP:8080
 ```
 
 See [../testing/README.md](../testing/README.md) for more testing tools.
 
-***REMOVED******REMOVED*** Dashboard File Locations
+## Dashboard File Locations
 
 All dashboard JSON files are in `monitoring/grafana/dashboards/`:
 
@@ -126,7 +126,7 @@ All dashboard JSON files are in `monitoring/grafana/dashboards/`:
 - `system-overview.json` - System overview
 - `traces-drilldown.json` - Trace analysis
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - **Main Monitoring Guide:** [../README.md](../README.md)
 - **Telemetry Setup:** [../telemetry/](../telemetry/)

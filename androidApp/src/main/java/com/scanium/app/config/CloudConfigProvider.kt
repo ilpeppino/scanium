@@ -10,11 +10,11 @@ import com.scanium.shared.core.models.config.CloudConfigProvider
  * Android implementation of CloudConfigProvider that reads base URL from BuildConfig
  * and API keys from encrypted storage backed by the Android Keystore.
  *
- * ***REMOVED******REMOVED*** URL Resolution Order (debug builds only):
+ * ## URL Resolution Order (debug builds only):
  * 1. DevConfigOverride (if explicitly set and not stale)
  * 2. BuildConfig.SCANIUM_API_BASE_URL
  *
- * ***REMOVED******REMOVED*** URL Resolution (release builds):
+ * ## URL Resolution (release builds):
  * - BuildConfig.SCANIUM_API_BASE_URL only (overrides are ignored)
  */
 class AndroidCloudConfigProvider(

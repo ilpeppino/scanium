@@ -1,5 +1,5 @@
-***REMOVED*** Tempo Configuration - Single-node development setup
-***REMOVED*** Optimized for NAS deployment (Synology DS418play: 2 cores, 4 threads, 6GB RAM)
+# Tempo Configuration - Single-node development setup
+# Optimized for NAS deployment (Synology DS418play: 2 cores, 4 threads, 6GB RAM)
 
 server:
   http_listen_port: 3200
@@ -18,18 +18,18 @@ distributor:
       store: inmemory
 
 ingester:
-  max_block_duration: 5m               ***REMOVED*** Cut blocks after 5 minutes
-  max_block_bytes: 10485760            ***REMOVED*** 10MB
+  max_block_duration: 5m               # Cut blocks after 5 minutes
+  max_block_bytes: 10485760            # 10MB
 
 compactor:
   compaction:
-    block_retention: 168h              ***REMOVED*** 7 days retention
+    block_retention: 168h              # 7 days retention
     compacted_block_retention: 1h
     compaction_window: 1h
     max_compaction_objects: 1000000
     retention_concurrency: 10
-    v2_in_buffer_bytes: 5242880        ***REMOVED*** 5MB
-    v2_out_buffer_bytes: 20971520      ***REMOVED*** 20MB
+    v2_in_buffer_bytes: 5242880        # 5MB
+    v2_out_buffer_bytes: 20971520      # 20MB
     v2_prefetch_traces_count: 1000
 
 storage:
@@ -40,11 +40,11 @@ storage:
     local:
       path: /var/tempo/blocks
     pool:
-      max_workers: 4      ***REMOVED*** Matches NAS thread count (DS418play: 4 threads)
-      queue_depth: 1000   ***REMOVED*** Reduced proportionally for NAS memory constraints
+      max_workers: 4      # Matches NAS thread count (DS418play: 4 threads)
+      queue_depth: 1000   # Reduced proportionally for NAS memory constraints
 
 querier:
-  max_concurrent_queries: 5   ***REMOVED*** Reduced for NAS CPU constraints
+  max_concurrent_queries: 5   # Reduced for NAS CPU constraints
   frontend_worker:
     frontend_address: tempo:9095
 
@@ -73,7 +73,7 @@ metrics_generator:
       wait: 10s
     span_metrics: { }
 
-***REMOVED*** Required for single-tenant mode to enable metrics generation
-***REMOVED*** See: https://github.com/grafana/tempo/issues/5479
+# Required for single-tenant mode to enable metrics generation
+# See: https://github.com/grafana/tempo/issues/5479
 overrides:
   per_tenant_override_config: /etc/tempo/overrides.yaml

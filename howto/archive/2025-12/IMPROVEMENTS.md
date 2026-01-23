@@ -1,4 +1,4 @@
-***REMOVED*** Scanium - Improvements Roadmap
+# Scanium - Improvements Roadmap
 
 **Document Version:** 1.0
 **Date:** 2025-12-13
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Scanium is a well-architected Android camera-first scanning app with solid foundations in MVVM,
 Jetpack Compose, and ML Kit integration. The codebase demonstrates strong engineering practices
@@ -35,18 +35,18 @@ abstraction layers.
 
 ---
 
-***REMOVED******REMOVED*** Priority Matrix
+## Priority Matrix
 
 ```
-CRITICAL │ P0: Dead Code Cleanup (***REMOVED***001, ***REMOVED***002, ***REMOVED***003)
-         │ P0: Documentation Sync (***REMOVED***007, ***REMOVED***009)
+CRITICAL │ P0: Dead Code Cleanup (#001, #002, #003)
+         │ P0: Documentation Sync (#007, #009)
          │
-HIGH     │ P1: Error Handling (***REMOVED***016, ***REMOVED***018)
-         │ P1: Memory Management (***REMOVED***012)
-         │ P1: Accessibility (***REMOVED***015)
-         │ P1: Config Externalization (***REMOVED***006)
+HIGH     │ P1: Error Handling (#016, #018)
+         │ P1: Memory Management (#012)
+         │ P1: Accessibility (#015)
+         │ P1: Config Externalization (#006)
          │
-MEDIUM   │ P2: UX Polish (***REMOVED***017, threading, logging)
+MEDIUM   │ P2: UX Polish (#017, threading, logging)
          │ P2: Performance Tuning
          │ P2: Instrumentation Tests
          │
@@ -57,15 +57,15 @@ LOW      │ P3: Advanced Features (persistence, analytics)
 
 ---
 
-***REMOVED******REMOVED*** Improvement Backlog
+## Improvement Backlog
 
-***REMOVED******REMOVED******REMOVED*** P0 - Must Do Next (Before Any New Features)
+### P0 - Must Do Next (Before Any New Features)
 
 These issues block maintainability and create confusion for current/future developers.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Remove Dead Code (Code Hygiene)
+#### 1. Remove Dead Code (Code Hygiene)
 
-**Issues:** ***REMOVED***001, ***REMOVED***002, ***REMOVED***003
+**Issues:** #001, #002, #003
 **Scope:** Small (2-4 hours)
 **Impact:** High - Reduces confusion, speeds up navigation, clarifies architecture
 
@@ -88,9 +88,9 @@ These issues block maintainability and create confusion for current/future devel
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Sync Documentation with Reality (Knowledge Transfer)
+#### 2. Sync Documentation with Reality (Knowledge Transfer)
 
-**Issues:** ***REMOVED***007, ***REMOVED***009, ***REMOVED***004
+**Issues:** #007, #009, #004
 **Scope:** Medium (4-6 hours)
 **Impact:** High - Enables accurate onboarding and maintenance
 
@@ -112,13 +112,13 @@ These issues block maintainability and create confusion for current/future devel
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** P1 - Near-Term (Next Sprint)
+### P1 - Near-Term (Next Sprint)
 
 Critical for production-ready user experience and maintainability.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Externalize Configuration Values (Maintainability)
+#### 3. Externalize Configuration Values (Maintainability)
 
-**Issue:** ***REMOVED***006
+**Issue:** #006
 **Scope:** Medium (6-8 hours)
 **Impact:** High - Enables A/B testing, easier tuning, clearer documentation
 
@@ -186,9 +186,9 @@ object ScaniumConfig {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Implement Proper Error Handling (Production Readiness)
+#### 4. Implement Proper Error Handling (Production Readiness)
 
-**Issues:** ***REMOVED***016 (camera errors), ***REMOVED***018 (ML Kit download)
+**Issues:** #016 (camera errors), #018 (ML Kit download)
 **Scope:** Large (8-12 hours)
 **Impact:** Critical for first-launch experience and robustness
 
@@ -247,9 +247,9 @@ sealed class AppError {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Fix Memory Management (Stability)
+#### 5. Fix Memory Management (Stability)
 
-**Issue:** ***REMOVED***012
+**Issue:** #012
 **Scope:** Medium (4-6 hours)
 **Impact:** High - Prevents OOM crashes on extended scanning sessions
 
@@ -306,9 +306,9 @@ sealed class AppError {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6. Accessibility Support (Inclusivity + Compliance)
+#### 6. Accessibility Support (Inclusivity + Compliance)
 
-**Issue:** ***REMOVED***015
+**Issue:** #015
 **Scope:** Medium (6-8 hours)
 **Impact:** Medium-High - Opens app to visually impaired users (~15% of population)
 
@@ -372,13 +372,13 @@ sealed class AppError {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** P2 - Medium-Term (2-3 Sprints)
+### P2 - Medium-Term (2-3 Sprints)
 
 Improvements that enhance quality but aren't blocking production.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 7. UX Polish & Feedback
+#### 7. UX Polish & Feedback
 
-**Issues:** ***REMOVED***017 (classification mode feedback), ***REMOVED***011 (threading)
+**Issues:** #017 (classification mode feedback), #011 (threading)
 **Scope:** Small-Medium (4-6 hours total)
 **Impact:** Medium - Better perceived quality
 
@@ -405,7 +405,7 @@ Improvements that enhance quality but aren't blocking production.
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 8. Performance Optimization
+#### 8. Performance Optimization
 
 **Scope:** Medium (6-10 hours)
 **Impact:** Medium - Improves responsiveness on mid-range devices
@@ -453,7 +453,7 @@ Improvements that enhance quality but aren't blocking production.
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 9. Expand Test Coverage
+#### 9. Expand Test Coverage
 
 **Scope:** Medium (8-12 hours)
 **Impact:** Medium - Reduces regression risk
@@ -494,13 +494,13 @@ Improvements that enhance quality but aren't blocking production.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** P3 - Long-Term (Future Roadmap)
+### P3 - Long-Term (Future Roadmap)
 
 Features and improvements for scaling beyond PoC.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 10. Production ML Models
+#### 10. Production ML Models
 
-**Issue:** ***REMOVED***014
+**Issue:** #014
 **Scope:** Very Large (multiple sprints, requires ML expertise)
 **Impact:** High - Core value proposition
 
@@ -551,9 +551,9 @@ Features and improvements for scaling beyond PoC.
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 11. Persistent Storage (Room Database Activation)
+#### 11. Persistent Storage (Room Database Activation)
 
-**Issue:** ***REMOVED***002 (decision required), ***REMOVED***008 (schema fixes)
+**Issue:** #002 (decision required), #008 (schema fixes)
 **Scope:** Medium (6-8 hours if activating)
 **Impact:** Medium - User convenience
 
@@ -586,7 +586,7 @@ If **activating**:
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 12. Multi-Module Architecture
+#### 12. Multi-Module Architecture
 
 **Scope:** Very Large (2-3 weeks)
 **Impact:** Medium - Scalability
@@ -601,14 +601,14 @@ If **activating**:
 **Proposed Structure:**
 
 ```
-:app                    ***REMOVED*** UI navigation, DI setup
-:feature:camera         ***REMOVED*** Camera screen, CameraXManager
-:feature:items          ***REMOVED*** Items list, ViewModel, aggregation
-:feature:selling        ***REMOVED*** eBay integration
-:core:ml                ***REMOVED*** ML Kit wrappers, tracking
-:core:data              ***REMOVED*** Room, repositories, preferences
-:core:domain            ***REMOVED*** Domain Pack system
-:core:ui                ***REMOVED*** Shared UI components, theme
+:app                    # UI navigation, DI setup
+:feature:camera         # Camera screen, CameraXManager
+:feature:items          # Items list, ViewModel, aggregation
+:feature:selling        # eBay integration
+:core:ml                # ML Kit wrappers, tracking
+:core:data              # Room, repositories, preferences
+:core:domain            # Domain Pack system
+:core:ui                # Shared UI components, theme
 ```
 
 **Benefits:**
@@ -628,7 +628,7 @@ If **activating**:
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 13. Analytics & Monitoring
+#### 13. Analytics & Monitoring
 
 **Scope:** Medium (4-6 hours for basic setup)
 **Impact:** Medium - Product insights
@@ -672,7 +672,7 @@ If **activating**:
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 14. CI/CD Pipeline
+#### 14. CI/CD Pipeline
 
 **Scope:** Medium (6-8 hours)
 **Impact:** Medium - Development velocity
@@ -730,52 +730,52 @@ jobs:
 
 ---
 
-***REMOVED******REMOVED*** Dependency Graph
+## Dependency Graph
 
 ```
-P0: Dead Code Cleanup (***REMOVED***001, ***REMOVED***002, ***REMOVED***003)
+P0: Dead Code Cleanup (#001, #002, #003)
   ↓
-P0: Documentation Sync (***REMOVED***007, ***REMOVED***009, ***REMOVED***004)
+P0: Documentation Sync (#007, #009, #004)
   ↓
-P1: Config Externalization (***REMOVED***006) ← Helps with tuning/testing
+P1: Config Externalization (#006) ← Helps with tuning/testing
   ↓
-P1: Error Handling (***REMOVED***016, ***REMOVED***018) ← Critical for users
-P1: Memory Management (***REMOVED***012)      ← Stability
-P1: Accessibility (***REMOVED***015)          ← Inclusivity
+P1: Error Handling (#016, #018) ← Critical for users
+P1: Memory Management (#012)      ← Stability
+P1: Accessibility (#015)          ← Inclusivity
   ↓
-P2: UX Polish (***REMOVED***017, ***REMOVED***011, ***REMOVED***010)
+P2: UX Polish (#017, #011, #010)
 P2: Performance Optimization
 P2: Test Coverage Expansion
   ↓
-P3: Production ML Models (***REMOVED***014)
-P3: Persistence (***REMOVED***002 decision)
+P3: Production ML Models (#014)
+P3: Persistence (#002 decision)
 P3: Multi-Module Architecture
 P3: Analytics & CI/CD
 ```
 
 ---
 
-***REMOVED******REMOVED*** Summary Recommendations
+## Summary Recommendations
 
-***REMOVED******REMOVED******REMOVED*** Immediate Actions (This Week):
+### Immediate Actions (This Week):
 
 1. **Delete dead code** (remaining: SessionDeduplicator, unused database)
 2. **Fix documentation** (CLAUDE.md tracker configs, ItemAggregator)
 3. **Externalize configs** (create ScaniumConfig object)
 
-***REMOVED******REMOVED******REMOVED*** Sprint 1 (Next 2 Weeks):
+### Sprint 1 (Next 2 Weeks):
 
 4. **Error handling** (camera errors, ML Kit download UI)
 5. **Memory management** (bitmap recycling)
 6. **Accessibility** (TalkBack support)
 
-***REMOVED******REMOVED******REMOVED*** Sprint 2-3 (Next Month):
+### Sprint 2-3 (Next Month):
 
 7. **UX polish** (classification mode feedback, threading fixes)
 8. **Performance tuning** (profile and optimize hot paths)
 9. **Test coverage** (integration tests, screenshot tests)
 
-***REMOVED******REMOVED******REMOVED*** Future Roadmap (3-6 Months):
+### Future Roadmap (3-6 Months):
 
 10. **Production ML** (CLIP or cloud classification)
 11. **Persistence decision** (activate database or delete it)
@@ -784,7 +784,7 @@ P3: Analytics & CI/CD
 
 ---
 
-***REMOVED******REMOVED*** Closing Thoughts
+## Closing Thoughts
 
 Scanium has a solid foundation with well-thought-out architecture and comprehensive testing. The
 identified issues are primarily **technical debt** and **polish** rather than fundamental design

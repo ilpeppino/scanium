@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
  * This collector monitors the device's network connectivity and reports it as a gauge metric.
  * The metric helps correlate API performance with network conditions.
  *
- * ***REMOVED******REMOVED*** Metric
+ * ## Metric
  * - **Name**: `mobile.network.type`
  * - **Type**: Gauge (current value)
  * - **Values**:
@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
  *   - `3`: Ethernet (rare on mobile)
  *   - `4`: Other (VPN, etc.)
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  * ```kotlin
  * val collector = NetworkTypeCollector(context, telemetry, scope)
  * collector.start()
@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
  * collector.stop()
  * ```
  *
- * ***REMOVED******REMOVED*** Privacy
+ * ## Privacy
  * This metric respects the telemetry opt-out setting. If telemetry is disabled,
  * no network metrics are collected.
  *

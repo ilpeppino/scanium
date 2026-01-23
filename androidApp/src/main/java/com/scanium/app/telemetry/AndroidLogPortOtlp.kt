@@ -24,20 +24,20 @@ import kotlin.concurrent.withLock
 /**
  * Android implementation of [LogPort] that exports logs via OTLP.
  *
- * ***REMOVED******REMOVED*** Batching Strategy
+ * ## Batching Strategy
  * - Accumulates log events in bounded queue
  * - Exports when batch size reached OR timeout elapsed
  * - Async/non-blocking (fire-and-forget)
  *
- * ***REMOVED******REMOVED*** Bounded Queue Behavior
+ * ## Bounded Queue Behavior
  * - Maximum queue size enforced (prevents memory exhaustion)
  * - Drop policy: DROP_OLDEST (default) or DROP_NEWEST
  * - When queue is full, oldest/newest events are dropped based on policy
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * Uses ReentrantLock to protect bounded queue operations.
  *
- * ***REMOVED******REMOVED*** Example Usage
+ * ## Example Usage
  * ```kotlin
  * val telemetryConfig = TelemetryConfig.development()
  * val otlpConfig = OtlpConfiguration.localDev(serviceVersion = "1.0.0")

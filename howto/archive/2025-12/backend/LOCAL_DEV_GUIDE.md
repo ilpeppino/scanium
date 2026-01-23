@@ -1,7 +1,7 @@
 > Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
 > state.
 
-***REMOVED*** Local Development & Mobile Testing Guide
+# Local Development & Mobile Testing Guide
 
 **Complete, tested guide for running the backend locally and testing eBay OAuth with your Android
 device.**
@@ -10,7 +10,7 @@ Last updated: 2025-12-12 (Tested on macOS with Colima)
 
 ---
 
-***REMOVED******REMOVED*** 🎯 Goal
+## 🎯 Goal
 
 1. Run backend on your Mac (localhost)
 2. Expose it publicly via ngrok
@@ -19,7 +19,7 @@ Last updated: 2025-12-12 (Tested on macOS with Colima)
 
 ---
 
-***REMOVED******REMOVED*** 📋 Prerequisites
+## 📋 Prerequisites
 
 ✅ You need:
 
@@ -32,35 +32,35 @@ Last updated: 2025-12-12 (Tested on macOS with Colima)
 
 ---
 
-***REMOVED******REMOVED*** Part 1: Backend Local Setup
+## Part 1: Backend Local Setup
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Verify Prerequisites
+### Step 1: Verify Prerequisites
 
 ```bash
-***REMOVED*** Check Node.js version (must be 20+)
+# Check Node.js version (must be 20+)
 node --version
-***REMOVED*** Expected: v20.x.x
+# Expected: v20.x.x
 
-***REMOVED*** Check if using Colima (macOS Docker alternative)
+# Check if using Colima (macOS Docker alternative)
 colima version
-***REMOVED*** Expected: colima version 0.x.x
+# Expected: colima version 0.x.x
 
-***REMOVED*** Check Colima status
+# Check Colima status
 colima status
-***REMOVED*** Expected: colima is running
+# Expected: colima is running
 
-***REMOVED*** If Colima is not running:
+# If Colima is not running:
 colima start --cpu 4 --memory 8
 
-***REMOVED*** Verify Docker context is set to Colima
+# Verify Docker context is set to Colima
 docker context ls
-***REMOVED*** Expected: colima * (active)
+# Expected: colima * (active)
 
-***REMOVED*** If not active, switch to it:
+# If not active, switch to it:
 docker context use colima
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Install Dependencies
+### Step 2: Install Dependencies
 
 ```bash
 cd /Users/family/dev/scanium/backend
@@ -73,7 +73,7 @@ npm install
 added 271 packages, and audited 271 packages in 3s
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 3: Configure PostgreSQL with Port Mapping
+### Step 3: Configure PostgreSQL with Port Mapping
 
 The `docker-compose.yml` needs to expose PostgreSQL on localhost for migrations.
 
@@ -84,7 +84,7 @@ postgres:
   image: postgres:16-alpine
   container_name: scanium-postgres
   ports:
-    - '5432:5432'  ***REMOVED*** Must be present for local development
+    - '5432:5432'  # Must be present for local development
   environment:
     POSTGRES_USER: ${POSTGRES_USER:-scanium}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scanium}
@@ -100,10 +100,10 @@ postgres:
     retries: 5
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 4: Start PostgreSQL
+### Step 4: Start PostgreSQL
 
 ```bash
-***REMOVED*** Use 'docker compose' (with space, not hyphen) for Compose V2
+# Use 'docker compose' (with space, not hyphen) for Compose V2
 docker compose up -d postgres
 ```
 
@@ -135,30 +135,30 @@ docker logs scanium-postgres
 
 Look for: `database system is ready to accept connections`
 
-***REMOVED******REMOVED******REMOVED*** Step 5: Create and Configure `.env` File
+### Step 5: Create and Configure `.env` File
 
 ```bash
-***REMOVED*** Create .env from example
+# Create .env from example
 cp .env.example .env
 
-***REMOVED*** Generate a secure session secret
+# Generate a secure session secret
 openssl rand -base64 64
 ```
 
 **Edit `.env` file:**
 
 ```bash
-***REMOVED*** Application
+# Application
 NODE_ENV=development
 PORT=8080
 
-***REMOVED*** Public URL (will update after ngrok setup)
+# Public URL (will update after ngrok setup)
 PUBLIC_BASE_URL=http://localhost:8080
 
-***REMOVED*** Database (localhost for local dev, postgres for Docker container)
+# Database (localhost for local dev, postgres for Docker container)
 DATABASE_URL=postgresql://scanium:scanium@localhost:5432/scanium
 
-***REMOVED*** eBay OAuth - YOUR SANDBOX CREDENTIALS
+# eBay OAuth - YOUR SANDBOX CREDENTIALS
 EBAY_ENV=sandbox
 EBAY_CLIENT_ID=REDACTED_EBAY_CLIENT_ID
 EBAY_CLIENT_SECRET=REDACTED_EBAY_CLIENT_SECRET
@@ -166,18 +166,18 @@ EBAY_TOKEN_ENCRYPTION_KEY=change_me_to_32+_char_secret_for_tokens
 EBAY_REDIRECT_PATH=/auth/ebay/callback
 EBAY_SCOPES=https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.fulfillment https://api.ebay.com/oauth/api_scope/sell.account
 
-***REMOVED*** Session Security (paste output from openssl command above)
+# Session Security (paste output from openssl command above)
 SESSION_SIGNING_SECRET=REPLACE_WITH_BASE64_64B_SECRET
 
-***REMOVED*** CORS Origins
+# CORS Origins
 CORS_ORIGINS=scanium://,http://localhost:3000
 
-***REMOVED*** PostgreSQL credentials (must match docker-compose.yml)
+# PostgreSQL credentials (must match docker-compose.yml)
 POSTGRES_USER=scanium
 POSTGRES_PASSWORD=scanium
 POSTGRES_DB=scanium
 
-***REMOVED*** Cloudflare Tunnel (leave empty for local dev)
+# Cloudflare Tunnel (leave empty for local dev)
 CLOUDFLARED_TOKEN=
 ```
 
@@ -189,7 +189,7 @@ CLOUDFLARED_TOKEN=
   from [eBay Developer Portal - Sandbox Keys](https://developer.ebay.com/my/keys)
 - `SESSION_SIGNING_SECRET` must be at least 64 characters
 
-***REMOVED******REMOVED******REMOVED*** Step 6: Generate Prisma Client
+### Step 6: Generate Prisma Client
 
 ```bash
 npm run prisma:generate
@@ -201,15 +201,15 @@ npm run prisma:generate
 ✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 25ms
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 7: Run Database Migrations
+### Step 7: Run Database Migrations
 
 If migrations fail due to advisory locks, clear stale connections first:
 
 ```bash
-***REMOVED*** Clear any stale advisory locks (if needed)
+# Clear any stale advisory locks (if needed)
 docker exec scanium-postgres psql -U scanium -d scanium -c "SELECT pg_advisory_unlock_all();"
 
-***REMOVED*** Run migrations
+# Run migrations
 npx prisma migrate dev --name init
 ```
 
@@ -230,21 +230,21 @@ Your database is now in sync with your schema.
 **If you encounter "advisory lock timeout":**
 
 ```bash
-***REMOVED*** Check for locks
+# Check for locks
 docker exec scanium-postgres psql -U scanium -d scanium -c "SELECT * FROM pg_locks WHERE locktype = 'advisory';"
 
-***REMOVED*** Terminate stale connections
+# Terminate stale connections
 docker exec scanium-postgres psql -U scanium -d scanium -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'scanium' AND pid != pg_backend_pid();"
 
-***REMOVED*** Try migration again
+# Try migration again
 npx prisma migrate dev --name init
 ```
 
 ---
 
-***REMOVED******REMOVED*** Part 2: Start Backend & Test Locally
+## Part 2: Start Backend & Test Locally
 
-***REMOVED******REMOVED******REMOVED*** Step 8: Start Development Server
+### Step 8: Start Development Server
 
 ```bash
 npm run dev
@@ -265,42 +265,42 @@ npm run dev
 
 **Keep this terminal running.**
 
-***REMOVED******REMOVED******REMOVED*** Step 9: Test Endpoints (New Terminal)
+### Step 9: Test Endpoints (New Terminal)
 
 Open a **new terminal window** and test:
 
 ```bash
-***REMOVED*** Health check
+# Health check
 curl http://localhost:8080/healthz
 
-***REMOVED*** Expected: {"status":"ok","timestamp":"2025-12-12T..."}
+# Expected: {"status":"ok","timestamp":"2025-12-12T..."}
 
-***REMOVED*** Readiness check (database connection)
+# Readiness check (database connection)
 curl http://localhost:8080/readyz
 
-***REMOVED*** Expected: {"status":"ok","database":"connected","timestamp":"..."}
+# Expected: {"status":"ok","database":"connected","timestamp":"..."}
 
-***REMOVED*** API info
+# API info
 curl http://localhost:8080/
 
-***REMOVED*** Expected: Full API info with endpoints list
+# Expected: Full API info with endpoints list
 
-***REMOVED*** eBay connection status (should be disconnected initially)
+# eBay connection status (should be disconnected initially)
 curl http://localhost:8080/auth/ebay/status
 
-***REMOVED*** Expected: {"connected":false}
+# Expected: {"connected":false}
 ```
 
 ✅ **If all return 200 OK, your backend is working!**
 
 ---
 
-***REMOVED******REMOVED*** Part 3: Expose Backend via ngrok
+## Part 3: Expose Backend via ngrok
 
 Your Android device can't access `localhost:8080` on your Mac. We need to expose it publicly using
 ngrok.
 
-***REMOVED******REMOVED******REMOVED*** Step 10: Install and Configure ngrok
+### Step 10: Install and Configure ngrok
 
 **Install via Homebrew:**
 
@@ -318,7 +318,7 @@ brew install ngrok/ngrok/ngrok
 **Authenticate ngrok:**
 
 ```bash
-***REMOVED*** Replace YOUR_AUTHTOKEN with your actual token from ngrok dashboard
+# Replace YOUR_AUTHTOKEN with your actual token from ngrok dashboard
 ngrok config add-authtoken YOUR_AUTHTOKEN_HERE
 ```
 
@@ -328,7 +328,7 @@ ngrok config add-authtoken YOUR_AUTHTOKEN_HERE
 Authtoken saved to configuration file: /Users/family/Library/Application Support/ngrok/ngrok.yml
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 11: Start ngrok Tunnel (New Terminal)
+### Step 11: Start ngrok Tunnel (New Terminal)
 
 Open a **third terminal window**:
 
@@ -359,14 +359,14 @@ Example: `https://brayan-vizarded-undomestically.ngrok-free.dev`
 
 **Keep this terminal running** - ngrok must stay active.
 
-***REMOVED******REMOVED******REMOVED*** Step 12: Update `.env` with ngrok URL
+### Step 12: Update `.env` with ngrok URL
 
 **Stop your dev server** (Ctrl+C in the terminal running `npm run dev`).
 
 **Edit `.env`:**
 
 ```bash
-***REMOVED*** Change PUBLIC_BASE_URL to your ngrok URL
+# Change PUBLIC_BASE_URL to your ngrok URL
 PUBLIC_BASE_URL=https://brayan-vizarded-undomestically.ngrok-free.dev
 ```
 
@@ -378,12 +378,12 @@ npm run dev
 
 Wait for: `✅ Server listening on http://0.0.0.0:8080`
 
-***REMOVED******REMOVED******REMOVED*** Step 13: Test via ngrok
+### Step 13: Test via ngrok
 
 From any device with internet (even your phone):
 
 ```bash
-***REMOVED*** Replace with YOUR actual ngrok URL
+# Replace with YOUR actual ngrok URL
 curl https://brayan-vizarded-undomestically.ngrok-free.dev/healthz
 ```
 
@@ -407,9 +407,9 @@ curl -X POST https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/sta
 
 ---
 
-***REMOVED******REMOVED*** Part 4: Configure eBay Developer Portal
+## Part 4: Configure eBay Developer Portal
 
-***REMOVED******REMOVED******REMOVED*** Step 14: Add RuName in eBay Developer Portal
+### Step 14: Add RuName in eBay Developer Portal
 
 1. Go to [eBay Developer Portal - My Keys](https://developer.ebay.com/my/keys)
 2. Under **Sandbox Keys**, find your application keyset
@@ -429,7 +429,7 @@ curl -X POST https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/sta
 
 Click **Save**
 
-***REMOVED******REMOVED******REMOVED*** Step 15: Activate RuName
+### Step 15: Activate RuName
 
 1. Still on the same page, click **Get a Token from eBay via Your Application**
 2. Select your newly created RuName from dropdown
@@ -444,20 +444,20 @@ Click **Save**
 
 ---
 
-***REMOVED******REMOVED*** Part 5: Test OAuth Flow from Browser
+## Part 5: Test OAuth Flow from Browser
 
 Before testing from mobile, verify OAuth works in your desktop browser.
 
-***REMOVED******REMOVED******REMOVED*** Step 16: Start OAuth Flow
+### Step 16: Start OAuth Flow
 
 ```bash
-***REMOVED*** Get authorization URL
+# Get authorization URL
 curl -X POST https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/start
 ```
 
 **Copy the `authorizeUrl` from the response.**
 
-***REMOVED******REMOVED******REMOVED*** Step 17: Complete OAuth in Browser
+### Step 17: Complete OAuth in Browser
 
 1. **Paste the URL** into your browser (Chrome, Safari, etc.)
 2. You'll see **eBay Sandbox Sign-In** page
@@ -475,7 +475,7 @@ You can now return to the Scanium app.
 [SANDBOX]
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 18: Verify Connection
+### Step 18: Verify Connection
 
 ```bash
 curl https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/status
@@ -494,7 +494,7 @@ curl https://brayan-vizarded-undomestically.ngrok-free.dev/auth/ebay/status
 
 ✅ **If `connected: true`, OAuth is working perfectly!**
 
-***REMOVED******REMOVED******REMOVED*** Step 19: Check Backend Logs
+### Step 19: Check Backend Logs
 
 In your backend terminal, you should see:
 
@@ -503,10 +503,10 @@ In your backend terminal, you should see:
 [INFO]: eBay OAuth successful
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 20: View Tokens in Database
+### Step 20: View Tokens in Database
 
 ```bash
-***REMOVED*** Open Prisma Studio
+# Open Prisma Studio
 npm run prisma:studio
 ```
 
@@ -524,11 +524,11 @@ Navigate to:
 
 ---
 
-***REMOVED******REMOVED*** Part 6: Mobile App Configuration (Android)
+## Part 6: Mobile App Configuration (Android)
 
 Now integrate your Android app with the local backend.
 
-***REMOVED******REMOVED******REMOVED*** Step 21: Add Dependencies
+### Step 21: Add Dependencies
 
 **In `app/build.gradle.kts`:**
 
@@ -563,7 +563,7 @@ plugins {
 
 **Sync Gradle** in Android Studio.
 
-***REMOVED******REMOVED******REMOVED*** Step 22: Create API Client
+### Step 22: Create API Client
 
 Create `app/src/main/java/com/scanium/app/api/ScaniumApi.kt`:
 
@@ -633,7 +633,7 @@ class ScaniumApi(private val baseUrl: String) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 23: Create Settings Screen
+### Step 23: Create Settings Screen
 
 Create `app/src/main/java/com/scanium/app/settings/SettingsScreen.kt`:
 
@@ -799,7 +799,7 @@ private fun openCustomTab(context: Context, url: String) {
 
 **⚠️ IMPORTANT:** Update the ngrok URL in the code with YOUR actual URL!
 
-***REMOVED******REMOVED******REMOVED*** Step 24: Add Settings Route
+### Step 24: Add Settings Route
 
 In `app/src/main/java/com/scanium/app/navigation/NavGraph.kt`:
 
@@ -819,7 +819,7 @@ composable(Routes.SETTINGS_HOME) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 25: Add Settings Button
+### Step 25: Add Settings Button
 
 In `ItemsListScreen.kt`, add settings icon:
 
@@ -843,9 +843,9 @@ TopAppBar(
 
 ---
 
-***REMOVED******REMOVED*** Part 7: Test OAuth from Mobile Device
+## Part 7: Test OAuth from Mobile Device
 
-***REMOVED******REMOVED******REMOVED*** Step 26: Build and Install App
+### Step 26: Build and Install App
 
 ```bash
 cd /Users/family/dev/scanium
@@ -854,7 +854,7 @@ cd /Users/family/dev/scanium
 
 Or in Android Studio: **Run > Run 'app'**
 
-***REMOVED******REMOVED******REMOVED*** Step 27: Test OAuth Flow on Device
+### Step 27: Test OAuth Flow on Device
 
 1. **Open Scanium app** on your Android device
 2. **Navigate to Items List** (scan some items if list is empty)
@@ -867,7 +867,7 @@ Or in Android Studio: **Run > Run 'app'**
 9. **Custom Tab closes automatically**
 10. **Settings screen updates**: Shows "✅ eBay Connected" and "Environment: SANDBOX"
 
-***REMOVED******REMOVED******REMOVED*** Step 28: Verify in Backend Logs
+### Step 28: Verify in Backend Logs
 
 Check your backend terminal:
 
@@ -878,7 +878,7 @@ Check your backend terminal:
 [INFO]: Request completed (GET /auth/ebay/callback)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 29: Check Database
+### Step 29: Check Database
 
 ```bash
 npm run prisma:studio
@@ -888,13 +888,13 @@ Navigate to **EbayConnection** table:
 
 - Should show 1 connection
 - `environment`: "sandbox"
-- `accessToken`: "v^1.1***REMOVED***i^1***REMOVED***..."
-- `refreshToken`: "v^1.1***REMOVED***i^1***REMOVED***..."
+- `accessToken`: "v^1.1#i^1#..."
+- `refreshToken`: "v^1.1#i^1#..."
 - `expiresAt`: Future timestamp
 
 ---
 
-***REMOVED******REMOVED*** 🎉 Success Checklist
+## 🎉 Success Checklist
 
 ✅ PostgreSQL running in Docker
 ✅ Backend server running (`npm run dev`)
@@ -908,26 +908,26 @@ Navigate to **EbayConnection** table:
 
 ---
 
-***REMOVED******REMOVED*** 🐛 Troubleshooting
+## 🐛 Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Port 8080 Already in Use
+### Port 8080 Already in Use
 
 **Error:** `EADDRINUSE: address already in use 0.0.0.0:8080`
 
 **Fix:**
 
 ```bash
-***REMOVED*** Find process using port 8080
+# Find process using port 8080
 lsof -i :8080
 
-***REMOVED*** Kill the process (replace PID)
+# Kill the process (replace PID)
 kill <PID>
 
-***REMOVED*** Or kill all node processes
+# Or kill all node processes
 pkill node
 ```
 
-***REMOVED******REMOVED******REMOVED*** PostgreSQL Port Not Exposed
+### PostgreSQL Port Not Exposed
 
 **Error:** `Can't reach database server at 'localhost:5432'`
 
@@ -936,7 +936,7 @@ pkill node
 ```yaml
 postgres:
   ports:
-    - '5432:5432'  ***REMOVED*** This line must be present
+    - '5432:5432'  # This line must be present
 ```
 
 Then recreate container:
@@ -945,40 +945,40 @@ Then recreate container:
 docker compose up -d postgres
 ```
 
-***REMOVED******REMOVED******REMOVED*** Database Advisory Lock Timeout
+### Database Advisory Lock Timeout
 
 **Error:** `Timed out trying to acquire a postgres advisory lock`
 
 **Fix:**
 
 ```bash
-***REMOVED*** Terminate stale connections
+# Terminate stale connections
 docker exec scanium-postgres psql -U scanium -d scanium -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'scanium' AND pid != pg_backend_pid();"
 
-***REMOVED*** Clear advisory locks
+# Clear advisory locks
 docker exec scanium-postgres psql -U scanium -d scanium -c "SELECT pg_advisory_unlock_all();"
 
-***REMOVED*** Retry migration
+# Retry migration
 npx prisma migrate dev --name init
 ```
 
-***REMOVED******REMOVED******REMOVED*** ngrok "Endpoint is Offline" (ERR_NGROK_3200)
+### ngrok "Endpoint is Offline" (ERR_NGROK_3200)
 
 **Problem:** ngrok not running or not authenticated
 
 **Fix:**
 
 ```bash
-***REMOVED*** Authenticate ngrok (first time only)
+# Authenticate ngrok (first time only)
 ngrok config add-authtoken YOUR_AUTHTOKEN
 
-***REMOVED*** Start ngrok
+# Start ngrok
 ngrok http 8080
 
-***REMOVED*** Keep terminal open
+# Keep terminal open
 ```
 
-***REMOVED******REMOVED******REMOVED*** Route Not Found (404)
+### Route Not Found (404)
 
 **Error:** `Route POST:/auth/ebay/start not found`
 
@@ -992,7 +992,7 @@ ngrok http 8080
 
 Because they're registered with `prefix: '/auth/ebay'` in `app.ts`.
 
-***REMOVED******REMOVED******REMOVED*** Cookie Plugin Error
+### Cookie Plugin Error
 
 **Error:** `reply.setCookie is not a function`
 
@@ -1007,7 +1007,7 @@ await app.register(fastifyCookie, {
 });
 ```
 
-***REMOVED******REMOVED******REMOVED*** ngrok URL Changed
+### ngrok URL Changed
 
 **Problem:** Free ngrok URLs change on restart
 
@@ -1022,7 +1022,7 @@ await app.register(fastifyCookie, {
 
 **Better solution:** Get ngrok paid plan for static domain ($8/month)
 
-***REMOVED******REMOVED******REMOVED*** "redirect_uri_mismatch" Error
+### "redirect_uri_mismatch" Error
 
 **Problem:** eBay redirect URL doesn't match configured RuName
 
@@ -1034,7 +1034,7 @@ await app.register(fastifyCookie, {
 4. Must be HTTPS (ngrok provides this)
 5. Restart backend after changing `.env`
 
-***REMOVED******REMOVED******REMOVED*** Mobile App Can't Connect
+### Mobile App Can't Connect
 
 **Error:** Network error or timeout
 
@@ -1046,7 +1046,7 @@ await app.register(fastifyCookie, {
 4. Verify ngrok is running: `curl https://your-url.ngrok-free.dev/healthz`
 5. Check mobile app has correct URL (no typos)
 
-***REMOVED******REMOVED******REMOVED*** OAuth State Mismatch
+### OAuth State Mismatch
 
 **Error:** `OAuth state mismatch - possible CSRF attack`
 
@@ -1065,9 +1065,9 @@ await app.register(fastifyCookie, {
 
 ---
 
-***REMOVED******REMOVED*** 🔄 Daily Development Workflow
+## 🔄 Daily Development Workflow
 
-***REMOVED******REMOVED******REMOVED*** Morning Startup (3 Terminals)
+### Morning Startup (3 Terminals)
 
 **Terminal 1: PostgreSQL**
 
@@ -1082,7 +1082,7 @@ docker logs -f scanium-postgres
 ```bash
 ngrok http 8080
 
-***REMOVED*** Note: Copy URL if it changed, update .env and RuName
+# Note: Copy URL if it changed, update .env and RuName
 ```
 
 **Terminal 3: Backend**
@@ -1092,28 +1092,28 @@ cd /Users/family/dev/scanium/backend
 npm run dev
 ```
 
-***REMOVED******REMOVED******REMOVED*** Testing Changes
+### Testing Changes
 
 ```bash
-***REMOVED*** Rebuild and install app
+# Rebuild and install app
 cd /Users/family/dev/scanium
 ./gradlew installDebug
 
-***REMOVED*** Test OAuth flow from device
+# Test OAuth flow from device
 ```
 
-***REMOVED******REMOVED******REMOVED*** End of Day Shutdown
+### End of Day Shutdown
 
 ```bash
-***REMOVED*** Terminal 1: Stop backend (Ctrl+C)
-***REMOVED*** Terminal 2: Stop ngrok (Ctrl+C)
-***REMOVED*** Terminal 3: Stop PostgreSQL
+# Terminal 1: Stop backend (Ctrl+C)
+# Terminal 2: Stop ngrok (Ctrl+C)
+# Terminal 3: Stop PostgreSQL
 docker compose down
 ```
 
 ---
 
-***REMOVED******REMOVED*** 📊 Architecture Summary
+## 📊 Architecture Summary
 
 ```
 ┌─────────────────┐
@@ -1159,7 +1159,7 @@ docker compose down
 
 ---
 
-***REMOVED******REMOVED*** 📱 Next Steps
+## 📱 Next Steps
 
 Once local testing is complete:
 
@@ -1174,7 +1174,7 @@ Once local testing is complete:
 
 ---
 
-***REMOVED******REMOVED*** 📚 Related Documentation
+## 📚 Related Documentation
 
 - **[Backend README](README.md)** - Full development guide
 - **[Setup Guide](SETUP_GUIDE.md)** - NAS deployment with Cloudflare Tunnel
@@ -1184,7 +1184,7 @@ Once local testing is complete:
 
 ---
 
-***REMOVED******REMOVED*** ✅ You're Ready!
+## ✅ You're Ready!
 
 Follow Steps 1-29 and you'll have:
 

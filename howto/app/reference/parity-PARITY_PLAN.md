@@ -1,4 +1,4 @@
-***REMOVED*** iOS Parity Plan - Phased Roadmap
+# iOS Parity Plan - Phased Roadmap
 
 **Document Version:** 1.0
 **Last Updated:** 2026-01-13
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 This plan achieves iOS-Android parity through **6 phases** optimized for:
 
@@ -19,27 +19,27 @@ This plan achieves iOS-Android parity through **6 phases** optimized for:
 
 ---
 
-***REMOVED******REMOVED*** Guiding Principles
+## Guiding Principles
 
-***REMOVED******REMOVED******REMOVED*** 1. DO NOT TOUCH ANDROID
+### 1. DO NOT TOUCH ANDROID
 
 - All PRs target `iosApp/` and `shared/` modules only
 - Android code is frozen as baseline (source of truth)
 - Any shared module changes must maintain backward compatibility with Android
 
-***REMOVED******REMOVED******REMOVED*** 2. Shared Brain First
+### 2. Shared Brain First
 
 - Leverage existing KMP shared modules (`core-tracking`, `core-domainpack`, `core-scan`, etc.)
 - iOS should consume shared logic, not reimplement
 - Only create iOS-specific code for platform adapters (UI, camera, networking)
 
-***REMOVED******REMOVED******REMOVED*** 3. Incremental Integration
+### 3. Incremental Integration
 
 - Each phase produces a working, testable iOS app
 - Phase N builds on Phase N-1 without breaking previous work
 - Feature flags gate incomplete work (e.g., `useMocks` toggle)
 
-***REMOVED******REMOVED******REMOVED*** 4. Definition of Done (Per Phase)
+### 4. Definition of Done (Per Phase)
 
 - All acceptance criteria met
 - No HIGH-risk gaps remaining in phase scope
@@ -49,14 +49,14 @@ This plan achieves iOS-Android parity through **6 phases** optimized for:
 
 ---
 
-***REMOVED******REMOVED*** Phase 0: Validation & Guardrails (Week 1-2, 1 engineer)
+## Phase 0: Validation & Guardrails (Week 1-2, 1 engineer)
 
 **Objective:** Establish parity definitions, build gates, and validation harness before
 implementation
 
-***REMOVED******REMOVED******REMOVED*** Tasks
+### Tasks
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 0.1 Parity Tracking Infrastructure
+#### 0.1 Parity Tracking Infrastructure
 
 **Acceptance Criteria:**
 
@@ -73,7 +73,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 0.2 Forbidden Imports Linter
+#### 0.2 Forbidden Imports Linter
 
 **Acceptance Criteria:**
 
@@ -90,7 +90,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 0.3 Android Baseline Freeze
+#### 0.3 Android Baseline Freeze
 
 **Acceptance Criteria:**
 
@@ -107,7 +107,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 0.4 iOS Build Validation Harness
+#### 0.4 iOS Build Validation Harness
 
 **Acceptance Criteria:**
 
@@ -124,7 +124,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Phase 0 Definition of Done
+### Phase 0 Definition of Done
 
 - ✅ All 4 tasks complete
 - ✅ CI green for iOS and Android
@@ -133,13 +133,13 @@ implementation
 
 ---
 
-***REMOVED******REMOVED*** Phase 1: Shared Brain Readiness (Week 3-5, 2 engineers)
+## Phase 1: Shared Brain Readiness (Week 3-5, 2 engineers)
 
 **Objective:** Ensure all shared KMP APIs used by Android are callable from iOS
 
-***REMOVED******REMOVED******REMOVED*** Tasks
+### Tasks
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.1 XCFramework Build & Distribution
+#### 1.1 XCFramework Build & Distribution
 
 **Acceptance Criteria:**
 
@@ -165,7 +165,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.2 Shared Module Initialization
+#### 1.2 Shared Module Initialization
 
 **Acceptance Criteria:**
 
@@ -190,7 +190,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.3 Type Mapping Validation
+#### 1.3 Type Mapping Validation
 
 **Acceptance Criteria:**
 
@@ -213,7 +213,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.4 Domain Pack Loading
+#### 1.4 Domain Pack Loading
 
 **Acceptance Criteria:**
 
@@ -237,7 +237,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Phase 1 Definition of Done
+### Phase 1 Definition of Done
 
 - ✅ All 4 tasks complete
 - ✅ iOS app successfully calls shared KMP modules
@@ -247,13 +247,13 @@ implementation
 
 ---
 
-***REMOVED******REMOVED*** Phase 2: iOS Platform Adapters (Week 6-9, 2 engineers)
+## Phase 2: iOS Platform Adapters (Week 6-9, 2 engineers)
 
 **Objective:** Complete and wire iOS platform adapters for detection services
 
-***REMOVED******REMOVED******REMOVED*** Tasks
+### Tasks
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.1 CoreML Object Detection Model Integration
+#### 2.1 CoreML Object Detection Model Integration
 
 **Acceptance Criteria:**
 
@@ -278,7 +278,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.2 Detection Orchestrator
+#### 2.2 Detection Orchestrator
 
 **Acceptance Criteria:**
 
@@ -303,7 +303,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.3 Object Tracking Integration
+#### 2.3 Object Tracking Integration
 
 **Acceptance Criteria:**
 
@@ -326,7 +326,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.4 Item Aggregation Integration
+#### 2.4 Item Aggregation Integration
 
 **Acceptance Criteria:**
 
@@ -349,7 +349,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Phase 2 Definition of Done
+### Phase 2 Definition of Done
 
 - ✅ All 4 tasks complete
 - ✅ Detection pipeline (barcode + OCR + OD) fully functional
@@ -359,13 +359,13 @@ implementation
 
 ---
 
-***REMOVED******REMOVED*** Phase 3: iOS UI Parity (Week 10-15, 2 engineers)
+## Phase 3: iOS UI Parity (Week 10-15, 2 engineers)
 
 **Objective:** Build interactive UI matching Android feature set
 
-***REMOVED******REMOVED******REMOVED*** Track 3A: Camera & Capture (Week 10-12)
+### Track 3A: Camera & Capture (Week 10-12)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3A.1 Camera Preview Screen
+#### 3A.1 Camera Preview Screen
 
 **Acceptance Criteria:**
 
@@ -385,7 +385,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3A.2 Shutter Button & Capture Modes
+#### 3A.2 Shutter Button & Capture Modes
 
 **Acceptance Criteria:**
 
@@ -404,7 +404,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3A.3 Detection Overlay (Real-Time)
+#### 3A.3 Detection Overlay (Real-Time)
 
 **Acceptance Criteria:**
 
@@ -424,7 +424,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3A.4 Camera Permissions
+#### 3A.4 Camera Permissions
 
 **Acceptance Criteria:**
 
@@ -443,9 +443,9 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track 3B: List & Detail Screens (Week 10-13)
+### Track 3B: List & Detail Screens (Week 10-13)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3B.1 Items List Interactivity
+#### 3B.1 Items List Interactivity
 
 **Acceptance Criteria:**
 
@@ -466,7 +466,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3B.2 Item Detail/Edit Screen
+#### 3B.2 Item Detail/Edit Screen
 
 **Acceptance Criteria:**
 
@@ -487,7 +487,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3B.3 Selection Mode (Multi-Select)
+#### 3B.3 Selection Mode (Multi-Select)
 
 **Acceptance Criteria:**
 
@@ -506,7 +506,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3B.4 Empty State & Confirmation Dialogs
+#### 3B.4 Empty State & Confirmation Dialogs
 
 **Acceptance Criteria:**
 
@@ -525,9 +525,9 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track 3C: Settings Screens (Week 11-13)
+### Track 3C: Settings Screens (Week 11-13)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3C.1 Settings Navigation Structure
+#### 3C.1 Settings Navigation Structure
 
 **Acceptance Criteria:**
 
@@ -546,7 +546,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3C.2 Camera Settings
+#### 3C.2 Camera Settings
 
 **Acceptance Criteria:**
 
@@ -566,7 +566,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3C.3 Privacy & Terms
+#### 3C.3 Privacy & Terms
 
 **Acceptance Criteria:**
 
@@ -585,7 +585,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Phase 3 Definition of Done
+### Phase 3 Definition of Done
 
 - ✅ All Track 3A, 3B, 3C tasks complete
 - ✅ Camera preview functional with live detection
@@ -596,13 +596,13 @@ implementation
 
 ---
 
-***REMOVED******REMOVED*** Phase 4: Storage & Persistence (Week 13-15, 1 engineer, parallel with Phase 3)
+## Phase 4: Storage & Persistence (Week 13-15, 1 engineer, parallel with Phase 3)
 
 **Objective:** Implement local database and image storage
 
-***REMOVED******REMOVED******REMOVED*** Tasks
+### Tasks
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4.1 Database Technology Selection
+#### 4.1 Database Technology Selection
 
 **Acceptance Criteria:**
 
@@ -620,7 +620,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4.2 Core Data or SQLDelight Setup
+#### 4.2 Core Data or SQLDelight Setup
 
 **Acceptance Criteria:**
 
@@ -640,7 +640,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4.3 Image File Storage
+#### 4.3 Image File Storage
 
 **Acceptance Criteria:**
 
@@ -659,7 +659,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4.4 PHPhotoLibrary Integration
+#### 4.4 PHPhotoLibrary Integration
 
 **Acceptance Criteria:**
 
@@ -678,7 +678,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4.5 History Tracking
+#### 4.5 History Tracking
 
 **Acceptance Criteria:**
 
@@ -697,7 +697,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Phase 4 Definition of Done
+### Phase 4 Definition of Done
 
 - ✅ All 5 tasks complete
 - ✅ Database functional with CRUD operations
@@ -708,13 +708,13 @@ implementation
 
 ---
 
-***REMOVED******REMOVED*** Phase 5: Networking & Backend Integration (Week 16-19, 2 engineers, parallel with Phase 6)
+## Phase 5: Networking & Backend Integration (Week 16-19, 2 engineers, parallel with Phase 6)
 
 **Objective:** Implement backend API client and eBay integration
 
-***REMOVED******REMOVED******REMOVED*** Track 5A: Backend API (Week 16-18)
+### Track 5A: Backend API (Week 16-18)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5A.1 URLSession Backend Client
+#### 5A.1 URLSession Backend Client
 
 **Acceptance Criteria:**
 
@@ -734,7 +734,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5A.2 Request Signing (HMAC-SHA256)
+#### 5A.2 Request Signing (HMAC-SHA256)
 
 **Acceptance Criteria:**
 
@@ -753,7 +753,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5A.3 Cloud Classification Integration
+#### 5A.3 Cloud Classification Integration
 
 **Acceptance Criteria:**
 
@@ -772,9 +772,9 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track 5B: eBay Integration (Week 17-19, only if eBay is MVP)
+### Track 5B: eBay Integration (Week 17-19, only if eBay is MVP)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5B.1 eBay OAuth 2.0 Flow
+#### 5B.1 eBay OAuth 2.0 Flow
 
 **Acceptance Criteria:**
 
@@ -794,7 +794,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5B.2 eBay API Client
+#### 5B.2 eBay API Client
 
 **Acceptance Criteria:**
 
@@ -813,7 +813,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5B.3 eBay Listing Screens
+#### 5B.3 eBay Listing Screens
 
 **Acceptance Criteria:**
 
@@ -832,7 +832,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Phase 5 Definition of Done
+### Phase 5 Definition of Done
 
 - ✅ All Track 5A tasks complete (backend API working)
 - ✅ Cloud classification functional (test with real backend)
@@ -842,13 +842,13 @@ implementation
 
 ---
 
-***REMOVED******REMOVED*** Phase 6: Observability & Polish (Week 20-24, 1 engineer, parallel with Phase 5)
+## Phase 6: Observability & Polish (Week 20-24, 1 engineer, parallel with Phase 5)
 
 **Objective:** Production observability, error handling, UX polish
 
-***REMOVED******REMOVED******REMOVED*** Track 6A: Crash Reporting & Telemetry (Week 20-21)
+### Track 6A: Crash Reporting & Telemetry (Week 20-21)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6A.1 Sentry iOS SDK Integration
+#### 6A.1 Sentry iOS SDK Integration
 
 **Acceptance Criteria:**
 
@@ -868,7 +868,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6A.2 Sentry Breadcrumbs & Tags
+#### 6A.2 Sentry Breadcrumbs & Tags
 
 **Acceptance Criteria:**
 
@@ -887,7 +887,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6A.3 Structured Logging (Optional)
+#### 6A.3 Structured Logging (Optional)
 
 **Acceptance Criteria:**
 
@@ -905,9 +905,9 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track 6B: UX Polish (Week 22-24)
+### Track 6B: UX Polish (Week 22-24)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6B.1 Audio Feedback (Sounds)
+#### 6B.1 Audio Feedback (Sounds)
 
 **Acceptance Criteria:**
 
@@ -928,7 +928,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6B.2 Motion Components (Optional)
+#### 6B.2 Motion Components (Optional)
 
 **Acceptance Criteria:**
 
@@ -947,7 +947,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6B.3 Theme System (Optional)
+#### 6B.3 Theme System (Optional)
 
 **Acceptance Criteria:**
 
@@ -966,7 +966,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6B.4 FTUE (First-Time User Experience)
+#### 6B.4 FTUE (First-Time User Experience)
 
 **Acceptance Criteria:**
 
@@ -985,7 +985,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Phase 6 Definition of Done
+### Phase 6 Definition of Done
 
 - ✅ All Track 6A and 6B tasks complete
 - ✅ Sentry captures crashes with breadcrumbs and tags
@@ -996,7 +996,7 @@ implementation
 
 ---
 
-***REMOVED******REMOVED*** Post-Parity: Future Enhancements (Deferred)
+## Post-Parity: Future Enhancements (Deferred)
 
 These features are NOT required for parity but may be roadmapped later:
 
@@ -1009,9 +1009,9 @@ These features are NOT required for parity but may be roadmapped later:
 
 ---
 
-***REMOVED******REMOVED*** Parity Completion Criteria
+## Parity Completion Criteria
 
-***REMOVED******REMOVED******REMOVED*** Definition of Done (Overall)
+### Definition of Done (Overall)
 
 - ✅ All 6 phases complete
 - ✅ All 19 HIGH-risk gaps closed (from Gap Matrix)
@@ -1021,11 +1021,11 @@ These features are NOT required for parity but may be roadmapped later:
 - ✅ Manual QA pass on iOS device (not just simulator)
 - ✅ Parity dashboard shows 100% completion
 
-***REMOVED******REMOVED******REMOVED*** Parity Checklist (Manual QA)
+### Parity Checklist (Manual QA)
 
 Run through this checklist on physical iOS device:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Camera & Capture
+#### Camera & Capture
 
 - [ ] Camera preview displays live feed
 - [ ] Tap shutter button → captures image, adds to list
@@ -1035,7 +1035,7 @@ Run through this checklist on physical iOS device:
 - [ ] OCR text extracted and displayed in list item
 - [ ] Object detection assigns correct category
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** List & Detail
+#### List & Detail
 
 - [ ] Items list displays all captured items
 - [ ] Tap item → detail screen shows full image and metadata
@@ -1044,7 +1044,7 @@ Run through this checklist on physical iOS device:
 - [ ] Pull-to-refresh → reloads from database
 - [ ] Long-press item → multi-select mode → batch delete works
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Settings
+#### Settings
 
 - [ ] Navigate to settings → all subsections present
 - [ ] Change camera resolution → applies on next launch
@@ -1052,33 +1052,33 @@ Run through this checklist on physical iOS device:
 - [ ] Toggle audio feedback → sounds play/muted
 - [ ] View privacy policy → link opens in browser
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Storage
+#### Storage
 
 - [ ] Force-quit app → relaunch → items still present (persistence)
 - [ ] Capture image → image file exists in app documents
 - [ ] Share image → save to Photos → appears in Photos app
 - [ ] Export CSV → file generated → open in Files app
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Networking (if backend available)
+#### Networking (if backend available)
 
 - [ ] Item classification requests backend → receives category
 - [ ] Request signing succeeds (no 401 errors)
 - [ ] Network failure → retry logic works → eventual success
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** eBay (if scoped in MVP)
+#### eBay (if scoped in MVP)
 
 - [ ] Navigate to eBay listing flow from item detail
 - [ ] OAuth login → redirects → tokens stored
 - [ ] Create draft → submit → listing appears in eBay account
 - [ ] Check listing status → shows "Active"
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Observability
+#### Observability
 
 - [ ] Force crash → crash appears in Sentry dashboard
 - [ ] Breadcrumbs present in crash report
 - [ ] Tags correctly set (app.flavor, device.model)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Edge Cases
+#### Edge Cases
 
 - [ ] Deny camera permission → graceful error message
 - [ ] Airplane mode → offline mode works (no crashes)
@@ -1087,9 +1087,9 @@ Run through this checklist on physical iOS device:
 
 ---
 
-***REMOVED******REMOVED*** Risk Mitigation
+## Risk Mitigation
 
-***REMOVED******REMOVED******REMOVED*** Risk 1: XCFramework Build Issues
+### Risk 1: XCFramework Build Issues
 
 **Mitigation:**
 
@@ -1097,7 +1097,7 @@ Run through this checklist on physical iOS device:
 - Test XCFramework integration in isolation before later phases
 - Fallback: Manual framework distribution if Gradle automation fails
 
-***REMOVED******REMOVED******REMOVED*** Risk 2: Kotlin/Swift Interop Issues
+### Risk 2: Kotlin/Swift Interop Issues
 
 **Mitigation:**
 
@@ -1105,7 +1105,7 @@ Run through this checklist on physical iOS device:
 - Discover nullability issues early
 - Document workarounds in `docs/parity/KMP_INTEROP_NOTES.md`
 
-***REMOVED******REMOVED******REMOVED*** Risk 3: CoreML Model Performance
+### Risk 3: CoreML Model Performance
 
 **Mitigation:**
 
@@ -1113,7 +1113,7 @@ Run through this checklist on physical iOS device:
 - Benchmark inference latency (target: <100ms per frame)
 - Fallback: Cloud-only classification if on-device too slow
 
-***REMOVED******REMOVED******REMOVED*** Risk 4: Database Migration Complexity
+### Risk 4: Database Migration Complexity
 
 **Mitigation:**
 
@@ -1121,7 +1121,7 @@ Run through this checklist on physical iOS device:
 - Choose SQLDelight (KMP) for shared schema definition
 - Fallback: Core Data with manual schema mapping
 
-***REMOVED******REMOVED******REMOVED*** Risk 5: Backend API Availability
+### Risk 5: Backend API Availability
 
 **Mitigation:**
 
@@ -1129,7 +1129,7 @@ Run through this checklist on physical iOS device:
 - Backend team provides staging environment
 - Integration tests validate contract before production
 
-***REMOVED******REMOVED******REMOVED*** Risk 6: eBay OAuth Complexity
+### Risk 6: eBay OAuth Complexity
 
 **Mitigation:**
 
@@ -1139,7 +1139,7 @@ Run through this checklist on physical iOS device:
 
 ---
 
-***REMOVED******REMOVED*** Parallelization Strategy (Max Efficiency)
+## Parallelization Strategy (Max Efficiency)
 
 To minimize overall duration, run these phases in parallel:
 
@@ -1163,16 +1163,16 @@ To minimize overall duration, run these phases in parallel:
 
 ---
 
-***REMOVED******REMOVED*** Success Metrics
+## Success Metrics
 
-***REMOVED******REMOVED******REMOVED*** Quantitative
+### Quantitative
 
 - **Lines of Code Added:** ~8,000-12,000 LOC (iOS Swift)
 - **Gaps Closed:** 47 gaps (19 HIGH + 28 MED)
 - **Test Coverage:** ≥70% for new iOS code
 - **Crash-Free Rate:** ≥99% (Sentry metric)
 
-***REMOVED******REMOVED******REMOVED*** Qualitative
+### Qualitative
 
 - **User Feedback:** iOS users report feature parity with Android
 - **Team Velocity:** iOS features ship at same pace as Android (post-parity)
@@ -1180,4 +1180,4 @@ To minimize overall duration, run these phases in parallel:
 
 ---
 
-***REMOVED******REMOVED*** END OF PARITY PLAN
+## END OF PARITY PLAN

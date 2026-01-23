@@ -1,34 +1,34 @@
-***REMOVED*** KMP Structure
+# KMP Structure
 
 This document describes the target Kotlin Multiplatform (KMP) module layout for Scanium after the
 extraction of shared business logic from the Android-specific codebase.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The `/shared` directory will contain all platform-independent Kotlin Multiplatform modules. These
 modules will use the `commonMain` / `androidMain` / `iosMain` source set structure to share core
 business logic while allowing platform-specific implementations where needed.
 
-***REMOVED******REMOVED*** Directory Structure
+## Directory Structure
 
 ```
 scanium/
-├── shared/                          ***REMOVED*** KMP modules root
-│   ├── core-models/                 ***REMOVED*** Platform-independent data models
-│   ├── core-tracking/               ***REMOVED*** Tracking & aggregation logic
-│   ├── core-domainpack/             ***REMOVED*** Domain Pack system (categories)
-│   ├── core-scan/                   ***REMOVED*** Scan contracts & interfaces
-│   └── core-contracts/              ***REMOVED*** Shared contracts & interfaces
+├── shared/                          # KMP modules root
+│   ├── core-models/                 # Platform-independent data models
+│   ├── core-tracking/               # Tracking & aggregation logic
+│   ├── core-domainpack/             # Domain Pack system (categories)
+│   ├── core-scan/                   # Scan contracts & interfaces
+│   └── core-contracts/              # Shared contracts & interfaces
 │
-├── androidApp/                      ***REMOVED*** Android app (Compose UI, navigation)
-├── android-ml-mlkit/                ***REMOVED*** Android ML Kit wrappers
-├── android-camera-camerax/          ***REMOVED*** Android CameraX wrappers
-└── android-platform-adapters/       ***REMOVED*** Android type conversions
+├── androidApp/                      # Android app (Compose UI, navigation)
+├── android-ml-mlkit/                # Android ML Kit wrappers
+├── android-camera-camerax/          # Android CameraX wrappers
+└── android-platform-adapters/       # Android type conversions
 ```
 
-***REMOVED******REMOVED*** Module Descriptions
+## Module Descriptions
 
-***REMOVED******REMOVED******REMOVED*** `/shared/core-models`
+### `/shared/core-models`
 
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Platform-independent data models and types
@@ -54,7 +54,7 @@ scanium/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** `/shared/core-tracking`
+### `/shared/core-tracking`
 
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Object tracking and item aggregation logic
@@ -88,7 +88,7 @@ scanium/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** `/shared/core-domainpack`
+### `/shared/core-domainpack`
 
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Domain Pack system for category taxonomy
@@ -119,7 +119,7 @@ scanium/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** `/shared/core-scan`
+### `/shared/core-scan`
 
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Scan-related contracts and interfaces (placeholder)
@@ -143,7 +143,7 @@ scanium/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** `/shared/core-contracts`
+### `/shared/core-contracts`
 
 **Type**: KMP Library (`multiplatform` plugin)
 **Purpose**: Shared contracts and interfaces (placeholder)
@@ -163,7 +163,7 @@ scanium/
 
 ---
 
-***REMOVED******REMOVED*** Dependency Graph
+## Dependency Graph
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -221,33 +221,33 @@ scanium/
 
 ---
 
-***REMOVED******REMOVED*** Source Set Structure (KMP Modules)
+## Source Set Structure (KMP Modules)
 
 Each shared module will follow the standard KMP source set layout:
 
 ```
 shared/core-models/
-├── build.gradle.kts           ***REMOVED*** KMP configuration
+├── build.gradle.kts           # KMP configuration
 └── src/
     ├── commonMain/
-    │   └── kotlin/            ***REMOVED*** Shared Kotlin code
+    │   └── kotlin/            # Shared Kotlin code
     ├── commonTest/
-    │   └── kotlin/            ***REMOVED*** Shared tests
+    │   └── kotlin/            # Shared tests
     ├── androidMain/
-    │   └── kotlin/            ***REMOVED*** Android-specific implementations
+    │   └── kotlin/            # Android-specific implementations
     ├── androidUnitTest/
-    │   └── kotlin/            ***REMOVED*** Android unit tests
+    │   └── kotlin/            # Android unit tests
     ├── iosMain/
-    │   └── kotlin/            ***REMOVED*** iOS-specific implementations
+    │   └── kotlin/            # iOS-specific implementations
     └── iosTest/
-        └── kotlin/            ***REMOVED*** iOS tests
+        └── kotlin/            # iOS tests
 ```
 
 ---
 
-***REMOVED******REMOVED*** Build Configuration
+## Build Configuration
 
-***REMOVED******REMOVED******REMOVED*** Gradle Setup (Module-Level)
+### Gradle Setup (Module-Level)
 
 Example `shared/core-models/build.gradle.kts`:
 
@@ -294,7 +294,7 @@ kotlin {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Settings Gradle
+### Settings Gradle
 
 The root `settings.gradle.kts` will include:
 
@@ -315,16 +315,16 @@ include(
 
 ---
 
-***REMOVED******REMOVED*** Migration Strategy
+## Migration Strategy
 
-***REMOVED******REMOVED******REMOVED*** Phase 1: Structure Setup (Current)
+### Phase 1: Structure Setup (Current)
 
 ✅ Create `/shared` directory structure
 ✅ Add placeholder modules
 ✅ Document target architecture
 🚧 No code moved yet
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Module Conversion
+### Phase 2: Module Conversion
 
 1. Convert `core-models` to KMP
     - Apply `multiplatform` plugin
@@ -348,7 +348,7 @@ include(
     - Keep `android-platform-adapters` as Android library
     - Create `ios-platform-adapters` for iOS-specific conversions
 
-***REMOVED******REMOVED******REMOVED*** Phase 3: iOS Integration
+### Phase 3: iOS Integration
 
 1. Create `:iosApp` module with SwiftUI
 2. Implement iOS platform providers (Camera, ML)
@@ -357,7 +357,7 @@ include(
 
 ---
 
-***REMOVED******REMOVED*** Non-Negotiables
+## Non-Negotiables
 
 1. **Android Must Remain Functional**: Every migration step must keep Android builds working
 2. **No Breaking Changes**: Existing Android features must continue working throughout migration
@@ -370,20 +370,20 @@ include(
 
 ---
 
-***REMOVED******REMOVED*** Testing Strategy
+## Testing Strategy
 
-***REMOVED******REMOVED******REMOVED*** Shared Modules
+### Shared Modules
 
 - **Common Tests** (`commonTest`): Platform-independent unit tests
 - **Android Tests** (`androidUnitTest`): Android-specific test cases
 - **iOS Tests** (`iosTest`): iOS-specific test cases
 
-***REMOVED******REMOVED******REMOVED*** Platform Modules
+### Platform Modules
 
 - **Android**: Existing test suite in `androidApp/src/test/` continues
 - **iOS**: New test suite in `iosApp/src/test/` (future)
 
-***REMOVED******REMOVED******REMOVED*** CI Pipeline
+### CI Pipeline
 
 - Build all KMP modules for Android + iOS targets
 - Run common tests on JVM
@@ -392,7 +392,7 @@ include(
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - **Migration Plan**: `docs/kmp-migration/PLAN.md`
 - **Phase 2 Plan**: `docs/kmp-migration/PHASE_2_PLAN.md`
@@ -402,7 +402,7 @@ include(
 
 ---
 
-***REMOVED******REMOVED*** Status
+## Status
 
 **Current State**: Phase 1 (Structure Setup)
 **Last Updated**: 2025-12-17

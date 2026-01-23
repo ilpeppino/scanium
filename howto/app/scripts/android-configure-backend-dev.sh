@@ -1,10 +1,10 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** =============================================================================
-***REMOVED*** DEPRECATED: This script has been moved to scripts/android/set-backend-cloudflare-dev.sh
-***REMOVED*** =============================================================================
-***REMOVED*** This stub forwards to the new location for backwards compatibility.
-***REMOVED*** Please update your workflows to use the new path.
-***REMOVED*** =============================================================================
+#!/usr/bin/env bash
+# =============================================================================
+# DEPRECATED: This script has been moved to scripts/android/set-backend-cloudflare-dev.sh
+# =============================================================================
+# This stub forwards to the new location for backwards compatibility.
+# Please update your workflows to use the new path.
+# =============================================================================
 
 echo ""
 echo "WARNING: This script is DEPRECATED!"

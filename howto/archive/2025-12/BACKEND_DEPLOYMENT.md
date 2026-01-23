@@ -1,9 +1,9 @@
-***REMOVED*** Scanium Backend - Complete Deployment Guide
+# Scanium Backend - Complete Deployment Guide
 
 This document provides the complete manual setup steps for deploying the Scanium backend on your
 Synology NAS.
 
-***REMOVED******REMOVED*** 📋 What Was Built
+## 📋 What Was Built
 
 A production-grade TypeScript backend with:
 
@@ -19,55 +19,55 @@ A production-grade TypeScript backend with:
 ✅ **Error Handling** - Consistent JSON error responses
 ✅ **Type Safety** - Full TypeScript with strict mode
 
-***REMOVED******REMOVED*** 🗂️ Project Structure
+## 🗂️ Project Structure
 
 ```
 backend/
 ├── src/
-│   ├── config/              ***REMOVED*** Environment validation (Zod)
-│   │   └── index.ts         ***REMOVED*** Load & validate env vars
+│   ├── config/              # Environment validation (Zod)
+│   │   └── index.ts         # Load & validate env vars
 │   ├── infra/
 │   │   ├── db/
-│   │   │   └── prisma.ts    ***REMOVED*** Prisma client wrapper
+│   │   │   └── prisma.ts    # Prisma client wrapper
 │   │   └── http/plugins/
-│   │       ├── cors.ts      ***REMOVED*** CORS configuration
-│   │       ├── cookies.ts   ***REMOVED*** Cookie signing
+│   │       ├── cors.ts      # CORS configuration
+│   │       ├── cookies.ts   # Cookie signing
 │   │       └── error-handler.ts
 │   ├── modules/
 │   │   ├── health/
-│   │   │   └── routes.ts    ***REMOVED*** Health check endpoints
+│   │   │   └── routes.ts    # Health check endpoints
 │   │   ├── auth/ebay/
-│   │   │   ├── routes.ts    ***REMOVED*** OAuth endpoints
+│   │   │   ├── routes.ts    # OAuth endpoints
 │   │   │   ├── oauth-flow.ts
 │   │   │   ├── token-storage.ts
-│   │   │   └── README.md    ***REMOVED*** API documentation
+│   │   │   └── README.md    # API documentation
 │   │   ├── marketplaces/
-│   │   │   └── adapter.ts   ***REMOVED*** Marketplace interface
-│   │   ├── listings/        ***REMOVED*** Future: eBay Sell APIs
-│   │   └── media/           ***REMOVED*** Future: image upload
+│   │   │   └── adapter.ts   # Marketplace interface
+│   │   ├── listings/        # Future: eBay Sell APIs
+│   │   └── media/           # Future: image upload
 │   ├── shared/
-│   │   ├── errors/          ***REMOVED*** Custom error types
-│   │   └── types/           ***REMOVED*** Shared type definitions
-│   ├── app.ts               ***REMOVED*** Fastify app builder
-│   └── main.ts              ***REMOVED*** Application entrypoint
+│   │   ├── errors/          # Custom error types
+│   │   └── types/           # Shared type definitions
+│   ├── app.ts               # Fastify app builder
+│   └── main.ts              # Application entrypoint
 ├── prisma/
-│   ├── schema.prisma        ***REMOVED*** Database schema
-│   └── migrations/          ***REMOVED*** Migration history
-├── Dockerfile               ***REMOVED*** Multi-stage production build
-├── docker-compose.yml       ***REMOVED*** NAS deployment stack
-├── SETUP_GUIDE.md          ***REMOVED*** Complete deployment guide
-└── README.md                ***REMOVED*** Development documentation
+│   ├── schema.prisma        # Database schema
+│   └── migrations/          # Migration history
+├── Dockerfile               # Multi-stage production build
+├── docker-compose.yml       # NAS deployment stack
+├── SETUP_GUIDE.md          # Complete deployment guide
+└── README.md                # Development documentation
 ```
 
-***REMOVED******REMOVED*** 🎯 Implemented Endpoints
+## 🎯 Implemented Endpoints
 
-***REMOVED******REMOVED******REMOVED*** Health & Status
+### Health & Status
 
 - `GET /healthz` - Liveness check (200 if process running)
 - `GET /readyz` - Readiness check (200 if DB connected)
 - `GET /` - API info and endpoint listing
 
-***REMOVED******REMOVED******REMOVED*** eBay OAuth (Server-Side)
+### eBay OAuth (Server-Side)
 
 - `POST /auth/ebay/start` - Returns eBay authorization URL
 - `GET /auth/ebay/callback` - Handles OAuth callback, exchanges code for tokens
@@ -75,11 +75,11 @@ backend/
 
 ---
 
-***REMOVED******REMOVED*** 🚀 MANUAL SETUP STEPS
+## 🚀 MANUAL SETUP STEPS
 
-***REMOVED******REMOVED*** A) Cloudflare Tunnel Setup
+## A) Cloudflare Tunnel Setup
 
-***REMOVED******REMOVED******REMOVED*** 1. Create Tunnel
+### 1. Create Tunnel
 
 1. Log into [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com/)
 2. Navigate to **Networks > Tunnels**
@@ -88,7 +88,7 @@ backend/
 5. Name: `scanium-api`
 6. Click **Save tunnel**
 
-***REMOVED******REMOVED******REMOVED*** 2. Get Tunnel Token
+### 2. Get Tunnel Token
 
 1. On the tunnel install page, select **Docker**
 2. Copy the token from the docker command:
@@ -97,7 +97,7 @@ backend/
    ```
 3. **Save this token** - you'll add it to `.env` as `CLOUDFLARED_TOKEN`
 
-***REMOVED******REMOVED******REMOVED*** 3. Configure Public Hostname
+### 3. Configure Public Hostname
 
 1. In the tunnel configuration, click **Public Hostname**
 2. Click **Add a public hostname**
@@ -115,9 +115,9 @@ backend/
 
 ---
 
-***REMOVED******REMOVED*** B) DNS Configuration
+## B) DNS Configuration
 
-***REMOVED******REMOVED******REMOVED*** Verify DNS (Automatic)
+### Verify DNS (Automatic)
 
 1. Go to **Cloudflare Dashboard > DNS > Records**
 2. Verify CNAME record exists:
@@ -130,15 +130,15 @@ backend/
 
 ---
 
-***REMOVED******REMOVED*** C) eBay Developer Credentials
+## C) eBay Developer Credentials
 
-***REMOVED******REMOVED******REMOVED*** 1. Create Developer Account
+### 1. Create Developer Account
 
 1. Go to [eBay Developers Program](https://developer.ebay.com/)
 2. Sign in with eBay account (or create one)
 3. Complete registration
 
-***REMOVED******REMOVED******REMOVED*** 2. Create Application Keyset (Sandbox)
+### 2. Create Application Keyset (Sandbox)
 
 1. Go to [My Keys](https://developer.ebay.com/my/keys)
 2. Under **Sandbox Keys**, click **Create a keyset**
@@ -146,7 +146,7 @@ backend/
     - **App ID (Client ID)**
     - **Cert ID (Client Secret)**
 
-***REMOVED******REMOVED******REMOVED*** 3. Configure RuName (Redirect URL)
+### 3. Configure RuName (Redirect URL)
 
 1. On Application Keys page, scroll to **User Tokens**
 2. Click **Get a Token from eBay**
@@ -157,14 +157,14 @@ backend/
         - ⚠️ **MUST MATCH** `PUBLIC_BASE_URL + EBAY_REDIRECT_PATH`
 5. Click **Save**
 
-***REMOVED******REMOVED******REMOVED*** 4. Grant Application Access
+### 4. Grant Application Access
 
 1. After creating RuName, click **Get a Token from eBay via Your Application**
 2. Select your RuName
 3. Click **Sign in to Sandbox**
 4. Authorize (this activates the RuName)
 
-***REMOVED******REMOVED******REMOVED*** 5. Configure Scopes
+### 5. Configure Scopes
 
 Required scopes for selling functionality:
 
@@ -184,7 +184,7 @@ https://api.ebay.com/oauth/api_scope/sell.account
 
 [Full scope reference](https://developer.ebay.com/api-docs/static/oauth-scopes.html)
 
-***REMOVED******REMOVED******REMOVED*** 6. Production Keys (Later)
+### 6. Production Keys (Later)
 
 For production eBay:
 
@@ -195,68 +195,68 @@ For production eBay:
 
 ---
 
-***REMOVED******REMOVED*** D) NAS Deployment
+## D) NAS Deployment
 
-***REMOVED******REMOVED******REMOVED*** 1. Prepare Environment Variables
+### 1. Prepare Environment Variables
 
 On your NAS, create `backend/.env`:
 
 ```bash
-***REMOVED*** Navigate to project directory
+# Navigate to project directory
 cd /volume1/docker/scanium-backend
 
-***REMOVED*** Create .env file
+# Create .env file
 nano .env
 ```
 
 **Required configuration:**
 
 ```bash
-***REMOVED*** Application
+# Application
 NODE_ENV=production
 PORT=8080
 
-***REMOVED*** CRITICAL: Must match Cloudflare Tunnel URL
+# CRITICAL: Must match Cloudflare Tunnel URL
 PUBLIC_BASE_URL=https://api.yourdomain.com
 
-***REMOVED*** Database (password MUST match POSTGRES_PASSWORD below)
+# Database (password MUST match POSTGRES_PASSWORD below)
 DATABASE_URL=postgresql://scanium:STRONG_PASSWORD_HERE@postgres:5432/scanium
 
-***REMOVED*** eBay OAuth
+# eBay OAuth
 EBAY_ENV=sandbox
 EBAY_CLIENT_ID=your_app_id_from_ebay_developer_portal
 EBAY_CLIENT_SECRET=your_cert_id_from_ebay_developer_portal
 EBAY_REDIRECT_PATH=/auth/ebay/callback
 EBAY_SCOPES=https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.fulfillment https://api.ebay.com/oauth/api_scope/sell.account
 
-***REMOVED*** Session Security (Generate: openssl rand -base64 32)
+# Session Security (Generate: openssl rand -base64 32)
 SESSION_SIGNING_SECRET=GENERATE_RANDOM_32_CHAR_SECRET_HERE
 
-***REMOVED*** CORS Origins (Include app scheme)
+# CORS Origins (Include app scheme)
 CORS_ORIGINS=scanium://,http://localhost:3000
 
-***REMOVED*** PostgreSQL Credentials
+# PostgreSQL Credentials
 POSTGRES_USER=scanium
 POSTGRES_PASSWORD=STRONG_PASSWORD_HERE
 POSTGRES_DB=scanium
 
-***REMOVED*** Cloudflare Tunnel Token (from step A.2)
+# Cloudflare Tunnel Token (from step A.2)
 CLOUDFLARED_TOKEN=your_tunnel_token_from_cloudflare_dashboard
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Generate Secrets
+### 2. Generate Secrets
 
 ```bash
-***REMOVED*** Generate session secret (min 32 chars)
+# Generate session secret (min 32 chars)
 openssl rand -base64 32
 
-***REMOVED*** Generate PostgreSQL password
+# Generate PostgreSQL password
 openssl rand -base64 24
 ```
 
 Replace `GENERATE_*` and `STRONG_PASSWORD_HERE` with generated values.
 
-***REMOVED******REMOVED******REMOVED*** 3. Deploy via Container Manager (UI)
+### 3. Deploy via Container Manager (UI)
 
 1. **Upload Project**:
     - Open **File Station** on NAS
@@ -286,40 +286,40 @@ Replace `GENERATE_*` and `STRONG_PASSWORD_HERE` with generated values.
     - Click **Done**
     - Project builds and starts automatically
 
-***REMOVED******REMOVED******REMOVED*** 4. Deploy via SSH (Alternative)
+### 4. Deploy via SSH (Alternative)
 
 ```bash
-***REMOVED*** SSH into NAS
+# SSH into NAS
 ssh admin@your-nas-ip
 
-***REMOVED*** Navigate to project
+# Navigate to project
 cd /volume1/docker/scanium-backend
 
-***REMOVED*** Start services
+# Start services
 sudo docker-compose up -d
 
-***REMOVED*** View logs
+# View logs
 sudo docker-compose logs -f
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Run Database Migrations
+### 5. Run Database Migrations
 
 ```bash
-***REMOVED*** Connect to API container
+# Connect to API container
 docker exec -it scanium-api sh
 
-***REMOVED*** Run migrations
+# Run migrations
 npx prisma migrate deploy
 
-***REMOVED*** Exit
+# Exit
 exit
 ```
 
 ---
 
-***REMOVED******REMOVED*** E) Verification
+## E) Verification
 
-***REMOVED******REMOVED******REMOVED*** 1. Check Container Status
+### 1. Check Container Status
 
 In Container Manager or via SSH:
 
@@ -333,16 +333,16 @@ docker ps
 - `scanium-api`
 - `scanium-cloudflared`
 
-***REMOVED******REMOVED******REMOVED*** 2. Check Logs
+### 2. Check Logs
 
 ```bash
-***REMOVED*** API logs
+# API logs
 docker logs scanium-api
 
-***REMOVED*** Cloudflared logs
+# Cloudflared logs
 docker logs scanium-cloudflared
 
-***REMOVED*** Postgres logs
+# Postgres logs
 docker logs scanium-postgres
 ```
 
@@ -362,7 +362,7 @@ docker logs scanium-postgres
 Connection registered
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Test Endpoints
+### 3. Test Endpoints
 
 **Health check:**
 
@@ -422,9 +422,9 @@ curl https://api.yourdomain.com/auth/ebay/status
 
 ---
 
-***REMOVED******REMOVED*** F) Mobile App Follow-Up
+## F) Mobile App Follow-Up
 
-***REMOVED******REMOVED******REMOVED*** 1. Android Integration (Summary)
+### 1. Android Integration (Summary)
 
 See [MOBILE_APP_INTEGRATION.md](md/backend/MOBILE_APP_INTEGRATION.md) for complete implementation.
 
@@ -464,7 +464,7 @@ See [MOBILE_APP_INTEGRATION.md](md/backend/MOBILE_APP_INTEGRATION.md) for comple
    val api = ScaniumApi("https://api.yourdomain.com")
    ```
 
-***REMOVED******REMOVED******REMOVED*** 2. OAuth Flow from App
+### 2. OAuth Flow from App
 
 ```
 1. User taps "Connect eBay" in Settings
@@ -492,7 +492,7 @@ See [MOBILE_APP_INTEGRATION.md](md/backend/MOBILE_APP_INTEGRATION.md) for comple
 
 ---
 
-***REMOVED******REMOVED*** 🔐 Security Checklist
+## 🔐 Security Checklist
 
 Before going live:
 
@@ -510,9 +510,9 @@ Before going live:
 
 ---
 
-***REMOVED******REMOVED*** 🐛 Troubleshooting
+## 🐛 Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Container won't start
+### Container won't start
 
 **Check logs:**
 
@@ -526,7 +526,7 @@ docker logs scanium-api
 - Database not ready (wait for postgres health check)
 - Port 8080 already in use
 
-***REMOVED******REMOVED******REMOVED*** Database connection failed
+### Database connection failed
 
 **Verify DATABASE_URL:**
 
@@ -540,7 +540,7 @@ docker logs scanium-api
 docker exec -it scanium-postgres psql -U scanium -d scanium
 ```
 
-***REMOVED******REMOVED******REMOVED*** Cloudflare Tunnel not connecting
+### Cloudflare Tunnel not connecting
 
 **Check token:**
 
@@ -559,7 +559,7 @@ docker logs scanium-cloudflared
 - Cloudflare Dashboard > Networks > Tunnels
 - Should show "HEALTHY"
 
-***REMOVED******REMOVED******REMOVED*** OAuth redirect_uri_mismatch
+### OAuth redirect_uri_mismatch
 
 **Verify RuName:**
 
@@ -568,7 +568,7 @@ docker logs scanium-cloudflared
 - No trailing slash
 - Check `PUBLIC_BASE_URL` in `.env`
 
-***REMOVED******REMOVED******REMOVED*** OAuth state mismatch
+### OAuth state mismatch
 
 **Causes:**
 
@@ -583,27 +583,27 @@ docker logs scanium-cloudflared
 
 ---
 
-***REMOVED******REMOVED*** 📊 Monitoring
+## 📊 Monitoring
 
-***REMOVED******REMOVED******REMOVED*** View logs in real-time:
+### View logs in real-time:
 
 ```bash
 docker-compose logs -f api
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check resource usage:
+### Check resource usage:
 
 ```bash
 docker stats scanium-api scanium-postgres scanium-cloudflared
 ```
 
-***REMOVED******REMOVED******REMOVED*** Database backup:
+### Database backup:
 
 ```bash
 docker exec scanium-postgres pg_dump -U scanium scanium > backup_$(date +%Y%m%d).sql
 ```
 
-***REMOVED******REMOVED******REMOVED*** Restore backup:
+### Restore backup:
 
 ```bash
 cat backup_20241212.sql | docker exec -i scanium-postgres psql -U scanium scanium
@@ -611,7 +611,7 @@ cat backup_20241212.sql | docker exec -i scanium-postgres psql -U scanium scaniu
 
 ---
 
-***REMOVED******REMOVED*** 🎯 Next Steps
+## 🎯 Next Steps
 
 1. ✅ Backend deployed on NAS
 2. ✅ Cloudflare Tunnel configured
@@ -626,7 +626,7 @@ cat backup_20241212.sql | docker exec -i scanium-postgres psql -U scanium scaniu
 
 ---
 
-***REMOVED******REMOVED*** 📚 Documentation Index
+## 📚 Documentation Index
 
 - [Backend README](backend/README.md) - Development guide
 - [Setup Guide](backend/SETUP_GUIDE.md) - Detailed deployment steps
@@ -635,7 +635,7 @@ cat backup_20241212.sql | docker exec -i scanium-postgres psql -U scanium scaniu
 
 ---
 
-***REMOVED******REMOVED*** ✅ Deployment Complete!
+## ✅ Deployment Complete!
 
 Your Scanium backend is now:
 

@@ -314,9 +314,9 @@ export class MockVisionExtractor {
     const facts: VisualFacts = {
       itemId,
       dominantColors: [
-        { name: 'blue', rgbHex: '***REMOVED***1E40AF', pct: 45 },
-        { name: 'white', rgbHex: '***REMOVED***FFFFFF', pct: 30 },
-        { name: 'gray', rgbHex: '***REMOVED***6B7280', pct: 25 },
+        { name: 'blue', rgbHex: '#1E40AF', pct: 45 },
+        { name: 'white', rgbHex: '#FFFFFF', pct: 30 },
+        { name: 'gray', rgbHex: '#6B7280', pct: 25 },
       ],
       ocrSnippets: [
         { text: 'IKEA', confidence: 0.95 },

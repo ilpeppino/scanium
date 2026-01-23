@@ -64,7 +64,7 @@ data class VisionAttributes(
  * Color detected by Vision API.
  *
  * @property name Human-readable color name (e.g., "blue", "red")
- * @property hex RGB hex code (e.g., "***REMOVED***1E40AF")
+ * @property hex RGB hex code (e.g., "#1E40AF")
  * @property score Confidence/prominence score (0.0 to 1.0)
  */
 data class VisionColor(

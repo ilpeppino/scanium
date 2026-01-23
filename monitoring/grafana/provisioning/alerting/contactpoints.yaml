@@ -1,20 +1,20 @@
-***REMOVED*** Grafana Alerting - Contact Points Provisioning
-***REMOVED*** These are placeholder contact points - configure secrets via environment variables
-***REMOVED***
-***REMOVED*** REQUIRED CONFIGURATION (set via docker-compose environment variables):
-***REMOVED*** - SMTP: GF_SMTP_* variables for email notifications
-***REMOVED*** - Webhook: Update the webhook URL in Grafana UI or use a secret manager
-***REMOVED***
-***REMOVED*** See monitoring/README.md for configuration instructions.
+# Grafana Alerting - Contact Points Provisioning
+# These are placeholder contact points - configure secrets via environment variables
+#
+# REQUIRED CONFIGURATION (set via docker-compose environment variables):
+# - SMTP: GF_SMTP_* variables for email notifications
+# - Webhook: Update the webhook URL in Grafana UI or use a secret manager
+#
+# See monitoring/README.md for configuration instructions.
 
 apiVersion: 1
 
 contactPoints:
-  ***REMOVED*** Default contact point for all environments
+  # Default contact point for all environments
   - orgId: 1
     name: scanium-default
     receivers:
-      ***REMOVED*** Webhook receiver (placeholder URL for local dev)
+      # Webhook receiver (placeholder URL for local dev)
       - uid: scanium-webhook
         type: webhook
         settings:
@@ -23,11 +23,11 @@ contactPoints:
           maxAlerts: 10
         disableResolveMessage: false
 
-  ***REMOVED*** High priority contact point for production alerts
+  # High priority contact point for production alerts
   - orgId: 1
     name: scanium-high-priority
     receivers:
-      ***REMOVED*** Primary webhook for production
+      # Primary webhook for production
       - uid: scanium-webhook-prod
         type: webhook
         settings:
@@ -36,7 +36,7 @@ contactPoints:
           maxAlerts: 5
         disableResolveMessage: false
 
-  ***REMOVED*** Low priority contact point for dev/staging
+  # Low priority contact point for dev/staging
   - orgId: 1
     name: scanium-low-priority
     receivers:

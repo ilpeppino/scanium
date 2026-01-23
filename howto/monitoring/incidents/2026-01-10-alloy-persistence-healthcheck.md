@@ -1,10 +1,10 @@
-***REMOVED*** Incident Report: Alloy Persistence & Healthcheck Fix
+# Incident Report: Alloy Persistence & Healthcheck Fix
 
 **Date:** 2026-01-10
 **Severity:** P1 - Critical (Monitoring system broken after restarts)
 **Status:** RESOLVED
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 Fixed two critical issues preventing Grafana Alloy from functioning correctly after container
 restarts:
@@ -12,9 +12,9 @@ restarts:
 1. **Ephemeral storage** causing Docker log replay storms and Loki rate-limit errors
 2. **Broken healthcheck** causing permanent UNHEALTHY status (319 consecutive failures)
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
-***REMOVED******REMOVED******REMOVED*** Before Fix
+### Before Fix
 
 **Healthcheck Status:**
 
@@ -35,9 +35,9 @@ After each Alloy restart, Docker container logs were replayed from the beginning
    restart
 2. Healthcheck used `wget` command which doesn't exist in `grafana/alloy:v1.0.0` image
 
-***REMOVED******REMOVED*** Changes Implemented
+## Changes Implemented
 
-***REMOVED******REMOVED******REMOVED*** 1. Added Persistent Storage Bind Mount
+### 1. Added Persistent Storage Bind Mount
 
 **File:** `monitoring/docker-compose.yml`
 **Change:** Added volume mount to persist Alloy internal state
@@ -57,7 +57,7 @@ After each Alloy restart, Docker container logs were replayed from the beginning
 - `loki.source.docker.backend/` - Docker log tail positions (prevents replay)
 - `prometheus.remote_write.*/` - Prometheus WAL segments
 
-***REMOVED******REMOVED******REMOVED*** 2. Fixed Healthcheck Command
+### 2. Fixed Healthcheck Command
 
 **File:** `monitoring/docker-compose.yml`
 **Change:** Replaced `wget` with `bash` + TCP socket test
@@ -78,9 +78,9 @@ After each Alloy restart, Docker container logs were replayed from the beginning
 - `bash` is available and supports `/dev/tcp` pseudo-device
 - Sends HTTP GET request to `/-/ready` endpoint and validates 200 OK response
 
-***REMOVED******REMOVED*** Verification Results
+## Verification Results
 
-***REMOVED******REMOVED******REMOVED*** Healthcheck Status: ✅ RESOLVED
+### Healthcheck Status: ✅ RESOLVED
 
 **Before:**
 
@@ -103,7 +103,7 @@ scanium-alloy  Up 19 seconds (healthy)
 Status: "healthy"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Storage Persistence: ✅ VERIFIED
+### Storage Persistence: ✅ VERIFIED
 
 **NAS Directory (after initial start):**
 
@@ -123,7 +123,7 @@ Status: "healthy"
 - Write test: ✅ Created `.persist_test` file successfully
 - Data survives restart: ✅ All files present after restart with updated timestamps
 
-***REMOVED******REMOVED******REMOVED*** Replay Storm Elimination: ✅ VERIFIED
+### Replay Storm Elimination: ✅ VERIFIED
 
 **Before Restart (baseline logs):**
 
@@ -146,47 +146,47 @@ grep -iE 'entry too far behind|429|Too Many Requests|rate limit exceeded'
 Loki is clean - no rate limit errors!
 ```
 
-***REMOVED******REMOVED*** How to Verify (Post-Deployment)
+## How to Verify (Post-Deployment)
 
-***REMOVED******REMOVED******REMOVED*** 1. Check Container Health
+### 1. Check Container Health
 
 ```bash
 ssh nas
 docker ps --format "table {{.Names}}\t{{.Status}}" | grep alloy
-***REMOVED*** Expected: scanium-alloy  Up X seconds (healthy)
+# Expected: scanium-alloy  Up X seconds (healthy)
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Verify Persistent Storage
+### 2. Verify Persistent Storage
 
 ```bash
-***REMOVED*** On NAS
+# On NAS
 ls -la /volume1/docker/scanium/repo/monitoring/data/alloy/
-***REMOVED*** Should show: alloy_seed.json, loki.source.docker.backend/, etc.
+# Should show: alloy_seed.json, loki.source.docker.backend/, etc.
 
-***REMOVED*** Inside container
+# Inside container
 docker exec scanium-alloy ls -la /var/lib/alloy/data
-***REMOVED*** Should show same files
+# Should show same files
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Test Restart (No Replay Storm)
+### 3. Test Restart (No Replay Storm)
 
 ```bash
 cd /volume1/docker/scanium/repo/monitoring
 docker-compose restart alloy
 sleep 15
-docker ps | grep alloy  ***REMOVED*** Should show (healthy)
+docker ps | grep alloy  # Should show (healthy)
 docker logs --tail 100 scanium-alloy | grep -iE "429|too far behind"
-***REMOVED*** Expected: No matches (or minimal, not sustained spam)
+# Expected: No matches (or minimal, not sustained spam)
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Verify Healthcheck Command
+### 4. Verify Healthcheck Command
 
 ```bash
 docker inspect scanium-alloy | jq '.[0].State.Health'
-***REMOVED*** Expected: "Status": "healthy"
+# Expected: "Status": "healthy"
 ```
 
-***REMOVED******REMOVED*** Impact
+## Impact
 
 **Before Fix:**
 
@@ -202,14 +202,14 @@ docker inspect scanium-alloy | jq '.[0].State.Health'
 - Zero Loki rate-limit errors
 - Monitoring system resilient to NAS power cycles
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 - `monitoring/docker-compose.yml` - Added persistent storage + fixed healthcheck
 - `monitoring/incident_data/alloy_before.log` - Baseline logs showing replay storm
 - `monitoring/incident_data/alloy_after_restart.log` - Clean logs after fix
 - `monitoring/incident_data/loki_after_restart.log` - Loki clean after fix
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 **Completed:**
 
@@ -224,7 +224,7 @@ docker inspect scanium-alloy | jq '.[0].State.Health'
 - ❌ Alloy batching optimization (not needed - working correctly)
 - ❌ Dashboard updates (not required for this fix)
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - Persistence Audit Report: `monitoring/incident_data/AUDIT_persistence_after_power_cycles.md`
 - Original Issue: Monitoring breaking after NAS restarts

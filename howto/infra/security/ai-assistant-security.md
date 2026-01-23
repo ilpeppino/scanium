@@ -1,22 +1,22 @@
-***REMOVED*** AI Assistant Security Framework
+# AI Assistant Security Framework
 
 This document defines the security model, threat analysis, and controls for Scanium's AI Assistant
 feature operating in "chat-only during draft item" mode.
 
-***REMOVED******REMOVED*** Table of Contents
+## Table of Contents
 
-1. [Overview](***REMOVED***overview)
-2. [Threat Model](***REMOVED***threat-model)
-3. [Data Minimization Policy](***REMOVED***data-minimization-policy)
-4. [Security Controls](***REMOVED***security-controls)
-5. [Operational Guidance](***REMOVED***operational-guidance)
-6. [Incident Response](***REMOVED***incident-response)
+1. [Overview](#overview)
+2. [Threat Model](#threat-model)
+3. [Data Minimization Policy](#data-minimization-policy)
+4. [Security Controls](#security-controls)
+5. [Operational Guidance](#operational-guidance)
+6. [Incident Response](#incident-response)
 
 ---
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
-***REMOVED******REMOVED******REMOVED*** Architecture
+### Architecture
 
 The AI Assistant follows a gateway architecture where:
 
@@ -38,7 +38,7 @@ The AI Assistant follows a gateway architecture where:
                                       │ Logs metadata only
 ```
 
-***REMOVED******REMOVED******REMOVED*** Security Principles
+### Security Principles
 
 1. **Defense in Depth**: Multiple layers of validation and filtering
 2. **Fail Closed**: If any security check fails, reject the request with a safe error
@@ -47,9 +47,9 @@ The AI Assistant follows a gateway architecture where:
 
 ---
 
-***REMOVED******REMOVED*** Threat Model
+## Threat Model
 
-***REMOVED******REMOVED******REMOVED*** Assets to Protect
+### Assets to Protect
 
 | Asset                            | Sensitivity | Impact if Compromised                |
 |----------------------------------|-------------|--------------------------------------|
@@ -60,7 +60,7 @@ The AI Assistant follows a gateway architecture where:
 | User conversation content        | Medium      | Privacy violation                    |
 | Device identifiers               | Low         | Tracking concerns                    |
 
-***REMOVED******REMOVED******REMOVED*** Threat Actors
+### Threat Actors
 
 | Actor          | Motivation                       | Capability |
 |----------------|----------------------------------|------------|
@@ -69,9 +69,9 @@ The AI Assistant follows a gateway architecture where:
 | Competitor     | Intelligence gathering           | Medium     |
 | Researcher     | Bug bounty, academic             | High       |
 
-***REMOVED******REMOVED******REMOVED*** Threats and Mitigations
+### Threats and Mitigations
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** T1: Prompt Injection
+#### T1: Prompt Injection
 
 **Description**: User crafts input to manipulate LLM behavior, extract system prompts, or bypass
 safety measures.
@@ -91,7 +91,7 @@ safety measures.
 - M1.3: Length limits on all inputs
 - M1.4: Safe refusal template that doesn't reveal internal prompts
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** T2: Data Exfiltration Attempts
+#### T2: Data Exfiltration Attempts
 
 **Description**: User attempts to extract data about other users, internal systems, or databases.
 
@@ -109,7 +109,7 @@ safety measures.
 - M2.3: User context isolation (only current user's draft data)
 - M2.4: Block requests mentioning "other users", "database", "dump", etc.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** T3: PII Leakage to LLM Provider
+#### T3: PII Leakage to LLM Provider
 
 **Description**: Sensitive user data inadvertently sent to third-party LLM provider.
 
@@ -126,7 +126,7 @@ safety measures.
 - M3.3: Never send raw photos/videos
 - M3.4: Never send marketplace credentials or tokens
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** T4: Abuse / Bot / Flood Attacks
+#### T4: Abuse / Bot / Flood Attacks
 
 **Description**: Automated requests to drain resources or incur costs.
 
@@ -144,7 +144,7 @@ safety measures.
 - M4.4: Daily quota per session/user
 - M4.5: Circuit breaker for provider failures
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** T5: Cost Attacks
+#### T5: Cost Attacks
 
 **Description**: User attempts to generate large LLM costs.
 
@@ -162,7 +162,7 @@ safety measures.
 - M5.4: Daily cost budget per user/session
 - M5.5: Provider timeout to bound costs
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** T6: Information Disclosure via Logs
+#### T6: Information Disclosure via Logs
 
 **Description**: Sensitive data exposed through logging.
 
@@ -179,7 +179,7 @@ safety measures.
 - M6.3: Structured logging with metadata only
 - M6.4: Separate debug log level for content (disabled in production)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** T7: Client-Side Secret Exposure
+#### T7: Client-Side Secret Exposure
 
 **Description**: API keys or secrets extracted from mobile app.
 
@@ -198,9 +198,9 @@ safety measures.
 
 ---
 
-***REMOVED******REMOVED*** Data Minimization Policy
+## Data Minimization Policy
 
-***REMOVED******REMOVED******REMOVED*** Data Allowed to Reach LLM
+### Data Allowed to Reach LLM
 
 | Field                           | Allowed | Max Size                 | Redaction    |
 |---------------------------------|---------|--------------------------|--------------|
@@ -212,7 +212,7 @@ safety measures.
 | User-provided notes             | Yes     | 500 chars                | PII patterns |
 | Conversation history            | Yes     | Last 10 messages         | PII patterns |
 
-***REMOVED******REMOVED******REMOVED*** Data Never Sent to LLM
+### Data Never Sent to LLM
 
 - Raw photos or video frames
 - Exact GPS location
@@ -228,9 +228,9 @@ safety measures.
 
 ---
 
-***REMOVED******REMOVED*** Security Controls
+## Security Controls
 
-***REMOVED******REMOVED******REMOVED*** Input Validation
+### Input Validation
 
 All inputs validated with fail-closed behavior:
 
@@ -253,7 +253,7 @@ User Notes:
   - Same normalization as message
 ```
 
-***REMOVED******REMOVED******REMOVED*** Prompt Injection Detection
+### Prompt Injection Detection
 
 Patterns triggering immediate safe refusal:
 
@@ -275,7 +275,7 @@ Category: Jailbreak Attempts
 - Base64/encoded payloads
 ```
 
-***REMOVED******REMOVED******REMOVED*** Rate Limiting
+### Rate Limiting
 
 Configurable via environment variables:
 
@@ -289,7 +289,7 @@ Configurable via environment variables:
 | Backoff base            | 30s     | `ASSIST_RATE_LIMIT_BACKOFF_SECONDS`     |
 | Backoff max             | 900s    | `ASSIST_RATE_LIMIT_BACKOFF_MAX_SECONDS` |
 
-***REMOVED******REMOVED******REMOVED*** Cost Guardrails
+### Cost Guardrails
 
 | Guardrail         | Default | Env Variable                 |
 |-------------------|---------|------------------------------|
@@ -298,7 +298,7 @@ Configurable via environment variables:
 | Provider timeout  | 30s     | `ASSIST_PROVIDER_TIMEOUT_MS` |
 | Max context items | 10      | `ASSIST_MAX_CONTEXT_ITEMS`   |
 
-***REMOVED******REMOVED******REMOVED*** Safe Error Responses
+### Safe Error Responses
 
 All error responses use stable reason codes without leaking internal details:
 
@@ -313,17 +313,17 @@ All error responses use stable reason codes without leaking internal details:
 
 ---
 
-***REMOVED******REMOVED*** Operational Guidance
+## Operational Guidance
 
-***REMOVED******REMOVED******REMOVED*** Environment Variables
+### Environment Variables
 
 Required for production:
 
 ```bash
-***REMOVED*** LLM Provider
-OPENAI_API_KEY=sk-...              ***REMOVED*** Server-side only, never in client
+# LLM Provider
+OPENAI_API_KEY=sk-...              # Server-side only, never in client
 
-***REMOVED*** Gateway Configuration
+# Gateway Configuration
 ASSIST_RATE_LIMIT_PER_MINUTE=60
 ASSIST_IP_RATE_LIMIT_PER_MINUTE=60
 ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE=30
@@ -332,11 +332,11 @@ ASSIST_MAX_INPUT_CHARS=2000
 ASSIST_MAX_OUTPUT_TOKENS=500
 ASSIST_PROVIDER_TIMEOUT_MS=30000
 
-***REMOVED*** Logging
-ASSIST_LOG_CONTENT=false           ***REMOVED*** Set true only for debugging, logs are redacted
+# Logging
+ASSIST_LOG_CONTENT=false           # Set true only for debugging, logs are redacted
 ```
 
-***REMOVED******REMOVED******REMOVED*** Monitoring Recommendations
+### Monitoring Recommendations
 
 1. **Alert on**: Unusual rate limit trigger volume (potential bot attack)
 2. **Alert on**: High policy violation rate (potential targeted attack)
@@ -344,9 +344,9 @@ ASSIST_LOG_CONTENT=false           ***REMOVED*** Set true only for debugging, lo
 4. **Dashboard**: Daily request volume, quota usage, error breakdown
 5. **Audit log**: All policy violations with request metadata (not content)
 
-***REMOVED******REMOVED******REMOVED*** Incident Response
+### Incident Response
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Suspected Prompt Injection Attack
+#### Suspected Prompt Injection Attack
 
 1. Check logs for `POLICY_VIOLATION` reason codes
 2. Identify source (IP, device hash, API key)
@@ -354,7 +354,7 @@ ASSIST_LOG_CONTENT=false           ***REMOVED*** Set true only for debugging, lo
 4. Review and update detection patterns if bypass found
 5. Do NOT expose successful bypass patterns publicly
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Cost Anomaly
+#### Cost Anomaly
 
 1. Check daily quota consumption metrics
 2. Identify highest-consuming sessions
@@ -362,7 +362,7 @@ ASSIST_LOG_CONTENT=false           ***REMOVED*** Set true only for debugging, lo
 4. Consider lowering limits if attack in progress
 5. Review provider billing dashboard
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Data Leak Concern
+#### Data Leak Concern
 
 1. Audit logs for affected time period
 2. Verify PII redaction was active
@@ -371,9 +371,9 @@ ASSIST_LOG_CONTENT=false           ***REMOVED*** Set true only for debugging, lo
 
 ---
 
-***REMOVED******REMOVED*** Incident Response
+## Incident Response
 
-***REMOVED******REMOVED******REMOVED*** Severity Levels
+### Severity Levels
 
 | Level | Description                            | Response Time | Examples                              |
 |-------|----------------------------------------|---------------|---------------------------------------|
@@ -382,9 +382,9 @@ ASSIST_LOG_CONTENT=false           ***REMOVED*** Set true only for debugging, lo
 | P3    | Medium - Elevated abuse                | < 4 hours     | Unusual rate limit triggers           |
 | P4    | Low - Policy tuning needed             | < 24 hours    | New bypass pattern detected           |
 
-***REMOVED******REMOVED******REMOVED*** Response Procedures
+### Response Procedures
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** P1: API Key Compromised
+#### P1: API Key Compromised
 
 1. Immediately rotate affected API key
 2. Block old key at provider
@@ -392,7 +392,7 @@ ASSIST_LOG_CONTENT=false           ***REMOVED*** Set true only for debugging, lo
 4. Audit usage during exposure window
 5. Post-incident review
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** P2: Sustained Attack
+#### P2: Sustained Attack
 
 1. Enable enhanced rate limiting
 2. Consider IP/region blocking if localized
@@ -402,7 +402,7 @@ ASSIST_LOG_CONTENT=false           ***REMOVED*** Set true only for debugging, lo
 
 ---
 
-***REMOVED******REMOVED*** Appendix: Security Checklist
+## Appendix: Security Checklist
 
 Before deploying changes to AI Assistant:
 

@@ -1,20 +1,20 @@
-***REMOVED*** AI Assistant Fix Report
+# AI Assistant Fix Report
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 Fixed 3 user-facing regressions on branch `refactoring` related to the AI Assistant feature.
 
 ---
 
-***REMOVED******REMOVED*** ISSUE 1: Double Click to Trigger AI Assistant
+## ISSUE 1: Double Click to Trigger AI Assistant
 
-***REMOVED******REMOVED******REMOVED*** Symptoms
+### Symptoms
 
 - User must click AI assistant button twice to trigger AI description generation
 - First click shows "AI disabled" inlay or does nothing
 - Second click works correctly
 
-***REMOVED******REMOVED******REMOVED*** Root Cause
+### Root Cause
 
 **File:** `androidApp/src/main/java/com/scanium/app/items/edit/EditItemScreenV3.kt:87`
 
@@ -29,7 +29,7 @@ The `collectAsState()` uses `initial = false`, meaning on first composition (bef
 2. Flow emits actual value (`true`)
 3. Second click: `aiAssistantEnabled = true` → opens sheet correctly
 
-***REMOVED******REMOVED******REMOVED*** Fix
+### Fix
 
 Changed initial value from `false` to `true`:
 
@@ -40,7 +40,7 @@ Changed initial value from `false` to `true`:
 val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = true)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Manual Verification
+### Manual Verification
 
 1. Open Items list
 2. Select any item
@@ -50,14 +50,14 @@ val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(i
 
 ---
 
-***REMOVED******REMOVED*** ISSUE 2: Navigation Not Shown After Selecting 2 Items
+## ISSUE 2: Navigation Not Shown After Selecting 2 Items
 
-***REMOVED******REMOVED******REMOVED*** Symptoms
+### Symptoms
 
 - After selecting 2 items and triggering AI, app stays on Edit page when AI completes
 - If user clicks again, AI response screen appears immediately
 
-***REMOVED******REMOVED******REMOVED*** Root Cause
+### Root Cause
 
 **Same as ISSUE 1.** The first click appeared to do nothing because `aiAssistantEnabled` was `false`
 initially. However, the generation still started in the background. When user clicked again:
@@ -66,11 +66,11 @@ initially. However, the generation still started in the background. When user cl
 2. Generation completed in background, Success state cached in ViewModel
 3. Second click: Opens sheet, immediately shows cached Success state
 
-***REMOVED******REMOVED******REMOVED*** Fix
+### Fix
 
 Same fix as ISSUE 1 - changing initial value to `true` ensures first click opens the sheet properly.
 
-***REMOVED******REMOVED******REMOVED*** Manual Verification
+### Manual Verification
 
 1. Open Items list
 2. Select 2 items
@@ -80,14 +80,14 @@ Same fix as ISSUE 1 - changing initial value to `true` ensures first click opens
 
 ---
 
-***REMOVED******REMOVED*** ISSUE 3: Language/Country Not Applied
+## ISSUE 3: Language/Country Not Applied
 
-***REMOVED******REMOVED******REMOVED*** Symptoms
+### Symptoms
 
 - User sets Language=Italian and Country=Italy in Settings > General
 - AI generates description in English instead of Italian
 
-***REMOVED******REMOVED******REMOVED*** Root Cause
+### Root Cause
 
 **File:** `androidApp/src/main/java/com/scanium/app/data/AssistantSettings.kt:51-54`
 
@@ -105,7 +105,7 @@ But users set language in General settings, which updates `primaryLanguageFlow` 
 `effectiveAiOutputLanguageFlow` (unified settings). The assistant was reading from a different,
 unset setting.
 
-***REMOVED******REMOVED******REMOVED*** Fix
+### Fix
 
 **File:** `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt:153-160`
 
@@ -126,7 +126,7 @@ val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
 This approach fixes the language at the settings layer, so all consumers of `assistantPrefsFlow`
 automatically get the correct language without needing changes.
 
-***REMOVED******REMOVED******REMOVED*** Manual Verification
+### Manual Verification
 
 1. Go to Settings > General
 2. Set Language to Italian, Country to Italy
@@ -137,7 +137,7 @@ automatically get the correct language without needing changes.
 
 ---
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 | File                            | Changes                                                                |
 |---------------------------------|------------------------------------------------------------------------|
@@ -146,27 +146,27 @@ automatically get the correct language without needing changes.
 
 ---
 
-***REMOVED******REMOVED*** Commits
+## Commits
 
-1. **fix(ai): trigger assistant on first click (***REMOVED***ISSUE-1 ***REMOVED***ISSUE-2)**
+1. **fix(ai): trigger assistant on first click (#ISSUE-1 #ISSUE-2)**
     - Removes `item` from `remember` key in `rememberItemEditState()`
     - Prevents ViewModel recreation when item loads, fixing timing issues
 
-2. **fix(ai): propagate unified language setting to assistant (***REMOVED***ISSUE-3)**
+2. **fix(ai): propagate unified language setting to assistant (#ISSUE-3)**
     - Overrides `assistantPrefsFlow` in `SettingsRepository` to combine with unified language
     - Uses `effectiveAiOutputLanguageFlow` as the language source
     - All assistant consumers automatically get the correct language
 
 ---
 
-***REMOVED******REMOVED*** Test Results
+## Test Results
 
 - `./gradlew test` - **PASSED**
 - `./gradlew :androidApp:assembleDevDebug` - **PASSED**
 
 ---
 
-***REMOVED******REMOVED*** Risk Assessment
+## Risk Assessment
 
 | Fix       | Risk Level | Notes                                                                                        |
 |-----------|------------|----------------------------------------------------------------------------------------------|
@@ -175,7 +175,7 @@ automatically get the correct language without needing changes.
 
 ---
 
-***REMOVED******REMOVED*** Notes
+## Notes
 
 The key insight for ISSUE 3 was that overriding language at request time using `.copy()` caused "
 Invalid response format" errors from the backend. The correct fix was to override

@@ -1,8 +1,8 @@
-***REMOVED*** Logcat commands for Scanium testing
+# Logcat commands for Scanium testing
 
 Use these filters to capture the app's functional and technical logs while exercising key flows.
 
-***REMOVED******REMOVED*** Quick start
+## Quick start
 
 - Full pipeline view (camera + ML + aggregation):
     -
@@ -11,7 +11,7 @@ Use these filters to capture the app's functional and technical logs while exerc
     -
     `adb logcat -v threadtime -f scanium-scan.log -s CameraXManager ObjectDetectorClient BarcodeScannerClient DocumentTextRecognitionClient DetectionLogger ItemsViewModel`
 
-***REMOVED******REMOVED*** Functional flow filters
+## Functional flow filters
 
 - Camera bring-up, frame analysis, and tracker metrics (CameraXManager):
     - `adb logcat -v color CameraXManager:I *:S`
@@ -24,14 +24,14 @@ Use these filters to capture the app's functional and technical logs while exerc
 - Item aggregation and telemetry snapshots (ItemsViewModel):
     - `adb logcat -v color ItemsViewModel:I *:S`
 
-***REMOVED******REMOVED*** Classification detail
+## Classification detail
 
 - On-device heuristics (OnDeviceClassifier) for quick feedback:
     - `adb logcat -v color OnDeviceClassifier:D *:S`
 - Cloud classifier requests/retries (CloudClassifier):
     - `adb logcat -v color CloudClassifier:D *:S`
 
-***REMOVED******REMOVED*** Selling and media flows
+## Selling and media flows
 
 - Listing lifecycle, mock API calls, and image prep (ListingViewModel, MockEbayApi,
   EbayMarketplaceService, ListingImagePreparer):
@@ -40,7 +40,7 @@ Use these filters to capture the app's functional and technical logs while exerc
 - Saved photo paths and failures (MediaStoreSaver):
     - `adb logcat -v color MediaStoreSaver:D *:S`
 
-***REMOVED******REMOVED*** Audio cues
+## Audio cues
 
 - Camera shutter/confirmation sounds (CameraSoundManager):
     - `adb logcat -v color CameraSoundManager:D *:S`

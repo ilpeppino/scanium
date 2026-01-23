@@ -1,6 +1,6 @@
-***REMOVED*** Pricing Phase 2: Market-Aware Estimation
+# Pricing Phase 2: Market-Aware Estimation
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Phase 2 adds **market awareness** to the baseline pricing system without marketplace dependency. The
 goal is to answer:
@@ -26,9 +26,9 @@ goal is to answer:
 
 ---
 
-***REMOVED******REMOVED*** Architecture Overview
+## Architecture Overview
 
-***REMOVED******REMOVED******REMOVED*** Layered Pricing Model
+### Layered Pricing Model
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -55,7 +55,7 @@ goal is to answer:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Data Flow
+### Data Flow
 
 ```
 PriceEstimateInputV2
@@ -102,9 +102,9 @@ PriceEstimateResultV2
 
 ---
 
-***REMOVED******REMOVED*** Layer 2: Market Adjustment
+## Layer 2: Market Adjustment
 
-***REMOVED******REMOVED******REMOVED*** 2.1 Regional Price Index
+### 2.1 Regional Price Index
 
 Each region has a price index relative to a baseline (US = 1.0). Indices are category-specific.
 
@@ -155,7 +155,7 @@ type CategorySegment =
 - Updated annually (low maintenance)
 - Category-specific because electronics resale differs from furniture resale
 
-***REMOVED******REMOVED******REMOVED*** 2.2 Urban Premium
+### 2.2 Urban Premium
 
 Urban areas typically have higher resale prices due to:
 
@@ -191,7 +191,7 @@ const URBAN_PREMIUM: UrbanPremiumConfig = {
     - User-provided postal code → lookup against urban classification
     - Fallback: assume suburban (neutral 1.0 multiplier)
 
-***REMOVED******REMOVED******REMOVED*** 2.3 Seasonality Adjustments
+### 2.3 Seasonality Adjustments
 
 Certain categories have predictable seasonal demand patterns.
 
@@ -246,7 +246,7 @@ function getSeasonalityFactor(category: CategorySegment, month: number): number 
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2.4 Currency Zones
+### 2.4 Currency Zones
 
 Prices displayed in local currency using fixed monthly exchange rates.
 
@@ -276,9 +276,9 @@ real-time to avoid external dependencies.
 
 ---
 
-***REMOVED******REMOVED*** Layer 3: Confidence Weighting
+## Layer 3: Confidence Weighting
 
-***REMOVED******REMOVED******REMOVED*** 3.1 Vision Quality Signals
+### 3.1 Vision Quality Signals
 
 Better photos → narrower price range → higher confidence.
 
@@ -356,7 +356,7 @@ function narrowRangeByQuality(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3.2 Wear Indicator Condition Refinement
+### 3.2 Wear Indicator Condition Refinement
 
 If vision detects wear indicators, adjust condition downward.
 
@@ -384,7 +384,7 @@ function refineConditionByWear(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3.3 Confidence Calculation V2
+### 3.3 Confidence Calculation V2
 
 Extended confidence that includes market signal quality.
 
@@ -423,9 +423,9 @@ function calculateConfidenceV2(
 
 ---
 
-***REMOVED******REMOVED*** Dataset Sourcing Strategy
+## Dataset Sourcing Strategy
 
-***REMOVED******REMOVED******REMOVED*** Data Sources
+### Data Sources
 
 | Dataset              | Source                  | Refresh | Cost | License  |
 |----------------------|-------------------------|---------|------|----------|
@@ -434,7 +434,7 @@ function calculateConfidenceV2(
 | Urban Boundaries     | OpenStreetMap, GeoNames | Annual  | Free | ODbL     |
 | Seasonality Patterns | Internal analysis       | Annual  | Free | Internal |
 
-***REMOVED******REMOVED******REMOVED*** Storage & Versioning
+### Storage & Versioning
 
 **Location:** `backend/src/modules/pricing/data/`
 
@@ -442,9 +442,9 @@ function calculateConfidenceV2(
 pricing/
 ├── data/
 │   ├── regional-indices/
-│   │   ├── 2024-v1.json        ***REMOVED*** Active dataset
-│   │   ├── 2024-v2.json        ***REMOVED*** Updated dataset (not yet active)
-│   │   └── manifest.json       ***REMOVED*** Points to active version
+│   │   ├── 2024-v1.json        # Active dataset
+│   │   ├── 2024-v2.json        # Updated dataset (not yet active)
+│   │   └── manifest.json       # Points to active version
 │   ├── currencies/
 │   │   ├── 2024-01.json
 │   │   ├── 2024-02.json
@@ -477,7 +477,7 @@ pricing/
 4. Update manifest to point to new version
 5. Deploy backend (hot-reload not required; files are read at startup)
 
-***REMOVED******REMOVED******REMOVED*** Caching Strategy
+### Caching Strategy
 
 ```typescript
 class MarketDataLoader {
@@ -503,9 +503,9 @@ class MarketDataLoader {
 
 ---
 
-***REMOVED******REMOVED*** API Contract
+## API Contract
 
-***REMOVED******REMOVED******REMOVED*** Request
+### Request
 
 ```typescript
 // POST /v1/pricing/estimate (extended)
@@ -544,7 +544,7 @@ type PriceEstimateRequestV2 = {
 };
 ```
 
-***REMOVED******REMOVED******REMOVED*** Response
+### Response
 
 ```typescript
 type PriceEstimateResponseV2 = {
@@ -600,7 +600,7 @@ type PriceEstimateResponseV2 = {
 
 ---
 
-***REMOVED******REMOVED*** Pseudocode: Complete Algorithm
+## Pseudocode: Complete Algorithm
 
 ```typescript
 function estimatePriceV2(input: PriceEstimateRequestV2): PriceEstimateResponseV2 {
@@ -814,9 +814,9 @@ function estimatePriceV2(input: PriceEstimateRequestV2): PriceEstimateResponseV2
 
 ---
 
-***REMOVED******REMOVED*** Cost & Performance Analysis
+## Cost & Performance Analysis
 
-***REMOVED******REMOVED******REMOVED*** Compute Cost
+### Compute Cost
 
 | Operation           | Complexity      | Latency Impact |
 |---------------------|-----------------|----------------|
@@ -829,7 +829,7 @@ function estimatePriceV2(input: PriceEstimateRequestV2): PriceEstimateResponseV2
 | Currency conversion | O(1) arithmetic | ~0.01ms        |
 | **Total Phase 2**   | O(1)            | **~1.1ms**     |
 
-***REMOVED******REMOVED******REMOVED*** Memory Cost
+### Memory Cost
 
 | Data                 | Size          | Load Frequency |
 |----------------------|---------------|----------------|
@@ -839,14 +839,14 @@ function estimatePriceV2(input: PriceEstimateRequestV2): PriceEstimateResponseV2
 | Urban classification | ~50KB (EU+US) | Startup        |
 | **Total**            | **~60KB**     | **Once**       |
 
-***REMOVED******REMOVED******REMOVED*** Network Cost
+### Network Cost
 
 | Operation        | External Calls   | Cost |
 |------------------|------------------|------|
 | Price estimation | 0                | Free |
 | Dataset updates  | 1/month (manual) | Free |
 
-***REMOVED******REMOVED******REMOVED*** Scaling
+### Scaling
 
 - Pricing is stateless → horizontally scalable
 - No database queries during estimation
@@ -855,9 +855,9 @@ function estimatePriceV2(input: PriceEstimateRequestV2): PriceEstimateResponseV2
 
 ---
 
-***REMOVED******REMOVED*** Acceptance Tests
+## Acceptance Tests
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 ```typescript
 describe('Phase 2 Pricing', () => {
@@ -970,7 +970,7 @@ describe('Phase 2 Pricing', () => {
 });
 ```
 
-***REMOVED******REMOVED******REMOVED*** Regression Tests
+### Regression Tests
 
 ```typescript
 describe('Phase 1 Compatibility', () => {
@@ -1001,7 +1001,7 @@ describe('Phase 1 Compatibility', () => {
 
 ---
 
-***REMOVED******REMOVED*** Phase 3 Boundary (DO NOT IMPLEMENT)
+## Phase 3 Boundary (DO NOT IMPLEMENT)
 
 Phase 3 will add marketplace awareness. It is explicitly **out of scope** for Phase 2:
 
@@ -1035,9 +1035,9 @@ Phase 3 will add marketplace awareness. It is explicitly **out of scope** for Ph
 
 ---
 
-***REMOVED******REMOVED*** Implementation Checklist
+## Implementation Checklist
 
-***REMOVED******REMOVED******REMOVED*** Files to Create
+### Files to Create
 
 - [ ] `backend/src/modules/pricing/types-v2.ts` - Extended types
 - [ ] `backend/src/modules/pricing/market-data.ts` - Market data loader
@@ -1052,13 +1052,13 @@ Phase 3 will add marketplace awareness. It is explicitly **out of scope** for Ph
 - [ ] `backend/src/modules/pricing/data/currencies/2024-01.json`
 - [ ] `backend/src/modules/pricing/data/seasonality/patterns-v1.json`
 
-***REMOVED******REMOVED******REMOVED*** Files to Modify
+### Files to Modify
 
 - [ ] `backend/src/modules/pricing/routes.ts` - Add V2 endpoint
 - [ ] `backend/src/modules/pricing/index.ts` - Export new functions
 - [ ] `backend/src/app.ts` - No changes needed (routes auto-registered)
 
-***REMOVED******REMOVED******REMOVED*** Tests to Add
+### Tests to Add
 
 - [ ] `backend/src/modules/pricing/estimator-v2.test.ts` - Unit tests
 - [ ] `backend/src/modules/pricing/market-data.test.ts` - Data loading tests
@@ -1066,7 +1066,7 @@ Phase 3 will add marketplace awareness. It is explicitly **out of scope** for Ph
 
 ---
 
-***REMOVED******REMOVED*** Design Decisions (Resolved)
+## Design Decisions (Resolved)
 
 1. **Urban Classification Source:** ✅ Postal code database (lighter than OSM, sufficient accuracy)
 

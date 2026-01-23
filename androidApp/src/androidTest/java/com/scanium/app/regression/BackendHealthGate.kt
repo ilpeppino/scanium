@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
  * require cloud functionality. Tests are skipped (not failed) if the
  * backend is unreachable.
  *
- * ***REMOVED******REMOVED*** Usage in Tests
+ * ## Usage in Tests
  * ```kotlin
  * @Before
  * fun setUp() = runBlocking {

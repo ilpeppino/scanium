@@ -60,8 +60,8 @@ class VisionEnrichmentGoldenTest {
             VisionAttributes(
                 colors =
                     listOf(
-                        VisionColor(name = "Blue", hex = "***REMOVED***1E40AF", score = 0.7f),
-                        VisionColor(name = "White", hex = "***REMOVED***FFFFFF", score = 0.3f),
+                        VisionColor(name = "Blue", hex = "#1E40AF", score = 0.7f),
+                        VisionColor(name = "White", hex = "#FFFFFF", score = 0.3f),
                     ),
                 ocrText = "Kleenex tissue box",
                 logos = listOf(VisionLogo(name = "Kleenex", score = 0.92f)),

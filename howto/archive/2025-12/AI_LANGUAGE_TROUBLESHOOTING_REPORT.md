@@ -1,6 +1,6 @@
-***REMOVED*** AI Language Propagation Troubleshooting Report
+# AI Language Propagation Troubleshooting Report
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The AI assistant language propagation system on the Scanium app is **correctly implemented**
 end-to-end. Language settings from the user's General Language preference are properly:
@@ -16,14 +16,14 @@ any runtime issues. This report documents the complete flow and how to verify co
 
 ---
 
-***REMOVED******REMOVED*** Reproduction Steps
+## Reproduction Steps
 
-***REMOVED******REMOVED******REMOVED*** Prerequisites
+### Prerequisites
 
 - Android emulator or device with Scanium dev debug build installed
 - Access to backend server (https://scanium.gtemp1.com)
 
-***REMOVED******REMOVED******REMOVED*** Steps to Reproduce
+### Steps to Reproduce
 
 1. Launch Scanium app
 2. Navigate to Settings → General → Language
@@ -33,19 +33,19 @@ any runtime issues. This report documents the complete flow and how to verify co
 6. Trigger AI assistant (e.g., generate product description)
 7. Verify: AI response should be in Italian (matching the selected language)
 
-***REMOVED******REMOVED******REMOVED*** Expected Behavior
+### Expected Behavior
 
 - AI output language matches the selected language in Settings
 
-***REMOVED******REMOVED******REMOVED*** Issue (Before Fix)
+### Issue (Before Fix)
 
 - AI would respond in English regardless of selected language
 
 ---
 
-***REMOVED******REMOVED*** Evidence Chain: How Language Flows Through the System
+## Evidence Chain: How Language Flows Through the System
 
-***REMOVED******REMOVED******REMOVED*** 1. ANDROID: Language Storage
+### 1. ANDROID: Language Storage
 
 **File:** `androidApp/src/main/java/com/scanium/app/data/SettingsKeys.kt`
 
@@ -61,7 +61,7 @@ Stored value format: BCP-47 language tags (lowercase)
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. ANDROID: Language Reading & Override
+### 2. ANDROID: Language Reading & Override
 
 **Files:**
 
@@ -96,7 +96,7 @@ language.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. ANDROID: Request Construction
+### 3. ANDROID: Request Construction
 
 **Files:**
 
@@ -122,7 +122,7 @@ assistantRepository.send(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. ANDROID: Request Serialization
+### 4. ANDROID: Request Serialization
 
 **File:** `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt`
 
@@ -149,7 +149,7 @@ Language value: lowercase BCP-47 tag ("it", "en", etc.)
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. BACKEND: Request Reception & Validation
+### 5. BACKEND: Request Reception & Validation
 
 **File:** `backend/src/modules/assistant/routes.ts`
 
@@ -168,7 +168,7 @@ Request validated successfully. Language field received as-is (e.g., "it").
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 6. BACKEND: Prompt Building with Localization
+### 6. BACKEND: Prompt Building with Localization
 
 **Files:**
 
@@ -209,7 +209,7 @@ Request validated successfully. Language field received as-is (e.g., "it").
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 7. BACKEND: Language Enforcement in Prompt
+### 7. BACKEND: Language Enforcement in Prompt
 
 Every prompt includes a **critical language enforcement instruction** at the top. Examples:
 
@@ -243,7 +243,7 @@ All 7 supported languages have complete translations:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 8. BACKEND: Full Example Prompt Chain
+### 8. BACKEND: Full Example Prompt Chain
 
 For Italian request:
 
@@ -273,7 +273,7 @@ RESPONSE: Generated in Italian (enforced by system prompt)
 
 ---
 
-***REMOVED******REMOVED*** Root Cause Analysis: Why This Works
+## Root Cause Analysis: Why This Works
 
 **The implementation is complete and correct because:**
 
@@ -291,9 +291,9 @@ RESPONSE: Generated in Italian (enforced by system prompt)
 
 ---
 
-***REMOVED******REMOVED*** Technical Details: File References
+## Technical Details: File References
 
-***REMOVED******REMOVED******REMOVED*** Android (Language Propagation)
+### Android (Language Propagation)
 
 | File                                                                                | Lines   | Purpose                                           |
 |-------------------------------------------------------------------------------------|---------|---------------------------------------------------|
@@ -304,7 +304,7 @@ RESPONSE: Generated in Italian (enforced by system prompt)
 | `androidApp/src/main/java/com/scanium/app/items/edit/ExportAssistantViewModel.kt`   | 266     | Read prefs for export                             |
 | `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantRepository.kt` | 132-152 | Build request payload                             |
 
-***REMOVED******REMOVED******REMOVED*** Backend (Language Usage)
+### Backend (Language Usage)
 
 | File                                                           | Lines   | Purpose                                     |
 |----------------------------------------------------------------|---------|---------------------------------------------|
@@ -318,20 +318,20 @@ RESPONSE: Generated in Italian (enforced by system prompt)
 
 ---
 
-***REMOVED******REMOVED*** How to Verify This Works
+## How to Verify This Works
 
-***REMOVED******REMOVED******REMOVED*** Manual Verification
+### Manual Verification
 
 1. Set language to Italian in Settings
 2. Check logs for "language='it'" in assistant requests
 3. Verify response is in Italian
 
-***REMOVED******REMOVED******REMOVED*** Automated Verification (Tests Added)
+### Automated Verification (Tests Added)
 
 - Android unit test: Language override in SettingsRepository combines correctly
 - Backend unit test: Language from request produces localized prompts
 
-***REMOVED******REMOVED******REMOVED*** Debug Logging
+### Debug Logging
 
 If issues arise, enable logging (temporarily added, then removed):
 
@@ -340,14 +340,14 @@ If issues arise, enable logging (temporarily added, then removed):
 
 ---
 
-***REMOVED******REMOVED*** Testing & Validation
+## Testing & Validation
 
-***REMOVED******REMOVED******REMOVED*** Test Results
+### Test Results
 
 - ✅ `./gradlew test` - BUILD SUCCESSFUL (691 tasks)
 - ✅ `./gradlew :androidApp:assembleDevDebug` - BUILD SUCCESSFUL
 
-***REMOVED******REMOVED******REMOVED*** Code Quality
+### Code Quality
 
 - No breaking changes
 - Minimal, focused implementation
@@ -356,7 +356,7 @@ If issues arise, enable logging (temporarily added, then removed):
 
 ---
 
-***REMOVED******REMOVED*** Summary of Flow
+## Summary of Flow
 
 ```
 User selects Italian in Settings
@@ -385,7 +385,7 @@ UI displays Italian response
 
 ---
 
-***REMOVED******REMOVED*** Commits
+## Commits
 
 - **b024dcd**: `refactor(ai): fix language at SettingsRepository layer`
     - Moves language override from ViewModels to SettingsRepository
@@ -394,7 +394,7 @@ UI displays Italian response
 
 ---
 
-***REMOVED******REMOVED*** Deployment Notes
+## Deployment Notes
 
 - No backend configuration changes required
 - No database migrations required
@@ -403,7 +403,7 @@ UI displays Italian response
 
 ---
 
-***REMOVED******REMOVED*** Conclusion
+## Conclusion
 
 The AI assistant language propagation is **fully implemented and working correctly** on the
 refactoring branch. The system properly:

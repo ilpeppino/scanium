@@ -1,4 +1,4 @@
-***REMOVED*** Scanium Architectural & Security Review Report
+# Scanium Architectural & Security Review Report
 
 **Review Date**: 2025-12-24
 **Reviewed By**: Senior Mobile Architect + Security/Performance Reviewer
@@ -8,9 +8,9 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
-***REMOVED******REMOVED******REMOVED*** Strengths ✅
+### Strengths ✅
 
 1. **Clean KMP Architecture**: Shared modules (`core-models`, `core-tracking`, `telemetry`) are
    completely Android-free and properly configured for iOS cross-compilation
@@ -23,7 +23,7 @@
 6. **Solid Build Infrastructure**: Java 17 toolchain, Gradle module dependency rules, portability
    checks
 
-***REMOVED******REMOVED******REMOVED*** Critical Risks (P0)
+### Critical Risks (P0)
 
 | ID           | Finding                                                 | Severity    | Impact                         | Effort |
 |--------------|---------------------------------------------------------|-------------|--------------------------------|--------|
@@ -32,7 +32,7 @@
 | **PERF-001** | No performance profiling infrastructure                 | **HIGH**    | High - Blind to bottlenecks    | M      |
 | **FUNC-001** | In-memory only state (no persistence surfaced)          | **HIGH**    | Med - Data loss on app close   | M      |
 
-***REMOVED******REMOVED******REMOVED*** High-Priority Recommendations (P1)
+### High-Priority Recommendations (P1)
 
 | ID           | Finding                                                                             | Severity | Impact                            | Effort |
 |--------------|-------------------------------------------------------------------------------------|----------|-----------------------------------|--------|
@@ -46,9 +46,9 @@
 
 ---
 
-***REMOVED******REMOVED*** A) Architecture & Modularity Review
+## A) Architecture & Modularity Review
 
-***REMOVED******REMOVED******REMOVED*** A.1 Alignment vs docs/ARCHITECTURE.md
+### A.1 Alignment vs docs/ARCHITECTURE.md
 
 **Status**: ✅ **ALIGNED** with documented architecture
 
@@ -72,9 +72,9 @@ The codebase implementation matches the documented architecture in `docs/ARCHITE
 - `androidApp/src/main/java/com/scanium/app/platform/PortableAdapters.kt` - Adapter layer correctly
   separates concerns
 
-***REMOVED******REMOVED******REMOVED*** A.2 Module Boundary Issues
+### A.2 Module Boundary Issues
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ **GOOD**: Clean Module Dependencies
+#### ✅ **GOOD**: Clean Module Dependencies
 
 ```
 Dependency Flow (enforced by build.gradle.kts rules):
@@ -93,7 +93,7 @@ androidApp (integration point, no reverse deps allowed)
 **Validation**: Root `build.gradle.kts` enforces that `androidApp` cannot be depended on by other
 modules (lines 18-28).
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ⚠️ **DRIFT**: Placeholder Modules Not Migrated
+#### ⚠️ **DRIFT**: Placeholder Modules Not Migrated
 
 **Issue ID**: TECH-001
 **Severity**: Medium
@@ -124,11 +124,11 @@ include(
 **Effort**: Large (requires DomainPack migration, JSON parsing strategy for KMP)
 **Risk**: Low (Android remains functional during migration)
 
-***REMOVED******REMOVED******REMOVED*** A.3 Future-Proofing for iOS (Track B/C)
+### A.3 Future-Proofing for iOS (Track B/C)
 
 **Status**: ✅ **EXCELLENT** - Ready for iOS integration
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Evidence of iOS Readiness:
+#### Evidence of iOS Readiness:
 
 1. **KMP Configuration**: All shared modules export iOS frameworks:
    ```kotlin
@@ -167,11 +167,11 @@ include(
 
 ---
 
-***REMOVED******REMOVED*** B) Code Quality & Reliability Review
+## B) Code Quality & Reliability Review
 
-***REMOVED******REMOVED******REMOVED*** B.1 Critical Execution Paths Analysis
+### B.1 Critical Execution Paths Analysis
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Path 1: App Start → Camera Screen
+#### Path 1: App Start → Camera Screen
 
 **Flow**:
 
@@ -193,7 +193,7 @@ MainActivity.onCreate()
   **Recommendation**: Add fallback domain pack or graceful degradation
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Path 2: CameraX → ML Kit → Tracking → UI
+#### Path 2: CameraX → ML Kit → Tracking → UI
 
 **Flow**:
 
@@ -221,7 +221,7 @@ CameraX frames (800ms interval)
   **Recommendation**: Move bitmap decoding to background dispatcher
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Path 3: Classification Orchestration
+#### Path 3: Classification Orchestration
 
 **Flow**:
 
@@ -246,9 +246,9 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Add certificate pinning for production backend
   **Effort**: M
 
-***REMOVED******REMOVED******REMOVED*** B.2 Lifecycle Correctness
+### B.2 Lifecycle Correctness
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Camera Lifecycle
+#### Camera Lifecycle
 
 **Binding/Unbinding**:
 
@@ -260,7 +260,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Monitor permission state in ViewModel, stop scan if revoked
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ViewModel Lifecycle
+#### ViewModel Lifecycle
 
 - ✅ ViewModels properly scoped to navigation destinations
 - ✅ `ItemsViewModel.clearAllItems()` resets tracker state
@@ -270,7 +270,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Auto-reset tracker on mode switch to prevent cross-mode contamination
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED*** B.3 Threading & Coroutines Correctness
+### B.3 Threading & Coroutines Correctness
 
 **Analysis of Dispatcher Usage**:
 
@@ -293,7 +293,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Use ConcurrentHashMap or synchronized list
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED*** B.4 Memory Management
+### B.4 Memory Management
 
 **Bitmap/Image Handling**:
 
@@ -317,7 +317,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Use WeakReference or pass application context explicitly
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED*** B.5 Error Handling
+### B.5 Error Handling
 
 **Error Surfacing**:
 
@@ -337,7 +337,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Surface persistence errors to ViewModel, show user notification
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED*** B.6 Naming & Package Consistency
+### B.6 Naming & Package Consistency
 
 **Package Structure**:
 
@@ -359,9 +359,9 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Standardize on `*Client` or `*Detector` pattern
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED*** B.7 God Objects
+### B.7 God Objects
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** **ItemsViewModel** - 400+ lines, 15+ responsibilities
+#### **ItemsViewModel** - 400+ lines, 15+ responsibilities
 
 **Evidence**: `ItemsViewModel.kt` handles:
 
@@ -392,7 +392,7 @@ ItemsViewModel.triggerEnhancedClassification()
     - `ListingStatusManager` - eBay posting status
     - Keep ItemsViewModel as facade for backward compat
 
-***REMOVED******REMOVED******REMOVED*** B.8 Configuration Management
+### B.8 Configuration Management
 
 **Centralization Analysis**:
 
@@ -406,7 +406,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Centralize feature flags in single `FeatureFlagRepository`
   **Effort**: M
 
-***REMOVED******REMOVED******REMOVED*** B.9 Testability & DI Strategy
+### B.9 Testability & DI Strategy
 
 **Current State**: Manual dependency injection in `ScaniumApp.kt`
 
@@ -435,9 +435,9 @@ ItemsViewModel.triggerEnhancedClassification()
 
 ---
 
-***REMOVED******REMOVED*** C) UI/UX Review
+## C) UI/UX Review
 
-***REMOVED******REMOVED******REMOVED*** C.1 Camera-First Flow Assessment
+### C.1 Camera-First Flow Assessment
 
 **Expected Behavior** (from PRODUCT.md):
 > "Live camera scanning with on-device ML Kit for object, barcode/QR, and document OCR modes. Shows
@@ -464,7 +464,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Add transient "Tap to capture, hold to scan" hint on first use
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED*** C.2 Visual Clutter & Overlay Readability
+### C.2 Visual Clutter & Overlay Readability
 
 **Analysis**:
 
@@ -476,7 +476,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Vary stroke width or color by confidence level
   **Effort**: S
 
-***REMOVED******REMOVED******REMOVED*** C.3 Accessibility
+### C.3 Accessibility
 
 **Current State**: ⚠️ **NO ACCESSIBILITY IMPLEMENTATION VERIFIED**
 
@@ -506,7 +506,7 @@ ItemsViewModel.triggerEnhancedClassification()
   **Recommendation**: Add manual TalkBack testing to `md/testing/TEST_CHECKLIST.md`
   **Effort**: Medium
 
-***REMOVED******REMOVED******REMOVED*** C.4 Error & Empty States
+### C.4 Error & Empty States
 
 **Analysis**:
 
@@ -520,11 +520,11 @@ ItemsViewModel.triggerEnhancedClassification()
 
 ---
 
-***REMOVED******REMOVED*** D) Performance Review
+## D) Performance Review
 
-***REMOVED******REMOVED******REMOVED*** D.1 Performance Hotspots (Static Analysis)
+### D.1 Performance Hotspots (Static Analysis)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Hotspot 1: Frame Analysis Cadence
+#### Hotspot 1: Frame Analysis Cadence
 
 **Location**: `CameraViewModel.kt` (implied), `ObjectDetectorClient.kt`
 **Issue**: Fixed 800ms analysis interval regardless of scene complexity
@@ -548,7 +548,7 @@ ItemsViewModel.triggerEnhancedClassification()
   ```
 - **Measurement**: Track `motionScore` via frame difference algorithm
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Hotspot 2: ML Inference Cost
+#### Hotspot 2: ML Inference Cost
 
 **Location**: `ObjectDetectorClient.kt:detectObjects()`
 **Issue**: No profiling of ML Kit inference latency
@@ -568,7 +568,7 @@ ItemsViewModel.triggerEnhancedClassification()
 - **Effort**: Small
 - **Priority**: P2
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Hotspot 3: Bitmap Conversions
+#### Hotspot 3: Bitmap Conversions
 
 **Location**: `PortableAdapters.kt:73` (`ImageRef.Bytes.toBitmap()`)
 **Issue**: Blocking main thread for bitmap decode
@@ -585,7 +585,7 @@ ItemsViewModel.triggerEnhancedClassification()
 - **Effort**: Small
 - **Priority**: P1 (PERF-003)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Hotspot 4: Overlay Recomposition
+#### Hotspot 4: Overlay Recomposition
 
 **Location**: `DetectionOverlay.kt`
 **Issue**: Draws all bounding boxes on every recomposition
@@ -593,7 +593,7 @@ ItemsViewModel.triggerEnhancedClassification()
 **Effort**: Small
 **Priority**: P2
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Hotspot 5: Object Tracking Complexity
+#### Hotspot 5: Object Tracking Complexity
 
 **Location**: `ObjectTracker.kt:processFrame()`
 **Complexity**: O(n * m) where n = new detections, m = active candidates
@@ -603,7 +603,7 @@ ItemsViewModel.triggerEnhancedClassification()
 **Effort**: Small
 **Priority**: P3
 
-***REMOVED******REMOVED******REMOVED*** D.2 Measurement Plan
+### D.2 Measurement Plan
 
 **PERF-001: No Performance Profiling Infrastructure**
 
@@ -635,15 +635,15 @@ ItemsViewModel.triggerEnhancedClassification()
 
 3. **On-device testing steps**:
    ```bash
-   ***REMOVED*** Step 1: Build and install debug APK
+   # Step 1: Build and install debug APK
    ./gradlew installDebug
 
-   ***REMOVED*** Step 2: Capture systrace
+   # Step 2: Capture systrace
    adb shell atrace --async_start gfx input view webview wm am sm audio video camera hal
 
-   ***REMOVED*** Step 3: Reproduce scenario (30s scan session)
+   # Step 3: Reproduce scenario (30s scan session)
 
-   ***REMOVED*** Step 4: Stop trace and analyze
+   # Step 4: Stop trace and analyze
    adb shell atrace --async_stop > trace.html
    ```
 
@@ -659,9 +659,9 @@ ItemsViewModel.triggerEnhancedClassification()
 
 ---
 
-***REMOVED******REMOVED*** E) Security & Privacy Review
+## E) Security & Privacy Review
 
-***REMOVED******REMOVED******REMOVED*** E.1 Security Posture Validation
+### E.1 Security Posture Validation
 
 **Baseline**: docs/_archive/2025-12/SECURITY.md (archived but relevant)
 
@@ -677,9 +677,9 @@ ItemsViewModel.triggerEnhancedClassification()
 7. PII sanitization in telemetry (`AttributeSanitizer.kt`)
 8. No image persistence by default (privacy-first)
 
-***REMOVED******REMOVED******REMOVED*** E.2 Critical Security Findings
+### E.2 Critical Security Findings
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-001: API Keys in BuildConfig (BLOCKER)
+#### SEC-001: API Keys in BuildConfig (BLOCKER)
 
 **Severity**: **P0 - BLOCKER**
 **Evidence**: `androidApp/build.gradle.kts:64-65`
@@ -724,7 +724,7 @@ class SecureConfigProvider(context: Context) {
 **Risk**: High (unpatched = production blocker)
 **Owner**: Security team + backend team
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-002: Sentry DSN in BuildConfig
+#### SEC-002: Sentry DSN in BuildConfig
 
 **Severity**: P1
 **Evidence**: `androidApp/build.gradle.kts:58`
@@ -746,7 +746,7 @@ via:
 **Effort**: Small
 **Priority**: P1
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-003: No TLS Certificate Pinning
+#### SEC-003: No TLS Certificate Pinning
 
 **Severity**: P1
 **Evidence**: `CloudClassifier.kt:94` - OkHttpClient lacks `CertificatePinner`
@@ -768,7 +768,7 @@ val client = OkHttpClient.Builder()
 **Effort**: Small
 **Priority**: P1 (before production release)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-004: No Request Signing
+#### SEC-004: No Request Signing
 
 **Severity**: P2
 **Evidence**: Cloud API requests lack HMAC signatures
@@ -787,7 +787,7 @@ headers["X-Request-Signature"] = signature
 **Effort**: Medium
 **Priority**: P2
 
-***REMOVED******REMOVED******REMOVED*** E.3 Privacy Validation
+### E.3 Privacy Validation
 
 **Status**: ✅ **STRONG PRIVACY POSTURE**
 
@@ -812,7 +812,7 @@ headers["X-Request-Signature"] = signature
   **Recommendation**: Add `data_region` attribute to telemetry config
   **Effort**: Small
 
-***REMOVED******REMOVED******REMOVED*** E.4 Dependency Hygiene
+### E.4 Dependency Hygiene
 
 **Status**: ✅ **EXCELLENT**
 
@@ -828,7 +828,7 @@ headers["X-Request-Signature"] = signature
 
 **Recommendation**: ✅ **No changes needed** - Keep workflow enabled
 
-***REMOVED******REMOVED******REMOVED*** E.5 Logging Practices
+### E.5 Logging Practices
 
 **Audit Results**:
 
@@ -841,7 +841,7 @@ headers["X-Request-Signature"] = signature
   **Recommendation**: Gate verbose logging behind `BuildConfig.DEBUG`
   **Effort**: Small
 
-***REMOVED******REMOVED******REMOVED*** E.6 Permissions Review
+### E.6 Permissions Review
 
 **Current Permissions** (from AndroidManifest):
 
@@ -859,7 +859,7 @@ headers["X-Request-Signature"] = signature
   **Recommendation**: Add permission check before write
   **Effort**: Small
 
-***REMOVED******REMOVED******REMOVED*** E.7 Prioritized Security Backlog
+### E.7 Prioritized Security Backlog
 
 | Priority | ID      | Title                                            | Effort | Risk |
 |----------|---------|--------------------------------------------------|--------|------|
@@ -874,9 +874,9 @@ headers["X-Request-Signature"] = signature
 
 ---
 
-***REMOVED******REMOVED*** F) CI/CD & Developer Experience
+## F) CI/CD & Developer Experience
 
-***REMOVED******REMOVED******REMOVED*** F.1 CI Workflows Assessment
+### F.1 CI Workflows Assessment
 
 **Current Workflows**:
 
@@ -908,7 +908,7 @@ headers["X-Request-Signature"] = signature
   **Recommendation**: Add lint task to coverage workflow
   **Effort**: Small
 
-***REMOVED******REMOVED******REMOVED*** F.2 Build Reproducibility
+### F.2 Build Reproducibility
 
 **Status**: ✅ **GOOD**
 
@@ -921,7 +921,7 @@ headers["X-Request-Signature"] = signature
 
 **Recommendation**: ✅ **No changes needed**
 
-***REMOVED******REMOVED******REMOVED*** F.3 Developer Workflow Friction Points
+### F.3 Developer Workflow Friction Points
 
 **Pain Points**:
 
@@ -939,7 +939,7 @@ headers["X-Request-Signature"] = signature
    **Linked to**: ARCH-001
    **Recommendation**: See DI migration plan in Section B.9
 
-***REMOVED******REMOVED******REMOVED*** F.4 Documentation Accuracy
+### F.4 Documentation Accuracy
 
 **Audit vs Reality**:
 
@@ -954,15 +954,15 @@ headers["X-Request-Signature"] = signature
 
 ---
 
-***REMOVED******REMOVED*** G) CI/CD & Developer Experience
+## G) CI/CD & Developer Experience
 
 *See Section F above - same content*
 
 ---
 
-***REMOVED******REMOVED*** H) Actionable Backlog (Prioritized)
+## H) Actionable Backlog (Prioritized)
 
-***REMOVED******REMOVED******REMOVED*** P0 (Blockers - Fix Before Production)
+### P0 (Blockers - Fix Before Production)
 
 | ID           | Title                                           | Category    | Severity | Effort | Risk | Evidence                                    | Recommendation                                 |
 |--------------|-------------------------------------------------|-------------|----------|--------|------|---------------------------------------------|------------------------------------------------|
@@ -972,7 +972,7 @@ headers["X-Request-Signature"] = signature
 | **UX-001**   | No accessibility semantics                      | UX          | HIGH     | M      | High | `CameraScreen.kt` lacks `.semantics { }`    | Add contentDescription, Role, stateDescription |
 | **FUNC-001** | In-memory only state (persistence not surfaced) | Functional  | HIGH     | M      | Med  | `ItemsViewModel` - no load from DB on start | Wire ScannedItemRepository to ViewModel init   |
 
-***REMOVED******REMOVED******REMOVED*** P1 (High Priority - Fix This Sprint)
+### P1 (High Priority - Fix This Sprint)
 
 | ID           | Title                                                        | Category    | Severity | Effort | Risk | Evidence                               | Recommendation                                               |
 |--------------|--------------------------------------------------------------|-------------|----------|--------|------|----------------------------------------|--------------------------------------------------------------|
@@ -986,7 +986,7 @@ headers["X-Request-Signature"] = signature
 | **UX-002**   | Network errors fail silently                                 | UX          | MED      | S      | Low  | `CloudClassifier.kt:134`               | Show toast/snackbar on cloud unavailable                     |
 | **CI-001**   | No instrumented tests in CI                                  | CI/CD       | MED      | M      | Med  | No `connectedAndroidTest` workflow     | Add Firebase Test Lab or emulator workflow                   |
 
-***REMOVED******REMOVED******REMOVED*** P2 (Medium Priority - Next 2 Sprints)
+### P2 (Medium Priority - Next 2 Sprints)
 
 | ID           | Title                                                         | Category    | Severity | Effort | Risk | Evidence                                                  | Recommendation                                 |
 |--------------|---------------------------------------------------------------|-------------|----------|--------|------|-----------------------------------------------------------|------------------------------------------------|
@@ -1001,7 +1001,7 @@ headers["X-Request-Signature"] = signature
 | **FUNC-003** | No handling of camera permission revocation while scanning    | Functional  | MED      | S      | Low  | `CameraScreen.kt`                                         | Monitor permission state, stop scan if revoked |
 | **CI-002**   | No lint check in CI                                           | CI/CD       | LOW      | S      | Low  | No `./gradlew lint` workflow                              | Add to coverage workflow                       |
 
-***REMOVED******REMOVED******REMOVED*** P3 (Low Priority - Backlog)
+### P3 (Low Priority - Backlog)
 
 | ID           | Title                                             | Category   | Severity | Effort | Risk | Evidence                                         | Recommendation                             |
 |--------------|---------------------------------------------------|------------|----------|--------|------|--------------------------------------------------|--------------------------------------------|
@@ -1020,9 +1020,9 @@ headers["X-Request-Signature"] = signature
 
 ---
 
-***REMOVED******REMOVED*** I) Build & Test Validation (Limited)
+## I) Build & Test Validation (Limited)
 
-***REMOVED******REMOVED******REMOVED*** I.1 Commands Executed
+### I.1 Commands Executed
 
 Due to container environment limitations (no Android SDK), only JVM-only checks were attempted:
 
@@ -1040,7 +1040,7 @@ Due to container environment limitations (no Android SDK), only JVM-only checks 
 
 **Workaround**: GitHub Actions workflow `android-debug-apk.yml` builds APK on every push to `main`
 
-***REMOVED******REMOVED******REMOVED*** I.2 Static Analysis Results
+### I.2 Static Analysis Results
 
 **Portability Check** (from root `build.gradle.kts`):
 
@@ -1054,30 +1054,30 @@ Due to container environment limitations (no Android SDK), only JVM-only checks 
 
 ---
 
-***REMOVED******REMOVED*** J) Recommendations Summary
+## J) Recommendations Summary
 
-***REMOVED******REMOVED******REMOVED*** Immediate Actions (This Week)
+### Immediate Actions (This Week)
 
 1. **SEC-001**: Move API keys from BuildConfig to secure storage (BLOCKER)
 2. **PERF-001**: Add telemetry spans to critical paths (camera, ML, tracking)
 3. **FUNC-002**: Add error handling for domain pack initialization
 4. **FUNC-005**: Surface persistence errors to user
 
-***REMOVED******REMOVED******REMOVED*** Short-Term (Next Sprint)
+### Short-Term (Next Sprint)
 
 1. **ARCH-001**: Evaluate Hilt vs Koin for DI migration
 2. **UX-001**: Accessibility audit + semantics implementation
 3. **SEC-003**: TLS certificate pinning for backend
 4. **PERF-003**: Move bitmap decode to background thread
 
-***REMOVED******REMOVED******REMOVED*** Medium-Term (Next 2 Sprints)
+### Medium-Term (Next 2 Sprints)
 
 1. **ARCH-002**: Decompose ItemsViewModel into smaller managers
 2. **CI-001**: Add instrumented test workflow (Firebase Test Lab)
 3. **TECH-001**: Complete KMP migration or remove placeholder modules
 4. **PERF-004**: Implement LRU cache for thumbnails
 
-***REMOVED******REMOVED******REMOVED*** Long-Term (Next Quarter)
+### Long-Term (Next Quarter)
 
 1. **TECH-006**: Centralize feature flags in single repository
 2. iOS readiness: Implement `iosMain` actuals for shared modules
@@ -1086,7 +1086,7 @@ Due to container environment limitations (no Android SDK), only JVM-only checks 
 
 ---
 
-***REMOVED******REMOVED*** K) Conclusion
+## K) Conclusion
 
 **Overall Assessment**: ✅ **PRODUCTION-READY with P0/P1 fixes**
 
@@ -1118,7 +1118,7 @@ and **comprehensive security baseline**. The primary blockers are **API key expo
 
 ---
 
-***REMOVED******REMOVED*** Appendix A: Evidence File Paths
+## Appendix A: Evidence File Paths
 
 *Key files referenced in this review*:
 

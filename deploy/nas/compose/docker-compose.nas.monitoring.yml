@@ -38,7 +38,7 @@ services:
     image: grafana/tempo:2.6.1
     container_name: scanium-tempo
     restart: unless-stopped
-    user: "0:0"  ***REMOVED*** Run as root to fix permission denied errors during compaction (GH-409)
+    user: "0:0"  # Run as root to fix permission denied errors during compaction (GH-409)
     command: [ "-config.file=/etc/tempo/tempo.yaml" ]
     volumes:
       - /volume1/docker/scanium/monitoring/tempo:/var/tempo
@@ -66,14 +66,14 @@ services:
       - --server.http.listen-addr=0.0.0.0:12345
       - /etc/alloy/config.alloy
     ports:
-      - "127.0.0.1:12345:12345"  ***REMOVED*** Admin UI - localhost only for security
-      - "4317:4317"               ***REMOVED*** OTLP gRPC - needs external access for telemetry
-      - "4318:4318"               ***REMOVED*** OTLP HTTP - needs external access for telemetry
+      - "127.0.0.1:12345:12345"  # Admin UI - localhost only for security
+      - "4317:4317"               # OTLP gRPC - needs external access for telemetry
+      - "4318:4318"               # OTLP HTTP - needs external access for telemetry
     volumes:
       - ${REPO_ROOT}/monitoring/alloy/alloy.hcl:/etc/alloy/config.alloy:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      ***REMOVED*** Optional: persist Alloy WAL so restarts don't drop buffered remote_write
-      ***REMOVED*** - /volume1/docker/scanium/monitoring/alloy:/var/lib/alloy
+      # Optional: persist Alloy WAL so restarts don't drop buffered remote_write
+      # - /volume1/docker/scanium/monitoring/alloy:/var/lib/alloy
     depends_on:
       - loki
       - tempo

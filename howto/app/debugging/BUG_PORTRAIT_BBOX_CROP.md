@@ -1,11 +1,11 @@
-***REMOVED*** Portrait Bounding Box and Crop Bug - Root Cause Analysis
+# Portrait Bounding Box and Crop Bug - Root Cause Analysis
 
-***REMOVED******REMOVED*** Problem Summary
+## Problem Summary
 
 In portrait mode, detected bounding boxes appear "wide" instead of matching tall objects, and saved
 thumbnails show incorrect crops (strips instead of full objects). Landscape mode works correctly.
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
 **The codebase incorrectly assumed ML Kit returns bboxes in SENSOR (raw buffer) coordinate space,
 but ML Kit actually returns bboxes in InputImage (upright/post-rotation) coordinate space.**
@@ -15,7 +15,7 @@ This caused a double-rotation bug:
 1. ML Kit already returns bboxes rotated to upright orientation
 2. Code then applied additional rotation transformation → wrong result
 
-***REMOVED******REMOVED*** ML Kit Coordinate Contract (CORRECT)
+## ML Kit Coordinate Contract (CORRECT)
 
 When using `InputImage.fromMediaImage(mediaImage, rotationDegrees)`:
 
@@ -25,7 +25,7 @@ When using `InputImage.fromMediaImage(mediaImage, rotationDegrees)`:
 | `InputImage.height`          | Height AFTER rotation (upright)           |
 | `DetectedObject.boundingBox` | Coordinates in InputImage space (upright) |
 
-***REMOVED******REMOVED******REMOVED*** Example - Portrait Mode (90° rotation)
+### Example - Portrait Mode (90° rotation)
 
 ```
 Sensor buffer:     1280 x 720  (landscape)
@@ -37,9 +37,9 @@ A tall bottle produces bbox approximately:
   → width=120, height=800 (tall, correct!)
 ```
 
-***REMOVED******REMOVED*** What Was Wrong
+## What Was Wrong
 
-***REMOVED******REMOVED******REMOVED*** File: `ObjectDetectorClient.kt`
+### File: `ObjectDetectorClient.kt`
 
 The comment and code in `getSensorDimensions()` was WRONG:
 
@@ -51,7 +51,7 @@ The comment and code in `getSensorDimensions()` was WRONG:
 private fun getSensorDimensions(inputImageWidth, inputImageHeight, rotationDegrees): Pair<Int, Int>
 ```
 
-***REMOVED******REMOVED******REMOVED*** File: `OverlayTransforms.kt`
+### File: `OverlayTransforms.kt`
 
 `mapBboxToPreview()` called `rotateNormalizedRect()` which rotated already-upright coordinates:
 
@@ -60,7 +60,7 @@ private fun getSensorDimensions(inputImageWidth, inputImageHeight, rotationDegre
 val rotatedNorm = rotateNormalizedRect(bboxNorm, transform.rotationDegrees)
 ```
 
-***REMOVED******REMOVED******REMOVED*** File: `DetectionGeometryMapper.kt`
+### File: `DetectionGeometryMapper.kt`
 
 `mlKitBboxToSensorSpace()` was designed to "reverse" ML Kit rotation, but this was based on wrong
 assumptions:
@@ -70,9 +70,9 @@ assumptions:
 // This function should not exist - ML Kit bbox IS already upright
 ```
 
-***REMOVED******REMOVED*** Coordinate Pipeline (FIXED)
+## Coordinate Pipeline (FIXED)
 
-***REMOVED******REMOVED******REMOVED*** Canonical "Upright Space"
+### Canonical "Upright Space"
 
 All bboxes are stored and processed in **upright space**:
 
@@ -80,7 +80,7 @@ All bboxes are stored and processed in **upright space**:
 - Dimensions: `uprightWidth x uprightHeight` (720x1280 in portrait)
 - This matches ML Kit's output directly
 
-***REMOVED******REMOVED******REMOVED*** Live Detection → Overlay
+### Live Detection → Overlay
 
 ```
 ML Kit bbox (already upright)
@@ -94,7 +94,7 @@ Map to preview: scale + offset (NO rotation needed)
 Draw on Canvas
 ```
 
-***REMOVED******REMOVED******REMOVED*** Thumbnail Cropping
+### Thumbnail Cropping
 
 ```
 ML Kit bbox (upright coordinates)
@@ -110,7 +110,7 @@ Rotate cropped region to upright
 Display thumbnail
 ```
 
-***REMOVED******REMOVED*** Key Files Modified
+## Key Files Modified
 
 | File                         | Change                                                                                    |
 |------------------------------|-------------------------------------------------------------------------------------------|
@@ -120,7 +120,7 @@ Display thumbnail
 | `DetectionGeometryMapper.kt` | Deprecated `mlKitBboxToSensorSpace()` (wrong assumptions)                                 |
 | `OverlayTransformsTest.kt`   | NEW: Unit tests for upright coordinate mapping                                            |
 
-***REMOVED******REMOVED*** Developer Geometry Debug
+## Developer Geometry Debug
 
 Enable "Show geometry debug" in Developer Options to see:
 
@@ -130,27 +130,27 @@ Enable "Show geometry debug" in Developer Options to see:
 - Mapped screen coordinates
 - Bbox aspect ratio (should be >1 for tall objects)
 
-***REMOVED******REMOVED*** Verification Checklist
+## Verification Checklist
 
-***REMOVED******REMOVED******REMOVED*** Portrait Mode
+### Portrait Mode
 
 - [ ] Tall bottle: bbox is tall (height > width)
 - [ ] Bbox surrounds object correctly
 - [ ] Thumbnail shows full object
 - [ ] Item list preview shows full object
 
-***REMOVED******REMOVED******REMOVED*** Landscape Mode
+### Landscape Mode
 
 - [ ] No regression from previous behavior
 - [ ] Bbox orientation matches objects
 - [ ] Thumbnails crop correctly
 
-***REMOVED******REMOVED*** Test Commands
+## Test Commands
 
 ```bash
-***REMOVED*** Build
+# Build
 ./gradlew :androidApp:assembleDebug --no-daemon
 
-***REMOVED*** Unit tests
+# Unit tests
 ./gradlew :androidApp:testDebugUnitTest --no-daemon
 ```

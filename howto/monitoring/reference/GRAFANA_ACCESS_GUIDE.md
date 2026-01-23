@@ -1,19 +1,19 @@
-***REMOVED*** Grafana Dashboard Access Guide
+# Grafana Dashboard Access Guide
 
 **Updated**: 2026-01-11
 **Grafana URL**: http://REDACTED_INTERNAL_IP:3000
 
 ---
 
-***REMOVED******REMOVED*** Quick Links
+## Quick Links
 
-***REMOVED******REMOVED******REMOVED*** Main Navigation
+### Main Navigation
 
 - **Home**: http://REDACTED_INTERNAL_IP:3000/
 - **All Dashboards**: http://REDACTED_INTERNAL_IP:3000/dashboards
 - **Scanium Folder**: http://REDACTED_INTERNAL_IP:3000/dashboards?folderIds=2
 
-***REMOVED******REMOVED******REMOVED*** Alternative Folder URLs
+### Alternative Folder URLs
 
 Both of these work:
 
@@ -22,9 +22,9 @@ Both of these work:
 
 ---
 
-***REMOVED******REMOVED*** All Scanium Dashboards (13 Total)
+## All Scanium Dashboards (13 Total)
 
-***REMOVED******REMOVED******REMOVED*** Backend Monitoring
+### Backend Monitoring
 
 1. **Backend Errors** ⭐ (Fixed today)
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-backend-errors/scanium-backend-errors
@@ -38,7 +38,7 @@ Both of these work:
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-backend-api-perf/scanium-backend-api-performance
     - Request latency, throughput, error rates by route
 
-***REMOVED******REMOVED******REMOVED*** System Overview
+### System Overview
 
 4. **System Overview (RED)**
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-system-overview/scanium-system-overview-red
@@ -48,7 +48,7 @@ Both of these work:
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-ops-overview/scanium-ops-overview
     - Operational overview across all services
 
-***REMOVED******REMOVED******REMOVED*** Performance & Reliability
+### Performance & Reliability
 
 6. **Performance & Latency**
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-scan-performance/scanium-performance-and-latency
@@ -62,7 +62,7 @@ Both of these work:
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-pipeline-health/scanium-pipeline-health
     - Data processing pipeline metrics
 
-***REMOVED******REMOVED******REMOVED*** Mobile & External Services
+### Mobile & External Services
 
 9. **Mobile App Health**
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-mobile-app-health/scanium-mobile-app-health
@@ -72,7 +72,7 @@ Both of these work:
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-openai-runtime/scanium-openai-runtime
     - AI service metrics, latency, costs
 
-***REMOVED******REMOVED******REMOVED*** Observability Stack
+### Observability Stack
 
 11. **LGTM Stack Health**
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-lgtm-health/scanium-lgtm-stack-health
@@ -88,30 +88,30 @@ Both of these work:
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting Access Issues
+## Troubleshooting Access Issues
 
-***REMOVED******REMOVED******REMOVED*** Issue: "Can't access folder URL"
+### Issue: "Can't access folder URL"
 
 **Symptom**: Navigating to http://REDACTED_INTERNAL_IP:3000/dashboards/f/scanium/ doesn't work
 
 **Solutions**:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Option 1: Use the Dashboards List (Recommended)
+#### Option 1: Use the Dashboards List (Recommended)
 
 1. Go to http://REDACTED_INTERNAL_IP:3000/dashboards
 2. You'll see all 13 Scanium dashboards grouped in the "Scanium" folder
 3. Click any dashboard to open it
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Option 2: Use the Folder Filter
+#### Option 2: Use the Folder Filter
 
 1. Go to http://REDACTED_INTERNAL_IP:3000/dashboards?folderIds=2
 2. This shows only dashboards in the Scanium folder
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Option 3: Use Direct Dashboard Links
+#### Option 3: Use Direct Dashboard Links
 
 Skip the folder view and use direct links from the list above.
 
-***REMOVED******REMOVED******REMOVED*** Issue: Blank Page or Loading Error
+### Issue: Blank Page or Loading Error
 
 **Possible Causes**:
 
@@ -122,19 +122,19 @@ Skip the folder view and use direct links from the list above.
 **Solutions**:
 
 ```bash
-***REMOVED*** Check if Grafana is running
+# Check if Grafana is running
 ssh nas "/usr/local/bin/docker ps | grep grafana"
 
-***REMOVED*** Check Grafana health
+# Check Grafana health
 curl http://REDACTED_INTERNAL_IP:3000/api/health
 
-***REMOVED*** Restart Grafana if needed
+# Restart Grafana if needed
 ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-compose restart grafana"
 
-***REMOVED*** Clear browser cache and try again
+# Clear browser cache and try again
 ```
 
-***REMOVED******REMOVED******REMOVED*** Issue: "Unauthorized" or Login Prompt
+### Issue: "Unauthorized" or Login Prompt
 
 **Expected Behavior**: Grafana is configured with anonymous access enabled. You should NOT see a
 login prompt.
@@ -157,7 +157,7 @@ login prompt.
    ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-compose restart grafana"
    ```
 
-***REMOVED******REMOVED******REMOVED*** Issue: Dashboards Show "No data"
+### Issue: Dashboards Show "No data"
 
 **If Backend Errors dashboard shows no data**:
 
@@ -170,32 +170,32 @@ login prompt.
 
 ---
 
-***REMOVED******REMOVED*** Grafana API Endpoints
+## Grafana API Endpoints
 
 Useful for debugging:
 
 ```bash
-***REMOVED*** List all folders
+# List all folders
 curl -s "http://REDACTED_INTERNAL_IP:3000/api/search?type=dash-folder" | jq '.'
 
-***REMOVED*** List all dashboards
+# List all dashboards
 curl -s "http://REDACTED_INTERNAL_IP:3000/api/search?type=dash-db" | jq '.'
 
-***REMOVED*** List dashboards in Scanium folder
+# List dashboards in Scanium folder
 curl -s "http://REDACTED_INTERNAL_IP:3000/api/search?folderIds=2" | jq '.[] | {title, url}'
 
-***REMOVED*** Get folder details
+# Get folder details
 curl -s "http://REDACTED_INTERNAL_IP:3000/api/folders/scanium" | jq '.'
 
-***REMOVED*** Check Grafana health
+# Check Grafana health
 curl -s "http://REDACTED_INTERNAL_IP:3000/api/health" | jq '.'
 ```
 
 ---
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
-***REMOVED******REMOVED******REMOVED*** Grafana Settings
+### Grafana Settings
 
 - **Version**: 10.3.1
 - **Port**: 3000 (exposed on all interfaces)
@@ -203,7 +203,7 @@ curl -s "http://REDACTED_INTERNAL_IP:3000/api/health" | jq '.'
 - **Datasources**: Loki, Tempo, Mimir (auto-provisioned)
 - **Dashboards**: Auto-provisioned from `/var/lib/grafana/dashboards`
 
-***REMOVED******REMOVED******REMOVED*** Dashboard Provisioning
+### Dashboard Provisioning
 
 ```yaml
 Provider: Scanium Dashboards
@@ -213,25 +213,25 @@ Update Interval: 30 seconds
 UI Updates: Allowed
 ```
 
-***REMOVED******REMOVED******REMOVED*** Docker Container
+### Docker Container
 
 ```bash
-***REMOVED*** Container name
+# Container name
 scanium-grafana
 
-***REMOVED*** Check status
+# Check status
 ssh nas "/usr/local/bin/docker ps | grep grafana"
 
-***REMOVED*** View logs
+# View logs
 ssh nas "/usr/local/bin/docker logs -f scanium-grafana"
 
-***REMOVED*** Restart
+# Restart
 ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-compose restart grafana"
 ```
 
 ---
 
-***REMOVED******REMOVED*** Recent Changes (2026-01-11)
+## Recent Changes (2026-01-11)
 
 ✅ Fixed **Backend Errors** dashboard:
 
@@ -247,7 +247,7 @@ ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-com
 
 ---
 
-***REMOVED******REMOVED*** Support
+## Support
 
 If you continue to have access issues:
 
@@ -267,7 +267,7 @@ If you continue to have access issues:
 
 ---
 
-***REMOVED******REMOVED*** Recommended Dashboards to Start With
+## Recommended Dashboards to Start With
 
 1. **System Overview (RED)** - Best starting point for overall health
     - http://REDACTED_INTERNAL_IP:3000/d/scanium-system-overview/scanium-system-overview-red

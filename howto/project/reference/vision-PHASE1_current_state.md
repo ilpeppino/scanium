@@ -1,4 +1,4 @@
-***REMOVED*** Phase 1: Current Vision + Classification Pipeline Analysis
+# Phase 1: Current Vision + Classification Pipeline Analysis
 
 **Date:** 2026-01-11
 **Status:** Investigation Complete
@@ -7,16 +7,16 @@ extraction, and attribute display
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
-***REMOVED******REMOVED******REMOVED*** What Works
+### What Works
 
 - Google Vision API integration is **fully functional** and enabled by default
 - All vision features (OCR, labels, logos, colors) are **active** and detecting correctly
 - Vision data **successfully flows** from backend to Android app through the entire pipeline
 - Enriched attributes (brand, color, model, material) are **extracted and persisted**
 
-***REMOVED******REMOVED******REMOVED*** What's Broken
+### What's Broken
 
 The UI displays "Unknown" for obvious products (Labello, Kleenex) because:
 
@@ -29,9 +29,9 @@ The UI displays "Unknown" for obvious products (Labello, Kleenex) because:
 
 ---
 
-***REMOVED******REMOVED*** 1. Current Pipeline Architecture
+## 1. Current Pipeline Architecture
 
-***REMOVED******REMOVED******REMOVED*** Data Flow Diagram (Text)
+### Data Flow Diagram (Text)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -67,7 +67,7 @@ The UI displays "Unknown" for obvious products (Labello, Kleenex) because:
 │   - ocrSnippets: ["Labello", "Hydro Care", ...]                   │
 │   - logoHints: [{ brand: "Labello", score: 0.92 }]                │
 │   - labelHints: [{ label: "Lip balm", score: 0.85 }]              │
-│   - dominantColors: [{ name: "blue", hex: "***REMOVED***1E40AF", pct: 45 }]   │
+│   - dominantColors: [{ name: "blue", hex: "#1E40AF", pct: 45 }]   │
 │         ↓                                                           │
 │ AttributeResolver.resolveAttributes()                              │
 │   - brand: { value: "Labello", confidence: "HIGH", source: "logo" }│
@@ -85,7 +85,7 @@ The UI displays "Unknown" for obvious products (Labello, Kleenex) because:
 │       color: { value: "blue", confidence: "MED", ... }             │
 │     },                                                              │
 │     visionAttributes: {               ← Raw vision data ✓          │
-│       colors: [{ name: "blue", hex: "***REMOVED***1E40AF", score: 0.45 }],     │
+│       colors: [{ name: "blue", hex: "#1E40AF", score: 0.45 }],     │
 │       ocrText: "Labello\nHydro Care\n...",                         │
 │       logos: [{ name: "Labello", score: 0.92 }],                   │
 │       labels: [{ name: "Lip balm", score: 0.85 }],                 │
@@ -129,9 +129,9 @@ The UI displays "Unknown" for obvious products (Labello, Kleenex) because:
 
 ---
 
-***REMOVED******REMOVED*** 2. Where Attributes SHOULD Appear
+## 2. Where Attributes SHOULD Appear
 
-***REMOVED******REMOVED******REMOVED*** ScannedItem.displayLabel Logic
+### ScannedItem.displayLabel Logic
 
 Located: `shared/core-models/src/commonMain/kotlin/.../ScannedItem.kt:235-281`
 
@@ -150,9 +150,9 @@ Located: `shared/core-models/src/commonMain/kotlin/.../ScannedItem.kt:235-281`
 
 ---
 
-***REMOVED******REMOVED*** 3. Where Attributes Are LOST or DROPPED
+## 3. Where Attributes Are LOST or DROPPED
 
-***REMOVED******REMOVED******REMOVED*** Critical Gap ***REMOVED***1: Missing `itemType` in Backend Response
+### Critical Gap #1: Missing `itemType` in Backend Response
 
 **Location:** `backend/src/modules/classifier/service.ts:367-394`
 
@@ -185,7 +185,7 @@ return {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Critical Gap ***REMOVED***2: Classification Label Overwrites Vision Results
+### Critical Gap #2: Classification Label Overwrites Vision Results
 
 **Location:** `androidApp/.../ItemClassificationCoordinator.kt:361`
 
@@ -203,7 +203,7 @@ val labelOverride = result.label?.takeUnless { it.isBlank() } ?: aggregatedItem.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Critical Gap ***REMOVED***3: Vision vs Enriched Attributes Priority Mismatch
+### Critical Gap #3: Vision vs Enriched Attributes Priority Mismatch
 
 **Location:** `shared/core-models/.../ScannedItem.kt:237-245`
 
@@ -230,9 +230,9 @@ val brand = attributes["brand"]?.value?.trim()?.takeIf { it.isNotEmpty() }
 
 ---
 
-***REMOVED******REMOVED*** 4. Classification vs Vision: Competition or Complement?
+## 4. Classification vs Vision: Competition or Complement?
 
-***REMOVED******REMOVED******REMOVED*** Current Behavior: **Competition (Vision Loses)**
+### Current Behavior: **Competition (Vision Loses)**
 
 **Classification Pipeline:**
 
@@ -252,7 +252,7 @@ val brand = attributes["brand"]?.value?.trim()?.takeIf { it.isNotEmpty() }
 - Uses `labelText` ("Unknown") because `visionAttributes.itemType` is missing
 - Ignores `enrichedAttributes.brand` entirely
 
-***REMOVED******REMOVED******REMOVED*** Ideal Behavior: **Complement**
+### Ideal Behavior: **Complement**
 
 - Classification provides: domain category, price estimates
 - Vision provides: brand, color, model, material
@@ -260,9 +260,9 @@ val brand = attributes["brand"]?.value?.trim()?.takeIf { it.isNotEmpty() }
 
 ---
 
-***REMOVED******REMOVED*** 5. Concrete Example: Labello Lip Balm
+## 5. Concrete Example: Labello Lip Balm
 
-***REMOVED******REMOVED******REMOVED*** What Google Vision Detects
+### What Google Vision Detects
 
 Based on code analysis of enabled features:
 
@@ -290,7 +290,7 @@ Based on code analysis of enabled features:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** What Backend Sends to Android
+### What Backend Sends to Android
 
 ```json
 {
@@ -326,7 +326,7 @@ Based on code analysis of enabled features:
   },
   "visionAttributes": {
     "colors": [
-      { "name": "blue", "hex": "***REMOVED***1E40AF", "score": 0.45 }
+      { "name": "blue", "hex": "#1E40AF", "score": 0.45 }
     ],
     "ocrText": "Labello\nHydro Care\n5.5ml",
     "logos": [
@@ -343,7 +343,7 @@ Based on code analysis of enabled features:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** What UI Shows
+### What UI Shows
 
 **Current:** "Unknown"
 
@@ -362,9 +362,9 @@ Based on code analysis of enabled features:
 
 ---
 
-***REMOVED******REMOVED*** 6. Code Evidence & File Locations
+## 6. Code Evidence & File Locations
 
-***REMOVED******REMOVED******REMOVED*** Android App
+### Android App
 
 | Component                  | File                                                                       | Purpose                             |
 |----------------------------|----------------------------------------------------------------------------|-------------------------------------|
@@ -379,7 +379,7 @@ Based on code analysis of enabled features:
 | Database Entity            | `androidApp/.../persistence/ScannedItemEntity.kt`                          | Room DB fields                      |
 | UI Rendering               | `androidApp/.../ItemsListScreen.kt:327,973,1085`                           | Uses displayLabel                   |
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 | Component              | File                                                        | Purpose                              |
 |------------------------|-------------------------------------------------------------|--------------------------------------|
@@ -393,30 +393,30 @@ Based on code analysis of enabled features:
 
 ---
 
-***REMOVED******REMOVED*** 7. Blockers Preventing Attributes from Appearing in UI
+## 7. Blockers Preventing Attributes from Appearing in UI
 
-***REMOVED******REMOVED******REMOVED*** Blocker ***REMOVED***1: Missing `itemType` Field
+### Blocker #1: Missing `itemType` Field
 
 **Severity:** HIGH
 **Location:** Backend response building
 **Impact:** UI falls back to "Unknown" label
 **Fix required:** Add `itemType` to backend response
 
-***REMOVED******REMOVED******REMOVED*** Blocker ***REMOVED***2: `enrichedAttributes` Not Merged into `attributes`
+### Blocker #2: `enrichedAttributes` Not Merged into `attributes`
 
 **Severity:** HIGH
 **Location:** Android attribute mapping
 **Impact:** `displayLabel` can't find brand/color in `attributes` map
 **Fix required:** Verify if merging is happening, or change displayLabel to check enrichedAttributes
 
-***REMOVED******REMOVED******REMOVED*** Blocker ***REMOVED***3: Classification Label Overrides Vision
+### Blocker #3: Classification Label Overrides Vision
 
 **Severity:** MEDIUM
 **Location:** Label assignment logic
 **Impact:** "Unknown" classification label hides vision-detected product type
 **Fix required:** Prioritize vision labels over classification when confidence is low
 
-***REMOVED******REMOVED******REMOVED*** Blocker ***REMOVED***4: No Fallback from Classification to Vision Labels
+### Blocker #4: No Fallback from Classification to Vision Labels
 
 **Severity:** MEDIUM
 **Location:** Display label logic
@@ -425,12 +425,12 @@ Based on code analysis of enabled features:
 
 ---
 
-***REMOVED******REMOVED*** 8. Configuration Verification
+## 8. Configuration Verification
 
-***REMOVED******REMOVED******REMOVED*** Backend Vision Features (All ENABLED by default)
+### Backend Vision Features (All ENABLED by default)
 
 ```bash
-***REMOVED*** From backend/src/config/index.ts
+# From backend/src/config/index.ts
 VISION_ENABLE_OCR=true
 VISION_ENABLE_LABELS=true
 VISION_ENABLE_LOGOS=true
@@ -439,7 +439,7 @@ VISION_OCR_MODE=TEXT_DETECTION
 CLASSIFIER_ENABLE_ATTRIBUTE_ENRICHMENT=true
 ```
 
-***REMOVED******REMOVED******REMOVED*** Android Request
+### Android Request
 
 ```kotlin
 // From CloudClassifier.kt:153
@@ -451,9 +451,9 @@ and mapping.
 
 ---
 
-***REMOVED******REMOVED*** 9. Summary of Findings
+## 9. Summary of Findings
 
-***REMOVED******REMOVED******REMOVED*** ✅ What's Working
+### ✅ What's Working
 
 1. Google Vision API successfully detects logos, text, labels, colors
 2. Backend correctly extracts attributes (brand, color, model, material)
@@ -462,14 +462,14 @@ and mapping.
 5. Both are persisted to Room database
 6. Data flows all the way to ScannedItem model
 
-***REMOVED******REMOVED******REMOVED*** ❌ What's Broken
+### ❌ What's Broken
 
 1. Backend doesn't send `itemType` in `visionAttributes` response
 2. Android `displayLabel` can't find data in `attributes` map (checking wrong field?)
 3. Classification label "Unknown" overrides all vision data
 4. Vision labels (e.g., "Lip balm") are never used as fallback
 
-***REMOVED******REMOVED******REMOVED*** 🔍 Critical Path to Fix
+### 🔍 Critical Path to Fix
 
 1. **Phase 2a:** Add `itemType` to backend `VisionAttributeSummary` type and response builder
 2. **Phase 2b:** Map vision labels → itemType on backend (e.g., "Lip balm" → "Lip Balm")
@@ -478,16 +478,16 @@ and mapping.
 
 ---
 
-***REMOVED******REMOVED*** 10. Next Steps (Phase 2 Planning)
+## 10. Next Steps (Phase 2 Planning)
 
-***REMOVED******REMOVED******REMOVED*** Immediate Verification Needed
+### Immediate Verification Needed
 
 1. Check if `enrichedAttributes` are actually merged into `attributes` map in Android
 2. Add temporary logging to see what `attributes["brand"]` returns vs
    `visionAttributes.primaryBrand`
 3. Verify with real scan whether enrichedAttributes are populated or empty
 
-***REMOVED******REMOVED******REMOVED*** Proposed Fixes (No Implementation Yet)
+### Proposed Fixes (No Implementation Yet)
 
 1. Backend: Add `itemType` field to `VisionAttributeSummary`
 2. Backend: Map highest-scoring vision label → sellable itemType

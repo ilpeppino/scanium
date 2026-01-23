@@ -1,6 +1,6 @@
-***REMOVED*** Camera NO_FRAMES Stall Bug - Root Cause & Fix
+# Camera NO_FRAMES Stall Bug - Root Cause & Fix
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 After returning to CameraScreen from Items List (or other screens), the ImageAnalysis callback does
 NOT receive frames even though the debug overlay shows:
@@ -14,7 +14,7 @@ NOT receive frames even though the debug overlay shows:
 
 The analyzer callback was not receiving frames despite flags indicating the pipeline was active.
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
 **Race Condition in LaunchedEffects during navigation return.**
 
@@ -37,9 +37,9 @@ When returning to CameraScreen from another screen:
 The analyzer was set on a stale `ImageAnalysis` instance that was replaced by the camera binding
 process.
 
-***REMOVED******REMOVED*** Solution
+## Solution
 
-***REMOVED******REMOVED******REMOVED*** 1. Deferred Analyzer Application
+### 1. Deferred Analyzer Application
 
 Modified `startPreviewDetection()` to detect when called before camera binding:
 
@@ -60,7 +60,7 @@ pendingPreviewDetectionCallback?.let { callback ->
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Truthful Diagnostic States
+### 2. Truthful Diagnostic States
 
 Changed from single `isAnalysisRunning` to two states:
 
@@ -72,7 +72,7 @@ This makes the debug overlay show the real state:
 - `AnalysisAttached: true` + `AnalysisFlowing: false` = Analyzer set but no frames (STALL)
 - `AnalysisAttached: true` + `AnalysisFlowing: true` = Working correctly
 
-***REMOVED******REMOVED******REMOVED*** 3. NO_FRAMES Watchdog (Self-Heal)
+### 3. NO_FRAMES Watchdog (Self-Heal)
 
 Added a watchdog coroutine that starts after camera binding:
 
@@ -98,7 +98,7 @@ private fun startNoFramesWatchdog() {
 
 The watchdog detects the "attached but not flowing" condition and attempts recovery.
 
-***REMOVED******REMOVED******REMOVED*** 4. Session-based Callback Validation
+### 4. Session-based Callback Validation
 
 Each analyzer callback now validates it belongs to the current session:
 
@@ -115,7 +115,7 @@ analysis.setAnalyzer(executor) { imageProxy ->
 
 This ensures stale callbacks from previous sessions are ignored.
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 - `CameraXManager.kt`
     - Added `pendingPreviewDetectionCallback` for deferred analyzer application
@@ -133,7 +133,7 @@ This ensures stale callbacks from previous sessions are ignored.
     - Updated to show new diagnostic states
     - Added StallReason display
 
-***REMOVED******REMOVED*** Debug Overlay States
+## Debug Overlay States
 
 The debug overlay now shows:
 
@@ -145,7 +145,7 @@ The debug overlay now shows:
 | `Status: RECOVERING`         | Watchdog attempting recovery               |
 | `Status: STALL_FAILED`       | Recovery failed after max attempts         |
 
-***REMOVED******REMOVED*** Validation
+## Validation
 
 The fix should pass these scenarios:
 
@@ -156,7 +156,7 @@ The fix should pass these scenarios:
 
 Enable "Camera Pipeline Debug" in Developer Settings to see the diagnostic overlay.
 
-***REMOVED******REMOVED*** Prevention
+## Prevention
 
 To prevent similar issues:
 

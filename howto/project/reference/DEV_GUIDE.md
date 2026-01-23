@@ -1,27 +1,27 @@
-***REMOVED*** Developer Guide
+# Developer Guide
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
-***REMOVED******REMOVED******REMOVED*** Android Development
+### Android Development
 
 - JDK 17 (Gradle toolchain auto-detects)
 - Android Studio with Android SDK + emulator or physical device
 - `local.properties` with `sdk.dir=...` (copy from `local.properties.example`)
 
-***REMOVED******REMOVED******REMOVED*** Backend Development
+### Backend Development
 
 - Node.js 20+ (LTS recommended)
 - npm or yarn
 - Docker Desktop or Colima (for PostgreSQL and monitoring stack)
 - ngrok (for mobile device testing): `brew install ngrok/ngrok/ngrok`
 
-***REMOVED******REMOVED******REMOVED*** Optional (Observability)
+### Optional (Observability)
 
 - Docker Compose V2 (included with Docker Desktop)
 - 4GB RAM available for Docker
 - 10GB disk space for monitoring data
 
-***REMOVED******REMOVED*** Cloud Classification Setup (config-driven)
+## Cloud Classification Setup (config-driven)
 
 Scanium uses cloud classification by default to identify items. To enable this feature:
 
@@ -29,7 +29,7 @@ Scanium uses cloud classification by default to identify items. To enable this f
    ```properties
    sdk.dir=/path/to/android-sdk
 
-   ***REMOVED*** Cloud classification API configuration
+   # Cloud classification API configuration
    scanium.api.base.url=https://your-backend-url.com/api/v1
    scanium.api.key=your-dev-api-key
    ```
@@ -55,7 +55,7 @@ Scanium uses cloud classification by default to identify items. To enable this f
 - Never commit API keys to version control
 - Release builds require API base URL; fail-fast if missing
 
-***REMOVED******REMOVED*** Settings Information Architecture
+## Settings Information Architecture
 
 The redesigned Settings experience is organized into six categories (General, Camera & Scanning, AI
 Assistant, Notifications & Feedback, Data & Privacy, and Developer Options). Each category lives on
@@ -63,9 +63,9 @@ its own screen with grouped toggles and actions, ensuring every preference has a
 to `docs/SETTINGS_IA.md` for a full mapping of settings → DataStore keys → screen location, plus
 guidance on adding new entries to the Settings home.
 
-***REMOVED******REMOVED*** Local build & test
+## Local build & test
 
-***REMOVED******REMOVED******REMOVED*** Build Variants (Flavors)
+### Build Variants (Flavors)
 
 Scanium uses three product flavors for side-by-side installation and developer control:
 
@@ -81,17 +81,17 @@ device (different applicationId). The launcher shows distinct app names for easy
 **Build commands:**
 
 ```bash
-***REMOVED*** Prod builds (stable release)
-./gradlew :androidApp:assembleProdDebug     ***REMOVED*** Prod debug APK
-./gradlew :androidApp:assembleProdRelease   ***REMOVED*** Prod release APK
+# Prod builds (stable release)
+./gradlew :androidApp:assembleProdDebug     # Prod debug APK
+./gradlew :androidApp:assembleProdRelease   # Prod release APK
 
-***REMOVED*** Dev builds (Developer Options accessible)
-./gradlew :androidApp:assembleDevDebug      ***REMOVED*** Dev debug APK
-./gradlew :androidApp:assembleDevRelease    ***REMOVED*** Dev release APK
+# Dev builds (Developer Options accessible)
+./gradlew :androidApp:assembleDevDebug      # Dev debug APK
+./gradlew :androidApp:assembleDevRelease    # Dev release APK
 
-***REMOVED*** Beta builds (Developer Options hidden)
-./gradlew :androidApp:assembleBetaDebug     ***REMOVED*** Beta debug APK
-./gradlew :androidApp:assembleBetaRelease   ***REMOVED*** Beta release APK
+# Beta builds (Developer Options hidden)
+./gradlew :androidApp:assembleBetaDebug     # Beta debug APK
+./gradlew :androidApp:assembleBetaRelease   # Beta release APK
 ```
 
 **APK output locations:**
@@ -111,7 +111,7 @@ device (different applicationId). The launcher shows distinct app names for easy
 - Navigation to `/settings/developer` redirects back in prod/beta builds
 - All dev-only UI and features are gated behind this flag
 
-***REMOVED******REMOVED******REMOVED*** With Android SDK (Workstation / Android Studio)
+### With Android SDK (Workstation / Android Studio)
 
 - `./scripts/build.sh assembleDebug` or `./gradlew assembleDevDebug` – build dev debug APK.
 - `./gradlew installDevDebug` – install dev build on a connected device/emulator.
@@ -121,17 +121,17 @@ device (different applicationId). The launcher shows distinct app names for easy
 - Coverage: `./gradlew koverVerify` (thresholds: shared modules ≥85%, androidApp ≥75%; HTML under
   `*/build/reports/kover/html` and `androidApp/build/reports/jacoco/testDebugUnitTest/html`).
 
-***REMOVED******REMOVED******REMOVED*** Container environments (Claude Code, Docker without Android SDK)
+### Container environments (Claude Code, Docker without Android SDK)
 
 **⚠️ Limitation:** `./gradlew test` and `./gradlew lint` **fail without Android SDK**.
 
 **Container-friendly validation:**
 
 ```bash
-***REMOVED*** JVM-only pre-push checks (shared modules only)
+# JVM-only pre-push checks (shared modules only)
 ./gradlew prePushJvmCheck
 
-***REMOVED*** Install git pre-push hook for automatic validation
+# Install git pre-push hook for automatic validation
 ./scripts/dev/install-hooks.sh
 ```
 
@@ -150,7 +150,7 @@ device (different applicationId). The launcher shows distinct app names for easy
 - ❌ Lint checks: `./gradlew lint`
 - ❌ Instrumented tests: `./gradlew connectedAndroidTest`
 
-***REMOVED******REMOVED******REMOVED*** Automated local test-fix loop
+### Automated local test-fix loop
 
 - `./scripts/dev/run_tests.sh test` – run unit tests with JDK 17 enforced.
 - `./scripts/dev/autofix_tests.sh test` – run tests, extract failures, and invoke Codex for fixes.
@@ -165,34 +165,34 @@ device (different applicationId). The launcher shows distinct app names for easy
 
 See also `hooks/README.md` for pre-push validation setup.
 
-***REMOVED******REMOVED******REMOVED*** Termux: Build APK to Downloads
+### Termux: Build APK to Downloads
 
 Build debug APKs directly on your Android device using Termux. The APK is copied to Downloads for
 easy installation.
 
-**Important:** Run these scripts from inside Termux on Android. The shebang (`***REMOVED***!/usr/bin/env bash`)
+**Important:** Run these scripts from inside Termux on Android. The shebang (`#!/usr/bin/env bash`)
 is portable across macOS and Termux, but storage paths like `$HOME/storage` only exist in Termux.
 
 **One-time setup:**
 
 ```bash
-***REMOVED*** Grant Termux storage permission (required once)
+# Grant Termux storage permission (required once)
 termux-setup-storage
 
-***REMOVED*** Verify storage access
+# Verify storage access
 ./scripts/termux/termux-storage-setup.sh
 ```
 
 **Build and install:**
 
 ```bash
-***REMOVED*** Build debug APK and copy to Downloads
+# Build debug APK and copy to Downloads
 ./scripts/termux/build_debug_to_downloads.sh
 
-***REMOVED*** Then:
-***REMOVED*** 1. Open Files app
-***REMOVED*** 2. Navigate to Downloads/scanium-apk/
-***REMOVED*** 3. Tap the APK to install
+# Then:
+# 1. Open Files app
+# 2. Navigate to Downloads/scanium-apk/
+# 3. Tap the APK to install
 ```
 
 **Requirements:**
@@ -201,7 +201,7 @@ termux-setup-storage
 - Storage permission granted via `termux-setup-storage`
 - ~2GB free space for Gradle cache
 
-***REMOVED******REMOVED******REMOVED*** Termux: Run Tests via Tailscale SSH
+### Termux: Run Tests via Tailscale SSH
 
 Run Gradle tests and autofix loops on your Mac from Termux over Tailscale SSH. Avoids Termux's
 JDK/toolchain limitations and works over mobile networks.
@@ -216,8 +216,8 @@ paths require Termux.
 3. Generate SSH key in Termux and add to Mac:
    ```bash
    ssh-keygen -t ed25519
-   cat ~/.ssh/id_ed25519.pub  ***REMOVED*** Copy this
-   ***REMOVED*** On Mac: append to ~/.ssh/authorized_keys
+   cat ~/.ssh/id_ed25519.pub  # Copy this
+   # On Mac: append to ~/.ssh/authorized_keys
    ```
 4. Grant Termux storage access:
    ```bash
@@ -226,21 +226,21 @@ paths require Termux.
 5. Configure remote environment:
    ```bash
    cp scripts/termux/remote_env.example scripts/termux/remote_env
-   ***REMOVED*** Edit remote_env with your Mac's Tailscale IP (e.g., 100.x.x.x)
+   # Edit remote_env with your Mac's Tailscale IP (e.g., 100.x.x.x)
    ```
 
 **Run autofix tests remotely:**
 
 ```bash
 ./scripts/termux/remote_autofix_tests.sh
-***REMOVED*** Runs autofix_tests.sh on Mac, pulls logs to Downloads/scanium-ci/
+# Runs autofix_tests.sh on Mac, pulls logs to Downloads/scanium-ci/
 ```
 
 **Build APK remotely:**
 
 ```bash
 ./scripts/termux/remote_build_pull_apk.sh
-***REMOVED*** Builds debug APK on Mac, copies to Downloads/scanium-apk/
+# Builds debug APK on Mac, copies to Downloads/scanium-apk/
 ```
 
 **Dry run (print commands without executing):**
@@ -255,15 +255,15 @@ DRY_RUN=1 ./scripts/termux/remote_autofix_tests.sh
 - Test SSH manually: `ssh user@100.x.x.x`
 - Ensure Mac is not sleeping (caffeinate or disable sleep)
 
-***REMOVED******REMOVED******REMOVED*** Local CI (quota-free)
+### Local CI (quota-free)
 
 Run GitHub Actions workflows locally to avoid CI quota limits:
 
 ```bash
-./scripts/ci/local-ci.sh doctor    ***REMOVED*** Check prerequisites (Java 17, jq, etc.)
-./scripts/ci/local-ci.sh coverage  ***REMOVED*** Run tests + coverage verification
-./scripts/ci/local-ci.sh security  ***REMOVED*** Run OWASP CVE scan
-./scripts/ci/local-ci.sh all       ***REMOVED*** Run both
+./scripts/ci/local-ci.sh doctor    # Check prerequisites (Java 17, jq, etc.)
+./scripts/ci/local-ci.sh coverage  # Run tests + coverage verification
+./scripts/ci/local-ci.sh security  # Run OWASP CVE scan
+./scripts/ci/local-ci.sh all       # Run both
 ```
 
 **Outputs:** `tmp/ci/coverage/` and `tmp/ci/security/` (gitignored)
@@ -276,24 +276,24 @@ Run GitHub Actions workflows locally to avoid CI quota limits:
 **Tip:** Set `NVD_API_KEY` for faster security scans (get key
 at https://nvd.nist.gov/developers/request-an-api-key)
 
-***REMOVED******REMOVED******REMOVED*** Gradle Configuration Sanity Check
+### Gradle Configuration Sanity Check
 
 Fast Gradle configuration validation (quota-free, no network required):
 
 ```bash
-./scripts/ci/gradle_sanity.sh       ***REMOVED*** Validate plugin resolution
-./scripts/dev/autofix_tests.sh test ***REMOVED*** Runs sanity check before tests
+./scripts/ci/gradle_sanity.sh       # Validate plugin resolution
+./scripts/dev/autofix_tests.sh test # Runs sanity check before tests
 ```
 
 **Plugin versions centralized:** Hilt and KSP versions are managed in `gradle/libs.versions.toml`.
 
-***REMOVED******REMOVED******REMOVED*** Codex container limitations (factual)
+### Codex container limitations (factual)
 
 - Android SDK/emulator are not available; JVM-only Gradle tasks are the safe path.
 - Networked device access (ADB) is unavailable; use CI artifacts for APKs.
 - Avoid installing system packages; rely on provided Gradle wrapper and scripts.
 
-***REMOVED******REMOVED*** Deduplication & Detection Quality Tuning
+## Deduplication & Detection Quality Tuning
 
 **Viewport Alignment (WYSIWYG):**
 
@@ -318,13 +318,13 @@ Fast Gradle configuration validation (quota-free, no network required):
 **Testing deduplication changes:**
 
 ```bash
-***REMOVED*** Run unit tests for merge policy (Android-free)
+# Run unit tests for merge policy (Android-free)
 ./gradlew :shared:core-tracking:test --tests "SpatialTemporalMergePolicyTest"
 
-***REMOVED*** Run all tracking tests
+# Run all tracking tests
 ./gradlew :shared:core-tracking:test
 
-***REMOVED*** Build and install for on-device testing
+# Build and install for on-device testing
 ./gradlew installDebug
 ```
 
@@ -336,7 +336,7 @@ Fast Gradle configuration validation (quota-free, no network required):
 - [ ] Verify categories still match correctly
 - [ ] Test with different lighting conditions
 
-***REMOVED******REMOVED*** Debugging tips
+## Debugging tips
 
 - **Developer Options**: Access Settings → Developer Options for System Health diagnostics (backend,
   network, permissions). See section below.
@@ -355,7 +355,7 @@ Fast Gradle configuration validation (quota-free, no network required):
 
 ---
 
-***REMOVED******REMOVED*** Developer Options (Dev Flavor Only)
+## Developer Options (Dev Flavor Only)
 
 Developer Options provides runtime diagnostics for troubleshooting connectivity, permissions, and
 device capabilities.
@@ -364,7 +364,7 @@ device capabilities.
 `assembleBetaDebug`, `assembleBetaRelease`) completely hide this feature to prevent external testers
 > from accessing internal debugging tools.
 
-***REMOVED******REMOVED******REMOVED*** Accessing Developer Options
+### Accessing Developer Options
 
 1. Launch the app (**dev** flavor build)
 2. Navigate to **Settings** (gear icon on camera screen)
@@ -373,7 +373,7 @@ device capabilities.
 For dev debug builds, Developer Options is always visible. For dev release builds, the user must
 first enable "Developer Mode" toggle (requires access via a debug build first).
 
-***REMOVED******REMOVED******REMOVED*** System Health Panel
+### System Health Panel
 
 The System Health panel displays real-time diagnostics:
 
@@ -385,7 +385,7 @@ The System Health panel displays real-time diagnostics:
 | **Capabilities** | Speech recognition, TTS, Camera lenses | Available / Unavailable                               |
 | **App Config**   | Version, build, device, SDK, base URL  | Informational                                         |
 
-***REMOVED******REMOVED******REMOVED*** Features
+### Features
 
 - **Auto-refresh**: Toggle to refresh diagnostics every 15 seconds
 - **Manual refresh**: Tap refresh button for immediate update
@@ -394,7 +394,7 @@ The System Health panel displays real-time diagnostics:
 - **FTUE Tour**: Reset or force-enable first-time experience tour
 - **Crash Test**: Send test exceptions to Sentry
 
-***REMOVED******REMOVED******REMOVED*** Interpreting Results
+### Interpreting Results
 
 **Backend "Down" status:**
 
@@ -412,7 +412,7 @@ The System Health panel displays real-time diagnostics:
 - Speech recognition requires Google app installed
 - Camera lenses depend on device hardware
 
-***REMOVED******REMOVED******REMOVED*** Copying Diagnostics for Support
+### Copying Diagnostics for Support
 
 1. Open Developer Options
 2. Tap the copy button (clipboard icon)
@@ -451,7 +451,7 @@ Text-to-Speech: Available
 Camera Lenses: Back, Front
 ```
 
-***REMOVED******REMOVED******REMOVED*** Aggregation Accuracy (Overlay Filter)
+### Aggregation Accuracy (Overlay Filter)
 
 A debug-only control for filtering which bounding boxes are shown on the camera overlay based on
 confidence threshold. This is useful for:
@@ -490,21 +490,21 @@ confidence threshold. This is useful for:
 
 ---
 
-***REMOVED******REMOVED*** Backend Development Workflow
+## Backend Development Workflow
 
-***REMOVED******REMOVED******REMOVED*** Quick Start
+### Quick Start
 
 **One-command startup** (recommended):
 
 ```bash
-***REMOVED*** Start everything: PostgreSQL + backend server + ngrok + monitoring stack
+# Start everything: PostgreSQL + backend server + ngrok + monitoring stack
 scripts/backend/start-dev.sh
 
-***REMOVED*** What you get:
-***REMOVED*** ✅ PostgreSQL database (port 5432)
-***REMOVED*** ✅ Backend API server (port 8080)
-***REMOVED*** ✅ ngrok tunnel (public URL for mobile testing)
-***REMOVED*** ✅ Observability stack (Grafana, Loki, Tempo, Mimir, Alloy)
+# What you get:
+# ✅ PostgreSQL database (port 5432)
+# ✅ Backend API server (port 8080)
+# ✅ ngrok tunnel (public URL for mobile testing)
+# ✅ Observability stack (Grafana, Loki, Tempo, Mimir, Alloy)
 ```
 
 **Skip monitoring** (backend only):
@@ -519,7 +519,7 @@ scripts/backend/start-dev.sh --no-monitoring
 MONITORING=0 scripts/backend/start-dev.sh
 ```
 
-***REMOVED******REMOVED******REMOVED*** Initial Setup
+### Initial Setup
 
 1. **Install dependencies**:
    ```bash
@@ -530,60 +530,60 @@ MONITORING=0 scripts/backend/start-dev.sh
 2. **Configure environment**:
    ```bash
    cp .env.example .env
-   ***REMOVED*** Edit .env with your configuration (DATABASE_URL, API keys, etc.)
+   # Edit .env with your configuration (DATABASE_URL, API keys, etc.)
    ```
 
 3. **Run database migrations**:
    ```bash
    npm run prisma:migrate
-   ***REMOVED*** Or: npx prisma migrate dev
+   # Or: npx prisma migrate dev
    ```
 
 4. **Generate Prisma Client**:
    ```bash
    npm run prisma:generate
-   ***REMOVED*** Or: npx prisma generate
+   # Or: npx prisma generate
    ```
 
-***REMOVED******REMOVED******REMOVED*** Development Commands
+### Development Commands
 
 **Start backend** (manual):
 
 ```bash
 cd backend
-npm run dev              ***REMOVED*** Runs with nodemon (auto-restart on changes)
+npm run dev              # Runs with nodemon (auto-restart on changes)
 ```
 
 **Database operations**:
 
 ```bash
-***REMOVED*** Run migrations
-npm run prisma:migrate            ***REMOVED*** Apply pending migrations
-npx prisma migrate dev --name <name>  ***REMOVED*** Create new migration
+# Run migrations
+npm run prisma:migrate            # Apply pending migrations
+npx prisma migrate dev --name <name>  # Create new migration
 
-***REMOVED*** Database management
-npx prisma studio                  ***REMOVED*** Open Prisma Studio GUI (localhost:5555)
-npx prisma db push                 ***REMOVED*** Push schema changes without migration
-npx prisma migrate reset           ***REMOVED*** Reset database (⚠️ deletes all data)
+# Database management
+npx prisma studio                  # Open Prisma Studio GUI (localhost:5555)
+npx prisma db push                 # Push schema changes without migration
+npx prisma migrate reset           # Reset database (⚠️ deletes all data)
 ```
 
 **Testing**:
 
 ```bash
-npm test                   ***REMOVED*** Run backend tests
-npm run test:watch         ***REMOVED*** Watch mode
-npm run test:coverage      ***REMOVED*** Coverage report
+npm test                   # Run backend tests
+npm run test:watch         # Watch mode
+npm run test:coverage      # Coverage report
 ```
 
 **Type checking & linting**:
 
 ```bash
-npm run type-check         ***REMOVED*** TypeScript type checking
-npm run lint               ***REMOVED*** ESLint
-npm run format             ***REMOVED*** Prettier formatting
+npm run type-check         # TypeScript type checking
+npm run lint               # ESLint
+npm run format             # Prettier formatting
 ```
 
-***REMOVED******REMOVED******REMOVED*** Backend API Endpoints
+### Backend API Endpoints
 
 **Health & Status:**
 
@@ -597,7 +597,7 @@ npm run format             ***REMOVED*** Prettier formatting
 
 *(Additional endpoints documented in `backend/src/routes/`)*
 
-***REMOVED******REMOVED******REMOVED*** Database Schema Changes
+### Database Schema Changes
 
 1. **Edit schema**: Modify `backend/prisma/schema.prisma`
 2. **Create migration**: `npx prisma migrate dev --name add_user_table`
@@ -629,12 +629,12 @@ model User {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Mobile Device Testing
+### Mobile Device Testing
 
 1. **Start backend with ngrok**:
    ```bash
    scripts/backend/start-dev.sh
-   ***REMOVED*** Note the ngrok URL (e.g., https://abc123.ngrok-free.dev)
+   # Note the ngrok URL (e.g., https://abc123.ngrok-free.dev)
    ```
 
 2. **Update Android app**:
@@ -653,31 +653,31 @@ model User {
     - View logs in `backend/.dev-server.log`
     - View telemetry in Grafana (if monitoring enabled)
 
-***REMOVED******REMOVED******REMOVED*** Troubleshooting Backend
+### Troubleshooting Backend
 
 **PostgreSQL not starting**:
 
 ```bash
-***REMOVED*** Check container status
+# Check container status
 docker ps --filter name=scanium-postgres
 
-***REMOVED*** View logs
+# View logs
 docker logs scanium-postgres
 
-***REMOVED*** Restart container
+# Restart container
 docker restart scanium-postgres
 ```
 
 **Backend server crashes**:
 
 ```bash
-***REMOVED*** View logs
+# View logs
 tail -f backend/.dev-server.log
 
-***REMOVED*** Check Node.js version
-node --version  ***REMOVED*** Should be 20+
+# Check Node.js version
+node --version  # Should be 20+
 
-***REMOVED*** Reinstall dependencies
+# Reinstall dependencies
 cd backend && rm -rf node_modules package-lock.json && npm install
 ```
 
@@ -690,21 +690,21 @@ cd backend && rm -rf node_modules package-lock.json && npm install
 **Database connection errors**:
 
 ```bash
-***REMOVED*** Check DATABASE_URL in .env
+# Check DATABASE_URL in .env
 cat backend/.env | grep DATABASE_URL
 
-***REMOVED*** Test PostgreSQL connection
+# Test PostgreSQL connection
 docker exec scanium-postgres psql -U scanium -d scanium -c "SELECT 1"
 
-***REMOVED*** Reset database (⚠️ deletes all data)
+# Reset database (⚠️ deletes all data)
 cd backend && npx prisma migrate reset
 ```
 
 ---
 
-***REMOVED******REMOVED*** Observability Stack
+## Observability Stack
 
-***REMOVED******REMOVED******REMOVED*** Overview
+### Overview
 
 Scanium uses the **LGTM stack** (Loki, Grafana, Tempo, Mimir) + Grafana Alloy for comprehensive
 observability:
@@ -715,7 +715,7 @@ observability:
 - **Tempo**: Distributed tracing (7-day retention)
 - **Mimir**: Prometheus-compatible metrics (15-day retention)
 
-***REMOVED******REMOVED******REMOVED*** Access Monitoring
+### Access Monitoring
 
 **View all URLs and health status**:
 
@@ -733,7 +733,7 @@ scripts/monitoring/print-urls.sh
 - Tempo: http://localhost:3200 (internal, access via Grafana)
 - Mimir: http://localhost:9009 (internal, access via Grafana)
 
-***REMOVED******REMOVED******REMOVED*** Managing Monitoring Stack
+### Managing Monitoring Stack
 
 **Start monitoring stack** (standalone):
 
@@ -746,17 +746,17 @@ scripts/monitoring/start-monitoring.sh
 ```bash
 scripts/monitoring/stop-monitoring.sh
 
-***REMOVED*** Or with backend
+# Or with backend
 scripts/backend/stop-dev.sh --with-monitoring
 ```
 
 **View logs**:
 
 ```bash
-***REMOVED*** All services
+# All services
 docker compose -p scanium-monitoring logs -f
 
-***REMOVED*** Specific service
+# Specific service
 docker compose -p scanium-monitoring logs -f grafana
 docker compose -p scanium-monitoring logs -f alloy
 docker compose -p scanium-monitoring logs -f loki
@@ -771,23 +771,23 @@ docker compose -p scanium-monitoring restart grafana
 **Health checks**:
 
 ```bash
-***REMOVED*** Grafana
+# Grafana
 curl http://localhost:3000/api/health
 
-***REMOVED*** Loki
+# Loki
 curl http://localhost:3100/ready
 
-***REMOVED*** Tempo
+# Tempo
 curl http://localhost:3200/ready
 
-***REMOVED*** Mimir
+# Mimir
 curl http://localhost:9009/ready
 
-***REMOVED*** Or use the helper script
-scripts/monitoring/print-urls.sh  ***REMOVED*** Shows health status of all services
+# Or use the helper script
+scripts/monitoring/print-urls.sh  # Shows health status of all services
 ```
 
-***REMOVED******REMOVED******REMOVED*** Dashboards
+### Dashboards
 
 **Pre-provisioned dashboards** are in `monitoring/grafana/dashboards/`:
 
@@ -802,7 +802,7 @@ scripts/monitoring/print-urls.sh  ***REMOVED*** Shows health status of all servi
 3. Save to `monitoring/grafana/dashboards/my-dashboard.json`
 4. Restart Grafana: `docker compose -p scanium-monitoring restart grafana`
 
-***REMOVED******REMOVED******REMOVED*** Data Persistence
+### Data Persistence
 
 **Data stored in** `monitoring/data/`:
 
@@ -814,15 +814,15 @@ scripts/monitoring/print-urls.sh  ***REMOVED*** Shows health status of all servi
 **Reset all data**:
 
 ```bash
-***REMOVED*** ⚠️ This deletes all monitoring data
+# ⚠️ This deletes all monitoring data
 rm -rf monitoring/data/*
 
-***REMOVED*** Recreate containers
+# Recreate containers
 docker compose -p scanium-monitoring down
 docker compose -p scanium-monitoring up -d
 ```
 
-***REMOVED******REMOVED******REMOVED*** Configuring Retention
+### Configuring Retention
 
 Edit retention in config files:
 
@@ -830,7 +830,7 @@ Edit retention in config files:
 
 ```yaml
 limits_config:
-  retention_period: 336h  ***REMOVED*** 14 days (default)
+  retention_period: 336h  # 14 days (default)
 ```
 
 **Tempo** (`monitoring/tempo/tempo.yaml`):
@@ -838,14 +838,14 @@ limits_config:
 ```yaml
 compactor:
   compaction:
-    block_retention: 168h  ***REMOVED*** 7 days (default)
+    block_retention: 168h  # 7 days (default)
 ```
 
 **Mimir** (`monitoring/mimir/mimir.yaml`):
 
 ```yaml
 limits:
-  compactor_blocks_retention_period: 360h  ***REMOVED*** 15 days (default)
+  compactor_blocks_retention_period: 360h  # 15 days (default)
 ```
 
 After editing, restart containers:
@@ -855,7 +855,7 @@ docker compose -p scanium-monitoring down
 docker compose -p scanium-monitoring up -d
 ```
 
-***REMOVED******REMOVED******REMOVED*** Sending Telemetry
+### Sending Telemetry
 
 **From backend** (OpenTelemetry SDK):
 
@@ -874,18 +874,18 @@ scanium.otlp.enabled=true
 scanium.otlp.endpoint=http://<lan-ip>:4318
 ```
 
-***REMOVED******REMOVED******REMOVED*** Troubleshooting Monitoring
+### Troubleshooting Monitoring
 
 **Grafana not accessible**:
 
 ```bash
-***REMOVED*** Check if running
+# Check if running
 docker ps --filter name=scanium-grafana
 
-***REMOVED*** View logs
+# View logs
 docker compose -p scanium-monitoring logs grafana
 
-***REMOVED*** Restart
+# Restart
 docker compose -p scanium-monitoring restart grafana
 ```
 
@@ -899,17 +899,17 @@ docker compose -p scanium-monitoring restart grafana
 **Containers not starting**:
 
 ```bash
-***REMOVED*** Check Docker daemon
+# Check Docker daemon
 docker info
 
-***REMOVED*** View compose logs
+# View compose logs
 docker compose -p scanium-monitoring logs
 
-***REMOVED*** Check disk space
-df -h  ***REMOVED*** Need 10GB for data storage
+# Check disk space
+df -h  # Need 10GB for data storage
 
-***REMOVED*** Check Docker resources
-docker stats  ***REMOVED*** Ensure 4GB RAM available
+# Check Docker resources
+docker stats  # Ensure 4GB RAM available
 ```
 
 **Pre-existing config issue (Tempo)**:
@@ -920,18 +920,18 @@ docker stats  ***REMOVED*** Ensure 4GB RAM available
 
 ---
 
-***REMOVED******REMOVED*** Development Workflow Summary
+## Development Workflow Summary
 
-***REMOVED******REMOVED******REMOVED*** Full Stack Development
+### Full Stack Development
 
 1. **Start everything**:
    ```bash
-   scripts/backend/start-dev.sh  ***REMOVED*** Backend + PostgreSQL + ngrok + monitoring
+   scripts/backend/start-dev.sh  # Backend + PostgreSQL + ngrok + monitoring
    ```
 
 2. **Develop Android app**:
    ```bash
-   ./gradlew installDebug        ***REMOVED*** Build and install on device
+   ./gradlew installDebug        # Build and install on device
    ```
 
 3. **View telemetry**:
@@ -943,7 +943,7 @@ docker stats  ***REMOVED*** Ensure 4GB RAM available
    scripts/backend/stop-dev.sh --with-monitoring
    ```
 
-***REMOVED******REMOVED******REMOVED*** Backend-Only Development
+### Backend-Only Development
 
 1. **Start backend** (no monitoring):
    ```bash
@@ -953,8 +953,8 @@ docker stats  ***REMOVED*** Ensure 4GB RAM available
 2. **Develop and test**:
    ```bash
    cd backend
-   npm run dev          ***REMOVED*** Auto-restart on changes
-   npm test             ***REMOVED*** Run tests
+   npm run dev          # Auto-restart on changes
+   npm test             # Run tests
    ```
 
 3. **Stop backend**:

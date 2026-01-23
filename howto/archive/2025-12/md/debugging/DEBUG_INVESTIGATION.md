@@ -1,21 +1,21 @@
-***REMOVED*** Multi-Layer Deduplication Debug Investigation
+# Multi-Layer Deduplication Debug Investigation
 
-***REMOVED******REMOVED*** Date: 2025-12-08
+## Date: 2025-12-08
 
-***REMOVED******REMOVED*** Problem Report
+## Problem Report
 
 User reported that NO items are being detected in scanning mode on a real device after implementing
 the new multi-layer deduplication system. Logs show nothing.
 
-***REMOVED******REMOVED*** Changes Made
+## Changes Made
 
-***REMOVED******REMOVED******REMOVED*** 1. Root Cause Identified
+### 1. Root Cause Identified
 
 **CRITICAL BUG FOUND AND FIXED**: Objects without ML Kit classification labels were getting
 confidence = 0.0f, which failed the `minConfidence = 0.2f` threshold check in
 `ObjectTracker.isConfirmed()`.
 
-***REMOVED******REMOVED******REMOVED*** 2. Key Fix Applied
+### 2. Key Fix Applied
 
 **File**: `/Users/family/dev/objecta/app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
 
@@ -39,32 +39,32 @@ val confidence = bestLabel?.confidence ?: run {
 This ensures that even objects without labels (which ML Kit still detects reliably) will pass the
 confirmation threshold.
 
-***REMOVED******REMOVED******REMOVED*** 3. Comprehensive Debug Logging Added
+### 3. Comprehensive Debug Logging Added
 
 Added detailed INFO-level logging at every critical pipeline stage:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** CameraXManager.kt
+#### CameraXManager.kt
 
 - `processImageProxy()`: Logs which code path is taken (tracking vs single-shot)
 - `processObjectDetectionWithTracking()`: Logs DetectionInfo received and ScannedItems produced
 - `startScanning()`: Logs callback invocations
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectDetectorClient.kt
+#### ObjectDetectorClient.kt
 
 - `detectObjectsWithTracking()`: Logs ML Kit raw detections and extracted DetectionInfo objects
 - `extractDetectionInfo()`: Logs each detection's tracking ID, confidence, category, and area
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectTracker.kt
+#### ObjectTracker.kt
 
 - `processFrame()`: Logs each detection being processed, candidates created/matched, and
   confirmations
 - Clear "✓✓✓ CONFIRMED" markers when candidates are promoted
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ItemsViewModel.kt
+#### ItemsViewModel.kt
 
 - `addItems()`: Logs items received, deduplication decisions, and final additions
 
-***REMOVED******REMOVED******REMOVED*** 4. Log Markers to Look For
+### 4. Log Markers to Look For
 
 When scanning is working correctly, you should see this sequence:
 
@@ -92,7 +92,7 @@ I/ItemsViewModel: >>> ADDING 1 unique items from batch of 1
 I/ItemsViewModel: >>> Total items now: 1
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Potential Issues to Check
+### 5. Potential Issues to Check
 
 If logs still show no items:
 
@@ -101,7 +101,7 @@ If logs still show no items:
 3. **Tracking path not taken**: Verify "Taking TRACKING PATH" appears in logs
 4. **Items rejected by SessionDeduplicator**: Look for "REJECTED: similar to existing item" messages
 
-***REMOVED******REMOVED******REMOVED*** 6. Current Thresholds (Very Permissive)
+### 6. Current Thresholds (Very Permissive)
 
 ```kotlin
 // ObjectTracker configuration
@@ -115,14 +115,14 @@ expiryFrames = 15            // Keep candidates longer
 
 These are intentionally very permissive to ensure detection works.
 
-***REMOVED******REMOVED*** Build Info
+## Build Info
 
 - Built successfully: 2025-12-08
 - APK location: `/Users/family/dev/objecta/app/build/outputs/apk/debug/app-debug.apk`
 - Size: 111MB
 - All 232 tests passing
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. Install the new APK on device: `adb install -r app/build/outputs/apk/debug/app-debug.apk`
 2. Clear app data: `adb shell pm clear com.scanium.app`
@@ -131,13 +131,13 @@ These are intentionally very permissive to ensure detection works.
    `adb logcat -s CameraXManager:I ObjectDetectorClient:I ObjectTracker:I ItemsViewModel:I`
 5. Analyze the log sequence to identify where the pipeline breaks
 
-***REMOVED******REMOVED*** Expected Outcome
+## Expected Outcome
 
 With the confidence fallback fix, objects should now be detected and confirmed even without
 classification labels. The extensive logging will show exactly where each detection goes through the
 pipeline.
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
 1. `/Users/family/dev/objecta/app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
     - Added fallback confidence for unlabeled objects
@@ -154,10 +154,10 @@ pipeline.
 
 ---
 
-***REMOVED******REMOVED*** Quick Log Capture Command
+## Quick Log Capture Command
 
 ```bash
-***REMOVED*** Clear logs and start fresh capture
+# Clear logs and start fresh capture
 adb logcat -c && adb logcat -s CameraXManager:I ObjectDetectorClient:I ObjectTracker:I ItemsViewModel:I > scan_logs.txt
 ```
 

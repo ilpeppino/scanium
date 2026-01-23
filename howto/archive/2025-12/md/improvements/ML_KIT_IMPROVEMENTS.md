@@ -1,6 +1,6 @@
-***REMOVED*** ML Kit Detection System - Complete Implementation
+# ML Kit Detection System - Complete Implementation
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium now features a **production-ready multi-frame detection pipeline** that ensures only stable,
 high-confidence detections are shown to users. This document describes the complete implementation
@@ -8,9 +8,9 @@ and improvements made to the ML Kit integration.
 
 ---
 
-***REMOVED******REMOVED*** System Architecture
+## System Architecture
 
-***REMOVED******REMOVED******REMOVED*** Core Components
+### Core Components
 
 1. **ObjectDetectorClient** - ML Kit Object Detection wrapper
 2. **BarcodeScannerClient** - ML Kit Barcode Scanning wrapper
@@ -22,9 +22,9 @@ and improvements made to the ML Kit integration.
 
 ---
 
-***REMOVED******REMOVED*** 1. ML Kit Configuration
+## 1. ML Kit Configuration
 
-***REMOVED******REMOVED******REMOVED*** Object Detection (ObjectDetectorClient.kt)
+### Object Detection (ObjectDetectorClient.kt)
 
 **Dual Detector Modes:**
 
@@ -56,7 +56,7 @@ ObjectDetectorOptions.Builder()
 - Bounding box coordinates
 - Support for multiple objects per frame
 
-***REMOVED******REMOVED******REMOVED*** Barcode Scanning (BarcodeScannerClient.kt)
+### Barcode Scanning (BarcodeScannerClient.kt)
 
 **Supported Formats:**
 
@@ -76,9 +76,9 @@ ObjectDetectorOptions.Builder()
 
 ---
 
-***REMOVED******REMOVED*** 2. Multi-Frame Detection Pipeline
+## 2. Multi-Frame Detection Pipeline
 
-***REMOVED******REMOVED******REMOVED*** Problem Statement
+### Problem Statement
 
 ML Kit's object detection can produce:
 
@@ -87,9 +87,9 @@ ML Kit's object detection can produce:
 - **Flickering detections** - Objects appearing/disappearing rapidly
 - **Duplicate items** - Same object detected multiple times with different IDs
 
-***REMOVED******REMOVED******REMOVED*** Solution: Object Tracking System
+### Solution: Object Tracking System
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectTracker (ObjectTracker.kt)
+#### ObjectTracker (ObjectTracker.kt)
 
 **Purpose:** Track detections across multiple frames and promote only stable, high-confidence
 objects.
@@ -119,7 +119,7 @@ Frame 3: Meets criteria → PROMOTE to ScannedItem
 4. **Expiry Management**: Removes stale candidates automatically
 5. **Duplicate Prevention**: Keeps confirmed IDs to avoid re-promotions
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectCandidate (ObjectCandidate.kt)
+#### ObjectCandidate (ObjectCandidate.kt)
 
 Intermediate representation storing per-object state:
 
@@ -129,7 +129,7 @@ Intermediate representation storing per-object state:
 - `maxConfidence`, `category`, `labelText`
 - `thumbnail`, `averageBoxArea`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** DetectionInfo (ObjectTracker.kt)
+#### DetectionInfo (ObjectTracker.kt)
 
 Tracking metadata produced by `ObjectDetectorClient.detectObjectsWithTracking()`:
 
@@ -141,7 +141,7 @@ Tracking metadata produced by `ObjectDetectorClient.detectObjectsWithTracking()`
 - `thumbnail`: Cropped thumbnail
 - `normalizedBoxArea`: Normalized bounding box area
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** RawDetection (RawDetection.kt)
+#### RawDetection (RawDetection.kt)
 
 **Purpose:** Intermediate data structure between ML Kit and candidate tracker.
 
@@ -167,9 +167,9 @@ data class RawDetection(
 
 ---
 
-***REMOVED******REMOVED*** 3. Confidence-Aware System
+## 3. Confidence-Aware System
 
-***REMOVED******REMOVED******REMOVED*** ScannedItem Model (ScannedItem.kt)
+### ScannedItem Model (ScannedItem.kt)
 
 **Extended with Confidence:**
 
@@ -188,7 +188,7 @@ data class ScannedItem(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** ConfidenceLevel Enum
+### ConfidenceLevel Enum
 
 ```kotlin
 enum class ConfidenceLevel(val threshold: Float) {
@@ -206,9 +206,9 @@ enum class ConfidenceLevel(val threshold: Float) {
 
 ---
 
-***REMOVED******REMOVED*** 4. Debug Logging System
+## 4. Debug Logging System
 
-***REMOVED******REMOVED******REMOVED*** DetectionLogger (DetectionLogger.kt)
+### DetectionLogger (DetectionLogger.kt)
 
 **Purpose:** Centralized logging for detection events and statistics (debug builds only).
 
@@ -223,7 +223,7 @@ enum class ConfidenceLevel(val threshold: Float) {
 1. **Raw Detection Events:**
 
 ```
-Frame ***REMOVED***42 | Detection:
+Frame #42 | Detection:
   id=a3b4c5d6, category=Fashion, label=Fashion good,
   conf=0.75, box=[240x360], area=0.123
 ```
@@ -251,7 +251,7 @@ REJECTED | id=xyz12345, reason=Low confidence, conf=0.15
 5. **Frame Summaries:**
 
 ```
-Frame ***REMOVED***42 | Summary:
+Frame #42 | Summary:
   raw=5, valid=3, promoted=1, active=2, time=125ms
 ```
 
@@ -266,21 +266,21 @@ Tracker Stats |
 **Usage in Development:**
 
 ```bash
-***REMOVED*** Filter detection logs
+# Filter detection logs
 adb logcat | grep DetectionLogger
 
-***REMOVED*** Monitor specific events
+# Monitor specific events
 adb logcat | grep "PROMOTED\|REJECTED"
 
-***REMOVED*** Watch frame summaries
+# Watch frame summaries
 adb logcat | grep "Frame.*Summary"
 ```
 
 ---
 
-***REMOVED******REMOVED*** 5. CameraX Integration
+## 5. CameraX Integration
 
-***REMOVED******REMOVED******REMOVED*** CameraXManager Updates (CameraXManager.kt)
+### CameraXManager Updates (CameraXManager.kt)
 
 **Multi-Frame Pipeline Integration:**
 
@@ -330,9 +330,9 @@ class CameraXManager {
 
 ---
 
-***REMOVED******REMOVED*** 6. Current Configuration & Thresholds
+## 6. Current Configuration & Thresholds
 
-***REMOVED******REMOVED******REMOVED*** Production Settings
+### Production Settings
 
 | Parameter            | Value       | Rationale                                               |
 |----------------------|-------------|---------------------------------------------------------|
@@ -346,7 +346,7 @@ class CameraXManager {
 | Image Resolution     | 1280x720    | Higher res improves detection; good performance balance |
 | Detector Mode        | STREAM_MODE | Optimized for video; fast enough for real-time          |
 
-***REMOVED******REMOVED******REMOVED*** Tuning Recommendations
+### Tuning Recommendations
 
 **For fewer false positives:**
 
@@ -367,9 +367,9 @@ class CameraXManager {
 
 ---
 
-***REMOVED******REMOVED*** 7. Testing Infrastructure
+## 7. Testing Infrastructure
 
-***REMOVED******REMOVED******REMOVED*** Test Coverage
+### Test Coverage
 
 **Unit Tests:**
 
@@ -410,23 +410,23 @@ class CameraXManager {
 
 ---
 
-***REMOVED******REMOVED*** 8. Performance Characteristics
+## 8. Performance Characteristics
 
-***REMOVED******REMOVED******REMOVED*** Memory Usage
+### Memory Usage
 
 - **Candidate Map**: O(n) where n = active candidates
 - **Automatic Cleanup**: Expires candidates after configured frame gap
 - **Bounded Growth**: Max ~5-10 candidates typically
 - **Bitmap Reuse**: Old thumbnails replaced by new ones
 
-***REMOVED******REMOVED******REMOVED*** CPU Usage
+### CPU Usage
 
 - **ML Kit Processing**: ~100-150ms per frame
 - **Candidate Tracking**: <5ms per frame
 - **Logging Overhead**: <1ms (debug), 0ms (release)
 - **Total Frame Time**: ~150-200ms
 
-***REMOVED******REMOVED******REMOVED*** Detection Latency
+### Detection Latency
 
 - **First Detection**: 800ms - 1600ms (1-2 frames)
 - **Promotion Delay**: Confirmation after ~3 frames with default thresholds
@@ -434,9 +434,9 @@ class CameraXManager {
 
 ---
 
-***REMOVED******REMOVED*** 9. Known Limitations
+## 9. Known Limitations
 
-***REMOVED******REMOVED******REMOVED*** ML Kit Constraints
+### ML Kit Constraints
 
 1. **Coarse Categories**: Only 5 top-level categories
 2. **Prominent Objects Only**: Small/occluded items may not detect
@@ -444,7 +444,7 @@ class CameraXManager {
 4. **No Custom Training**: Cannot add new categories
 5. **Lighting Dependent**: Poor lighting reduces accuracy
 
-***REMOVED******REMOVED******REMOVED*** Implementation Constraints
+### Implementation Constraints
 
 1. **No Persistence**: Candidates cleared on scan stop
 2. **No Cross-Session Tracking**: Fresh start each scan
@@ -453,23 +453,23 @@ class CameraXManager {
 
 ---
 
-***REMOVED******REMOVED*** 10. Future Enhancements
+## 10. Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** Short-Term
+### Short-Term
 
 - [ ] Runtime threshold configuration (settings screen)
 - [ ] Confidence-based visual indicators in UI
 - [ ] Filter items by confidence level
 - [ ] Detection quality metrics dashboard
 
-***REMOVED******REMOVED******REMOVED*** Medium-Term
+### Medium-Term
 
 - [ ] Persistent candidate storage (survive app kills)
 - [ ] Cross-session item correlation
 - [ ] Machine learning feedback loop (user corrections)
 - [ ] Custom TensorFlow Lite model training
 
-***REMOVED******REMOVED******REMOVED*** Long-Term
+### Long-Term
 
 - [ ] Cloud-based fine-grained detection
 - [ ] Brand/model recognition
@@ -478,7 +478,7 @@ class CameraXManager {
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 The Scanium ML Kit integration now features:
 
@@ -496,7 +496,7 @@ confidence-aware recognition system suitable for production use.
 
 **Test with**: shoes, shirts, bottles, cups, fruits, potted plants for best results.
 
-***REMOVED******REMOVED*** Latest Update: Object Tracking and De-Duplication System
+## Latest Update: Object Tracking and De-Duplication System
 
 **Issue**: In continuous scanning mode, the same physical object was being detected multiple times,
 creating duplicate entries in the items list.
@@ -513,7 +513,7 @@ but:
 **Solution**: Implemented a comprehensive tracking and de-duplication system (
 see [TRACKING_IMPLEMENTATION.md](../features/TRACKING_IMPLEMENTATION.md) for details).
 
-***REMOVED******REMOVED******REMOVED*** New Components Added
+### New Components Added
 
 1. **ObjectCandidate** (`tracking/ObjectCandidate.kt`)
     - Intermediate representation for objects being tracked across frames
@@ -532,7 +532,7 @@ see [TRACKING_IMPLEMENTATION.md](../features/TRACKING_IMPLEMENTATION.md) for det
     - Raw detection metadata from ML Kit
     - Bridges ML Kit DetectedObject and ObjectTracker
 
-***REMOVED******REMOVED******REMOVED*** How It Works
+### How It Works
 
 **Data Flow:**
 
@@ -565,7 +565,7 @@ Objects must meet ALL criteria before being added to the items list:
     - Center distance - 30% weight
     - Combined score must be ≥0.3
 
-***REMOVED******REMOVED******REMOVED*** Configuration
+### Configuration
 
 Tracking behavior is controlled by `TrackerConfig`:
 
@@ -580,7 +580,7 @@ TrackerConfig(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Integration Points
+### Integration Points
 
 **CameraXManager Changes:**
 
@@ -600,7 +600,7 @@ TrackerConfig(
 
 - No changes required! Existing ID-based de-duplication works seamlessly with stable tracking IDs
 
-***REMOVED******REMOVED******REMOVED*** Testing
+### Testing
 
 Created comprehensive test suite:
 
@@ -621,7 +621,7 @@ Created comprehensive test suite:
     - Noise filtering
     - Reset between scan sessions
 
-***REMOVED******REMOVED******REMOVED*** Benefits
+### Benefits
 
 ✅ **Eliminates Duplicates**: Each physical object appears only once per scan session
 ✅ **Stable Detection**: Multi-frame confirmation filters out noise and false detections
@@ -631,7 +631,7 @@ Created comprehensive test suite:
 ✅ **Well-Tested**: 44 tests covering unit and integration scenarios
 ✅ **Backward Compatible**: Single-shot and other modes unchanged
 
-***REMOVED******REMOVED******REMOVED*** Monitoring
+### Monitoring
 
 **Logs to Watch:**
 
@@ -648,7 +648,7 @@ ObjectTracker: ✓ CONFIRMED candidate gen_abc123: FASHION (Shirt) after 3 frame
 ObjectTracker: Tracker stats: active=1, confirmed=1, frame=3
 ```
 
-***REMOVED******REMOVED******REMOVED*** Trade-offs
+### Trade-offs
 
 **Pros:**
 
@@ -662,14 +662,14 @@ ObjectTracker: Tracker stats: active=1, confirmed=1, frame=3
 - Slight processing overhead (IoU calculations)
 - Memory usage for tracking state (mitigated by expiry)
 
-***REMOVED******REMOVED******REMOVED*** Future Enhancements
+### Future Enhancements
 
 - **Color Matching**: Extract dominant color for improved spatial matching
 - **Adaptive Thresholds**: Adjust based on scene complexity and frame rate
 - **Persistence**: Save tracker state across app restarts
 - **Performance Metrics**: Track and log frame processing times
 
-***REMOVED******REMOVED******REMOVED*** Debugging Tips
+### Debugging Tips
 
 **If same object still appears multiple times:**
 

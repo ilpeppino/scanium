@@ -148,7 +148,7 @@ describe('extractVisualFactsFromResponses', () => {
     expect(facts.ocrSnippets.some((s) => s.text === 'IKEA')).toBe(true);
     expect(facts.labelHints[0]?.label).toBe('Furniture');
     expect(facts.logoHints[0]?.brand).toBe('IKEA');
-    expect(facts.dominantColors[0]?.rgbHex).toBe('***REMOVED***FF0000');
+    expect(facts.dominantColors[0]?.rgbHex).toBe('#FF0000');
     expect(facts.dominantColors[0]?.name).toBe('red');
   });
 
@@ -223,7 +223,7 @@ describe('Multi-feature Vision Extraction', () => {
 
     // Color extraction
     expect(facts.dominantColors.length).toBeGreaterThan(0);
-    expect(facts.dominantColors[0].rgbHex).toBe('***REMOVED***FFFFFF'); // white
+    expect(facts.dominantColors[0].rgbHex).toBe('#FFFFFF'); // white
     expect(facts.dominantColors[0].pct).toBe(35);
   });
 
@@ -473,7 +473,7 @@ describe('Vision Response Shape', () => {
       expect(typeof color.name).toBe('string');
       expect(color.name.length).toBeGreaterThan(0);
       expect(typeof color.rgbHex).toBe('string');
-      expect(color.rgbHex).toMatch(/^***REMOVED***[0-9A-F]{6}$/i);
+      expect(color.rgbHex).toMatch(/^#[0-9A-F]{6}$/i);
       expect(typeof color.pct).toBe('number');
       expect(color.pct).toBeGreaterThanOrEqual(0);
       expect(color.pct).toBeLessThanOrEqual(100);

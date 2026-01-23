@@ -94,7 +94,7 @@ export function getColorName(r: number, g: number, b: number): string {
  * Convert RGB to hex string.
  */
 export function rgbToHex(r: number, g: number, b: number): string {
-  return '***REMOVED***' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+  return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
 /**

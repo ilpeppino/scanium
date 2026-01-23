@@ -1,8 +1,8 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Scanium Architecture & Code Review
+# Scanium Architecture & Code Review
 
-***REMOVED******REMOVED*** A) Executive Summary
+## A) Executive Summary
 
 - Camera-first flow and shared-tracking abstractions remain consistent with documented intent, but
   continuous-scanning currently bypasses streaming/track-aware detection due to crash avoidance,
@@ -21,7 +21,7 @@
 - CI parity is limited in the container: `./gradlew test` and `./gradlew lint` fail without an
   Android SDK; use workstation/CI runners for validation. 【dd6fab†L1-L12】【1ec8cd†L14-L25】
 
-***REMOVED******REMOVED*** B) Architecture & Modularity Review
+## B) Architecture & Modularity Review
 
 - **Alignment with docs:** Modules and layering match the documented separation (androidApp UI +
   platform adapters + shared tracking/models). 【F:docs/ARCHITECTURE.md†L7-L17】 Camera entry, ML
@@ -44,7 +44,7 @@
   `shared/core-tracking` or `shared/core-models` for analyzer inputs/outputs and inject platform
   adapters.
 
-***REMOVED******REMOVED*** C) Code Quality & Reliability Review
+## C) Code Quality & Reliability Review
 
 - **Main-thread heavy aggregation:** `addItems` performs per-frame aggregation, heap logging, and
   stats computation synchronously; invoked from the UI thread this risks dropped frames. 【F:
@@ -66,7 +66,7 @@
   androidApp/src/main/java/com/scanium/app/items/ItemsViewModel.kt†L245-L295】 Encapsulate aggregator
   updates behind thread-safe methods or dispatch updates on the main dispatcher explicitly.
 
-***REMOVED******REMOVED*** D) UI/UX Review
+## D) UI/UX Review
 
 - **Permission denial handling:** Camera permission loss clears detections but shows no educative
   UI; users may see an inert camera screen. Consider a dedicated “camera access required” state with
@@ -81,7 +81,7 @@
   androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt†L99-L123】【F:
   androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt†L585-L600】
 
-***REMOVED******REMOVED*** E) Performance Review
+## E) Performance Review
 
 - **Analyzer overhead:** For each analyzed frame, the pipeline converts `ImageProxy` to `Bitmap` for
   thumbnails even when not needed, allocating large buffers and increasing GC pressure. 【F:
@@ -97,7 +97,7 @@
   mid-tier device with `./gradlew installDebug` + `adb shell am profile start/stop` per DEV_GUIDE
   commands. 【F:docs/DEV_GUIDE.md†L40-L55】
 
-***REMOVED******REMOVED*** F) Security & Privacy Review
+## F) Security & Privacy Review
 
 - **Logging of sensitive content:** CloudClassifier logs response bodies and can save JPEG crops
   when debug flags are enabled, which may capture user belongings; sanitize logs and keep debug
@@ -110,7 +110,7 @@
 - **Dependency scanning:** OWASP Dependency-Check exists in CI; ensure it remains enabled when
   Gradle/AGP changes land. 【F:docs/CI_CD.md†L3-L12】【F:docs/SECURITY.md†L3-L15】
 
-***REMOVED******REMOVED*** G) CI/CD & Developer Experience
+## G) CI/CD & Developer Experience
 
 - **Container limitations:** Unit tests and lint fail locally without an Android SDK; rely on
   CI/workstation for full validation. 【dd6fab†L1-L12】【1ec8cd†L14-L25】 Consider a lightweight
@@ -124,7 +124,7 @@
   thresholds: shared modules ≥85%, androidApp ≥75%. 【F:docs/DEV_GUIDE.md†L40-L47】【F:
   docs/CI_CD.md†L11-L15】【F:.github/workflows/coverage.yml】
 
-***REMOVED******REMOVED*** H) Actionable Backlog (Prioritized)
+## H) Actionable Backlog (Prioritized)
 
 | ID   | Title                                             | Category               | Severity | Effort | Risk | Owner type     | Evidence                                                                                                                                                       | Recommendation                                                                                                                                                       |
 |------|---------------------------------------------------|------------------------|----------|--------|------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|

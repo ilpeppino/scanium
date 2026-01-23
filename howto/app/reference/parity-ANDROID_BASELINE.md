@@ -1,4 +1,4 @@
-***REMOVED*** Android Baseline - Source of Truth
+# Android Baseline - Source of Truth
 
 **Document Version:** 1.0
 **Last Updated:** 2026-01-13
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The Android application is a **production-ready, feature-complete** implementation with:
 
@@ -21,17 +21,17 @@ The Android application is a **production-ready, feature-complete** implementati
 
 ---
 
-***REMOVED******REMOVED*** 1. CAPTURE - Camera & Frame Processing
+## 1. CAPTURE - Camera & Frame Processing
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Primary:** `androidApp/src/main/java/com/scanium/app/camera/`
 - **Platform Layer:** `android-camera-camerax/`
 - **Shared Brain:** `core-scan/` (scan mode definitions)
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Camera UX
+#### A. Camera UX
 
 **Entry Point:** `CameraScreen.kt`
 
@@ -49,7 +49,7 @@ androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt
 - Settings overlay for tuning detection parameters in-session
 - Live diagnostics panel (dev-only): FPS, latency, frame drops
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Capture/Resolution Settings
+#### B. Capture/Resolution Settings
 
 **Configuration:** `CaptureResolution` enum
 
@@ -68,7 +68,7 @@ androidApp/src/main/java/com/scanium/app/camera/CaptureResolution.kt
 - Beta/prod builds clamp to NORMAL via `FeatureFlags.allowHighResolution`
 - User preference stored in DataStore
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Orientation Handling
+#### C. Orientation Handling
 
 **Implementation:** `CameraXManager.kt`
 
@@ -84,7 +84,7 @@ androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt
 - Crop rect management for frame alignment
 - EXIF orientation metadata on saved images
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** D. Frame Processing Pipeline
+#### D. Frame Processing Pipeline
 
 **Components:**
 
@@ -111,17 +111,17 @@ androidApp/src/main/java/com/scanium/app/camera/ImageUtils.kt
 
 ---
 
-***REMOVED******REMOVED*** 2. ML - Detection & Classification
+## 2. ML - Detection & Classification
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Primary:** `androidApp/src/main/java/com/scanium/app/ml/`
 - **Platform Layer:** `android-ml-mlkit/`
 - **Shared Brain:** `core-domainpack/` (classification), `core-models/` (data types)
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Object Detection
+#### A. Object Detection
 
 **Entry Point:** `ObjectDetectorClient.kt`
 
@@ -149,7 +149,7 @@ androidApp/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt
     - Tracking ID (ML Kit assigns)
     - Thumbnail bitmap (lazily generated)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Barcode Scanning
+#### B. Barcode Scanning
 
 **Entry Point:** `BarcodeDetectorClient.kt`
 
@@ -179,7 +179,7 @@ androidApp/src/main/java/com/scanium/app/ml/BarcodeDetectorClient.kt
 - Bounding box for each detected barcode
 - Converts barcode → `ScannedItem` with category inference
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Text Recognition (OCR)
+#### C. Text Recognition (OCR)
 
 **Entry Point:** `DocumentTextRecognitionClient.kt`
 
@@ -202,7 +202,7 @@ androidApp/src/main/java/com/scanium/app/ml/DocumentTextRecognitionClient.kt
 - Confidence per text element
 - Language script identification
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** D. Classification
+#### D. Classification
 
 **Entry Point:** `ClassificationOrchestrator.kt`
 
@@ -253,16 +253,16 @@ androidApp/src/main/java/com/scanium/app/ml/classification/CloudCallGate.kt
 
 ---
 
-***REMOVED******REMOVED*** 3. TRACKING - Object Tracking & Aggregation
+## 3. TRACKING - Object Tracking & Aggregation
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Shared Brain:** `core-tracking/src/main/java/com/scanium/app/tracking/`
 - **Android Adapter:** Type aliases in `androidApp`
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Object Tracking
+#### A. Object Tracking
 
 **Implementation:** `ObjectTracker.kt`
 
@@ -282,7 +282,7 @@ core-tracking/src/main/java/com/scanium/app/tracking/ObjectTracker.kt
 - `DetectionInfo` with tracking state
 - Used for overlay rendering (bounding boxes follow objects)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Item Aggregation
+#### B. Item Aggregation
 
 **Implementation:** `ItemAggregator.kt`
 
@@ -303,16 +303,16 @@ core-tracking/src/main/java/com/scanium/app/aggregation/ItemAggregator.kt
 
 ---
 
-***REMOVED******REMOVED*** 4. DOMAIN PACKS - Taxonomies & Classification
+## 4. DOMAIN PACKS - Taxonomies & Classification
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Shared Brain:** `core-domainpack/`
 - **Android Adapter:** Embedded JSON asset loading
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Domain Pack Loading
+#### A. Domain Pack Loading
 
 **Entry Point:** `DomainPackProvider.kt`
 
@@ -326,7 +326,7 @@ core-domainpack/src/main/java/com/scanium/app/domain/DomainPackProvider.kt
 - Loads from `res/raw/home_resale_domain_pack.json`
 - Sets up `CategoryEngine` for taxonomy mapping
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Domain Pack Validation
+#### B. Domain Pack Validation
 
 **Schema:** `DomainPack.kt`
 
@@ -346,7 +346,7 @@ core-domainpack/src/main/java/com/scanium/app/domain/config/DomainPack.kt
 - Schema version check
 - Required field validation
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Classification Flow
+#### C. Classification Flow
 
 **Components:**
 
@@ -371,17 +371,17 @@ core-domainpack/src/main/java/com/scanium/app/domain/category/CategoryEngine.kt
 
 ---
 
-***REMOVED******REMOVED*** 5. STORAGE - Persistence & Export
+## 5. STORAGE - Persistence & Export
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Primary:** `androidApp/src/main/java/com/scanium/app/items/persistence/`
 - **Export:** `androidApp/src/main/java/com/scanium/app/items/export/`
 - **Shared Export:** `shared/core-export/`
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Local Persistence (Room Database)
+#### A. Local Persistence (Room Database)
 
 **Entry Point:** `ScannedItemDatabase.kt`
 
@@ -410,7 +410,7 @@ androidApp/src/main/java/com/scanium/app/selling/persistence/ListingDraftDao.kt
 - Listing draft lifecycle management
 - Flow-based reactive queries for UI
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Saved Images
+#### B. Saved Images
 
 **Implementation:** `MediaStoreSaver.kt`
 
@@ -436,7 +436,7 @@ androidApp/src/main/java/com/scanium/app/media/StorageHelper.kt
 - Temporary file handling
 - Cleanup on low storage
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Export Functionality
+#### C. Export Functionality
 
 **Formats:**
 
@@ -463,16 +463,16 @@ shared/core-export/
 
 ---
 
-***REMOVED******REMOVED*** 6. UI - Screens & Components
+## 6. UI - Screens & Components
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Primary:** `androidApp/src/main/java/com/scanium/app/ui/`
 - **Theme:** `androidApp/src/main/java/com/scanium/app/ui/theme/`
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Item List Screen
+#### A. Item List Screen
 
 **Entry Point:** `ItemsListScreen.kt`
 
@@ -490,7 +490,7 @@ androidApp/src/main/java/com/scanium/app/items/ItemsListScreen.kt
 - Pull-to-refresh
 - Search/filter (dev-only)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Item Details Dialog
+#### B. Item Details Dialog
 
 **Entry Point:** `EditItemScreenV3.kt`
 
@@ -509,7 +509,7 @@ androidApp/src/main/java/com/scanium/app/items/EditItemScreenV3.kt
 - Confidence score visualization
 - Save/Cancel actions
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Gestures & Interactions
+#### C. Gestures & Interactions
 
 **Implementation:** Compose gesture modifiers
 
@@ -521,7 +521,7 @@ androidApp/src/main/java/com/scanium/app/items/EditItemScreenV3.kt
 - Pinch-to-zoom: Image preview
 - Pull-to-refresh: List reload
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** D. Delete/Selection Flows
+#### D. Delete/Selection Flows
 
 **Entry Point:** `ItemsViewModel.kt`
 
@@ -538,16 +538,16 @@ androidApp/src/main/java/com/scanium/app/items/ItemsViewModel.kt
 
 ---
 
-***REMOVED******REMOVED*** 7. NETWORKING - Backend & eBay Integration
+## 7. NETWORKING - Backend & eBay Integration
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Primary:** `androidApp/src/main/java/com/scanium/app/network/`
 - **eBay:** `androidApp/src/main/java/com/scanium/app/selling/`
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Backend Integration
+#### A. Backend Integration
 
 **Entry Point:** `RequestSigner.kt`
 
@@ -576,7 +576,7 @@ androidApp/src/main/java/com/scanium/app/network/security/RequestSigner.kt
 - Retry interceptor with exponential backoff
 - Certificate pinning (optional, SEC-003)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. eBay Integration
+#### B. eBay Integration
 
 **Interface:** `EbayApi.kt`
 
@@ -605,17 +605,17 @@ androidApp/src/main/java/com/scanium/app/selling/data/EbayApi.kt
 
 ---
 
-***REMOVED******REMOVED*** 8. LOGGING/MONITORING - Observability
+## 8. LOGGING/MONITORING - Observability
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Primary:** `androidApp/src/main/java/com/scanium/app/crash/`
 - **Telemetry:** `shared/telemetry/`, `shared/telemetry-contract/`
 - **Logging:** `androidApp/src/main/java/com/scanium/app/logging/`
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Sentry Crash Reporting
+#### A. Sentry Crash Reporting
 
 **Entry Point:** `AndroidCrashPortAdapter.kt`
 
@@ -646,7 +646,7 @@ buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
 
 - Mitigations: Rate limiting, IP filtering, DSN rotation
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. OTLP Telemetry
+#### B. OTLP Telemetry
 
 **Configuration:**
 
@@ -669,7 +669,7 @@ buildConfigField("boolean", "OTLP_ENABLED", otlpEnabled)
 - `CameraXManager`: Frame processing metrics
 - `RequestSigner`: API request traces
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** C. Logging Infrastructure
+#### C. Logging Infrastructure
 
 **Entry Point:** `ScaniumLog.kt`
 
@@ -695,16 +695,16 @@ androidApp/src/main/java/com/scanium/app/logging/CorrelationIds.kt
 
 ---
 
-***REMOVED******REMOVED*** 9. SECURITY/PRIVACY - Permissions & Data Handling
+## 9. SECURITY/PRIVACY - Permissions & Data Handling
 
-***REMOVED******REMOVED******REMOVED*** Module Ownership
+### Module Ownership
 
 - **Primary:** `androidApp/`
 - **Documentation:** `docs/security/` (if present)
 
-***REMOVED******REMOVED******REMOVED*** Key Capabilities
+### Key Capabilities
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** A. Permissions
+#### A. Permissions
 
 **Manifest:** `androidApp/src/main/AndroidManifest.xml`
 
@@ -726,7 +726,7 @@ androidApp/src/main/java/com/scanium/app/ftue/PermissionEducationDialog.kt
 - Educational dialog before requesting
 - Graceful degradation if denied
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** B. Data Handling
+#### B. Data Handling
 
 **SEC-001: API Key Management**
 
@@ -758,9 +758,9 @@ androidApp/src/main/java/com/scanium/app/ftue/PermissionEducationDialog.kt
 
 ---
 
-***REMOVED******REMOVED*** 10. ADDITIONAL ANDROID FEATURES
+## 10. ADDITIONAL ANDROID FEATURES
 
-***REMOVED******REMOVED******REMOVED*** A. Audio/Sound Feedback
+### A. Audio/Sound Feedback
 
 **Entry Point:** `AndroidSoundManager.kt`
 
@@ -776,7 +776,7 @@ androidApp/src/main/java/com/scanium/app/audio/AndroidSoundManager.kt
 - Device sound policy awareness (silent mode)
 - Settings-driven enable/disable
 
-***REMOVED******REMOVED******REMOVED*** B. Accessibility (FTUE)
+### B. Accessibility (FTUE)
 
 **Entry Point:** `TourViewModel.kt`
 
@@ -791,7 +791,7 @@ androidApp/src/main/java/com/scanium/app/ftue/TourViewModel.kt
 - `tourTarget` modifier for highlighting UI elements
 - Skip/complete tracking
 
-***REMOVED******REMOVED******REMOVED*** C. Billing/Monetization
+### C. Billing/Monetization
 
 **Entry Point:** `BillingRepository.kt`
 
@@ -807,7 +807,7 @@ androidApp/src/main/java/com/scanium/app/billing/BillingRepository.kt
 - Paywall screen for upsell
 - Purchase token validation
 
-***REMOVED******REMOVED******REMOVED*** D. Voice/Assistant
+### D. Voice/Assistant
 
 **Entry Point:** `VoiceStateMachine.kt`
 
@@ -824,7 +824,7 @@ androidApp/src/main/java/com/scanium/app/voice/VoiceStateMachine.kt
 - Progress tracking (Sending → Thinking → Extracting Vision → Generating)
 - Error recovery and retry logic
 
-***REMOVED******REMOVED******REMOVED*** E. Theme & Design System
+### E. Theme & Design System
 
 **Entry Point:** `Theme.kt`
 
@@ -851,16 +851,16 @@ androidApp/src/main/java/com/scanium/app/ui/motion/
 
 ---
 
-***REMOVED******REMOVED*** DEPENDENCY SUMMARY
+## DEPENDENCY SUMMARY
 
-***REMOVED******REMOVED******REMOVED*** Android-Specific Modules
+### Android-Specific Modules
 
 - `androidApp`: Main application module
 - `android-camera-camerax`: CameraX integration (currently minimal)
 - `android-ml-mlkit`: ML Kit wrappers (currently minimal)
 - `android-platform-adapters`: Platform-specific adapters
 
-***REMOVED******REMOVED******REMOVED*** Shared KMP Modules (Used by Android)
+### Shared KMP Modules (Used by Android)
 
 - `core-models`: Shared data types (ScannedItem, ImageRef, etc.)
 - `core-tracking`: Object tracking and aggregation
@@ -873,7 +873,7 @@ androidApp/src/main/java/com/scanium/app/ui/motion/
 
 ---
 
-***REMOVED******REMOVED*** ARCHITECTURE PATTERNS
+## ARCHITECTURE PATTERNS
 
 1. **ARCH-001: Hilt DI Framework**
     - Replaces manual DI
@@ -900,20 +900,20 @@ androidApp/src/main/java/com/scanium/app/ui/motion/
 
 ---
 
-***REMOVED******REMOVED*** BUILD CONFIGURATION
+## BUILD CONFIGURATION
 
-***REMOVED******REMOVED******REMOVED*** Product Flavors
+### Product Flavors
 
 1. **prod**: Production, no dev mode, applicationId: `com.scanium.app`
 2. **dev**: Developer mode enabled, applicationId: `com.scanium.app.dev`
 3. **beta**: Beta testing, no dev mode, applicationId: `com.scanium.app.beta`
 
-***REMOVED******REMOVED******REMOVED*** Build Types
+### Build Types
 
 1. **debug**: LAN backend URL, no obfuscation
 2. **release**: Remote backend URL, ProGuard enabled, signed
 
-***REMOVED******REMOVED******REMOVED*** Security Features
+### Security Features
 
 - SBOM generation (CycloneDX)
 - CVE scanning (OWASP Dependency-Check)
@@ -921,7 +921,7 @@ androidApp/src/main/java/com/scanium/app/ui/motion/
 
 ---
 
-***REMOVED******REMOVED*** KEY STATISTICS
+## KEY STATISTICS
 
 - **Total Kotlin files in androidApp:** 100+ files
 - **Lines of Kotlin code:** ~15,000+ lines (estimated)
@@ -933,4 +933,4 @@ androidApp/src/main/java/com/scanium/app/ui/motion/
 
 ---
 
-***REMOVED******REMOVED*** END OF ANDROID BASELINE
+## END OF ANDROID BASELINE

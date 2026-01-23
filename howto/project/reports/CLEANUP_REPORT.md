@@ -1,8 +1,8 @@
-***REMOVED*** Cleanup & Docs Migration Report
+# Cleanup & Docs Migration Report
 
-***REMOVED******REMOVED*** 2025-12-27 Cleanup
+## 2025-12-27 Cleanup
 
-***REMOVED******REMOVED******REMOVED*** Summary
+### Summary
 
 - Expanded canonical doc set to 11 files (added CODEX_CONTEXT, SECURITY, MANUAL_GOLDEN_RUNBOOK,
   RELEASE_CHECKLIST).
@@ -11,7 +11,7 @@
 - Updated INDEX.md with organized sections (Core Reference, Operations & Process, Decision Log &
   Reports).
 
-***REMOVED******REMOVED******REMOVED*** Files moved to archive
+### Files moved to archive
 
 | Original Location                      | New Location                                                       | Reason                          |
 |----------------------------------------|--------------------------------------------------------------------|---------------------------------|
@@ -23,7 +23,7 @@
 | `docs/release/`                        | `docs/_archive/2025-12/release/`                                   | Detailed release checklists     |
 | `docs/go-live/`                        | `docs/_archive/2025-12/go-live/`                                   | Production readiness WIP        |
 
-***REMOVED******REMOVED******REMOVED*** Current canonical docs (11 files)
+### Current canonical docs (11 files)
 
 | Doc                      | Audience    | Purpose                     |
 |--------------------------|-------------|-----------------------------|
@@ -42,9 +42,9 @@
 
 ---
 
-***REMOVED******REMOVED*** 2025-12-20 Cleanup
+## 2025-12-20 Cleanup
 
-***REMOVED******REMOVED******REMOVED*** What changed (summary)
+### What changed (summary)
 
 - Centralized scripts under `scripts/` with a README; updated backend helpers to run from the
   correct working directory.
@@ -55,7 +55,7 @@
 - Removed tracked crash artifacts (`crash.log`, `tombstone_23`) and tightened `.gitignore` for
   logs/build outputs/temp dirs.
 
-***REMOVED******REMOVED*** Inventory (classification)
+## Inventory (classification)
 
 | Path / Scope                                                                                        | Classification             |
 |-----------------------------------------------------------------------------------------------------|----------------------------|
@@ -69,7 +69,7 @@
 | crash.log, tombstone_23                                                                             | DELETE (tracked artifacts) |
 | bicycle.jpg, local.properties.example                                                               | KEEP                       |
 
-***REMOVED******REMOVED*** Old → New mapping (selected)
+## Old → New mapping (selected)
 
 | Old location                                                                                                                                                                                                                                   | Action  | New location                                         |
 |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|------------------------------------------------------|
@@ -84,7 +84,7 @@
 | `LISTING_TITLE_FIX_SUMMARY.md`                                                                                                                                                                                                                 | ARCHIVE | `docs/_archive/2025-12/LISTING_TITLE_FIX_SUMMARY.md` |
 | `crash.log`, `tombstone_23`                                                                                                                                                                                                                    | DELETE  | (removed; ignored via `.gitignore`)                  |
 
-***REMOVED******REMOVED*** Canonical docs and audience
+## Canonical docs and audience
 
 | Doc                    | Audience                | Purpose                                                          |
 |------------------------|-------------------------|------------------------------------------------------------------|
@@ -96,7 +96,7 @@
 | docs/DECISIONS.md      | Leads/architects        | ADR-lite history and recent consolidation choices.               |
 | docs/CLEANUP_REPORT.md | Maintainers             | Source-of-truth for this migration and future archiving rules.   |
 
-***REMOVED******REMOVED*** Maintenance rules
+## Maintenance rules
 
 - Keep new documentation under `docs/`; archive retired material under `docs/_archive/YYYY-MM/` with
   an archive banner and update this report’s mapping.

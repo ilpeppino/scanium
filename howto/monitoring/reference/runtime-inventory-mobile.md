@@ -1,10 +1,10 @@
-***REMOVED*** Runtime Inventory - Mobile Telemetry Implementation
+# Runtime Inventory - Mobile Telemetry Implementation
 
 **Date:** 2026-01-12
 **Commit:** 929c56b6063fe731e3e94dd94c8f7455290db752
 **Purpose:** Document NAS container/network state before implementing mobile telemetry
 
-***REMOVED******REMOVED*** Container Status
+## Container Status
 
 ```
 NAMES                   IMAGE                           STATUS
@@ -21,7 +21,7 @@ scanium-smoke-monitor   alpine:3.19                     Up 2 days
 
 **Note:** `scanium-alloy` is unhealthy - requires investigation.
 
-***REMOVED******REMOVED*** Docker Networks
+## Docker Networks
 
 ```
 NETWORK ID     NAME                            DRIVER    SCOPE
@@ -38,39 +38,39 @@ bf9936db109f   pihole_net                      macvlan   local
 31e5fc07f258   scanium_net                     bridge    local
 ```
 
-***REMOVED******REMOVED*** Network Topology
+## Network Topology
 
-***REMOVED******REMOVED******REMOVED*** scanium-backend
+### scanium-backend
 
 - **Networks:** backend_scanium-network, compose_scanium_net
 - **backend_scanium-network:** 172.23.0.4/16 (Gateway: 172.23.0.1)
 - **compose_scanium_net:** 172.21.0.4/16 (Gateway: 172.21.0.1)
 
-***REMOVED******REMOVED******REMOVED*** scanium-alloy
+### scanium-alloy
 
 - **Networks:** backend_scanium-network, scanium-observability
 - **backend_scanium-network:** 172.23.0.2/16 (Gateway: 172.23.0.1)
 - **scanium-observability:** 172.25.0.5/16 (Gateway: 172.25.0.1)
 - **Status:** Bridge container between backend and monitoring stacks
 
-***REMOVED******REMOVED******REMOVED*** scanium-loki
+### scanium-loki
 
 - **Networks:** scanium-observability
 - **scanium-observability:** 172.25.0.3/16 (Gateway: 172.25.0.1)
 
-***REMOVED******REMOVED******REMOVED*** scanium-mimir
+### scanium-mimir
 
 - **Networks:** scanium-observability
 - **scanium-observability:** 172.25.0.4/16 (Gateway: 172.25.0.1)
 
-***REMOVED******REMOVED******REMOVED*** scanium-grafana
+### scanium-grafana
 
 - **Networks:** backend_scanium-network, scanium-observability
 - **backend_scanium-network:** 172.23.0.5/16 (Gateway: 172.23.0.1)
 - **scanium-observability:** 172.25.0.6/16 (Gateway: 172.25.0.1)
 - **Status:** Bridge container between backend and monitoring stacks
 
-***REMOVED******REMOVED*** Key Observations
+## Key Observations
 
 1. **Network Segmentation:**
     - Backend stack: `backend_scanium-network` (172.23.0.0/16)

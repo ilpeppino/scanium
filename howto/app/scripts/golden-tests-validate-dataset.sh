@@ -1,6 +1,6 @@
-***REMOVED***!/bin/bash
-***REMOVED*** validate-dataset.sh
-***REMOVED*** Validates the external golden dataset submodule for provenance and image constraints.
+#!/bin/bash
+# validate-dataset.sh
+# Validates the external golden dataset submodule for provenance and image constraints.
 
 set -euo pipefail
 

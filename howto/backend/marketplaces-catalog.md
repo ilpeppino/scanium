@@ -1,15 +1,15 @@
-***REMOVED*** Marketplaces Catalog API
+# Marketplaces Catalog API
 
 > **Phase 1:** Read-only catalog exposure for EU marketplaces
 > **Status:** ✅ Deployed
 > **Version:** 1.0
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Marketplaces Catalog API provides a read-only, API-key protected endpoint to retrieve
 marketplace information for EU countries. This is Phase 1 of the marketplace pricing integration.
 
-***REMOVED******REMOVED******REMOVED*** Features
+### Features
 
 - ✅ Safe, validated JSON catalog loading
 - ✅ API key authentication required
@@ -17,7 +17,7 @@ marketplace information for EU countries. This is Phase 1 of the marketplace pri
 - ✅ Marketplace classification (global, marketplace, classifieds)
 - ✅ Currency information per country
 
-***REMOVED******REMOVED******REMOVED*** Non-Goals (Phase 1)
+### Non-Goals (Phase 1)
 
 - ❌ Price retrieval from marketplaces (Phase 2)
 - ❌ Android app integration (Phase 2)
@@ -25,9 +25,9 @@ marketplace information for EU countries. This is Phase 1 of the marketplace pri
 
 ---
 
-***REMOVED******REMOVED*** API Endpoints
+## API Endpoints
 
-***REMOVED******REMOVED******REMOVED*** 1. List Countries
+### 1. List Countries
 
 **GET** `/v1/marketplaces/countries`
 
@@ -52,7 +52,7 @@ Returns list of supported country codes.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Get Marketplaces for Country
+### 2. Get Marketplaces for Country
 
 **GET** `/v1/marketplaces/:countryCode`
 
@@ -104,13 +104,13 @@ Returns marketplaces for a specific country.
 
 ---
 
-***REMOVED******REMOVED*** Catalog Format
+## Catalog Format
 
-***REMOVED******REMOVED******REMOVED*** File Location
+### File Location
 
 `backend/config/marketplaces/marketplaces.eu.json`
 
-***REMOVED******REMOVED******REMOVED*** Schema
+### Schema
 
 ```json
 {
@@ -132,7 +132,7 @@ Returns marketplaces for a specific country.
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Validation Rules
+### Validation Rules
 
 - `version`: Positive integer
 - `countries`: Non-empty array
@@ -144,7 +144,7 @@ Returns marketplaces for a specific country.
 - `domains`: Array of domain names (without protocol)
 - `type`: One of `global`, `marketplace`, `classifieds`
 
-***REMOVED******REMOVED******REMOVED*** Marketplace Types
+### Marketplace Types
 
 - **global**: Large international platforms (Amazon, eBay, AliExpress)
 - **marketplace**: Regional e-commerce platforms (Bol.com, Allegro, Alza)
@@ -152,9 +152,9 @@ Returns marketplaces for a specific country.
 
 ---
 
-***REMOVED******REMOVED*** Updating the Catalog
+## Updating the Catalog
 
-***REMOVED******REMOVED******REMOVED*** Safe Update Procedure
+### Safe Update Procedure
 
 1. **Edit JSON file:**
    ```bash
@@ -186,13 +186,13 @@ Returns marketplaces for a specific country.
 
 5. **Verify:**
    ```bash
-   ***REMOVED*** Check logs show successful load
-   ***REMOVED*** Should see: "Marketplaces catalog loaded successfully"
+   # Check logs show successful load
+   # Should see: "Marketplaces catalog loaded successfully"
    curl -s https://scanium.gtemp1.com/v1/marketplaces/countries \
      -H "X-API-Key: YOUR_KEY" | jq '.countries | length'
    ```
 
-***REMOVED******REMOVED******REMOVED*** Rollback Procedure
+### Rollback Procedure
 
 ```bash
 ssh nas
@@ -204,53 +204,53 @@ docker-compose restart backend
 
 ---
 
-***REMOVED******REMOVED*** Acceptance Tests
+## Acceptance Tests
 
-***REMOVED******REMOVED******REMOVED*** Local Testing
+### Local Testing
 
 ```bash
 cd backend
 npm test -- src/modules/marketplaces
 ```
 
-***REMOVED******REMOVED******REMOVED*** Production Verification
+### Production Verification
 
 ```bash
-***REMOVED*** Replace YOUR_KEY with actual API key from .env
+# Replace YOUR_KEY with actual API key from .env
 API_KEY="your-actual-api-key-here"
 
-***REMOVED*** Test 1: Health check still works
+# Test 1: Health check still works
 curl -s https://scanium.gtemp1.com/health | jq '.'
 
-***REMOVED*** Test 2: Countries endpoint returns 401 without key
+# Test 2: Countries endpoint returns 401 without key
 curl -s -i https://scanium.gtemp1.com/v1/marketplaces/countries | head -20
 
-***REMOVED*** Test 3: Countries endpoint works with valid key
+# Test 3: Countries endpoint works with valid key
 curl -s https://scanium.gtemp1.com/v1/marketplaces/countries \
   -H "X-API-Key: $API_KEY" | jq '.'
 
-***REMOVED*** Test 4: Get marketplaces for Netherlands
+# Test 4: Get marketplaces for Netherlands
 curl -s https://scanium.gtemp1.com/v1/marketplaces/NL \
   -H "X-API-Key: $API_KEY" | jq '.'
 
-***REMOVED*** Test 5: Get marketplaces for Germany
+# Test 5: Get marketplaces for Germany
 curl -s https://scanium.gtemp1.com/v1/marketplaces/DE \
   -H "X-API-Key: $API_KEY" | jq '.'
 
-***REMOVED*** Test 6: Verify 404 for unsupported country
+# Test 6: Verify 404 for unsupported country
 curl -s https://scanium.gtemp1.com/v1/marketplaces/US \
   -H "X-API-Key: $API_KEY" | jq '.'
 
-***REMOVED*** Test 7: Verify 400 for invalid country code format
+# Test 7: Verify 400 for invalid country code format
 curl -s https://scanium.gtemp1.com/v1/marketplaces/USA \
   -H "X-API-Key: $API_KEY" | jq '.'
 ```
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Catalog fails to load on startup
+### Catalog fails to load on startup
 
 **Symptom:** Logs show "Marketplaces catalog failed to load"
 
@@ -271,7 +271,7 @@ docker-compose logs backend | grep -i marketplace
     - Fix: Verify file exists in container:
       `docker exec scanium-backend ls -la /app/backend/config/marketplaces/`
 
-***REMOVED******REMOVED******REMOVED*** Endpoints return 503
+### Endpoints return 503
 
 **Symptom:** All requests return `SERVICE_UNAVAILABLE`
 
@@ -283,7 +283,7 @@ docker-compose logs backend | grep -i marketplace
 2. Fix the catalog JSON
 3. Restart backend container
 
-***REMOVED******REMOVED******REMOVED*** New country not appearing
+### New country not appearing
 
 **Checklist:**
 
@@ -296,9 +296,9 @@ docker-compose logs backend | grep -i marketplace
 
 ---
 
-***REMOVED******REMOVED*** Implementation Details
+## Implementation Details
 
-***REMOVED******REMOVED******REMOVED*** Architecture
+### Architecture
 
 ```
 Routes (routes.ts)
@@ -310,20 +310,20 @@ Loader (loader.ts) - File reading + caching
 Schema (schema.ts) - Zod validation
 ```
 
-***REMOVED******REMOVED******REMOVED*** Security
+### Security
 
 - **Authentication:** X-API-Key header (same keys as classifier/assistant)
 - **Rate limiting:** Covered by global API guard (30 req/10s default)
 - **Input validation:** Zod schema + path param validation
 - **No data exposure:** Read-only access, no PII
 
-***REMOVED******REMOVED******REMOVED*** Caching
+### Caching
 
 - **In-memory cache:** Catalog loaded once at startup
 - **No expiry:** Cache persists for app lifetime
 - **Reload:** Requires backend restart
 
-***REMOVED******REMOVED******REMOVED*** Monitoring
+### Monitoring
 
 Logs available via:
 
@@ -344,7 +344,7 @@ Marketplaces catalog loaded successfully {
 
 ---
 
-***REMOVED******REMOVED*** Future Enhancements (Phase 2+)
+## Future Enhancements (Phase 2+)
 
 - [ ] Price scraping from marketplaces
 - [ ] Search URL generation
@@ -355,7 +355,7 @@ Marketplaces catalog loaded successfully {
 
 ---
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - [Backend Architecture](./README.md)
 - [API Authentication](./authentication.md)

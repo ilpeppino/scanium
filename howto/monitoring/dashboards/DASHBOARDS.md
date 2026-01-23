@@ -1,35 +1,35 @@
-***REMOVED*** Scanium Grafana Dashboards
+# Scanium Grafana Dashboards
 
 This document describes the Grafana dashboards provisioned for Scanium observability, including the
 expected metrics/labels and how to adapt queries if your naming conventions differ.
 
-***REMOVED******REMOVED*** Dashboard Overview
+## Dashboard Overview
 
 | Dashboard                                           | UID                         | Purpose                                          | Primary Datasource |
 |-----------------------------------------------------|-----------------------------|--------------------------------------------------|--------------------|
-| [System Overview (RED)](***REMOVED***system-overview-red)       | `scanium-system-overview`   | Rate, Errors, Duration overview with saturation  | Mimir              |
-| [Backend Health](***REMOVED***backend-health)                   | `scanium-backend-health`    | Backend RED summary + recent errors              | Mimir, Loki        |
-| [Backend API Performance](***REMOVED***backend-api-performance) | `scanium-backend-api-perf`  | Latency, throughput, errors by route             | Mimir              |
-| [Backend Errors](***REMOVED***backend-errors)                   | `scanium-backend-errors`    | 4xx vs 5xx analysis, error messages, trace links | Mimir, Loki, Tempo |
-| [Logs Explorer](***REMOVED***logs-explorer)                     | `scanium-logs-explorer`     | Log exploration, error rates, pattern analysis   | Loki               |
-| [Traces Drilldown](***REMOVED***traces-drilldown)               | `scanium-traces-drilldown`  | Slow traces, span analysis, service map          | Tempo, Mimir       |
-| [LGTM Stack Health](***REMOVED***lgtm-stack-health)             | `scanium-lgtm-health`       | Observability infrastructure health              | Mimir              |
-| [Ops Overview](***REMOVED***ops-overview-mobile)                | `scanium-ops-overview`      | Mobile app executive summary                     | Loki, Mimir        |
-| [Mobile App Health](***REMOVED***mobile-app-health)             | `scanium-mobile-app-health` | Mobile app functional correctness                | Loki               |
-| [Scan Performance](***REMOVED***scan-performance-mobile)        | `scanium-scan-performance`  | ML inference latency                             | Mimir              |
-| [Errors](***REMOVED***errors-mobile)                            | `scanium-errors`            | Mobile app error analysis                        | Loki               |
-| [Pipeline Health](***REMOVED***pipeline-health)                 | `scanium-pipeline-health`   | Telemetry pipeline metrics                       | Loki, Mimir        |
+| [System Overview (RED)](#system-overview-red)       | `scanium-system-overview`   | Rate, Errors, Duration overview with saturation  | Mimir              |
+| [Backend Health](#backend-health)                   | `scanium-backend-health`    | Backend RED summary + recent errors              | Mimir, Loki        |
+| [Backend API Performance](#backend-api-performance) | `scanium-backend-api-perf`  | Latency, throughput, errors by route             | Mimir              |
+| [Backend Errors](#backend-errors)                   | `scanium-backend-errors`    | 4xx vs 5xx analysis, error messages, trace links | Mimir, Loki, Tempo |
+| [Logs Explorer](#logs-explorer)                     | `scanium-logs-explorer`     | Log exploration, error rates, pattern analysis   | Loki               |
+| [Traces Drilldown](#traces-drilldown)               | `scanium-traces-drilldown`  | Slow traces, span analysis, service map          | Tempo, Mimir       |
+| [LGTM Stack Health](#lgtm-stack-health)             | `scanium-lgtm-health`       | Observability infrastructure health              | Mimir              |
+| [Ops Overview](#ops-overview-mobile)                | `scanium-ops-overview`      | Mobile app executive summary                     | Loki, Mimir        |
+| [Mobile App Health](#mobile-app-health)             | `scanium-mobile-app-health` | Mobile app functional correctness                | Loki               |
+| [Scan Performance](#scan-performance-mobile)        | `scanium-scan-performance`  | ML inference latency                             | Mimir              |
+| [Errors](#errors-mobile)                            | `scanium-errors`            | Mobile app error analysis                        | Loki               |
+| [Pipeline Health](#pipeline-health)                 | `scanium-pipeline-health`   | Telemetry pipeline metrics                       | Loki, Mimir        |
 
 ---
 
-***REMOVED******REMOVED*** Metric & Label Inventory
+## Metric & Label Inventory
 
-***REMOVED******REMOVED******REMOVED*** Backend HTTP Metrics (Prometheus via prom-client)
+### Backend HTTP Metrics (Prometheus via prom-client)
 
 The backend dashboards expect Scanium-prefixed metrics emitted by the backend service and scraped by
 Alloy.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Primary Metrics
+#### Primary Metrics
 
 - `scanium_http_requests_total` (Counter)
 - `scanium_http_request_duration_ms_bucket` (Histogram)
@@ -59,14 +59,14 @@ scanium_http_request_duration_ms_bucket{
 } 12
 ```
 
-***REMOVED******REMOVED******REMOVED*** Assistant / Vision / Classifier Metrics
+### Assistant / Vision / Classifier Metrics
 
 Scanium backend emits domain metrics for assistant, vision, and classifier pipelines (see
 `monitoring/grafana/OPENAI_MONITORING.md`).
 
-***REMOVED******REMOVED******REMOVED*** Log Labels (Loki)
+### Log Labels (Loki)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Backend Logs
+#### Backend Logs
 
 | Label          | Description           | Example Values          |
 |----------------|-----------------------|-------------------------|
@@ -84,7 +84,7 @@ Scanium backend emits domain metrics for assistant, vision, and classifier pipel
 | `traceid`               | Trace correlation ID |
 | `attributes.http.route` | Route                |
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Mobile App Logs (OTLP events)
+#### Mobile App Logs (OTLP events)
 
 | Label         | Description             | Example Values         |
 |---------------|-------------------------|------------------------|
@@ -109,7 +109,7 @@ Scanium backend emits domain metrics for assistant, vision, and classifier pipel
 - Use controlled vocabularies for `event_name`, `scan_mode`, and `platform`.
 - Prefer short enums over arbitrary strings for new attributes.
 
-***REMOVED******REMOVED******REMOVED*** Pipeline Self-Observability Metrics
+### Pipeline Self-Observability Metrics
 
 | Metric                                    | Type    | Description                         |
 |-------------------------------------------|---------|-------------------------------------|
@@ -127,11 +127,11 @@ Scanium backend emits domain metrics for assistant, vision, and classifier pipel
 
 ---
 
-***REMOVED******REMOVED*** Adapting Queries for Different Naming Conventions
+## Adapting Queries for Different Naming Conventions
 
 If your metrics use different names or labels, here is how to adapt:
 
-***REMOVED******REMOVED******REMOVED*** Different Metric Names
+### Different Metric Names
 
 **Scenario:** Your HTTP metrics are named `http_requests_total` instead of
 `scanium_http_requests_total`
@@ -143,27 +143,27 @@ If your metrics use different names or labels, here is how to adapt:
     - Find: `scanium_http_requests_total`
     - Replace: `http_requests_total` (or your metric name)
 
-***REMOVED******REMOVED******REMOVED*** Different Label Names
+### Different Label Names
 
 **Scenario:** You use `environment` instead of `env`
 
 1. Update dashboard variables to use your label:
    ```promql
-   ***REMOVED*** Original
+   # Original
    label_values(scanium_http_requests_total, env)
-   ***REMOVED*** Modified
+   # Modified
    label_values(scanium_http_requests_total, environment)
    ```
 
 2. Update panel queries:
    ```promql
-   ***REMOVED*** Original
+   # Original
    {env=~"$env"}
-   ***REMOVED*** Modified
+   # Modified
    {environment=~"$env"}
    ```
 
-***REMOVED******REMOVED******REMOVED*** Common Label Mapping
+### Common Label Mapping
 
 | Expected Label | Common Alternative | Dashboard Variable |
 |----------------|--------------------|--------------------|
@@ -173,7 +173,7 @@ If your metrics use different names or labels, here is how to adapt:
 | `method`       | `http_method`      | `$method`          |
 | `status_code`  | `status`           | `$status_code`     |
 
-***REMOVED******REMOVED******REMOVED*** Non-Histogram Metrics
+### Non-Histogram Metrics
 
 If your latency metrics are gauges or summaries instead of histograms:
 
@@ -197,7 +197,7 @@ avg(scanium_http_request_duration_ms)
 
 ---
 
-***REMOVED******REMOVED*** Dashboard Variables
+## Dashboard Variables
 
 All backend dashboards use these standard variables:
 
@@ -218,9 +218,9 @@ Mobile dashboards use:
 
 ---
 
-***REMOVED******REMOVED*** Dashboard Details
+## Dashboard Details
 
-***REMOVED******REMOVED******REMOVED*** System Overview (RED)
+### System Overview (RED)
 
 **Purpose:** Executive summary using RED methodology (Rate, Errors, Duration) plus saturation.
 
@@ -233,7 +233,7 @@ Mobile dashboards use:
 - Apdex score (satisfaction index)
 - Status code distribution
 
-***REMOVED******REMOVED******REMOVED*** Backend Health
+### Backend Health
 
 **Purpose:** Backend RED summary plus recent error logs.
 
@@ -246,7 +246,7 @@ Mobile dashboards use:
 - 4xx vs 5xx over time
 - Recent error logs
 
-***REMOVED******REMOVED******REMOVED*** Backend API Performance
+### Backend API Performance
 
 **Purpose:** Deep dive into API latency and throughput per route.
 
@@ -258,7 +258,7 @@ Mobile dashboards use:
 - Slowest routes table
 - Latency heatmap
 
-***REMOVED******REMOVED******REMOVED*** Backend Errors
+### Backend Errors
 
 **Purpose:** Error investigation with logs and trace correlation.
 
@@ -270,7 +270,7 @@ Mobile dashboards use:
 - Recent error logs
 - Error traces with drill-down links
 
-***REMOVED******REMOVED******REMOVED*** Logs Explorer
+### Logs Explorer
 
 **Purpose:** General-purpose log exploration and pattern analysis.
 
@@ -282,7 +282,7 @@ Mobile dashboards use:
 - Live log stream (filterable)
 - Anomaly detection (rate vs moving average)
 
-***REMOVED******REMOVED******REMOVED*** Traces Drilldown
+### Traces Drilldown
 
 **Purpose:** Distributed tracing analysis and performance investigation.
 
@@ -295,7 +295,7 @@ Mobile dashboards use:
 - Service dependency graph
 - Slow/error trace tables with links
 
-***REMOVED******REMOVED******REMOVED*** LGTM Stack Health
+### LGTM Stack Health
 
 **Purpose:** Monitor the observability infrastructure itself.
 
@@ -308,7 +308,7 @@ Mobile dashboards use:
 - Backend health (streams, traces, series)
 - Resource usage (CPU, memory)
 
-***REMOVED******REMOVED******REMOVED*** Mobile App Health
+### Mobile App Health
 
 **Purpose:** Mobile app functional correctness and usage funnel.
 
@@ -325,11 +325,11 @@ required labels or fields.
 
 ---
 
-***REMOVED******REMOVED*** Alert Rules
+## Alert Rules
 
 Alert rules are provisioned in `/monitoring/grafana/provisioning/alerting/rules.yaml`.
 
-***REMOVED******REMOVED******REMOVED*** Backend Alerts (Recommended)
+### Backend Alerts (Recommended)
 
 | Alert                        | Metric                                            | Condition       | Severity |
 |------------------------------|---------------------------------------------------|-----------------|----------|
@@ -337,7 +337,7 @@ Alert rules are provisioned in `/monitoring/grafana/provisioning/alerting/rules.
 | Sustained High Latency (p95) | `histogram_quantile(0.95, ...)`                   | > 500ms for 10m | Warning  |
 | API Availability             | `up{job="scanium-backend"}`                       | == 0 for 2m     | Critical |
 
-***REMOVED******REMOVED******REMOVED*** Infrastructure Alerts (Existing)
+### Infrastructure Alerts (Existing)
 
 | Alert              | Condition                                       | Severity |
 |--------------------|-------------------------------------------------|----------|
@@ -350,15 +350,15 @@ Alert rules are provisioned in `/monitoring/grafana/provisioning/alerting/rules.
 
 ---
 
-***REMOVED******REMOVED*** Usage Tips
+## Usage Tips
 
-***REMOVED******REMOVED******REMOVED*** Correlating Signals
+### Correlating Signals
 
 1. **Metrics → Logs:** Click on a spike in error rate, then use the time range to filter logs
 2. **Logs → Traces:** Click on `trace_id` in log details to jump to Tempo
 3. **Traces → Metrics:** Use trace exemplars in Mimir to find specific requests
 
-***REMOVED******REMOVED******REMOVED*** Time Range Recommendations
+### Time Range Recommendations
 
 | Dashboard       | Recommended Range | Use Case                  |
 |-----------------|-------------------|---------------------------|
@@ -370,7 +370,7 @@ Alert rules are provisioned in `/monitoring/grafana/provisioning/alerting/rules.
 | Traces          | 5m - 1h           | Request tracing           |
 | LGTM Health     | 1h - 24h          | Infrastructure monitoring |
 
-***REMOVED******REMOVED******REMOVED*** Panel Links
+### Panel Links
 
 Many panels include drill-down links:
 
@@ -380,21 +380,21 @@ Many panels include drill-down links:
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** No Data in Backend Dashboards
+### No Data in Backend Dashboards
 
 1. **Check datasource:** Ensure Mimir datasource is configured with correct URL
 2. **Check metrics exist:** Use Explore → Mimir → Metrics browser
 3. **Check label names:** Your labels may differ from expected (see adaptation guide)
 
-***REMOVED******REMOVED******REMOVED*** Missing Span Metrics
+### Missing Span Metrics
 
 1. **Enable Tempo metrics generator:** Check `tempo.yaml` has `metrics_generator` enabled
 2. **Check Mimir target:** Tempo should export to Mimir's remote write endpoint
 3. **Wait for data:** Span metrics may take a few minutes to appear
 
-***REMOVED******REMOVED******REMOVED*** Log Queries Return Empty
+### Log Queries Return Empty
 
 1. **Check source label:** Ensure logs have `source="scanium-backend"` label
 2. **Check JSON parsing:** Logs must be valid JSON for `| json` parsing
@@ -402,7 +402,7 @@ Many panels include drill-down links:
 
 ---
 
-***REMOVED******REMOVED*** Adding Custom Dashboards
+## Adding Custom Dashboards
 
 To add a new dashboard:
 
@@ -416,25 +416,25 @@ Dashboard will be auto-provisioned on Grafana restart.
 
 ---
 
-***REMOVED******REMOVED*** Telemetry Inventory Script
+## Telemetry Inventory Script
 
 The `scripts/monitoring/inventory-telemetry.sh` script discovers what telemetry actually exists in
 your running LGTM stack and generates an inventory report.
 
-***REMOVED******REMOVED******REMOVED*** Running the Inventory Script
+### Running the Inventory Script
 
 ```bash
-***REMOVED*** Basic usage (requires monitoring stack to be running)
+# Basic usage (requires monitoring stack to be running)
 ./howto/monitoring/scripts/verify-monitoring.sh
 
-***REMOVED*** With custom Grafana URL
+# With custom Grafana URL
 ./howto/monitoring/scripts/verify-monitoring.sh --grafana-url http://localhost:3000
 
-***REMOVED*** With API token (if anonymous auth is disabled)
+# With API token (if anonymous auth is disabled)
 ./howto/monitoring/scripts/verify-monitoring.sh --token "your-grafana-api-token"
 ```
 
-***REMOVED******REMOVED******REMOVED*** What It Discovers
+### What It Discovers
 
 1. **Datasources:** Lists all configured datasources with UIDs (Loki, Tempo, Mimir)
 2. **Metrics (Mimir):** Sample metric names and their labels
@@ -442,12 +442,12 @@ your running LGTM stack and generates an inventory report.
 4. **Traces (Tempo):** Service names and trace attributes (if available)
 5. **Dashboards:** Currently provisioned dashboards
 
-***REMOVED******REMOVED******REMOVED*** Output Files
+### Output Files
 
 - `monitoring/grafana/telemetry-inventory.json` - Machine-readable inventory
 - `monitoring/grafana/telemetry-inventory.md` - Human-readable summary
 
-***REMOVED******REMOVED******REMOVED*** Safety Measures
+### Safety Measures
 
 The script is designed to be safe for production use:
 
@@ -458,9 +458,9 @@ The script is designed to be safe for production use:
 
 ---
 
-***REMOVED******REMOVED*** Regenerating Dashboards
+## Regenerating Dashboards
 
-***REMOVED******REMOVED******REMOVED*** When to Regenerate
+### When to Regenerate
 
 Regenerate dashboards when:
 
@@ -468,7 +468,7 @@ Regenerate dashboards when:
 - New telemetry sources are added
 - Dashboard queries need updating
 
-***REMOVED******REMOVED******REMOVED*** Workflow
+### Workflow
 
 1. **Discover current telemetry:**
    ```bash
@@ -494,23 +494,23 @@ Regenerate dashboards when:
 
 ---
 
-***REMOVED******REMOVED*** Validation Checklist
+## Validation Checklist
 
 After making changes to dashboards, verify:
 
-***REMOVED******REMOVED******REMOVED*** Stack Health
+### Stack Health
 
 - [ ] All services are running: `docker compose -p scanium-monitoring ps`
 - [ ] Grafana is healthy: `curl localhost:3000/api/health`
 - [ ] Datasources are configured: `curl localhost:3000/api/datasources`
 
-***REMOVED******REMOVED******REMOVED*** Dashboard Loading
+### Dashboard Loading
 
 - [ ] Dashboards appear in Grafana UI
 - [ ] No "dashboard not found" errors
 - [ ] Dashboard JSON is valid (no parse errors)
 
-***REMOVED******REMOVED******REMOVED*** Data Presence
+### Data Presence
 
 - [ ] **LGTM Stack Health:** Shows UP status for all services
 - [ ] **System Overview:** Shows request rate (requires backend traffic)
@@ -518,13 +518,13 @@ After making changes to dashboards, verify:
 - [ ] **Logs Explorer:** Shows log volume (requires log ingestion)
 - [ ] **Traces Drilldown:** Shows traces (requires trace ingestion)
 
-***REMOVED******REMOVED******REMOVED*** Panel Functionality
+### Panel Functionality
 
 - [ ] Variables populate correctly
 - [ ] Panels show data or appropriate "No data" message
 - [ ] Cross-datasource links work (logs→traces, metrics→traces)
 
-***REMOVED******REMOVED******REMOVED*** No Data Troubleshooting
+### No Data Troubleshooting
 
 If dashboards show "No data":
 
@@ -536,7 +536,7 @@ If dashboards show "No data":
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - [OpenTelemetry HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/)
 - [Grafana Dashboard Best Practices](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/best-practices/)

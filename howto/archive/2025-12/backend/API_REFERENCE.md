@@ -1,7 +1,7 @@
 > Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
 > state.
 
-***REMOVED*** Scanium Backend API Reference
+# Scanium Backend API Reference
 
 Quick reference for all available endpoints.
 
@@ -9,9 +9,9 @@ Quick reference for all available endpoints.
 
 ---
 
-***REMOVED******REMOVED*** 🏥 Health & Status
+## 🏥 Health & Status
 
-***REMOVED******REMOVED******REMOVED*** GET /healthz
+### GET /healthz
 
 Liveness probe - returns 200 if process is running.
 
@@ -26,7 +26,7 @@ Liveness probe - returns 200 if process is running.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** GET /readyz
+### GET /readyz
 
 Readiness probe - returns 200 only if database is reachable.
 
@@ -52,7 +52,7 @@ Readiness probe - returns 200 only if database is reachable.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** GET /
+### GET /
 
 API information and endpoint listing.
 
@@ -77,9 +77,9 @@ API information and endpoint listing.
 
 ---
 
-***REMOVED******REMOVED*** 🔐 eBay OAuth
+## 🔐 eBay OAuth
 
-***REMOVED******REMOVED******REMOVED*** POST /auth/ebay/start
+### POST /auth/ebay/start
 
 Initiates eBay OAuth flow. Returns authorization URL for user to visit.
 
@@ -113,7 +113,7 @@ Content-Type: application/json
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** GET /auth/ebay/callback
+### GET /auth/ebay/callback
 
 OAuth callback endpoint - receives authorization code from eBay.
 
@@ -198,7 +198,7 @@ User-friendly success page:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** GET /auth/ebay/status
+### GET /auth/ebay/status
 
 Returns current eBay connection status.
 
@@ -238,11 +238,11 @@ Host: api.yourdomain.com
 
 ---
 
-***REMOVED******REMOVED*** 🛒 eBay Listings (Future)
+## 🛒 eBay Listings (Future)
 
 Placeholder endpoints - not yet implemented.
 
-***REMOVED******REMOVED******REMOVED*** POST /listings
+### POST /listings
 
 Create a new eBay listing.
 
@@ -271,11 +271,11 @@ Create a new eBay listing.
 
 ---
 
-***REMOVED******REMOVED*** 📷 Media Upload (Future)
+## 📷 Media Upload (Future)
 
 Placeholder endpoints - not yet implemented.
 
-***REMOVED******REMOVED******REMOVED*** POST /media/upload
+### POST /media/upload
 
 Upload image for listing.
 
@@ -302,7 +302,7 @@ file: <binary image data>
 
 ---
 
-***REMOVED******REMOVED*** 🚨 Error Responses
+## 🚨 Error Responses
 
 All errors follow this format:
 
@@ -318,7 +318,7 @@ All errors follow this format:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Common Error Codes
+### Common Error Codes
 
 | Code                          | HTTP Status | Description                           |
 |-------------------------------|-------------|---------------------------------------|
@@ -333,7 +333,7 @@ All errors follow this format:
 
 ---
 
-***REMOVED******REMOVED*** 🔒 Security Headers
+## 🔒 Security Headers
 
 All responses include:
 
@@ -345,27 +345,27 @@ Set-Cookie: ...; HttpOnly; Secure; SameSite=Lax
 
 ---
 
-***REMOVED******REMOVED*** 📝 Request Examples (curl)
+## 📝 Request Examples (curl)
 
-***REMOVED******REMOVED******REMOVED*** Health Check
+### Health Check
 
 ```bash
 curl https://api.yourdomain.com/healthz
 ```
 
-***REMOVED******REMOVED******REMOVED*** Start OAuth
+### Start OAuth
 
 ```bash
 curl -X POST https://api.yourdomain.com/auth/ebay/start
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check Connection Status
+### Check Connection Status
 
 ```bash
 curl https://api.yourdomain.com/auth/ebay/status
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test with Accept: application/json
+### Test with Accept: application/json
 
 ```bash
 curl -H "Accept: application/json" \
@@ -374,9 +374,9 @@ curl -H "Accept: application/json" \
 
 ---
 
-***REMOVED******REMOVED*** 📱 Mobile App Integration
+## 📱 Mobile App Integration
 
-***REMOVED******REMOVED******REMOVED*** Kotlin Example
+### Kotlin Example
 
 ```kotlin
 import kotlinx.serialization.Serializable
@@ -433,7 +433,7 @@ if (status.connected) {
 
 ---
 
-***REMOVED******REMOVED*** 🔄 Rate Limiting (Future)
+## 🔄 Rate Limiting (Future)
 
 Rate limiting not yet implemented. Future plans:
 
@@ -451,9 +451,9 @@ X-RateLimit-Reset: 1702345678
 
 ---
 
-***REMOVED******REMOVED*** 📊 Monitoring
+## 📊 Monitoring
 
-***REMOVED******REMOVED******REMOVED*** Metrics (Future)
+### Metrics (Future)
 
 Planned Prometheus metrics:
 
@@ -467,31 +467,31 @@ Planned Prometheus metrics:
 
 ---
 
-***REMOVED******REMOVED*** 🧪 Testing
+## 🧪 Testing
 
-***REMOVED******REMOVED******REMOVED*** Local Testing
+### Local Testing
 
 ```bash
-***REMOVED*** Start local server
+# Start local server
 cd backend
 npm run dev
 
-***REMOVED*** Test endpoints
+# Test endpoints
 curl http://localhost:8080/healthz
 curl -X POST http://localhost:8080/auth/ebay/start
 ```
 
-***REMOVED******REMOVED******REMOVED*** Production Testing
+### Production Testing
 
 ```bash
-***REMOVED*** Use actual Cloudflare Tunnel URL
+# Use actual Cloudflare Tunnel URL
 curl https://api.yourdomain.com/healthz
 curl https://api.yourdomain.com/auth/ebay/status
 ```
 
 ---
 
-***REMOVED******REMOVED*** 📚 Related Documentation
+## 📚 Related Documentation
 
 - [Setup Guide](SETUP_GUIDE.md) - Deployment instructions
 - [Backend README](README.md) - Development guide

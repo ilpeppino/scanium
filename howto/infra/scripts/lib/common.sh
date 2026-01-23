@@ -1,16 +1,16 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium Ops Common Library
-***REMOVED*** =============================================================================
-***REMOVED*** Shared helpers for ops scripts. Source this file:
-***REMOVED***   source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
-***REMOVED*** =============================================================================
+#!/usr/bin/env bash
+# =============================================================================
+# Scanium Ops Common Library
+# =============================================================================
+# Shared helpers for ops scripts. Source this file:
+#   source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+# =============================================================================
 
 set -euo pipefail
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Color support (auto-disable if not TTY)
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Color support (auto-disable if not TTY)
+# -----------------------------------------------------------------------------
 if [[ -t 1 ]]; then
   COLOR_RED='\033[0;31m'
   COLOR_YELLOW='\033[0;33m'
@@ -25,9 +25,9 @@ else
   COLOR_RESET=''
 fi
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Logging helpers
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Logging helpers
+# -----------------------------------------------------------------------------
 timestamp() {
   date -u '+%Y-%m-%dT%H:%M:%SZ'
 }
@@ -57,9 +57,9 @@ die() {
   exit 1
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Command checks
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Command checks
+# -----------------------------------------------------------------------------
 require_cmd() {
   local cmd="$1"
   if ! command -v "$cmd" &>/dev/null; then
@@ -67,9 +67,9 @@ require_cmd() {
   fi
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Repo root detection
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Repo root detection
+# -----------------------------------------------------------------------------
 get_repo_root() {
   git rev-parse --show-toplevel 2>/dev/null || die "Not inside a git repository"
 }
@@ -82,19 +82,19 @@ ensure_repo_root() {
   echo "$REPO_ROOT"
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Safe file operations (only inside repo)
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Safe file operations (only inside repo)
+# -----------------------------------------------------------------------------
 safe_mkdir() {
   local dir="$1"
   local repo_root
   repo_root="$(ensure_repo_root)"
 
-  ***REMOVED*** Resolve to absolute path
+  # Resolve to absolute path
   local abs_dir
   abs_dir="$(cd "$repo_root" && mkdir -p "$dir" && cd "$dir" && pwd)"
 
-  ***REMOVED*** Verify it's inside repo
+  # Verify it's inside repo
   case "$abs_dir" in
     "$repo_root"/*)
       echo "$abs_dir"
@@ -110,11 +110,11 @@ safe_rmfile() {
   local repo_root
   repo_root="$(ensure_repo_root)"
 
-  ***REMOVED*** Resolve to absolute path
+  # Resolve to absolute path
   local abs_file
   abs_file="$(cd "$(dirname "$file")" 2>/dev/null && pwd)/$(basename "$file")" || return 0
 
-  ***REMOVED*** Verify it's inside repo
+  # Verify it's inside repo
   case "$abs_file" in
     "$repo_root"/*)
       rm -f "$abs_file"
@@ -125,17 +125,17 @@ safe_rmfile() {
   esac
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Redaction helper
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Redacts sensitive information from stdin, writes to stdout.
-***REMOVED*** Best-effort pattern matching for:
-***REMOVED***   - Lines containing: API_KEY, TOKEN, SECRET, PASSWORD, SESSION_SIGNING_SECRET
-***REMOVED***   - Headers: Authorization:, X-API-Key:
-***REMOVED***   - URLs with embedded credentials (basic auth)
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Redaction helper
+# -----------------------------------------------------------------------------
+# Redacts sensitive information from stdin, writes to stdout.
+# Best-effort pattern matching for:
+#   - Lines containing: API_KEY, TOKEN, SECRET, PASSWORD, SESSION_SIGNING_SECRET
+#   - Headers: Authorization:, X-API-Key:
+#   - URLs with embedded credentials (basic auth)
+# -----------------------------------------------------------------------------
 redact_secrets() {
-  ***REMOVED*** Use sed for POSIX compatibility (works on both macOS and Linux)
+  # Use sed for POSIX compatibility (works on both macOS and Linux)
   sed -E \
     -e 's/(API_KEY|APIKEY|api_key|apikey)[[:space:]]*[=:][[:space:]]*[^[:space:]"'\'']+/\1=[REDACTED]/gi' \
     -e 's/(TOKEN|token)[[:space:]]*[=:][[:space:]]*[^[:space:]"'\'']+/\1=[REDACTED]/gi' \
@@ -149,14 +149,14 @@ redact_secrets() {
     -e 's/"(api_key|apikey|token|secret|password|authorization)"[[:space:]]*:[[:space:]]*"[^"]*"/"\1": "[REDACTED]"/gi'
 }
 
-***REMOVED*** Redact a string directly (for single values)
+# Redact a string directly (for single values)
 redact_string() {
   echo "$1" | redact_secrets
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** HTTP helpers
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# HTTP helpers
+# -----------------------------------------------------------------------------
 http_get() {
   local url="$1"
   local timeout="${2:-10}"
@@ -165,7 +165,7 @@ http_get() {
   local curl_args=(-s --max-time "$timeout")
 
   if [[ -n "$headers" ]]; then
-    ***REMOVED*** Headers passed as "Header1: value1\nHeader2: value2"
+    # Headers passed as "Header1: value1\nHeader2: value2"
     while IFS= read -r header; do
       [[ -n "$header" ]] && curl_args+=(-H "$header")
     done <<< "$headers"
@@ -213,21 +213,21 @@ http_get_with_body() {
   rm -f "$tmp_body"
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Utility functions
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Utility functions
+# -----------------------------------------------------------------------------
 truncate_string() {
   local str="$1"
   local max_len="${2:-200}"
 
-  if [[ ${***REMOVED***str} -gt $max_len ]]; then
+  if [[ ${#str} -gt $max_len ]]; then
     echo "${str:0:$max_len}..."
   else
     echo "$str"
   fi
 }
 
-***REMOVED*** Check if a value is in an array
+# Check if a value is in an array
 in_array() {
   local needle="$1"
   shift
@@ -238,14 +238,14 @@ in_array() {
   return 1
 }
 
-***REMOVED*** Parse a simple key=value or --key value argument
+# Parse a simple key=value or --key value argument
 parse_arg() {
   local arg="$1"
   local next="${2:-}"
 
   case "$arg" in
     --*=*)
-      echo "${arg***REMOVED****=}"
+      echo "${arg#*=}"
       ;;
     --*)
       echo "$next"
@@ -256,7 +256,7 @@ parse_arg() {
   esac
 }
 
-***REMOVED*** Print help header
+# Print help header
 print_help_header() {
   local script_name="$1"
   local description="$2"

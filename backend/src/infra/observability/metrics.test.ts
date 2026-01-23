@@ -286,8 +286,8 @@ describe('Metrics Module', () => {
       const metrics = await getMetrics();
 
       // Check Prometheus format markers
-      expect(metrics).toContain('***REMOVED*** HELP');
-      expect(metrics).toContain('***REMOVED*** TYPE');
+      expect(metrics).toContain('# HELP');
+      expect(metrics).toContain('# TYPE');
     });
   });
 });

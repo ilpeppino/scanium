@@ -1,17 +1,17 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Emit synthetic mobile telemetry log to Loki for dashboard wiring validation
-***REMOVED*** Usage: bash emit-mobile-test-log.sh [loki_url]
-***REMOVED***
-***REMOVED*** This script pushes a single test log entry to Loki with mobile-app labels.
-***REMOVED*** It's used to validate that mobile dashboards can query and display data correctly,
-***REMOVED*** without requiring a live mobile app session.
+#!/bin/bash
+# Emit synthetic mobile telemetry log to Loki for dashboard wiring validation
+# Usage: bash emit-mobile-test-log.sh [loki_url]
+#
+# This script pushes a single test log entry to Loki with mobile-app labels.
+# It's used to validate that mobile dashboards can query and display data correctly,
+# without requiring a live mobile app session.
 
 set -euo pipefail
 
 LOKI_URL="${1:-http://127.0.0.1:3100}"
 TIMESTAMP_NS=$(date +%s%N)
 
-***REMOVED*** Log entry with mobile telemetry structure
+# Log entry with mobile telemetry structure
 LOG_ENTRY='{
   "source": "scanium-mobile",
   "event_name": "monitor_smoke",
@@ -23,9 +23,9 @@ LOG_ENTRY='{
   "message": "Synthetic test log for mobile dashboard validation"
 }'
 
-***REMOVED*** Loki push API payload
-***REMOVED*** Labels must match what mobile dashboards query:
-***REMOVED*** source="scanium-mobile", platform, app_version, build_type, event_name
+# Loki push API payload
+# Labels must match what mobile dashboards query:
+# source="scanium-mobile", platform, app_version, build_type, event_name
 PAYLOAD='{
   "streams": [
     {
@@ -58,9 +58,9 @@ else
   exit 1
 fi
 
-***REMOVED*** Verify the log is queryable
+# Verify the log is queryable
 echo "[emit-mobile-test-log] Verifying log is queryable..."
-sleep 2  ***REMOVED*** Give Loki a moment to ingest
+sleep 2  # Give Loki a moment to ingest
 
 QUERY_RESULT=$(curl -sf -G "$LOKI_URL/loki/api/v1/query" \
   --data-urlencode 'query={source="scanium-mobile",event_name="monitor_smoke"}' \

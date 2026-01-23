@@ -1,31 +1,31 @@
-***REMOVED*** ML Kit Detection Diagnostic Log Guide
+# ML Kit Detection Diagnostic Log Guide
 
 This guide helps interpret the enhanced diagnostic logs to identify why ML Kit might return zero
 detections.
 
-***REMOVED******REMOVED*** How to View Logs
+## How to View Logs
 
-***REMOVED******REMOVED******REMOVED*** Method 1: Using the test script
+### Method 1: Using the test script
 
 ```bash
 ./test_ml_kit_detection.sh
 ```
 
-***REMOVED******REMOVED******REMOVED*** Method 2: Manual logcat
+### Method 2: Manual logcat
 
 ```bash
 adb logcat -s ObjectDetectorClient:* CameraXManager:*
 ```
 
-***REMOVED******REMOVED******REMOVED*** Method 3: Android Studio Logcat
+### Method 3: Android Studio Logcat
 
 1. Open Logcat panel
 2. Filter by "ObjectDetectorClient" or "CameraXManager"
 3. Look for lines containing ">>>" for critical info
 
-***REMOVED******REMOVED*** Log Patterns & What They Mean
+## Log Patterns & What They Mean
 
-***REMOVED******REMOVED******REMOVED*** 1. Successful Model Initialization
+### 1. Successful Model Initialization
 
 **Look for:**
 
@@ -51,7 +51,7 @@ I ObjectDetectorClient: ML Kit Object Detection model initialization complete
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Successful Detection
+### 2. Successful Detection
 
 **Look for:**
 
@@ -79,7 +79,7 @@ I ObjectDetectorClient: >>> ML Kit returned 3 raw objects from original image
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Zero Detections - Using Fallback Strategies
+### 3. Zero Detections - Using Fallback Strategies
 
 **Look for:**
 
@@ -126,7 +126,7 @@ I ObjectDetectorClient: >>> SUCCESS: SINGLE_IMAGE_MODE detected objects!
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Zero Detections - All Strategies Failed
+### 4. Zero Detections - All Strategies Failed
 
 **Look for:**
 
@@ -156,7 +156,7 @@ Check the bitmap analysis for clues:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 5. Bitmap Analysis Diagnostics
+### 5. Bitmap Analysis Diagnostics
 
 **Low Variance (Likely Blank):**
 
@@ -199,7 +199,7 @@ I ObjectDetectorClient: >>> Bitmap Analysis: size=1280x720, variance=145, isLike
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 6. Scene Recommendations
+### 6. Scene Recommendations
 
 When zero detections occur with valid image, check:
 
@@ -242,7 +242,7 @@ E ObjectDetectorClient: >>>   2. Scene doesn't contain detectable objects
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 7. Model Download Issues
+### 7. Model Download Issues
 
 **Look for:**
 
@@ -266,7 +266,7 @@ E ObjectDetectorClient: [Exception details...]
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 8. Tracker Statistics (Normal Flow)
+### 8. Tracker Statistics (Normal Flow)
 
 **Look for:**
 
@@ -289,7 +289,7 @@ I CameraXManager: >>> Tracker stats: active=1, confirmed=2, frame=5
 
 ---
 
-***REMOVED******REMOVED*** Quick Diagnostic Checklist
+## Quick Diagnostic Checklist
 
 When troubleshooting zero detections, check logs for:
 
@@ -315,7 +315,7 @@ When troubleshooting zero detections, check logs for:
     - [ ] Distinct physical objects (not flat surfaces)
     - If NO: Adjust scene
 
-***REMOVED******REMOVED*** Common Issues & Solutions
+## Common Issues & Solutions
 
 | Symptom             | Log Pattern                          | Solution                                |
 |---------------------|--------------------------------------|-----------------------------------------|
@@ -325,40 +325,40 @@ When troubleshooting zero detections, check logs for:
 | Works with fallback | Alternative/SINGLE_IMAGE works       | Use that strategy by default            |
 | Inconsistent        | Sometimes works, sometimes doesn't   | Lighting/angle dependent, guide user    |
 
-***REMOVED******REMOVED*** Testing Different Scenarios
+## Testing Different Scenarios
 
-***REMOVED******REMOVED******REMOVED*** Scenario 1: Fresh Install (Test Model Download)
+### Scenario 1: Fresh Install (Test Model Download)
 
 ```bash
 adb uninstall com.scanium.app
 ./gradlew :app:installDebug
-***REMOVED*** Open app, should see model initialization logs
+# Open app, should see model initialization logs
 ```
 
-***REMOVED******REMOVED******REMOVED*** Scenario 2: No Network (Test Cached Model)
+### Scenario 2: No Network (Test Cached Model)
 
 ```bash
-***REMOVED*** Install with network first, then disable network
-***REMOVED*** Reopen app, should still detect (model cached)
+# Install with network first, then disable network
+# Reopen app, should still detect (model cached)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Scenario 3: Various Objects (Test Detection Quality)
+### Scenario 3: Various Objects (Test Detection Quality)
 
 ```bash
-***REMOVED*** Test with: bottle, book, box, phone, laptop, cup
-***REMOVED*** Compare detection counts for each
-***REMOVED*** ML Kit works best with simple geometric shapes
+# Test with: bottle, book, box, phone, laptop, cup
+# Compare detection counts for each
+# ML Kit works best with simple geometric shapes
 ```
 
-***REMOVED******REMOVED******REMOVED*** Scenario 4: Lighting Conditions (Test Robustness)
+### Scenario 4: Lighting Conditions (Test Robustness)
 
 ```bash
-***REMOVED*** Test in: bright light, dim light, mixed lighting
-***REMOVED*** Check variance values correlate with lighting
-***REMOVED*** ML Kit needs reasonable lighting (not pitch black)
+# Test in: bright light, dim light, mixed lighting
+# Check variance values correlate with lighting
+# ML Kit needs reasonable lighting (not pitch black)
 ```
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 Detection is working correctly when:
 

@@ -1,9 +1,9 @@
-***REMOVED*** Telemetry Status Report
+# Telemetry Status Report
 
 **Last Updated**: 2026-01-09 21:37 UTC
 **Status**: Metrics ✅ | Logs ✅ | Traces ✅
 
-***REMOVED******REMOVED*** Quick Summary
+## Quick Summary
 
 | Signal      | Status        | Details                                           |
 |-------------|---------------|---------------------------------------------------|
@@ -11,9 +11,9 @@
 | **Logs**    | ✅ **WORKING** | 5 labels in Loki, Pino integrated with OTLP       |
 | **Traces**  | ✅ **WORKING** | scanium-backend service in Tempo with HTTP traces |
 
-***REMOVED******REMOVED*** What's Working
+## What's Working
 
-***REMOVED******REMOVED******REMOVED*** ✅ Metrics (Mimir)
+### ✅ Metrics (Mimir)
 
 - **80 data series** successfully ingested
 - **Backend metrics** present (`scanium-backend` job)
@@ -24,12 +24,12 @@
 
 ```bash
 ./howto/monitoring/scripts/verify-monitoring.sh
-***REMOVED*** Shows: series_count: 80, jobs: [alloy, loki, mimir, scanium-backend, tempo]
+# Shows: series_count: 80, jobs: [alloy, loki, mimir, scanium-backend, tempo]
 ```
 
-***REMOVED******REMOVED*** What's Not Working
+## What's Not Working
 
-***REMOVED******REMOVED******REMOVED*** ❌ Logs (Loki)
+### ❌ Logs (Loki)
 
 **Status**: Infrastructure healthy, application logs not reaching Loki
 
@@ -60,7 +60,7 @@ const logger = pino(stream)
 
 **Alternative**: Use docker log scraping (needs deeper debugging of Alloy config)
 
-***REMOVED******REMOVED******REMOVED*** ❌ Traces (Tempo)
+### ❌ Traces (Tempo)
 
 **Status**: Infrastructure ready, no traces being emitted
 
@@ -81,9 +81,9 @@ const logger = pino(stream)
 - Check if Alloy is forwarding traces to Tempo
 - Verify Tempo is ingesting (check Tempo logs)
 
-***REMOVED******REMOVED*** Infrastructure Status
+## Infrastructure Status
 
-***REMOVED******REMOVED******REMOVED*** ✅ Alloy (Telemetry Gateway)
+### ✅ Alloy (Telemetry Gateway)
 
 - **Status**: Healthy (marked "unhealthy" due to wget healthcheck issue - cosmetic)
 - **OTLP Receivers**:
@@ -95,28 +95,28 @@ const logger = pino(stream)
     - Mimir: ✅ Working
     - Tempo: ✅ Ready
 
-***REMOVED******REMOVED******REMOVED*** ✅ Loki (Log Storage)
+### ✅ Loki (Log Storage)
 
 - **Status**: Healthy and accepting writes
 - **Test**: Manual log ingestion successful
 - **Issue**: No application logs reaching it
 
-***REMOVED******REMOVED******REMOVED*** ✅ Mimir (Metrics Storage)
+### ✅ Mimir (Metrics Storage)
 
 - **Status**: Healthy and storing data
 - **Data**: 80 series across 5 jobs
 
-***REMOVED******REMOVED******REMOVED*** ✅ Tempo (Trace Storage)
+### ✅ Tempo (Trace Storage)
 
 - **Status**: Healthy and ready
 - **Issue**: No traces being sent to it
 
-***REMOVED******REMOVED******REMOVED*** ✅ Grafana
+### ✅ Grafana
 
 - **Status**: Healthy
 - **Datasources**: All connected (Mimir, Loki, Tempo)
 
-***REMOVED******REMOVED*** Network Topology
+## Network Topology
 
 ```
 backend_scanium-network (172.23.0.0/16):
@@ -133,9 +133,9 @@ scanium-observability (172.24.0.0/16):
 
 **Verdict**: ✅ All services can reach each other. Network is NOT the issue.
 
-***REMOVED******REMOVED*** Backend Configuration
+## Backend Configuration
 
-***REMOVED******REMOVED******REMOVED*** Current OTLP Setup
+### Current OTLP Setup
 
 **File**: `backend/src/infra/telemetry/index.ts`
 
@@ -159,7 +159,7 @@ loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
 // BUT: Application uses Pino, not this LoggerProvider!
 ```
 
-***REMOVED******REMOVED******REMOVED*** Environment Variables
+### Environment Variables
 
 **Current** (after fix):
 
@@ -169,9 +169,9 @@ OTEL_SERVICE_NAME=scanium-backend ✅
 OTEL_ENABLED=true ✅
 ```
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
-***REMOVED******REMOVED******REMOVED*** Immediate (to get logs working)
+### Immediate (to get logs working)
 
 1. **Integrate Pino with OpenTelemetry**
    ```bash
@@ -192,14 +192,14 @@ OTEL_ENABLED=true ✅
 3. **Restart backend and verify**:
    ```bash
    ./howto/monitoring/scripts/verify-monitoring.sh
-   ***REMOVED*** Should show: label_count > 2
+   # Should show: label_count > 2
    ```
 
-***REMOVED******REMOVED******REMOVED*** Short-term (to get traces working)
+### Short-term (to get traces working)
 
 1. **Verify traces are being generated**:
    ```bash
-   ***REMOVED*** Inside Alloy container:
+   # Inside Alloy container:
    curl http://localhost:12345/metrics | grep otelcol_receiver_accepted_spans
    ```
 
@@ -211,10 +211,10 @@ OTEL_ENABLED=true ✅
 3. **Verify Tempo is receiving**:
    ```bash
    curl http://localhost:3200/api/search/tags | jq
-   ***REMOVED*** Should show service.name and other trace tags
+   # Should show service.name and other trace tags
    ```
 
-***REMOVED******REMOVED******REMOVED*** Medium-term
+### Medium-term
 
 1. **Create `verify-ingestion.sh`** for CI/CD:
     - Fails if Loki has zero labels
@@ -229,28 +229,28 @@ OTEL_ENABLED=true ✅
     - Debug why `loki.source.docker` positions stays empty
     - Consider switching to `loki.source.file` with Docker JSON logs
 
-***REMOVED******REMOVED*** Files Created
+## Files Created
 
 1. `./howto/monitoring/scripts/verify-monitoring.sh` - Telemetry verification script
 2. `monitoring/grafana/telemetry-truth.md` - Latest proof report
 3. `monitoring/incident_data/INCIDENT_NO_DATA_20260109.md` - Full investigation
 4. `monitoring/TELEMETRY_STATUS.md` - This file
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
 ```bash
-***REMOVED*** Run telemetry proof (comprehensive)
+# Run telemetry proof (comprehensive)
 cd /volume1/docker/scanium/repo
 bash ./howto/monitoring/scripts/verify-monitoring.sh
 
-***REMOVED*** Quick checks
+# Quick checks
 curl -s http://localhost:3000/api/datasources | jq '.[] | {name, type, uid}'
 curl -s http://localhost:9009/prometheus/api/v1/label/__name__/values | jq '.data | length'
 curl -s http://localhost:3100/loki/api/v1/labels | jq
 curl -s http://localhost:3200/api/search/tags | jq
 ```
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 - [x] Mimir shows scanium-backend metrics ✅
 - [x] Loki shows backend logs ✅ (Pino integrated with OTLP)
@@ -260,7 +260,7 @@ curl -s http://localhost:3200/api/search/tags | jq
 
 **Current Score**: 4/5 (80%)
 
-***REMOVED******REMOVED*** Fixes Applied
+## Fixes Applied
 
 1. **Pino OTLP Integration** - Installed `pino-opentelemetry-transport` and configured Pino to send
    logs to OpenTelemetry LoggerProvider

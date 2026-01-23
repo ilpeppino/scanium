@@ -1,20 +1,20 @@
-***REMOVED***!/bin/bash
-***REMOVED*** scripts/ci/local-ci.sh - Local CI runner (quota-free alternative to GitHub Actions)
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   ./scripts/ci/local-ci.sh doctor    ***REMOVED*** Check prerequisites
-***REMOVED***   ./scripts/ci/local-ci.sh coverage  ***REMOVED*** Run coverage checks
-***REMOVED***   ./scripts/ci/local-ci.sh security  ***REMOVED*** Run CVE security scan
-***REMOVED***   ./scripts/ci/local-ci.sh all       ***REMOVED*** Run both
-***REMOVED***   ./scripts/ci/local-ci.sh help      ***REMOVED*** Show help
-***REMOVED***
-***REMOVED*** Options:
-***REMOVED***   --act          Run via 'act' (GitHub Actions emulator) instead of direct tools
-***REMOVED***   --no-color     Disable colored output
-***REMOVED***
-***REMOVED*** Mirrors:
-***REMOVED***   - .github/workflows/coverage.yml
-***REMOVED***   - .github/workflows/security-cve-scan.yml
+#!/bin/bash
+# scripts/ci/local-ci.sh - Local CI runner (quota-free alternative to GitHub Actions)
+#
+# Usage:
+#   ./scripts/ci/local-ci.sh doctor    # Check prerequisites
+#   ./scripts/ci/local-ci.sh coverage  # Run coverage checks
+#   ./scripts/ci/local-ci.sh security  # Run CVE security scan
+#   ./scripts/ci/local-ci.sh all       # Run both
+#   ./scripts/ci/local-ci.sh help      # Show help
+#
+# Options:
+#   --act          Run via 'act' (GitHub Actions emulator) instead of direct tools
+#   --no-color     Disable colored output
+#
+# Mirrors:
+#   - .github/workflows/coverage.yml
+#   - .github/workflows/security-cve-scan.yml
 
 set -euo pipefail
 
@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 OUTPUT_DIR="$REPO_ROOT/tmp/ci"
 
-***REMOVED*** Colors (can be disabled with --no-color)
+# Colors (can be disabled with --no-color)
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -30,10 +30,10 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-***REMOVED*** Parse options
+# Parse options
 USE_ACT=false
 NO_OPEN=false
-while [[ $***REMOVED*** -gt 0 ]]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --act)
             USE_ACT=true
@@ -79,11 +79,11 @@ ${BLUE}Options:${NC}
   --no-open   Don't auto-open HTML reports in browser (coverage only)
 
 ${BLUE}Examples:${NC}
-  $0 doctor              ***REMOVED*** Verify prerequisites
-  $0 coverage            ***REMOVED*** Run tests and coverage verification
-  $0 security            ***REMOVED*** Run OWASP Dependency-Check CVE scan
-  $0 all                 ***REMOVED*** Run full CI suite
-  $0 --act coverage      ***REMOVED*** Run coverage via act (Docker)
+  $0 doctor              # Verify prerequisites
+  $0 coverage            # Run tests and coverage verification
+  $0 security            # Run OWASP Dependency-Check CVE scan
+  $0 all                 # Run full CI suite
+  $0 --act coverage      # Run coverage via act (Docker)
 
 ${BLUE}Output:${NC}
   Coverage reports:  $OUTPUT_DIR/coverage/
@@ -182,7 +182,7 @@ run_security_act() {
     fi
 
     cd "$REPO_ROOT"
-    ***REMOVED*** Pass NVD API key if available
+    # Pass NVD API key if available
     local act_env=""
     if [[ -n "${NVD_API_KEY:-}" ]]; then
         act_env="-s NVD_API_KEY=$NVD_API_KEY"
@@ -198,7 +198,7 @@ run_all() {
     echo -e "${BLUE}${BOLD}=== Running Full CI Suite ===${NC}"
     echo ""
 
-    ***REMOVED*** Run coverage
+    # Run coverage
     echo -e "${BLUE}--- Coverage ---${NC}"
     if run_coverage; then
         coverage_result=0
@@ -207,7 +207,7 @@ run_all() {
     fi
     echo ""
 
-    ***REMOVED*** Run security
+    # Run security
     echo -e "${BLUE}--- Security ---${NC}"
     if run_security; then
         security_result=0
@@ -216,7 +216,7 @@ run_all() {
     fi
     echo ""
 
-    ***REMOVED*** Summary
+    # Summary
     echo -e "${BLUE}${BOLD}=== Final Summary ===${NC}"
     echo ""
     if [[ $coverage_result -eq 0 ]]; then
@@ -235,13 +235,13 @@ run_all() {
     echo "Reports: $OUTPUT_DIR/"
     echo ""
 
-    ***REMOVED*** Exit with failure if either failed
+    # Exit with failure if either failed
     if [[ $coverage_result -ne 0 || $security_result -ne 0 ]]; then
         exit 1
     fi
 }
 
-***REMOVED*** Main dispatch
+# Main dispatch
 case "$COMMAND" in
     doctor)
         run_doctor

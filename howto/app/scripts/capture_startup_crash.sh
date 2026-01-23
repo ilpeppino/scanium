@@ -1,51 +1,51 @@
-***REMOVED***!/bin/bash
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** Scanium Startup Crash Capture Script
-***REMOVED***
-***REMOVED*** Purpose: Capture diagnostic information when the app crash-loops on startup.
-***REMOVED***          Helps identify root causes by collecting logs, package info, and
-***REMOVED***          process state before/after launch attempts.
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   ./scripts/dev/capture_startup_crash.sh [OPTIONS]
-***REMOVED***
-***REMOVED*** Options:
-***REMOVED***   --flavor FLAVOR   Build flavor: dev, beta, or prod (default: dev)
-***REMOVED***   --clear           Clear app data before launch
-***REMOVED***   --install APK     Install APK before launch
-***REMOVED***   --loop N          Run N iterations to catch intermittent crashes (default: 1)
-***REMOVED***   --stop-on-crash   Stop loop on first crash detected
-***REMOVED***   --output DIR      Output directory (default: tmp/startup_crash)
-***REMOVED***   --help            Show this help message
-***REMOVED***
-***REMOVED*** Examples:
-***REMOVED***   ./scripts/dev/capture_startup_crash.sh
-***REMOVED***   ./scripts/dev/capture_startup_crash.sh --clear --loop 5 --stop-on-crash
-***REMOVED***   ./scripts/dev/capture_startup_crash.sh --flavor beta --install app.apk
-***REMOVED***
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+#!/bin/bash
+##############################################################################
+# Scanium Startup Crash Capture Script
+#
+# Purpose: Capture diagnostic information when the app crash-loops on startup.
+#          Helps identify root causes by collecting logs, package info, and
+#          process state before/after launch attempts.
+#
+# Usage:
+#   ./scripts/dev/capture_startup_crash.sh [OPTIONS]
+#
+# Options:
+#   --flavor FLAVOR   Build flavor: dev, beta, or prod (default: dev)
+#   --clear           Clear app data before launch
+#   --install APK     Install APK before launch
+#   --loop N          Run N iterations to catch intermittent crashes (default: 1)
+#   --stop-on-crash   Stop loop on first crash detected
+#   --output DIR      Output directory (default: tmp/startup_crash)
+#   --help            Show this help message
+#
+# Examples:
+#   ./scripts/dev/capture_startup_crash.sh
+#   ./scripts/dev/capture_startup_crash.sh --clear --loop 5 --stop-on-crash
+#   ./scripts/dev/capture_startup_crash.sh --flavor beta --install app.apk
+#
+##############################################################################
 
 set -e
 
-***REMOVED*** Colors for output
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' ***REMOVED*** No Color
+NC='\033[0m' # No Color
 
-***REMOVED*** Script directory
+# Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-***REMOVED*** Package name mapping by flavor
+# Package name mapping by flavor
 declare -A PACKAGE_NAMES=(
     ["dev"]="com.scanium.app.dev"
     ["beta"]="com.scanium.app.beta"
     ["prod"]="com.scanium.app"
 )
 
-***REMOVED*** Default options
+# Default options
 FLAVOR="dev"
 CLEAR_DATA=false
 INSTALL_APK=""
@@ -53,8 +53,8 @@ LOOP_COUNT=1
 STOP_ON_CRASH=false
 OUTPUT_DIR="$REPO_ROOT/tmp/startup_crash"
 
-***REMOVED*** Parse arguments
-while [[ $***REMOVED*** -gt 0 ]]; do
+# Parse arguments
+while [[ $# -gt 0 ]]; do
     case $1 in
         --flavor)
             FLAVOR="$2"
@@ -96,13 +96,13 @@ Options:
   --help            Show this help message
 
 Examples:
-  ***REMOVED*** Single capture for dev flavor
+  # Single capture for dev flavor
   ./scripts/dev/capture_startup_crash.sh
 
-  ***REMOVED*** Loop mode to catch intermittent crashes
+  # Loop mode to catch intermittent crashes
   ./scripts/dev/capture_startup_crash.sh --clear --loop 10 --stop-on-crash
 
-  ***REMOVED*** Install APK and test beta flavor
+  # Install APK and test beta flavor
   ./scripts/dev/capture_startup_crash.sh --flavor beta --install app-beta-release.apk
 
 Output:
@@ -124,7 +124,7 @@ EOF
     esac
 done
 
-***REMOVED*** Validate flavor
+# Validate flavor
 if [[ ! -v "PACKAGE_NAMES[$FLAVOR]" ]]; then
     echo -e "${RED}Invalid flavor: $FLAVOR${NC}"
     echo "Valid flavors: dev, beta, prod"
@@ -145,7 +145,7 @@ echo "  Clear data: $CLEAR_DATA"
 echo "  Stop on crash: $STOP_ON_CRASH"
 echo ""
 
-***REMOVED*** Check adb connectivity
+# Check adb connectivity
 echo -e "${YELLOW}Checking ADB connection...${NC}"
 if ! adb devices | grep -q "device$"; then
     echo -e "${RED}No Android device connected.${NC}"
@@ -156,10 +156,10 @@ DEVICE=$(adb devices | grep "device$" | head -1 | awk '{print $1}')
 echo -e "${GREEN}Connected to device: $DEVICE${NC}"
 echo ""
 
-***REMOVED*** Create output directory
+# Create output directory
 mkdir -p "$OUTPUT_DIR"
 
-***REMOVED*** Function to capture a single startup attempt
+# Function to capture a single startup attempt
 capture_startup() {
     local iteration=$1
     local timestamp=$(date +%Y%m%d_%H%M%S)
@@ -168,38 +168,38 @@ capture_startup() {
 
     echo -e "${YELLOW}[$iteration/$LOOP_COUNT] Starting capture at $timestamp${NC}"
 
-    ***REMOVED*** Clear logcat buffer
+    # Clear logcat buffer
     adb logcat -c
 
-    ***REMOVED*** Optionally clear app data
+    # Optionally clear app data
     if [ "$CLEAR_DATA" = true ]; then
         echo "  Clearing app data..."
         adb shell pm clear "$PACKAGE" 2>/dev/null || true
     fi
 
-    ***REMOVED*** Optionally install APK
+    # Optionally install APK
     if [ -n "$INSTALL_APK" ]; then
         echo "  Installing APK: $INSTALL_APK"
         adb install -r "$INSTALL_APK"
     fi
 
-    ***REMOVED*** Capture pre-launch package info
+    # Capture pre-launch package info
     echo "  Capturing package info..."
     adb shell dumpsys package "$PACKAGE" > "$run_dir/package_info.txt" 2>&1 || true
 
-    ***REMOVED*** Force stop any existing instance
+    # Force stop any existing instance
     adb shell am force-stop "$PACKAGE" 2>/dev/null || true
     sleep 0.5
 
-    ***REMOVED*** Launch main activity
+    # Launch main activity
     echo "  Launching app..."
     local launch_time=$(date +%s%3N)
     adb shell am start -n "$MAIN_ACTIVITY" -W 2>&1 | tee "$run_dir/launch_result.txt" || true
 
-    ***REMOVED*** Wait for potential crash (startup should complete within 3 seconds)
+    # Wait for potential crash (startup should complete within 3 seconds)
     sleep 3
 
-    ***REMOVED*** Capture logcat
+    # Capture logcat
     echo "  Capturing logcat..."
     adb logcat -d \
         -s ActivityManager:* AndroidRuntime:* System.err:* "$PACKAGE:*" \
@@ -207,20 +207,20 @@ capture_startup() {
         "DomainPackProvider:*" "Sentry:*" \
         > "$run_dir/logcat.txt" 2>&1 || true
 
-    ***REMOVED*** Also capture full logcat for thorough analysis
+    # Also capture full logcat for thorough analysis
     adb logcat -d > "$run_dir/logcat_full.txt" 2>&1 || true
 
-    ***REMOVED*** Extract FATAL EXCEPTION if present
+    # Extract FATAL EXCEPTION if present
     if grep -q "FATAL EXCEPTION" "$run_dir/logcat.txt" 2>/dev/null; then
         echo -e "  ${RED}FATAL EXCEPTION detected!${NC}"
-        ***REMOVED*** Extract the exception block (from FATAL EXCEPTION to next blank line or end)
+        # Extract the exception block (from FATAL EXCEPTION to next blank line or end)
         awk '/FATAL EXCEPTION/,/^$/{print}' "$run_dir/logcat.txt" > "$run_dir/fatal_exception.txt"
         CRASH_DETECTED=true
     else
         CRASH_DETECTED=false
     fi
 
-    ***REMOVED*** Check if app is still running
+    # Check if app is still running
     echo "  Capturing process info..."
     adb shell "ps -A 2>/dev/null || ps" | grep "$PACKAGE" > "$run_dir/process_info.txt" 2>&1 || true
 
@@ -229,17 +229,17 @@ capture_startup() {
         app_running=true
     fi
 
-    ***REMOVED*** Check activity processes
+    # Check activity processes
     adb shell dumpsys activity processes | grep -A5 "$PACKAGE" > "$run_dir/activity_processes.txt" 2>&1 || true
 
-    ***REMOVED*** Try to list app files (best effort, may fail without root)
+    # Try to list app files (best effort, may fail without root)
     echo "  Capturing app files list..."
     adb shell "run-as $PACKAGE ls -la files/ 2>/dev/null || echo 'Cannot access app files (not debuggable or no files)'" > "$run_dir/files_list.txt" 2>&1 || true
 
-    ***REMOVED*** Check for ANR traces
+    # Check for ANR traces
     adb shell "cat /data/anr/traces.txt 2>/dev/null | head -500" > "$run_dir/anr_traces.txt" 2>&1 || true
 
-    ***REMOVED*** Create summary
+    # Create summary
     local crash_status="No crash detected"
     if [ "$CRASH_DETECTED" = true ]; then
         crash_status="CRASH DETECTED"
@@ -300,7 +300,7 @@ EOF
     return 0
 }
 
-***REMOVED*** Run capture loop
+# Run capture loop
 CRASHES_FOUND=0
 for ((i=1; i<=LOOP_COUNT; i++)); do
     if ! capture_startup "$i"; then
@@ -310,14 +310,14 @@ for ((i=1; i<=LOOP_COUNT; i++)); do
         fi
     fi
 
-    ***REMOVED*** Short delay between iterations (if looping)
+    # Short delay between iterations (if looping)
     if [ $i -lt $LOOP_COUNT ]; then
         echo ""
         sleep 1
     fi
 done
 
-***REMOVED*** Final summary
+# Final summary
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}  Capture Complete${NC}"

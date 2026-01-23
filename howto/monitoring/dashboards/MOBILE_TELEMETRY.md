@@ -1,9 +1,9 @@
-***REMOVED*** Mobile Telemetry
+# Mobile Telemetry
 
 Scanium mobile app sends telemetry events to the backend, which forwards them to the LGTM stack (
 Loki/Mimir) via Grafana Alloy.
 
-***REMOVED******REMOVED*** Ingestion Path
+## Ingestion Path
 
 1. **Mobile App**: Sends `POST /v1/telemetry/mobile` to Backend.
 2. **Backend**: Validates request and emits OTLP Log Record to `scanium-alloy:4318`.
@@ -12,7 +12,7 @@ Loki/Mimir) via Grafana Alloy.
     - Adds `source="scanium-mobile"` external label (via `mobile_http` receiver pipeline).
     - Forwards to Loki.
 
-***REMOVED******REMOVED*** Event Schema
+## Event Schema
 
 Payload:
 
@@ -31,7 +31,7 @@ Payload:
 }
 ```
 
-***REMOVED******REMOVED*** querying
+## querying
 
 Loki:
 

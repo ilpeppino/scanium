@@ -1,4 +1,4 @@
-***REMOVED*** Loki 3.x - Single-node filesystem + TSDB (dev/NAS)
+# Loki 3.x - Single-node filesystem + TSDB (dev/NAS)
 auth_enabled: false
 
 server:
@@ -33,7 +33,7 @@ storage_config:
     directory: /loki/chunks
 
 limits_config:
-  retention_period: 168h  ***REMOVED*** 7 days
+  retention_period: 168h  # 7 days
 
 compactor:
   working_directory: /loki/compactor

@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/DECISIONS.md.
 
-***REMOVED*** ADR-0003: Module Boundaries and Dependency Rules
+# ADR-0003: Module Boundaries and Dependency Rules
 
 **Status:** Accepted  
 **Date:** 2025-01-12  
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Context
+## Context
 
 We have multiple modules (androidApp, android-*, shared/core-*, core-domainpack, shell modules).
 Without rules, platform code can leak into shared code or platform modules can tangle, risking
@@ -17,7 +17,7 @@ Without rules, platform code can leak into shared code or platform modules can t
 
 ---
 
-***REMOVED******REMOVED*** Decision
+## Decision
 
 Adopt clear dependency rules and keep enforcement lightweight:
 
@@ -38,7 +38,7 @@ Gradle dependency validation when the graph grows.
 
 ---
 
-***REMOVED******REMOVED*** Consequences
+## Consequences
 
 **Positive**
 
@@ -52,7 +52,7 @@ Gradle dependency validation when the graph grows.
 
 ---
 
-***REMOVED******REMOVED*** Notes for Future Enforcement
+## Notes for Future Enforcement
 
 - If new shared modules appear (e.g., shared/core-domain), they follow the same rules: depend only
   on shared modules, never on Android or UI.

@@ -55,7 +55,7 @@ describe('VisualFactsCache', () => {
 
   const mockFacts: VisualFacts = {
     itemId: 'test-item',
-    dominantColors: [{ name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 50 }],
+    dominantColors: [{ name: 'blue', rgbHex: '#0000FF', pct: 50 }],
     ocrSnippets: [{ text: 'IKEA', confidence: 0.9 }],
     labelHints: [{ label: 'Furniture', score: 0.85 }],
     logoHints: [{ brand: 'IKEA', score: 0.8 }],
@@ -387,8 +387,8 @@ describe('resolveAttributes', () => {
       const facts: VisualFacts = {
         ...baseFacts,
         dominantColors: [
-          { name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 60 },
-          { name: 'white', rgbHex: '***REMOVED***FFFFFF', pct: 20 },
+          { name: 'blue', rgbHex: '#0000FF', pct: 60 },
+          { name: 'white', rgbHex: '#FFFFFF', pct: 20 },
         ],
       };
 
@@ -404,8 +404,8 @@ describe('resolveAttributes', () => {
       const facts: VisualFacts = {
         ...baseFacts,
         dominantColors: [
-          { name: 'red', rgbHex: '***REMOVED***FF0000', pct: 45 },
-          { name: 'black', rgbHex: '***REMOVED***000000', pct: 15 },
+          { name: 'red', rgbHex: '#FF0000', pct: 45 },
+          { name: 'black', rgbHex: '#000000', pct: 15 },
         ],
       };
 
@@ -420,8 +420,8 @@ describe('resolveAttributes', () => {
       const facts: VisualFacts = {
         ...baseFacts,
         dominantColors: [
-          { name: 'green', rgbHex: '***REMOVED***00FF00', pct: 30 },
-          { name: 'gray', rgbHex: '***REMOVED***808080', pct: 10 },
+          { name: 'green', rgbHex: '#00FF00', pct: 30 },
+          { name: 'gray', rgbHex: '#808080', pct: 10 },
         ],
       };
 
@@ -436,8 +436,8 @@ describe('resolveAttributes', () => {
       const facts: VisualFacts = {
         ...baseFacts,
         dominantColors: [
-          { name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 28 },
-          { name: 'green', rgbHex: '***REMOVED***00FF00', pct: 25 },
+          { name: 'blue', rgbHex: '#0000FF', pct: 28 },
+          { name: 'green', rgbHex: '#00FF00', pct: 25 },
         ],
       };
 
@@ -504,7 +504,7 @@ describe('resolveAttributes', () => {
     it('suggests brand photo when brand is missing', () => {
       const facts: VisualFacts = {
         ...baseFacts,
-        dominantColors: [{ name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 60 }],
+        dominantColors: [{ name: 'blue', rgbHex: '#0000FF', pct: 60 }],
       };
 
       const result = resolveAttributes('item-1', facts);
@@ -515,7 +515,7 @@ describe('resolveAttributes', () => {
       const facts: VisualFacts = {
         ...baseFacts,
         ocrSnippets: [{ text: 'Acmecorp', confidence: 0.8 }],
-        dominantColors: [{ name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 60 }],
+        dominantColors: [{ name: 'blue', rgbHex: '#0000FF', pct: 60 }],
       };
 
       const result = resolveAttributes('item-1', facts);
@@ -527,7 +527,7 @@ describe('resolveAttributes', () => {
       const facts: VisualFacts = {
         ...baseFacts,
         logoHints: [{ brand: 'IKEA', score: 0.9 }],
-        dominantColors: [{ name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 60 }],
+        dominantColors: [{ name: 'blue', rgbHex: '#0000FF', pct: 60 }],
       };
 
       const result = resolveAttributes('item-1', facts);
@@ -543,8 +543,8 @@ describe('resolveAttributes', () => {
           { text: 'AB1234', confidence: 0.9 },
         ],
         dominantColors: [
-          { name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 30 },
-          { name: 'green', rgbHex: '***REMOVED***00FF00', pct: 28 },
+          { name: 'blue', rgbHex: '#0000FF', pct: 30 },
+          { name: 'green', rgbHex: '#00FF00', pct: 28 },
         ],
       };
 
@@ -561,7 +561,7 @@ describe('resolveAttributes', () => {
           { text: 'Model', confidence: 0.9 },
           { text: 'AB1234', confidence: 0.9 },
         ],
-        dominantColors: [{ name: 'blue', rgbHex: '***REMOVED***0000FF', pct: 60 }],
+        dominantColors: [{ name: 'blue', rgbHex: '#0000FF', pct: 60 }],
       };
 
       const result = resolveAttributes('item-1', facts);

@@ -135,7 +135,7 @@ export const ebayAuthRoutes: FastifyPluginAsync<{ config: Config }> = async (
       justify-content: center;
       min-height: 100vh;
       margin: 0;
-      background: linear-gradient(135deg, ***REMOVED***667eea 0%, ***REMOVED***764ba2 100%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
     .container {

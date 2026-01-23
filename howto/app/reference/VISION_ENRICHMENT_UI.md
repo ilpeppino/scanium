@@ -1,11 +1,11 @@
-***REMOVED*** Vision Enrichment UI - Edit Items Enhancement
+# Vision Enrichment UI - Edit Items Enhancement
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This document describes the UI enhancements made to the Edit Items screen to display and utilize
 vision attributes that are automatically extracted when items are scanned.
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 After scanning an item (e.g., Labello lip balm), the app would show "Unknown classification + no
 prefilled attributes" even though:
@@ -17,7 +17,7 @@ prefilled attributes" even though:
 **Root Cause:** The Edit Items UI was not displaying or utilizing the vision attributes that were
 already available in the data model.
 
-***REMOVED******REMOVED*** Solution
+## Solution
 
 Enhanced the Edit Items screen (`EditItemsScreen.kt`) to:
 
@@ -26,9 +26,9 @@ Enhanced the Edit Items screen (`EditItemsScreen.kt`) to:
 3. **Populate recognized text** from vision OCR data
 4. **Show detected attributes** (brand, colors) as informational chips
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Existing Infrastructure (Already Working)
+### Existing Infrastructure (Already Working)
 
 ```
 1. User scans item (CameraScreen)
@@ -48,7 +48,7 @@ Enhanced the Edit Items screen (`EditItemsScreen.kt`) to:
 8. **NEW**: EditItemsScreen displays vision data ✅
 ```
 
-***REMOVED******REMOVED******REMOVED*** Data Flow
+### Data Flow
 
 **ScannedItem Model Fields:**
 
@@ -70,11 +70,11 @@ data class VisionAttributes(
 )
 ```
 
-***REMOVED******REMOVED*** Changes Made
+## Changes Made
 
-***REMOVED******REMOVED******REMOVED*** 1. Files Modified
+### 1. Files Modified
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `/androidApp/src/main/java/com/scanium/app/items/EditItemsScreen.kt`
+#### `/androidApp/src/main/java/com/scanium/app/items/EditItemsScreen.kt`
 
 **Added:**
 
@@ -94,16 +94,16 @@ data class VisionAttributes(
 - Line 522-569: Category dropdown composable
 - Line 571-630: Vision attributes display with brand and color chips
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `/androidApp/src/main/java/com/scanium/app/items/state/ItemsStateManager.kt`
+#### `/androidApp/src/main/java/com/scanium/app/items/state/ItemsStateManager.kt`
 
 **Added:**
 
 - Line 707: `category` field to `ItemFieldUpdate` data class
 - Line 313: Apply category updates in `updateItemsFields()`
 
-***REMOVED******REMOVED******REMOVED*** 2. UI Enhancements
+### 2. UI Enhancements
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Pre-filled Fields
+#### Pre-filled Fields
 
 **Label / Name:**
 
@@ -122,7 +122,7 @@ data class VisionAttributes(
 - Shows all available categories
 - Allows user to correct misclassifications
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Vision Attributes Display
+#### Vision Attributes Display
 
 Shows detected attributes as chips:
 
@@ -131,9 +131,9 @@ Shows detected attributes as chips:
 
 The section only appears if vision data is available (not empty).
 
-***REMOVED******REMOVED*** Manual Test Checklist
+## Manual Test Checklist
 
-***REMOVED******REMOVED******REMOVED*** Scenario 1: Scan Item with Clear Brand Logo (e.g., Labello)
+### Scenario 1: Scan Item with Clear Brand Logo (e.g., Labello)
 
 1. **Setup:**
     - Ensure backend is running and classification is enabled
@@ -157,7 +157,7 @@ The section only appears if vision data is available (not empty).
    [ ] Recognized Text field populated with OCR text
    ```
 
-***REMOVED******REMOVED******REMOVED*** Scenario 2: Edit Category
+### Scenario 2: Edit Category
 
 1. **Steps:**
    ```
@@ -174,7 +174,7 @@ The section only appears if vision data is available (not empty).
    [ ] Category persists after save
    ```
 
-***REMOVED******REMOVED******REMOVED*** Scenario 3: Scan Item Without Brand (e.g., Generic Object)
+### Scenario 3: Scan Item Without Brand (e.g., Generic Object)
 
 1. **Steps:**
    ```
@@ -190,7 +190,7 @@ The section only appears if vision data is available (not empty).
    [ ] Category based on object labels
    ```
 
-***REMOVED******REMOVED******REMOVED*** Scenario 4: Multiple Items
+### Scenario 4: Multiple Items
 
 1. **Steps:**
    ```
@@ -207,31 +207,31 @@ The section only appears if vision data is available (not empty).
    [ ] Page indicator shows current item
    ```
 
-***REMOVED******REMOVED*** Verification on NAS
+## Verification on NAS
 
-***REMOVED******REMOVED******REMOVED*** Build and Deploy
+### Build and Deploy
 
 ```bash
-***REMOVED*** On development machine
+# On development machine
 cd /Users/family/dev/scanium
 ./gradlew :androidApp:assembleDebug
 
-***REMOVED*** Transfer APK to device (or use adb install)
+# Transfer APK to device (or use adb install)
 adb install -r androidApp/build/outputs/apk/dev/debug/androidApp-dev-debug.apk
 ```
 
-***REMOVED******REMOVED******REMOVED*** Backend Logs
+### Backend Logs
 
 ```bash
-***REMOVED*** SSH into NAS
+# SSH into NAS
 ssh nas
 cd /volume1/docker/scanium/repo/deploy/nas/compose
 
-***REMOVED*** Check backend logs for vision extraction
+# Check backend logs for vision extraction
 docker logs -f --tail=200 scanium-backend | grep -i "vision\|classify\|enrich"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Expected Log Output
+### Expected Log Output
 
 ```
 [Classifier] POST /classify - enrichAttributes=true
@@ -244,14 +244,14 @@ docker logs -f --tail=200 scanium-backend | grep -i "vision\|classify\|enrich"
 [Classifier] Response: category=BEAUTY, enrichedAttributes={brand, color}, visionAttributes={logos, colors, ocr}
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test Classification Endpoint
+### Test Classification Endpoint
 
 ```bash
-***REMOVED*** From NAS or local machine with access
+# From NAS or local machine with access
 API_KEY="your-api-key"
 DEVICE_ID="test-device-001"
 
-***REMOVED*** Test with sample image
+# Test with sample image
 curl -X POST "http://localhost:3000/v1/classify?enrichAttributes=true" \
   -H "X-API-Key: $API_KEY" \
   -H "X-Scanium-Device-Id: $DEVICE_ID" \
@@ -274,8 +274,8 @@ curl -X POST "http://localhost:3000/v1/classify?enrichAttributes=true" \
   },
   "visionAttributes": {
     "colors": [
-      {"name": "blue", "hex": "***REMOVED***1E40AF", "score": 0.92},
-      {"name": "white", "hex": "***REMOVED***FFFFFF", "score": 0.78}
+      {"name": "blue", "hex": "#1E40AF", "score": 0.92},
+      {"name": "white", "hex": "#FFFFFF", "score": 0.78}
     ],
     "ocrText": "Labello Cherry SPF 15",
     "logos": [
@@ -291,7 +291,7 @@ curl -X POST "http://localhost:3000/v1/classify?enrichAttributes=true" \
 }
 ```
 
-***REMOVED******REMOVED*** Known Limitations
+## Known Limitations
 
 1. **Backend Required:** Vision enrichment only works when backend is available and classification
    is enabled
@@ -302,7 +302,7 @@ curl -X POST "http://localhost:3000/v1/classify?enrichAttributes=true" \
 5. **Attribute Editing:** Brand and color chips are informational only (editing support can be
    added)
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
 1. **Category Mapping:** Use vision labels to improve category suggestions
     - Map "lip balm" label → BEAUTY category
@@ -323,7 +323,7 @@ curl -X POST "http://localhost:3000/v1/classify?enrichAttributes=true" \
     - Show logo detection boxes
     - Display color extraction areas
 
-***REMOVED******REMOVED*** References
+## References
 
 - Backend Vision Extractor: `/backend/src/modules/vision/extractor.ts`
 - Backend Classification Route: `/backend/src/modules/classifier/routes.ts`
@@ -334,7 +334,7 @@ curl -X POST "http://localhost:3000/v1/classify?enrichAttributes=true" \
 - ScannedItem Model:
   `/shared/core-models/src/commonMain/kotlin/com/scanium/shared/core/models/items/ScannedItem.kt`
 
-***REMOVED******REMOVED*** Testing Summary
+## Testing Summary
 
 ✅ **Backend:** Vision extraction and classification already tested and working
 ✅ **Android:** Classification coordinator automatically triggers after scan

@@ -1,4 +1,4 @@
-***REMOVED*** Android-iOS Parity Gap Matrix
+# Android-iOS Parity Gap Matrix
 
 **Document Version:** 1.0
 **Last Updated:** 2026-01-13
@@ -6,9 +6,9 @@
 
 ---
 
-***REMOVED******REMOVED*** Reading This Document
+## Reading This Document
 
-***REMOVED******REMOVED******REMOVED*** Column Definitions
+### Column Definitions
 
 1. **Capability:** Feature or component area
 2. **Android Status:** Implementation status with file evidence
@@ -20,7 +20,7 @@
 8. **Proposed Solution:** High-level approach
 9. **Estimation:** Size bucket (S/M/L) based on complexity
 
-***REMOVED******REMOVED******REMOVED*** Estimation Buckets
+### Estimation Buckets
 
 - **S (Small):** 1-3 days, <500 LOC, single file/module, low risk
 - **M (Medium):** 4-10 days, 500-2000 LOC, multiple files, medium complexity
@@ -28,9 +28,9 @@
 
 ---
 
-***REMOVED******REMOVED*** GAP MATRIX
+## GAP MATRIX
 
-| ***REMOVED***                                           | Capability                      | Android Status                                                                               | iOS Status                                                                              | Gap Description                                                                                              | Root Cause Type                           | Risk                                                          | Dependencies                                                                                   | Proposed Solution                                                                                                                          | Size    |
+| #                                           | Capability                      | Android Status                                                                               | iOS Status                                                                              | Gap Description                                                                                              | Root Cause Type                           | Risk                                                          | Dependencies                                                                                   | Proposed Solution                                                                                                                          | Size    |
 |---------------------------------------------|---------------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|-------------------------------------------|---------------------------------------------------------------|------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------|
 | **1. CAPTURE - CAMERA UI**                  |
 | 1.1                                         | Camera Preview Screen           | ✅ Done<br>`CameraScreen.kt`<br>`CameraXManager.kt`                                           | ❌ None<br>Searched: `iosApp/`                                                           | No camera feed UI, no preview view controller, no capture interface                                          | Missing UI                                | **HIGH**<br>Core functionality blocker                        | - AVFoundationFrameSource.swift (exists)<br>- SwiftUI camera view patterns                     | Create `CameraView.swift` with AVCaptureVideoPreviewLayer wrapper, integrate AVFoundationFrameSource, add to NavigationStack               | **M**   |
@@ -115,7 +115,7 @@
 | 16.4                                        | Feature Flag Toggle             | ✅ Done<br>BuildConfig-driven                                                                 | ✅ Done<br>`FeatureFlags.swift:4`<br>`useMocks = true`                                   | Feature flag exists but hardcoded to true, should be dynamic                                                 | Missing Configuration                     | **LOW**<br>Dev/test aid                                       | - Shared integration working                                                                   | Make `useMocks` read from UserDefaults or build setting, toggle at runtime for testing                                                     | **S**   |
 | **17. BUILD & DEPLOYMENT**                  |
 | 17.1                                        | Product Flavors (Prod/Dev/Beta) | ✅ Done<br>3 flavors with distinct app IDs                                                    | ❌ None                                                                                  | No schemes for side-by-side installation, single configuration                                               | Build Integration                         | **LOW**<br>Dev productivity                                   | - Xcode schemes                                                                                | Create Xcode schemes: Prod, Dev, Beta with distinct bundle IDs, configure build settings per scheme                                        | **S**   |
-| 17.2                                        | Feature Flags (Build-Time)      | ✅ Done<br>BuildConfig fields gated per flavor                                                | ❌ None                                                                                  | No build-time feature gates                                                                                  | Build Integration                         | **LOW**<br>Feature gating                                     | - Xcode build settings                                                                         | Use preprocessor macros (***REMOVED***if DEBUG) or Swift compiler flags for feature gating                                                             | **S**   |
+| 17.2                                        | Feature Flags (Build-Time)      | ✅ Done<br>BuildConfig fields gated per flavor                                                | ❌ None                                                                                  | No build-time feature gates                                                                                  | Build Integration                         | **LOW**<br>Feature gating                                     | - Xcode build settings                                                                         | Use preprocessor macros (#if DEBUG) or Swift compiler flags for feature gating                                                             | **S**   |
 | 17.3                                        | ProGuard/R8 (Code Obfuscation)  | ✅ Done<br>Release builds minified                                                            | ❌ None                                                                                  | No code obfuscation, IPA reversible                                                                          | Build Integration                         | **LOW**<br>IP protection                                      | - Xcode release config                                                                         | Enable "Strip Swift Symbols" + "Make Swift Symbols Hidden" in release build settings                                                       | **S**   |
 | 17.4                                        | SBOM Generation                 | ✅ Done<br>CycloneDX plugin                                                                   | ❌ None                                                                                  | No software bill of materials, supply chain blind spot                                                       | Build Integration                         | **LOW**<br>Security compliance                                | - CocoaPods or SPM plugin                                                                      | Add SBOM generation plugin to Xcode build phases (if required for compliance)                                                              | **S**   |
 | 17.5                                        | CVE Scanning                    | ✅ Done<br>OWASP Dependency-Check                                                             | ❌ None                                                                                  | No automated vulnerability scanning                                                                          | Build Integration                         | **LOW**<br>Security compliance                                | - CI/CD pipeline                                                                               | Integrate dependency scanning tool (e.g., Snyk, OWASP) into CI                                                                             | **S**   |
@@ -126,9 +126,9 @@
 
 ---
 
-***REMOVED******REMOVED*** SUMMARY STATISTICS
+## SUMMARY STATISTICS
 
-***REMOVED******REMOVED******REMOVED*** Gap Counts by Root Cause
+### Gap Counts by Root Cause
 
 - **Missing UI:** 15 gaps
 - **Missing Platform Integration:** 8 gaps
@@ -145,13 +145,13 @@
 - **Build Integration:** 6 gaps
 - **Missing Tests:** 3 gaps (out of scope)
 
-***REMOVED******REMOVED******REMOVED*** Gap Counts by Risk Level
+### Gap Counts by Risk Level
 
 - **HIGH:** 19 gaps (must-fix for MVP)
 - **MED:** 28 gaps (important for parity)
 - **LOW:** 31 gaps (polish/future enhancements)
 
-***REMOVED******REMOVED******REMOVED*** Gap Counts by Size Estimate
+### Gap Counts by Size Estimate
 
 - **S (Small):** 40 gaps (40-120 days total)
 - **M (Medium):** 28 gaps (112-280 days total)
@@ -159,7 +159,7 @@
 
 ---
 
-***REMOVED******REMOVED*** CRITICAL PATH (HIGH-Risk Gaps)
+## CRITICAL PATH (HIGH-Risk Gaps)
 
 These 19 HIGH-risk gaps block MVP:
 
@@ -185,4 +185,4 @@ These 19 HIGH-risk gaps block MVP:
 
 ---
 
-***REMOVED******REMOVED*** END OF GAP MATRIX
+## END OF GAP MATRIX

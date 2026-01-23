@@ -79,7 +79,7 @@ object LiveScanDiagnostics {
         if (!enabled) return
 
         val sb = StringBuilder()
-        sb.appendLine("=== FRAME ***REMOVED***${diagnostics.frameId} ===")
+        sb.appendLine("=== FRAME #${diagnostics.frameId} ===")
         sb.appendLine("  timestamp=${diagnostics.timestamp}")
         sb.appendLine("  image=${diagnostics.imageWidth}x${diagnostics.imageHeight} rot=${diagnostics.rotationDegrees}")
         sb.appendLine("  sharpness=${String.format("%.1f", diagnostics.sharpnessScore)}")
@@ -143,7 +143,7 @@ object LiveScanDiagnostics {
 
         Log.d(
             TAG,
-            "[FRAME ***REMOVED***$frameId] SELECT: id=$selectedId, score=${String.format("%.3f", selectedScore)}, " +
+            "[FRAME #$frameId] SELECT: id=$selectedId, score=${String.format("%.3f", selectedScore)}, " +
                 "centerDist=${String.format("%.3f", selectedCenterDist)}, area=${String.format("%.4f", selectedArea)}, " +
                 "total=$totalCandidates, rejected=$reasons",
         )
@@ -165,7 +165,7 @@ object LiveScanDiagnostics {
 
         Log.i(
             TAG,
-            "[FRAME ***REMOVED***$frameId] ITEM_ADDED: id=$candidateId, cat=$category, " +
+            "[FRAME #$frameId] ITEM_ADDED: id=$candidateId, cat=$category, " +
                 "conf=${String.format("%.2f", confidence)}, " +
                 "centerDist=${String.format("%.3f", centerDistance)}, " +
                 "area=${String.format("%.4f", area)}, " +
@@ -187,7 +187,7 @@ object LiveScanDiagnostics {
 
         Log.d(
             TAG,
-            "[FRAME ***REMOVED***$frameId] GATING_REJECT: id=$candidateId, reason=$reason, " +
+            "[FRAME #$frameId] GATING_REJECT: id=$candidateId, reason=$reason, " +
                 "value=${String.format("%.3f", value)}, threshold=${String.format("%.3f", threshold)}",
         )
     }
@@ -208,7 +208,7 @@ object LiveScanDiagnostics {
 
         Log.d(
             TAG,
-            "[FRAME ***REMOVED***$frameId] STABILITY: id=$candidateId, " +
+            "[FRAME #$frameId] STABILITY: id=$candidateId, " +
                 "frames=$consecutiveFrames/$requiredFrames, " +
                 "time=${stableTimeMs}ms/${requiredTimeMs}ms, " +
                 "stable=$isStable",
@@ -228,7 +228,7 @@ object LiveScanDiagnostics {
 
         Log.d(
             TAG,
-            "[FRAME ***REMOVED***$frameId] SHARPNESS: score=${String.format("%.1f", sharpnessScore)}, " +
+            "[FRAME #$frameId] SHARPNESS: score=${String.format("%.1f", sharpnessScore)}, " +
                 "blurry=$isBlurry, threshold=${String.format("%.1f", threshold)}",
         )
     }

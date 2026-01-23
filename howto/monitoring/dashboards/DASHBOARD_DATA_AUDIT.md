@@ -1,4 +1,4 @@
-***REMOVED*** Scanium Grafana Dashboards Data Audit Report
+# Scanium Grafana Dashboards Data Audit Report
 
 **Date:** 2026-01-10
 **Auditor:** Claude Sonnet 4.5 (Observability Engineering Agent)
@@ -6,13 +6,13 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 This audit validates data availability for all Scanium Grafana dashboards and identifies root causes
 for dashboard failures. The primary finding is a **Mimir ingester-to-querier data visibility issue**
 preventing backend metrics from being queryable despite successful ingestion.
 
-***REMOVED******REMOVED******REMOVED*** Critical Findings
+### Critical Findings
 
 1. **Backend metrics ingestion gap:** Last queryable data is from **1 hour ago** (epoch: 1768041589)
 2. **Alloy is scraping successfully:** Writing 1,559 samples with 0 failures
@@ -22,7 +22,7 @@ preventing backend metrics from being queryable despite successful ingestion.
 
 ---
 
-***REMOVED******REMOVED*** Dashboard Status Summary
+## Dashboard Status Summary
 
 | Dashboard               | Signals        | Initial Status       | Root Cause                            | Priority |
 |-------------------------|----------------|----------------------|---------------------------------------|----------|
@@ -48,7 +48,7 @@ preventing backend metrics from being queryable despite successful ingestion.
 
 ---
 
-***REMOVED******REMOVED*** Signal Dependency Mapping
+## Signal Dependency Mapping
 
 | Dashboard               | Metrics (Mimir) | Logs (Loki) | Traces (Tempo) | External |
 |-------------------------|-----------------|-------------|----------------|----------|
@@ -68,9 +68,9 @@ preventing backend metrics from being queryable despite successful ingestion.
 
 ---
 
-***REMOVED******REMOVED*** Infrastructure Baseline
+## Infrastructure Baseline
 
-***REMOVED******REMOVED******REMOVED*** Monitoring Stack
+### Monitoring Stack
 
 **File:** `/volume1/docker/scanium/repo/monitoring/docker-compose.yml`
 
@@ -98,7 +98,7 @@ scanium-tempo          Up 4 hours (healthy)
 - **Mimir** (uid=MIMIR, type=prometheus) - Metrics
 - **Tempo** (uid=TEMPO, type=tempo) - Traces
 
-***REMOVED******REMOVED******REMOVED*** Dashboard Files
+### Dashboard Files
 
 Location: `/volume1/docker/scanium/repo/monitoring/grafana/dashboards/`
 
@@ -120,9 +120,9 @@ traces-drilldown.json           (15 KB, 12 PromQL queries)
 
 ---
 
-***REMOVED******REMOVED*** PHASE 1: Query-Level Test Results
+## PHASE 1: Query-Level Test Results
 
-***REMOVED******REMOVED******REMOVED*** Datasource Connectivity
+### Datasource Connectivity
 
 ✅ **All datasources accessible and healthy**
 
@@ -130,14 +130,14 @@ traces-drilldown.json           (15 KB, 12 PromQL queries)
 - Mimir direct: http://127.0.0.1:9009/prometheus
 - Loki direct: http://127.0.0.1:3100
 
-***REMOVED******REMOVED******REMOVED*** Metrics (Mimir) Test Results
+### Metrics (Mimir) Test Results
 
 **Metric Names in Index:** 1,064 (historical + current)
 
 **Series Existence:**
 
 ```bash
-***REMOVED*** Series API shows backend series exist (last hour)
+# Series API shows backend series exist (last hour)
 {
   "__name__": "up",
   "job": "scanium-backend",
@@ -156,61 +156,61 @@ traces-drilldown.json           (15 KB, 12 PromQL queries)
 **Query Test (PromQL):**
 
 ```promql
-***REMOVED*** Query: up{job="scanium-backend"}
-***REMOVED*** Time: now (epoch 1768045189)
-***REMOVED*** Result: EMPTY []
+# Query: up{job="scanium-backend"}
+# Time: now (epoch 1768045189)
+# Result: EMPTY []
 
-***REMOVED*** Query: up{job="scanium-backend"} [last 7 days]
-***REMOVED*** Result: 10 data points
-***REMOVED*** Last timestamp: 1768041589 (2026-01-10 10:39:49 UTC)
-***REMOVED*** Current time:   1768045189 (2026-01-10 11:39:49 UTC)
-***REMOVED*** GAP: 3600 seconds (1 HOUR)
+# Query: up{job="scanium-backend"} [last 7 days]
+# Result: 10 data points
+# Last timestamp: 1768041589 (2026-01-10 10:39:49 UTC)
+# Current time:   1768045189 (2026-01-10 11:39:49 UTC)
+# GAP: 3600 seconds (1 HOUR)
 ```
 
 **Pipeline Metrics:** ✅ Working
 
 ```promql
-***REMOVED*** Query: up{source="pipeline"}
-***REMOVED*** Result: 5 series (alloy, loki, mimir, tempo, loki)
-***REMOVED*** Status: QUERYABLE (range queries work)
+# Query: up{source="pipeline"}
+# Result: 5 series (alloy, loki, mimir, tempo, loki)
+# Status: QUERYABLE (range queries work)
 ```
 
 **Backend Application Metrics:**
 
 ```promql
-***REMOVED*** Query: scanium_http_requests_total
-***REMOVED*** Result: EMPTY (metric name exists in index)
+# Query: scanium_http_requests_total
+# Result: EMPTY (metric name exists in index)
 
-***REMOVED*** Query: scanium_http_request_duration_ms_bucket
-***REMOVED*** Result: EMPTY (metric name exists in index)
+# Query: scanium_http_request_duration_ms_bucket
+# Result: EMPTY (metric name exists in index)
 ```
 
 **Backend Endpoint Verification:**
 
 ```bash
-***REMOVED*** Backend exposes 52 metrics at :8080/metrics
-curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^***REMOVED*** HELP" | wc -l
-***REMOVED*** Output: 52
+# Backend exposes 52 metrics at :8080/metrics
+curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^# HELP" | wc -l
+# Output: 52
 
-***REMOVED*** Sample metrics exposed:
+# Sample metrics exposed:
 - scanium_http_requests_total{method="GET",route="/v1/config",status_code="401"} 84
 - scanium_http_request_duration_ms_bucket{le="5",method="GET",...} 84
 - scanium_process_cpu_seconds_total 60.70
 - (process metrics, Node.js metrics, etc.)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Logs (Loki) Test Results
+### Logs (Loki) Test Results
 
 **Log Ingestion:** ❌ NO DATA
 
 ```bash
-***REMOVED*** Query: {source=~".+"}  (any source)
-***REMOVED*** Time: last hour
-***REMOVED*** Result: EMPTY []
-***REMOVED*** Total lines processed: 0
+# Query: {source=~".+"}  (any source)
+# Time: last hour
+# Result: EMPTY []
+# Total lines processed: 0
 
-***REMOVED*** Label values check
-***REMOVED*** Result: No labels exist in time range
+# Label values check
+# Result: No labels exist in time range
 ```
 
 **Expected Sources:**
@@ -223,9 +223,9 @@ curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^***REMOVED*** HELP" | wc 
 
 ---
 
-***REMOVED******REMOVED*** PHASE 2: Traffic Generation
+## PHASE 2: Traffic Generation
 
-***REMOVED******REMOVED******REMOVED*** Traffic Generator Script
+### Traffic Generator Script
 
 **Created:** `/Users/family/dev/scanium/scripts/monitoring/generate-dashboard-traffic.sh`
 
@@ -240,10 +240,10 @@ curl http://REDACTED_INTERNAL_IP:8080/metrics | grep "^***REMOVED*** HELP" | wc 
 **Usage:**
 
 ```bash
-***REMOVED*** Generate all traffic types for 90 seconds
+# Generate all traffic types for 90 seconds
 ./generate-dashboard-traffic.sh --normal --errors --duration 90
 
-***REMOVED*** Normal traffic only
+# Normal traffic only
 ./generate-dashboard-traffic.sh --normal --duration 60
 ```
 
@@ -252,41 +252,41 @@ of traffic but a **Mimir ingester-to-querier visibility issue**.
 
 ---
 
-***REMOVED******REMOVED*** PHASE 5: Mimir Anomaly Deep-Dive
+## PHASE 5: Mimir Anomaly Deep-Dive
 
-***REMOVED******REMOVED******REMOVED*** Anomaly Confirmation
+### Anomaly Confirmation
 
 **Trigger Condition Met:** ✅
 Backend series exist in Mimir but PromQL queries return empty for recent data (last hour).
 
-***REMOVED******REMOVED******REMOVED*** Evidence Collection
+### Evidence Collection
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Series Existence (Mimir API)
+#### 1. Series Existence (Mimir API)
 
 ```bash
-***REMOVED*** Check series for job="scanium-backend" (last hour)
+# Check series for job="scanium-backend" (last hour)
 curl POST /prometheus/api/v1/series?match[]={job="scanium-backend"}
-***REMOVED*** Result: 5 series found
-***REMOVED*** - up, scrape_duration_seconds, scrape_samples_scraped, etc.
+# Result: 5 series found
+# - up, scrape_duration_seconds, scrape_samples_scraped, etc.
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Query Emptiness
+#### 2. Query Emptiness
 
 ```bash
-***REMOVED*** Instant query for up{job="scanium-backend"}
+# Instant query for up{job="scanium-backend"}
 curl POST /prometheus/api/v1/query?query=up{job="scanium-backend"}
-***REMOVED*** Result: [] (EMPTY)
+# Result: [] (EMPTY)
 
-***REMOVED*** Range query (last 5 minutes)
+# Range query (last 5 minutes)
 curl POST /prometheus/api/v1/query_range?query=up{job="scanium-backend"}&start=...
-***REMOVED*** Result: [] (EMPTY)
+# Result: [] (EMPTY)
 
-***REMOVED*** Range query (last 7 days)
+# Range query (last 7 days)
 curl POST /prometheus/api/v1/query_range?query=up{job="scanium-backend"}&start=...
-***REMOVED*** Result: 10 data points (last at epoch 1768041589 - 1 HOUR AGO)
+# Result: 10 data points (last at epoch 1768041589 - 1 HOUR AGO)
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Timestamp/Clock Skew Check
+#### 3. Timestamp/Clock Skew Check
 
 **All clocks synchronized:** ✅
 
@@ -299,22 +299,22 @@ Mimir:     Sat Jan 10 11:39:50 UTC 2026
 
 **Clock skew:** < 1 second (negligible)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Alloy Scraping Status
+#### 4. Alloy Scraping Status
 
 **Alloy Metrics:**
 
 ```
-***REMOVED*** Scrape targets discovered
+# Scrape targets discovered
 prometheus_target_scrape_pool_targets{scrape_job="prometheus.scrape.backend"} 1
 
-***REMOVED*** Samples written to remote storage
+# Samples written to remote storage
 prometheus_remote_storage_samples_total{component_id="prometheus.remote_write.backend"} 1559
 
-***REMOVED*** Highest timestamp in write path
+# Highest timestamp in write path
 prometheus_remote_storage_highest_timestamp_in_seconds{component_id="prometheus.remote_write.backend"} 1.768045124e+09
-***REMOVED*** (7 seconds ago from query time)
+# (7 seconds ago from query time)
 
-***REMOVED*** Remote write failures
+# Remote write failures
 prometheus_remote_storage_samples_failed_total{...backend...} 0
 prometheus_remote_storage_samples_pending{...backend...} 0
 ```
@@ -326,7 +326,7 @@ prometheus_remote_storage_samples_pending{...backend...} 0
 - ✅ Zero remote write failures or pending samples
 - ❌ But data is NOT queryable in Mimir!
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Alloy Configuration
+#### 5. Alloy Configuration
 
 ```hcl
 prometheus.scrape "backend" {
@@ -359,7 +359,7 @@ prometheus.remote_write "backend" {
 
 **Configuration status:** ✅ Correct (no issues)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6. Mimir Ingester vs Querier Visibility
+#### 6. Mimir Ingester vs Querier Visibility
 
 **Mimir Configuration:**
 
@@ -375,7 +375,7 @@ blocks_storage:
     sync_dir: /data/tsdb-sync
   tsdb:
     dir: /data/tsdb
-    retention_period: 360h  ***REMOVED*** 15 days
+    retention_period: 360h  # 15 days
     block_ranges_period: [ 2h ]
     ship_interval: 1m
 ```
@@ -383,10 +383,10 @@ blocks_storage:
 **Mimir Logs:**
 
 ```
-***REMOVED*** No errors in last 10 minutes
-***REMOVED*** Compactor running successfully
-***REMOVED*** Block flushing healthy
-***REMOVED*** User: anonymous (no multi-tenancy issues)
+# No errors in last 10 minutes
+# Compactor running successfully
+# Block flushing healthy
+# User: anonymous (no multi-tenancy issues)
 ```
 
 **Hypothesis:**
@@ -398,7 +398,7 @@ flushing interval is 2 hours, and last queryable data is from 1 hour ago, sugges
 3. Then ingestion to queryable storage stopped/delayed
 4. Current scrapes are reaching ingester but not querier
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 7. Tenant / Org-ID Validation
+#### 7. Tenant / Org-ID Validation
 
 **Tenant Configuration:**
 
@@ -408,29 +408,29 @@ flushing interval is 2 hours, and last queryable data is from 1 hour ago, sugges
 
 **Status:** ✅ Tenant consistency confirmed
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 8. Label Values Check
+#### 8. Label Values Check
 
 ```bash
-***REMOVED*** Check label "job" values
+# Check label "job" values
 curl /prometheus/api/v1/label/job/values
-***REMOVED*** Result: ["alloy", "loki", "mimir", "scanium-backend", "tempo"]
-***REMOVED*** Status: ✅ scanium-backend IS present
+# Result: ["alloy", "loki", "mimir", "scanium-backend", "tempo"]
+# Status: ✅ scanium-backend IS present
 
-***REMOVED*** Check label "__name__" values
+# Check label "__name__" values
 curl /prometheus/api/v1/label/__name__/values
-***REMOVED*** Result: 1064 metric names including:
-***REMOVED*** - scanium_http_requests_total ✅
-***REMOVED*** - scanium_http_request_duration_ms_bucket ✅
-***REMOVED*** - up ✅
+# Result: 1064 metric names including:
+# - scanium_http_requests_total ✅
+# - scanium_http_request_duration_ms_bucket ✅
+# - up ✅
 ```
 
 **Analysis:** Label index is populated correctly, proving data WAS ingested historically.
 
 ---
 
-***REMOVED******REMOVED*** Root Cause Analysis
+## Root Cause Analysis
 
-***REMOVED******REMOVED******REMOVED*** Primary Issue: Mimir Ingester-to-Querier Data Gap
+### Primary Issue: Mimir Ingester-to-Querier Data Gap
 
 **Root Cause:** Backend metrics are being successfully scraped by Alloy and written to Mimir's
 ingester, but are **not visible to the querier** due to a block flushing delay or ingester-querier
@@ -469,7 +469,7 @@ and therefore not visible to the **querier**. This explains:
 - Why queries return empty for recent data
 - Why old data (1+ hour) is queryable
 
-***REMOVED******REMOVED******REMOVED*** Secondary Issue: Loki Has No Logs
+### Secondary Issue: Loki Has No Logs
 
 **Root Cause:** Loki is not receiving any logs from Docker containers.
 
@@ -495,24 +495,24 @@ and therefore not visible to the **querier**. This explains:
 
 ---
 
-***REMOVED******REMOVED*** Next Actions (Prioritized)
+## Next Actions (Prioritized)
 
-***REMOVED******REMOVED******REMOVED*** P0 - Immediate (Fix Mimir Query Issue)
+### P0 - Immediate (Fix Mimir Query Issue)
 
 1. **Verify Mimir Ingester Status**
    ```bash
-   ***REMOVED*** Check if data is in ingester memory
+   # Check if data is in ingester memory
    curl http://mimir:9009/ingester/flush
 
-   ***REMOVED*** Force query against ingester (if supported)
-   ***REMOVED*** Or wait for natural flush cycle (2h interval)
+   # Force query against ingester (if supported)
+   # Or wait for natural flush cycle (2h interval)
    ```
 
 2. **Restart Mimir** (last resort)
    ```bash
    ssh nas 'cd /volume1/docker/scanium/repo/monitoring && sudo docker-compose restart mimir'
-   ***REMOVED*** Wait 2 minutes for startup
-   ***REMOVED*** Re-test queries
+   # Wait 2 minutes for startup
+   # Re-test queries
    ```
 
 3. **Verify Query-Ingester Path**
@@ -521,42 +521,42 @@ and therefore not visible to the **querier**. This explains:
 
 4. **Reduce Block Flush Interval** (if issue persists)
    ```yaml
-   ***REMOVED*** mimir/mimir.yaml
+   # mimir/mimir.yaml
    blocks_storage:
      tsdb:
-       block_ranges_period: [ 30m ]  ***REMOVED*** Reduce from 2h to 30m
-       ship_interval: 30s             ***REMOVED*** Reduce from 1m
+       block_ranges_period: [ 30m ]  # Reduce from 2h to 30m
+       ship_interval: 30s             # Reduce from 1m
    ```
 
-***REMOVED******REMOVED******REMOVED*** P1 - High (Fix Log Ingestion)
+### P1 - High (Fix Log Ingestion)
 
 1. **Debug Alloy Docker Log Source**
    ```bash
-   ***REMOVED*** Check Alloy logs for Docker source errors
+   # Check Alloy logs for Docker source errors
    ssh nas 'sudo docker logs scanium-alloy | grep loki.source.docker'
 
-   ***REMOVED*** Verify Docker socket is mounted
+   # Verify Docker socket is mounted
    ssh nas 'sudo docker inspect scanium-alloy | grep /var/run/docker.sock'
    ```
 
 2. **Test Loki Ingestion Manually**
    ```bash
-   ***REMOVED*** Push test log to Loki
+   # Push test log to Loki
    curl -H "Content-Type: application/json" \
      -XPOST "http://127.0.0.1:3100/loki/api/v1/push" \
      --data '{"streams":[{"stream":{"source":"test"},"values":[["'$(date +%s)000000000'","test message"]]}]}'
 
-   ***REMOVED*** Query for test log
+   # Query for test log
    curl "http://127.0.0.1:3100/loki/api/v1/query?query={source=\"test\"}"
    ```
 
 3. **Fix Alloy Docker Source Configuration** (if needed)
 
-***REMOVED******REMOVED******REMOVED*** P2 - Medium (Generate Test Traffic)
+### P2 - Medium (Generate Test Traffic)
 
 1. **Run Traffic Generator** (after fixing Mimir)
    ```bash
-   ***REMOVED*** Execute from local machine
+   # Execute from local machine
    /Users/family/dev/scanium/scripts/monitoring/generate-dashboard-traffic.sh \
      --normal --errors --duration 120
    ```
@@ -565,16 +565,16 @@ and therefore not visible to the **querier**. This explains:
 
 3. **Re-test All Dashboards**
 
-***REMOVED******REMOVED******REMOVED*** P3 - Low (Mobile Telemetry)
+### P3 - Low (Mobile Telemetry)
 
 - Mobile App Health dashboard will remain EXPECTED_NO_DATA until mobile app sends telemetry
 - No action required unless mobile testing is planned
 
 ---
 
-***REMOVED******REMOVED*** Traffic Classes & Dashboard Dependencies
+## Traffic Classes & Dashboard Dependencies
 
-***REMOVED******REMOVED******REMOVED*** Class A: Backend Normal Traffic (200s)
+### Class A: Backend Normal Traffic (200s)
 
 **Dashboards Affected:**
 
@@ -592,7 +592,7 @@ scanium_http_request_duration_ms_bucket
 up{job="scanium-backend"}
 ```
 
-***REMOVED******REMOVED******REMOVED*** Class B: Backend Error Traffic (4xx + 5xx)
+### Class B: Backend Error Traffic (4xx + 5xx)
 
 **Dashboards Affected:**
 
@@ -608,7 +608,7 @@ scanium_http_requests_total{status_code=~"4..|5.."}
 rate(scanium_http_requests_total{status_code=~"5.."}[5m])
 ```
 
-***REMOVED******REMOVED******REMOVED*** Class C: Backend Slow Traffic (Latency)
+### Class C: Backend Slow Traffic (Latency)
 
 **Dashboards Affected:**
 
@@ -621,7 +621,7 @@ rate(scanium_http_requests_total{status_code=~"5.."}[5m])
 histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Class D: OpenAI Traffic
+### Class D: OpenAI Traffic
 
 **Dashboards Affected:**
 
@@ -632,7 +632,7 @@ histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 - OpenAI-specific metrics (if instrumented)
 - Backend assist endpoint calls
 
-***REMOVED******REMOVED******REMOVED*** Class E: Mobile Telemetry
+### Class E: Mobile Telemetry
 
 **Dashboards Affected:**
 
@@ -641,7 +641,7 @@ histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 
 **Expected Status:** EXPECTED_NO_DATA (no mobile traffic)
 
-***REMOVED******REMOVED******REMOVED*** Class F: LGTM Stack / Pipeline Health
+### Class F: LGTM Stack / Pipeline Health
 
 **Dashboards Affected:**
 
@@ -652,9 +652,9 @@ histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 
 ---
 
-***REMOVED******REMOVED*** Deliverables
+## Deliverables
 
-***REMOVED******REMOVED******REMOVED*** 1. Traffic Generator Script ✅
+### 1. Traffic Generator Script ✅
 
 **File:** `/Users/family/dev/scanium/scripts/monitoring/generate-dashboard-traffic.sh`
 
@@ -668,7 +668,7 @@ histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 
 **Status:** Created, tested (dry-run), ready for use after Mimir fix
 
-***REMOVED******REMOVED******REMOVED*** 2. Audit Report ✅
+### 2. Audit Report ✅
 
 **File:** `/Users/family/dev/scanium/monitoring/grafana/DASHBOARD_DATA_AUDIT.md`
 
@@ -686,7 +686,7 @@ histogram_quantile(0.95, scanium_http_request_duration_ms_bucket)
 
 ---
 
-***REMOVED******REMOVED*** Conclusion
+## Conclusion
 
 All 13 Scanium Grafana dashboards have been audited. The primary blocker is a **Mimir
 ingester-to-querier visibility issue** where backend metrics are successfully ingested but not

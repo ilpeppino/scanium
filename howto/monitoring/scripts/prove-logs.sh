@@ -1,12 +1,12 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Prove logs pipeline: Backend → Alloy → Loki
-***REMOVED*** Usage: bash prove-logs.sh [backend_url] [loki_url]
-***REMOVED***
-***REMOVED*** This script:
-***REMOVED*** 1. Triggers backend logs (via API calls that generate logs)
-***REMOVED*** 2. Queries Loki to verify:
-***REMOVED***    - {source="scanium-backend"} returns entries
-***REMOVED***    - Logs are recent (within last 5 minutes)
+#!/bin/bash
+# Prove logs pipeline: Backend → Alloy → Loki
+# Usage: bash prove-logs.sh [backend_url] [loki_url]
+#
+# This script:
+# 1. Triggers backend logs (via API calls that generate logs)
+# 2. Queries Loki to verify:
+#    - {source="scanium-backend"} returns entries
+#    - Logs are recent (within last 5 minutes)
 
 set -euo pipefail
 
@@ -17,7 +17,7 @@ echo "[prove-logs] ========================================"
 echo "[prove-logs] Proving Backend → Alloy → Loki pipeline"
 echo "[prove-logs] ========================================"
 
-***REMOVED*** Step 1: Generate backend activity that produces logs
+# Step 1: Generate backend activity that produces logs
 echo "[prove-logs] Step 1: Generating backend logs..."
 echo "[prove-logs] - Health check (should log request)"
 curl -sf "$BACKEND_URL/health" > /dev/null || { echo "❌ Backend health check failed"; exit 1; }
@@ -26,11 +26,11 @@ echo "[prove-logs] - Additional requests to trigger logging"
 curl -sf "$BACKEND_URL/health" > /dev/null 2>&1 || true
 curl -sf "$BACKEND_URL/nonexistent" > /dev/null 2>&1 || true
 
-***REMOVED*** Give Alloy time to scrape docker logs and forward to Loki
+# Give Alloy time to scrape docker logs and forward to Loki
 echo "[prove-logs] - Waiting 5s for log ingestion..."
 sleep 5
 
-***REMOVED*** Step 2: Query Loki for backend logs
+# Step 2: Query Loki for backend logs
 echo "[prove-logs] Step 2: Querying Loki for backend logs..."
 LOG_QUERY='{source="scanium-backend"}'
 LOKI_QUERY="$LOKI_URL/loki/api/v1/query"
@@ -50,7 +50,7 @@ else
   exit 1
 fi
 
-***REMOVED*** Step 3: Verify logs are recent (check timestamp)
+# Step 3: Verify logs are recent (check timestamp)
 echo "[prove-logs] Step 3: Verifying logs are recent..."
 FIRST_LOG=$(echo "$LOG_RESULT" | grep -o '"values":\[\[.*\]\]' | head -1)
 

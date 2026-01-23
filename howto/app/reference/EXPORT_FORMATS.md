@@ -1,17 +1,17 @@
-***REMOVED*** Export Formats
+# Export Formats
 
 This document describes the export formats supported by Scanium's export bundle feature (Phase 5).
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium supports exporting scanned items in two formats:
 
 1. **Plain Text** - Ready-to-paste text for marketplaces
 2. **ZIP Bundle** - Structured archive with photos and metadata
 
-***REMOVED******REMOVED*** Text Export
+## Text Export
 
-***REMOVED******REMOVED******REMOVED*** Share Text Format
+### Share Text Format
 
 The share text format is optimized for pasting into marketplace listings:
 
@@ -30,7 +30,7 @@ Category: Fashion
 📷 3 photo(s) available
 ```
 
-***REMOVED******REMOVED******REMOVED*** Compact List Format
+### Compact List Format
 
 For quick sharing of multiple items:
 
@@ -51,9 +51,9 @@ Scanium Items (3)
 
 Items marked with ⚠️ need AI processing for better descriptions.
 
-***REMOVED******REMOVED*** ZIP Bundle Format
+## ZIP Bundle Format
 
-***REMOVED******REMOVED******REMOVED*** Structure
+### Structure
 
 ```
 scanium-export-YYYYMMDD-HHmmss.zip
@@ -71,7 +71,7 @@ scanium-export-YYYYMMDD-HHmmss.zip
     └── ...
 ```
 
-***REMOVED******REMOVED******REMOVED*** export-manifest.json
+### export-manifest.json
 
 The manifest provides a summary of the export:
 
@@ -111,7 +111,7 @@ The manifest provides a summary of the export:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** listing.json
+### listing.json
 
 Structured JSON for each item:
 
@@ -157,7 +157,7 @@ Structured JSON for each item:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** listing.txt
+### listing.txt
 
 Human-readable text version:
 
@@ -177,7 +177,7 @@ AI Confidence: HIGH
 📷 3 photo(s) available
 ```
 
-***REMOVED******REMOVED*** Export Status Flags
+## Export Status Flags
 
 | Flag          | Description                                      |
 |---------------|--------------------------------------------------|
@@ -186,7 +186,7 @@ AI Confidence: HIGH
 | `NO_PHOTOS`   | No photos available for this item                |
 | `USER_EDITED` | Summary text was edited by user                  |
 
-***REMOVED******REMOVED*** Item Status Values
+## Item Status Values
 
 | Status               | Description                     |
 |----------------------|---------------------------------|
@@ -195,7 +195,7 @@ AI Confidence: HIGH
 | `NEEDS_AI`           | Needs AI processing, has photos |
 | `NEEDS_AI_NO_PHOTOS` | Needs AI processing, no photos  |
 
-***REMOVED******REMOVED*** Export Limits
+## Export Limits
 
 | Limit                | Default Value |
 |----------------------|---------------|
@@ -205,7 +205,7 @@ AI Confidence: HIGH
 
 If limits are exceeded, the export will fail with an error message.
 
-***REMOVED******REMOVED*** Text Source Priority
+## Text Source Priority
 
 When generating export text, the following priority is used:
 
@@ -225,7 +225,7 @@ When generating export text, the following priority is used:
     - Fallback when no other text available
     - Marked as `NEEDS_AI`
 
-***REMOVED******REMOVED*** Photo Processing
+## Photo Processing
 
 Photos are processed during ZIP export:
 
@@ -234,9 +234,9 @@ Photos are processed during ZIP export:
 - EXIF metadata is stripped for privacy
 - Streamed to avoid memory issues
 
-***REMOVED******REMOVED*** Usage
+## Usage
 
-***REMOVED******REMOVED******REMOVED*** From Items List
+### From Items List
 
 1. Long-press to enter selection mode
 2. Select items to export
@@ -245,7 +245,7 @@ Photos are processed during ZIP export:
 5. Select format (Text or ZIP)
 6. Share or save
 
-***REMOVED******REMOVED******REMOVED*** Programmatic
+### Programmatic
 
 ```kotlin
 val repository = ExportBundleRepository(context, photoManager)

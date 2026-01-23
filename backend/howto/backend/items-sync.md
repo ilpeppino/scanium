@@ -1,6 +1,6 @@
-***REMOVED*** Items API - Multi-Device Sync (Phase E)
+# Items API - Multi-Device Sync (Phase E)
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Items API provides user-scoped storage and multi-device synchronization for scanned items. Items
 are owned by users and synchronized across devices using last-write-wins conflict resolution.
@@ -15,9 +15,9 @@ are owned by users and synchronized across devices using last-write-wins conflic
 - Incremental sync with `since` parameter
 - Batch sync operations
 
-***REMOVED******REMOVED*** Data Model
+## Data Model
 
-***REMOVED******REMOVED******REMOVED*** Item Schema (`prisma/schema.prisma`)
+### Item Schema (`prisma/schema.prisma`)
 
 ```prisma
 model Item {
@@ -96,7 +96,7 @@ model Item {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Photo Metadata Structure
+### Photo Metadata Structure
 
 Photos are not stored on the server (Phase E). Only metadata is synchronized:
 
@@ -122,11 +122,11 @@ Photos are not stored on the server (Phase E). Only metadata is synchronized:
 - Integrity checking when photos uploaded to S3 later (Phase F)
 - Minimal overhead (hash computed once at capture time)
 
-***REMOVED******REMOVED*** API Endpoints
+## API Endpoints
 
 All endpoints require authentication via `Authorization: Bearer <token>` header.
 
-***REMOVED******REMOVED******REMOVED*** GET /v1/items
+### GET /v1/items
 
 List user's items with optional filtering and pagination.
 
@@ -156,7 +156,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 **Rate Limit:** 100 req/min per user
 
-***REMOVED******REMOVED******REMOVED*** GET /v1/items/:id
+### GET /v1/items/:id
 
 Fetch single item by ID. Enforces user ownership.
 
@@ -176,7 +176,7 @@ Fetch single item by ID. Enforces user ownership.
 
 **Rate Limit:** 100 req/min per user
 
-***REMOVED******REMOVED******REMOVED*** POST /v1/items
+### POST /v1/items
 
 Create new item for authenticated user.
 
@@ -219,7 +219,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 
 **Rate Limit:** 30 req/min per user
 
-***REMOVED******REMOVED******REMOVED*** PATCH /v1/items/:id
+### PATCH /v1/items/:id
 
 Update item with optimistic locking.
 
@@ -265,7 +265,7 @@ curl -X PATCH -H "Authorization: Bearer $TOKEN" \
 
 **Rate Limit:** 30 req/min per user
 
-***REMOVED******REMOVED******REMOVED*** DELETE /v1/items/:id
+### DELETE /v1/items/:id
 
 Soft delete item (sets `deletedAt`, increments `syncVersion`).
 
@@ -282,7 +282,7 @@ Soft delete item (sets `deletedAt`, increments `syncVersion`).
 
 **Rate Limit:** 30 req/min per user
 
-***REMOVED******REMOVED******REMOVED*** POST /v1/items/sync
+### POST /v1/items/sync
 
 Batch synchronization - push local changes and receive server changes.
 
@@ -356,7 +356,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 
 **Rate Limit:** 10 req/min per user
 
-***REMOVED******REMOVED*** Conflict Resolution
+## Conflict Resolution
 
 **Strategy: Last-write-wins using `clientUpdatedAt` timestamps**
 
@@ -384,7 +384,7 @@ Client: Retry via sync endpoint with clientUpdatedAt
 Server: Compares timestamps, resolves conflict, returns winning version
 ```
 
-***REMOVED******REMOVED*** Ownership Enforcement
+## Ownership Enforcement
 
 **All endpoints enforce user ownership:**
 
@@ -406,22 +406,22 @@ if (!item) {
 - Database queries always filter by `userId`
 - No endpoint allows cross-user access
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
-***REMOVED******REMOVED******REMOVED*** Run Tests
+### Run Tests
 
 ```bash
-***REMOVED*** Run all tests
+# Run all tests
 npm test
 
-***REMOVED*** Run items API tests only
+# Run items API tests only
 npm test -- items/routes.test.ts
 
-***REMOVED*** Watch mode
+# Watch mode
 npm test -- --watch
 ```
 
-***REMOVED******REMOVED******REMOVED*** Test Coverage
+### Test Coverage
 
 **Test file:** `src/modules/items/routes.test.ts`
 
@@ -448,9 +448,9 @@ npm test -- --watch
 - ✓ Handle conflicts with resolution
 - ✓ Return server changes for incremental sync
 
-***REMOVED******REMOVED*** Migration
+## Migration
 
-***REMOVED******REMOVED******REMOVED*** Adding Item Model
+### Adding Item Model
 
 **Migration:** `prisma/migrations/20260113161300_add_item_sync/migration.sql`
 
@@ -476,13 +476,13 @@ ALTER TABLE "items" ADD CONSTRAINT "items_userId_fkey"
 **Run migration:**
 
 ```bash
-npx prisma migrate deploy  ***REMOVED*** Production
-npx prisma migrate dev     ***REMOVED*** Development
+npx prisma migrate deploy  # Production
+npx prisma migrate dev     # Development
 ```
 
-***REMOVED******REMOVED*** Observability
+## Observability
 
-***REMOVED******REMOVED******REMOVED*** Metrics
+### Metrics
 
 All endpoints emit metrics:
 
@@ -490,7 +490,7 @@ All endpoints emit metrics:
 - `items_request_duration_seconds{method, endpoint}`
 - `items_sync_conflicts_total{resolution}`
 
-***REMOVED******REMOVED******REMOVED*** Logging
+### Logging
 
 Structured logs include:
 
@@ -514,7 +514,7 @@ Structured logs include:
 }
 ```
 
-***REMOVED******REMOVED*** Rate Limiting
+## Rate Limiting
 
 **Per-user rate limits:**
 
@@ -529,9 +529,9 @@ Structured logs include:
 - Returns `429 Too Many Requests` when exceeded
 - Includes `Retry-After` header
 
-***REMOVED******REMOVED*** Best Practices
+## Best Practices
 
-***REMOVED******REMOVED******REMOVED*** Client Implementation
+### Client Implementation
 
 1. **Store server ID mapping**
    ```typescript
@@ -581,7 +581,7 @@ Structured logs include:
    }
    ```
 
-***REMOVED******REMOVED******REMOVED*** Server Deployment
+### Server Deployment
 
 1. **Run migrations before deployment**
    ```bash
@@ -590,7 +590,7 @@ Structured logs include:
 
 2. **Monitor sync conflicts**
    ```bash
-   ***REMOVED*** Alert if conflicts spike
+   # Alert if conflicts spike
    rate(items_sync_conflicts_total[5m]) > 10
    ```
 
@@ -604,9 +604,9 @@ Structured logs include:
    DATABASE_URL="postgresql://...?connection_limit=20&pool_timeout=10"
    ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** 409 Conflicts on Every Update
+### 409 Conflicts on Every Update
 
 **Cause:** Client not incrementing syncVersion or not fetching latest version
 
@@ -621,7 +621,7 @@ const updated = await PATCH('/v1/items/:id', {
 });
 ```
 
-***REMOVED******REMOVED******REMOVED*** Items Missing After Sync
+### Items Missing After Sync
 
 **Cause:** Client using wrong `since` timestamp
 
@@ -636,7 +636,7 @@ const response = await POST('/v1/items/sync', {
 setLastSync(response.syncTimestamp); // ← Save for next sync
 ```
 
-***REMOVED******REMOVED******REMOVED*** Rate Limit Errors
+### Rate Limit Errors
 
 **Cause:** Too many individual requests instead of batch sync
 
@@ -661,28 +661,28 @@ await POST('/v1/items/sync', {
 });
 ```
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** Phase F: Photo Upload to S3
+### Phase F: Photo Upload to S3
 
 - Store photos in S3 with signed URLs
 - Sync photo metadata + URLs
 - Client downloads photos on demand
 - Use SHA-256 hashes for deduplication
 
-***REMOVED******REMOVED******REMOVED*** Phase G: Real-time Sync
+### Phase G: Real-time Sync
 
 - WebSocket connection for instant updates
 - Push notifications for cross-device changes
 - Presence detection (show which devices are online)
 
-***REMOVED******REMOVED******REMOVED*** Phase H: Conflict UI
+### Phase H: Conflict UI
 
 - Show conflict resolution UI to user
 - Allow manual merge of conflicting changes
 - Provide diff view of local vs server state
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - [Android Sync Implementation](../../../androidApp/howto/app/sync.md)
 - [Authentication Flow](./auth-flow.md)

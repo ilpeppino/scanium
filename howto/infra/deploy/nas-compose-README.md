@@ -1,8 +1,8 @@
-***REMOVED*** NAS Compose Quickstart
+# NAS Compose Quickstart
 
 Use this directory for fast local smoke tests of the NAS deployment files.
 
-***REMOVED******REMOVED*** 1. Configure environment files
+## 1. Configure environment files
 
 1. Edit `deploy/nas/compose/.env` – Docker Compose reads this automatically to set `POSTGRES_USER`,
    `POSTGRES_PASSWORD`, and `POSTGRES_DB`.
@@ -11,7 +11,7 @@ Use this directory for fast local smoke tests of the NAS deployment files.
     - `ALLOW_INSECURE_HTTP=true` if you want to exercise HTTP on `localhost` or `192.168.x.x`.
     - `PUBLIC_BASE_URL` – the Cloudflare hostname (e.g., `https://scanium.gtemp1.com`).
 
-***REMOVED******REMOVED*** 2. Launch the stack
+## 2. Launch the stack
 
 ```bash
 cd deploy/nas/compose
@@ -22,9 +22,9 @@ docker compose -f docker-compose.nas.backend.yml \
 The backend container defaults to `NODE_ENV=production`, so HTTPS is enforced unless
 `ALLOW_INSECURE_HTTP=true`.
 
-***REMOVED******REMOVED*** 3. Verify with curl
+## 3. Verify with curl
 
-***REMOVED******REMOVED******REMOVED*** Local/LAN testing (requires `ALLOW_INSECURE_HTTP=true`)
+### Local/LAN testing (requires `ALLOW_INSECURE_HTTP=true`)
 
 ```bash
 curl -X POST http://localhost:8080/v1/assist/chat \
@@ -35,7 +35,7 @@ curl -X POST http://localhost:8080/v1/assist/chat \
 
 If you forget to set the flag, the backend responds with `403` / `HTTPS_REQUIRED`.
 
-***REMOVED******REMOVED******REMOVED*** Public Cloudflare tunnel
+### Public Cloudflare tunnel
 
 ```bash
 curl -X POST https://scanium.gtemp1.com/v1/assist/chat \

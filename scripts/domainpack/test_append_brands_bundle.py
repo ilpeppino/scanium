@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Tests for append_brands_bundle.py script.
 
@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import sys
 
-***REMOVED*** Import the module under test
+# Import the module under test
 from append_brands_bundle import (
     normalize_brand,
     dedupe_brands,
@@ -47,7 +47,7 @@ class TestDedupeBrands:
     def test_removes_case_insensitive_duplicates(self):
         brands = ["Apple", "apple", "APPLE", "Samsung"]
         result = dedupe_brands(brands)
-        ***REMOVED*** Should have 2 items (Apple and Samsung), preserving first casing
+        # Should have 2 items (Apple and Samsung), preserving first casing
         assert len(result) == 2
         assert "Apple" in result
         assert "Samsung" in result
@@ -55,12 +55,12 @@ class TestDedupeBrands:
     def test_preserves_first_occurrence_casing(self):
         brands = ["apple", "APPLE", "Apple"]
         result = dedupe_brands(brands)
-        assert result[0] == "apple"  ***REMOVED*** First occurrence
+        assert result[0] == "apple"  # First occurrence
 
     def test_sorts_alphabetically(self):
         brands = ["Sony", "Apple", "Samsung"]
         result = dedupe_brands(brands)
-        ***REMOVED*** Sorted case-insensitively
+        # Sorted case-insensitively
         assert result == ["Apple", "Samsung", "Sony"]
 
     def test_ignores_empty_strings(self):
@@ -117,7 +117,7 @@ class TestValidatePayload:
     def test_invalid_subtype_id_type(self):
         payload = {
             "brandsBySubtype": {
-                123: ["Apple"]  ***REMOVED*** subtype ID must be string
+                123: ["Apple"]  # subtype ID must be string
             }
         }
         valid, msg = validate_payload(payload)
@@ -126,7 +126,7 @@ class TestValidatePayload:
     def test_brands_not_list(self):
         payload = {
             "brandsBySubtype": {
-                "electronics_laptop": "Apple"  ***REMOVED*** must be list
+                "electronics_laptop": "Apple"  # must be list
             }
         }
         valid, msg = validate_payload(payload)
@@ -135,7 +135,7 @@ class TestValidatePayload:
     def test_brand_not_string(self):
         payload = {
             "brandsBySubtype": {
-                "electronics_laptop": ["Apple", 123]  ***REMOVED*** brand must be string
+                "electronics_laptop": ["Apple", 123]  # brand must be string
             }
         }
         valid, msg = validate_payload(payload)
@@ -144,7 +144,7 @@ class TestValidatePayload:
     def test_empty_brand(self):
         payload = {
             "brandsBySubtype": {
-                "electronics_laptop": ["Apple", "   "]  ***REMOVED*** empty after normalization
+                "electronics_laptop": ["Apple", "   "]  # empty after normalization
             }
         }
         valid, msg = validate_payload(payload)
@@ -171,7 +171,7 @@ class TestMergeBrands:
 
     def test_merge_is_case_insensitive(self):
         result = merge_brands(["Apple"], ["apple", "APPLE", "Samsung"])
-        ***REMOVED*** Should dedupe Apple variants and sort
+        # Should dedupe Apple variants and sort
         assert len(result) == 2
         assert "Apple" in result
         assert "Samsung" in result
@@ -227,22 +227,22 @@ class TestIntegration:
         valid, msg = validate_payload(payload)
         assert valid is True
 
-        ***REMOVED*** Simulate existing catalog
+        # Simulate existing catalog
         existing_catalog = {
             "id": "brands_catalog",
             "version": "1.0.0",
             "brandsBySubtype": {
-                "electronics_laptop": ["Apple"]  ***REMOVED*** Already has Apple
+                "electronics_laptop": ["Apple"]  # Already has Apple
             }
         }
 
-        ***REMOVED*** Merge
+        # Merge
         new_brands = merge_brands(
             existing_catalog["brandsBySubtype"]["electronics_laptop"],
             payload["brandsBySubtype"]["electronics_laptop"]
         )
 
-        ***REMOVED*** Should have unique brands sorted
+        # Should have unique brands sorted
         assert "Apple" in new_brands
         assert "Dell" in new_brands
         assert "Lenovo" in new_brands
@@ -260,14 +260,14 @@ class TestIntegration:
         assert valid is True
 
         result = dedupe_brands(payload["brandsBySubtype"]["electronics_laptop"])
-        ***REMOVED*** Should preserve first occurrence (lowercase "apple") and sort
+        # Should preserve first occurrence (lowercase "apple") and sort
         assert result == ["apple", "Dell"]
 
     def test_empty_normalized_brands_rejected(self):
         """Test that brands that are empty after normalization are rejected."""
         payload = {
             "brandsBySubtype": {
-                "electronics_laptop": ["Apple", "    "]  ***REMOVED*** Whitespace only
+                "electronics_laptop": ["Apple", "    "]  # Whitespace only
             }
         }
 

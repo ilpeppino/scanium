@@ -26,26 +26,26 @@ import kotlin.random.Random
 /**
  * Android implementation of [TracePort] that exports traces via OTLP.
  *
- * ***REMOVED******REMOVED*** Sampling
+ * ## Sampling
  * - Configurable sampling rate (0.0 to 1.0)
  * - Sampling decision made at span creation
  * - Non-sampled spans are no-ops (minimal overhead)
  *
- * ***REMOVED******REMOVED*** ID Generation
+ * ## ID Generation
  * - Trace ID: 16-byte hex string (32 chars)
  * - Span ID: 8-byte hex string (16 chars)
  * - Random generation (no collision handling for simplicity)
  *
- * ***REMOVED******REMOVED*** Bounded Queue Behavior
+ * ## Bounded Queue Behavior
  * - Maximum queue size enforced (prevents memory exhaustion)
  * - Drop policy: DROP_OLDEST (default) or DROP_NEWEST
  * - When queue is full, oldest/newest spans are dropped based on policy
  *
- * ***REMOVED******REMOVED*** Batching
+ * ## Batching
  * - Accumulates completed spans in bounded buffer
  * - Exports when batch size reached OR timeout elapsed
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * Uses ReentrantLock to protect bounded queue operations.
  */
 class AndroidTracePortOtlp(

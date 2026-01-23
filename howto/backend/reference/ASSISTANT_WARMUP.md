@@ -1,15 +1,15 @@
-***REMOVED*** Assistant Warmup Endpoint
+# Assistant Warmup Endpoint
 
 The warmup endpoint allows the mobile app to pre-verify that the assistant is configured and
 reachable before initiating a chat session.
 
-***REMOVED******REMOVED*** Endpoint
+## Endpoint
 
 ```
 POST /v1/assist/warmup
 ```
 
-***REMOVED******REMOVED*** Request
+## Request
 
 Headers:
 
@@ -17,9 +17,9 @@ Headers:
 
 Body: Empty (no payload required)
 
-***REMOVED******REMOVED*** Response
+## Response
 
-***REMOVED******REMOVED******REMOVED*** Success (200)
+### Success (200)
 
 ```json
 {
@@ -31,7 +31,7 @@ Body: Empty (no payload required)
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Unauthorized (401)
+### Unauthorized (401)
 
 ```json
 {
@@ -43,7 +43,7 @@ Body: Empty (no payload required)
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Provider Not Configured (503)
+### Provider Not Configured (503)
 
 ```json
 {
@@ -55,7 +55,7 @@ Body: Empty (no payload required)
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Provider Unavailable (503)
+### Provider Unavailable (503)
 
 ```json
 {
@@ -67,25 +67,25 @@ Body: Empty (no payload required)
 }
 ```
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
-***REMOVED******REMOVED******REMOVED*** Local Development
+### Local Development
 
 ```bash
-***REMOVED*** Test against local dev server
+# Test against local dev server
 curl -X POST http://localhost:8080/v1/assist/warmup \
   -H "X-API-Key: YOUR_API_KEY"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Production (via Cloudflare Tunnel)
+### Production (via Cloudflare Tunnel)
 
 ```bash
-***REMOVED*** Test against production
+# Test against production
 curl -X POST https://scanium.gtemp1.com/v1/assist/warmup \
   -H "X-API-Key: YOUR_PRODUCTION_API_KEY"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Expected Output
+### Expected Output
 
 On success, you should see:
 
@@ -96,9 +96,9 @@ On success, you should see:
 If you see `404 "Route not found"`, the container is running an old image.
 See [REDEPLOY.md](./REDEPLOY.md) for instructions.
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** 404 Route not found
+### 404 Route not found
 
 **Cause**: The Docker container is running an old image that doesn't have the warmup route.
 
@@ -111,13 +111,13 @@ docker compose build --no-cache api
 docker compose up -d api
 ```
 
-***REMOVED******REMOVED******REMOVED*** 401 Unauthorized
+### 401 Unauthorized
 
 **Cause**: Missing or invalid API key.
 
 **Fix**: Ensure you're passing the correct API key in the `X-API-Key` header.
 
-***REMOVED******REMOVED******REMOVED*** 503 Provider Not Configured
+### 503 Provider Not Configured
 
 **Cause**: The assistant provider environment variables are not set.
 
@@ -126,7 +126,7 @@ docker compose up -d api
 - `ASSISTANT_PROVIDER=claude`
 - `CLAUDE_API_KEY=...`
 
-***REMOVED******REMOVED******REMOVED*** Connection Refused
+### Connection Refused
 
 **Cause**: Container is not running or port is not exposed.
 
@@ -137,7 +137,7 @@ docker ps | grep scanium-api
 docker logs scanium-api --tail 50
 ```
 
-***REMOVED******REMOVED*** Integration Tests
+## Integration Tests
 
 Run the E2E tests to verify route registration:
 

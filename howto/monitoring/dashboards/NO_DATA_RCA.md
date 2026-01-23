@@ -1,4 +1,4 @@
-***REMOVED*** No Data RCA Report - Grafana Dashboards
+# No Data RCA Report - Grafana Dashboards
 
 **Date:** 2026-01-14
 **Investigator:** Claude (Observability Agent)
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Five dashboards were investigated for "No data" issues. All root causes fall into **Category D (Data
 not being ingested)** - the datasource wiring and queries are correct, but the underlying telemetry
@@ -23,17 +23,17 @@ data does not exist.
 **Fixes Applied:** None (all issues require instrumentation/infrastructure changes)
 **GitHub Issues Created:** 4
 
-- [***REMOVED***406](https://github.com/ilpeppino/scanium/issues/406) - Mobile telemetry not being shipped
-- [***REMOVED***407](https://github.com/ilpeppino/scanium/issues/407) - ML inference latency metric not
+- [#406](https://github.com/ilpeppino/scanium/issues/406) - Mobile telemetry not being shipped
+- [#407](https://github.com/ilpeppino/scanium/issues/407) - ML inference latency metric not
   instrumented
-- [***REMOVED***408](https://github.com/ilpeppino/scanium/issues/408) - Span metrics not configured in Alloy
-- [***REMOVED***409](https://github.com/ilpeppino/scanium/issues/409) - Tempo permission errors
+- [#408](https://github.com/ilpeppino/scanium/issues/408) - Span metrics not configured in Alloy
+- [#409](https://github.com/ilpeppino/scanium/issues/409) - Tempo permission errors
 
 ---
 
-***REMOVED******REMOVED*** Phase 1: Stack Health
+## Phase 1: Stack Health
 
-***REMOVED******REMOVED******REMOVED*** Container Status (NAS)
+### Container Status (NAS)
 
 ```
 scanium-backend       Up 14 hours (healthy)
@@ -49,7 +49,7 @@ scanium-loki          Up 14 hours (healthy)
 - **Alloy (unhealthy):** Rejecting old log entries ("entry too far behind")
 - **Tempo:** Permission denied errors during compaction
 
-***REMOVED******REMOVED******REMOVED*** Datasource UIDs (Verified Correct)
+### Datasource UIDs (Verified Correct)
 
 | Name  | UID   | Type       | URL                          |
 |-------|-------|------------|------------------------------|
@@ -57,7 +57,7 @@ scanium-loki          Up 14 hours (healthy)
 | Loki  | LOKI  | loki       | http://loki:3100             |
 | Tempo | TEMPO | tempo      | http://tempo:3200            |
 
-***REMOVED******REMOVED******REMOVED*** Log Evidence
+### Log Evidence
 
 **Alloy Logs (unhealthy reason):**
 
@@ -77,9 +77,9 @@ error completing block: mkdir /var/tempo/blocks/single-tenant/...: permission de
 
 ---
 
-***REMOVED******REMOVED*** Phase 2: Dashboard Query Analysis
+## Phase 2: Dashboard Query Analysis
 
-***REMOVED******REMOVED******REMOVED*** 1. Scanium - Traces Drilldown (`traces-drilldown.json`)
+### 1. Scanium - Traces Drilldown (`traces-drilldown.json`)
 
 | Panel                    | Datasource | Query Type | Signal Dependency                                                 |
 |--------------------------|------------|------------|-------------------------------------------------------------------|
@@ -97,7 +97,7 @@ error completing block: mkdir /var/tempo/blocks/single-tenant/...: permission de
 | Service Dependency Graph | TEMPO      | serviceMap | n/a                                                               |
 | Span Latency Heatmap     | MIMIR      | PromQL     | `traces_spanmetrics_latency_bucket`                               |
 
-***REMOVED******REMOVED******REMOVED*** 2. Scanium - Errors & Failures (`errors.json`)
+### 2. Scanium - Errors & Failures (`errors.json`)
 
 | Panel                   | Datasource | Query Type | Signal Dependency                                               |
 |-------------------------|------------|------------|-----------------------------------------------------------------|
@@ -106,7 +106,7 @@ error completing block: mkdir /var/tempo/blocks/single-tenant/...: permission de
 | Top Error Types (Trend) | LOKI       | LogQL      | `{source="scanium-mobile"}                                      | json | event_name=~"error.*"` |
 | Recent Error Events     | LOKI       | LogQL      | `{source="scanium-mobile"}                                      | json | event_name=~"error.*"` |
 
-***REMOVED******REMOVED******REMOVED*** 3. Scanium - Mobile App Health (`mobile-app-health.json`)
+### 3. Scanium - Mobile App Health (`mobile-app-health.json`)
 
 | Panel                 | Datasource | Query Type | Signal Dependency                                        |
 |-----------------------|------------|------------|----------------------------------------------------------|
@@ -121,7 +121,7 @@ error completing block: mkdir /var/tempo/blocks/single-tenant/...: permission de
 | Session Activity      | LOKI       | LogQL      | `{source="scanium-mobile"}                               | json` |
 | Recent Events         | LOKI       | LogQL      | `{source="scanium-mobile"}`                              |
 
-***REMOVED******REMOVED******REMOVED*** 4. Scanium - Performance & Latency (`scan-performance.json`)
+### 4. Scanium - Performance & Latency (`scan-performance.json`)
 
 | Panel                           | Datasource | Query Type | Signal Dependency                                         |
 |---------------------------------|------------|------------|-----------------------------------------------------------|
@@ -129,7 +129,7 @@ error completing block: mkdir /var/tempo/blocks/single-tenant/...: permission de
 | Latency by App Version (p95)    | MIMIR      | PromQL     | `ml_inference_latency_ms_bucket{source="scanium-mobile"}` |
 | Trace Count (Tempo)             | TEMPO      | TraceQL    | `{ span.http.method =~ "POST" }`                          |
 
-***REMOVED******REMOVED******REMOVED*** 5. Scanium - Ops Overview (`ops-overview.json`)
+### 5. Scanium - Ops Overview (`ops-overview.json`)
 
 | Panel                   | Datasource | Query Type | Signal Dependency                                         |
 |-------------------------|------------|------------|-----------------------------------------------------------|
@@ -141,9 +141,9 @@ error completing block: mkdir /var/tempo/blocks/single-tenant/...: permission de
 
 ---
 
-***REMOVED******REMOVED*** Phase 3: Ground-Truth Data Existence
+## Phase 3: Ground-Truth Data Existence
 
-***REMOVED******REMOVED******REMOVED*** Mimir (Metrics)
+### Mimir (Metrics)
 
 **Available metrics (scanium-related):**
 
@@ -171,7 +171,7 @@ scanium_process_*
 - `env`: `dev`
 - `job`: `scanium-backend`, `alloy`, `loki`, `mimir`, `tempo`
 
-***REMOVED******REMOVED******REMOVED*** Loki (Logs)
+### Loki (Logs)
 
 **Query:** `curl -s "http://127.0.0.1:3100/loki/api/v1/labels"`
 
@@ -190,7 +190,7 @@ scanium_process_*
 
 - `source="scanium-mobile"` - NOT FOUND
 
-***REMOVED******REMOVED******REMOVED*** Tempo (Traces)
+### Tempo (Traces)
 
 **Query:** `curl -s "http://127.0.0.1:3200/api/search/tag/resource.service.name/values"`
 
@@ -205,21 +205,21 @@ traces from becoming searchable.
 
 ---
 
-***REMOVED******REMOVED*** Phase 4: Root Cause Classification
+## Phase 4: Root Cause Classification
 
-***REMOVED******REMOVED******REMOVED*** Root Cause A: Wrong datasource UID
+### Root Cause A: Wrong datasource UID
 
 **Status:** NOT FOUND - All datasource UIDs are correct (MIMIR, LOKI, TEMPO)
 
-***REMOVED******REMOVED******REMOVED*** Root Cause B: Wrong query language/syntax
+### Root Cause B: Wrong query language/syntax
 
 **Status:** NOT FOUND - All queries are syntactically correct
 
-***REMOVED******REMOVED******REMOVED*** Root Cause C: Wrong metric name/label keys/variables
+### Root Cause C: Wrong metric name/label keys/variables
 
 **Status:** NOT FOUND - Queries match expected schema, but data doesn't exist
 
-***REMOVED******REMOVED******REMOVED*** Root Cause D: Data not being ingested (FOUND)
+### Root Cause D: Data not being ingested (FOUND)
 
 | Signal                                            | Expected Source                   | Actual Status                                          |
 |---------------------------------------------------|-----------------------------------|--------------------------------------------------------|
@@ -228,19 +228,19 @@ traces from becoming searchable.
 | Span metrics (`traces_spanmetrics_*`)             | Alloy spanmetrics connector       | **NOT CONFIGURED** - No spanmetrics in Alloy           |
 | Traces (Tempo searchable)                         | Backend → OTLP → Alloy → Tempo    | **PARTIALLY BROKEN** - Permission errors in compaction |
 
-***REMOVED******REMOVED******REMOVED*** Root Cause E: Time range/step/aggregation
+### Root Cause E: Time range/step/aggregation
 
 **Status:** NOT FOUND
 
-***REMOVED******REMOVED******REMOVED*** Root Cause F: Expected no data
+### Root Cause F: Expected no data
 
 **Status:** PARTIAL - Mobile telemetry was designed but not yet implemented in app
 
 ---
 
-***REMOVED******REMOVED*** Phase 5: GitHub Issues Created
+## Phase 5: GitHub Issues Created
 
-***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***406: Mobile telemetry not being shipped to LGTM stack
+### Issue #406: Mobile telemetry not being shipped to LGTM stack
 
 **Link:** https://github.com/ilpeppino/scanium/issues/406
 
@@ -255,7 +255,7 @@ traces from becoming searchable.
 ```bash
 $ curl -s "http://127.0.0.1:3100/loki/api/v1/label/source/values"
 {"status":"success","data":["scanium-backend"]}
-***REMOVED*** "scanium-mobile" is missing
+# "scanium-mobile" is missing
 ```
 
 **Root Cause:** The Android app is not instrumented to send telemetry to the Alloy OTLP endpoint.
@@ -267,7 +267,7 @@ $ curl -s "http://127.0.0.1:3100/loki/api/v1/label/source/values"
 3. Add event tracking for: `app_launch`, `scan_started`, `scan_completed`, `assist_clicked`,
    `error_shown`, `crash_marker`
 
-***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***407: ML inference latency metric not instrumented
+### Issue #407: ML inference latency metric not instrumented
 
 **Link:** https://github.com/ilpeppino/scanium/issues/407
 
@@ -281,7 +281,7 @@ $ curl -s "http://127.0.0.1:3100/loki/api/v1/label/source/values"
 ```bash
 $ curl -s "http://127.0.0.1:9009/prometheus/api/v1/query" --data-urlencode 'query=ml_inference_latency_ms_bucket'
 {"status":"success","data":{"resultType":"vector","result":[]}}
-***REMOVED*** Metric does not exist
+# Metric does not exist
 ```
 
 **Root Cause:** The `ml_inference_latency_ms_bucket` histogram metric is not being emitted by any
@@ -293,7 +293,7 @@ service.
 2. Emit histogram metric with buckets for latency distribution
 3. Include labels: `source`, `env`, `platform`, `app_version`
 
-***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***408: Span metrics not configured in Alloy
+### Issue #408: Span metrics not configured in Alloy
 
 **Link:** https://github.com/ilpeppino/scanium/issues/408
 
@@ -305,7 +305,7 @@ service.
 
 ```bash
 $ grep -i "spanmetrics" monitoring/alloy/config.alloy
-***REMOVED*** No results - spanmetrics connector not configured
+# No results - spanmetrics connector not configured
 ```
 
 **Root Cause:** Alloy is forwarding traces to Tempo but not generating span metrics.
@@ -316,7 +316,7 @@ $ grep -i "spanmetrics" monitoring/alloy/config.alloy
 2. Route traces through the connector before exporting to Tempo
 3. Forward generated metrics to Mimir
 
-***REMOVED******REMOVED******REMOVED*** Issue ***REMOVED***409: Tempo trace search broken (permission errors)
+### Issue #409: Tempo trace search broken (permission errors)
 
 **Link:** https://github.com/ilpeppino/scanium/issues/409
 
@@ -343,20 +343,20 @@ preventing trace compaction and making traces unsearchable.
 
 ---
 
-***REMOVED******REMOVED*** Validation Checklist
+## Validation Checklist
 
 | Item                       | Status               |
 |----------------------------|----------------------|
 | Datasource UIDs correct    | VERIFIED             |
 | Query syntax correct       | VERIFIED             |
-| Mobile logs exist in Loki  | NOT FOUND - Issue ***REMOVED***1 |
-| ML inference metric exists | NOT FOUND - Issue ***REMOVED***2 |
-| Span metrics exist         | NOT FOUND - Issue ***REMOVED***3 |
-| Tempo trace search works   | BROKEN - Issue ***REMOVED***4    |
+| Mobile logs exist in Loki  | NOT FOUND - Issue #1 |
+| ML inference metric exists | NOT FOUND - Issue #2 |
+| Span metrics exist         | NOT FOUND - Issue #3 |
+| Tempo trace search works   | BROKEN - Issue #4    |
 
 ---
 
-***REMOVED******REMOVED*** Appendix: Alloy Pipeline Configuration
+## Appendix: Alloy Pipeline Configuration
 
 ```
 Mobile App → OTLP HTTP (4318) → otelcol.receiver.otlp "mobile_http"

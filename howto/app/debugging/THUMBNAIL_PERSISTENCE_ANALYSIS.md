@@ -1,12 +1,12 @@
-***REMOVED*** Thumbnail Persistence Analysis
+# Thumbnail Persistence Analysis
 
-***REMOVED******REMOVED*** Problem Summary
+## Problem Summary
 
 After process death (swipe away from Recents), items persist but thumbnails show "?" placeholders.
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
-***REMOVED******REMOVED******REMOVED*** Data Flow Before Fix
+### Data Flow Before Fix
 
 1. **Item Creation**: Items are created with `ImageRef.Bytes` thumbnails containing actual image
    data.
@@ -34,7 +34,7 @@ After process death (swipe away from Recents), items persist but thumbnails show
     - UI renders `(thumbnailRef ?: thumbnail).toImageBitmap()` → `null`
     - Shows "?" placeholder
 
-***REMOVED******REMOVED******REMOVED*** The Exact Bug Location
+### The Exact Bug Location
 
 **File**: `ItemsStateManager.kt:551`
 
@@ -55,9 +55,9 @@ This line mutates the aggregator's internal thumbnail reference from `Bytes` to 
 On subsequent calls to `getScannedItems()`, the aggregator returns items with `CacheKey` thumbnails,
 which then get persisted as `null` bytes.
 
-***REMOVED******REMOVED*** Persistence Contract
+## Persistence Contract
 
-***REMOVED******REMOVED******REMOVED*** What Gets Persisted (DB)
+### What Gets Persisted (DB)
 
 - `thumbnailBytes: ByteArray?` - Raw image bytes
 - `thumbnailMimeType: String?` - MIME type
@@ -65,12 +65,12 @@ which then get persisted as `null` bytes.
 - `thumbnailHeight: Int?` - Height in pixels
 - Same fields for `thumbnailRef*`
 
-***REMOVED******REMOVED******REMOVED*** What's In Memory Only
+### What's In Memory Only
 
 - `ImageRef.CacheKey` - A string key referencing `ThumbnailCache`
 - `ThumbnailCache` - LRU cache of `ImageRef.Bytes`, max 50 entries
 
-***REMOVED******REMOVED******REMOVED*** The Conversion Functions
+### The Conversion Functions
 
 ```kotlin
 // ScannedItemEntity.kt:159-165
@@ -83,24 +83,24 @@ private fun ImageRef?.toImageFields(): ImageFields? {
 }
 ```
 
-***REMOVED******REMOVED*** Fix Summary
+## Fix Summary
 
-***REMOVED******REMOVED******REMOVED*** INVARIANT A (Persistence)
+### INVARIANT A (Persistence)
 
 - DB layer MUST persist `ImageRef.Bytes` data
 - Never persist items with CacheKey-only thumbnails
 
-***REMOVED******REMOVED******REMOVED*** INVARIANT B (Rehydration)
+### INVARIANT B (Rehydration)
 
 - On cold start, thumbnails MUST be rehydrated as `ImageRef.Bytes`
 - UI must NOT depend on `ThumbnailCache` after process death
 
-***REMOVED******REMOVED******REMOVED*** INVARIANT C (Cache is Optional)
+### INVARIANT C (Cache is Optional)
 
 - `ThumbnailCache` is purely a performance optimization
 - If cache miss occurs, fall back to DB bytes
 
-***REMOVED******REMOVED******REMOVED*** Changes Required
+### Changes Required
 
 1. Remove `itemAggregator.updateThumbnail()` call from `cacheThumbnails()`
 2. Keep aggregator state with `ImageRef.Bytes` always

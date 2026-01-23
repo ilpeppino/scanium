@@ -1,13 +1,13 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Version Compatibility Matrix
+# Version Compatibility Matrix
 
-***REMOVED******REMOVED*** Current Versions (2025-12-20)
+## Current Versions (2025-12-20)
 
 This document tracks tested version combinations for critical build dependencies to prevent KMP/AGP
 compatibility warnings and build issues.
 
-***REMOVED******REMOVED******REMOVED*** Build Tools & Plugins
+### Build Tools & Plugins
 
 | Tool                        | Version      | Status   | Notes                             |
 |-----------------------------|--------------|----------|-----------------------------------|
@@ -17,9 +17,9 @@ compatibility warnings and build issues.
 | Kover                       | 0.7.4        | ✅ Stable | Coverage plugin                   |
 | KSP                         | 2.0.0-1.0.24 | ✅ Stable | Must match Kotlin version         |
 
-***REMOVED******REMOVED******REMOVED*** Known Compatibility Issues
+### Known Compatibility Issues
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** KMP + AGP 8.5.0 Warnings (RESOLVED)
+#### KMP + AGP 8.5.0 Warnings (RESOLVED)
 
 **Issue**: Kotlin Multiplatform modules emitted compatibility warnings with AGP 8.5.0 when using
 mismatched Kotlin versions across modules.
@@ -34,12 +34,12 @@ mismatched Kotlin versions across modules.
 
 **Prevention**: CI coverage workflow now runs on all PRs to catch build warnings early.
 
-***REMOVED******REMOVED******REMOVED*** Version Update Strategy
+### Version Update Strategy
 
 When updating major versions:
 
 1. **Check official compatibility**:
-    - [Kotlin/AGP compatibility](https://kotlinlang.org/docs/gradle-configure-project.html***REMOVED***apply-the-plugin)
+    - [Kotlin/AGP compatibility](https://kotlinlang.org/docs/gradle-configure-project.html#apply-the-plugin)
     - [KMP release notes](https://kotlinlang.org/docs/multiplatform-compatibility-guide.html)
     - [AGP release notes](https://developer.android.com/build/releases/gradle-plugin)
 
@@ -57,7 +57,7 @@ When updating major versions:
     - All workflows (debug APK, coverage, security scan) must pass
     - Review build logs for deprecation warnings
 
-***REMOVED******REMOVED******REMOVED*** Dependency Version Sources
+### Dependency Version Sources
 
 | Dependency                           | Declaration Location                      |
 |--------------------------------------|-------------------------------------------|
@@ -67,13 +67,13 @@ When updating major versions:
 | KSP                                  | `androidApp/build.gradle.kts:7`           |
 | Kover                                | `build.gradle.kts:7`                      |
 
-***REMOVED******REMOVED******REMOVED*** Version Lifecycle
+### Version Lifecycle
 
 - **Stable**: Tested and used in production
 - **Beta**: Under evaluation, not for production
 - **Deprecated**: Plan migration, do not use in new code
 
-***REMOVED******REMOVED*** CI Enforcement
+## CI Enforcement
 
 The following CI workflows validate version compatibility:
 
@@ -88,9 +88,9 @@ The following CI workflows validate version compatibility:
 3. **Security CVE Scan** (`.github/workflows/security-cve-scan.yml`)
     - Dependency-check continues on error but logs warnings
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "Kotlin version mismatch" warnings
+### "Kotlin version mismatch" warnings
 
 **Symptom**: Build succeeds but logs show version conflicts between modules.
 
@@ -100,7 +100,7 @@ The following CI workflows validate version compatibility:
 2. Update to match root project version
 3. Use `./gradlew --warning-mode all` to verify
 
-***REMOVED******REMOVED******REMOVED*** AGP upgrade breaks KMP modules
+### AGP upgrade breaks KMP modules
 
 **Symptom**: KMP modules fail to compile after AGP update.
 
@@ -111,7 +111,7 @@ Check [Kotlin/AGP compatibility matrix](https://kotlinlang.org/docs/gradle-confi
 2. Update Kotlin version to compatible release
 3. Test shared modules independently: `./gradlew :shared:core-models:build`
 
-***REMOVED******REMOVED*** References
+## References
 
 - [Kotlin Multiplatform Documentation](https://kotlinlang.org/docs/multiplatform.html)
 - [Android Gradle Plugin Release Notes](https://developer.android.com/build/releases/gradle-plugin)

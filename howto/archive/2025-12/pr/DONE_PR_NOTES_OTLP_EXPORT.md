@@ -1,12 +1,12 @@
-***REMOVED*** PR ***REMOVED***5: Android OTLP Export Adapter (Logs/Metrics/Traces)
+# PR #5: Android OTLP Export Adapter (Logs/Metrics/Traces)
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This PR implements **OpenTelemetry Protocol (OTLP) export adapters** for Android that send telemetry
 data (logs, metrics, traces) to an OTLP-compatible backend like Grafana Alloy. The implementation is
 **lightweight, vendor-neutral, and minimally invasive** to the existing codebase.
 
-***REMOVED******REMOVED******REMOVED*** Key Features
+### Key Features
 
 ✅ **Lightweight OTLP/HTTP JSON exporter** using OkHttp (no heavy OpenTelemetry SDK)
 ✅ **Three port adapters**: AndroidLogPortOtlp, AndroidMetricPortOtlp, AndroidTracePortOtlp
@@ -18,9 +18,9 @@ data (logs, metrics, traces) to an OTLP-compatible backend like Grafana Alloy. T
 
 ---
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** OTLP Export Flow
+### OTLP Export Flow
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -71,7 +71,7 @@ data (logs, metrics, traces) to an OTLP-compatible backend like Grafana Alloy. T
     └─────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Component Responsibilities
+### Component Responsibilities
 
 | Component                            | Responsibility                                     |
 |--------------------------------------|----------------------------------------------------|
@@ -85,11 +85,11 @@ data (logs, metrics, traces) to an OTLP-compatible backend like Grafana Alloy. T
 
 ---
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
-***REMOVED******REMOVED******REMOVED*** New Files
+### New Files
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Telemetry Infrastructure
+#### Telemetry Infrastructure
 
 - **`androidApp/src/main/java/com/scanium/app/telemetry/OtlpConfiguration.kt`**
   Configuration class for OTLP export (endpoint, sampling, batching settings)
@@ -97,7 +97,7 @@ data (logs, metrics, traces) to an OTLP-compatible backend like Grafana Alloy. T
 - **`androidApp/src/main/java/com/scanium/app/telemetry/AndroidDefaultAttributesProvider.kt`**
   Provides required telemetry attributes (platform, app_version, build, env, session_id)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** OTLP Protocol
+#### OTLP Protocol
 
 - **`androidApp/src/main/java/com/scanium/app/telemetry/otlp/OtlpModels.kt`**
   OTLP JSON data models (logs, metrics, traces)
@@ -105,7 +105,7 @@ data (logs, metrics, traces) to an OTLP-compatible backend like Grafana Alloy. T
 - **`androidApp/src/main/java/com/scanium/app/telemetry/otlp/OtlpHttpExporter.kt`**
   HTTP transport layer using OkHttp
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Port Adapters
+#### Port Adapters
 
 - **`androidApp/src/main/java/com/scanium/app/telemetry/AndroidLogPortOtlp.kt`**
   LogPort implementation with batching
@@ -116,7 +116,7 @@ data (logs, metrics, traces) to an OTLP-compatible backend like Grafana Alloy. T
 - **`androidApp/src/main/java/com/scanium/app/telemetry/AndroidTracePortOtlp.kt`**
   TracePort implementation with sampling
 
-***REMOVED******REMOVED******REMOVED*** Modified Files
+### Modified Files
 
 - **`androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt`**
     - Added `telemetry: Telemetry` property (global instance)
@@ -130,23 +130,23 @@ data (logs, metrics, traces) to an OTLP-compatible backend like Grafana Alloy. T
 
 ---
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
-***REMOVED******REMOVED******REMOVED*** Method 1: local.properties (Recommended for Development)
+### Method 1: local.properties (Recommended for Development)
 
 Add to `local.properties` in project root:
 
 ```properties
-***REMOVED*** Enable OTLP export
+# Enable OTLP export
 scanium.otlp.enabled=true
 
-***REMOVED*** OTLP endpoint (Grafana Alloy default for Android emulator)
-***REMOVED*** Use 10.0.2.2 for Android emulator (maps to host's localhost)
-***REMOVED*** Use 127.0.0.1 for physical device with port forwarding
+# OTLP endpoint (Grafana Alloy default for Android emulator)
+# Use 10.0.2.2 for Android emulator (maps to host's localhost)
+# Use 127.0.0.1 for physical device with port forwarding
 scanium.otlp.endpoint=http://10.0.2.2:4318
 ```
 
-***REMOVED******REMOVED******REMOVED*** Method 2: Environment Variables (for CI/CD)
+### Method 2: Environment Variables (for CI/CD)
 
 Set before building:
 
@@ -156,7 +156,7 @@ export SCANIUM_OTLP_ENDPOINT=http://otlp.example.com:4318
 ./gradlew assembleDebug
 ```
 
-***REMOVED******REMOVED******REMOVED*** Disabling OTLP (Default)
+### Disabling OTLP (Default)
 
 By default, OTLP export is **disabled**. If not configured:
 
@@ -166,9 +166,9 @@ By default, OTLP export is **disabled**. If not configured:
 
 ---
 
-***REMOVED******REMOVED*** Testing with Grafana Alloy
+## Testing with Grafana Alloy
 
-***REMOVED******REMOVED******REMOVED*** Prerequisites
+### Prerequisites
 
 1. **Install Grafana Alloy** (lightweight OpenTelemetry collector)
     - macOS: `brew install grafana/grafana/alloy`
@@ -178,7 +178,7 @@ By default, OTLP export is **disabled**. If not configured:
     - macOS: `brew install grafana`
     - Docker: See below
 
-***REMOVED******REMOVED******REMOVED*** Option 1: Docker Compose Setup
+### Option 1: Docker Compose Setup
 
 Create `docker-compose.alloy.yml`:
 
@@ -186,13 +186,13 @@ Create `docker-compose.alloy.yml`:
 version: '3.8'
 
 services:
-  ***REMOVED*** Grafana Alloy (OTLP receiver + exporter)
+  # Grafana Alloy (OTLP receiver + exporter)
   alloy:
     image: grafana/alloy:latest
     ports:
-      - "4318:4318"  ***REMOVED*** OTLP HTTP
-      - "4317:4317"  ***REMOVED*** OTLP gRPC (not used yet)
-      - "12345:12345" ***REMOVED*** Alloy UI
+      - "4318:4318"  # OTLP HTTP
+      - "4317:4317"  # OTLP gRPC (not used yet)
+      - "12345:12345" # Alloy UI
     volumes:
       - ./alloy-config.alloy:/etc/alloy/config.alloy
     command:
@@ -200,7 +200,7 @@ services:
       - /etc/alloy/config.alloy
       - --server.http.listen-addr=0.0.0.0:12345
 
-  ***REMOVED*** Grafana (visualization)
+  # Grafana (visualization)
   grafana:
     image: grafana/grafana:latest
     ports:
@@ -270,7 +270,7 @@ Start the stack:
 docker-compose -f docker-compose.alloy.yml up -d
 ```
 
-***REMOVED******REMOVED******REMOVED*** Option 2: Local Alloy (macOS)
+### Option 2: Local Alloy (macOS)
 
 1. **Install Alloy:**
    ```bash
@@ -308,9 +308,9 @@ docker-compose -f docker-compose.alloy.yml up -d
 4. **View Alloy UI:**
    Open http://localhost:12345 to see received telemetry
 
-***REMOVED******REMOVED******REMOVED*** Testing Steps
+### Testing Steps
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Configure Android App
+#### 1. Configure Android App
 
 Edit `local.properties`:
 
@@ -319,14 +319,14 @@ scanium.otlp.enabled=true
 scanium.otlp.endpoint=http://10.0.2.2:4318
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2. Build & Install
+#### 2. Build & Install
 
 ```bash
 ./gradlew :androidApp:assembleDebug
 adb install -r androidApp/build/outputs/apk/debug/androidApp-debug.apk
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Run App & Generate Telemetry
+#### 3. Run App & Generate Telemetry
 
 - Open the app
 - Perform actions that generate telemetry:
@@ -334,12 +334,12 @@ adb install -r androidApp/build/outputs/apk/debug/androidApp-debug.apk
     - Wait for ML classification (generates metrics)
     - Navigate between screens (generates trace spans)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Verify in Alloy Logs
+#### 4. Verify in Alloy Logs
 
 Watch Alloy console output:
 
 ```bash
-***REMOVED*** You should see logs like:
+# You should see logs like:
 2025-12-24 10:30:00  INFO  Logs  {
   "resourceLogs": [{
     "resource": {
@@ -365,15 +365,15 @@ Watch Alloy console output:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Verify All Signal Types
+#### 5. Verify All Signal Types
 
 **Logs:**
 
 ```bash
-***REMOVED*** Check logcat for OTLP export confirmation
+# Check logcat for OTLP export confirmation
 adb logcat | grep "OtlpHttpExporter"
 
-***REMOVED*** Expected output:
+# Expected output:
 I/OtlpHttpExporter: Exporting 5 logs to http://10.0.2.2:4318/v1/logs
 I/OtlpHttpExporter: Successfully exported logs
 ```
@@ -381,22 +381,22 @@ I/OtlpHttpExporter: Successfully exported logs
 **Metrics:**
 
 ```bash
-***REMOVED*** Metrics are exported every 5 seconds (batch timeout)
-***REMOVED*** Look for counter/gauge/timer exports in Alloy logs
+# Metrics are exported every 5 seconds (batch timeout)
+# Look for counter/gauge/timer exports in Alloy logs
 ```
 
 **Traces:**
 
 ```bash
-***REMOVED*** Traces are sampled (10% in dev)
-***REMOVED*** Look for span exports in Alloy logs
+# Traces are sampled (10% in dev)
+# Look for span exports in Alloy logs
 ```
 
 ---
 
-***REMOVED******REMOVED*** OTLP Payload Examples
+## OTLP Payload Examples
 
-***REMOVED******REMOVED******REMOVED*** Log Record
+### Log Record
 
 ```json
 {
@@ -430,7 +430,7 @@ I/OtlpHttpExporter: Successfully exported logs
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Metric (Counter)
+### Metric (Counter)
 
 ```json
 {
@@ -461,7 +461,7 @@ I/OtlpHttpExporter: Successfully exported logs
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Trace (Span)
+### Trace (Span)
 
 ```json
 {
@@ -494,9 +494,9 @@ I/OtlpHttpExporter: Successfully exported logs
 
 ---
 
-***REMOVED******REMOVED*** Configuration Options
+## Configuration Options
 
-***REMOVED******REMOVED******REMOVED*** OtlpConfiguration Properties
+### OtlpConfiguration Properties
 
 | Property            | Default                      | Description                             |
 |---------------------|------------------------------|-----------------------------------------|
@@ -511,7 +511,7 @@ I/OtlpHttpExporter: Successfully exported logs
 | `httpTimeoutMs`     | `10000`                      | HTTP request timeout                    |
 | `debugLogging`      | `false` (prod), `true` (dev) | Enable debug logs                       |
 
-***REMOVED******REMOVED******REMOVED*** Sampling Strategy
+### Sampling Strategy
 
 **Logs:** Always exported when enabled (no sampling)
 
@@ -524,15 +524,15 @@ I/OtlpHttpExporter: Successfully exported logs
 
 ---
 
-***REMOVED******REMOVED*** Performance Considerations
+## Performance Considerations
 
-***REMOVED******REMOVED******REMOVED*** Batching
+### Batching
 
 - **Logs:** Batched up to 100 events OR 5 seconds
 - **Metrics:** All metrics exported every 5 seconds
 - **Traces:** Batched up to 100 spans OR 5 seconds
 
-***REMOVED******REMOVED******REMOVED*** Memory Usage
+### Memory Usage
 
 - **Logs:** ~100 events × ~1KB = ~100KB buffer
 - **Metrics:** ~50 metrics × ~500B = ~25KB buffer
@@ -540,7 +540,7 @@ I/OtlpHttpExporter: Successfully exported logs
 
 **Total:** <500KB additional memory overhead
 
-***REMOVED******REMOVED******REMOVED*** Network Usage
+### Network Usage
 
 Assuming moderate app usage:
 
@@ -550,7 +550,7 @@ Assuming moderate app usage:
 
 **Total:** ~140KB/min (~8.4MB/hour)
 
-***REMOVED******REMOVED******REMOVED*** CPU Overhead
+### CPU Overhead
 
 - JSON serialization: <5ms per batch
 - HTTP POST: Async (non-blocking)
@@ -558,33 +558,33 @@ Assuming moderate app usage:
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** No Data in Alloy
+### No Data in Alloy
 
 **Check 1: Is OTLP enabled?**
 
 ```bash
 adb logcat | grep "ScaniumApplication"
 
-***REMOVED*** Expected:
+# Expected:
 I/ScaniumApplication: OTLP telemetry enabled: endpoint=http://10.0.2.2:4318, env=dev, sampling=0.1
 ```
 
 **Check 2: Network connectivity**
 
 ```bash
-***REMOVED*** From Android emulator, test connectivity
+# From Android emulator, test connectivity
 adb shell curl -v http://10.0.2.2:4318/v1/logs
 ```
 
 **Check 3: Alloy is running**
 
 ```bash
-***REMOVED*** Check Alloy UI
+# Check Alloy UI
 open http://localhost:12345
 
-***REMOVED*** Check Alloy logs
+# Check Alloy logs
 docker-compose logs -f alloy
 ```
 
@@ -593,12 +593,12 @@ docker-compose logs -f alloy
 ```bash
 adb logcat | grep "OtlpHttpExporter"
 
-***REMOVED*** Expected:
+# Expected:
 D/OtlpHttpExporter: Exporting 5 logs to http://10.0.2.2:4318/v1/logs
 D/OtlpHttpExporter: Successfully exported logs
 ```
 
-***REMOVED******REMOVED******REMOVED*** HTTP 404 Errors
+### HTTP 404 Errors
 
 **Problem:** Endpoint path incorrect
 
@@ -609,7 +609,7 @@ D/OtlpHttpExporter: Successfully exported logs
 
 Paths are appended automatically by OtlpHttpExporter.
 
-***REMOVED******REMOVED******REMOVED*** Connection Refused
+### Connection Refused
 
 **Problem:** Cannot reach Alloy from Android emulator
 
@@ -619,14 +619,14 @@ Paths are appended automatically by OtlpHttpExporter.
 2. For physical device: Use `adb reverse tcp:4318 tcp:4318`
    ```bash
    adb reverse tcp:4318 tcp:4318
-   ***REMOVED*** Then use http://localhost:4318 in app config
+   # Then use http://localhost:4318 in app config
    ```
 
 ---
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
-***REMOVED******REMOVED******REMOVED*** Out of Scope for This PR
+### Out of Scope for This PR
 
 - [ ] **Protobuf encoding** (currently using JSON for simplicity)
 - [ ] **gRPC transport** (currently HTTP only)
@@ -636,7 +636,7 @@ Paths are appended automatically by OtlpHttpExporter.
 - [ ] **Real-time streaming** (batching only)
 - [ ] **Automatic instrumentation** (manual telemetry.event() calls only)
 
-***REMOVED******REMOVED******REMOVED*** Potential Future Work
+### Potential Future Work
 
 - Add OTLP/gRPC support for lower overhead
 - Implement retry with exponential backoff
@@ -647,7 +647,7 @@ Paths are appended automatically by OtlpHttpExporter.
 
 ---
 
-***REMOVED******REMOVED*** Security Considerations
+## Security Considerations
 
 ✅ **No PII in telemetry** - AttributeSanitizer removes PII before export
 ✅ **HTTPS support** - Endpoint can be https:// for production
@@ -657,22 +657,22 @@ Paths are appended automatically by OtlpHttpExporter.
 
 ---
 
-***REMOVED******REMOVED*** Build Verification
+## Build Verification
 
 ```bash
-***REMOVED*** Clean build from scratch
+# Clean build from scratch
 ./gradlew clean
 
-***REMOVED*** Build debug APK
+# Build debug APK
 ./gradlew :androidApp:assembleDebug
 
-***REMOVED*** Verify success
+# Verify success
 ✅ BUILD SUCCESSFUL in 5s
 ```
 
 ---
 
-***REMOVED******REMOVED*** PR Review Checklist
+## PR Review Checklist
 
 - [x] OTLP adapters implement existing port interfaces (no changes to Telemetry facade)
 - [x] JSON encoding using kotlinx-serialization (lightweight)
@@ -688,7 +688,7 @@ Paths are appended automatically by OtlpHttpExporter.
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This PR delivers a **production-ready OTLP export system** for Android that:
 

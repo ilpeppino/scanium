@@ -1,38 +1,38 @@
-***REMOVED***!/bin/bash
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** Build and Install devDebug with Connectivity Smoke Test
-***REMOVED***
-***REMOVED*** Builds the devDebug variant, installs it on a connected device,
-***REMOVED*** prints BuildConfig values, and performs a connectivity smoke test.
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   ./scripts/android/build-install-devdebug.sh
-***REMOVED***
-***REMOVED*** Options:
-***REMOVED***   --skip-test    Skip the connectivity smoke test
-***REMOVED***   --build-only   Only build, don't install or test
-***REMOVED***
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+#!/bin/bash
+##############################################################################
+# Build and Install devDebug with Connectivity Smoke Test
+#
+# Builds the devDebug variant, installs it on a connected device,
+# prints BuildConfig values, and performs a connectivity smoke test.
+#
+# Usage:
+#   ./scripts/android/build-install-devdebug.sh
+#
+# Options:
+#   --skip-test    Skip the connectivity smoke test
+#   --build-only   Only build, don't install or test
+#
+##############################################################################
 
 set -e
 
-***REMOVED*** Colors
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-***REMOVED*** Script location
+# Script location
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-***REMOVED*** Options
+# Options
 SKIP_TEST=false
 BUILD_ONLY=false
 
-***REMOVED*** Parse args
-while [[ $***REMOVED*** -gt 0 ]]; do
+# Parse args
+while [[ $# -gt 0 ]]; do
     case $1 in
         --skip-test) SKIP_TEST=true; shift ;;
         --build-only) BUILD_ONLY=true; shift ;;
@@ -50,12 +50,12 @@ done
 
 cd "$REPO_ROOT"
 
-***REMOVED*** Mask secrets
+# Mask secrets
 mask_key() {
     local key="$1"
     if [ -z "$key" ]; then
         echo "(not set)"
-    elif [ ${***REMOVED***key} -le 8 ]; then
+    elif [ ${#key} -le 8 ]; then
         echo "****"
     else
         echo "${key:0:8}..."
@@ -67,7 +67,7 @@ echo -e "${BLUE}  Scanium: Build & Install devDebug${NC}"
 echo -e "${BLUE}=============================================${NC}"
 echo ""
 
-***REMOVED*** Step 1: Validate configuration
+# Step 1: Validate configuration
 echo -e "${YELLOW}[1/5] Validating backend configuration...${NC}"
 if ! ./gradlew -q :androidApp:validateBackendConfig 2>&1; then
     echo -e "${RED}Backend configuration invalid!${NC}"
@@ -76,13 +76,13 @@ if ! ./gradlew -q :androidApp:validateBackendConfig 2>&1; then
 fi
 echo ""
 
-***REMOVED*** Step 2: Build
+# Step 2: Build
 echo -e "${YELLOW}[2/5] Building devDebug...${NC}"
 ./gradlew :androidApp:assembleDevDebug
 echo -e "${GREEN}Build successful!${NC}"
 echo ""
 
-***REMOVED*** Step 3: Print BuildConfig values
+# Step 3: Print BuildConfig values
 echo -e "${YELLOW}[3/5] BuildConfig values:${NC}"
 BUILDCONFIG="$REPO_ROOT/androidApp/build/generated/source/buildConfig/dev/debug/com/scanium/app/BuildConfig.java"
 
@@ -107,10 +107,10 @@ if [ "$BUILD_ONLY" = true ]; then
     exit 0
 fi
 
-***REMOVED*** Step 4: Install
+# Step 4: Install
 echo -e "${YELLOW}[4/5] Installing to device...${NC}"
 
-***REMOVED*** Check for connected device
+# Check for connected device
 if ! adb devices 2>/dev/null | grep -q "device$"; then
     echo -e "${RED}No Android device connected!${NC}"
     echo "Connect a device and enable USB debugging."
@@ -122,7 +122,7 @@ fi
 DEVICE=$(adb devices | grep "device$" | head -1 | awk '{print $1}')
 echo "Target device: $DEVICE"
 
-***REMOVED*** Find and install APK
+# Find and install APK
 APK_DIR="$REPO_ROOT/androidApp/build/outputs/apk/dev/debug"
 APK_FILE=$(find "$APK_DIR" -name "*.apk" -type f | head -1)
 
@@ -136,13 +136,13 @@ adb install -r "$APK_FILE"
 echo -e "${GREEN}Installation successful!${NC}"
 echo ""
 
-***REMOVED*** Step 5: Connectivity smoke test
+# Step 5: Connectivity smoke test
 if [ "$SKIP_TEST" = true ]; then
     echo -e "${YELLOW}[5/5] Skipping connectivity test (--skip-test)${NC}"
 else
     echo -e "${YELLOW}[5/5] Connectivity smoke test...${NC}"
 
-    ***REMOVED*** Extract backend URL from BuildConfig
+    # Extract backend URL from BuildConfig
     if [ -z "$API_URL" ]; then
         echo -e "${YELLOW}Cannot determine backend URL, skipping test${NC}"
     else
@@ -150,7 +150,7 @@ else
         echo "Testing: $HEALTH_URL"
         echo ""
 
-        ***REMOVED*** Try curl from device
+        # Try curl from device
         if adb shell "command -v curl" &>/dev/null; then
             echo "Using curl on device..."
             HTTP_CODE=$(adb shell "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 15 '$HEALTH_URL'" 2>/dev/null || echo "000")
@@ -163,7 +163,7 @@ else
                 HTTP_CODE="000"
             fi
         else
-            ***REMOVED*** Fallback: try with toybox
+            # Fallback: try with toybox
             echo "Using toybox wget..."
             if adb shell "toybox wget -q -O /dev/null '$HEALTH_URL'" 2>/dev/null; then
                 HTTP_CODE="200"

@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Fetch eBay UK (EBAY_GB) taxonomy/category tree.
 Requires: EBAY_CLIENT_ID, EBAY_CLIENT_SECRET environment variables.
@@ -36,14 +36,14 @@ def get_oauth_token(client_id: str, client_secret: str, sandbox: bool = True) ->
     Returns:
         Access token string or None on failure
     """
-    ***REMOVED*** Use sandbox or production endpoint
+    # Use sandbox or production endpoint
     auth_url = "https://api.sandbox.ebay.com/identity/v1/oauth2/token" if sandbox else "https://api.ebay.com/identity/v1/oauth2/token"
 
-    ***REMOVED*** Encode credentials for Basic Auth
+    # Encode credentials for Basic Auth
     credentials = f"{client_id}:{client_secret}"
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
 
-    ***REMOVED*** Prepare request
+    # Prepare request
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f"Basic {encoded_credentials}"
@@ -80,22 +80,22 @@ def fetch_ebay_category_tree(access_token: str, marketplace_id: str = "EBAY_GB",
     Returns:
         Category tree data or None on failure
     """
-    ***REMOVED*** Map marketplace code to category tree ID
-    ***REMOVED*** See: https://developer.ebay.com/api-docs/commerce/taxonomy/resources/category_tree/methods/getCategoryTree
+    # Map marketplace code to category tree ID
+    # See: https://developer.ebay.com/api-docs/commerce/taxonomy/resources/category_tree/methods/getCategoryTree
     marketplace_to_tree_id = {
-        "EBAY_US": "0",  ***REMOVED*** United States
-        "EBAY_GB": "3",  ***REMOVED*** United Kingdom
-        "EBAY_DE": "77", ***REMOVED*** Germany
-        "EBAY_FR": "71", ***REMOVED*** France
-        "EBAY_IT": "101", ***REMOVED*** Italy
-        "EBAY_ES": "186", ***REMOVED*** Spain
-        "EBAY_AU": "15",  ***REMOVED*** Australia
-        "EBAY_CA": "2",   ***REMOVED*** Canada (English)
+        "EBAY_US": "0",  # United States
+        "EBAY_GB": "3",  # United Kingdom
+        "EBAY_DE": "77", # Germany
+        "EBAY_FR": "71", # France
+        "EBAY_IT": "101", # Italy
+        "EBAY_ES": "186", # Spain
+        "EBAY_AU": "15",  # Australia
+        "EBAY_CA": "2",   # Canada (English)
     }
 
-    category_tree_id = marketplace_to_tree_id.get(marketplace_id, "3")  ***REMOVED*** Default to UK
+    category_tree_id = marketplace_to_tree_id.get(marketplace_id, "3")  # Default to UK
 
-    ***REMOVED*** Use sandbox or production endpoint
+    # Use sandbox or production endpoint
     base_url = "https://api.sandbox.ebay.com" if sandbox else "https://api.ebay.com"
     url = f"{base_url}/commerce/taxonomy/v1/category_tree/{category_tree_id}"
 
@@ -209,12 +209,12 @@ def fetch_taxonomy() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "ebay_category_tree.json"
 
-    ***REMOVED*** Check credentials
+    # Check credentials
     client_id, client_secret = check_credentials()
 
     if not client_id or not client_secret:
         print_setup_instructions()
-        ***REMOVED*** For now, we'll use mock data to allow the workflow to continue
+        # For now, we'll use mock data to allow the workflow to continue
         print("\n⚠️  Using MOCK DATA for demonstration...")
         taxonomy_data = fetch_taxonomy_mock()
         with open(output_path, 'w') as f:
@@ -225,12 +225,12 @@ def fetch_taxonomy() -> int:
 
     print(f"✅ eBay credentials found. Marketplace: EBAY_GB")
 
-    ***REMOVED*** Detect if using sandbox credentials (contains "SBX")
+    # Detect if using sandbox credentials (contains "SBX")
     is_sandbox = "SBX" in client_id or "sandbox" in client_id.lower()
     env_label = "SANDBOX" if is_sandbox else "PRODUCTION"
     print(f"   Environment: {env_label}")
 
-    ***REMOVED*** Step 1: Get OAuth token
+    # Step 1: Get OAuth token
     print("🔐 Fetching OAuth token...")
     access_token = get_oauth_token(client_id, client_secret, sandbox=is_sandbox)
 
@@ -245,7 +245,7 @@ def fetch_taxonomy() -> int:
 
     print("✅ OAuth token obtained")
 
-    ***REMOVED*** Step 2: Fetch category tree
+    # Step 2: Fetch category tree
     marketplace_id = os.environ.get("EBAY_MARKETPLACE", "EBAY_GB")
     print(f"📥 Fetching category tree for {marketplace_id}...")
 
@@ -260,7 +260,7 @@ def fetch_taxonomy() -> int:
         print(f"✅ Mock taxonomy tree saved to {output_path}")
         return 1
 
-    ***REMOVED*** Wrap the response in our expected structure
+    # Wrap the response in our expected structure
     taxonomy_data = {
         "status": "REAL_DATA",
         "marketplace": marketplace_id,
@@ -273,7 +273,7 @@ def fetch_taxonomy() -> int:
 
     print(f"✅ Real taxonomy tree saved to {output_path}")
 
-    ***REMOVED*** Print summary statistics
+    # Print summary statistics
     root_categories = category_tree.get("rootCategoryNode", {})
     if "childCategoryTreeNodes" in root_categories:
         num_top_level = len(root_categories["childCategoryTreeNodes"])

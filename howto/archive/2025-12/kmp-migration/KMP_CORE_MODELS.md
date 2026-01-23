@@ -1,15 +1,15 @@
-***REMOVED*** KMP Core Models Module
+# KMP Core Models Module
 
 This document describes the `shared/core-models` Kotlin Multiplatform module and the migration plan
 for moving platform-independent data models from the existing Android library `core-models` module.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The `shared/core-models` module will contain all platform-independent data models and types used
 throughout Scanium. This is the foundation layer with **no dependencies** on other modules, making
 it safe to depend on from all other shared and platform-specific modules.
 
-***REMOVED******REMOVED*** Module Configuration
+## Module Configuration
 
 **Type**: Kotlin Multiplatform Library
 **Plugin**: `kotlin("multiplatform")`
@@ -30,14 +30,14 @@ it safe to depend on from all other shared and platform-specific modules.
 - Kotlinx Serialization JSON (for data serialization)
 - Kotlin Test (for testing)
 
-***REMOVED******REMOVED*** Files to Migrate
+## Files to Migrate
 
 The following files from `core-models/src/main/java/` will be migrated to
 `shared/core-models/src/commonMain/kotlin/`:
 
-***REMOVED******REMOVED******REMOVED*** Core Geometry & Image Types
+### Core Geometry & Image Types
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ImageRef.kt`
+#### `ImageRef.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/model/ImageRef.kt`
 **Target**: `shared/core-models/src/commonMain/kotlin/com/scanium/core/models/image/ImageRef.kt`
@@ -63,7 +63,7 @@ sealed class ImageRef {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `NormalizedRect.kt`
+#### `NormalizedRect.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/model/NormalizedRect.kt`
 **Target**:
@@ -90,9 +90,9 @@ data class NormalizedRect(
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** ML Detection Types
+### ML Detection Types
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ItemCategory.kt`
+#### `ItemCategory.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/ml/ItemCategory.kt`
 **Target**: `shared/core-models/src/commonMain/kotlin/com/scanium/core/models/ml/ItemCategory.kt`
@@ -118,7 +118,7 @@ enum class ItemCategory {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ScanMode.kt`
+#### `ScanMode.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/camera/ScanMode.kt`
 **Target**: `shared/core-models/src/commonMain/kotlin/com/scanium/core/models/camera/ScanMode.kt`
@@ -141,7 +141,7 @@ enum class ScanMode {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ClassificationMode.kt`
+#### `ClassificationMode.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/ml/classification/ClassificationMode.kt`
 **Target**:
@@ -164,7 +164,7 @@ enum class ClassificationMode {
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `DetectionResult.kt`
+#### `DetectionResult.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/ml/DetectionResult.kt`
 **Target**: `shared/core-models/src/commonMain/kotlin/com/scanium/core/models/ml/DetectionResult.kt`
@@ -179,7 +179,7 @@ Real-time detection result using portable types.
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `RawDetection.kt`
+#### `RawDetection.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/ml/RawDetection.kt`
 **Target**: `shared/core-models/src/commonMain/kotlin/com/scanium/core/models/ml/RawDetection.kt`
@@ -196,7 +196,7 @@ Raw ML detection data.
 
 ---
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ClassificationResult.kt`
+#### `ClassificationResult.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/ml/classification/ClassificationResult.kt`
 **Target**:
@@ -211,9 +211,9 @@ Cloud classification result with domain category and attributes.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Item Models
+### Item Models
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** `ScannedItem.kt`
+#### `ScannedItem.kt`
 
 **Source**: `core-models/src/main/java/com/scanium/app/items/ScannedItem.kt`
 **Target**: `shared/core-models/src/commonMain/kotlin/com/scanium/core/models/items/ScannedItem.kt`
@@ -236,9 +236,9 @@ Immutable scanned item model.
 
 ---
 
-***REMOVED******REMOVED*** Migration Checklist
+## Migration Checklist
 
-***REMOVED******REMOVED******REMOVED*** Phase 1: Pre-Migration Cleanup ✅ (This PR)
+### Phase 1: Pre-Migration Cleanup ✅ (This PR)
 
 - [x] Create KMP module skeleton
 - [x] Define source sets (commonMain, androidMain, iosMain)
@@ -246,14 +246,14 @@ Immutable scanned item model.
 - [x] Add placeholder files
 - [x] Document migration plan
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Remove Android Dependencies (Next PR)
+### Phase 2: Remove Android Dependencies (Next PR)
 
 - [ ] Remove legacy `Rect`/`Bitmap` fields from `RawDetection`
 - [ ] Remove `Uri` from `ScannedItem`
 - [ ] Update all call sites in `androidApp` to use portable types
 - [ ] Verify no android.* imports remain in target files
 
-***REMOVED******REMOVED******REMOVED*** Phase 3: Move Code (Future PR)
+### Phase 3: Move Code (Future PR)
 
 - [ ] Move `ImageRef.kt` → `commonMain`
 - [ ] Move `NormalizedRect.kt` → `commonMain`
@@ -266,7 +266,7 @@ Immutable scanned item model.
 - [ ] Move `ScannedItem.kt` → `commonMain` (after Uri removal)
 - [ ] Move tests → `commonTest`
 
-***REMOVED******REMOVED******REMOVED*** Phase 4: Update Dependencies (Future PR)
+### Phase 4: Update Dependencies (Future PR)
 
 - [ ] Update `core-tracking` to depend on `shared:core-models`
 - [ ] Update `core-domainpack` to depend on `shared:core-models`
@@ -276,9 +276,9 @@ Immutable scanned item model.
 
 ---
 
-***REMOVED******REMOVED*** Strict Rules for commonMain
+## Strict Rules for commonMain
 
-***REMOVED******REMOVED******REMOVED*** ✅ ALLOWED
+### ✅ ALLOWED
 
 - Kotlin stdlib (`kotlin.*`)
 - Kotlin Coroutines (`kotlinx.coroutines.*`)
@@ -286,7 +286,7 @@ Immutable scanned item model.
 - Pure Kotlin data classes, enums, sealed classes
 - Platform-agnostic types: `ByteArray`, `String`, `Float`, etc.
 
-***REMOVED******REMOVED******REMOVED*** ❌ FORBIDDEN
+### ❌ FORBIDDEN
 
 - `android.*` - Any Android SDK classes
 - `androidx.*` - Any AndroidX library classes
@@ -297,7 +297,7 @@ Immutable scanned item model.
 - `android.util.Log` - Use `Logger` interface instead
 - CameraX, ML Kit, Compose - Platform-specific, stays in `androidApp`
 
-***REMOVED******REMOVED******REMOVED*** Enforcement
+### Enforcement
 
 - CI builds will verify no Android imports in `commonMain`
 - Gradle configuration disallows Android dependencies
@@ -305,34 +305,34 @@ Immutable scanned item model.
 
 ---
 
-***REMOVED******REMOVED*** Package Structure
+## Package Structure
 
 Target package structure in `commonMain`:
 
 ```
 com.scanium.core.models/
 ├── image/
-│   └── ImageRef.kt                   ***REMOVED*** Platform-agnostic image
+│   └── ImageRef.kt                   # Platform-agnostic image
 ├── geometry/
-│   └── NormalizedRect.kt             ***REMOVED*** Normalized bounding box
+│   └── NormalizedRect.kt             # Normalized bounding box
 ├── ml/
-│   ├── ItemCategory.kt               ***REMOVED*** ML category enum
-│   ├── DetectionResult.kt            ***REMOVED*** Detection result
-│   ├── RawDetection.kt               ***REMOVED*** Raw ML detection
+│   ├── ItemCategory.kt               # ML category enum
+│   ├── DetectionResult.kt            # Detection result
+│   ├── RawDetection.kt               # Raw ML detection
 │   └── classification/
-│       ├── ClassificationMode.kt     ***REMOVED*** ON_DEVICE | CLOUD
-│       └── ClassificationResult.kt   ***REMOVED*** Domain classification result
+│       ├── ClassificationMode.kt     # ON_DEVICE | CLOUD
+│       └── ClassificationResult.kt   # Domain classification result
 ├── camera/
-│   └── ScanMode.kt                   ***REMOVED*** Scan mode enum
+│   └── ScanMode.kt                   # Scan mode enum
 └── items/
-    └── ScannedItem.kt                ***REMOVED*** Scanned item model
+    └── ScannedItem.kt                # Scanned item model
 ```
 
 ---
 
-***REMOVED******REMOVED*** Testing Strategy
+## Testing Strategy
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests
+### Unit Tests
 
 - All tests from `core-models/src/test/` will move to `commonTest`
 - Use `kotlin.test` framework (platform-agnostic)
@@ -351,13 +351,13 @@ com.scanium.core.models/
 
 ---
 
-***REMOVED******REMOVED*** Dependencies
+## Dependencies
 
-***REMOVED******REMOVED******REMOVED*** This Module Depends On
+### This Module Depends On
 
 - **None** - Foundation layer, no internal dependencies
 
-***REMOVED******REMOVED******REMOVED*** Modules That Will Depend On This
+### Modules That Will Depend On This
 
 - `shared:core-tracking` - Uses `ImageRef`, `NormalizedRect`, `ScannedItem`
 - `shared:core-domainpack` - Uses `ItemCategory`
@@ -366,22 +366,22 @@ com.scanium.core.models/
 
 ---
 
-***REMOVED******REMOVED*** Build Verification
+## Build Verification
 
-***REMOVED******REMOVED******REMOVED*** Local Build (No Android SDK required for commonMain)
+### Local Build (No Android SDK required for commonMain)
 
 ```bash
 ./gradlew :shared:core-models:compileKotlinCommonMain
 ./gradlew :shared:core-models:compileKotlinAndroidDebug
 ```
 
-***REMOVED******REMOVED******REMOVED*** Testing
+### Testing
 
 ```bash
 ./gradlew :shared:core-models:cleanAllTests :shared:core-models:allTests
 ```
 
-***REMOVED******REMOVED******REMOVED*** CI Pipeline
+### CI Pipeline
 
 - Verify `commonMain` builds without Android SDK
 - Run tests on JVM (commonTest)
@@ -390,7 +390,7 @@ com.scanium.core.models/
 
 ---
 
-***REMOVED******REMOVED*** Timeline
+## Timeline
 
 1. **This PR**: KMP skeleton only (no code moved)
 2. **Next PR**: Remove Android dependencies from target files
@@ -400,7 +400,7 @@ com.scanium.core.models/
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - **KMP Structure**: `docs/kmp-migration/KMP_STRUCTURE.md`
 - **Migration Plan**: `docs/kmp-migration/PLAN.md`

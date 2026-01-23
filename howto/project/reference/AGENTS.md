@@ -1,8 +1,8 @@
-***REMOVED*** Repository Guidelines
+# Repository Guidelines
 
-***REMOVED******REMOVED*** Project Structure & Module Organization
+## Project Structure & Module Organization
 
-***REMOVED******REMOVED******REMOVED*** Android Application
+### Android Application
 
 - Multi-module Gradle project with Hilt DI.
 - `androidApp/`: Android app (Jetpack Compose UI, CameraX, ML Kit wrappers, AI Assistant, selling
@@ -26,7 +26,7 @@
     - Resources: `androidApp/src/main/res`
     - Manifest: `androidApp/src/main/AndroidManifest.xml`
 
-***REMOVED******REMOVED******REMOVED*** Shared Kotlin Modules (KMP-ready)
+### Shared Kotlin Modules (KMP-ready)
 
 - `shared/core-models/`: Portable models (ImageRef, NormalizedRect, ScannedItem, ScanMode, domain
   config)
@@ -34,7 +34,7 @@
 - `shared/core-export/`: Export models and mappers (CSV, ZIP)
 - `shared/test-utils/`: Shared test helpers
 
-***REMOVED******REMOVED******REMOVED*** Android Wrappers & Adapters
+### Android Wrappers & Adapters
 
 - `core-models/`: Android wrapper for shared models (typealiases, backwards-compatible)
 - `core-tracking/`: Android wrapper for shared tracking logic
@@ -43,7 +43,7 @@
 - Library shells (`android-ml-mlkit`, `android-camera-camerax`, `core-contracts`, `core-scan`): Hold
   namespaces only
 
-***REMOVED******REMOVED******REMOVED*** Backend Services
+### Backend Services
 
 - `backend/`: Fastify + TypeScript + Prisma + PostgreSQL backend
     - `src/index.ts` or `src/main.ts`: Server entry point
@@ -54,7 +54,7 @@
     - `prisma/migrations/`: Version-controlled schema changes
     - `docker-compose.yml`: PostgreSQL container
 
-***REMOVED******REMOVED******REMOVED*** Observability Stack
+### Observability Stack
 
 - `monitoring/`: LGTM observability stack (Grafana, Loki, Tempo, Mimir, Alloy)
     - `docker-compose.yml`: All monitoring services
@@ -62,46 +62,46 @@
     - `alloy/alloy.hcl`: OTLP routing configuration
     - `loki/`, `tempo/`, `mimir/`: Backend storage configs
 
-***REMOVED******REMOVED******REMOVED*** Development Scripts
+### Development Scripts
 
 - `scripts/backend/start-dev.sh`: Start backend + PostgreSQL + ngrok + monitoring
 - `scripts/backend/stop-dev.sh`: Stop services
 - `scripts/monitoring/`: Monitoring stack management
 - `scripts/build.sh`: Android build with Java 17 auto-detection
 
-***REMOVED******REMOVED*** Build, Test, and Development Commands
+## Build, Test, and Development Commands
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 ```bash
-./scripts/build.sh assembleDebug      ***REMOVED*** Builds with auto-detected Java 17
-./gradlew assembleDebug               ***REMOVED*** Build debug APK
-./gradlew installDebug                ***REMOVED*** Deploy to connected device/emulator
-./gradlew test                        ***REMOVED*** JVM unit tests
-./gradlew connectedAndroidTest        ***REMOVED*** Instrumented + Compose UI tests (needs device)
-./gradlew lint                        ***REMOVED*** Android Lint across modules
-./gradlew prePushJvmCheck             ***REMOVED*** Fast pre-push validation (JVM tests + portability)
+./scripts/build.sh assembleDebug      # Builds with auto-detected Java 17
+./gradlew assembleDebug               # Build debug APK
+./gradlew installDebug                # Deploy to connected device/emulator
+./gradlew test                        # JVM unit tests
+./gradlew connectedAndroidTest        # Instrumented + Compose UI tests (needs device)
+./gradlew lint                        # Android Lint across modules
+./gradlew prePushJvmCheck             # Fast pre-push validation (JVM tests + portability)
 ```
 
 - Use Android Studio's "Apply Changes" for quick UI tweaks; prefer `./gradlew clean` before
   reproducing build issues.
 
-***REMOVED******REMOVED******REMOVED*** Backend & Observability
+### Backend & Observability
 
 ```bash
-scripts/backend/start-dev.sh          ***REMOVED*** Start backend + PostgreSQL + ngrok + monitoring
-scripts/backend/start-dev.sh --no-monitoring  ***REMOVED*** Backend only
-scripts/backend/stop-dev.sh           ***REMOVED*** Stop backend + PostgreSQL
-scripts/backend/stop-dev.sh --with-monitoring ***REMOVED*** Stop everything
-scripts/monitoring/print-urls.sh      ***REMOVED*** View monitoring URLs and health status
-cd backend && npm install             ***REMOVED*** Install dependencies
-cd backend && npm run dev             ***REMOVED*** Run backend in dev mode
-cd backend && npm test                ***REMOVED*** Run backend tests
-cd backend && npm run prisma:migrate  ***REMOVED*** Run database migrations
-cd backend && npm run typecheck       ***REMOVED*** TypeScript type checking
+scripts/backend/start-dev.sh          # Start backend + PostgreSQL + ngrok + monitoring
+scripts/backend/start-dev.sh --no-monitoring  # Backend only
+scripts/backend/stop-dev.sh           # Stop backend + PostgreSQL
+scripts/backend/stop-dev.sh --with-monitoring # Stop everything
+scripts/monitoring/print-urls.sh      # View monitoring URLs and health status
+cd backend && npm install             # Install dependencies
+cd backend && npm run dev             # Run backend in dev mode
+cd backend && npm test                # Run backend tests
+cd backend && npm run prisma:migrate  # Run database migrations
+cd backend && npm run typecheck       # TypeScript type checking
 ```
 
-***REMOVED******REMOVED*** Coding Style & Naming Conventions
+## Coding Style & Naming Conventions
 
 - Kotlin official style, 4-space indentation; prefer expression bodies for simple functions.
 - Compose composables in `PascalCase` with `@Composable` at top; preview functions end with
@@ -121,7 +121,7 @@ cd backend && npm run typecheck       ***REMOVED*** TypeScript type checking
 - Run `./gradlew lint` (or Android Studio formatting) before sending changes; avoid storing secrets
   in code or `local.properties`.
 
-***REMOVED******REMOVED*** Mac + NAS Invariant Workflow (Mandatory)
+## Mac + NAS Invariant Workflow (Mandatory)
 
 - **Repo alignment:** Always check `git rev-parse HEAD` on Mac and NAS before any change. If they
   differ, stop and align both to the same commit. Never hot-fix runtime state.
@@ -135,14 +135,14 @@ cd backend && npm run typecheck       ***REMOVED*** TypeScript type checking
 - **Redeploy + verify:** All fixes must be committed and redeployed. Verify container health, DNS
   resolution, and telemetry/log/metrics flow post-deploy.
 
-***REMOVED******REMOVED*** Testing Guidelines
+## Testing Guidelines
 
-***REMOVED******REMOVED******REMOVED*** Test Organization
+### Test Organization
 
 - **Unit tests**: `androidApp/src/test/java/` (JUnit4, Truth, MockK, Coroutines Test, Robolectric)
 - **Instrumented tests**: `androidApp/src/androidTest/java/` (Compose UI and Android framework)
 
-***REMOVED******REMOVED******REMOVED*** Current Test Coverage (all passing ✅)
+### Current Test Coverage (all passing ✅)
 
 - **Unit tests** focus on:
     - Tracking & aggregation: `ObjectTrackerTest.kt`, `ObjectCandidateTest.kt`,
@@ -162,7 +162,7 @@ cd backend && npm run typecheck       ***REMOVED*** TypeScript type checking
     - `ModeSwitcherTest.kt` and `DetectionOverlayTest.kt` - Compose UI interaction
     - `ItemsViewModelInstrumentedTest.kt` - Integration tests
 
-***REMOVED******REMOVED******REMOVED*** Test Dependencies
+### Test Dependencies
 
 - JUnit 4.13.2 (test framework)
 - **Robolectric 4.11.1** (Android framework in unit tests - required for `Rect`, etc.)
@@ -171,7 +171,7 @@ cd backend && npm run typecheck       ***REMOVED*** TypeScript type checking
 - Coroutines Test 1.7.3 (coroutine testing)
 - Core Testing 2.2.0 (LiveData/Flow testing)
 
-***REMOVED******REMOVED******REMOVED*** Testing Best Practices
+### Testing Best Practices
 
 - Name tests: `whenCondition_thenExpectedBehavior`
 - Use `@RunWith(RobolectricTestRunner::class)` for tests using Android framework classes
@@ -179,7 +179,7 @@ cd backend && npm run typecheck       ***REMOVED*** TypeScript type checking
 - Run `./gradlew test` for fast unit tests
 - Run `./gradlew connectedAndroidTest` for UI/instrumented tests (requires device)
 
-***REMOVED******REMOVED*** Commit & Pull Request Guidelines
+## Commit & Pull Request Guidelines
 
 - Commits in imperative mood with clear scope (e.g., `Add MLKit detector pipeline`,
   `Tweak CameraScreen gestures`); keep them small and logically grouped.
@@ -188,18 +188,18 @@ cd backend && npm run typecheck       ***REMOVED*** TypeScript type checking
 - Call out any API/permission implications (camera usage, ML Kit model changes) in the PR
   description.
 
-***REMOVED******REMOVED*** AI Agent Workflow
+## AI Agent Workflow
 
 When working as an AI agent on tasks:
 
-***REMOVED******REMOVED******REMOVED*** Completing Tasks
+### Completing Tasks
 
 - **Always commit and push to main** when a task is complete and all tests pass.
 - Run appropriate tests before committing (see Testing Guidelines above).
 - Use descriptive commit messages following the conventions above (imperative mood, clear scope).
 - Push changes immediately after committing: `git push origin main`
 
-***REMOVED******REMOVED******REMOVED*** Docker & NAS Operations
+### Docker & NAS Operations
 
 - **Always use `ssh nas` prefix** for any Docker commands or NAS file system operations.
 - The monitoring stack (Grafana, Loki, Tempo, Mimir, Alloy) runs on the NAS, not locally.

@@ -1,10 +1,10 @@
-***REMOVED*** No User Feedback When Switching Classification Modes
+# No User Feedback When Switching Classification Modes
 
 **Labels:** `ux`, `priority:p3`, `area:ui`, `area:settings`
 **Type:** UX Issue
 **Severity:** Low
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 Users can toggle between "On-Device" and "Cloud" classification modes, but there's **no visual or
 haptic feedback** indicating:
@@ -13,12 +13,12 @@ haptic feedback** indicating:
 - That the mode switch was successful
 - What the difference between modes is
 
-***REMOVED******REMOVED*** Location
+## Location
 
 **ClassificationModeViewModel.kt** and wherever the toggle is displayed (likely in advanced camera
 controls)
 
-***REMOVED******REMOVED*** Current Behavior
+## Current Behavior
 
 User taps classification mode toggle:
 
@@ -27,9 +27,9 @@ User taps classification mode toggle:
 - User doesn't know if tap registered
 - No explanation of what changed
 
-***REMOVED******REMOVED*** Expected Behavior
+## Expected Behavior
 
-***REMOVED******REMOVED******REMOVED*** When User Toggles Mode:
+### When User Toggles Mode:
 
 1. **Visual Feedback**:
     - Toggle animates to new position
@@ -45,7 +45,7 @@ User taps classification mode toggle:
     - Different color for cloud vs on-device
     - Icon in camera controls
 
-***REMOVED******REMOVED******REMOVED*** First Time Toggle (Educational):
+### First Time Toggle (Educational):
 
 Show explanation dialog:
 
@@ -67,7 +67,7 @@ Show explanation dialog:
 └─────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED*** Impact
+## Impact
 
 **Severity**: Low
 
@@ -77,7 +77,7 @@ Show explanation dialog:
 
 **Affected Users**: Anyone who finds the advanced controls
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 
 - [x] Add visual state indicator to classification mode toggle
 - [x] Show confirmation when mode changes
@@ -86,7 +86,7 @@ Show explanation dialog:
 - [ ] Consider showing explanatory dialog on first toggle (deferred)
 - [ ] Update CLAUDE.md to document the UX
 
-***REMOVED******REMOVED*** Resolution
+## Resolution
 
 - Added mode-specific iconography and brief descriptions to the Processing settings card so users
   can see whether they are on-device or cloud along with trade-offs.
@@ -94,7 +94,7 @@ Show explanation dialog:
   initial value is skipped).
 - Persistence continues via `ClassificationPreferences` DataStore; no change needed.
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
 - Manual: Open the Camera settings panel → toggle Processing mode; observe icon/color/text change
   and toast confirmation. Reopen to confirm state persisted.
@@ -102,9 +102,9 @@ Show explanation dialog:
   apt due to unsigned/blocked repositories). `./gradlew assembleDebug` (fails: Java 17 toolchain not
   available and repository download blocked).
 
-***REMOVED******REMOVED*** Suggested Implementation
+## Suggested Implementation
 
-***REMOVED******REMOVED******REMOVED*** 1. Visual State Indicator
+### 1. Visual State Indicator
 
 ```kotlin
 // ClassificationModeToggle.kt (or wherever it's displayed)
@@ -134,7 +134,7 @@ Row(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Confirmation Toast
+### 2. Confirmation Toast
 
 ```kotlin
 // CameraScreen.kt or wherever toggle is
@@ -152,7 +152,7 @@ LaunchedEffect(classificationMode) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Help Dialog (First Time)
+### 3. Help Dialog (First Time)
 
 ```kotlin
 var showClassificationExplanation by remember {
@@ -200,6 +200,6 @@ if (showClassificationExplanation) {
 }
 ```
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
-- Issue ***REMOVED***014 (Classification system placeholders) - explains why modes might not show difference
+- Issue #014 (Classification system placeholders) - explains why modes might not show difference

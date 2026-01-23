@@ -1,5 +1,5 @@
-***REMOVED*** Grafana Dashboard Provisioning
-***REMOVED*** Automatically loads dashboards from the specified folder
+# Grafana Dashboard Provisioning
+# Automatically loads dashboards from the specified folder
 
 apiVersion: 1
 

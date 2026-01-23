@@ -1,13 +1,13 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-***REMOVED*** Run autofix_tests.sh on remote Mac via SSH over Tailscale
-***REMOVED*** Pulls back test artifacts to phone Downloads
+# Run autofix_tests.sh on remote Mac via SSH over Tailscale
+# Pulls back test artifacts to phone Downloads
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/remote_env"
 
-***REMOVED*** SSH options for mobile network resilience
+# SSH options for mobile network resilience
 SSH_OPTS=(
     -o ServerAliveInterval=30
     -o ServerAliveCountMax=3
@@ -15,7 +15,7 @@ SSH_OPTS=(
     -o BatchMode=yes
 )
 
-***REMOVED*** Colors
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -25,7 +25,7 @@ log_info()  { echo -e "${GREEN}[INFO]${NC} $*"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
-***REMOVED*** Load remote_env
+# Load remote_env
 if [[ ! -f "$ENV_FILE" ]]; then
     log_error "Remote environment not configured."
     echo ""
@@ -38,10 +38,10 @@ if [[ ! -f "$ENV_FILE" ]]; then
     exit 1
 fi
 
-***REMOVED*** shellcheck source=/dev/null
+# shellcheck source=/dev/null
 source "$ENV_FILE"
 
-***REMOVED*** Validate required variables
+# Validate required variables
 if [[ -z "${MAC_SSH_HOST:-}" || -z "${MAC_SSH_USER:-}" ]]; then
     log_error "MAC_SSH_HOST and MAC_SSH_USER must be set in remote_env"
     exit 1
@@ -60,7 +60,7 @@ run_cmd() {
     fi
 }
 
-***REMOVED*** Test SSH connection
+# Test SSH connection
 log_info "Testing SSH connection to $MAC_SSH..."
 if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "echo 'Connected to Mac'"; then
     log_error "SSH connection failed."
@@ -73,7 +73,7 @@ if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "echo 'Connected to Mac'"; then
     exit 1
 fi
 
-***REMOVED*** Run autofix_tests.sh on Mac
+# Run autofix_tests.sh on Mac
 log_info "Running autofix_tests.sh on Mac..."
 echo ""
 
@@ -82,11 +82,11 @@ GRADLE_LOG="tmp/termux_remote_gradle.log"
 AUTOFIX_SCRIPT='
 cd '"$MAC_REPO_DIR"'
 
-***REMOVED*** Force JDK 17 (project requirement)
+# Force JDK 17 (project requirement)
 export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 export PATH="$JAVA_HOME/bin:$PATH"
 
-***REMOVED*** Parse ANDROID_SDK_ROOT from local.properties
+# Parse ANDROID_SDK_ROOT from local.properties
 if [[ -f "local.properties" ]]; then
     SDK_DIR=$(grep "^sdk.dir=" local.properties | cut -d= -f2-)
     if [[ -n "$SDK_DIR" ]]; then
@@ -95,17 +95,17 @@ if [[ -f "local.properties" ]]; then
     fi
 fi
 
-***REMOVED*** Preflight: print environment info
+# Preflight: print environment info
 echo "=== Remote Environment Preflight ==="
 echo "JAVA_HOME=$JAVA_HOME"
 java -version 2>&1 | head -2
 echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-<not set>}"
 echo "===================================="
 
-***REMOVED*** Ensure tmp dir exists for logs
+# Ensure tmp dir exists for logs
 mkdir -p tmp
 
-***REMOVED*** Run autofix_tests.sh with logging
+# Run autofix_tests.sh with logging
 if ./scripts/dev/autofix_tests.sh test 2>&1 | tee '"$GRADLE_LOG"'; then
     echo "TESTS_COMPLETED"
 else
@@ -122,10 +122,10 @@ if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$AUTOFIX_SCRIPT"; then
     log_info "Full log available at: $MAC_REPO_DIR/$GRADLE_LOG"
 fi
 
-***REMOVED*** Create artifact directory on phone
+# Create artifact directory on phone
 run_cmd mkdir -p "$PHONE_ARTIFACT_DIR"
 
-***REMOVED*** Pull artifacts from Mac
+# Pull artifacts from Mac
 log_info "Pulling test artifacts..."
 
 ARTIFACTS=(
@@ -137,7 +137,7 @@ for artifact in "${ARTIFACTS[@]}"; do
     remote_path="$MAC_REPO_DIR/$artifact"
     local_path="$PHONE_ARTIFACT_DIR/$(basename "$artifact")"
 
-    ***REMOVED*** Check if file exists on Mac
+    # Check if file exists on Mac
     if run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "test -f $remote_path" 2>/dev/null; then
         log_info "Pulling $artifact..."
         run_cmd scp "${SSH_OPTS[@]}" "$MAC_SSH:$remote_path" "$local_path"

@@ -1,11 +1,11 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Prove mobile dashboard wiring: Synthetic test log → Loki → Dashboard queries work
-***REMOVED*** Usage: bash prove-mobile-dashboard-wiring.sh [loki_url]
-***REMOVED***
-***REMOVED*** This script:
-***REMOVED*** 1. Emits a synthetic mobile test log to Loki
-***REMOVED*** 2. Verifies the log is queryable with mobile dashboard label selectors
-***REMOVED*** 3. Proves mobile dashboard panels would display data (if present)
+#!/bin/bash
+# Prove mobile dashboard wiring: Synthetic test log → Loki → Dashboard queries work
+# Usage: bash prove-mobile-dashboard-wiring.sh [loki_url]
+#
+# This script:
+# 1. Emits a synthetic mobile test log to Loki
+# 2. Verifies the log is queryable with mobile dashboard label selectors
+# 3. Proves mobile dashboard panels would display data (if present)
 
 set -euo pipefail
 
@@ -16,18 +16,18 @@ echo "[prove-mobile-wiring] ================================================"
 echo "[prove-mobile-wiring] Proving Mobile Dashboard Wiring"
 echo "[prove-mobile-wiring] ================================================"
 
-***REMOVED*** Step 1: Emit synthetic mobile log
+# Step 1: Emit synthetic mobile log
 echo "[prove-mobile-wiring] Step 1: Emitting synthetic mobile test log..."
 bash "$SCRIPT_DIR/emit-mobile-test-log.sh" "$LOKI_URL" || {
   echo "[prove-mobile-wiring] ❌ Failed to emit test log"
   exit 1
 }
 
-***REMOVED*** Step 2: Query with dashboard label selectors
+# Step 2: Query with dashboard label selectors
 echo "[prove-mobile-wiring] Step 2: Querying with mobile dashboard selectors..."
 
-***REMOVED*** This matches the query pattern from mobile-app-health.json:
-***REMOVED*** {source="scanium-mobile", platform=~"$platform", build_type=~"$build_type", app_version=~"$app_version"}
+# This matches the query pattern from mobile-app-health.json:
+# {source="scanium-mobile", platform=~"$platform", build_type=~"$build_type", app_version=~"$app_version"}
 MOBILE_QUERY='{source="scanium-mobile",platform="android",build_type="debug",app_version="test"}'
 
 QUERY_RESULT=$(curl -sf -G "$LOKI_URL/loki/api/v1/query" \
@@ -45,7 +45,7 @@ else
   exit 1
 fi
 
-***REMOVED*** Step 3: Verify event_name label (used in dashboard aggregations)
+# Step 3: Verify event_name label (used in dashboard aggregations)
 echo "[prove-mobile-wiring] Step 3: Verifying event_name label..."
 EVENT_QUERY='{source="scanium-mobile",event_name="monitor_smoke"}'
 

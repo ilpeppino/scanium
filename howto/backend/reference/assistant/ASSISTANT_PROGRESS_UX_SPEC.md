@@ -1,14 +1,14 @@
-***REMOVED*** Assistant Progress UI States
+# Assistant Progress UI States
 
 This document describes the progress UI states shown during the assistant request lifecycle.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The assistant request lifecycle now provides detailed progress feedback to users through a state
 machine. This replaces the generic spinner with context-aware progress labels that help users
 understand what's happening.
 
-***REMOVED******REMOVED*** State Machine
+## State Machine
 
 ```
 IDLE ─┬─> SENDING ─> THINKING ─┬─> DRAFTING ─> FINALIZING ─> DONE
@@ -18,7 +18,7 @@ IDLE ─┬─> SENDING ─> THINKING ─┬─> DRAFTING ─> FINALIZING ─> D
       └─> ERROR_TEMPORARY / ERROR_AUTH / ERROR_VALIDATION
 ```
 
-***REMOVED******REMOVED*** Progress States
+## Progress States
 
 | State              | Display Label                                   | When Shown                                      | Duration        |
 |--------------------|-------------------------------------------------|-------------------------------------------------|-----------------|
@@ -33,28 +33,28 @@ IDLE ─┬─> SENDING ─> THINKING ─┬─> DRAFTING ─> FINALIZING ─> D
 | `ErrorAuth`        | "Authentication required"                       | 401 errors                                      | Not retryable   |
 | `ErrorValidation`  | "Invalid request"                               | 400 errors                                      | Not retryable   |
 
-***REMOVED******REMOVED*** UI Behavior
+## UI Behavior
 
-***REMOVED******REMOVED******REMOVED*** Progress Indicator
+### Progress Indicator
 
 - Single-line progress label with small spinner
 - Thin linear progress bar below
 - Uses `Crossfade` animation (200ms) for smooth transitions
 - Fixed height to prevent layout jumps
 
-***REMOVED******REMOVED******REMOVED*** Last Successful Response
+### Last Successful Response
 
 - The last successful assistant response is preserved during new requests
 - Never replaced with "temporarily unavailable" unless the *current* request fails
 - Stored in `AssistantUiState.lastSuccessfulEntry`
 
-***REMOVED******REMOVED******REMOVED*** Error Handling
+### Error Handling
 
 - `ErrorTemporary`: Shows retry banner with "Retry" button
 - `ErrorAuth`: Shows error banner (no retry)
 - `ErrorValidation`: Shows error banner (no retry)
 
-***REMOVED******REMOVED*** Timing Telemetry
+## Timing Telemetry
 
 Each request tracks timing for performance monitoring:
 
@@ -79,21 +79,21 @@ Example log output:
 Assist timing: correlationId=assist-abc123 sending=150ms thinking=800ms vision=1200ms drafting=2500ms total=4650ms
 ```
 
-***REMOVED******REMOVED*** State Transitions
+## State Transitions
 
-***REMOVED******REMOVED******REMOVED*** Success Flow (No Images)
+### Success Flow (No Images)
 
 ```
 Idle -> Sending -> Thinking -> Drafting -> [Finalizing] -> Done
 ```
 
-***REMOVED******REMOVED******REMOVED*** Success Flow (With Images)
+### Success Flow (With Images)
 
 ```
 Idle -> Sending -> Thinking -> ExtractingVision -> Drafting -> [Finalizing] -> Done
 ```
 
-***REMOVED******REMOVED******REMOVED*** Error Flow
+### Error Flow
 
 ```
 Idle -> Sending -> Thinking -> ErrorTemporary (on timeout/5xx)
@@ -101,28 +101,28 @@ Idle -> Sending -> Thinking -> ErrorTemporary (on timeout/5xx)
                             -> ErrorValidation (on 400)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Retry Flow
+### Retry Flow
 
 ```
 ErrorTemporary -> Idle -> Sending -> ...
 ```
 
-***REMOVED******REMOVED*** Implementation Details
+## Implementation Details
 
-***REMOVED******REMOVED******REMOVED*** Files Changed
+### Files Changed
 
 - `AssistantViewModel.kt`: Added `AssistantRequestProgress` sealed class, `AssistantRequestTiming`
   data class
 - `AssistantScreen.kt`: Added `ProgressIndicatorSection`, `ProgressStageRow`, `ProgressErrorBanner`
   composables
 
-***REMOVED******REMOVED******REMOVED*** Backwards Compatibility
+### Backwards Compatibility
 
 - Legacy `LoadingStage` enum is deprecated but preserved
 - `AssistantUiState.loadingStage` still updated for backwards compatibility
 - `AssistantRequestProgress.toLegacyStage()` provides mapping
 
-***REMOVED******REMOVED*** Usage Example
+## Usage Example
 
 ```kotlin
 // In ViewModel

@@ -1,6 +1,6 @@
-***REMOVED*** KMP Migration - Phase 2 Plan: Module Conversion
+# KMP Migration - Phase 2 Plan: Module Conversion
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 **Goal**: Convert `:core-models`, `:core-tracking`, and `:core-scan` from Android library modules to
 Kotlin Multiplatform (KMP) shared modules with `commonMain`, `androidMain`, and `iosMain` source
@@ -13,11 +13,11 @@ Platform-specific adapters (iOS camera/ML) are out of scope and will be addresse
 
 ---
 
-***REMOVED******REMOVED*** Prerequisites (Phase 1 Completion Checklist)
+## Prerequisites (Phase 1 Completion Checklist)
 
 All items below must be ✅ before starting Phase 2:
 
-***REMOVED******REMOVED******REMOVED*** ✅ Module Structure
+### ✅ Module Structure
 
 - [x] 9-module Gradle structure established
 - [x] `:core-models` – Platform-independent data models (Android-free)
@@ -26,13 +26,13 @@ All items below must be ✅ before starting Phase 2:
 - [x] `:core-scan`, `:core-contracts` – Placeholder modules
 - [x] `:android-platform-adapters` – Conversion layer between Android and portable types
 
-***REMOVED******REMOVED******REMOVED*** ✅ Portable Types Implemented
+### ✅ Portable Types Implemented
 
 - [x] `ImageRef` – Platform-agnostic image reference (sealed class with `ImageRef.Bytes`)
 - [x] `NormalizedRect` – Portable bounding box with 0-1 coordinates
 - [x] `Logger` – Platform-agnostic logging interface
 
-***REMOVED******REMOVED******REMOVED*** ✅ Core Models Migrated
+### ✅ Core Models Migrated
 
 - [x] `DetectionResult` – Uses `NormalizedRect` (removed legacy `Rect`)
 - [x] `RawDetection` – Has both legacy and portable fields (transitional state)
@@ -40,18 +40,18 @@ All items below must be ✅ before starting Phase 2:
 - [x] `ObjectCandidate` – Uses `NormalizedRect` (removed `RectF`)
 - [x] `ObjectTracker` – Prefers `NormalizedRect` for spatial matching
 
-***REMOVED******REMOVED******REMOVED*** ✅ Platform Adapters Established
+### ✅ Platform Adapters Established
 
 - [x] `ImageAdapters.kt` – `Bitmap ↔ ImageRef` conversions
 - [x] `RectAdapters.kt` – Placeholder for `Rect/RectF ↔ NormalizedRect`
 
-***REMOVED******REMOVED******REMOVED*** ✅ Android-Free Core Modules
+### ✅ Android-Free Core Modules
 
 - [x] `:core-models` – No Android dependencies (except `Uri` in `ScannedItem`)
 - [x] `:core-tracking` – Zero Android imports (uses Logger, ImageRef, NormalizedRect)
 - [x] CI builds successfully without Android SDK in core modules
 
-***REMOVED******REMOVED******REMOVED*** ✅ Testing & CI
+### ✅ Testing & CI
 
 - [x] 175+ tests passing (110 tracking/detection, 61 domain pack, 4+ eBay)
 - [x] `./gradlew test` succeeds
@@ -60,9 +60,9 @@ All items below must be ✅ before starting Phase 2:
 
 ---
 
-***REMOVED******REMOVED*** Scope Boundaries
+## Scope Boundaries
 
-***REMOVED******REMOVED******REMOVED*** ✅ In Scope (Phase 2)
+### ✅ In Scope (Phase 2)
 
 1. **KMP Plugin Configuration**
     - Convert `:core-models` from `com.android.library` to `org.jetbrains.kotlin.multiplatform`
@@ -91,7 +91,7 @@ All items below must be ✅ before starting Phase 2:
     - Verify CI builds remain green
     - Validate Android app functionality (no regressions)
 
-***REMOVED******REMOVED******REMOVED*** ❌ Out of Scope (Deferred to Phase 3)
+### ❌ Out of Scope (Deferred to Phase 3)
 
 - iOS app target (`:iosApp`) creation
 - iOS platform adapters (`IOSImageAdapters`, `IOSRectAdapters`)
@@ -102,7 +102,7 @@ All items below must be ✅ before starting Phase 2:
 - Cross-platform state management (shared ViewModels)
 - Publishing KMP artifacts to Maven/CocoaPods
 
-***REMOVED******REMOVED******REMOVED*** ⚠️ Boundary Cases
+### ⚠️ Boundary Cases
 
 - **`:core-domainpack`**: Currently an Android library. Migration is in scope for Phase 2, but
   depends on:
@@ -112,9 +112,9 @@ All items below must be ✅ before starting Phase 2:
 
 ---
 
-***REMOVED******REMOVED*** Phase 2 Task Breakdown
+## Phase 2 Task Breakdown
 
-***REMOVED******REMOVED******REMOVED*** Task 1: Remove Remaining Android Dependencies from `:core-models`
+### Task 1: Remove Remaining Android Dependencies from `:core-models`
 
 **Objective**: Make `:core-models` 100% Android-free by removing all `android.*` imports.
 
@@ -150,7 +150,7 @@ All items below must be ✅ before starting Phase 2:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Task 2: Convert `:core-models` to KMP Module
+### Task 2: Convert `:core-models` to KMP Module
 
 **Objective**: Migrate `:core-models` from Android library plugin to KMP plugin with `commonMain`
 source set.
@@ -231,7 +231,7 @@ source set.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Task 3: Convert `:core-tracking` to KMP Module with Logger Actuals
+### Task 3: Convert `:core-tracking` to KMP Module with Logger Actuals
 
 **Objective**: Migrate `:core-tracking` to KMP and implement platform-specific `Logger` actuals.
 
@@ -337,15 +337,15 @@ source set.
 
 ---
 
-***REMOVED******REMOVED*** Follow-Up Tasks (After First 3)
+## Follow-Up Tasks (After First 3)
 
-***REMOVED******REMOVED******REMOVED*** Task 4: Convert `:core-scan` to KMP Module
+### Task 4: Convert `:core-scan` to KMP Module
 
 - Currently a placeholder module with minimal code
 - Apply same KMP conversion pattern as `:core-models`
 - May remain minimal until scan contracts are defined
 
-***REMOVED******REMOVED******REMOVED*** Task 5: Convert `:core-domainpack` to KMP Module
+### Task 5: Convert `:core-domainpack` to KMP Module
 
 - Move JSON parsing to Kotlinx Serialization (multiplatform)
 - Extract `LocalDomainPackRepository` platform loading to actuals:
@@ -353,7 +353,7 @@ source set.
     - iOS: Load from bundle resources
 - Keep `BasicCategoryEngine` in `commonMain`
 
-***REMOVED******REMOVED******REMOVED*** Task 6: Validate Full KMP Build
+### Task 6: Validate Full KMP Build
 
 - Run `./gradlew build` – all modules compile for all targets
 - Run `./gradlew test` – 175+ tests pass
@@ -363,23 +363,23 @@ source set.
 
 ---
 
-***REMOVED******REMOVED*** Non-Negotiables
+## Non-Negotiables
 
-***REMOVED******REMOVED******REMOVED*** Build Stability
+### Build Stability
 
 - **Android must remain green**: `./gradlew assembleDebug` must succeed after EVERY commit
 - **Tests must pass**: `./gradlew test` must show zero failures
 - **CI must validate**: GitHub Actions must build successfully on every push
 - **No regressions**: Android app functionality must remain 100% intact
 
-***REMOVED******REMOVED******REMOVED*** Migration Discipline
+### Migration Discipline
 
 - **Incremental commits**: Each task is 1-3 small, focused commits
 - **Green-to-green**: Never commit broken builds
 - **Test after each step**: Run `./gradlew test` before committing
 - **Document blockers**: If a step fails, document why before proceeding
 
-***REMOVED******REMOVED******REMOVED*** Code Quality
+### Code Quality
 
 - **No Android leaks in shared code**: Zero `android.*` imports in `commonMain`
 - **Platform boundaries respected**: Adapters live in platform-specific modules
@@ -389,9 +389,9 @@ source set.
 
 ---
 
-***REMOVED******REMOVED*** Success Metrics
+## Success Metrics
 
-***REMOVED******REMOVED******REMOVED*** Phase 2 Complete When:
+### Phase 2 Complete When:
 
 1. ✅ `:core-models` is a KMP module with `commonMain` source set
 2. ✅ `:core-tracking` is a KMP module with `commonMain` source set
@@ -403,7 +403,7 @@ source set.
 8. ✅ CI pipeline validates builds on every push
 9. ✅ iOS targets compile successfully (even without iOS app)
 
-***REMOVED******REMOVED******REMOVED*** Phase 2 Does NOT Require:
+### Phase 2 Does NOT Require:
 
 - iOS app implementation
 - iOS camera/ML adapters
@@ -413,9 +413,9 @@ source set.
 
 ---
 
-***REMOVED******REMOVED*** Risk Mitigation
+## Risk Mitigation
 
-***REMOVED******REMOVED******REMOVED*** Risk: Build Configuration Breakage
+### Risk: Build Configuration Breakage
 
 **Mitigation**:
 
@@ -424,7 +424,7 @@ source set.
 - Keep Android plugin alongside KMP plugin during transition
 - Rollback immediately if `assembleDebug` fails
 
-***REMOVED******REMOVED******REMOVED*** Risk: Test Failures After Migration
+### Risk: Test Failures After Migration
 
 **Mitigation**:
 
@@ -433,7 +433,7 @@ source set.
 - Investigate any new failures immediately
 - Use golden tests to verify tracking/aggregation behavior unchanged
 
-***REMOVED******REMOVED******REMOVED*** Risk: Performance Regression
+### Risk: Performance Regression
 
 **Mitigation**:
 
@@ -442,7 +442,7 @@ source set.
 - Profile memory usage with shared models
 - Optimize adapter conversions if needed
 
-***REMOVED******REMOVED******REMOVED*** Risk: Unexpected Android Leaks
+### Risk: Unexpected Android Leaks
 
 **Mitigation**:
 
@@ -453,16 +453,16 @@ source set.
 
 ---
 
-***REMOVED******REMOVED*** Timeline & Dependencies
+## Timeline & Dependencies
 
-***REMOVED******REMOVED******REMOVED*** Prerequisites (Must be ✅)
+### Prerequisites (Must be ✅)
 
 - All Phase 1 tasks complete (see checklist above)
 - CI pipeline validating Android builds
 - 175+ tests passing baseline
 - Documentation reviewed and approved
 
-***REMOVED******REMOVED******REMOVED*** Task Dependencies
+### Task Dependencies
 
 ```
 Task 1 (Remove Android deps)
@@ -478,7 +478,7 @@ Task 5 (Convert :core-domainpack to KMP)
 Task 6 (Validate full KMP build)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Estimated Duration
+### Estimated Duration
 
 - **Task 1**: 1 commit, 1-2 hours
 - **Task 2**: 2 commits, 2-3 hours
@@ -487,21 +487,21 @@ Task 6 (Validate full KMP build)
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
-***REMOVED******REMOVED******REMOVED*** Existing Documentation
+### Existing Documentation
 
 - `CLAUDE.md` – Project overview, module structure, KMP status
 - `docs/kmp-migration/PLAN.md` – Original KMP migration strategy
 - `docs/kmp-migration/TARGETS.md` – Top files for migration, leak inventory
 
-***REMOVED******REMOVED******REMOVED*** Kotlin Multiplatform Resources
+### Kotlin Multiplatform Resources
 
 - [Kotlin Multiplatform Documentation](https://kotlinlang.org/docs/multiplatform.html)
 - [KMP Mobile Samples](https://github.com/Kotlin/kmm-production-sample)
 - [Expect/Actual Mechanism](https://kotlinlang.org/docs/multiplatform-connect-to-apis.html)
 
-***REMOVED******REMOVED******REMOVED*** Gradle Configuration
+### Gradle Configuration
 
 - [Android Library Plugin](https://developer.android.com/build/publish-library)
 - [Kotlin Multiplatform Plugin](https://kotlinlang.org/docs/multiplatform-dsl-reference.html)
@@ -509,7 +509,7 @@ Task 6 (Validate full KMP build)
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. **Review this plan** with stakeholders
 2. **Confirm Phase 1 completion** (verify all ✅ prerequisites)

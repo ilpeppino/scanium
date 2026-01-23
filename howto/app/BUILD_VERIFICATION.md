@@ -1,8 +1,8 @@
-***REMOVED*** Build and Install Verification
+# Build and Install Verification
 
 This document describes the deterministic build+install+verify system for Scanium Android development.
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 Previously, the installed APK could differ from the current git HEAD by 2+ commits due to:
 - Using wildcard paths that picked stale APK outputs
@@ -10,7 +10,7 @@ Previously, the installed APK could differ from the current git HEAD by 2+ commi
 - Gradle configuration cache using stale git SHA information
 - Installing from wrong build output directories
 
-***REMOVED******REMOVED*** Solution
+## Solution
 
 We now provide deterministic build scripts that:
 1. Build the exact variant (devDebug or betaDebug)
@@ -18,31 +18,31 @@ We now provide deterministic build scripts that:
 3. Verify the installed app's git SHA matches the current HEAD
 4. Fail loudly with diagnostics if there's a mismatch
 
-***REMOVED******REMOVED*** Quick Start
+## Quick Start
 
-***REMOVED******REMOVED******REMOVED*** Dev Builds
+### Dev Builds
 
 ```bash
-***REMOVED*** Build, install, and verify devDebug variant
+# Build, install, and verify devDebug variant
 ./scripts/dev/install_dev_debug.sh
 
-***REMOVED*** Optionally uninstall existing app first
+# Optionally uninstall existing app first
 ./scripts/dev/install_dev_debug.sh --uninstall
 ```
 
-***REMOVED******REMOVED******REMOVED*** Beta Builds
+### Beta Builds
 
 ```bash
-***REMOVED*** Build, install, and verify betaDebug variant
+# Build, install, and verify betaDebug variant
 ./scripts/dev/install_beta_debug.sh
 
-***REMOVED*** Optionally uninstall existing app first
+# Optionally uninstall existing app first
 ./scripts/dev/install_beta_debug.sh --uninstall
 ```
 
-***REMOVED******REMOVED*** How It Works
+## How It Works
 
-***REMOVED******REMOVED******REMOVED*** 1. Build Fingerprinting
+### 1. Build Fingerprinting
 
 Git SHA and build time are embedded in `BuildConfig` at build time:
 
@@ -56,18 +56,18 @@ buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
 buildConfigField("String", "BUILD_TIME_UTC", "\"$buildTimeUtc\"")
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Device-Readable Build Info (Dev Flavor Only)
+### 2. Device-Readable Build Info (Dev Flavor Only)
 
 The `BuildInfoReceiver` (dev flavor only) allows scripts to query installed build info:
 
 ```bash
-***REMOVED*** Query installed build info
+# Query installed build info
 adb shell am broadcast -n com.scanium.app.dev/com.scanium.app.debug.BuildInfoReceiver \
     -a com.scanium.app.DEBUG_BUILD_INFO
 
-***REMOVED*** Read from logcat
+# Read from logcat
 adb logcat -d -s BuildInfoReceiver:I | grep "BUILD_INFO|"
-***REMOVED*** Output: BUILD_INFO|com.scanium.app.dev|1.6.0-dev|100016|dev|debug|27f919f6|2026-01-20T19:15:00Z
+# Output: BUILD_INFO|com.scanium.app.dev|1.6.0-dev|100016|dev|debug|27f919f6|2026-01-20T19:15:00Z
 ```
 
 **Location**: `androidApp/src/dev/java/com/scanium/app/debug/BuildInfoReceiver.kt`
@@ -75,25 +75,25 @@ adb logcat -d -s BuildInfoReceiver:I | grep "BUILD_INFO|"
 This receiver is only included in dev builds via the `src/dev` source set and is registered in
 `androidApp/src/dev/AndroidManifest.xml`.
 
-***REMOVED******REMOVED******REMOVED*** 3. Startup Logging (All Flavors)
+### 3. Startup Logging (All Flavors)
 
 All flavors log build info at app startup for manual verification:
 
 ```bash
 adb logcat -s APP_BUILD:I
-***REMOVED*** Output: versionName=1.6.0-dev versionCode=100016 flavor=dev buildType=debug git=27f919f6 time=2026-01-20T19:15:00Z
+# Output: versionName=1.6.0-dev versionCode=100016 flavor=dev buildType=debug git=27f919f6 time=2026-01-20T19:15:00Z
 ```
 
 **Location**: `androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt:76-83`
 
-***REMOVED******REMOVED******REMOVED*** 4. Deterministic APK Selection
+### 4. Deterministic APK Selection
 
 Scripts automatically:
 - Detect device ABI (`adb shell getprop ro.product.cpu.abi`)
 - Locate the correct APK: `androidApp/build/outputs/apk/{flavor}/{buildType}/androidApp-{flavor}-{abi}-{buildType}.apk`
 - Fail if the expected APK doesn't exist
 
-***REMOVED******REMOVED******REMOVED*** 5. Verification
+### 5. Verification
 
 After installation:
 - **Dev builds**: Query `BuildInfoReceiver` via broadcast
@@ -101,9 +101,9 @@ After installation:
 - Compare installed SHA with `git rev-parse --short HEAD`
 - Exit 0 on match, exit 1 with diagnostics on mismatch
 
-***REMOVED******REMOVED*** Script Output
+## Script Output
 
-***REMOVED******REMOVED******REMOVED*** Success
+### Success
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -146,7 +146,7 @@ Installed SHA: 27f919f6
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-***REMOVED******REMOVED******REMOVED*** Failure
+### Failure
 
 ```
 ✗ FAILURE: SHA mismatch!
@@ -167,24 +167,24 @@ Recommended actions:
   3. Re-run this script with --uninstall flag
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** SHA Mismatch After Clean Checkout
+### SHA Mismatch After Clean Checkout
 
 If the installed SHA doesn't match after a clean checkout:
 
 ```bash
-***REMOVED*** Stop Gradle daemon to clear config cache
+# Stop Gradle daemon to clear config cache
 ./gradlew --stop
 
-***REMOVED*** Clean build outputs
+# Clean build outputs
 ./gradlew clean
 
-***REMOVED*** Uninstall and reinstall
+# Uninstall and reinstall
 ./scripts/dev/install_dev_debug.sh --uninstall
 ```
 
-***REMOVED******REMOVED******REMOVED*** BuildInfoReceiver Not Found (Dev Builds)
+### BuildInfoReceiver Not Found (Dev Builds)
 
 If the broadcast receiver fails:
 
@@ -198,13 +198,13 @@ If the broadcast receiver fails:
    adb shell pm dump com.scanium.app.dev | grep BuildInfoReceiver
    ```
 
-***REMOVED******REMOVED******REMOVED*** Wrong ABI Selected
+### Wrong ABI Selected
 
 The script auto-detects device ABI. To manually verify:
 
 ```bash
 adb shell getprop ro.product.cpu.abi
-***REMOVED*** Output: arm64-v8a, armeabi-v7a, x86, or x86_64
+# Output: arm64-v8a, armeabi-v7a, x86, or x86_64
 ```
 
 Available ABIs per variant:
@@ -213,21 +213,21 @@ Available ABIs per variant:
 - `x86_64` - 64-bit emulators
 - `x86` - 32-bit emulators
 
-***REMOVED******REMOVED******REMOVED*** APK Not Found
+### APK Not Found
 
 If the expected APK doesn't exist:
 
 ```bash
-***REMOVED*** List all built APKs
+# List all built APKs
 find androidApp/build/outputs/apk -name "*.apk"
 
-***REMOVED*** Verify the variant was built
+# Verify the variant was built
 ./gradlew :androidApp:assembleDevDebug --console=plain
 ```
 
-***REMOVED******REMOVED*** Manual Verification
+## Manual Verification
 
-***REMOVED******REMOVED******REMOVED*** Check Installed SHA (Dev Builds)
+### Check Installed SHA (Dev Builds)
 
 ```bash
 adb shell am broadcast -n com.scanium.app.dev/com.scanium.app.debug.BuildInfoReceiver \
@@ -236,38 +236,38 @@ adb shell am broadcast -n com.scanium.app.dev/com.scanium.app.debug.BuildInfoRec
 adb logcat -d -s BuildInfoReceiver:I | grep "BUILD_INFO" | tail -1
 ```
 
-***REMOVED******REMOVED******REMOVED*** Check Installed SHA (All Flavors)
+### Check Installed SHA (All Flavors)
 
 ```bash
-***REMOVED*** Start the app
+# Start the app
 adb shell am start -n com.scanium.app.dev/com.scanium.app.MainActivity
 
-***REMOVED*** Read startup log
+# Read startup log
 adb logcat -d -s APP_BUILD:I | tail -1
-***REMOVED*** Output: versionName=1.6.0-dev versionCode=100016 flavor=dev buildType=debug git=27f919f6 time=2026-01-20T19:15:00Z
+# Output: versionName=1.6.0-dev versionCode=100016 flavor=dev buildType=debug git=27f919f6 time=2026-01-20T19:15:00Z
 ```
 
-***REMOVED******REMOVED******REMOVED*** Compare with Local HEAD
+### Compare with Local HEAD
 
 ```bash
 git rev-parse --short HEAD
 ```
 
-***REMOVED******REMOVED*** Architecture Notes
+## Architecture Notes
 
-***REMOVED******REMOVED******REMOVED*** Why Explicit Component Name for Broadcasts?
+### Why Explicit Component Name for Broadcasts?
 
 Android 8.0+ (API 26) restricts implicit broadcasts for security. The broadcast must specify the component explicitly:
 
 ```bash
-***REMOVED*** ✓ Works (explicit component)
+# ✓ Works (explicit component)
 adb shell am broadcast -n com.scanium.app.dev/com.scanium.app.debug.BuildInfoReceiver -a ACTION
 
-***REMOVED*** ✗ Fails on Android 8+ (implicit broadcast)
+# ✗ Fails on Android 8+ (implicit broadcast)
 adb shell am broadcast -a ACTION
 ```
 
-***REMOVED******REMOVED******REMOVED*** Why ABI-Specific APKs?
+### Why ABI-Specific APKs?
 
 Scanium uses ABI splits for smaller download sizes:
 
@@ -284,7 +284,7 @@ splits {
 
 This reduces APK size by ~40% but requires selecting the correct ABI at install time.
 
-***REMOVED******REMOVED******REMOVED*** Git SHA Computation
+### Git SHA Computation
 
 The git SHA is computed at Gradle configuration time using the `providers.exec` API:
 
@@ -301,24 +301,24 @@ This ensures:
 
 **Important**: Gradle daemon caching can cause stale SHAs. Always stop the daemon (`./gradlew --stop`) after switching branches or pulling updates.
 
-***REMOVED******REMOVED*** Related Files
+## Related Files
 
-***REMOVED******REMOVED******REMOVED*** Scripts
+### Scripts
 - `scripts/dev/install_dev_debug.sh` - Dev variant install script
 - `scripts/dev/install_beta_debug.sh` - Beta variant install script
 
-***REMOVED******REMOVED******REMOVED*** Source
+### Source
 - `androidApp/build.gradle.kts` - Git SHA and build time computation (lines 88-107, 194-195)
 - `androidApp/src/dev/java/com/scanium/app/debug/BuildInfoReceiver.kt` - Debug broadcast receiver (dev only)
 - `androidApp/src/dev/AndroidManifest.xml` - Receiver registration (dev only)
 - `androidApp/src/main/java/com/scanium/app/ScaniumApplication.kt` - Startup logging (lines 74-83)
 
-***REMOVED******REMOVED******REMOVED*** Build Configuration
+### Build Configuration
 - `androidApp/build.gradle.kts:341-346` - ABI splits configuration
 - `androidApp/build.gradle.kts:114` - Base applicationId
 - `androidApp/build.gradle.kts:241-289` - Flavor configuration (applicationIdSuffix)
 
-***REMOVED******REMOVED*** See Also
+## See Also
 
 - `howto/app/reference/DEV_GUIDE.md` - General development workflow
 - `howto/app/reference/FLAVORS.md` - Build flavors and variants

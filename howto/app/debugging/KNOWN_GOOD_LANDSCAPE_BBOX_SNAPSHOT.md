@@ -1,11 +1,11 @@
-***REMOVED*** Known-Good Landscape Bbox→Snapshot Correlation Path
+# Known-Good Landscape Bbox→Snapshot Correlation Path
 
 This document traces the exact code path that produces correct landscape snapshots.
 Portrait mode must replicate this contract exactly.
 
 ---
 
-***REMOVED******REMOVED*** COORDINATE CONTRACT (Ground Truth)
+## COORDINATE CONTRACT (Ground Truth)
 
 **ML Kit returns bboxes in InputImage (upright) coordinate space.**
 
@@ -24,9 +24,9 @@ When using `InputImage.fromMediaImage(mediaImage, rotationDegrees)`:
 
 ---
 
-***REMOVED******REMOVED*** LANDSCAPE PATH (Known Good)
+## LANDSCAPE PATH (Known Good)
 
-***REMOVED******REMOVED******REMOVED*** 1. Detection: `ObjectDetectorClient.kt`
+### 1. Detection: `ObjectDetectorClient.kt`
 
 ```
 CameraXManager.processImageProxy()
@@ -44,7 +44,7 @@ objectDetector.detectObjectsWithTracking(inputImage, ...)
 - `detectObjectsWithTracking()` runs ML Kit detection
 - Returns both `DetectionInfo` (for tracking) and `DetectionResult` (for overlay)
 
-***REMOVED******REMOVED******REMOVED*** 2. Bbox Normalization
+### 2. Bbox Normalization
 
 **File**: `ObjectDetectorClient.kt:255-256`
 
@@ -62,7 +62,7 @@ val bboxNorm = uprightBbox.toNormalizedRect(uprightWidth, uprightHeight)
 
 **Result**: `NormalizedRect` with values in [0, 1] range, in upright coordinate space.
 
-***REMOVED******REMOVED******REMOVED*** 3. Thumbnail Cropping
+### 3. Thumbnail Cropping
 
 **File**: `ObjectDetectorClient.kt:564-572`
 
@@ -88,7 +88,7 @@ For landscape (rotation=0), this is identity transform.
 2. Rotates the crop by `rotationDegrees` for display orientation
 3. Returns upright thumbnail
 
-***REMOVED******REMOVED******REMOVED*** 4. Overlay Rendering
+### 4. Overlay Rendering
 
 **File**: `DetectionOverlay.kt:133-140`
 
@@ -115,7 +115,7 @@ val transformedBox = mapBboxToPreview(detection.bboxNorm, transform)
 - Does NOT rotate (bbox is already upright from ML Kit)
 - Applies scale + offset for FILL_CENTER preview
 
-***REMOVED******REMOVED******REMOVED*** 5. Full Image Snapshot (for classification)
+### 5. Full Image Snapshot (for classification)
 
 **File**: `StableItemCropper.kt:57-94`
 
@@ -138,7 +138,7 @@ rotation.
 
 ---
 
-***REMOVED******REMOVED*** WHY LANDSCAPE WORKS
+## WHY LANDSCAPE WORKS
 
 In landscape mode (`rotationDegrees = 0`):
 
@@ -151,7 +151,7 @@ All three systems (overlay, thumbnail, snapshot) see the same coordinate space.
 
 ---
 
-***REMOVED******REMOVED*** WHY PORTRAIT BREAKS
+## WHY PORTRAIT BREAKS
 
 In portrait mode (`rotationDegrees = 90`):
 
@@ -169,22 +169,22 @@ In portrait mode (`rotationDegrees = 90`):
 
 ---
 
-***REMOVED******REMOVED*** CANONICAL CONTRACT (To Enforce)
+## CANONICAL CONTRACT (To Enforce)
 
-***REMOVED******REMOVED******REMOVED*** Single Source of Truth
+### Single Source of Truth
 
 All bbox operations use **upright coordinate space**:
 
 - `NormalizedRect` in [0,1] range
 - Dimensions: `uprightWidth × uprightHeight`
 
-***REMOVED******REMOVED******REMOVED*** Pipeline Requirements
+### Pipeline Requirements
 
 1. **Overlay**: Map upright bbox → preview coords (scale+offset, no rotation)
 2. **Thumbnail**: Convert upright bbox → sensor coords, crop, rotate to upright
 3. **Snapshot**: Load bitmap to upright orientation FIRST, then apply upright bbox directly
 
-***REMOVED******REMOVED******REMOVED*** Aspect Ratio Invariant
+### Aspect Ratio Invariant
 
 ```
 bboxAR = (bbox.height / bbox.width)   // in normalized upright space
@@ -197,7 +197,7 @@ This must hold in BOTH portrait and landscape.
 
 ---
 
-***REMOVED******REMOVED*** FILES INVOLVED
+## FILES INVOLVED
 
 | File                         | Function                           | Role                            |
 |------------------------------|------------------------------------|---------------------------------|
@@ -214,7 +214,7 @@ This must hold in BOTH portrait and landscape.
 
 ---
 
-***REMOVED******REMOVED*** VERIFICATION STEPS
+## VERIFICATION STEPS
 
 1. Enable "Bbox Correlation Debug" in Developer Options
 2. Point camera at tall object in portrait mode

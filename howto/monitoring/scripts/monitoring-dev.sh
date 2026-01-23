@@ -1,12 +1,12 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-***REMOVED*** Resolve the directory where this script lives (even if called via symlink)
+# Resolve the directory where this script lives (even if called via symlink)
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-***REMOVED*** Try to locate repo root:
-***REMOVED*** 1) if git is available and script is inside the repo, use git root
-***REMOVED*** 2) otherwise, fall back to SCRIPT_DIR and let user place script in repo
+# Try to locate repo root:
+# 1) if git is available and script is inside the repo, use git root
+# 2) otherwise, fall back to SCRIPT_DIR and let user place script in repo
 if command -v git >/dev/null 2>&1 && git -C "$SCRIPT_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
   REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 else

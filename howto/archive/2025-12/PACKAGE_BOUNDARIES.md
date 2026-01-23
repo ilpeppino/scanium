@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** Package Boundaries and Module Organization
+# Package Boundaries and Module Organization
 
 **Status:** Phase 3 - Modularity Without Build Blockers
 **Last Updated:** 2025-12-18
@@ -9,7 +9,7 @@ module extraction
 
 ---
 
-***REMOVED******REMOVED*** Current State: Single Module with Package Structure
+## Current State: Single Module with Package Structure
 
 All code currently lives in `:androidApp` module. We organize by **package boundaries** to enforce
 dependency rules without the overhead of multiple Gradle modules yet.
@@ -26,28 +26,28 @@ dependency rules without the overhead of multiple Gradle modules yet.
 
 ---
 
-***REMOVED******REMOVED*** Package Boundary Map
+## Package Boundary Map
 
-***REMOVED******REMOVED******REMOVED*** Layer 1: Presentation (com.scanium.app.*)
+### Layer 1: Presentation (com.scanium.app.*)
 
 **Purpose:** UI and user interaction. Can depend on all other layers.
 
 ```
 com.scanium.app/
-├── ui/                         ***REMOVED*** Compose screens and components
-│   ├── theme/                  ***REMOVED*** Material 3 theme
-│   ├── components/             ***REMOVED*** Reusable Composables
-│   └── navigation/             ***REMOVED*** Navigation composables
-├── camera/                     ***REMOVED*** Camera screen and overlays
+├── ui/                         # Compose screens and components
+│   ├── theme/                  # Material 3 theme
+│   ├── components/             # Reusable Composables
+│   └── navigation/             # Navigation composables
+├── camera/                     # Camera screen and overlays
 │   ├── CameraScreen.kt
 │   ├── CameraViewModel.kt
 │   └── DetectionOverlay.kt
-├── items/                      ***REMOVED*** Items list screen
+├── items/                      # Items list screen
 │   ├── ItemsListScreen.kt
 │   └── ItemsViewModel.kt
-├── selling/                    ***REMOVED*** Selling flow screens
+├── selling/                    # Selling flow screens
 │   └── ui/
-└── navigation/                 ***REMOVED*** Navigation graph
+└── navigation/                 # Navigation graph
     └── NavGraph.kt
 ```
 
@@ -61,22 +61,22 @@ com.scanium.app/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Layer 2: Platform Scanning (com.scanium.platform.*)
+### Layer 2: Platform Scanning (com.scanium.platform.*)
 
 **Purpose:** Android-specific camera and ML Kit integration.
 
 ```
 com.scanium.platform/
-├── camera/                     ***REMOVED*** CameraX integration
-│   ├── CameraXManager.kt       ***REMOVED*** Camera lifecycle
-│   └── FrameAnalyzer.kt        ***REMOVED*** Image analysis
-├── mlkit/                      ***REMOVED*** ML Kit wrappers
+├── camera/                     # CameraX integration
+│   ├── CameraXManager.kt       # Camera lifecycle
+│   └── FrameAnalyzer.kt        # Image analysis
+├── mlkit/                      # ML Kit wrappers
 │   ├── ObjectDetectorClient.kt
 │   ├── BarcodeScannerClient.kt
 │   └── DocumentTextRecognitionClient.kt
-└── adapters/                   ***REMOVED*** Type converters
-    ├── ImageAdapters.kt        ***REMOVED*** Bitmap → ImageRef
-    └── RectAdapters.kt         ***REMOVED*** Rect → NormalizedRect
+└── adapters/                   # Type converters
+    ├── ImageAdapters.kt        # Bitmap → ImageRef
+    └── RectAdapters.kt         # Rect → NormalizedRect
 ```
 
 **Dependencies:**
@@ -95,28 +95,28 @@ com.scanium.platform/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Layer 3: Core Domain (com.scanium.domain.*)
+### Layer 3: Core Domain (com.scanium.domain.*)
 
 **Purpose:** Business logic, use-cases, domain models. **NO Android imports allowed.**
 
 ```
 com.scanium.domain/
-├── model/                      ***REMOVED*** Domain models
-│   ├── ScannedItem.kt          ***REMOVED*** (May reference shared:core-models)
+├── model/                      # Domain models
+│   ├── ScannedItem.kt          # (May reference shared:core-models)
 │   ├── DomainCategoryId.kt
 │   ├── ItemAttributes.kt
 │   └── PriceEstimate.kt
-├── usecase/                    ***REMOVED*** Business logic
+├── usecase/                    # Business logic
 │   ├── AggregateDetectionsUseCase.kt
 │   ├── ClassifyItemUseCase.kt
 │   ├── EstimatePriceUseCase.kt
 │   └── ApplyDomainPackMappingUseCase.kt
-├── repository/                 ***REMOVED*** Repository interfaces
-│   ├── ItemClassifier.kt       ***REMOVED*** Classification contract
-│   ├── CategoryEngine.kt       ***REMOVED*** Category mapping contract
-│   ├── PriceEstimator.kt       ***REMOVED*** Pricing contract
-│   └── DomainPackRepository.kt ***REMOVED*** Category config
-└── event/                      ***REMOVED*** Domain events
+├── repository/                 # Repository interfaces
+│   ├── ItemClassifier.kt       # Classification contract
+│   ├── CategoryEngine.kt       # Category mapping contract
+│   ├── PriceEstimator.kt       # Pricing contract
+│   └── DomainPackRepository.kt # Category config
+└── event/                      # Domain events
     └── ScanSessionEvent.kt
 ```
 
@@ -139,23 +139,23 @@ com.scanium.domain/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Layer 4: Data & Integrations (com.scanium.data.*, com.scanium.integrations.*)
+### Layer 4: Data & Integrations (com.scanium.data.*, com.scanium.integrations.*)
 
 **Purpose:** Repository implementations, network clients, external services.
 
 ```
 com.scanium.data/
-├── repository/                 ***REMOVED*** Repository implementations
+├── repository/                 # Repository implementations
 │   ├── LocalPricingRepository.kt
 │   └── DomainPackRepositoryImpl.kt
 └── cache/
     └── ClassificationCache.kt
 
 com.scanium.integrations/
-└── vision/                     ***REMOVED*** Cloud classification
-    ├── CloudClassifier.kt      ***REMOVED*** Implements ItemClassifier
-    ├── GoogleVisionClient.kt   ***REMOVED*** HTTP client
-    └── VisionApiMapper.kt      ***REMOVED*** API response → domain model
+└── vision/                     # Cloud classification
+    ├── CloudClassifier.kt      # Implements ItemClassifier
+    ├── GoogleVisionClient.kt   # HTTP client
+    └── VisionApiMapper.kt      # API response → domain model
 ```
 
 **Dependencies:**
@@ -175,16 +175,16 @@ com.scanium.integrations/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Layer 5: Configuration (com.scanium.config.*)
+### Layer 5: Configuration (com.scanium.config.*)
 
 **Purpose:** App configuration, feature flags, build config.
 
 ```
 com.scanium.config/
-├── AppConfig.kt                ***REMOVED*** Configuration data class
-├── FeatureFlags.kt             ***REMOVED*** Feature toggles
-├── ApiConfig.kt                ***REMOVED*** Backend endpoints
-└── ConfigProvider.kt           ***REMOVED*** Provides config from BuildConfig
+├── AppConfig.kt                # Configuration data class
+├── FeatureFlags.kt             # Feature toggles
+├── ApiConfig.kt                # Backend endpoints
+└── ConfigProvider.kt           # Provides config from BuildConfig
 ```
 
 **Dependencies:**
@@ -202,16 +202,16 @@ com.scanium.config/
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Layer 6: Observability (com.scanium.observability.*)
+### Layer 6: Observability (com.scanium.observability.*)
 
 **Purpose:** Logging, metrics, analytics, crash reporting.
 
 ```
 com.scanium.observability/
-├── AppLogger.kt                ***REMOVED*** Logging interface
-├── AndroidLogger.kt            ***REMOVED*** Android Log implementation
-├── MetricsCollector.kt         ***REMOVED*** Classification metrics
-└── DebugOverlay.kt             ***REMOVED*** Debug UI overlays
+├── AppLogger.kt                # Logging interface
+├── AndroidLogger.kt            # Android Log implementation
+├── MetricsCollector.kt         # Classification metrics
+└── DebugOverlay.kt             # Debug UI overlays
 ```
 
 **Dependencies:**
@@ -230,7 +230,7 @@ com.scanium.observability/
 
 ---
 
-***REMOVED******REMOVED*** Dependency Rules Matrix
+## Dependency Rules Matrix
 
 | From Layer                          | Can Depend On                       | Cannot Depend On                                       |
 |-------------------------------------|-------------------------------------|--------------------------------------------------------|
@@ -246,9 +246,9 @@ com.scanium.observability/
 
 ---
 
-***REMOVED******REMOVED*** Migration Strategy
+## Migration Strategy
 
-***REMOVED******REMOVED******REMOVED*** Phase 3 (Current): Package Structure Within :androidApp
+### Phase 3 (Current): Package Structure Within :androidApp
 
 1. Create packages: `domain/`, `data/`, `integrations/`, `config/`, `observability/`
 2. Define interfaces in `domain/repository/`
@@ -259,19 +259,19 @@ com.scanium.observability/
 **Validation:**
 
 ```bash
-***REMOVED*** Check no Android imports in domain package
-./gradlew checkPortableModules  ***REMOVED*** (adapt to check domain/ package)
+# Check no Android imports in domain package
+./gradlew checkPortableModules  # (adapt to check domain/ package)
 
-***REMOVED*** Verify build
+# Verify build
 ./gradlew assembleDebug
 
-***REMOVED*** Verify app runs
+# Verify app runs
 ./gradlew installDebug
 ```
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Phase 4-5: Extract to Gradle Modules (Future)
+### Phase 4-5: Extract to Gradle Modules (Future)
 
 Once package boundaries are stable and tested:
 
@@ -299,9 +299,9 @@ Once package boundaries are stable and tested:
 
 ---
 
-***REMOVED******REMOVED*** Enforcement Strategy
+## Enforcement Strategy
 
-***REMOVED******REMOVED******REMOVED*** 1. Code Review Checklist
+### 1. Code Review Checklist
 
 **For changes to `com.scanium.domain.*`:**
 
@@ -322,7 +322,7 @@ Once package boundaries are stable and tested:
 - [ ] No business logic in Composables
 - [ ] StateFlow/State observation only
 
-***REMOVED******REMOVED******REMOVED*** 2. Automated Checks (Future Gradle Task)
+### 2. Automated Checks (Future Gradle Task)
 
 ```kotlin
 // build.gradle.kts
@@ -354,7 +354,7 @@ tasks.named("check") {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Package-Private Visibility
+### 3. Package-Private Visibility
 
 Use package-private (`internal` in Kotlin) to enforce boundaries:
 
@@ -375,9 +375,9 @@ fun provideItemClassifier(): ItemClassifier = CloudClassifier()
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
-***REMOVED******REMOVED******REMOVED*** Phase 3 Complete When:
+### Phase 3 Complete When:
 
 - [x] Package structure documented (this file)
 - [ ] Domain interfaces defined (ItemClassifier, CategoryEngine, PriceEstimator)
@@ -388,7 +388,7 @@ fun provideItemClassifier(): ItemClassifier = CloudClassifier()
 - [ ] App works: scanning, detection, items list functional
 - [ ] Tests pass: `./gradlew test`
 
-***REMOVED******REMOVED******REMOVED*** Ready for Phase 4 When:
+### Ready for Phase 4 When:
 
 - Domain package has 90%+ test coverage
 - All major features use domain interfaces
@@ -397,22 +397,22 @@ fun provideItemClassifier(): ItemClassifier = CloudClassifier()
 
 ---
 
-***REMOVED******REMOVED*** Current Package Migration Status
+## Current Package Migration Status
 
-***REMOVED******REMOVED******REMOVED*** ✅ Already Organized Well:
+### ✅ Already Organized Well:
 
 - `app/camera/` - Presentation (camera screen)
 - `app/items/` - Presentation (items list)
 - `app/selling/` - Presentation (selling flow)
 - `app/ml/` - Platform scanning (mostly)
 
-***REMOVED******REMOVED******REMOVED*** 📦 Needs Package Refactoring:
+### 📦 Needs Package Refactoring:
 
 - `app/ml/` → `platform/mlkit/` (ML Kit clients)
 - `app/data/` → `data/repository/` (if repository implementations)
 - `app/model/` → `domain/model/` (if domain models)
 
-***REMOVED******REMOVED******REMOVED*** 🆕 Needs Creation:
+### 🆕 Needs Creation:
 
 - `domain/usecase/` - New (extract from ViewModels)
 - `domain/repository/` - New (interfaces)
@@ -422,7 +422,7 @@ fun provideItemClassifier(): ItemClassifier = CloudClassifier()
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - ADR-002: Cross-platform Shared Brain (KMP strategy)
 - ADR-003: Module Boundaries and Dependency Rules

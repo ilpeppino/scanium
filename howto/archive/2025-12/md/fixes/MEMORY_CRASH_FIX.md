@@ -1,6 +1,6 @@
-***REMOVED*** Memory Crash Fix - December 8, 2024
+# Memory Crash Fix - December 8, 2024
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 The app was being killed by the system (not crashing with exception) immediately after detecting
 objects. The log showed:
@@ -11,7 +11,7 @@ Process com.scanium.app (pid 2073) has died: fg TOP
 
 No Java exception or stacktrace - the process just **died**, indicating the system killed it.
 
-***REMOVED******REMOVED******REMOVED*** Root Cause
+### Root Cause
 
 **Out of Memory (OOM)** due to inefficient bitmap handling. The previous fix used `.copy()` which
 created **TWO bitmaps** for each thumbnail:
@@ -26,18 +26,18 @@ When detecting multiple objects (5 objects detected in the crash), this doubled 
 - 5 objects × 2 bitmaps each = **10 bitmaps kept in memory**
 - System killed the app to reclaim memory
 
-***REMOVED******REMOVED*** Solution
+## Solution
 
 **Create a single independent bitmap using Canvas** instead of crop + copy:
 
-***REMOVED******REMOVED******REMOVED*** Before (Memory Inefficient - 2 bitmaps per object):
+### Before (Memory Inefficient - 2 bitmaps per object):
 
 ```kotlin
-val cropped = Bitmap.createBitmap(source, left, top, width, height) // Bitmap ***REMOVED***1
-cropped.copy(Bitmap.Config.ARGB_8888, false) // Bitmap ***REMOVED***2 (OOM!)
+val cropped = Bitmap.createBitmap(source, left, top, width, height) // Bitmap #1
+cropped.copy(Bitmap.Config.ARGB_8888, false) // Bitmap #2 (OOM!)
 ```
 
-***REMOVED******REMOVED******REMOVED*** After (Memory Efficient - 1 bitmap per object):
+### After (Memory Efficient - 1 bitmap per object):
 
 ```kotlin
 // Create new bitmap with independent pixel data
@@ -56,21 +56,21 @@ This approach:
 - ✅ Uses ~50% less memory than the copy approach
 - ✅ More efficient for multiple object detection
 
-***REMOVED******REMOVED*** Changes Made
+## Changes Made
 
-***REMOVED******REMOVED******REMOVED*** 1. ObjectDetectorClient.kt (line 561-580)
-
-Replaced crop + copy with Canvas-based single bitmap creation.
-
-***REMOVED******REMOVED******REMOVED*** 2. BarcodeScannerClient.kt (line 155-175)
+### 1. ObjectDetectorClient.kt (line 561-580)
 
 Replaced crop + copy with Canvas-based single bitmap creation.
 
-***REMOVED******REMOVED******REMOVED*** 3. DocumentTextRecognitionClient.kt (line 131-155)
+### 2. BarcodeScannerClient.kt (line 155-175)
 
 Replaced crop + copy with Canvas-based single bitmap creation.
 
-***REMOVED******REMOVED*** Why This Works
+### 3. DocumentTextRecognitionClient.kt (line 131-155)
+
+Replaced crop + copy with Canvas-based single bitmap creation.
+
+## Why This Works
 
 1. **Independent pixel data**: Canvas.drawBitmap() copies pixels into the new bitmap, so it's safe
    when source is recycled
@@ -78,7 +78,7 @@ Replaced crop + copy with Canvas-based single bitmap creation.
 3. **Memory efficient**: Reduces memory footprint by 50% compared to copy approach
 4. **System won't kill app**: Memory usage stays within acceptable limits
 
-***REMOVED******REMOVED*** Memory Comparison
+## Memory Comparison
 
 **Old approach (5 objects detected):**
 
@@ -92,13 +92,13 @@ Replaced crop + copy with Canvas-based single bitmap creation.
 - 5 objects × 1 bitmap × ~500KB each = ~2.5MB
 - **Total: ~32.5MB** (Safe!)
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
 ✅ **Build successful**: `./gradlew assembleDebug`
 ✅ **All tests pass**: 232 tests
 ✅ **Memory efficient**: Uses 50% less memory for thumbnails
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 1. **Install the new APK**:
    ```bash
@@ -124,7 +124,7 @@ Replaced crop + copy with Canvas-based single bitmap creation.
 - **App stays running** without being killed
 - Memory usage remains stable
 
-***REMOVED******REMOVED*** Related Documentation
+## Related Documentation
 
 - See `BITMAP_CRASH_FIX.md` for the original recycling issue
 - See `ML_KIT_ZERO_DETECTIONS_FIX.md` for ML Kit detection issues

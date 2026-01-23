@@ -18,7 +18,7 @@ import java.util.UUID
  * - Trigger classification requests for test items
  * - Access internal state for assertions
  *
- * ***REMOVED******REMOVED*** Usage in Tests
+ * ## Usage in Tests
  * ```kotlin
  * val testItem = TestBridge.createTestItem(
  *     category = ItemCategory.FASHION,

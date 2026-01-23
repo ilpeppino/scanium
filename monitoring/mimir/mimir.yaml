@@ -1,7 +1,7 @@
-***REMOVED*** Mimir Configuration - Single-node development setup
-***REMOVED*** Optimized for local/NAS deployment
+# Mimir Configuration - Single-node development setup
+# Optimized for local/NAS deployment
 
-***REMOVED*** Run all services in single process
+# Run all services in single process
 target: all
 
 multitenancy_enabled: false
@@ -25,7 +25,7 @@ blocks_storage:
 
   tsdb:
     dir: /data/tsdb
-    retention_period: 360h  ***REMOVED*** 15 days
+    retention_period: 360h  # 15 days
     block_ranges_period: [ 2h ]
     ship_interval: 1m
 
@@ -34,7 +34,7 @@ blocks_storage:
     index_cache:
       backend: inmemory
       inmemory:
-        max_size_bytes: 536870912  ***REMOVED*** 512MB
+        max_size_bytes: 536870912  # 512MB
 
 compactor:
   data_dir: /data/compactor
@@ -84,10 +84,10 @@ alertmanager_storage:
     dir: /data/alertmanager
 
 limits:
-  ***REMOVED*** Retention
+  # Retention
   compactor_blocks_retention_period: 15d
 
-  ***REMOVED*** Ingestion limits
+  # Ingestion limits
   ingestion_rate: 100000
   ingestion_burst_size: 200000
   max_global_series_per_user: 1500000
@@ -96,20 +96,20 @@ limits:
   max_global_metadata_per_metric: 0
   max_global_exemplars_per_user: 100000
 
-  ***REMOVED*** Query limits
+  # Query limits
   max_fetched_series_per_query: 100000
   max_fetched_chunk_bytes_per_query: 100000000
-  max_query_parallelism: 4    ***REMOVED*** Reduced for NAS (DS418play: 4 threads)
+  max_query_parallelism: 4    # Reduced for NAS (DS418play: 4 threads)
   max_query_lookback: 0
   max_partial_query_length: 744h
   max_cache_freshness: 10m
 
-  ***REMOVED*** Compactor
+  # Compactor
   compactor_split_and_merge_shards: 0
   compactor_split_groups: 1
   compactor_tenant_shard_size: 0
 
-  ***REMOVED*** Cardinality analysis
+  # Cardinality analysis
   cardinality_analysis_enabled: true
   label_names_and_values_results_max_size_bytes: 419430400
   label_values_max_cardinality_label_names_per_request: 100

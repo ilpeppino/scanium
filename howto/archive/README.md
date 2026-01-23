@@ -1,15 +1,15 @@
-***REMOVED*** Archived Documentation
+# Archived Documentation
 
 **ARCHIVED** - Documents in this directory are kept for historical reference only and may be
 outdated.
 
-***REMOVED******REMOVED*** Contents
+## Contents
 
 | Folder               | Description                             |
 |----------------------|-----------------------------------------|
 | [2025-12/](2025-12/) | Documentation archived in December 2025 |
 
-***REMOVED******REMOVED*** Why Archive?
+## Why Archive?
 
 Documents are archived rather than deleted to:
 
@@ -17,7 +17,7 @@ Documents are archived rather than deleted to:
 - Allow reference for regression analysis
 - Maintain audit trail of project evolution
 
-***REMOVED******REMOVED*** Using Archived Docs
+## Using Archived Docs
 
 When referencing archived documentation:
 

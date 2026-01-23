@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/INDEX.md.
 
-***REMOVED*** iOS-Android Parity Plan
+# iOS-Android Parity Plan
 
 **Last Updated:** 2025-12-19
 **Goal:** Bring iOS to feature parity with Android while keeping Android stable
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Guiding Principles
+## Guiding Principles
 
 1. **Android Stability:** Do NOT modify Android production code. Android is the stable baseline.
 2. **Shared Brain First:** Ensure all shared KMP APIs work on iOS before building iOS-specific
@@ -21,20 +21,20 @@
 
 ---
 
-***REMOVED******REMOVED*** Phase 0: Validation & Guardrails (Week 1)
+## Phase 0: Validation & Guardrails (Week 1)
 
 **Goal:** Ensure build infrastructure and guardrails are in place before development starts.
 
-***REMOVED******REMOVED******REMOVED*** Objectives:
+### Objectives:
 
 - Validate XCFramework integration
 - Add iOS permissions to Info.plist
 - Set up parity definition of done
 - Create CI checks to prevent Android regressions
 
-***REMOVED******REMOVED******REMOVED*** Tasks:
+### Tasks:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 0.1 XCFramework Linking Validation
+#### 0.1 XCFramework Linking Validation
 
 - **Action:** Confirm `Shared.xcframework` is embedded in iOS app target
 - **Files:** `iosApp/ScaniumiOS.xcodeproj`, `iosApp/Frameworks/`
@@ -42,7 +42,7 @@
 - **Estimation:** 1 day
 - **Do Not Touch:** Android build.gradle files
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 0.2 Add Missing Permissions
+#### 0.2 Add Missing Permissions
 
 - **Action:** Add required usage description keys to Info.plist
 - **Files:** `iosApp/ScaniumiOS/Info.plist`
@@ -55,7 +55,7 @@
 - **Estimation:** 0.5 days
 - **Android Ref:** `androidApp/src/main/AndroidManifest.xml:5`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 0.3 Define Parity Checklist
+#### 0.3 Define Parity Checklist
 
 - **Action:** Create checklist of must-have features for parity milestone
 - **Files:** `docs/parity/PARITY_CHECKLIST.md` (new)
@@ -68,7 +68,7 @@
     - [ ] Can navigate between screens
 - **Estimation:** 0.5 days
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 0.4 CI Guardrails (Optional)
+#### 0.4 CI Guardrails (Optional)
 
 - **Action:** Add GitHub Actions check to prevent Android file modifications
 - **Files:** `.github/workflows/parity-guard.yml` (new)
@@ -76,7 +76,7 @@
 - **Estimation:** 1 day
 - **Do Not Touch:** Existing Android CI workflows
 
-***REMOVED******REMOVED******REMOVED*** Phase 0 Definition of Done:
+### Phase 0 Definition of Done:
 
 - [ ] XCFramework imports successfully
 - [ ] Info.plist has camera and photo permissions
@@ -87,19 +87,19 @@
 
 ---
 
-***REMOVED******REMOVED*** Phase 1: Shared Brain Readiness (Week 2)
+## Phase 1: Shared Brain Readiness (Week 2)
 
 **Goal:** Ensure all shared KMP APIs used by Android are callable and functional from iOS.
 
-***REMOVED******REMOVED******REMOVED*** Objectives:
+### Objectives:
 
 - Validate `ObjectTracker` and `ItemAggregator` work on iOS
 - Create Swift platform adapters for shared types
 - Test shared data models round-trip
 
-***REMOVED******REMOVED******REMOVED*** Tasks:
+### Tasks:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.1 Platform Adapters: Image Conversion
+#### 1.1 Platform Adapters: Image Conversion
 
 - **Action:** Create Swift extensions for `ImageRef` ↔ `UIImage` conversion
 - **Files:** `iosApp/ScaniumiOS/PlatformAdapters/ImageAdapters.swift` (new)
@@ -117,7 +117,7 @@
 - **Android Ref:**
   `android-platform-adapters/src/main/java/com/scanium/android/platform/adapters/ImageAdapters.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.2 Platform Adapters: Rect Conversion
+#### 1.2 Platform Adapters: Rect Conversion
 
 - **Action:** Create Swift extensions for `CGRect` ↔ `NormalizedRect` conversion
 - **Files:** `iosApp/ScaniumiOS/PlatformAdapters/RectAdapters.swift` (new)
@@ -135,7 +135,7 @@
 - **Android Ref:**
   `android-platform-adapters/src/main/java/com/scanium/android/platform/adapters/RectAdapters.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.3 Test ObjectTracker Integration
+#### 1.3 Test ObjectTracker Integration
 
 - **Action:** Write Swift test to instantiate `ObjectTracker` and call `processFrame()`
 - **Files:** `iosApp/ScaniumiOSTests/ObjectTrackerIntegrationTest.swift` (new test target)
@@ -145,7 +145,7 @@
 - **Android Ref:**
   `shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ObjectTracker.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.4 Test ItemAggregator Integration
+#### 1.4 Test ItemAggregator Integration
 
 - **Action:** Write Swift test to instantiate `ItemAggregator` and call `processDetection()`
 - **Files:** `iosApp/ScaniumiOSTests/ItemAggregatorIntegrationTest.swift` (new)
@@ -155,7 +155,7 @@
 - **Android Ref:**
   `shared/core-tracking/src/commonMain/kotlin/com/scanium/core/tracking/ItemAggregator.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 1.5 Extend SharedBridge
+#### 1.5 Extend SharedBridge
 
 - **Action:** Add methods to SharedBridge for creating tracker/aggregator instances
 - **Files:** `iosApp/ScaniumiOS/SharedBridge.swift`
@@ -167,7 +167,7 @@
 - **Acceptance Criteria:** Can create tracker/aggregator from SwiftUI views
 - **Estimation:** 0.5 days
 
-***REMOVED******REMOVED******REMOVED*** Phase 1 Definition of Done:
+### Phase 1 Definition of Done:
 
 - [ ] Image and rect conversion utilities exist and pass tests
 - [ ] ObjectTracker and ItemAggregator can be instantiated and called from Swift
@@ -178,19 +178,19 @@
 
 ---
 
-***REMOVED******REMOVED*** Phase 2: iOS Platform Adapters (Weeks 3-4)
+## Phase 2: iOS Platform Adapters (Weeks 3-4)
 
 **Goal:** Implement iOS-specific ML services and wire them to shared contracts.
 
-***REMOVED******REMOVED******REMOVED*** Objectives:
+### Objectives:
 
 - Complete Vision barcode and text services (already exist, validate)
 - Complete CoreML object detection service (already exists, validate)
 - Create classification adapters (on-device and cloud)
 
-***REMOVED******REMOVED******REMOVED*** Tasks:
+### Tasks:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.1 Validate Vision Barcode Service
+#### 2.1 Validate Vision Barcode Service
 
 - **Action:** Test `VisionBarcodeService` with sample images
 - **Files:** `iosApp/ScaniumiOS/VisionBarcodeService.swift` (existing)
@@ -199,7 +199,7 @@
 - **Estimation:** 0.5 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/ml/BarcodeScannerClient.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.2 Validate Vision Text Service
+#### 2.2 Validate Vision Text Service
 
 - **Action:** Test `VisionTextService` with sample images
 - **Files:** `iosApp/ScaniumiOS/VisionTextService.swift` (existing)
@@ -208,7 +208,7 @@
 - **Estimation:** 0.5 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/ml/DocumentTextRecognitionClient.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.3 Validate CoreML Object Detection Service
+#### 2.3 Validate CoreML Object Detection Service
 
 - **Action:** Bundle a test CoreML model and test `CoreMLObjectDetectionService`
 - **Files:** `iosApp/ScaniumiOS/CoreMLObjectDetectionService.swift` (existing)
@@ -217,7 +217,7 @@
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.4 Implement On-Device Classifier
+#### 2.4 Implement On-Device Classifier
 
 - **Action:** Port label→category mapping logic to Swift
 - **Files:** `iosApp/ScaniumiOS/Classification/OnDeviceClassifier.swift` (new)
@@ -228,7 +228,7 @@
 - **Android Ref:**
   `androidApp/src/main/java/com/scanium/app/ml/classification/OnDeviceClassifier.kt:15`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.5 Implement Cloud Classifier
+#### 2.5 Implement Cloud Classifier
 
 - **Action:** Create URLSession HTTP client for cloud classifier API
 - **Files:** `iosApp/ScaniumiOS/Classification/CloudClassifier.swift` (new)
@@ -239,7 +239,7 @@
 - **Android Ref:**
   `androidApp/src/main/java/com/scanium/app/ml/classification/CloudClassifier.kt:50`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.6 Implement Classification Orchestrator
+#### 2.6 Implement Classification Orchestrator
 
 - **Action:** Create mode-based classifier with fallback logic
 - **Files:** `iosApp/ScaniumiOS/Classification/ClassificationOrchestrator.swift` (new)
@@ -249,7 +249,7 @@
 - **Android Ref:**
   `androidApp/src/main/java/com/scanium/app/ml/classification/ClassificationOrchestrator.kt:45`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 2.7 Add Classification Mode Persistence
+#### 2.7 Add Classification Mode Persistence
 
 - **Action:** Create UserDefaults wrapper for classification mode preference
 - **Files:** `iosApp/ScaniumiOS/Settings/ClassificationPreferences.swift` (new)
@@ -258,7 +258,7 @@
 - **Estimation:** 0.5 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/data/ClassificationPreferences.kt`
 
-***REMOVED******REMOVED******REMOVED*** Phase 2 Definition of Done:
+### Phase 2 Definition of Done:
 
 - [ ] All ML services validated with test images
 - [ ] On-device classifier works (matches Android output)
@@ -270,13 +270,13 @@
 
 ---
 
-***REMOVED******REMOVED*** Phase 3: iOS UI Parity (Weeks 5-7)
+## Phase 3: iOS UI Parity (Weeks 5-7)
 
 **Goal:** Build camera UI, items list, detail view, and navigation matching Android UX.
 
-***REMOVED******REMOVED******REMOVED*** Track A: Camera UI (can run in parallel with Track B)
+### Track A: Camera UI (can run in parallel with Track B)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.1 Create Camera Preview View
+#### 3.1 Create Camera Preview View
 
 - **Action:** Build SwiftUI wrapper for AVCaptureVideoPreviewLayer
 - **Files:** `iosApp/ScaniumiOS/Camera/CameraView.swift` (new)
@@ -285,7 +285,7 @@
 - **Estimation:** 2 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt:45`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.2 Add Capture Button
+#### 3.2 Add Capture Button
 
 - **Action:** Add shutter button with tap gesture and haptic feedback
 - **Files:** `iosApp/ScaniumiOS/Camera/ShutterButton.swift` (new)
@@ -296,7 +296,7 @@
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/camera/ShutterButton.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.3 Add Detection Overlay
+#### 3.3 Add Detection Overlay
 
 - **Action:** Draw bounding boxes on camera preview using SwiftUI Canvas
 - **Files:** `iosApp/ScaniumiOS/Camera/DetectionOverlay.swift` (new)
@@ -305,7 +305,7 @@
 - **Estimation:** 2 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/camera/DetectionOverlay.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.4 Add Mode Switcher
+#### 3.4 Add Mode Switcher
 
 - **Action:** Add segmented control to toggle object/barcode/text modes
 - **Files:** `iosApp/ScaniumiOS/Camera/ModeSwitcher.swift` (new)
@@ -314,7 +314,7 @@
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/camera/ModeSwitcher.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.5 Add Settings Overlay
+#### 3.5 Add Settings Overlay
 
 - **Action:** Create settings sheet with resolution picker and threshold slider
 - **Files:** `iosApp/ScaniumiOS/Camera/CameraSettingsSheet.swift` (new)
@@ -323,7 +323,7 @@
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/camera/CameraSettingsOverlay.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.6 Wire ML Pipeline
+#### 3.6 Wire ML Pipeline
 
 - **Action:** Integrate frame analysis loop with ML services and tracker
 - **Files:** `iosApp/ScaniumiOS/Camera/CameraViewModel.swift` (new)
@@ -338,9 +338,9 @@
 - **Estimation:** 3 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt:180`
 
-***REMOVED******REMOVED******REMOVED*** Track B: Items List & Details (can run in parallel with Track A)
+### Track B: Items List & Details (can run in parallel with Track A)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.7 Create Items List State Management
+#### 3.7 Create Items List State Management
 
 - **Action:** Build ItemsViewModel as ObservableObject
 - **Files:** `iosApp/ScaniumiOS/Items/ItemsViewModel.swift` (new)
@@ -353,7 +353,7 @@
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/items/ItemsViewModel.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.8 Enhance Items List View
+#### 3.8 Enhance Items List View
 
 - **Action:** Replace ContentView with full-featured items list
 - **Files:** `iosApp/ScaniumiOS/Items/ItemsListView.swift` (rename ContentView)
@@ -367,7 +367,7 @@
 - **Estimation:** 2 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/items/ItemsListScreen.kt`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.9 Create Item Detail View
+#### 3.9 Create Item Detail View
 
 - **Action:** Build full-screen detail modal
 - **Files:** `iosApp/ScaniumiOS/Items/ItemDetailView.swift` (new)
@@ -380,7 +380,7 @@
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/items/ItemDetailDialog.kt:30`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.10 Add Floating Action Button
+#### 3.10 Add Floating Action Button
 
 - **Action:** Create FAB with dropdown for Save/Sell actions
 - **Files:** `iosApp/ScaniumiOS/Items/FloatingActionButton.swift` (new)
@@ -390,9 +390,9 @@
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/items/ItemsListScreen.kt:250`
 
-***REMOVED******REMOVED******REMOVED*** Track C: Navigation
+### Track C: Navigation
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.11 Create Navigation Architecture
+#### 3.11 Create Navigation Architecture
 
 - **Action:** Set up NavigationStack with path-based routing
 - **Files:** `iosApp/ScaniumiOS/Navigation/Router.swift` (new)
@@ -404,14 +404,14 @@
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/navigation/NavGraph.kt:21`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 3.12 Wire Navigation
+#### 3.12 Wire Navigation
 
 - **Action:** Add NavigationLink from camera to items list, items list to sell screen
 - **Files:** `iosApp/ScaniumiOS/ScaniumiOSApp.swift`, `CameraView.swift`, `ItemsListView.swift`
 - **Acceptance Criteria:** Can navigate camera → items → sell → back
 - **Estimation:** 0.5 days
 
-***REMOVED******REMOVED******REMOVED*** Phase 3 Definition of Done:
+### Phase 3 Definition of Done:
 
 - [ ] Camera preview shows live feed
 - [ ] Detections appear as bounding boxes
@@ -425,13 +425,13 @@
 
 ---
 
-***REMOVED******REMOVED*** Phase 4: Storage & Export Parity (Week 8)
+## Phase 4: Storage & Export Parity (Week 8)
 
 **Goal:** Implement photo library save matching Android MediaStore functionality.
 
-***REMOVED******REMOVED******REMOVED*** Tasks:
+### Tasks:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4.1 Implement Photo Library Save
+#### 4.1 Implement Photo Library Save
 
 - **Action:** Use PHPhotoLibrary to save images to Photos
 - **Files:** `iosApp/ScaniumiOS/Storage/PhotoLibrarySaver.swift` (new)
@@ -448,7 +448,7 @@
 - **Estimation:** 2 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/media/MediaStoreSaver.kt:58`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4.2 Wire Save Action
+#### 4.2 Wire Save Action
 
 - **Action:** Connect FAB "Save to Gallery" action to PhotoLibrarySaver
 - **Files:** `iosApp/ScaniumiOS/Items/ItemsListView.swift`
@@ -456,7 +456,7 @@
 - **Acceptance Criteria:** Selecting items and tapping Save exports to Photos
 - **Estimation:** 0.5 days
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 4.3 Add Error Handling
+#### 4.3 Add Error Handling
 
 - **Action:** Handle permission denied, save failures, partial success
 - **Files:** `iosApp/ScaniumiOS/Storage/SaveResult.swift` (new)
@@ -465,7 +465,7 @@
 - **Estimation:** 0.5 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/media/MediaStoreSaver.kt:23`
 
-***REMOVED******REMOVED******REMOVED*** Phase 4 Definition of Done:
+### Phase 4 Definition of Done:
 
 - [ ] Can save selected items to Photos
 - [ ] Images appear in "Scanium" album
@@ -476,16 +476,16 @@
 
 ---
 
-***REMOVED******REMOVED*** Phase 5: Selling Flow (Optional - Week 9)
+## Phase 5: Selling Flow (Optional - Week 9)
 
 **Goal:** Implement eBay selling screen matching Android (mock API for v1).
 
 **Note:** This phase is optional for MVP parity. If eBay integration is not a priority, defer to
 post-parity.
 
-***REMOVED******REMOVED******REMOVED*** Tasks:
+### Tasks:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5.1 Create Selling Screen UI
+#### 5.1 Create Selling Screen UI
 
 - **Action:** Build listing creation form
 - **Files:** `iosApp/ScaniumiOS/Selling/SellOnEbayView.swift` (new)
@@ -498,7 +498,7 @@ post-parity.
 - **Estimation:** 3 days
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/selling/ui/SellOnEbayScreen.kt:39`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5.2 Create Marketplace Service
+#### 5.2 Create Marketplace Service
 
 - **Action:** Port EbayMarketplaceService to Swift with mock API
 - **Files:**
@@ -510,7 +510,7 @@ post-parity.
 - **Android Ref:**
   `androidApp/src/main/java/com/scanium/app/selling/data/EbayMarketplaceService.kt:25`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5.3 Create Domain Models
+#### 5.3 Create Domain Models
 
 - **Action:** Port Listing, ListingCondition, ListingStatus to Swift
 - **Files:** `iosApp/ScaniumiOS/Selling/Models/` (new)
@@ -519,7 +519,7 @@ post-parity.
 - **Estimation:** 1 day
 - **Android Ref:** `androidApp/src/main/java/com/scanium/app/selling/domain/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 5.4 Wire Selling Flow
+#### 5.4 Wire Selling Flow
 
 - **Action:** Connect items list FAB to selling screen
 - **Files:** `iosApp/ScaniumiOS/Items/ItemsListView.swift`
@@ -527,7 +527,7 @@ post-parity.
 - **Acceptance Criteria:** Can navigate from items list to selling screen with pre-populated items
 - **Estimation:** 0.5 days
 
-***REMOVED******REMOVED******REMOVED*** Phase 5 Definition of Done:
+### Phase 5 Definition of Done:
 
 - [ ] Selling screen shows selected items
 - [ ] Can edit listing details (title, price, condition)
@@ -539,13 +539,13 @@ post-parity.
 
 ---
 
-***REMOVED******REMOVED*** Phase 6: Observability & Final Polish (Week 10)
+## Phase 6: Observability & Final Polish (Week 10)
 
 **Goal:** Add logging, crash reporting, and final parity validation.
 
-***REMOVED******REMOVED******REMOVED*** Tasks:
+### Tasks:
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6.1 Add Structured Logging
+#### 6.1 Add Structured Logging
 
 - **Action:** Create OSLog wrapper for consistent logging
 - **Files:** `iosApp/ScaniumiOS/Logging/Logger.swift` (new)
@@ -554,7 +554,7 @@ post-parity.
 - **Estimation:** 1 day
 - **Android Ref:** Android Log usage throughout `androidApp/`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6.2 Add Crash Reporting (Optional)
+#### 6.2 Add Crash Reporting (Optional)
 
 - **Action:** Integrate Sentry SDK for iOS
 - **Files:** `iosApp/ScaniumiOS/ScaniumiOSApp.swift`
@@ -563,7 +563,7 @@ post-parity.
 - **Estimation:** 1 day
 - **Note:** Only if Sentry also added to Android (not currently implemented)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6.3 Final Parity Validation
+#### 6.3 Final Parity Validation
 
 - **Action:** Run parity checklist (from Phase 0) and fix any gaps
 - **Files:** `docs/parity/PARITY_CHECKLIST.md`
@@ -571,7 +571,7 @@ post-parity.
 - **Acceptance Criteria:** All checklist items pass
 - **Estimation:** 2 days
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** 6.4 Performance Optimization
+#### 6.4 Performance Optimization
 
 - **Action:** Profile camera frame rate, ML latency, UI responsiveness
 - **Tools:** Xcode Instruments
@@ -579,7 +579,7 @@ post-parity.
 - **Acceptance Criteria:** Camera runs at 30 fps, ML latency <100ms
 - **Estimation:** 1 day
 
-***REMOVED******REMOVED******REMOVED*** Phase 6 Definition of Done:
+### Phase 6 Definition of Done:
 
 - [ ] Structured logging in place
 - [ ] Crash reporting configured (if applicable)
@@ -590,56 +590,56 @@ post-parity.
 
 ---
 
-***REMOVED******REMOVED*** Testing Strategy (Continuous)
+## Testing Strategy (Continuous)
 
 Throughout all phases:
 
-***REMOVED******REMOVED******REMOVED*** Unit Tests:
+### Unit Tests:
 
 - Write XCTest for each new ViewModel, service, and utility
 - Target: 70%+ code coverage
 
-***REMOVED******REMOVED******REMOVED*** Integration Tests:
+### Integration Tests:
 
 - Test shared KMP integration (tracker, aggregator)
 - Test ML services with sample images
 
-***REMOVED******REMOVED******REMOVED*** Manual Testing:
+### Manual Testing:
 
 - Test camera → scan → list → save flow on real device
 - Compare iOS and Android side-by-side
 
-***REMOVED******REMOVED******REMOVED*** Regression Testing:
+### Regression Testing:
 
 - Run Android tests after each iOS PR to ensure no regressions (CI check)
 
 ---
 
-***REMOVED******REMOVED*** Risk Mitigation
+## Risk Mitigation
 
-***REMOVED******REMOVED******REMOVED*** Risk 1: Shared KMP APIs Don't Work on iOS
+### Risk 1: Shared KMP APIs Don't Work on iOS
 
 - **Mitigation:** Phase 1 validates shared APIs early
 - **Fallback:** Create iOS-native equivalents if KMP bridging fails
 
-***REMOVED******REMOVED******REMOVED*** Risk 2: CoreML Models Underperform vs ML Kit
+### Risk 2: CoreML Models Underperform vs ML Kit
 
 - **Mitigation:** Phase 2 validates ML accuracy with test images
 - **Fallback:** Use cloud classifier as primary, on-device as fallback
 
-***REMOVED******REMOVED******REMOVED*** Risk 3: SwiftUI Performance Issues
+### Risk 3: SwiftUI Performance Issues
 
 - **Mitigation:** Phase 6 includes performance profiling
 - **Fallback:** Optimize with UIKit hybrid approach if needed
 
-***REMOVED******REMOVED******REMOVED*** Risk 4: Timeline Overruns
+### Risk 4: Timeline Overruns
 
 - **Mitigation:** Prioritize critical path (Phases 0-4), defer Phase 5 if needed
 - **Fallback:** Ship MVP without selling flow, add in v1.1
 
 ---
 
-***REMOVED******REMOVED*** Staffing Recommendations
+## Staffing Recommendations
 
 **Optimal Team:**
 
@@ -653,7 +653,7 @@ Throughout all phases:
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
 iOS is at parity when:
 
@@ -670,7 +670,7 @@ iOS is at parity when:
 
 ---
 
-***REMOVED******REMOVED*** Next Steps
+## Next Steps
 
 1. Review this plan with stakeholders
 2. Assign engineers to tracks

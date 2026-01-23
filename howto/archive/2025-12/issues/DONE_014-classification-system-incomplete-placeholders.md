@@ -1,18 +1,18 @@
-***REMOVED*** Classification System Has Placeholder Implementations
+# Classification System Has Placeholder Implementations
 
 **Labels:** `enhancement`, `priority:p3`, `area:ml`, `feature-incomplete`
 **Type:** Feature Completeness
 **Severity:** Low (expected for PoC, but should be documented)
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 The classification system architecture is implemented but uses **placeholder/stub classifiers**
 instead of real ML models. This is likely intentional for a PoC, but should be explicitly
 documented.
 
-***REMOVED******REMOVED*** Current State
+## Current State
 
-***REMOVED******REMOVED******REMOVED*** OnDeviceClassifier - Fake Implementation
+### OnDeviceClassifier - Fake Implementation
 
 File: `/app/src/main/java/com/scanium/app/ml/classification/OnDeviceClassifier.kt`
 
@@ -42,7 +42,7 @@ return when {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** CloudClassifier - Requires External Configuration
+### CloudClassifier - Requires External Configuration
 
 File: `/app/src/main/java/com/scanium/app/ml/classification/CloudClassifier.kt`
 
@@ -57,14 +57,14 @@ private val apiUrl = BuildConfig.CLOUD_CLASSIFIER_URL.ifEmpty {
 
 **Impact**: Silently skips cloud classification if not configured.
 
-***REMOVED******REMOVED******REMOVED*** ClassificationOrchestrator - Works Correctly
+### ClassificationOrchestrator - Works Correctly
 
 File: `/app/src/main/java/com/scanium/app/ml/classification/ClassificationOrchestrator.kt`
 
 **Status**: ✅ Implementation is correct - properly orchestrates classifiers, just depends on
 placeholder implementations above.
 
-***REMOVED******REMOVED*** Impact
+## Impact
 
 **Current**: System appears to work but provides low-quality classifications
 
@@ -76,33 +76,33 @@ placeholder implementations above.
 
 **Expectations**: This is likely **intentional for PoC scope**
 
-***REMOVED******REMOVED*** Decision Required
+## Decision Required
 
 Choose ONE:
 
-***REMOVED******REMOVED******REMOVED*** Option 1: Document as Intentional (Recommended)
+### Option 1: Document as Intentional (Recommended)
 
 Add prominent documentation that classification is placeholder-only:
 
 **In CLAUDE.md:**
 
 ```markdown
-***REMOVED******REMOVED*** Classification System (Placeholder Implementation)
+## Classification System (Placeholder Implementation)
 
 ⚠️ **Current Status**: Classification system architecture is complete but uses placeholder implementations suitable for PoC/demo only.
 
-***REMOVED******REMOVED******REMOVED*** OnDeviceClassifier
+### OnDeviceClassifier
 - **Current**: Brightness/contrast heuristics
 - **Production TODO**: Integrate CLIP or custom TFLite model
 - **Effort**: 2-3 sprints for model training + integration
 
-***REMOVED******REMOVED******REMOVED*** CloudClassifier
+### CloudClassifier
 - **Current**: Disabled (no API configured)
 - **Production TODO**: Implement backend classification API
 - **Effort**: Backend API development + integration
 ```
 
-***REMOVED******REMOVED******REMOVED*** Option 2: Implement Real Classifiers
+### Option 2: Implement Real Classifiers
 
 Significant effort required:
 
@@ -112,7 +112,7 @@ Significant effort required:
 - Build/integrate cloud API
 - Performance testing
 
-***REMOVED******REMOVED*** Acceptance Criteria (Option 1 - Document)
+## Acceptance Criteria (Option 1 - Document)
 
 - [ ] Add "Known Limitations" section to CLAUDE.md documenting placeholder classifiers
 - [ ] Add TODO comments in OnDeviceClassifier pointing to model integration guide
@@ -120,9 +120,9 @@ Significant effort required:
 - [ ] Document expected classification quality ("placeholder only")
 - [ ] Add future roadmap section mentioning real ML integration
 
-***REMOVED******REMOVED*** Suggested Documentation
+## Suggested Documentation
 
-***REMOVED******REMOVED******REMOVED*** In OnDeviceClassifier.kt:
+### In OnDeviceClassifier.kt:
 
 ```kotlin
 /**
@@ -143,7 +143,7 @@ class OnDeviceClassifier : ItemClassifier {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** In build.gradle.kts:
+### In build.gradle.kts:
 
 ```kotlin
 // Cloud Classifier Configuration (Optional)
@@ -156,11 +156,11 @@ buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY",
     "\"${project.findProperty("cloud.classifier.api.key") ?: ""}\"")
 ```
 
-***REMOVED******REMOVED*** Assessment (2025-12-14)
+## Assessment (2025-12-14)
 
 **Status**: ✅ **NOT A BUG - Intentional PoC Architecture**
 
-***REMOVED******REMOVED******REMOVED*** Investigation Summary
+### Investigation Summary
 
 The classification system was reviewed against:
 
@@ -169,7 +169,7 @@ The classification system was reviewed against:
 - CameraX & ML Kit integration patterns
 - Project's documented PoC scope and architecture
 
-***REMOVED******REMOVED******REMOVED*** Key Findings
+### Key Findings
 
 1. **System is Working as Designed**
     - Classification infrastructure is **actively integrated** in production (`ScaniumApp.kt:45-48`)
@@ -198,7 +198,7 @@ The classification system was reviewed against:
     - Enhanced classification is supplementary/optional
     - App delivers on its core value proposition
 
-***REMOVED******REMOVED******REMOVED*** Decision: Follow Option 1 (Document as Intentional)
+### Decision: Follow Option 1 (Document as Intentional)
 
 **Rationale:**
 
@@ -207,7 +207,7 @@ The classification system was reviewed against:
 - Code is well-architected and ready for real ML model integration when needed
 - No functional bugs or user-facing issues to fix
 
-***REMOVED******REMOVED******REMOVED*** Recommended Next Actions
+### Recommended Next Actions
 
 **Priority 1: Documentation (Immediate)**
 
@@ -230,14 +230,14 @@ The classification system was reviewed against:
     - Performance benchmarking approach
     - Estimated effort (2-3 sprints)
 
-***REMOVED******REMOVED******REMOVED*** Why Not Implement Real Classifiers Now?
+### Why Not Implement Real Classifiers Now?
 
 1. **Out of PoC Scope**: Requires significant research, training, and integration effort
 2. **Core Features Work**: ML Kit provides primary object detection
 3. **Architecture Ready**: Pluggable design makes future integration straightforward
 4. **Resource Allocation**: Better to validate PoC value proposition first
 
-***REMOVED******REMOVED******REMOVED*** Verification Checklist
+### Verification Checklist
 
 - [x] Classification system files exist and are used in production
 - [x] No crashes, memory leaks, or threading issues
@@ -246,7 +246,7 @@ The classification system was reviewed against:
 - [x] No Android/Compose best practice violations
 - [x] Core app functionality unaffected
 
-***REMOVED******REMOVED******REMOVED*** When to Revisit
+### When to Revisit
 
 **Triggers for implementing real classifiers:**
 
@@ -263,6 +263,6 @@ The classification system was reviewed against:
 - Classification confidence distribution
 - Performance impact of enhanced classification
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
 None (this is expected PoC limitation)

@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Safe brands bundle append script.
 
@@ -70,7 +70,7 @@ def dedupe_brands(brands: List[str]) -> List[str]:
         if lower not in seen_lower:
             seen_lower[lower] = normalized
 
-    ***REMOVED*** Sort by lowercase key, return original casing
+    # Sort by lowercase key, return original casing
     return [seen_lower[k] for k in sorted(seen_lower.keys())]
 
 
@@ -114,7 +114,7 @@ def apply_update(catalog: Dict, payload: Dict, dry_run: bool = False) -> tuple[b
     """
     brands_by_subtype = payload["brandsBySubtype"]
 
-    ***REMOVED*** Build new catalog with deterministic ordering
+    # Build new catalog with deterministic ordering
     new_brands_by_subtype = {}
     for subtype_id in sorted(brands_by_subtype.keys()):
         new_brands = brands_by_subtype[subtype_id]
@@ -122,17 +122,17 @@ def apply_update(catalog: Dict, payload: Dict, dry_run: bool = False) -> tuple[b
         merged = merge_brands(existing_brands, new_brands)
         new_brands_by_subtype[subtype_id] = merged
 
-    ***REMOVED*** Preserve existing subtypes not in payload
+    # Preserve existing subtypes not in payload
     for subtype_id in sorted(catalog["brandsBySubtype"].keys()):
         if subtype_id not in new_brands_by_subtype:
             new_brands_by_subtype[subtype_id] = catalog["brandsBySubtype"][subtype_id]
 
-    ***REMOVED*** Create updated catalog
+    # Create updated catalog
     updated_catalog = catalog.copy()
     updated_catalog["brandsBySubtype"] = new_brands_by_subtype
 
     if dry_run:
-        ***REMOVED*** Generate diff summary
+        # Generate diff summary
         old_json = json.dumps(catalog, indent=2, sort_keys=True, ensure_ascii=False)
         new_json = json.dumps(updated_catalog, indent=2, sort_keys=True, ensure_ascii=False)
 
@@ -150,12 +150,12 @@ def apply_update(catalog: Dict, payload: Dict, dry_run: bool = False) -> tuple[b
         summary = f"DRY RUN: Would update {len(new_brands_by_subtype)} subtypes\n\n{diff_str}"
         return True, summary
     else:
-        ***REMOVED*** Write to file
+        # Write to file
         with open(CATALOG_PATH, "w", encoding="utf-8") as f:
             json.dump(updated_catalog, f, indent=2, sort_keys=True, ensure_ascii=False)
             f.write("\n")
 
-        ***REMOVED*** Count changes
+        # Count changes
         added_subtypes = len(set(new_brands_by_subtype.keys()) - set(catalog["brandsBySubtype"].keys()))
         updated_subtypes = sum(
             1 for subtype_id in brands_by_subtype.keys()
@@ -189,7 +189,7 @@ def main():
 
     args = parser.parse_args()
 
-    ***REMOVED*** Load payload
+    # Load payload
     try:
         if args.payload_stdin:
             payload_str = sys.stdin.read()
@@ -205,16 +205,16 @@ def main():
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
 
-    ***REMOVED*** Validate payload
+    # Validate payload
     valid, error_msg = validate_payload(payload)
     if not valid:
         print(f"ERROR: Validation failed: {error_msg}", file=sys.stderr)
         return 1
 
-    ***REMOVED*** Load existing catalog
+    # Load existing catalog
     catalog = load_existing_catalog()
 
-    ***REMOVED*** Apply update
+    # Apply update
     success, message = apply_update(catalog, payload, dry_run=args.dry_run)
 
     if not success:
@@ -224,7 +224,7 @@ def main():
     print(message)
 
     if args.dry_run:
-        ***REMOVED*** Exit with non-zero to indicate changes pending
+        # Exit with non-zero to indicate changes pending
         return 1
 
     return 0

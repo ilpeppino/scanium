@@ -1,141 +1,141 @@
-***REMOVED*** Scanium - Development Setup
+# Scanium - Development Setup
 
-***REMOVED******REMOVED*** Prerequisites
+## Prerequisites
 
-***REMOVED******REMOVED******REMOVED*** Required
+### Required
 
 - **Java 17** (JDK 17)
 - **Android SDK** (automatically detected from `local.properties`)
 - **Android Studio** (recommended) or command-line tools
 
-***REMOVED******REMOVED******REMOVED*** Java 17 Installation
+### Java 17 Installation
 
 The project requires Java 17 to build. Gradle will automatically detect and use it via the toolchain
 feature.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** macOS
+#### macOS
 
 ```bash
-***REMOVED*** Using Homebrew
+# Using Homebrew
 brew install openjdk@17
 
-***REMOVED*** Using SDKMAN
+# Using SDKMAN
 sdk install java 17.0.9-tem
 
-***REMOVED*** Or download from: https://adoptium.net/temurin/releases/?version=17
+# Or download from: https://adoptium.net/temurin/releases/?version=17
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Linux
+#### Linux
 
 ```bash
-***REMOVED*** Ubuntu/Debian
+# Ubuntu/Debian
 sudo apt install openjdk-17-jdk
 
-***REMOVED*** Fedora/RHEL
+# Fedora/RHEL
 sudo dnf install java-17-openjdk-devel
 
-***REMOVED*** Using SDKMAN (all Linux distros)
+# Using SDKMAN (all Linux distros)
 sdk install java 17.0.9-tem
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Windows
+#### Windows
 
 ```powershell
-***REMOVED*** Using Chocolatey
+# Using Chocolatey
 choco install temurin17
 
-***REMOVED*** Or download from: https://adoptium.net/temurin/releases/?version=17
+# Or download from: https://adoptium.net/temurin/releases/?version=17
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Using mise (all platforms)
+#### Using mise (all platforms)
 
 ```bash
 mise install java@17
 mise use java@17
 ```
 
-***REMOVED******REMOVED*** Building the Project
+## Building the Project
 
-***REMOVED******REMOVED******REMOVED*** OS-Agnostic Build (Recommended)
+### OS-Agnostic Build (Recommended)
 
 ```bash
-***REMOVED*** Gradle will automatically find Java 17
+# Gradle will automatically find Java 17
 ./gradlew assembleDebug
 ```
 
-***REMOVED******REMOVED******REMOVED*** If You Have Multiple Java Versions
+### If You Have Multiple Java Versions
 
 Gradle's toolchain feature will automatically find Java 17. No manual configuration needed!
 
 If the build fails with Java version errors, verify Java 17 is installed:
 
 ```bash
-***REMOVED*** Check installed Java versions (macOS)
+# Check installed Java versions (macOS)
 /usr/libexec/java_home -V
 
-***REMOVED*** Check installed Java versions (Linux)
+# Check installed Java versions (Linux)
 update-java-alternatives -l
 
-***REMOVED*** Check current Java version
+# Check current Java version
 java -version
 ```
 
-***REMOVED******REMOVED******REMOVED*** Troubleshooting
+### Troubleshooting
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Error: "Value given for org.gradle.java.home is invalid"
+#### Error: "Value given for org.gradle.java.home is invalid"
 
 This means a hardcoded Java path was set in `gradle.properties`. This file should **not** contain
 `org.gradle.java.home` to remain portable.
 
 **Fix:** Remove or comment out `org.gradle.java.home` in `gradle.properties`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Build works on one machine but not another
+#### Build works on one machine but not another
 
 1. Ensure Java 17 is installed on both machines
 2. Verify `gradle.properties` doesn't contain system-specific paths
 3. Stop all Gradle daemons: `./gradlew --stop`
 4. Try again: `./gradlew assembleDebug`
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Using a specific Java version temporarily
+#### Using a specific Java version temporarily
 
 ```bash
-***REMOVED*** macOS/Linux
+# macOS/Linux
 JAVA_HOME=/path/to/jdk-17 ./gradlew assembleDebug
 
-***REMOVED*** Windows PowerShell
+# Windows PowerShell
 $env:JAVA_HOME="C:\Path\To\jdk-17"; ./gradlew assembleDebug
 
-***REMOVED*** Windows CMD
+# Windows CMD
 set JAVA_HOME=C:\Path\To\jdk-17 && gradlew assembleDebug
 ```
 
-***REMOVED******REMOVED*** Development Workflow
+## Development Workflow
 
-***REMOVED******REMOVED******REMOVED*** Clean Build
+### Clean Build
 
 ```bash
 ./gradlew clean assembleDebug
 ```
 
-***REMOVED******REMOVED******REMOVED*** Run Tests
+### Run Tests
 
 ```bash
 ./gradlew test
 ```
 
-***REMOVED******REMOVED******REMOVED*** Install on Device
+### Install on Device
 
 ```bash
 ./gradlew installDebug
 ```
 
-***REMOVED******REMOVED******REMOVED*** View Logs
+### View Logs
 
 ```bash
 adb logcat | grep Scanium
 ```
 
-***REMOVED******REMOVED*** Project Structure
+## Project Structure
 
 The project is intentionally **portable** and **OS-agnostic**:
 
@@ -145,22 +145,22 @@ The project is intentionally **portable** and **OS-agnostic**:
 - ✅ Works on macOS, Linux, and Windows
 - ✅ Compatible with multiple laptops/environments
 
-***REMOVED******REMOVED*** IDE Setup
+## IDE Setup
 
-***REMOVED******REMOVED******REMOVED*** Android Studio (Recommended)
+### Android Studio (Recommended)
 
 1. Open project in Android Studio
 2. Android Studio will automatically configure Java toolchain
 3. No additional setup needed
 
-***REMOVED******REMOVED******REMOVED*** IntelliJ IDEA
+### IntelliJ IDEA
 
 1. Open project
 2. Go to: **File** → **Project Structure** → **Project**
 3. Set Project SDK to Java 17
 4. Gradle will use toolchain automatically
 
-***REMOVED******REMOVED******REMOVED*** VS Code
+### VS Code
 
 1. Install extensions:
     - Kotlin Language
@@ -169,7 +169,7 @@ The project is intentionally **portable** and **OS-agnostic**:
 2. Ensure Java 17 is in PATH
 3. Open project and sync Gradle
 
-***REMOVED******REMOVED*** Important Files (Don't Commit!)
+## Important Files (Don't Commit!)
 
 These files are **machine-specific** and already in `.gitignore`:
 
@@ -178,7 +178,7 @@ These files are **machine-specific** and already in `.gitignore`:
 - `*.iml` - IDE module files
 - `.gradle/` - Gradle cache
 
-***REMOVED******REMOVED*** Configuration Files (Safe to Commit)
+## Configuration Files (Safe to Commit)
 
 These files are **portable** and should be committed:
 
@@ -186,7 +186,7 @@ These files are **portable** and should be committed:
 - `build.gradle.kts` - Build configuration
 - `.gitignore` - Ignore patterns
 
-***REMOVED******REMOVED*** Getting Help
+## Getting Help
 
 If you encounter issues:
 
@@ -195,7 +195,7 @@ If you encounter issues:
 3. Clean and rebuild: `./gradlew clean assembleDebug`
 4. Check GitHub issues or create a new one
 
-***REMOVED******REMOVED*** Multi-Machine Development
+## Multi-Machine Development
 
 Working across multiple machines? This setup is designed for you:
 

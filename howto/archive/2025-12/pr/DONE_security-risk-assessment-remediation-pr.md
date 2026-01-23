@@ -1,6 +1,6 @@
-***REMOVED*** Security: Implement Input Validation and Privacy Protections
+# Security: Implement Input Validation and Privacy Protections
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 This PR implements **3 medium-priority security fixes** from the Security Risk Assessment (
 SECURITY_RISK_ASSESSMENT.md) and updates the assessment document with remediation status for all 18
@@ -27,9 +27,9 @@ identified issues.
 
 ---
 
-***REMOVED******REMOVED*** Changes
+## Changes
 
-***REMOVED******REMOVED******REMOVED*** 1. SEC-006: OCR Text Length Limit
+### 1. SEC-006: OCR Text Length Limit
 
 **File:** `app/src/main/java/com/scanium/app/ml/DocumentTextRecognitionClient.kt`
 
@@ -56,7 +56,7 @@ identified issues.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. SEC-007: Listing Field Validation
+### 2. SEC-007: Listing Field Validation
 
 **File:** `app/src/main/java/com/scanium/app/selling/data/MockEbayApi.kt`
 
@@ -90,7 +90,7 @@ identified issues.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. SEC-010: FLAG_SECURE for Sensitive Screens
+### 3. SEC-010: FLAG_SECURE for Sensitive Screens
 
 **Files:**
 
@@ -124,7 +124,7 @@ identified issues.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Documentation: SECURITY_RISK_ASSESSMENT.md Updates
+### 4. Documentation: SECURITY_RISK_ASSESSMENT.md Updates
 
 **Added Section 11: REMEDIATION STATUS**
 
@@ -166,9 +166,9 @@ Comprehensive documentation of:
 
 ---
 
-***REMOVED******REMOVED*** Test Plan
+## Test Plan
 
-***REMOVED******REMOVED******REMOVED*** SEC-006: OCR Text Length Limit
+### SEC-006: OCR Text Length Limit
 
 **Unit Tests (Recommended):**
 
@@ -198,7 +198,7 @@ fun `OCR text not truncated when under 10KB`() {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-007: Listing Field Validation
+### SEC-007: Listing Field Validation
 
 **Unit Tests (Recommended):**
 
@@ -274,7 +274,7 @@ class MockEbayApiValidationTest {
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** SEC-010: FLAG_SECURE
+### SEC-010: FLAG_SECURE
 
 **Manual Test (Android device or emulator):**
 
@@ -311,36 +311,36 @@ class MockEbayApiValidationTest {
 
 ---
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
 ```bash
-***REMOVED*** 1. Verify OCR text limit added
+# 1. Verify OCR text limit added
 grep -n "MAX_TEXT_LENGTH" app/src/main/java/com/scanium/app/ml/DocumentTextRecognitionClient.kt
-***REMOVED*** Expected: Line 24 with value 10_000
+# Expected: Line 24 with value 10_000
 
-***REMOVED*** 2. Verify listing validation constants
+# 2. Verify listing validation constants
 grep -n "MAX_TITLE_LENGTH\|MAX_DESCRIPTION_LENGTH\|MIN_PRICE\|MAX_PRICE" app/src/main/java/com/scanium/app/selling/data/MockEbayApi.kt
-***REMOVED*** Expected: Lines 28-31 with constants
+# Expected: Lines 28-31 with constants
 
-***REMOVED*** 3. Verify FLAG_SECURE imports and usage
+# 3. Verify FLAG_SECURE imports and usage
 grep -n "FLAG_SECURE\|DisposableEffect" app/src/main/java/com/scanium/app/items/ItemsListScreen.kt
-***REMOVED*** Expected: Imports on lines 3-6, DisposableEffect on lines 60-70
+# Expected: Imports on lines 3-6, DisposableEffect on lines 60-70
 
 grep -n "FLAG_SECURE\|DisposableEffect" app/src/main/java/com/scanium/app/selling/ui/SellOnEbayScreen.kt
-***REMOVED*** Expected: Imports on lines 3-4, 17, DisposableEffect on lines 50-60
+# Expected: Imports on lines 3-4, 17, DisposableEffect on lines 50-60
 
-***REMOVED*** 4. Verify remediation status documented
+# 4. Verify remediation status documented
 grep -A 5 "REMEDIATION STATUS" docs/security/SECURITY_RISK_ASSESSMENT.md
-***REMOVED*** Expected: Section 11 with remediation date and summary
+# Expected: Section 11 with remediation date and summary
 
-***REMOVED*** 5. Run existing tests (no breaking changes expected)
+# 5. Run existing tests (no breaking changes expected)
 ./gradlew test --tests "*Tracker*"
 ./gradlew test --tests "*Aggregat*"
 ```
 
 ---
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 
 - [x] SEC-006: OCR text length limited to 10KB with truncation
 - [x] SEC-007: Listing validation rejects invalid titles, descriptions, prices
@@ -358,7 +358,7 @@ grep -A 5 "REMEDIATION STATUS" docs/security/SECURITY_RISK_ASSESSMENT.md
 
 ---
 
-***REMOVED******REMOVED*** Remaining Security Work
+## Remaining Security Work
 
 **Before Release (P0):**
 
@@ -379,17 +379,17 @@ See Section 11 of SECURITY_RISK_ASSESSMENT.md for full details.
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - **OWASP Mobile Top 10 (2024):** https://owasp.org/www-project-mobile-top-10/
 - **OWASP MASVS:** https://mas.owasp.org/MASVS/
 - **Android Security Best Practices:** https://developer.android.com/privacy-and-security
 - **FLAG_SECURE Documentation:
-  ** https://developer.android.com/reference/android/view/WindowManager.LayoutParams***REMOVED***FLAG_SECURE
+  ** https://developer.android.com/reference/android/view/WindowManager.LayoutParams#FLAG_SECURE
 
 ---
 
-***REMOVED******REMOVED*** Checklist
+## Checklist
 
 - [x] Code implements security fixes without breaking existing functionality
 - [x] All changes follow Android security best practices

@@ -1,6 +1,6 @@
-***REMOVED*** Domain Pack Architecture (Track A)
+# Domain Pack Architecture (Track A)
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Domain Pack system provides a **config-driven, fine-grained category taxonomy** for Scanium that
 extends beyond the coarse-grained `ItemCategory` enum. This architecture enables multi-tenancy,
@@ -11,9 +11,9 @@ domain-specific classification, and future integration with CLIP and cloud class
 
 ---
 
-***REMOVED******REMOVED*** Core Concepts
+## Core Concepts
 
-***REMOVED******REMOVED******REMOVED*** What is a Domain Pack?
+### What is a Domain Pack?
 
 A **Domain Pack** is a JSON configuration file that defines:
 
@@ -26,7 +26,7 @@ A **Domain Pack** is a JSON configuration file that defines:
 Example Domain Pack: `home_resale_domain_pack.json` (for second-hand furniture, electronics,
 clothing)
 
-***REMOVED******REMOVED******REMOVED*** Why Domain Packs?
+### Why Domain Packs?
 
 | Problem                            | Solution                                                        |
 |------------------------------------|-----------------------------------------------------------------|
@@ -38,7 +38,7 @@ clothing)
 
 ---
 
-***REMOVED******REMOVED*** Architecture Diagram
+## Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -114,47 +114,47 @@ clothing)
 
 ---
 
-***REMOVED******REMOVED*** Package Structure
+## Package Structure
 
 ```
 app/src/main/java/com/scanium/app/domain/
 ├── config/
-│   ├── AttributeType.kt              ***REMOVED*** Enum: STRING, NUMBER, ENUM, BOOLEAN
-│   ├── ExtractionMethod.kt           ***REMOVED*** Enum: OCR, CLIP, CLOUD, BARCODE, HEURISTIC, NONE
-│   ├── DomainAttribute.kt            ***REMOVED*** Attribute definition data class
-│   ├── DomainCategory.kt             ***REMOVED*** Category definition data class
-│   └── DomainPack.kt                 ***REMOVED*** Top-level pack data class with helper methods
+│   ├── AttributeType.kt              # Enum: STRING, NUMBER, ENUM, BOOLEAN
+│   ├── ExtractionMethod.kt           # Enum: OCR, CLIP, CLOUD, BARCODE, HEURISTIC, NONE
+│   ├── DomainAttribute.kt            # Attribute definition data class
+│   ├── DomainCategory.kt             # Category definition data class
+│   └── DomainPack.kt                 # Top-level pack data class with helper methods
 ├── repository/
-│   ├── DomainPackRepository.kt       ***REMOVED*** Interface for loading packs
-│   └── LocalDomainPackRepository.kt  ***REMOVED*** Loads from res/raw, caches in memory
+│   ├── DomainPackRepository.kt       # Interface for loading packs
+│   └── LocalDomainPackRepository.kt  # Loads from res/raw, caches in memory
 ├── category/
-│   ├── CategorySelectionInput.kt     ***REMOVED*** Input data for category selection
-│   ├── CategoryEngine.kt             ***REMOVED*** Interface for category selection
-│   ├── BasicCategoryEngine.kt        ***REMOVED*** Simple ML Kit label matching impl
-│   └── CategoryMapper.kt             ***REMOVED*** Maps DomainCategory ↔ ItemCategory
-└── DomainPackProvider.kt             ***REMOVED*** Singleton for app-wide access
+│   ├── CategorySelectionInput.kt     # Input data for category selection
+│   ├── CategoryEngine.kt             # Interface for category selection
+│   ├── BasicCategoryEngine.kt        # Simple ML Kit label matching impl
+│   └── CategoryMapper.kt             # Maps DomainCategory ↔ ItemCategory
+└── DomainPackProvider.kt             # Singleton for app-wide access
 
 app/src/main/res/raw/
-└── home_resale_domain_pack.json      ***REMOVED*** Default Domain Pack configuration
+└── home_resale_domain_pack.json      # Default Domain Pack configuration
 
 app/src/test/java/com/scanium/app/domain/
 ├── config/
-│   └── DomainPackTest.kt             ***REMOVED*** 10 tests for DomainPack data class
+│   └── DomainPackTest.kt             # 10 tests for DomainPack data class
 ├── repository/
-│   └── LocalDomainPackRepositoryTest.kt  ***REMOVED*** 14 tests for repository
+│   └── LocalDomainPackRepositoryTest.kt  # 14 tests for repository
 ├── category/
-│   ├── CategoryMapperTest.kt         ***REMOVED*** 11 tests for mapper
-│   └── BasicCategoryEngineTest.kt    ***REMOVED*** 16 tests for engine
-└── DomainPackProviderTest.kt         ***REMOVED*** 10 tests for provider
+│   ├── CategoryMapperTest.kt         # 11 tests for mapper
+│   └── BasicCategoryEngineTest.kt    # 16 tests for engine
+└── DomainPackProviderTest.kt         # 10 tests for provider
 
 **Total: 61 tests added** (all passing ✅)
 ```
 
 ---
 
-***REMOVED******REMOVED*** Data Models
+## Data Models
 
-***REMOVED******REMOVED******REMOVED*** DomainPack
+### DomainPack
 
 Top-level container for the entire domain configuration.
 
@@ -175,7 +175,7 @@ data class DomainPack(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** DomainCategory
+### DomainCategory
 
 Defines a single category in the taxonomy.
 
@@ -199,7 +199,7 @@ data class DomainPack(
 // Mapper always emits the *matched token* as the display label so UIs can show "Mug" instead of "Drinkware".
 ```
 
-***REMOVED******REMOVED******REMOVED*** DomainAttribute
+### DomainAttribute
 
 Defines an extractable attribute (e.g., brand, color, condition).
 
@@ -215,16 +215,16 @@ data class DomainAttribute(
 
 ---
 
-***REMOVED******REMOVED*** Usage Examples
+## Usage Examples
 
-***REMOVED******REMOVED******REMOVED*** Initialize Domain Pack System
+### Initialize Domain Pack System
 
 ```kotlin
 // In MainActivity.onCreate()
 DomainPackProvider.initialize(context)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Load Domain Pack
+### Load Domain Pack
 
 ```kotlin
 // Access via provider
@@ -236,7 +236,7 @@ println("Categories: ${pack.categories.size}")
 println("Attributes: ${pack.attributes.size}")
 ```
 
-***REMOVED******REMOVED******REMOVED*** Select Category
+### Select Category
 
 ```kotlin
 // Create input with ML Kit label
@@ -258,7 +258,7 @@ if (category != null) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Get Multiple Candidates
+### Get Multiple Candidates
 
 ```kotlin
 val input = CategorySelectionInput(mlKitLabel = "electronics")
@@ -273,7 +273,7 @@ candidates.forEach { (category, score) ->
 // Television: 70.0%
 ```
 
-***REMOVED******REMOVED******REMOVED*** Store Domain Category in ScannedItem
+### Store Domain Category in ScannedItem
 
 ```kotlin
 val domainCategory = engine.selectCategory(input)
@@ -289,11 +289,11 @@ val scannedItem = ScannedItem(
 
 ---
 
-***REMOVED******REMOVED*** Home Resale Domain Pack
+## Home Resale Domain Pack
 
 The default pack (`home_resale_domain_pack.json`) contains **23 categories** and **10 attributes**.
 
-***REMOVED******REMOVED******REMOVED*** Categories by Group
+### Categories by Group
 
 | Group           | Categories                                  | ItemCategory Mapping    |
 |-----------------|---------------------------------------------|-------------------------|
@@ -305,7 +305,7 @@ The default pack (`home_resale_domain_pack.json`) contains **23 categories** and
 | **Toys**        | Action Figure, Board Game                   | UNKNOWN                 |
 | **Other**       | Indoor Plant, Book, Bicycle                 | PLANT, UNKNOWN, UNKNOWN |
 
-***REMOVED******REMOVED******REMOVED*** Attributes
+### Attributes
 
 | Attribute    | Type   | Extraction Method | Applies To                         |
 |--------------|--------|-------------------|------------------------------------|
@@ -322,9 +322,9 @@ The default pack (`home_resale_domain_pack.json`) contains **23 categories** and
 
 ---
 
-***REMOVED******REMOVED*** Integration Points
+## Integration Points
 
-***REMOVED******REMOVED******REMOVED*** Non-Breaking Integration
+### Non-Breaking Integration
 
 The Domain Pack system is **purely additive** and does not break existing functionality:
 
@@ -343,7 +343,7 @@ The Domain Pack system is **purely additive** and does not break existing functi
 4. **ObjectDetectorClient**: No changes in Track A
     - Future Tracks (B/C) will integrate CLIP/cloud here
 
-***REMOVED******REMOVED******REMOVED*** Initialization
+### Initialization
 
 ```kotlin
 // MainActivity.onCreate()
@@ -354,9 +354,9 @@ This loads the pack asynchronously on first access (lazy initialization).
 
 ---
 
-***REMOVED******REMOVED*** Testing Strategy
+## Testing Strategy
 
-***REMOVED******REMOVED******REMOVED*** Test Coverage
+### Test Coverage
 
 **61 tests added** across 5 test files:
 
@@ -391,24 +391,24 @@ This loads the pack asynchronously on first access (lazy initialization).
     - Error handling before init
     - Reset functionality
 
-***REMOVED******REMOVED******REMOVED*** Running Tests
+### Running Tests
 
 ```bash
-***REMOVED*** Run all domain tests
+# Run all domain tests
 ./gradlew test --tests "com.scanium.app.domain.*"
 
-***REMOVED*** Run specific test file
+# Run specific test file
 ./gradlew test --tests "com.scanium.app.domain.category.BasicCategoryEngineTest"
 
-***REMOVED*** Run with console output
+# Run with console output
 ./gradlew test --tests "com.scanium.app.domain.*" --console=plain
 ```
 
 ---
 
-***REMOVED******REMOVED*** Future Enhancements (Track B, C, D)
+## Future Enhancements (Track B, C, D)
 
-***REMOVED******REMOVED******REMOVED*** Track B: On-Device CLIP Integration
+### Track B: On-Device CLIP Integration
 
 **Goal:** Use on-device CLIP model for fine-grained classification
 
@@ -435,7 +435,7 @@ class ClipCategoryEngine(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Track C: Cloud Classifier Integration
+### Track C: Cloud Classifier Integration
 
 **Goal:** Use cloud API for highest accuracy (optional, premium feature)
 
@@ -466,7 +466,7 @@ class HybridCategoryEngine(
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Track D: Attribute Extraction Engine
+### Track D: Attribute Extraction Engine
 
 **Goal:** Extract attributes based on Domain Pack configuration
 
@@ -502,9 +502,9 @@ class AttributeEngine(
 
 ---
 
-***REMOVED******REMOVED*** Design Decisions
+## Design Decisions
 
-***REMOVED******REMOVED******REMOVED*** Why JSON Configuration?
+### Why JSON Configuration?
 
 | Pros                                   | Cons                             |
 |----------------------------------------|----------------------------------|
@@ -515,14 +515,14 @@ class AttributeEngine(
 
 **Decision:** JSON wins for flexibility. Validation handled by comprehensive tests.
 
-***REMOVED******REMOVED******REMOVED*** Why Kotlinx Serialization?
+### Why Kotlinx Serialization?
 
 - **Modern**: Kotlin-first, multiplatform-ready
 - **Efficient**: Compile-time code generation
 - **Flexible**: Lenient mode handles unknown fields
 - **Alternative considered**: Gson (more mature but Java-centric)
 
-***REMOVED******REMOVED******REMOVED*** Why Singleton Provider?
+### Why Singleton Provider?
 
 - **No DI framework**: Project doesn't use Hilt/Koin yet
 - **Simple access**: `DomainPackProvider.categoryEngine`
@@ -543,7 +543,7 @@ object DomainPackModule {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Why Priority Field?
+### Why Priority Field?
 
 Handles ambiguous cases where multiple categories match:
 
@@ -557,7 +557,7 @@ Matches: Laptop (priority 15), Phone (priority 12), TV (priority 12)
 Selected: Laptop (highest priority)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Why Hierarchical Categories?
+### Why Hierarchical Categories?
 
 `parentId` enables grouping and future hierarchical matching:
 
@@ -576,21 +576,21 @@ Future: If "furniture_sofa" doesn't match, try parent "furniture".
 
 ---
 
-***REMOVED******REMOVED*** Performance Considerations
+## Performance Considerations
 
-***REMOVED******REMOVED******REMOVED*** Memory
+### Memory
 
 - **Domain Pack**: ~50KB JSON → ~200KB in memory (parsed objects)
 - **Caching**: Loaded once, cached for app lifetime
 - **Cleanup**: Not needed (small, persistent data)
 
-***REMOVED******REMOVED******REMOVED*** Loading Time
+### Loading Time
 
 - **First access**: ~50ms (JSON parse + validation)
 - **Subsequent access**: <1ms (cached)
 - **Initialization**: Async on first use (doesn't block startup)
 
-***REMOVED******REMOVED******REMOVED*** Matching Performance
+### Matching Performance
 
 - **BasicCategoryEngine**: O(n) where n = number of categories (~20-30)
 - **Single match**: <1ms
@@ -603,24 +603,24 @@ Future optimizations:
 
 ---
 
-***REMOVED******REMOVED*** Migration Path for Existing Code
+## Migration Path for Existing Code
 
 The Domain Pack system is designed for gradual adoption:
 
-***REMOVED******REMOVED******REMOVED*** Phase 1: Foundation (Track A - COMPLETE ✅)
+### Phase 1: Foundation (Track A - COMPLETE ✅)
 
 - Domain Pack loaded and cached
 - CategoryEngine available but not required
 - Existing code continues using ItemCategory
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Optional Usage (Track B/C)
+### Phase 2: Optional Usage (Track B/C)
 
 - New detections populate `domainCategoryId`
 - UI can show fine-grained categories: "Laptop" instead of "Electronics"
 - Pricing can optionally use fine-grained categories
 - Existing data (without domainCategoryId) still works
 
-***REMOVED******REMOVED******REMOVED*** Phase 3: Full Integration (Track D+)
+### Phase 3: Full Integration (Track D+)
 
 - Attribute extraction based on Domain Pack
 - Rich item details (brand, color, condition, etc.)
@@ -628,9 +628,9 @@ The Domain Pack system is designed for gradual adoption:
 
 ---
 
-***REMOVED******REMOVED*** Validation & Error Handling
+## Validation & Error Handling
 
-***REMOVED******REMOVED******REMOVED*** Validation Checks
+### Validation Checks
 
 1. **Load-time validation** (LocalDomainPackRepository):
     - At least one enabled category
@@ -643,7 +643,7 @@ The Domain Pack system is designed for gradual adoption:
     - Invalid category mapping → return UNKNOWN ItemCategory
     - No matching category → return null (caller handles)
 
-***REMOVED******REMOVED******REMOVED*** Error Scenarios
+### Error Scenarios
 
 | Error                         | Behavior                                       |
 |-------------------------------|------------------------------------------------|
@@ -655,7 +655,7 @@ The Domain Pack system is designed for gradual adoption:
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 **Track A deliverables:**
 

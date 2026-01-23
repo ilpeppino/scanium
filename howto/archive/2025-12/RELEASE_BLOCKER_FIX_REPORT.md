@@ -1,4 +1,4 @@
-***REMOVED*** Release Blocker Fix Report: Camera Image Corruption on Background/Resume
+# Release Blocker Fix Report: Camera Image Corruption on Background/Resume
 
 **Status**: FIXED AND TESTED ✅
 **Severity**: RELEASE-BLOCKING
@@ -7,7 +7,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 A critical bug in the camera image capture pipeline was causing image corruption and overwrites when
 the app entered background and resumed. The root cause was **filename collision due to
@@ -20,9 +20,9 @@ succession scenarios.
 
 ---
 
-***REMOVED******REMOVED*** The Bug
+## The Bug
 
-***REMOVED******REMOVED******REMOVED*** Symptoms
+### Symptoms
 
 After app background/resume:
 
@@ -30,7 +30,7 @@ After app background/resume:
 2. New captures show wrong thumbnails/labels (e.g., "Adidas" label on different item)
 3. Inconsistent item-to-image associations
 
-***REMOVED******REMOVED******REMOVED*** Root Cause
+### Root Cause
 
 **Location**: CameraXManager.kt:1393-1400 (`captureHighResImage()`)
 
@@ -57,7 +57,7 @@ val photoFile = File(context.cacheDir, "SCANIUM_$timestamp.jpg")
     - UI shows new filenames but references old cached image data
     - Result: Mismatched thumbnails and labels
 
-***REMOVED******REMOVED******REMOVED*** Why It Happened
+### Why It Happened
 
 - Timestamp format truncates to 1-second precision
 - No uniqueness guarantee for high-speed capture sequences
@@ -66,9 +66,9 @@ val photoFile = File(context.cacheDir, "SCANIUM_$timestamp.jpg")
 
 ---
 
-***REMOVED******REMOVED*** The Fix
+## The Fix
 
-***REMOVED******REMOVED******REMOVED*** Change 1: Collision-Proof Filename Generation ✅
+### Change 1: Collision-Proof Filename Generation ✅
 
 **File**: androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt
 **Lines**: 1393-1402
@@ -98,7 +98,7 @@ val photoFile = File(context.cacheDir, "SCANIUM_${timestamp}_${uniqueSuffix}.jpg
 - Combined: Zero collision probability for any realistic capture rate
 - Format is still sortable by timestamp (yyyyMMdd_HHmmss prefix)
 
-***REMOVED******REMOVED******REMOVED*** Change 2: Debug Instrumentation (Optional) ✅
+### Change 2: Debug Instrumentation (Optional) ✅
 
 **File**: androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt
 
@@ -113,9 +113,9 @@ val photoFile = File(context.cacheDir, "SCANIUM_${timestamp}_${uniqueSuffix}.jpg
 
 ---
 
-***REMOVED******REMOVED*** Tests
+## Tests
 
-***REMOVED******REMOVED******REMOVED*** Regression Guard Test Suite ✅
+### Regression Guard Test Suite ✅
 
 **File**: androidApp/src/test/java/com/scanium/app/camera/CameraXManagerFilenameTest.kt
 
@@ -146,9 +146,9 @@ val photoFile = File(context.cacheDir, "SCANIUM_${timestamp}_${uniqueSuffix}.jpg
 
 ---
 
-***REMOVED******REMOVED*** Code Changes Summary
+## Code Changes Summary
 
-***REMOVED******REMOVED******REMOVED*** Commits
+### Commits
 
 1. **6f11336**: chore(debug): add temporary instrumentation + fix file collision
     - Added TEMP_CAM_BUG_DEBUG flag
@@ -163,7 +163,7 @@ val photoFile = File(context.cacheDir, "SCANIUM_${timestamp}_${uniqueSuffix}.jpg
     - Set TEMP_CAM_BUG_DEBUG = false for production safety
     - Tests: PASS, Build: PASS
 
-***REMOVED******REMOVED******REMOVED*** Line Changes
+### Line Changes
 
 - **CameraXManager.kt**: ~10 lines changed (filename generation + debug logs)
 - **New file**: CameraXManagerFilenameTest.kt (~152 lines, pure tests)
@@ -171,9 +171,9 @@ val photoFile = File(context.cacheDir, "SCANIUM_${timestamp}_${uniqueSuffix}.jpg
 
 ---
 
-***REMOVED******REMOVED*** How to Verify Manually
+## How to Verify Manually
 
-***REMOVED******REMOVED******REMOVED*** Test Scenario: Rapid Capture Sequence
+### Test Scenario: Rapid Capture Sequence
 
 **Procedure**:
 
@@ -203,7 +203,7 @@ val photoFile = File(context.cacheDir, "SCANIUM_${timestamp}_${uniqueSuffix}.jpg
 - ❌ Label/image mismatches
 - ❌ Multiple items have identical file sizes (collision)
 
-***REMOVED******REMOVED******REMOVED*** Enable Debug Logging (Optional)
+### Enable Debug Logging (Optional)
 
 If you need to see debug logs during testing:
 
@@ -219,9 +219,9 @@ If you need to see debug logs during testing:
 
 ---
 
-***REMOVED******REMOVED*** Risks and Mitigations
+## Risks and Mitigations
 
-***REMOVED******REMOVED******REMOVED*** Risk 1: Longer Filenames
+### Risk 1: Longer Filenames
 
 **Risk**: Filenames are now longer (SCANIUM_yyyyMMdd_HHmmss_epochMs_uuid.jpg vs
 SCANIUM_yyyyMMdd_HHmmss.jpg)
@@ -231,7 +231,7 @@ SCANIUM_yyyyMMdd_HHmmss.jpg)
 - Our filenames ~50 chars
 - No risk
 
-***REMOVED******REMOVED******REMOVED*** Risk 2: Debug Logs
+### Risk 2: Debug Logs
 
 **Risk**: Temporary debug logging code left in codebase
 **Mitigation**:
@@ -241,7 +241,7 @@ SCANIUM_yyyyMMdd_HHmmss.jpg)
 - Code is guarded, won't execute in release
 - Can be easily removed in future cleanup
 
-***REMOVED******REMOVED******REMOVED*** Risk 3: UUID Randomness
+### Risk 3: UUID Randomness
 
 **Risk**: Two UUIDs could theoretically be identical
 **Mitigation**:
@@ -251,7 +251,7 @@ SCANIUM_yyyyMMdd_HHmmss.jpg)
 - Tests verify uniqueness for 1000+ captures
 - Industry standard for exactly this use case
 
-***REMOVED******REMOVED******REMOVED*** Risk 4: File System Limits
+### Risk 4: File System Limits
 
 **Risk**: Rapid captures could hit filesystem limits
 **Mitigation**:
@@ -262,19 +262,19 @@ SCANIUM_yyyyMMdd_HHmmss.jpg)
 
 ---
 
-***REMOVED******REMOVED*** How to Disable This Fix (Revert)
+## How to Disable This Fix (Revert)
 
 If needed (unlikely), revert the fix with:
 
 ```bash
-git revert 6f11336  ***REMOVED*** Reverts collision-proof filename fix
-git revert f972a99  ***REMOVED*** Reverts test suite
-git revert 9fa728a  ***REMOVED*** Reverts debug flag disable
+git revert 6f11336  # Reverts collision-proof filename fix
+git revert f972a99  # Reverts test suite
+git revert 9fa728a  # Reverts debug flag disable
 ```
 
 ---
 
-***REMOVED******REMOVED*** Future Improvements (Optional)
+## Future Improvements (Optional)
 
 1. **Remove temporary debug code** (Phase 6 cleanup)
     - Delete TEMP_CAM_BUG_DEBUG-guarded logs once fully validated
@@ -294,7 +294,7 @@ git revert 9fa728a  ***REMOVED*** Reverts debug flag disable
 
 ---
 
-***REMOVED******REMOVED*** Sign-Off
+## Sign-Off
 
 **Fix Verified By**:
 ✅ Unit tests: All pass (691 tasks)
@@ -309,7 +309,7 @@ git revert 9fa728a  ***REMOVED*** Reverts debug flag disable
 
 ---
 
-***REMOVED******REMOVED*** Contact
+## Contact
 
 For questions about this fix:
 

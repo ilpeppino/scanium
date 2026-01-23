@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/DECISIONS.md.
 
-***REMOVED*** ADR-001: Cloud Classification via Google Vision (Backend Proxy)
+# ADR-001: Cloud Classification via Google Vision (Backend Proxy)
 
 **Status:** Accepted  
 **Date:** 2025-01-12  
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Context
+## Context
 
 ML Kit only returns 5 coarse labels, which is insufficient for resale workflows (needs 20+
 fine-grained categories and attributes). We also must keep the camera pipeline responsive and avoid
@@ -18,7 +18,7 @@ on-device detection/tracking.
 
 ---
 
-***REMOVED******REMOVED*** Decision
+## Decision
 
 Use Google Vision (Image/Label Detection) through our backend proxy as the **primary** classifier.
 
@@ -33,7 +33,7 @@ Use Google Vision (Image/Label Detection) through our backend proxy as the **pri
 
 ---
 
-***REMOVED******REMOVED*** Alternatives Considered
+## Alternatives Considered
 
 - **Direct Vision API from app** — Rejected (key leakage, no throttling).
 - **On-device CLIP** — Deferred (size/perf risk; violates “no heavy ML runtime” for this phase).
@@ -41,7 +41,7 @@ Use Google Vision (Image/Label Detection) through our backend proxy as the **pri
 
 ---
 
-***REMOVED******REMOVED*** Consequences
+## Consequences
 
 **Positive**
 

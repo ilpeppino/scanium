@@ -1,20 +1,20 @@
-***REMOVED*** ItemsDao Uses Risky OnConflictStrategy.REPLACE
+# ItemsDao Uses Risky OnConflictStrategy.REPLACE
 
 **Labels:** `code-quality`, `priority:p3`, `area:data`
 **Type:** Code Quality Issue
 **Severity:** Low (only if database activated)
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 `ItemsDao.kt` uses `OnConflictStrategy.REPLACE` for inserts, which will **overwrite entire rows** on
 ID collision. This could cause data loss if the schema grows and old code tries to insert items.
 
-***REMOVED******REMOVED*** Location
+## Location
 
 File: `/app/src/main/java/com/scanium/app/data/ItemsDao.kt`
 Lines: 60, 67
 
-***REMOVED******REMOVED*** Current Code
+## Current Code
 
 ```kotlin
 @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -24,7 +24,7 @@ suspend fun insert(item: ScannedItemEntity)
 suspend fun insertAll(items: List<ScannedItemEntity>)
 ```
 
-***REMOVED******REMOVED*** Scenario Where This Causes Problems
+## Scenario Where This Causes Problems
 
 1. **Version 1**: Schema has fields A, B, C
 2. **User adds item**: DB stores A, B, C with values
@@ -32,9 +32,9 @@ suspend fun insertAll(items: List<ScannedItemEntity>)
 4. **Old code path**: Tries to insert same ID with only A, B, C
 5. **Result**: REPLACE overwrites row, field D becomes NULL (data loss!)
 
-***REMOVED******REMOVED*** Expected Behavior (Better Approaches)
+## Expected Behavior (Better Approaches)
 
-***REMOVED******REMOVED******REMOVED*** Option 1: IGNORE + Explicit Update
+### Option 1: IGNORE + Explicit Update
 
 ```kotlin
 @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -50,7 +50,7 @@ fun upsert(item: ScannedItemEntity) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Option 2: Custom Upsert
+### Option 2: Custom Upsert
 
 ```kotlin
 @Query("""
@@ -62,7 +62,7 @@ suspend fun upsert(...)
 
 Preserves existing fields if new data doesn't provide them.
 
-***REMOVED******REMOVED******REMOVED*** Option 3: Document Intent
+### Option 3: Document Intent
 
 If REPLACE is truly desired, document why:
 
@@ -78,22 +78,22 @@ If REPLACE is truly desired, document why:
 suspend fun insert(item: ScannedItemEntity)
 ```
 
-***REMOVED******REMOVED*** Current Impact
+## Current Impact
 
-**Low** - Database layer is currently unused (see Issue ***REMOVED***002).
+**Low** - Database layer is currently unused (see Issue #002).
 
 **Future Risk** - If database is activated and schema evolves, this could cause subtle bugs.
 
-***REMOVED******REMOVED*** Acceptance Criteria (if database is activated)
+## Acceptance Criteria (if database is activated)
 
 - [ ] Choose strategy: IGNORE+UPDATE, custom upsert, or documented REPLACE
 - [ ] Implement chosen approach
 - [ ] Add tests for conflict scenarios
 - [ ] Document behavior in code comments
 
-***REMOVED******REMOVED*** Suggested Fix
+## Suggested Fix
 
-***REMOVED******REMOVED******REMOVED*** Recommended: Transaction-based Upsert
+### Recommended: Transaction-based Upsert
 
 ```kotlin
 @Dao
@@ -115,7 +115,7 @@ interface ItemsDao {
 }
 ```
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
-- Issue ***REMOVED***002 (Remove or activate Room database) - BLOCKING
-- Issue ***REMOVED***008 (Schema drift in ScannedItemEntity)
+- Issue #002 (Remove or activate Room database) - BLOCKING
+- Issue #008 (Schema drift in ScannedItemEntity)

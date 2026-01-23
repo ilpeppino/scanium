@@ -1,15 +1,15 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-***REMOVED*** Prove mobile telemetry pipeline is working end-to-end
-***REMOVED*** Usage: ./prove-mobile-telemetry.sh [backend_url] [loki_url] [mimir_url]
-***REMOVED***
-***REMOVED*** This script:
-***REMOVED*** 1. Generates synthetic mobile events (unless SKIP_GENERATION=1)
-***REMOVED*** 2. Waits for logs to propagate through Alloy
-***REMOVED*** 3. Asserts Loki has mobile telemetry logs
-***REMOVED*** 4. Asserts Mimir has mobile telemetry metrics
-***REMOVED*** 5. Outputs PASS/FAIL with diagnostics
+# Prove mobile telemetry pipeline is working end-to-end
+# Usage: ./prove-mobile-telemetry.sh [backend_url] [loki_url] [mimir_url]
+#
+# This script:
+# 1. Generates synthetic mobile events (unless SKIP_GENERATION=1)
+# 2. Waits for logs to propagate through Alloy
+# 3. Asserts Loki has mobile telemetry logs
+# 4. Asserts Mimir has mobile telemetry metrics
+# 5. Outputs PASS/FAIL with diagnostics
 
 BACKEND_URL="${1:-http://localhost:8080}"
 LOKI_URL="${2:-http://localhost:3100}"
@@ -29,7 +29,7 @@ echo "Mimir:    $MIMIR_URL"
 echo "═══════════════════════════════════════════════════════════"
 echo
 
-***REMOVED*** Step 1: Generate events (unless skipped)
+# Step 1: Generate events (unless skipped)
 if [ "$SKIP_GENERATION" = "1" ]; then
   echo "⏭️  Skipping event generation (SKIP_GENERATION=1)"
   echo
@@ -49,7 +49,7 @@ else
   echo
 fi
 
-***REMOVED*** Step 2: Assert Loki has mobile telemetry logs
+# Step 2: Assert Loki has mobile telemetry logs
 echo "🔍 Step 2/4: Checking Loki for mobile telemetry logs..."
 LOKI_QUERY='{source="scanium-mobile"}'
 LOKI_START=$(date -u -d '10 minutes ago' +%s)000000000 2>/dev/null || LOKI_START=$(date -u -v-10M +%s)000000000
@@ -82,7 +82,7 @@ if [ -n "${LOKI_RESPONSE:-}" ]; then
 fi
 echo
 
-***REMOVED*** Step 3: Assert Mimir has mobile telemetry metrics
+# Step 3: Assert Mimir has mobile telemetry metrics
 echo "📊 Step 3/4: Checking Mimir for mobile telemetry metrics..."
 MIMIR_QUERY="scanium_mobile_events_total"
 
@@ -108,7 +108,7 @@ if [ -n "${MIMIR_RESPONSE:-}" ]; then
 fi
 echo
 
-***REMOVED*** Step 4: Optional - Check Grafana dashboard provisioning
+# Step 4: Optional - Check Grafana dashboard provisioning
 echo "📈 Step 4/4: Checking Grafana dashboard (optional)..."
 GRAFANA_URL="${GRAFANA_URL:-http://localhost:3000}"
 GRAFANA_DASHBOARD_UID="scanium-mobile-app-health"
@@ -131,7 +131,7 @@ else
 fi
 echo
 
-***REMOVED*** Summary
+# Summary
 echo "═══════════════════════════════════════════════════════════"
 echo "Results:"
 echo "  ✅ Passed: $PASS"

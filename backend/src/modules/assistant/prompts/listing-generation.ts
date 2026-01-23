@@ -208,7 +208,7 @@ export function buildListingUserPrompt(
   parts.push(`${content.userPrompt.generateListing}\n`);
 
   for (const item of items) {
-    parts.push(`***REMOVED******REMOVED*** ${content.userPrompt.itemHeader}: ${item.itemId}`);
+    parts.push(`## ${content.userPrompt.itemHeader}: ${item.itemId}`);
 
     // Basic info with localized labels
     if (item.title) {

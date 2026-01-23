@@ -1,34 +1,34 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium Docker Status
-***REMOVED*** =============================================================================
-***REMOVED*** Shows status of Docker containers with health and restart information.
-***REMOVED*** Prints logs for unhealthy/restarting/exited containers.
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   ./scripts/ops/docker_status.sh --help
-***REMOVED***   ./scripts/ops/docker_status.sh --filter scanium
-***REMOVED***   ./scripts/ops/docker_status.sh --include-all --json status.json
-***REMOVED***
-***REMOVED*** =============================================================================
+#!/usr/bin/env bash
+# =============================================================================
+# Scanium Docker Status
+# =============================================================================
+# Shows status of Docker containers with health and restart information.
+# Prints logs for unhealthy/restarting/exited containers.
+#
+# Usage:
+#   ./scripts/ops/docker_status.sh --help
+#   ./scripts/ops/docker_status.sh --filter scanium
+#   ./scripts/ops/docker_status.sh --include-all --json status.json
+#
+# =============================================================================
 
-***REMOVED*** Source common library
+# Source common library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-***REMOVED*** shellcheck source=lib/common.sh
+# shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Defaults
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Defaults
+# -----------------------------------------------------------------------------
 FILTER="scanium"
 LOG_LINES=120
 INCLUDE_ALL=false
 JSON_OUT=""
 HAS_ISSUES=false
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Help
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Help
+# -----------------------------------------------------------------------------
 show_help() {
   cat <<EOF
 docker_status.sh - Scanium Docker container status
@@ -43,13 +43,13 @@ Options:
   --help            Show this help message
 
 Examples:
-  ***REMOVED*** Show scanium containers
+  # Show scanium containers
   ./scripts/ops/docker_status.sh
 
-  ***REMOVED*** Show all containers
+  # Show all containers
   ./scripts/ops/docker_status.sh --include-all
 
-  ***REMOVED*** Export status as JSON
+  # Export status as JSON
   ./scripts/ops/docker_status.sh --json tmp/status.json
 
 Output columns:
@@ -67,10 +67,10 @@ Exit codes:
 EOF
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Parse arguments
-***REMOVED*** -----------------------------------------------------------------------------
-while [[ $***REMOVED*** -gt 0 ]]; do
+# -----------------------------------------------------------------------------
+# Parse arguments
+# -----------------------------------------------------------------------------
+while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
       show_help
@@ -81,7 +81,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --filter=*)
-      FILTER="${1***REMOVED****=}"
+      FILTER="${1#*=}"
       shift
       ;;
     --logs)
@@ -89,7 +89,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --logs=*)
-      LOG_LINES="${1***REMOVED****=}"
+      LOG_LINES="${1#*=}"
       shift
       ;;
     --include-all)
@@ -102,7 +102,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --json=*)
-      JSON_OUT="${1***REMOVED****=}"
+      JSON_OUT="${1#*=}"
       shift
       ;;
     *)
@@ -111,12 +111,12 @@ while [[ $***REMOVED*** -gt 0 ]]; do
   esac
 done
 
-***REMOVED*** Validate required commands
+# Validate required commands
 require_cmd docker
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Get container data
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Get container data
+# -----------------------------------------------------------------------------
 get_containers() {
   local format='{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
 
@@ -143,7 +143,7 @@ is_problematic() {
   local status="$1"
   local health="$2"
 
-  ***REMOVED*** Check for problematic states
+  # Check for problematic states
   case "$status" in
     *Exited*|*exited*) return 0 ;;
     *Restarting*|*restarting*) return 0 ;;
@@ -157,9 +157,9 @@ is_problematic() {
   return 1
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Print table
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Print table
+# -----------------------------------------------------------------------------
 print_table() {
   local containers="$1"
 
@@ -168,13 +168,13 @@ print_table() {
     return
   fi
 
-  ***REMOVED*** Print header
+  # Print header
   printf "%-25s %-35s %-20s %-12s %-8s %s\n" \
     "NAME" "IMAGE" "STATUS" "HEALTH" "RESTARTS" "PORTS"
   printf "%-25s %-35s %-20s %-12s %-8s %s\n" \
     "-------------------------" "-----------------------------------" "--------------------" "------------" "--------" "-----"
 
-  ***REMOVED*** Print rows
+  # Print rows
   while IFS=$'\t' read -r id name image status ports; do
     [[ -z "$id" ]] && continue
 
@@ -183,7 +183,7 @@ print_table() {
     local restarts
     restarts=$(get_container_restarts "$id")
 
-    ***REMOVED*** Truncate long values
+    # Truncate long values
     local name_short="${name:0:25}"
     local image_short="${image:0:35}"
     local status_short="${status:0:20}"
@@ -192,16 +192,16 @@ print_table() {
     printf "%-25s %-35s %-20s %-12s %-8s %s\n" \
       "$name_short" "$image_short" "$status_short" "$health" "$restarts" "$ports_short"
 
-    ***REMOVED*** Track issues
+    # Track issues
     if is_problematic "$status" "$health"; then
       HAS_ISSUES=true
     fi
   done <<< "$containers"
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Show logs for problematic containers
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Show logs for problematic containers
+# -----------------------------------------------------------------------------
 show_problem_logs() {
   local containers="$1"
 
@@ -231,9 +231,9 @@ show_problem_logs() {
   done <<< "$containers"
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Generate JSON output
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Generate JSON output
+# -----------------------------------------------------------------------------
 generate_json() {
   local containers="$1"
   local output_file="$2"
@@ -241,16 +241,16 @@ generate_json() {
   local repo_root
   repo_root="$(ensure_repo_root)"
 
-  ***REMOVED*** Ensure output is in tmp/
+  # Ensure output is in tmp/
   local tmp_dir="$repo_root/tmp"
   mkdir -p "$tmp_dir"
 
-  ***REMOVED*** Handle relative paths
+  # Handle relative paths
   if [[ "$output_file" != /* ]]; then
     output_file="$repo_root/$output_file"
   fi
 
-  ***REMOVED*** Verify file is in repo
+  # Verify file is in repo
   case "$output_file" in
     "$repo_root"/*)
       ;;
@@ -259,7 +259,7 @@ generate_json() {
       ;;
   esac
 
-  ***REMOVED*** Build JSON
+  # Build JSON
   local json='{"timestamp":"'"$(timestamp)"'","containers":['
   local first=true
 
@@ -277,7 +277,7 @@ generate_json() {
     [[ "$first" == "false" ]] && json+=","
     first=false
 
-    ***REMOVED*** Escape special characters for JSON
+    # Escape special characters for JSON
     name="${name//\"/\\\"}"
     image="${image//\"/\\\"}"
     status="${status//\"/\\\"}"
@@ -292,9 +292,9 @@ generate_json() {
   log_info "JSON written to: $output_file"
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Main
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Main
+# -----------------------------------------------------------------------------
 log_info "Docker container status (filter: ${FILTER:-<all>})"
 echo ""
 

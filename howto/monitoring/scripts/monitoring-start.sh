@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env sh
+#!/usr/bin/env sh
 set -eu
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
@@ -13,11 +13,11 @@ fi
 echo "▶ Repo root: $REPO_ROOT"
 echo "▶ Compose file: $COMPOSE_FILE"
 
-***REMOVED*** Make relative bind-mounts resolve correctly
+# Make relative bind-mounts resolve correctly
 COMPOSE_DIR="$(dirname "$COMPOSE_FILE")"
 cd "$COMPOSE_DIR"
 
-***REMOVED*** Export so ${REPO_ROOT} in compose works
+# Export so ${REPO_ROOT} in compose works
 export REPO_ROOT="$REPO_ROOT"
 
 echo
@@ -43,18 +43,18 @@ if [ -z "${NET:-}" ]; then
   exit 0
 fi
 
-***REMOVED*** Retry loop from inside the compose network (DNS works there now)
+# Retry loop from inside the compose network (DNS works there now)
 i=0
 while [ "$i" -lt 12 ]; do
   i=$((i+1))
   echo
   echo "Attempt $i/12..."
 
-  ***REMOVED*** Grafana health (should go 200 quickly)
+  # Grafana health (should go 200 quickly)
   docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -o /dev/null -w "grafana=%{http_code}\n" \
     http://scanium-grafana:3000/api/health || true
 
-  ***REMOVED*** /ready endpoints (may return 503 for a short warm-up)
+  # /ready endpoints (may return 503 for a short warm-up)
   docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -o /dev/null -w "mimir=%{http_code}\n" \
     http://scanium-mimir:9009/ready || true
   docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -o /dev/null -w "loki=%{http_code}\n" \
@@ -62,14 +62,14 @@ while [ "$i" -lt 12 ]; do
   docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -o /dev/null -w "tempo=%{http_code}\n" \
     http://scanium-tempo:3200/ready || true
 
-  ***REMOVED*** Exit early if all are 200
+  # Exit early if all are 200
   codes="$(docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -o /dev/null -w "%{http_code} %{http_code} %{http_code} %{http_code}\n" \
     http://scanium-grafana:3000/api/health \
     http://scanium-mimir:9009/ready \
     http://scanium-loki:3100/ready \
     http://scanium-tempo:3200/ready || true)"
 
-  ***REMOVED*** If curl failed, try again
+  # If curl failed, try again
   echo "codes: ${codes:-<none>}"
   echo "$codes" | grep -q '^200 200 200 200$' && {
     echo "✅ All healthy."

@@ -1,35 +1,35 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
-***REMOVED*** rollback-backend-nas.sh
-***REMOVED***
-***REMOVED*** Rolls back the scanium-backend to a previously built Docker image tag.
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   bash scripts/app/rollback-backend-nas.sh <TAG>
-***REMOVED***
-***REMOVED*** Example:
-***REMOVED***   bash scripts/app/rollback-backend-nas.sh 2026.01.10-abc123
-***REMOVED***   bash scripts/app/rollback-backend-nas.sh latest
-***REMOVED***
-***REMOVED*** Requirements:
-***REMOVED***   - Must run on NAS
-***REMOVED***   - Docker and docker-compose in PATH
-***REMOVED***   - Target image tag must exist locally
-***REMOVED***   - Repo at /volume1/docker/scanium/repo
-***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
+##############################################################################
+# rollback-backend-nas.sh
+#
+# Rolls back the scanium-backend to a previously built Docker image tag.
+#
+# Usage:
+#   bash scripts/app/rollback-backend-nas.sh <TAG>
+#
+# Example:
+#   bash scripts/app/rollback-backend-nas.sh 2026.01.10-abc123
+#   bash scripts/app/rollback-backend-nas.sh latest
+#
+# Requirements:
+#   - Must run on NAS
+#   - Docker and docker-compose in PATH
+#   - Target image tag must exist locally
+#   - Repo at /volume1/docker/scanium/repo
+##############################################################################
 
 REPO_ROOT="/volume1/docker/scanium/repo"
 BACKEND_DIR="$REPO_ROOT/backend"
 DOCKER="/usr/local/bin/docker"
 DOCKER_COMPOSE="/usr/local/bin/docker-compose"
 
-***REMOVED*** Ensure docker is in PATH
+# Ensure docker is in PATH
 export PATH="/usr/local/bin:$PATH"
 
-***REMOVED*** Check arguments
-if [ $***REMOVED*** -ne 1 ]; then
+# Check arguments
+if [ $# -ne 1 ]; then
   echo "Usage: $0 <TAG>"
   echo ""
   echo "Available tags:"
@@ -46,7 +46,7 @@ echo ""
 echo "Target tag: $TARGET_TAG"
 echo ""
 
-***REMOVED*** Step 1: Verify tag exists
+# Step 1: Verify tag exists
 echo "[1/5] Verifying image scanium-backend:$TARGET_TAG exists..."
 if ! $DOCKER image inspect "scanium-backend:$TARGET_TAG" > /dev/null 2>&1; then
   echo "✗ ERROR: Image scanium-backend:$TARGET_TAG does not exist"
@@ -58,7 +58,7 @@ fi
 echo "✓ Image exists"
 echo ""
 
-***REMOVED*** Step 2: Get current running image for reference
+# Step 2: Get current running image for reference
 echo "[2/5] Checking current deployment..."
 CURRENT_IMAGE=$($DOCKER inspect --format='{{.Config.Image}}' scanium-backend 2>/dev/null || echo "unknown")
 echo "   Current image: $CURRENT_IMAGE"
@@ -75,7 +75,7 @@ if [ "$CURRENT_IMAGE" == "scanium-backend:$TARGET_TAG" ]; then
   fi
 fi
 
-***REMOVED*** Step 3: Set BACKEND_TAG and deploy
+# Step 3: Set BACKEND_TAG and deploy
 echo "[3/5] Setting BACKEND_TAG and redeploying..."
 export BACKEND_TAG="$TARGET_TAG"
 cd "$BACKEND_DIR"
@@ -83,7 +83,7 @@ $DOCKER_COMPOSE up -d --force-recreate --no-deps api
 echo "✓ Container recreated"
 echo ""
 
-***REMOVED*** Step 4: Wait for container to be healthy
+# Step 4: Wait for container to be healthy
 echo "[4/5] Waiting for backend to be healthy..."
 MAX_WAIT=60
 WAIT_COUNT=0
@@ -108,13 +108,13 @@ if [ "$HEALTH" != "healthy" ]; then
   exit 1
 fi
 
-***REMOVED*** Step 5: Verify deployed image
+# Step 5: Verify deployed image
 echo ""
 echo "[5/5] Verifying rollback..."
 DEPLOYED_IMAGE=$($DOCKER inspect --format='{{.Config.Image}}' scanium-backend)
 echo "✓ Container is running with image: $DEPLOYED_IMAGE"
 
-***REMOVED*** Test health endpoint
+# Test health endpoint
 echo "   Testing health endpoint..."
 if $DOCKER exec scanium-backend node -e "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"; then
   echo "✓ Health endpoint responding"

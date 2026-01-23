@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Flatten eBay category tree from ebay_category_tree.json
 Output: scripts/output/ebay/uk/ebay_flat_categories.json
@@ -18,26 +18,26 @@ def flatten_category_tree(tree_data: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     def traverse_node(node: Dict[str, Any], path: List[str], parent_id: str = None) -> None:
         """Recursively traverse category tree node building paths."""
-        ***REMOVED*** Extract category info from node structure
+        # Extract category info from node structure
         category = node.get("category", {})
         cat_id = category.get("categoryId")
         cat_name = category.get("categoryName", "")
 
-        ***REMOVED*** Skip root node (categoryId "0")
+        # Skip root node (categoryId "0")
         if cat_id == "0":
-            ***REMOVED*** Process children without adding root to path
+            # Process children without adding root to path
             for child_node in node.get("childCategoryTreeNodes", []):
                 traverse_node(child_node, [], cat_id)
             return
 
-        ***REMOVED*** Build current path
+        # Build current path
         current_path = path + [cat_name] if cat_name else path
 
-        ***REMOVED*** Check if this is a leaf node
+        # Check if this is a leaf node
         child_nodes = node.get("childCategoryTreeNodes", [])
         is_leaf = node.get("leafCategoryTreeNode", False) or len(child_nodes) == 0
 
-        ***REMOVED*** Create flat entry
+        # Create flat entry
         flat_entry = {
             "ebayCategoryId": cat_id,
             "name": cat_name,
@@ -48,19 +48,19 @@ def flatten_category_tree(tree_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         }
         flat_categories.append(flat_entry)
 
-        ***REMOVED*** Recursively process child nodes
+        # Recursively process child nodes
         for child_node in child_nodes:
             traverse_node(child_node, current_path, cat_id)
 
-    ***REMOVED*** Handle real eBay API structure with rootCategoryNode
+    # Handle real eBay API structure with rootCategoryNode
     category_tree = tree_data.get("categoryTree", {})
     root_node = category_tree.get("rootCategoryNode")
 
     if root_node:
-        ***REMOVED*** Real eBay API structure
+        # Real eBay API structure
         traverse_node(root_node, [])
     else:
-        ***REMOVED*** Fallback to mock data structure
+        # Fallback to mock data structure
         def traverse_old(category: Dict[str, Any], path: List[str]) -> None:
             """Legacy traversal for mock data structure."""
             cat_id = category.get("categoryId")
@@ -103,10 +103,10 @@ def flatten_taxonomy() -> int:
         print(f"❌ ERROR: Failed to parse {input_path}: {e}", file=sys.stderr)
         return 1
 
-    ***REMOVED*** Flatten the tree
+    # Flatten the tree
     flat_categories = flatten_category_tree(tree_data)
 
-    ***REMOVED*** Write output
+    # Write output
     output = {
         "source": "ebay_category_tree.json",
         "marketplace": tree_data.get("marketplace", "EBAY_GB"),
@@ -119,7 +119,7 @@ def flatten_taxonomy() -> int:
 
     print(f"✅ Flattened {len(flat_categories)} categories to {output_path}")
 
-    ***REMOVED*** Print summary
+    # Print summary
     leaf_cats = [c for c in flat_categories if c.get("leafFlag")]
     print(f"   Leaf categories: {len(leaf_cats)}")
     print(f"   Internal categories: {len(flat_categories) - len(leaf_cats)}")

@@ -21,7 +21,7 @@ import com.scanium.shared.core.models.classification.ClassificationOrchestrator 
  * This class adapts the shared ClassificationOrchestrator to work with Android-specific
  * types (AggregatedItem, ItemClassifier) while delegating all logic to the shared module.
  *
- * ***REMOVED******REMOVED*** Architecture
+ * ## Architecture
  * - Delegates to shared/core-models ClassificationOrchestrator
  * - Adapts Android ItemClassifier to portable Classifier interface
  * - Converts between Android and shared ClassificationResult types

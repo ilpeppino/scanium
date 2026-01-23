@@ -1,10 +1,10 @@
-***REMOVED*** Extract Hardcoded Configuration Values to Centralized Config
+# Extract Hardcoded Configuration Values to Centralized Config
 
 **Labels:** `tech-debt`, `priority:p2`, `maintainability`, `area:camera`, `area:ml`
 **Type:** Code Maintainability
 **Severity:** Medium
 
-***REMOVED******REMOVED*** Problem
+## Problem
 
 Configuration values are hardcoded throughout the codebase, making it difficult to:
 
@@ -13,9 +13,9 @@ Configuration values are hardcoded throughout the codebase, making it difficult 
 - Understand what's configurable
 - Debug why certain values were chosen
 
-***REMOVED******REMOVED*** Hardcoded Values Found
+## Hardcoded Values Found
 
-***REMOVED******REMOVED******REMOVED*** 1. CameraXManager.kt
+### 1. CameraXManager.kt
 
 **Line 131**: Camera resolution
 
@@ -44,7 +44,7 @@ private val objectTracker = ObjectTracker(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. ObjectDetectorClient.kt
+### 2. ObjectDetectorClient.kt
 
 **Line 34**: Confidence threshold
 
@@ -64,7 +64,7 @@ val isLikelyBlank = totalVariance < 30
 val maxDimension = 200
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. CloudClassifier.kt
+### 3. CloudClassifier.kt
 
 **Lines 43-44**: Network timeouts
 
@@ -73,7 +73,7 @@ connectTimeout = 5_000
 readTimeout = 8_000
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. SessionDeduplicator.kt (if not deleted per Issue ***REMOVED***003)
+### 4. SessionDeduplicator.kt (if not deleted per Issue #003)
 
 **Lines 30-32**: Similarity thresholds
 
@@ -83,14 +83,14 @@ private const val MAX_SIZE_RATIO_DIFF = 0.4f
 private const val MIN_LABEL_SIMILARITY = 0.7f
 ```
 
-***REMOVED******REMOVED*** Impact
+## Impact
 
 - **Maintenance**: Changing thresholds requires code changes
 - **Testing**: Can't A/B test different configurations
 - **Documentation**: Hard to see all tunable parameters
 - **Production**: Can't hotfix threshold issues without app update
 
-***REMOVED******REMOVED*** Acceptance Criteria
+## Acceptance Criteria
 
 - [ ] Create `ScaniumConfig` object or class
 - [ ] Move all hardcoded values to centralized config
@@ -98,9 +98,9 @@ private const val MIN_LABEL_SIMILARITY = 0.7f
 - [ ] Consider loading from BuildConfig for release/debug variants
 - [ ] Update CLAUDE.md with configuration section
 
-***REMOVED******REMOVED*** Suggested Approach
+## Suggested Approach
 
-***REMOVED******REMOVED******REMOVED*** 1. Create Config Object
+### 1. Create Config Object
 
 File: `/app/src/main/java/com/scanium/app/config/ScaniumConfig.kt`
 
@@ -133,15 +133,15 @@ object ScaniumConfig {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Update Usages
+### 2. Update Usages
 
 Replace hardcoded values with `ScaniumConfig.Camera.targetResolution` etc.
 
-***REMOVED******REMOVED******REMOVED*** 3. Document in CLAUDE.md
+### 3. Document in CLAUDE.md
 
 Add "Configuration & Tuning" section documenting all values and their impact.
 
-***REMOVED******REMOVED*** Alternative: BuildConfig Approach
+## Alternative: BuildConfig Approach
 
 For more advanced control:
 
@@ -155,19 +155,19 @@ buildConfigField("Float", "MIN_CONFIDENCE", "0.2f")
 val resolution = Size(BuildConfig.CAMERA_WIDTH, BuildConfig.CAMERA_HEIGHT)
 ```
 
-***REMOVED******REMOVED*** Related Issues
+## Related Issues
 
-- Issue ***REMOVED***009 (Tracker config mismatch between code and docs)
+- Issue #009 (Tracker config mismatch between code and docs)
 
 ---
 
-***REMOVED******REMOVED*** Assessment
+## Assessment
 
 **Status:** ❌ NOT RELEVANT (Premature Abstraction)
 
 **Decision:** Do not implement centralized configuration object at this time.
 
-***REMOVED******REMOVED******REMOVED*** Why This Is Not Relevant
+### Why This Is Not Relevant
 
 **1. YAGNI Principle Violation**
 
@@ -205,7 +205,7 @@ ScaniumConfig.Detection.confidenceThreshold
 - **Documentation**: Comments explain "why" better than config files
 - **Maintainability**: Fewer files/abstractions = easier maintenance
 
-***REMOVED******REMOVED******REMOVED*** The Real Problem
+### The Real Problem
 
 The issue correctly identifies a documentation problem, but proposes the wrong solution:
 
@@ -233,9 +233,9 @@ minMatchScore = 0.2f      // DIFFERENT!
 expiryFrames = 15         // DIFFERENT!
 ```
 
-**Solution:** Fix the documentation, not the code structure (see Issue ***REMOVED***009).
+**Solution:** Fix the documentation, not the code structure (see Issue #009).
 
-***REMOVED******REMOVED******REMOVED*** Current State Verification
+### Current State Verification
 
 **✅ All values are well-documented:**
 
@@ -276,14 +276,14 @@ expiryFrames = 15         // DIFFERENT!
 **✅ Values are discoverable:**
 
 ```bash
-***REMOVED*** Find all tuning constants
+# Find all tuning constants
 grep -r "private const val" app/src/main/java/
 grep -r "val.*= [0-9]" app/src/main/java/com/scanium/app/camera/
 ```
 
-**✅ CLAUDE.md has "Configuration & Tuning" section** (though out of date - see Issue ***REMOVED***009)
+**✅ CLAUDE.md has "Configuration & Tuning" section** (though out of date - see Issue #009)
 
-***REMOVED******REMOVED******REMOVED*** When to Revisit
+### When to Revisit
 
 Consider centralized configuration **only if**:
 
@@ -309,12 +309,12 @@ Consider centralized configuration **only if**:
 
 **None of these apply to current PoC/demo scope.**
 
-***REMOVED******REMOVED******REMOVED*** Recommended Actions
+### Recommended Actions
 
 **Instead of creating ScaniumConfig:**
 
 1. ✅ **Keep inline constants** with descriptive comments
-2. ✅ **Fix CLAUDE.md** to match actual code (Issue ***REMOVED***009)
+2. ✅ **Fix CLAUDE.md** to match actual code (Issue #009)
 3. ✅ **Add "Why" documentation** for non-obvious values
 4. ✅ **Follow YAGNI** - defer abstraction until needed
 
@@ -328,7 +328,7 @@ Consider centralized configuration **only if**:
 val analysisIntervalMs = 800L
 ```
 
-***REMOVED******REMOVED******REMOVED*** Benefits of Current Approach
+### Benefits of Current Approach
 
 ✅ **Simplicity**: Fewer files, less indirection
 ✅ **Clarity**: Values near usage, easier to understand
@@ -337,9 +337,9 @@ val analysisIntervalMs = 800L
 ✅ **Discoverability**: grep works perfectly
 ✅ **Flexibility**: Easy to change when actually needed
 
-***REMOVED******REMOVED******REMOVED*** Conclusion
+### Conclusion
 
 This issue represents **premature optimization**. The current approach is appropriate for a PoC/demo
 app. Creating a centralized config object would add complexity without solving any real problem.
 
-**Close this issue and focus on Issue ***REMOVED***009** (fixing CLAUDE.md documentation mismatch) instead.
+**Close this issue and focus on Issue #009** (fixing CLAUDE.md documentation mismatch) instead.

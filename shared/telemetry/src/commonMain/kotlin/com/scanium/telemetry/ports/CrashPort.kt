@@ -12,7 +12,7 @@ package com.scanium.telemetry.ports
  * This port keeps the shared code vendor-neutral while allowing platform-specific
  * implementations to integrate with various crash reporting services.
  *
- * ***REMOVED******REMOVED*** Usage in Application Initialization
+ * ## Usage in Application Initialization
  * ```kotlin
  * class Application {
  *     fun onCreate() {
@@ -28,7 +28,7 @@ package com.scanium.telemetry.ports
  * }
  * ```
  *
- * ***REMOVED******REMOVED*** Usage with Telemetry Bridge
+ * ## Usage with Telemetry Bridge
  * ```kotlin
  * class TelemetryCrashBridge(
  *     private val crashPort: CrashPort,
@@ -47,7 +47,7 @@ package com.scanium.telemetry.ports
  * }
  * ```
  *
- * ***REMOVED******REMOVED*** Usage for Manual Error Capture
+ * ## Usage for Manual Error Capture
  * ```kotlin
  * try {
  *     riskyOperation()

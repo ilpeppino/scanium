@@ -1,9 +1,9 @@
-***REMOVED*** Mobile Telemetry (OTLP) - Option 2
+# Mobile Telemetry (OTLP) - Option 2
 
 **Status**: ✅ Implemented
 **Last Updated**: 2026-01-10
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Mobile telemetry is sent directly from the Scanium Android app to Grafana Alloy using **OTLP (
 OpenTelemetry Protocol) over HTTP**. This is the structural fix (Option 2) that replaces the
@@ -11,9 +11,9 @@ previous backend-mediated approach (Option C).
 
 **Flow**: `Mobile App` → `OTLP HTTP` → `Alloy:4318` → `Loki` → `Grafana Dashboards`
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
-***REMOVED******REMOVED******REMOVED*** Components
+### Components
 
 1. **Mobile App (Android)**
     - Uses `AndroidLogPortOtlp` to export telemetry events
@@ -33,9 +33,9 @@ previous backend-mediated approach (Option C).
     - Stores mobile logs with source=`scanium-mobile`
     - Queryable via LogQL in Grafana dashboards
 
-***REMOVED******REMOVED*** Event Schema
+## Event Schema
 
-***REMOVED******REMOVED******REMOVED*** Required Attributes (Auto-populated)
+### Required Attributes (Auto-populated)
 
 Every event includes these attributes as Loki labels:
 
@@ -50,7 +50,7 @@ Every event includes these attributes as Loki labels:
 | `data_region` | `"US"` / `"EU"`               | Data residency region      |
 | `event_name`  | `"scan.started"`              | Event identifier           |
 
-***REMOVED******REMOVED******REMOVED*** Event Naming Convention
+### Event Naming Convention
 
 Events follow the pattern: `<domain>.<action>`
 
@@ -63,7 +63,7 @@ Events follow the pattern: `<domain>.<action>`
 - `error.*` - Errors and exceptions (e.g., `error.exception`)
 - `ml.*` - Machine learning (e.g., `ml.classification_completed`)
 
-***REMOVED******REMOVED******REMOVED*** Event Catalog
+### Event Catalog
 
 | Event Name                    | Attributes                                       | Description            |
 |-------------------------------|--------------------------------------------------|------------------------|
@@ -78,7 +78,7 @@ Events follow the pattern: `<domain>.<action>`
 | `error.exception`             | `error_code`, `error_category`, `is_recoverable` | Error occurred         |
 | `ml.classification_completed` | `classification_mode`, `duration_ms`, `success`  | Item classified        |
 
-***REMOVED******REMOVED*** Privacy & PII Redaction
+## Privacy & PII Redaction
 
 **Hard Rules (enforced by `AttributeSanitizer`):**
 
@@ -102,18 +102,18 @@ Events follow the pattern: `<domain>.<action>`
 - Values > 200 chars are truncated
 - Validation happens in `TelemetryEvent` before OTLP export
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
-***REMOVED******REMOVED******REMOVED*** Mobile App (`local.properties`)
+### Mobile App (`local.properties`)
 
 ```properties
-***REMOVED*** OTLP Telemetry (Option 2)
+# OTLP Telemetry (Option 2)
 scanium.otlp.endpoint=http://REDACTED_INTERNAL_IP:4318
 scanium.otlp.enabled=true
 scanium.telemetry.data_region=US
 ```
 
-***REMOVED******REMOVED******REMOVED*** Alloy (`monitoring/alloy/config.alloy`)
+### Alloy (`monitoring/alloy/config.alloy`)
 
 OTLP receiver and attribute extraction are configured in the Alloy pipeline:
 
@@ -155,9 +155,9 @@ loki.write "mobile" {
 }
 ```
 
-***REMOVED******REMOVED*** Testing & Verification
+## Testing & Verification
 
-***REMOVED******REMOVED******REMOVED*** 1. Send Test Event from CLI
+### 1. Send Test Event from CLI
 
 ```bash
 curl -X POST http://REDACTED_INTERNAL_IP:4318/v1/logs \
@@ -194,20 +194,20 @@ curl -X POST http://REDACTED_INTERNAL_IP:4318/v1/logs \
 }'
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Verify in Loki
+### 2. Verify in Loki
 
 ```bash
-***REMOVED*** Run proof script
+# Run proof script
 ./howto/monitoring/scripts/verify-monitoring.sh
 
-***REMOVED*** Or query manually
+# Or query manually
 ssh nas 'curl -G "http://127.0.0.1:3100/loki/api/v1/query_range" \
   --data-urlencode "query={source=\"scanium-mobile\", event_name=\"test.cli_probe\"}" \
   --data-urlencode "start=$(date -u +%s)000000000" \
   --data-urlencode "end=$(date -u +%s)000000000"'
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Test from Device
+### 3. Test from Device
 
 1. Build and install app: `./gradlew installDevDebug`
 2. Launch app on device (emulator or physical)
@@ -215,7 +215,7 @@ ssh nas 'curl -G "http://127.0.0.1:3100/loki/api/v1/query_range" \
 4. Run proof script: `./howto/monitoring/scripts/verify-monitoring.sh`
 5. Open Grafana dashboard: `Scanium - Mobile App Health`
 
-***REMOVED******REMOVED******REMOVED*** 4. Verify Dashboard
+### 4. Verify Dashboard
 
 Open http://REDACTED_INTERNAL_IP:3000 and check:
 
@@ -224,9 +224,9 @@ Open http://REDACTED_INTERNAL_IP:3000 and check:
 - **Active Sessions**: Counts unique `session_id` values
 - **Top Events**: Breakdown by `event_name`
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** No logs in Loki
+### No logs in Loki
 
 1. **Check Alloy receiver is running:**
    ```bash
@@ -247,7 +247,7 @@ Open http://REDACTED_INTERNAL_IP:3000 and check:
    adb logcat -s OtlpHttpExporter AndroidLogPortOtlp
    ```
 
-***REMOVED******REMOVED******REMOVED*** Logs in Loki but labels missing
+### Logs in Loki but labels missing
 
 If logs appear but `event_name` is in the JSON body instead of labels:
 
@@ -256,13 +256,13 @@ If logs appear but `event_name` is in the JSON body instead of labels:
    `ssh nas "cd /volume1/docker/scanium/repo/monitoring && docker-compose restart alloy"`
 3. Re-send test log and verify labels
 
-***REMOVED******REMOVED******REMOVED*** Dashboard panels empty
+### Dashboard panels empty
 
 1. Check label names in dashboard queries match Loki labels
 2. Verify time range includes recent data
 3. Check Loki datasource is configured: `LOKI` UID
 
-***REMOVED******REMOVED*** Performance & Overhead
+## Performance & Overhead
 
 - **Batch size**: 100 events (configurable in `TelemetryConfig`)
 - **Flush interval**: 5s (configurable)
@@ -271,7 +271,7 @@ If logs appear but `event_name` is in the JSON body instead of labels:
 - **CPU**: Negligible (<1% on modern devices)
 - **Battery**: Minimal impact (batched, async)
 
-***REMOVED******REMOVED*** Migration from Option C
+## Migration from Option C
 
 **Old flow (Option C):**
 
@@ -300,7 +300,7 @@ Mobile App → Alloy (OTLP HTTP :4318) → Loki
 4. ✅ Verify dashboard queries work with new labels
 5. ⏳ Remove backend `/v1/telemetry/mobile` endpoint (optional)
 
-***REMOVED******REMOVED*** See Also
+## See Also
 
 - [Telemetry Facade](../../howto/app/TELEMETRY_FACADE.md) - Shared telemetry API
 - [Alloy Configuration](../../../monitoring/alloy/config.alloy) - OTLP receiver setup

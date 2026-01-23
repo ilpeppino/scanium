@@ -1,6 +1,6 @@
-***REMOVED*** Portrait Mode Bbox & Preview Misalignment Fix
+# Portrait Mode Bbox & Preview Misalignment Fix
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 In PORTRAIT mode:
 
@@ -9,9 +9,9 @@ In PORTRAIT mode:
 
 In LANDSCAPE mode: Both bbox overlay and thumbnails work correctly (reference behavior).
 
-***REMOVED******REMOVED*** Root Cause Analysis
+## Root Cause Analysis
 
-***REMOVED******REMOVED******REMOVED*** Where bbox coords originate
+### Where bbox coords originate
 
 - ML Kit Object Detection returns `DetectedObject.boundingBox` as a pixel `Rect`
 - The coordinate space depends on how `InputImage` was created:
@@ -20,7 +20,7 @@ In LANDSCAPE mode: Both bbox overlay and thumbnails work correctly (reference be
     - The sensor produces 1280x720 landscape, but ML Kit processes it as if rotated to 720x1280
       portrait
 
-***REMOVED******REMOVED******REMOVED*** Where bbox mapping to screen happens
+### Where bbox mapping to screen happens
 
 - `ObjectDetectorClient.convertToDetectionResult()` normalizes bbox using
   `toNormalizedRect(imageWidth, imageHeight)`
@@ -30,14 +30,14 @@ In LANDSCAPE mode: Both bbox overlay and thumbnails work correctly (reference be
     - In preview mode (no bitmap): uses `InputImage.width/height` (possibly 720x1280 rotated)
     - In capture mode (with bitmap): uses `bitmap.width/height` (1280x720 unrotated)
 
-***REMOVED******REMOVED******REMOVED*** Where thumbnail crop happens
+### Where thumbnail crop happens
 
 - `ObjectDetectorClient.cropThumbnail()` crops from unrotated sensor bitmap
 - ML Kit bbox is in ROTATED space (720x1280 for portrait)
 - **BUG**: Cropping uses rotated-space coords on unrotated-space bitmap!
 - Current code tries to fix by rotating AFTER crop, but the crop itself is wrong
 
-***REMOVED******REMOVED******REMOVED*** What differs between portrait vs landscape
+### What differs between portrait vs landscape
 
 | Aspect             | Landscape (rotation=0) | Portrait (rotation=90)   |
 |--------------------|------------------------|--------------------------|
@@ -47,9 +47,9 @@ In LANDSCAPE mode: Both bbox overlay and thumbnails work correctly (reference be
 | Bitmap from sensor | 1280x720               | 1280x720                 |
 | Coord mismatch?    | No                     | **YES**                  |
 
-***REMOVED******REMOVED*** Canonical Mapping Contract
+## Canonical Mapping Contract
 
-***REMOVED******REMOVED******REMOVED*** Data Class: `GeometryContext`
+### Data Class: `GeometryContext`
 
 ```kotlin
 data class GeometryContext(
@@ -62,7 +62,7 @@ data class GeometryContext(
 )
 ```
 
-***REMOVED******REMOVED******REMOVED*** Canonical Flow
+### Canonical Flow
 
 ```
 ML Kit bbox (rotated space)
@@ -93,9 +93,9 @@ mapBboxToPreview()         │
 Screen RectF            to display orientation
 ```
 
-***REMOVED******REMOVED*** Fix Strategy
+## Fix Strategy
 
-***REMOVED******REMOVED******REMOVED*** 1. Unified Geometry Mapper (`DetectionGeometryMapper.kt`)
+### 1. Unified Geometry Mapper (`DetectionGeometryMapper.kt`)
 
 Create a single source of truth for all coordinate transformations:
 
@@ -112,7 +112,7 @@ object DetectionGeometryMapper {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Key Transformations
+### 2. Key Transformations
 
 **ML Kit rotated space → Sensor space (inverse rotation):**
 
@@ -124,26 +124,26 @@ object DetectionGeometryMapper {
 - Apply `rotateNormalizedRect()` to get upright coords
 - Apply scale and offset from `calculateTransformWithRotation()`
 
-***REMOVED******REMOVED******REMOVED*** 3. Implementation Changes
+### 3. Implementation Changes
 
 1. **ObjectDetectorClient**: Convert ML Kit bbox to sensor space IMMEDIATELY after detection
 2. **DetectionOverlay**: Use unified mapper for overlay rendering (no change to rotation logic)
 3. **cropThumbnail**: Use sensor-space bbox directly (no coordinate confusion)
 
-***REMOVED******REMOVED*** Debug Overlay
+## Debug Overlay
 
-***REMOVED******REMOVED******REMOVED*** Developer Option Toggle
+### Developer Option Toggle
 
 Add "Show geometry debug overlay" toggle in Developer Settings.
 
-***REMOVED******REMOVED******REMOVED*** Diagnostic Info Displayed
+### Diagnostic Info Displayed
 
 1. Preview composable size (px)
 2. Analyzer ImageProxy: width, height, rotationDegrees, cropRect
 3. Effective content rect after scale/crop
 4. For top detection: raw bbox, mapped screen rect
 
-***REMOVED******REMOVED******REMOVED*** GeomMap Logs (rate-limited 1/sec)
+### GeomMap Logs (rate-limited 1/sec)
 
 ```
 [GeomMap] Frame: sensor=1280x720, rotation=90, preview=1080x2400
@@ -153,26 +153,26 @@ Add "Show geometry debug overlay" toggle in Developer Settings.
 [GeomMap] Preview rect: RectF(168,1935,338,2268)
 ```
 
-***REMOVED******REMOVED*** Validation Checklist
+## Validation Checklist
 
-***REMOVED******REMOVED******REMOVED*** Portrait Mode
+### Portrait Mode
 
 - [ ] Single centered object: bbox tightly surrounds object
 - [ ] Object near ROI edge: bbox still matches
 - [ ] Saved item preview shows full object (not cropped)
 - [ ] Bbox stable while panning
 
-***REMOVED******REMOVED******REMOVED*** Landscape Mode
+### Landscape Mode
 
 - [ ] No regression in bbox alignment
 - [ ] No regression in preview crop
 
-***REMOVED******REMOVED******REMOVED*** Debug Overlay
+### Debug Overlay
 
 - [ ] Dimensions and rotation values correct
 - [ ] Mapped rect visually matches bbox on screen
 
-***REMOVED******REMOVED*** Files Modified
+## Files Modified
 
 | File                           | Changes                                                                                                                                  |
 |--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
@@ -183,7 +183,7 @@ Add "Show geometry debug overlay" toggle in Developer Settings.
 | `DeveloperOptionsScreen.kt`    | Added "Geometry Debug Overlay" toggle UI                                                                                                 |
 | `CameraScreen.kt`              | Pass `bboxMappingDebugEnabled` state to DetectionOverlay                                                                                 |
 
-***REMOVED******REMOVED*** Root Cause
+## Root Cause
 
 The bug was caused by a coordinate space mismatch between ML Kit's bounding box output and the
 normalization/cropping code:
@@ -205,7 +205,7 @@ normalization/cropping code:
 4. **Thumbnail cropping worked by accident**: When bitmap was available, `bitmap.width` was used (
    1280), which matched sensor space. But this masked the underlying issue.
 
-***REMOVED******REMOVED*** The Fix
+## The Fix
 
 Added `getSensorDimensions()` helper that converts InputImage dimensions back to sensor dimensions
 by swapping width/height for 90° and 270° rotation. This ensures all normalization uses consistent
@@ -224,7 +224,7 @@ private fun getSensorDimensions(
 }
 ```
 
-***REMOVED******REMOVED*** Test Cases (DetectionGeometryMapperTest.kt)
+## Test Cases (DetectionGeometryMapperTest.kt)
 
 1. `mlKitBboxToSensorSpace with 0 rotation returns unchanged bbox`
 2. `mlKitBboxToSensorSpace with 90 rotation inverts rotation correctly`

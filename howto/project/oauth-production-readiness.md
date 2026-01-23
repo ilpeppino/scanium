@@ -1,26 +1,26 @@
-***REMOVED*** OAuth Production Readiness - Scanium
+# OAuth Production Readiness - Scanium
 
 **Last Updated:** 2026-01-13
 **Purpose:** Ensure Google OAuth is correctly configured for production release to Google Play
 
 ---
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium uses Google OAuth 2.0 for user authentication. To release to production, you must ensure
 that OAuth clients are properly configured and not using test/development credentials.
 
 ---
 
-***REMOVED******REMOVED*** Current OAuth Setup
+## Current OAuth Setup
 
-***REMOVED******REMOVED******REMOVED*** Backend OAuth Client
+### Backend OAuth Client
 
 - **Environment Variable:** `GOOGLE_OAUTH_CLIENT_ID`
 - **Configuration File:** `backend/.env`
 - **Used for:** Server-side token verification
 
-***REMOVED******REMOVED******REMOVED*** Android OAuth Client
+### Android OAuth Client
 
 - **Hardcoded in:** `androidApp/src/main/java/com/scanium/app/auth/AuthRepository.kt`
 - **Constant:** `GOOGLE_SERVER_CLIENT_ID`
@@ -28,11 +28,11 @@ that OAuth clients are properly configured and not using test/development creden
 
 ---
 
-***REMOVED******REMOVED*** Pre-Release Checklist
+## Pre-Release Checklist
 
-***REMOVED******REMOVED******REMOVED*** 1. Create Production OAuth Clients (if not done)
+### 1. Create Production OAuth Clients (if not done)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Backend OAuth Client (Web Application)
+#### Backend OAuth Client (Web Application)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Select your project (or create new for production)
@@ -45,7 +45,7 @@ that OAuth clients are properly configured and not using test/development creden
     - **Authorized redirect URIs:** Not required for backend token verification
 7. Save and copy the **Client ID**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Android OAuth Client
+#### Android OAuth Client
 
 1. In the same Google Cloud project
 2. Click **Create Credentials → OAuth 2.0 Client ID**
@@ -58,16 +58,16 @@ that OAuth clients are properly configured and not using test/development creden
 
 ---
 
-***REMOVED******REMOVED*** Getting Production SHA-1 Fingerprint
+## Getting Production SHA-1 Fingerprint
 
-***REMOVED******REMOVED******REMOVED*** If using Google Play App Signing (Recommended)
+### If using Google Play App Signing (Recommended)
 
 1. Go to [Play Console](https://play.google.com/console/)
 2. Select your app
 3. Navigate to **Release → Setup → App signing**
 4. Copy the **SHA-1 certificate fingerprint** from **App signing key certificate**
 
-***REMOVED******REMOVED******REMOVED*** If using your own signing key
+### If using your own signing key
 
 ```bash
 keytool -list -v -keystore /path/to/your/production-keystore.jks -alias your-key-alias
@@ -75,18 +75,18 @@ keytool -list -v -keystore /path/to/your/production-keystore.jks -alias your-key
 
 ---
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
-***REMOVED******REMOVED******REMOVED*** Backend Configuration
+### Backend Configuration
 
 Update `backend/.env` or `deploy/nas/compose/.env` (for production deployment):
 
 ```env
-***REMOVED*** Production OAuth Client ID (Web Application type)
+# Production OAuth Client ID (Web Application type)
 GOOGLE_OAUTH_CLIENT_ID=YOUR_PRODUCTION_BACKEND_CLIENT_ID.apps.googleusercontent.com
 ```
 
-***REMOVED******REMOVED******REMOVED*** Android Configuration
+### Android Configuration
 
 Update `androidApp/src/main/java/com/scanium/app/auth/AuthRepository.kt`:
 
@@ -102,9 +102,9 @@ Consider using BuildConfig or environment-based configuration.
 
 ---
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
-***REMOVED******REMOVED******REMOVED*** 1. Backend Verification
+### 1. Backend Verification
 
 Test token exchange in production:
 
@@ -116,14 +116,14 @@ curl -X POST https://scanium.gtemp1.com/v1/auth/google \
 
 Expected: 200 OK with session tokens
 
-***REMOVED******REMOVED******REMOVED*** 2. Android Verification
+### 2. Android Verification
 
 1. Build production release APK/AAB with production OAuth client
 2. Install on test device
 3. Go to Settings → Sign in with Google
 4. Verify sign-in succeeds and creates backend session
 
-***REMOVED******REMOVED******REMOVED*** 3. Common Errors
+### 3. Common Errors
 
 | Error              | Cause                                          | Fix                                                              |
 |--------------------|------------------------------------------------|------------------------------------------------------------------|
@@ -133,11 +133,11 @@ Expected: 200 OK with session tokens
 
 ---
 
-***REMOVED******REMOVED*** Test vs. Production Separation (Recommended)
+## Test vs. Production Separation (Recommended)
 
 For safety, maintain separate OAuth projects for development and production:
 
-***REMOVED******REMOVED******REMOVED*** Development Environment
+### Development Environment
 
 - **Project:** `Scanium Dev`
 - **Backend Client ID:** `dev-backend-client-id.apps.googleusercontent.com`
@@ -145,7 +145,7 @@ For safety, maintain separate OAuth projects for development and production:
 - **SHA-1:** Debug keystore SHA-1
 - **Backend URL:** `http://localhost:8080` or `https://dev.scanium.example.com`
 
-***REMOVED******REMOVED******REMOVED*** Production Environment
+### Production Environment
 
 - **Project:** `Scanium Production`
 - **Backend Client ID:** `prod-backend-client-id.apps.googleusercontent.com`
@@ -155,11 +155,11 @@ For safety, maintain separate OAuth projects for development and production:
 
 ---
 
-***REMOVED******REMOVED*** Environment-Based Configuration (Advanced)
+## Environment-Based Configuration (Advanced)
 
 To avoid hardcoding credentials, use build variants:
 
-***REMOVED******REMOVED******REMOVED*** AndroidManifest.xml
+### AndroidManifest.xml
 
 ```xml
 <meta-data
@@ -167,7 +167,7 @@ To avoid hardcoding credentials, use build variants:
     android:value="@string/google_oauth_client_id" />
 ```
 
-***REMOVED******REMOVED******REMOVED*** strings.xml (flavor-specific)
+### strings.xml (flavor-specific)
 
 ```
 androidApp/src/dev/res/values/strings.xml:
@@ -181,17 +181,17 @@ Then use `context.getString(R.string.google_oauth_client_id)` in `AuthRepository
 
 ---
 
-***REMOVED******REMOVED*** OAuth Consent Screen Configuration
+## OAuth Consent Screen Configuration
 
-***REMOVED******REMOVED******REMOVED*** Internal Testing vs. Production
+### Internal Testing vs. Production
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** During Development (Internal Testing)
+#### During Development (Internal Testing)
 
 - **Publishing status:** Testing
 - **User type:** Internal (limited to test users you add)
 - **Test users:** Add your Gmail accounts in **OAuth consent screen → Test users**
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** For Production Release
+#### For Production Release
 
 - **Publishing status:** In production
 - **User type:** External
@@ -204,7 +204,7 @@ Then use `context.getString(R.string.google_oauth_client_id)` in `AuthRepository
 
 ---
 
-***REMOVED******REMOVED*** Pre-Submission Checklist
+## Pre-Submission Checklist
 
 Before submitting to Google Play:
 
@@ -220,27 +220,27 @@ Before submitting to Google Play:
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** Sign-in works in debug but fails in release
+### Sign-in works in debug but fails in release
 
 - **Cause:** Debug SHA-1 is different from release SHA-1
 - **Fix:** Add production SHA-1 to Android OAuth client
 
-***REMOVED******REMOVED******REMOVED*** Backend returns 401 "Invalid Google ID token"
+### Backend returns 401 "Invalid Google ID token"
 
 - **Cause:** Backend `GOOGLE_OAUTH_CLIENT_ID` doesn't match Android client's audience
 - **Fix:** Both clients must be in the same Google Cloud project, or configure backend to accept
   Android client ID
 
-***REMOVED******REMOVED******REMOVED*** "This app is blocked" error during sign-in
+### "This app is blocked" error during sign-in
 
 - **Cause:** OAuth consent screen is in testing mode but user not added as test user
 - **Fix:** Publish OAuth consent screen to production, or add user to test users list
 
 ---
 
-***REMOVED******REMOVED*** References
+## References
 
 - **Google Sign-In for Android:** https://developers.google.com/identity/sign-in/android/start
 - **OAuth 2.0 for Mobile & Desktop Apps:
@@ -250,7 +250,7 @@ Before submitting to Google Play:
 
 ---
 
-***REMOVED******REMOVED*** Maintenance
+## Maintenance
 
 Review OAuth configuration whenever:
 

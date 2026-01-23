@@ -1,4 +1,4 @@
-***REMOVED*** iOS Parity PR Roadmap
+# iOS Parity PR Roadmap
 
 **Document Version:** 1.0
 **Last Updated:** 2026-01-13
@@ -6,9 +6,9 @@
 
 ---
 
-***REMOVED******REMOVED*** How to Use This Document
+## How to Use This Document
 
-***REMOVED******REMOVED******REMOVED*** PR Structure
+### PR Structure
 
 Each PR has:
 
@@ -20,7 +20,7 @@ Each PR has:
 - **Depends On:** Prerequisite PRs (must be merged first)
 - **Parallel Track:** Which track this PR belongs to for parallelization
 
-***REMOVED******REMOVED******REMOVED*** Parallelization Tracks
+### Parallelization Tracks
 
 - **Track A: iOS UI:** SwiftUI screens and components
 - **Track B: iOS Adapters:** Platform-specific services (camera, detection, networking)
@@ -33,9 +33,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Phase 0: Validation & Guardrails (2 PRs)
+## Phase 0: Validation & Guardrails (2 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-0.1: Parity Documentation & Baseline
+### PR-0.1: Parity Documentation & Baseline
 
 **Title:** `docs: Add iOS parity analysis and baseline documentation`
 
@@ -65,7 +65,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-0.2: iOS Parity CI Guard
+### PR-0.2: iOS Parity CI Guard
 
 **Title:** `ci: Add iOS parity guard to prevent Android modifications`
 
@@ -91,9 +91,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Phase 1: Shared Brain Readiness (5 PRs)
+## Phase 1: Shared Brain Readiness (5 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-1.1: XCFramework Build Automation
+### PR-1.1: XCFramework Build Automation
 
 **Title:** `build: Add Gradle tasks for iOS XCFramework generation`
 
@@ -124,7 +124,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-1.2: iOS XCFramework Integration
+### PR-1.2: iOS XCFramework Integration
 
 **Title:** `ios: Integrate shared XCFrameworks into Xcode project`
 
@@ -152,7 +152,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-1.3: Shared Module Initialization
+### PR-1.3: Shared Module Initialization
 
 **Title:** `ios: Initialize KMP shared session and data source`
 
@@ -179,7 +179,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-1.4: Shared Type Mapping Tests
+### PR-1.4: Shared Type Mapping Tests
 
 **Title:** `ios: Add unit tests for Kotlin-Swift type mapping`
 
@@ -206,7 +206,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-1.5: Domain Pack Loading
+### PR-1.5: Domain Pack Loading
 
 **Title:** `ios: Load domain pack from iOS bundle`
 
@@ -233,9 +233,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Phase 2: iOS Platform Adapters (6 PRs)
+## Phase 2: iOS Platform Adapters (6 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-2.1: CoreML Object Detection Model
+### PR-2.1: CoreML Object Detection Model
 
 **Title:** `ios: Add CoreML object detection model and initialize service`
 
@@ -263,7 +263,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-2.2: Detection Orchestrator
+### PR-2.2: Detection Orchestrator
 
 **Title:** `ios: Implement detection orchestrator with throttling`
 
@@ -291,7 +291,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-2.3: Object Tracking Integration
+### PR-2.3: Object Tracking Integration
 
 **Title:** `ios: Integrate shared ObjectTracker for stable tracking IDs`
 
@@ -317,7 +317,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-2.4: Item Aggregation Integration
+### PR-2.4: Item Aggregation Integration
 
 **Title:** `ios: Integrate shared ItemAggregator for deduplication`
 
@@ -342,7 +342,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-2.5: Detection Services Wiring
+### PR-2.5: Detection Services Wiring
 
 **Title:** `ios: Wire detection services to camera frame pipeline`
 
@@ -368,7 +368,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-2.6: Classification Placeholder
+### PR-2.6: Classification Placeholder
 
 **Title:** `ios: Add classification orchestrator stub (cloud-only for MVP)`
 
@@ -394,11 +394,11 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Phase 3: iOS UI Parity (14 PRs)
+## Phase 3: iOS UI Parity (14 PRs)
 
-***REMOVED******REMOVED******REMOVED*** Track 3A: Camera & Capture (5 PRs)
+### Track 3A: Camera & Capture (5 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-3A.1: Camera Preview Screen
+### PR-3A.1: Camera Preview Screen
 
 **Title:** `ios: Add camera preview screen with AVCaptureVideoPreviewLayer`
 
@@ -425,7 +425,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3A.2: Camera Permissions
+### PR-3A.2: Camera Permissions
 
 **Title:** `ios: Add camera permission handling and Info.plist keys`
 
@@ -451,7 +451,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3A.3: Shutter Button & Capture Modes
+### PR-3A.3: Shutter Button & Capture Modes
 
 **Title:** `ios: Add shutter button with tap/long-press gestures`
 
@@ -477,7 +477,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3A.4: Detection Overlay (Real-Time)
+### PR-3A.4: Detection Overlay (Real-Time)
 
 **Title:** `ios: Add real-time detection overlay with bounding boxes`
 
@@ -504,7 +504,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3A.5: Camera Settings Overlay (Optional)
+### PR-3A.5: Camera Settings Overlay (Optional)
 
 **Title:** `ios: Add in-camera settings overlay for resolution/threshold`
 
@@ -531,9 +531,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track 3B: List & Detail Screens (6 PRs)
+### Track 3B: List & Detail Screens (6 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-3B.1: Items List Interactivity
+### PR-3B.1: Items List Interactivity
 
 **Title:** `ios: Add tap/swipe gestures and toolbar actions to items list`
 
@@ -560,7 +560,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3B.2: Item Detail/Edit Screen
+### PR-3B.2: Item Detail/Edit Screen
 
 **Title:** `ios: Add item detail screen with image zoom and editable fields`
 
@@ -588,7 +588,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3B.3: Selection Mode (Multi-Select)
+### PR-3B.3: Selection Mode (Multi-Select)
 
 **Title:** `ios: Add multi-select mode with batch actions`
 
@@ -616,7 +616,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3B.4: Empty State & Error Handling
+### PR-3B.4: Empty State & Error Handling
 
 **Title:** `ios: Add empty state view and error alerts`
 
@@ -642,7 +642,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3B.5: Confirmation Dialogs
+### PR-3B.5: Confirmation Dialogs
 
 **Title:** `ios: Add confirmation dialogs for destructive actions`
 
@@ -668,7 +668,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3B.6: Pull-to-Refresh
+### PR-3B.6: Pull-to-Refresh
 
 **Title:** `ios: Add pull-to-refresh to items list`
 
@@ -693,9 +693,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track 3C: Settings Screens (3 PRs)
+### Track 3C: Settings Screens (3 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-3C.1: Settings Navigation Structure
+### PR-3C.1: Settings Navigation Structure
 
 **Title:** `ios: Add settings root screen and subsections`
 
@@ -724,7 +724,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3C.2: Camera Settings Implementation
+### PR-3C.2: Camera Settings Implementation
 
 **Title:** `ios: Implement camera settings screen with resolution and thresholds`
 
@@ -751,7 +751,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-3C.3: Privacy & Terms Settings
+### PR-3C.3: Privacy & Terms Settings
 
 **Title:** `ios: Add privacy settings screen with terms/policy links`
 
@@ -777,9 +777,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Phase 4: Storage & Persistence (8 PRs)
+## Phase 4: Storage & Persistence (8 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-4.1: Database Technology Decision
+### PR-4.1: Database Technology Decision
 
 **Title:** `docs: Document database technology choice for iOS`
 
@@ -804,7 +804,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-4.2: SQLDelight iOS Configuration (Recommended Path)
+### PR-4.2: SQLDelight iOS Configuration (Recommended Path)
 
 **Title:** `ios: Configure SQLDelight for iOS with shared schema`
 
@@ -831,7 +831,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-4.3 (Alternative): Core Data Setup
+### PR-4.3 (Alternative): Core Data Setup
 
 **Title:** `ios: Set up Core Data with schema matching Android`
 
@@ -861,7 +861,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-4.4: DAO Layer Implementation
+### PR-4.4: DAO Layer Implementation
 
 **Title:** `ios: Implement DAO layer for CRUD operations`
 
@@ -889,7 +889,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-4.5: Image File Storage
+### PR-4.5: Image File Storage
 
 **Title:** `ios: Implement image file storage with cache management`
 
@@ -916,7 +916,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-4.6: PHPhotoLibrary Integration
+### PR-4.6: PHPhotoLibrary Integration
 
 **Title:** `ios: Add photo library integration for saving images`
 
@@ -942,7 +942,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-4.7: History Tracking
+### PR-4.7: History Tracking
 
 **Title:** `ios: Implement history tracking for item changes`
 
@@ -968,7 +968,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-4.8: Wire Storage to UI
+### PR-4.8: Wire Storage to UI
 
 **Title:** `ios: Wire database persistence to camera and list screens`
 
@@ -995,11 +995,11 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Phase 5: Networking & Backend Integration (9 PRs)
+## Phase 5: Networking & Backend Integration (9 PRs)
 
-***REMOVED******REMOVED******REMOVED*** Track 5A: Backend API (5 PRs)
+### Track 5A: Backend API (5 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-5A.1: Backend API Client Foundation
+### PR-5A.1: Backend API Client Foundation
 
 **Title:** `ios: Add URLSession-based backend API client`
 
@@ -1026,7 +1026,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-5A.2: Request Signing (HMAC-SHA256)
+### PR-5A.2: Request Signing (HMAC-SHA256)
 
 **Title:** `ios: Implement HMAC-SHA256 request signing with CryptoKit`
 
@@ -1053,7 +1053,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-5A.3: API Key Configuration
+### PR-5A.3: API Key Configuration
 
 **Title:** `ios: Add API key configuration via build settings`
 
@@ -1079,7 +1079,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-5A.4: Retry Logic with Exponential Backoff
+### PR-5A.4: Retry Logic with Exponential Backoff
 
 **Title:** `ios: Add retry logic with exponential backoff to backend client`
 
@@ -1105,7 +1105,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-5A.5: Cloud Classification Endpoint
+### PR-5A.5: Cloud Classification Endpoint
 
 **Title:** `ios: Implement /v1/classify endpoint integration`
 
@@ -1132,9 +1132,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track 5B: eBay Integration (4 PRs, conditional on MVP scope)
+### Track 5B: eBay Integration (4 PRs, conditional on MVP scope)
 
-***REMOVED******REMOVED******REMOVED*** PR-5B.1: eBay OAuth 2.0 Flow
+### PR-5B.1: eBay OAuth 2.0 Flow
 
 **Title:** `ios: Implement eBay OAuth 2.0 flow with ASWebAuthenticationSession`
 
@@ -1163,7 +1163,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-5B.2: eBay API Client
+### PR-5B.2: eBay API Client
 
 **Title:** `ios: Implement eBay API client with OAuth token injection`
 
@@ -1190,7 +1190,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-5B.3: eBay Listing Draft Screen
+### PR-5B.3: eBay Listing Draft Screen
 
 **Title:** `ios: Add eBay listing draft form screen`
 
@@ -1217,7 +1217,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-5B.4: eBay Review & Submit Screen
+### PR-5B.4: eBay Review & Submit Screen
 
 **Title:** `ios: Add eBay listing review and submit screen`
 
@@ -1245,11 +1245,11 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Phase 6: Observability & Polish (9 PRs)
+## Phase 6: Observability & Polish (9 PRs)
 
-***REMOVED******REMOVED******REMOVED*** Track 6A: Crash Reporting & Telemetry (4 PRs)
+### Track 6A: Crash Reporting & Telemetry (4 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-6A.1: Sentry iOS SDK Integration
+### PR-6A.1: Sentry iOS SDK Integration
 
 **Title:** `ios: Integrate Sentry iOS SDK for crash reporting`
 
@@ -1275,7 +1275,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-6A.2: Sentry Breadcrumbs & Tags
+### PR-6A.2: Sentry Breadcrumbs & Tags
 
 **Title:** `ios: Add Sentry breadcrumbs and tags for context`
 
@@ -1301,7 +1301,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-6A.3: Structured Logging (Optional)
+### PR-6A.3: Structured Logging (Optional)
 
 **Title:** `ios: Add structured logging facade with OSLog`
 
@@ -1327,7 +1327,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-6A.4: Correlation IDs
+### PR-6A.4: Correlation IDs
 
 **Title:** `ios: Add correlation ID generation for distributed tracing`
 
@@ -1353,9 +1353,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Track 6B: UX Polish (5 PRs)
+### Track 6B: UX Polish (5 PRs)
 
-***REMOVED******REMOVED******REMOVED*** PR-6B.1: Audio Feedback (Sounds)
+### PR-6B.1: Audio Feedback (Sounds)
 
 **Title:** `ios: Add audio feedback for capture and success events`
 
@@ -1382,7 +1382,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-6B.2: Motion Components (Optional)
+### PR-6B.2: Motion Components (Optional)
 
 **Title:** `ios: Add motion effects to detection overlay and list`
 
@@ -1408,7 +1408,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-6B.3: Theme System (Optional)
+### PR-6B.3: Theme System (Optional)
 
 **Title:** `ios: Add custom theme system with color palette`
 
@@ -1434,7 +1434,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-6B.4: FTUE (First-Time User Experience)
+### PR-6B.4: FTUE (First-Time User Experience)
 
 **Title:** `ios: Add onboarding flow with permission education`
 
@@ -1462,7 +1462,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-6B.5: Export Functionality
+### PR-6B.5: Export Functionality
 
 **Title:** `ios: Add CSV and Zip export with ShareSheet`
 
@@ -1489,9 +1489,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Post-Parity: Build & Deployment (5 PRs, optional)
+## Post-Parity: Build & Deployment (5 PRs, optional)
 
-***REMOVED******REMOVED******REMOVED*** PR-7.1: Product Flavors (Xcode Schemes)
+### PR-7.1: Product Flavors (Xcode Schemes)
 
 **Title:** `ios: Add Xcode schemes for Prod/Dev/Beta variants`
 
@@ -1515,14 +1515,14 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-7.2: Feature Flags (Build-Time)
+### PR-7.2: Feature Flags (Build-Time)
 
 **Title:** `ios: Add build-time feature flags via compiler directives`
 
 **Scope:**
 
 - Swift compiler flags: `DEBUG`, `DEV_MODE`
-- Feature gating in code: `***REMOVED***if DEBUG`
+- Feature gating in code: `#if DEBUG`
 
 **Acceptance Criteria:**
 
@@ -1537,7 +1537,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-7.3: Code Obfuscation (Release Builds)
+### PR-7.3: Code Obfuscation (Release Builds)
 
 **Title:** `ios: Enable code obfuscation for release builds`
 
@@ -1559,7 +1559,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-7.4: SBOM Generation (Optional)
+### PR-7.4: SBOM Generation (Optional)
 
 **Title:** `ios: Add SBOM generation for supply chain security`
 
@@ -1581,7 +1581,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PR-7.5: CVE Scanning (Optional)
+### PR-7.5: CVE Scanning (Optional)
 
 **Title:** `ios: Add automated CVE scanning to CI pipeline`
 
@@ -1603,9 +1603,9 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Parallelization Summary
+## Parallelization Summary
 
-***REMOVED******REMOVED******REMOVED*** Maximum Parallelization (3 Engineers)
+### Maximum Parallelization (3 Engineers)
 
 **Week 1-2 (Phase 0):** All engineers on documentation and validation (no parallelization)
 
@@ -1643,7 +1643,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Total PRs
+## Total PRs
 
 - **Phase 0:** 2 PRs
 - **Phase 1:** 5 PRs
@@ -1658,7 +1658,7 @@ must be sequential.
 
 ---
 
-***REMOVED******REMOVED*** Do Not Touch - Forbidden Paths
+## Do Not Touch - Forbidden Paths
 
 ALL PRs must avoid touching these paths (enforced by CI guard from PR-0.2):
 
@@ -1683,4 +1683,4 @@ docs/BUILD_IOS_FRAMEWORKS.md
 
 ---
 
-***REMOVED******REMOVED*** END OF PR ROADMAP
+## END OF PR ROADMAP

@@ -1,10 +1,10 @@
-***REMOVED*** Vision API Quota Limits
+# Vision API Quota Limits
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Vision API quota system enforces per-user daily limits on Google Vision API requests to control costs and prevent abuse. Each authenticated user is allowed a maximum of 50 Vision API requests per day (configurable).
 
-***REMOVED******REMOVED*** Features
+## Features
 
 - **Per-User Tracking**: Quota is tracked per authenticated user (via Bearer token)
 - **Daily Reset**: Quotas automatically reset at midnight UTC
@@ -12,12 +12,12 @@ The Vision API quota system enforces per-user daily limits on Google Vision API 
 - **Rate Limit Headers**: Responses include standard rate limit headers
 - **Graceful Errors**: Clear error messages when quota exceeded
 
-***REMOVED******REMOVED*** Configuration
+## Configuration
 
 Set the daily quota limit via environment variable:
 
 ```bash
-VISION_DAILY_QUOTA_LIMIT=50  ***REMOVED*** Default: 50 requests per user per day
+VISION_DAILY_QUOTA_LIMIT=50  # Default: 50 requests per user per day
 ```
 
 Or in `.env` file:
@@ -28,11 +28,11 @@ VISION_DAILY_QUOTA_LIMIT=50
 
 The limit can be set between 1 and 1000 requests per day.
 
-***REMOVED******REMOVED*** Protected Endpoints
+## Protected Endpoints
 
 The following endpoints enforce quota limits:
 
-***REMOVED******REMOVED******REMOVED*** `/v1/vision/insights`
+### `/v1/vision/insights`
 
 - **Authentication Required**: Yes (Bearer token)
 - **Quota Cost**: 1 request per call (including cache hits)
@@ -41,7 +41,7 @@ The following endpoints enforce quota limits:
   - `X-RateLimit-Remaining`: Remaining requests for today
   - `X-RateLimit-Reset`: Unix timestamp when quota resets
 
-***REMOVED******REMOVED*** Error Responses
+## Error Responses
 
 When quota is exceeded, the API returns:
 
@@ -62,9 +62,9 @@ Retry-After: 43200
 }
 ```
 
-***REMOVED******REMOVED*** Implementation Details
+## Implementation Details
 
-***REMOVED******REMOVED******REMOVED*** Database Schema
+### Database Schema
 
 The `vision_quotas` table tracks daily usage:
 
@@ -81,7 +81,7 @@ CREATE TABLE "vision_quotas" (
 );
 ```
 
-***REMOVED******REMOVED******REMOVED*** Service API
+### Service API
 
 The `VisionQuotaService` provides the following methods:
 
@@ -101,7 +101,7 @@ const usage = await quotaService.getQuotaUsage(userId);
 const deletedCount = await quotaService.cleanupOldRecords(7); // Keep last 7 days
 ```
 
-***REMOVED******REMOVED*** Request Flow
+## Request Flow
 
 1. **Authentication**: User provides Bearer token
 2. **Quota Check**: System checks if user has available quota
@@ -109,19 +109,19 @@ const deletedCount = await quotaService.cleanupOldRecords(7); // Keep last 7 day
 4. **Quota Increment**: After successful processing, increment user's quota count
 5. **Response**: Return result with quota headers
 
-***REMOVED******REMOVED*** Cache Behavior
+## Cache Behavior
 
 - **Cache Hits**: Quota is still incremented for cached responses
 - **Rationale**: The user made a request, even if served from cache
 - **Benefit**: Prevents abuse via repeated identical requests
 
-***REMOVED******REMOVED*** Quota Reset
+## Quota Reset
 
 - **Reset Time**: Midnight UTC (00:00:00 UTC)
 - **Automatic**: No manual intervention required
 - **Timezone**: All dates stored in UTC
 
-***REMOVED******REMOVED*** Monitoring
+## Monitoring
 
 Track quota usage via logs:
 
@@ -136,7 +136,7 @@ Track quota usage via logs:
 }
 ```
 
-***REMOVED******REMOVED*** Maintenance
+## Maintenance
 
 Periodically cleanup old quota records to prevent table bloat:
 
@@ -147,7 +147,7 @@ await quotaService.cleanupOldRecords(7);
 
 Consider running this as a scheduled job (e.g., daily cron).
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 Run quota service tests:
 
@@ -156,7 +156,7 @@ cd backend
 npm test -- quota-service.test.ts
 ```
 
-***REMOVED******REMOVED*** Migration
+## Migration
 
 Apply the database migration:
 
@@ -171,7 +171,7 @@ Or in production:
 npm run prisma:migrate deploy
 ```
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
 Potential improvements:
 

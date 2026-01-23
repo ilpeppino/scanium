@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env node
+#!/usr/bin/env node
 
 /**
  * eBay Domain Pack Generator CLI

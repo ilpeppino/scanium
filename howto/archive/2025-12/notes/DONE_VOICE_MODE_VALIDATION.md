@@ -1,8 +1,8 @@
-***REMOVED*** Voice Mode Validation Checklist
+# Voice Mode Validation Checklist
 
 Use this quick list on a device/emulator before shipping changes to PR6.
 
-***REMOVED******REMOVED*** Speech-to-Text input
+## Speech-to-Text input
 
 1. Open Settings → Voice Mode and enable **Voice input (microphone)**. Approve the microphone
    permission prompt.
@@ -14,14 +14,14 @@ Use this quick list on a device/emulator before shipping changes to PR6.
 5. Enable Auto-send, dictate “What brand is it?”, and confirm it sends immediately after
    transcription.
 
-***REMOVED******REMOVED*** Text-to-Speech output
+## Text-to-Speech output
 
 1. Enable **Read assistant replies aloud** in Settings.
 2. Ask any question in the assistant and confirm the final answer is spoken with the “Speaking...”
    chip visible.
 3. Tap the chip to stop playback and verify TTS stops immediately.
 
-***REMOVED******REMOVED*** Privacy, lifecycle, and fallbacks
+## Privacy, lifecycle, and fallbacks
 
 1. Deny the microphone permission when prompted and confirm the toggle snaps back off with the
    snackbar explanation.

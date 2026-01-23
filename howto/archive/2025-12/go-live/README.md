@@ -1,4 +1,4 @@
-***REMOVED*** Scanium Go-Live Readiness
+# Scanium Go-Live Readiness
 
 **Status:** 🔴 **NOT READY FOR PRODUCTION**
 
@@ -7,7 +7,7 @@ Scanium for production deployment.
 
 **Total Issues Created:** 31 (20 Phase 1: Production-Ready + 11 Phase 2: Enterprise-Ready)
 
-***REMOVED******REMOVED*** Quick Links
+## Quick Links
 
 - 📊 **[Full Summary](GO_LIVE_BACKLOG_SUMMARY.md)** - Complete analysis (20 pages)
 - 🎫 *
@@ -17,36 +17,36 @@ Scanium for production deployment.
   *[P0 Blockers](https://github.com/ilpeppino/scanium/issues?q=is%3Aissue+is%3Aopen+label%3Apriority%3Ap0)
   ** - 8 critical blockers
 
-***REMOVED******REMOVED*** What Blocks Go-Live Right Now
+## What Blocks Go-Live Right Now
 
-***REMOVED******REMOVED******REMOVED*** 8 P0 Critical Blockers (Must Fix First)
+### 8 P0 Critical Blockers (Must Fix First)
 
-1. **[***REMOVED***237](https://github.com/ilpeppino/scanium/issues/237)** - Backend production deployment
+1. **[#237](https://github.com/ilpeppino/scanium/issues/237)** - Backend production deployment
    config missing
-2. **[***REMOVED***238](https://github.com/ilpeppino/scanium/issues/238)** - Backend
+2. **[#238](https://github.com/ilpeppino/scanium/issues/238)** - Backend
    authentication/authorization missing
-3. **[***REMOVED***239](https://github.com/ilpeppino/scanium/issues/239)** - Production observability (alerting,
+3. **[#239](https://github.com/ilpeppino/scanium/issues/239)** - Production observability (alerting,
    SLOs)
-4. **[***REMOVED***240](https://github.com/ilpeppino/scanium/issues/240)** - PostgreSQL backup strategy missing
-5. **[***REMOVED***241](https://github.com/ilpeppino/scanium/issues/241)** - Environment separation (
+4. **[#240](https://github.com/ilpeppino/scanium/issues/240)** - PostgreSQL backup strategy missing
+5. **[#241](https://github.com/ilpeppino/scanium/issues/241)** - Environment separation (
    dev/staging/prod)
-6. **[***REMOVED***242](https://github.com/ilpeppino/scanium/issues/242)** - Android release signing
+6. **[#242](https://github.com/ilpeppino/scanium/issues/242)** - Android release signing
    verification
-7. **[***REMOVED***243](https://github.com/ilpeppino/scanium/issues/243)** - Rate limiting cost controls missing
-8. **[***REMOVED***244](https://github.com/ilpeppino/scanium/issues/244)** - TLS/SSL configuration (backend HTTP
+7. **[#243](https://github.com/ilpeppino/scanium/issues/243)** - Rate limiting cost controls missing
+8. **[#244](https://github.com/ilpeppino/scanium/issues/244)** - TLS/SSL configuration (backend HTTP
    only)
 
 **Estimated time to unblock:** 2-3 weeks (parallelizable with 3-4 engineers)
 
-***REMOVED******REMOVED*** Top 3 Risks
+## Top 3 Risks
 
-1. 🔴 **Unauthenticated API** - Anyone can access user data (***REMOVED***238)
-2. 🔴 **No PostgreSQL Backups** - Data loss risk (***REMOVED***240)
-3. 🔴 **Cannot Deploy Backend** - No production config (***REMOVED***237)
+1. 🔴 **Unauthenticated API** - Anyone can access user data (#238)
+2. 🔴 **No PostgreSQL Backups** - Data loss risk (#240)
+3. 🔴 **Cannot Deploy Backend** - No production config (#237)
 
-***REMOVED******REMOVED*** Execution Plan
+## Execution Plan
 
-***REMOVED******REMOVED******REMOVED*** Week 1: Critical Infrastructure (P0)
+### Week 1: Critical Infrastructure (P0)
 
 - Backend deployment config
 - Environment separation (dev/staging/prod)
@@ -59,7 +59,7 @@ Scanium for production deployment.
 
 **Goal:** Backend deployable to production with auth, backups, monitoring
 
-***REMOVED******REMOVED******REMOVED*** Week 2: Testing & Reliability (P1)
+### Week 2: Testing & Reliability (P1)
 
 - Backend integration tests
 - CI/CD pipeline (automated deployments)
@@ -70,7 +70,7 @@ Scanium for production deployment.
 
 **Goal:** Safe deployments with automated testing and documentation
 
-***REMOVED******REMOVED******REMOVED*** Week 3: Hardening & Scale-Up (P2)
+### Week 3: Hardening & Scale-Up (P2)
 
 - Production log retention (30d+)
 - Performance monitoring
@@ -81,9 +81,9 @@ Scanium for production deployment.
 
 **Goal:** Operational maturity and future-proofing
 
-***REMOVED******REMOVED*** Issue Breakdown
+## Issue Breakdown
 
-***REMOVED******REMOVED******REMOVED*** Phase 1: Production-Ready (20 issues)
+### Phase 1: Production-Ready (20 issues)
 
 | Priority          | Count  | Focus                        |
 |-------------------|--------|------------------------------|
@@ -92,7 +92,7 @@ Scanium for production deployment.
 | **P2**            | 6      | Scale-up and future-proofing |
 | **Total Phase 1** | **20** | -                            |
 
-***REMOVED******REMOVED******REMOVED*** Phase 2: Enterprise-Ready (11 issues)
+### Phase 2: Enterprise-Ready (11 issues)
 
 | Priority          | Severity | Count  | Focus                                                                      |
 |-------------------|----------|--------|----------------------------------------------------------------------------|
@@ -112,7 +112,7 @@ Scanium for production deployment.
 | **Docs**          | 2     | Privacy policy, runbooks              |
 | **Scale-iOS**     | 1     | iOS development                       |
 
-***REMOVED******REMOVED*** Current Maturity
+## Current Maturity
 
 | Component          | Status             | Notes                                         |
 |--------------------|--------------------|-----------------------------------------------|
@@ -123,7 +123,7 @@ Scanium for production deployment.
 | **Security**       | ⚠️ Partial         | 9/18 mobile issues fixed, backend gaps remain |
 | **Documentation**  | ⚠️ Partial         | Technical docs good, missing privacy/ops      |
 
-***REMOVED******REMOVED*** Cost Estimate
+## Cost Estimate
 
 **Monthly AWS/GCP cost for 1,000 active users:** ~$296/month
 
@@ -136,7 +136,7 @@ Scanium for production deployment.
 
 **At 10,000 users:** ~$500-800/month
 
-***REMOVED******REMOVED*** Files in This Directory
+## Files in This Directory
 
 - `README.md` (this file) - Quick reference
 - `GO_LIVE_BACKLOG_SUMMARY.md` - Full 20-page Phase 1 analysis
@@ -145,7 +145,7 @@ Scanium for production deployment.
 - `CREATE_ISSUES.sh` - Script to create Phase 1 issues (already run - 20 issues)
 - `CREATE_ISSUES_PHASE2.sh` - Script to create Phase 2 issues (already run - 11 issues)
 
-***REMOVED******REMOVED*** How to Use This
+## How to Use This
 
 1. **Read the summary:** [GO_LIVE_BACKLOG_SUMMARY.md](GO_LIVE_BACKLOG_SUMMARY.md)
 2. **Review P0 issues:
@@ -155,18 +155,18 @@ Scanium for production deployment.
 5. **Start Week 1:** Kick off P0 issues in parallel
 6. **Daily standups:** Track progress on critical path items
 
-***REMOVED******REMOVED*** Success Criteria
+## Success Criteria
 
-***REMOVED******REMOVED******REMOVED*** Minimum Viable Production (MVP)
+### Minimum Viable Production (MVP)
 
 ✅ All P0 issues resolved (~2-3 weeks)
 
-***REMOVED******REMOVED******REMOVED*** Production-Ready (Phase 1 Complete)
+### Production-Ready (Phase 1 Complete)
 
 ✅ All 20 Phase 1 issues resolved (~3-4 weeks)
 ✅ Safe for beta launch with 100-1,000 users
 
-***REMOVED******REMOVED******REMOVED*** Enterprise-Ready (Phase 2 Complete)
+### Enterprise-Ready (Phase 2 Complete)
 
 ✅ All 31 issues resolved (Phase 1 + Phase 2) (~6-10 weeks)
 ✅ Pen tested, load tested, chaos tested

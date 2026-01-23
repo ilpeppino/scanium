@@ -1,6 +1,6 @@
 > Archived on 2025-12-20: superseded by docs/DECISIONS.md.
 
-***REMOVED*** ADR-002: Cross-Platform “Shared Brain” (KMP-Ready) without Blocking Android
+# ADR-002: Cross-Platform “Shared Brain” (KMP-Ready) without Blocking Android
 
 **Status:** Accepted  
 **Date:** 2025-01-12  
@@ -9,7 +9,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Context
+## Context
 
 We must keep Android shipping while preparing for iOS. Business logic (tracking, aggregation,
 classification contracts, domain mapping) should be shared to avoid divergence, but
@@ -19,7 +19,7 @@ introducing iOS build blockers.
 
 ---
 
-***REMOVED******REMOVED*** Decision
+## Decision
 
 - Keep **shared brain** in existing KMP modules:
     - `shared/core-models`: models plus portable contracts for classification/config.
@@ -33,7 +33,7 @@ introducing iOS build blockers.
 
 ---
 
-***REMOVED******REMOVED*** Alternatives Considered
+## Alternatives Considered
 
 - **Full cross-platform UI (Flutter/RN)** — Rejected; would block Android, compromise camera/ML
   performance.
@@ -43,7 +43,7 @@ introducing iOS build blockers.
 
 ---
 
-***REMOVED******REMOVED*** Consequences
+## Consequences
 
 **Positive**
 

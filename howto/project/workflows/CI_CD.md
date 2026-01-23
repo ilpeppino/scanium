@@ -1,6 +1,6 @@
-***REMOVED*** CI / CD
+# CI / CD
 
-***REMOVED******REMOVED*** Workflows
+## Workflows
 
 - **Android Debug APK** (`.github/workflows/android-debug-apk.yml`)
     - Triggers: push to `main`, manual dispatch.
@@ -24,13 +24,13 @@
     - Enforces thresholds: shared modules ≥85%, androidApp ≥75% (configured in respective
       `build.gradle.kts`).
 
-***REMOVED******REMOVED*** Mobile testing via artifact
+## Mobile testing via artifact
 
 1. Push your branch or use workflow_dispatch on **Android Debug APK**.
 2. Download `scanium-app-debug-apk` from the workflow run artifacts.
 3. Install on device/emulator (enable unknown sources if needed) and verify the scenario.
 
-***REMOVED******REMOVED*** Runners / environments
+## Runners / environments
 
 - Current workflows run on `ubuntu-latest` GitHub-hosted runners; no self-hosted runners configured.
 - Keep CI green by ensuring Gradle wrapper is executable and Java 17-compatible.

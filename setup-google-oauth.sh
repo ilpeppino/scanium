@@ -1,5 +1,5 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Quick setup script for Google OAuth credentials
+#!/bin/bash
+# Quick setup script for Google OAuth credentials
 
 set -e
 
@@ -13,7 +13,7 @@ echo ""
 echo "Setup Guide: howto/GOOGLE_OAUTH_SETUP.md"
 echo ""
 
-***REMOVED*** Step 1: Get Client ID from user
+# Step 1: Get Client ID from user
 read -p "Enter your Web OAuth Client ID from Google Cloud Console: " CLIENT_ID
 
 if [[ -z "$CLIENT_ID" ]]; then
@@ -21,7 +21,7 @@ if [[ -z "$CLIENT_ID" ]]; then
     exit 1
 fi
 
-***REMOVED*** Validate format
+# Validate format
 if [[ ! "$CLIENT_ID" =~ \.apps\.googleusercontent\.com$ ]]; then
     echo "⚠️  Warning: Client ID should end with .apps.googleusercontent.com"
     read -p "Continue anyway? (y/n): " CONTINUE
@@ -33,13 +33,13 @@ fi
 echo ""
 echo "📝 Updating Android app configuration..."
 
-***REMOVED*** Step 2: Update Android app
+# Step 2: Update Android app
 sed -i '' "s/YOUR_ANDROID_CLIENT_ID\.apps\.googleusercontent\.com/$CLIENT_ID/" \
     androidApp/src/main/java/com/scanium/app/auth/CredentialManagerAuthLauncher.kt
 
 echo "✅ Updated: androidApp/src/main/java/com/scanium/app/auth/CredentialManagerAuthLauncher.kt"
 
-***REMOVED*** Step 3: Commit changes
+# Step 3: Commit changes
 echo ""
 echo "📦 Committing changes..."
 git add androidApp/src/main/java/com/scanium/app/auth/CredentialManagerAuthLauncher.kt
@@ -49,7 +49,7 @@ echo ""
 echo "🚀 Pushing to origin..."
 git push origin main
 
-***REMOVED*** Step 4: Update NAS backend
+# Step 4: Update NAS backend
 echo ""
 echo "🔄 Syncing with NAS and updating backend..."
 ssh nas "cd /volume1/docker/scanium/repo && git pull origin main"

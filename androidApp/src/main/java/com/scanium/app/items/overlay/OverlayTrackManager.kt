@@ -24,7 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * - Tracking overlay ready states
  * - Caching resolution mappings
  *
- * ***REMOVED******REMOVED*** Eye Mode vs Focus Mode
+ * ## Eye Mode vs Focus Mode
  * ALL detections are rendered (Eye mode = global vision):
  * - Detections outside ROI: EYE style (subtle, global awareness)
  * - Detection inside ROI: SELECTED/READY/LOCKED style (user intent)
@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * - User centers object in ROI to select it
  * - Only selected object can be scanned/captured
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * This class is designed to be called from the main thread.
  * Internal state uses mutable maps which should be accessed from the same thread.
  *

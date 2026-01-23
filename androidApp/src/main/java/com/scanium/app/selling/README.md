@@ -1,15 +1,15 @@
-***REMOVED*** eBay Selling Flow
+# eBay Selling Flow
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The eBay selling flow allows users to list scanned items on eBay (currently mocked for development).
 
-***REMOVED******REMOVED*** Listing Title Generation
+## Listing Title Generation
 
 Listing titles are generated from scanned items using a **single source of truth**:
 `ListingTitleBuilder`.
 
-***REMOVED******REMOVED******REMOVED*** Title Selection Priority
+### Title Selection Priority
 
 The title builder uses the following priority to select the best available name:
 
@@ -25,7 +25,7 @@ The title builder uses the following priority to select the best available name:
 3. **"Item"** - Ultimate fallback
     - Only used if all else fails (should never happen in practice)
 
-***REMOVED******REMOVED******REMOVED*** Title Formatting
+### Title Formatting
 
 All titles are formatted with:
 
@@ -34,7 +34,7 @@ All titles are formatted with:
 - **80 character max** - eBay title length limit
 - **Whitespace trimmed** - clean formatting
 
-***REMOVED******REMOVED******REMOVED*** Examples
+### Examples
 
 | Input (labelText)  | Input (category) | Output Title            |
 |--------------------|------------------|-------------------------|
@@ -45,7 +45,7 @@ All titles are formatted with:
 | null               | FASHION          | "Used Fashion"          |
 | "" (blank)         | HOME_GOOD        | "Used Home Good"        |
 
-***REMOVED******REMOVED*** Data Flow
+## Data Flow
 
 ```
 ScannedItem (with labelText from classification)
@@ -61,14 +61,14 @@ MockEbayApi.createListing(draft)
 Listing (echoes draft.title)
 ```
 
-***REMOVED******REMOVED*** Key Files
+## Key Files
 
 - `ListingTitleBuilder.kt` - Core title generation logic (pure, testable)
 - `ListingDraftMapper.kt` - Maps ScannedItem → ListingDraft
 - `ListingViewModel.kt` - Orchestrates the sell flow
 - `MockEbayApi.kt` - Mocked eBay API (echoes title from draft)
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 Title generation is comprehensively tested:
 
@@ -81,7 +81,7 @@ Run tests:
 ./gradlew test --tests "com.scanium.app.selling.util.*"
 ```
 
-***REMOVED******REMOVED*** Debugging
+## Debugging
 
 When selling an item, check logs for title generation:
 
@@ -92,9 +92,9 @@ ListingDraftMapper:   - category: <category>
 ListingDraftMapper:   - generated title: <title>
 ```
 
-***REMOVED******REMOVED*** Common Issues
+## Common Issues
 
-***REMOVED******REMOVED******REMOVED*** "Used table" appears for all items
+### "Used table" appears for all items
 
 **Root Cause**: labelText is null/blank, falling back to category display name.
 
@@ -108,7 +108,7 @@ AggregatedItem.
 3. Check ItemsViewModel applies `result.label` to aggregated item
 4. Verify AggregatedItem.toScannedItem() includes `enhancedLabelText`
 
-***REMOVED******REMOVED******REMOVED*** Title shows generic category instead of specific item
+### Title shows generic category instead of specific item
 
 **Root Cause**: Same as above - labelText not populated.
 
@@ -118,7 +118,7 @@ AggregatedItem.
 2. CloudClassifier parses response correctly
 3. ItemsViewModel applies enhanced classification
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
 - Add brand information to title (e.g., "Used Samsung Monitor")
 - Support custom condition prefixes (e.g., "New", "Like New")

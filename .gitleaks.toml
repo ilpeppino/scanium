@@ -1,0 +1,73 @@
+# Gitleaks configuration for Scanium
+# Detects secrets and credentials before they're committed
+
+title = "Gitleaks config for Scanium"
+
+# Use default gitleaks rules
+[extend]
+useDefault = true
+
+# Custom rules specific to Scanium
+[[rules]]
+id = "scanium-api-key"
+description = "Scanium API Key (long base64-like strings in env files)"
+regex = '''(SCANIUM_API_KEY|scanium\.api\.key)\s*[=:]\s*[A-Za-z0-9_-]{40,}'''
+tags = ["scanium", "api-key"]
+
+[[rules]]
+id = "postgres-connection-password"
+description = "PostgreSQL Password in environment files"
+regex = '''POSTGRES_PASSWORD\s*=\s*['"]?[^\s'"]+['"]?'''
+path = '''.*\.env.*'''
+tags = ["database", "password"]
+
+[[rules]]
+id = "cloudflare-tunnel-token-env"
+description = "Cloudflare Tunnel Token"
+regex = '''CLOUDFLARED_TOKEN\s*=\s*[A-Za-z0-9+/=]{50,}'''
+tags = ["cloudflare", "token"]
+
+[[rules]]
+id = "ebay-credentials"
+description = "eBay OAuth Credentials"
+regex = '''EBAY_(CLIENT_SECRET|TOKEN_ENCRYPTION_KEY)\s*=\s*[^\s]+'''
+tags = ["ebay", "oauth"]
+
+[[rules]]
+id = "session-signing-key"
+description = "Session/Auth Signing Secret (hex)"
+regex = '''(SESSION_SIGNING_SECRET|AUTH_SESSION_SECRET)\s*=\s*[A-Fa-f0-9]{32,}'''
+tags = ["session", "jwt"]
+
+[[rules]]
+id = "android-keystore-creds"
+description = "Android Keystore Password"
+regex = '''(storePassword|keyPassword)\s*=\s*.+'''
+path = '''keystore\.properties'''
+tags = ["android", "keystore"]
+
+# Allowlist configuration
+[allowlist]
+description = "Allowlisted files and patterns"
+paths = [
+    '''.*\.example$''',
+    '''.*\.template$''',
+    '''.*\.md$''',
+    '''.*test.*\.ts$''',
+    '''.*test.*\.kt$''',
+    '''.*spec.*\.ts$''',
+    '''^backend/\.env\.example$''',
+    '''^deploy/nas/compose/\.env\.example$''',
+    '''^howto/.*''',
+    '''^monitoring/.*''',
+    '''^scripts/security-purge-secrets\.sh$''',
+]
+regexes = [
+    '''sk-proj-EXAMPLE''',
+    '''your-api-key-here''',
+    '''PLACEHOLDER''',
+    '''changeme''',
+    '''<YOUR_[A-Z_]+>''',
+    '''thisIsAFakeKeyForTestingOnly''',
+    '''REDACTED_[A-Z_]+''',
+]

@@ -1,10 +1,10 @@
-***REMOVED***!/bin/bash
-***REMOVED*** scripts/ci/run_coverage.sh - Run coverage checks locally
-***REMOVED*** Mirrors: .github/workflows/coverage.yml
+#!/bin/bash
+# scripts/ci/run_coverage.sh - Run coverage checks locally
+# Mirrors: .github/workflows/coverage.yml
 
 set -euo pipefail
 
-***REMOVED*** Colors
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -16,7 +16,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 OUTPUT_DIR="$REPO_ROOT/tmp/ci/coverage"
 LOG_FILE="$OUTPUT_DIR/gradle_coverage.log"
 
-***REMOVED*** Parse options
+# Parse options
 OPEN_BROWSER=true
 for arg in "$@"; do
     case "$arg" in
@@ -31,10 +31,10 @@ echo "Repo root: $REPO_ROOT"
 echo "Output: $OUTPUT_DIR"
 echo ""
 
-***REMOVED*** Ensure output directory exists
+# Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"
 
-***REMOVED*** Setup JDK 17 on macOS if available
+# Setup JDK 17 on macOS if available
 setup_java() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         if /usr/libexec/java_home -v 17 &>/dev/null; then
@@ -48,7 +48,7 @@ setup_java() {
     echo ""
 }
 
-***REMOVED*** Ensure gradlew is executable
+# Ensure gradlew is executable
 ensure_gradlew() {
     if [[ ! -x "$REPO_ROOT/gradlew" ]]; then
         echo "Making gradlew executable..."
@@ -56,7 +56,7 @@ ensure_gradlew() {
     fi
 }
 
-***REMOVED*** Run coverage
+# Run coverage
 run_coverage() {
     local exit_code=0
 
@@ -65,7 +65,7 @@ run_coverage() {
     echo "Logging to: $LOG_FILE"
     echo ""
 
-    ***REMOVED*** Run tests with kover verification (this is the main CI check)
+    # Run tests with kover verification (this is the main CI check)
     if "$REPO_ROOT/gradlew" -p "$REPO_ROOT" clean test koverVerify 2>&1 | tee "$LOG_FILE"; then
         echo -e "${GREEN}[PASS]${NC} Tests passed and coverage thresholds met"
     else
@@ -78,7 +78,7 @@ run_coverage() {
     echo "Command: ./gradlew koverHtmlReport"
     echo ""
 
-    ***REMOVED*** Generate Kover HTML reports
+    # Generate Kover HTML reports
     if "$REPO_ROOT/gradlew" -p "$REPO_ROOT" koverHtmlReport 2>&1 | tee -a "$LOG_FILE"; then
         echo -e "${GREEN}[OK]${NC} Kover HTML reports generated"
     else
@@ -90,7 +90,7 @@ run_coverage() {
     echo "Command: ./gradlew jacocoTestReport"
     echo ""
 
-    ***REMOVED*** Generate Jacoco report (continue on error, matching CI behavior)
+    # Generate Jacoco report (continue on error, matching CI behavior)
     if "$REPO_ROOT/gradlew" -p "$REPO_ROOT" jacocoTestReport 2>&1 | tee -a "$LOG_FILE"; then
         echo -e "${GREEN}[OK]${NC} Jacoco report generated"
     else
@@ -101,7 +101,7 @@ run_coverage() {
     return $exit_code
 }
 
-***REMOVED*** Open file in browser (cross-platform)
+# Open file in browser (cross-platform)
 open_in_browser() {
     local file="$1"
     if [[ ! -f "$file" ]]; then
@@ -120,19 +120,19 @@ open_in_browser() {
     fi
 }
 
-***REMOVED*** Collect and display report locations
+# Collect and display report locations
 show_reports() {
     echo -e "${BLUE}=== Coverage Reports ===${NC}"
     echo ""
 
     local reports_to_open=()
 
-    ***REMOVED*** Kover reports (shared modules)
+    # Kover reports (shared modules)
     echo "Kover HTML reports (shared modules):"
     while IFS= read -r report; do
         if [[ -n "$report" ]]; then
             echo "  - $report"
-            ***REMOVED*** Copy to output dir
+            # Copy to output dir
             module=$(echo "$report" | sed "s|$REPO_ROOT/||" | cut -d'/' -f1-2 | tr '/' '_')
             mkdir -p "$OUTPUT_DIR/kover_$module"
             cp -r "$(dirname "$report")"/* "$OUTPUT_DIR/kover_$module/" 2>/dev/null || true
@@ -141,7 +141,7 @@ show_reports() {
     done < <(find "$REPO_ROOT" -path "*/build/reports/kover/html/index.html" -type f 2>/dev/null)
     echo ""
 
-    ***REMOVED*** Jacoco report (androidApp)
+    # Jacoco report (androidApp)
     JACOCO_REPORT="$REPO_ROOT/androidApp/build/reports/jacoco/testDebugUnitTest/html/index.html"
     if [[ -f "$JACOCO_REPORT" ]]; then
         echo "Jacoco HTML report (androidApp):"
@@ -162,21 +162,21 @@ show_reports() {
     echo "  - Shared modules (core-models, core-tracking): >= 85%"
     echo "  - androidApp: >= 75%"
 
-    ***REMOVED*** Open reports in browser
-    if [[ "$OPEN_BROWSER" == true && ${***REMOVED***reports_to_open[@]} -gt 0 ]]; then
+    # Open reports in browser
+    if [[ "$OPEN_BROWSER" == true && ${#reports_to_open[@]} -gt 0 ]]; then
         echo ""
         echo -e "${BLUE}Opening reports in browser...${NC}"
         for report in "${reports_to_open[@]}"; do
             open_in_browser "$report"
-            sleep 0.3  ***REMOVED*** Small delay to avoid overwhelming the browser
+            sleep 0.3  # Small delay to avoid overwhelming the browser
         done
-    elif [[ ${***REMOVED***reports_to_open[@]} -gt 0 ]]; then
+    elif [[ ${#reports_to_open[@]} -gt 0 ]]; then
         echo ""
         echo -e "${BLUE}Tip:${NC} Run without --no-open to auto-open reports in browser"
     fi
 }
 
-***REMOVED*** Print all HTML reports at the end
+# Print all HTML reports at the end
 print_all_reports() {
     echo ""
     echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════════════════╗${NC}"
@@ -184,7 +184,7 @@ print_all_reports() {
     echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 
-    ***REMOVED*** Find all Kover reports
+    # Find all Kover reports
     echo -e "${BLUE}Kover Reports:${NC}"
     local kover_found=false
     while IFS= read -r report; do
@@ -198,7 +198,7 @@ print_all_reports() {
     fi
     echo ""
 
-    ***REMOVED*** Find all Jacoco reports
+    # Find all Jacoco reports
     echo -e "${BLUE}Jacoco Reports:${NC}"
     local jacoco_found=false
     while IFS= read -r report; do
@@ -214,7 +214,7 @@ print_all_reports() {
     echo -e "${GREEN}═══════════════════════════════════════════════════════════════════════════${NC}"
 }
 
-***REMOVED*** Main
+# Main
 setup_java
 ensure_gradlew
 
@@ -234,7 +234,7 @@ else
     echo -e "${RED}Result: FAIL${NC}"
 fi
 
-***REMOVED*** Print all reports at the very end
+# Print all reports at the very end
 print_all_reports
 
 exit $EXIT_CODE

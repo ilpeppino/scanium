@@ -1,6 +1,6 @@
-***REMOVED*** Bounding Box Lifecycle Root Cause Analysis
+# Bounding Box Lifecycle Root Cause Analysis
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 Bounding boxes (bboxes) freeze or disappear when:
 
@@ -10,9 +10,9 @@ Bounding boxes (bboxes) freeze or disappear when:
 
 The **only** action that reliably "revives" bboxes is opening Recents and selecting Scanium again.
 
-***REMOVED******REMOVED*** Root Cause Analysis
+## Root Cause Analysis
 
-***REMOVED******REMOVED******REMOVED*** 1. Bbox State Production Chain
+### 1. Bbox State Production Chain
 
 ```
 ML Kit Detection
@@ -40,9 +40,9 @@ DetectionOverlay composable
 - `ItemsViewModel.kt:281-288` - updateOverlayDetections
 - `OverlayTrackManager.kt:220` - _overlayTracks StateFlow update
 
-***REMOVED******REMOVED******REMOVED*** 2. Identified Issues
+### 2. Identified Issues
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Issue A: CoroutineScope Not Recreated After Cancellation
+#### Issue A: CoroutineScope Not Recreated After Cancellation
 
 **Location:** `CameraXManager.kt:162`
 
@@ -62,7 +62,7 @@ SupervisorJob's children are cancelled.
 **Why Recents fixes it:** Recents causes Activity recreation → new CameraXManager instance → new
 scope.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Issue B: isPreviewDetectionActive Race Condition
+#### Issue B: isPreviewDetectionActive Race Condition
 
 **Location:** `CameraXManager.kt:792-795`
 
@@ -78,7 +78,7 @@ if (isScanning || isPreviewDetectionActive) {
 1. The previous analyzer callback has fully completed
 2. The coroutine scope is ready to accept new work
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Issue C: No ProcessLifecycleOwner Guard
+#### Issue C: No ProcessLifecycleOwner Guard
 
 **Location:** None (missing)
 
@@ -88,7 +88,7 @@ camera pipeline should still stop.
 
 There's no ProcessLifecycleOwner observer to handle app-level background/foreground transitions.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Issue D: CameraXManager Created with `remember {}` Without Keys
+#### Issue D: CameraXManager Created with `remember {}` Without Keys
 
 **Location:** `CameraScreen.kt:138-141`
 
@@ -102,7 +102,7 @@ val cameraManager = remember {
 internal state (detectionScope, isPreviewDetectionActive, etc.) may become stale after
 ON_PAUSE/ON_RESUME cycles.
 
-***REMOVED******REMOVED******REMOVED*** 3. Why the Current Fix Attempt (`lifecycleResumeCount`) Fails
+### 3. Why the Current Fix Attempt (`lifecycleResumeCount`) Fails
 
 The current implementation uses a counter:
 
@@ -136,9 +136,9 @@ LaunchedEffect(modelDownloadState, cameraState, isCameraBinding, lifecycleResume
    `isPreviewDetectionActive` state
 3. No delay between `stopPreviewDetection` and `startPreviewDetection` to allow cleanup
 
-***REMOVED******REMOVED*** Solution Design
+## Solution Design
 
-***REMOVED******REMOVED******REMOVED*** 1. Create Session-Based Camera Controller
+### 1. Create Session-Based Camera Controller
 
 Instead of relying on boolean flags, use a session-based approach where each "session" has a unique
 key. Old sessions are invalidated when a new session starts.
@@ -156,7 +156,7 @@ fun startSession(): Int {
 fun isSessionValid(id: Int): Boolean = id == sessionId.get()
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Recreate CoroutineScope on Each Session Start
+### 2. Recreate CoroutineScope on Each Session Start
 
 ```kotlin
 private fun recreateDetectionScope() {
@@ -165,7 +165,7 @@ private fun recreateDetectionScope() {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Add ProcessLifecycleOwner Guard
+### 3. Add ProcessLifecycleOwner Guard
 
 In CameraScreen, observe ProcessLifecycleOwner to handle app background/foreground:
 
@@ -186,14 +186,14 @@ DisposableEffect(processLifecycleOwner) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Synchronize Stop/Start with Proper Ordering
+### 4. Synchronize Stop/Start with Proper Ordering
 
 Ensure `stopPreviewDetection()` fully completes before `startPreviewDetection()` is called:
 
 - Use a suspend function for stop that awaits cleanup
 - Or use a session ID to invalidate old callbacks immediately
 
-***REMOVED******REMOVED******REMOVED*** 5. Clear Bbox State on Session Stop
+### 5. Clear Bbox State on Session Stop
 
 ```kotlin
 fun stopSession() {
@@ -206,7 +206,7 @@ fun stopSession() {
 }
 ```
 
-***REMOVED******REMOVED*** Implementation Files to Modify
+## Implementation Files to Modify
 
 1. `CameraXManager.kt` - Add session management, scope recreation
 2. `CameraScreen.kt` - Add ProcessLifecycleOwner observer, session-based triggers
@@ -214,7 +214,7 @@ fun stopSession() {
 4. Create `CameraPipelineDebugOverlay.kt` - Debug overlay showing pipeline state
 5. Update developer options to include the new toggle
 
-***REMOVED******REMOVED*** Validation Criteria
+## Validation Criteria
 
 After fix, all these scenarios MUST show live bboxes within 200-500ms:
 
@@ -236,14 +236,14 @@ Debug overlay should show:
 
 ---
 
-***REMOVED******REMOVED*** Implementation Summary (Completed)
+## Implementation Summary (Completed)
 
-***REMOVED******REMOVED******REMOVED*** Files Created:
+### Files Created:
 
 - `CameraSessionController.kt` - Session-based lifecycle management with diagnostics
 - `CameraPipelineDebugOverlay.kt` - Debug overlay composable for diagnostics
 
-***REMOVED******REMOVED******REMOVED*** Files Modified:
+### Files Modified:
 
 - `CameraXManager.kt`:
     - Added `CameraSessionController` integration
@@ -265,7 +265,7 @@ Debug overlay should show:
 - `DeveloperOptionsViewModel.kt`:
     - Added `cameraPipelineDebugEnabled` StateFlow and setter
 
-***REMOVED******REMOVED******REMOVED*** Key Fixes:
+### Key Fixes:
 
 1. **Scope Recreation**: `detectionScope` is now recreated on each session start, preventing
    cancelled coroutines from blocking new launches

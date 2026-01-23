@@ -6,7 +6,7 @@ import okhttp3.Response
 /**
  * OkHttp interceptor that injects W3C Trace Context headers into HTTP requests.
  *
- * ***REMOVED******REMOVED*** W3C Trace Context Format
+ * ## W3C Trace Context Format
  * This interceptor adds the `traceparent` header to outgoing HTTP requests:
  * ```
  * traceparent: 00-{traceId}-{spanId}-{flags}
@@ -18,12 +18,12 @@ import okhttp3.Response
  * - **SpanId**: 16 hex characters (8 bytes) - Identifies this specific operation
  * - **Flags**: 2 hex characters - `01` for sampled, `00` for not sampled
  *
- * ***REMOVED******REMOVED*** Example
+ * ## Example
  * ```
  * traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
  * ```
  *
- * ***REMOVED******REMOVED*** Usage
+ * ## Usage
  * Add this interceptor to your OkHttp client:
  * ```kotlin
  * val client = OkHttpClient.Builder()
@@ -35,7 +35,7 @@ import okhttp3.Response
  * headers when a span is active. If no span is active (or the span is not sampled),
  * no headers are added.
  *
- * ***REMOVED******REMOVED*** Distributed Tracing Flow
+ * ## Distributed Tracing Flow
  * 1. Mobile app creates a root span for an operation
  * 2. Mobile sets the span as active via [TraceContext.setActiveSpan]
  * 3. Mobile makes HTTP request → This interceptor injects `traceparent` header
@@ -43,7 +43,7 @@ import okhttp3.Response
  * 5. Backend calls external service → Propagates `traceparent` → Creates grandchild span
  * 6. All spans share the same traceId, forming a complete trace tree
  *
- * ***REMOVED******REMOVED*** Compatibility
+ * ## Compatibility
  * - **Request Signing**: Works with HMAC request signing (RequestSigner)
  * - **Correlation IDs**: Works alongside existing X-Scanium-Correlation-Id headers
  * - **Privacy**: Respects telemetry opt-out (no headers when opt-out enabled)
@@ -56,7 +56,7 @@ class TraceContextInterceptor(
     companion object {
         /**
          * W3C traceparent header name.
-         * See: https://www.w3.org/TR/trace-context/***REMOVED***traceparent-header
+         * See: https://www.w3.org/TR/trace-context/#traceparent-header
          */
         private const val TRACEPARENT_HEADER = "traceparent"
 

@@ -1,19 +1,19 @@
-***REMOVED***!/bin/bash
-***REMOVED*** E2E Monitoring Tests Runner
-***REMOVED*** Usage: bash e2e-monitoring.sh [--skip-remote]
-***REMOVED***
-***REMOVED*** Runs all monitoring proof scripts and reports PASS/FAIL summary.
-***REMOVED*** Exit code 0 if all tests pass, non-zero if any fail.
-***REMOVED***
-***REMOVED*** Options:
-***REMOVED***   --skip-remote: Skip remote access test (for local-only testing)
+#!/bin/bash
+# E2E Monitoring Tests Runner
+# Usage: bash e2e-monitoring.sh [--skip-remote]
+#
+# Runs all monitoring proof scripts and reports PASS/FAIL summary.
+# Exit code 0 if all tests pass, non-zero if any fail.
+#
+# Options:
+#   --skip-remote: Skip remote access test (for local-only testing)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKIP_REMOTE=false
 
-***REMOVED*** Parse arguments
+# Parse arguments
 for arg in "$@"; do
   case $arg in
     --skip-remote)
@@ -32,7 +32,7 @@ PASSED=0
 FAILED=0
 TESTS=()
 
-***REMOVED*** Helper function to run a test
+# Helper function to run a test
 run_test() {
   local test_name="$1"
   local test_script="$2"
@@ -55,7 +55,7 @@ run_test() {
   echo ""
 }
 
-***REMOVED*** Run all proof scripts
+# Run all proof scripts
 run_test "Metrics Pipeline (Backend → Mimir)" "prove-metrics.sh"
 run_test "Logs Pipeline (Backend → Loki)" "prove-logs.sh"
 run_test "Mobile Telemetry Pipeline (End-to-End)" "prove-mobile-telemetry.sh"
@@ -72,7 +72,7 @@ else
   echo ""
 fi
 
-***REMOVED*** Summary
+# Summary
 echo "======================================================================="
 echo " E2E Test Summary"
 echo "======================================================================="

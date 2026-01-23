@@ -1,26 +1,26 @@
-***REMOVED*** Mobile App Backend Integration Guide
+# Mobile App Backend Integration Guide
 
 This guide explains how to integrate the Scanium Android app with the backend API for eBay OAuth and
 future listing features.
 
-***REMOVED******REMOVED*** 📡 Backend Endpoints
+## 📡 Backend Endpoints
 
 Base URL: `https://api.yourdomain.com` (replace with your actual Cloudflare Tunnel URL)
 
-***REMOVED******REMOVED******REMOVED*** Health & Status
+### Health & Status
 
 - `GET /healthz` - Basic health check
 - `GET /readyz` - Database connectivity check
 
-***REMOVED******REMOVED******REMOVED*** eBay OAuth
+### eBay OAuth
 
 - `POST /auth/ebay/start` - Initiate OAuth flow
 - `GET /auth/ebay/callback` - OAuth callback (handled by browser)
 - `GET /auth/ebay/status` - Check connection status
 
-***REMOVED******REMOVED*** 🔐 eBay OAuth Flow (Android)
+## 🔐 eBay OAuth Flow (Android)
 
-***REMOVED******REMOVED******REMOVED*** Step 1: Add Network Permission
+### Step 1: Add Network Permission
 
 In `app/src/main/AndroidManifest.xml`:
 
@@ -33,7 +33,7 @@ In `app/src/main/AndroidManifest.xml`:
 </application>
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 2: Create API Client
+### Step 2: Create API Client
 
 Create `app/src/main/java/com/scanium/app/api/ScaniumApi.kt`:
 
@@ -96,7 +96,7 @@ class ScaniumApi(private val baseUrl: String) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 3: Add Dependency
+### Step 3: Add Dependency
 
 In `app/build.gradle.kts`:
 
@@ -118,7 +118,7 @@ plugins {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 4: Create OAuth UI Screen
+### Step 4: Create OAuth UI Screen
 
 Create `app/src/main/java/com/scanium/app/settings/EbayOAuthScreen.kt`:
 
@@ -212,7 +212,7 @@ private fun openCustomTab(context: Context, url: String) {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 5: Add Custom Tabs Dependency
+### Step 5: Add Custom Tabs Dependency
 
 In `app/build.gradle.kts`:
 
@@ -222,7 +222,7 @@ dependencies {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Step 6: Poll for Connection After OAuth
+### Step 6: Poll for Connection After OAuth
 
 After the Custom Tab closes, poll the status endpoint:
 
@@ -243,9 +243,9 @@ LaunchedEffect(Unit) {
 }
 ```
 
-***REMOVED******REMOVED*** 🧪 Testing OAuth Flow
+## 🧪 Testing OAuth Flow
 
-***REMOVED******REMOVED******REMOVED*** Local Testing (Development)
+### Local Testing (Development)
 
 1. Start backend locally:
    ```bash
@@ -267,7 +267,7 @@ LaunchedEffect(Unit) {
 
 5. Test OAuth flow from app
 
-***REMOVED******REMOVED******REMOVED*** Production Testing
+### Production Testing
 
 1. Deploy backend to NAS with Cloudflare Tunnel
 
@@ -278,9 +278,9 @@ LaunchedEffect(Unit) {
 
 3. Test OAuth flow from app
 
-***REMOVED******REMOVED*** 🔒 Security Considerations
+## 🔒 Security Considerations
 
-***REMOVED******REMOVED******REMOVED*** 1. Certificate Pinning (Optional but Recommended)
+### 1. Certificate Pinning (Optional but Recommended)
 
 Add OkHttp certificate pinning:
 
@@ -294,7 +294,7 @@ val client = OkHttpClient.Builder()
     .build()
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Store API Base URL in BuildConfig
+### 2. Store API Base URL in BuildConfig
 
 In `app/build.gradle.kts`:
 
@@ -317,7 +317,7 @@ Then use:
 val api = ScaniumApi(BuildConfig.API_BASE_URL)
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Network Security Config
+### 3. Network Security Config
 
 Create `app/src/main/res/xml/network_security_config.xml`:
 
@@ -343,7 +343,7 @@ Reference in `AndroidManifest.xml`:
     android:networkSecurityConfig="@xml/network_security_config">
 ```
 
-***REMOVED******REMOVED*** 📱 Future: Listing Creation
+## 📱 Future: Listing Creation
 
 Once backend listing endpoints are implemented, follow this pattern:
 
@@ -370,28 +370,28 @@ suspend fun ScaniumApi.createListing(
 }
 ```
 
-***REMOVED******REMOVED*** 🐛 Troubleshooting
+## 🐛 Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "Unable to resolve host" error
+### "Unable to resolve host" error
 
 - Check that backend is running and accessible
 - Verify `API_BASE_URL` is correct
 - Check network permissions in manifest
 - Test URL in browser first
 
-***REMOVED******REMOVED******REMOVED*** OAuth callback doesn't work
+### OAuth callback doesn't work
 
 - Verify `PUBLIC_BASE_URL` matches actual backend URL
 - Check eBay app RuName configuration matches callback URL
 - View backend logs: `docker logs scanium-api`
 
-***REMOVED******REMOVED******REMOVED*** Custom Tab doesn't open
+### Custom Tab doesn't open
 
 - Ensure Chrome is installed on device/emulator
 - Check `androidx.browser` dependency is added
 - Handle case where no browser is available
 
-***REMOVED******REMOVED*** 📚 Additional Resources
+## 📚 Additional Resources
 
 - [Backend API Documentation](../backend/README.md)
 - [eBay OAuth Module](../backend/src/modules/auth/ebay/README.md)

@@ -1,9 +1,9 @@
-***REMOVED*** Data Safety Mapping for Google Play
+# Data Safety Mapping for Google Play
 
 This document maps Scanium's features to the data types collected, shared, and processed, for the
 Google Play Console Data Safety section.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 Scanium is a camera-first app that uses machine learning to detect and identify objects. Most
 processing happens on-device. Cloud features are opt-in and clearly disclosed in the app's Data
@@ -11,7 +11,7 @@ Usage screen.
 
 ---
 
-***REMOVED******REMOVED*** Data Safety Matrix
+## Data Safety Matrix
 
 | Feature                   | Data Type                     | Collected?                    | Shared?                       | Purpose                      | Storage/Retention                  | User Control                        |
 |---------------------------|-------------------------------|-------------------------------|-------------------------------|------------------------------|------------------------------------|-------------------------------------|
@@ -27,9 +27,9 @@ Usage screen.
 
 ---
 
-***REMOVED******REMOVED*** Detailed Data Descriptions
+## Detailed Data Descriptions
 
-***REMOVED******REMOVED******REMOVED*** 1. Cloud Classification
+### 1. Cloud Classification
 
 **What is sent:**
 
@@ -52,7 +52,7 @@ Usage screen.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. AI Assistant
+### 2. AI Assistant
 
 **What is sent (text-only mode, default):**
 
@@ -85,7 +85,7 @@ Usage screen.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Voice Mode
+### 3. Voice Mode
 
 **Speech-to-Text (STT):**
 
@@ -118,7 +118,7 @@ Usage screen.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Crash Reports & Diagnostics
+### 4. Crash Reports & Diagnostics
 
 **What is collected (when opted in):**
 
@@ -152,7 +152,7 @@ Usage screen.
 
 ---
 
-***REMOVED******REMOVED*** Privacy Safe Mode
+## Privacy Safe Mode
 
 Users can enable "Privacy Safe Mode" with one tap, which disables:
 
@@ -166,11 +166,11 @@ This ensures no data leaves the device.
 
 ---
 
-***REMOVED******REMOVED*** Google Play Data Safety Form Responses
+## Google Play Data Safety Form Responses
 
 Based on the above, here are the recommended responses for the Play Console:
 
-***REMOVED******REMOVED******REMOVED*** Data Collection
+### Data Collection
 
 | Data Type                | Collected?     | Required? | Purpose                            |
 |--------------------------|----------------|-----------|------------------------------------|
@@ -188,7 +188,7 @@ Based on the above, here are the recommended responses for the Play Console:
 | App info and performance | Yes (optional) | No        | Crash reporting                    |
 | Device or other IDs      | Yes (optional) | No        | Rate limiting (hashed)             |
 
-***REMOVED******REMOVED******REMOVED*** Data Sharing
+### Data Sharing
 
 | Data Type                | Shared?        | Purpose           | Recipient         |
 |--------------------------|----------------|-------------------|-------------------|
@@ -196,7 +196,7 @@ Based on the above, here are the recommended responses for the Play Console:
 | App info and performance | Yes (optional) | Crash reporting   | Sentry            |
 | Device IDs               | Yes (optional) | Rate limiting     | Scanium backend   |
 
-***REMOVED******REMOVED******REMOVED*** Security Practices
+### Security Practices
 
 - Data encrypted in transit: Yes (HTTPS/TLS)
 - Data encrypted at rest: Yes (Sentry infrastructure)
@@ -205,7 +205,7 @@ Based on the above, here are the recommended responses for the Play Console:
 
 ---
 
-***REMOVED******REMOVED*** Changelog
+## Changelog
 
 | Date       | Change                                     |
 |------------|--------------------------------------------|

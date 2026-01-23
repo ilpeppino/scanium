@@ -1,7 +1,7 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** Access Grafana from mobile via Tailscale + SSH tunnel
-***REMOVED*** This creates a tunnel that binds to all interfaces (0.0.0.0)
-***REMOVED*** allowing mobile devices to connect via Mac's Tailscale IP
+#!/usr/bin/env bash
+# Access Grafana from mobile via Tailscale + SSH tunnel
+# This creates a tunnel that binds to all interfaces (0.0.0.0)
+# allowing mobile devices to connect via Mac's Tailscale IP
 
 set -euo pipefail
 
@@ -11,7 +11,7 @@ NAS_HOST="${2:-nas}"
 echo "=== Grafana SSH Tunnel for Tailscale Access ==="
 echo
 
-***REMOVED*** Get Tailscale IP
+# Get Tailscale IP
 TAILSCALE_IP=$(tailscale ip -4 2>/dev/null || echo "")
 if [ -z "$TAILSCALE_IP" ]; then
     echo "⚠️  Tailscale IP not found. Make sure Tailscale is running."
@@ -24,7 +24,7 @@ echo "Tunnel port: $PORT"
 echo "NAS host: $NAS_HOST"
 echo
 
-***REMOVED*** Check if port is already in use
+# Check if port is already in use
 if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo "⚠️  Port $PORT is already in use!"
     echo
@@ -37,7 +37,7 @@ if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
     exit 1
 fi
 
-***REMOVED*** Check if NAS is reachable
+# Check if NAS is reachable
 if ! ssh -q -o ConnectTimeout=5 $NAS_HOST exit 2>/dev/null; then
     echo "❌ Cannot connect to $NAS_HOST via SSH"
     echo
@@ -45,7 +45,7 @@ if ! ssh -q -o ConnectTimeout=5 $NAS_HOST exit 2>/dev/null; then
     exit 1
 fi
 
-***REMOVED*** Check if Grafana is running on NAS
+# Check if Grafana is running on NAS
 echo "Checking if Grafana is running on NAS..."
 if ! ssh $NAS_HOST "/usr/local/bin/docker ps | grep -q scanium-grafana"; then
     echo "❌ Grafana container is not running on NAS!"
@@ -58,7 +58,7 @@ fi
 echo "✅ Grafana is running on NAS"
 echo
 
-***REMOVED*** Create SSH tunnel bound to 0.0.0.0 (all interfaces)
+# Create SSH tunnel bound to 0.0.0.0 (all interfaces)
 echo "Creating SSH tunnel (binding to all interfaces)..."
 echo "  ssh -L 0.0.0.0:$PORT:localhost:3000 $NAS_HOST"
 echo
@@ -81,5 +81,5 @@ echo
 echo "Press Ctrl+C to close the tunnel and exit"
 echo
 
-***REMOVED*** Keep tunnel open with keepalive
+# Keep tunnel open with keepalive
 ssh -o ServerAliveInterval=60 -L 0.0.0.0:$PORT:localhost:3000 $NAS_HOST

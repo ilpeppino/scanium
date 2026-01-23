@@ -1,9 +1,9 @@
-***REMOVED*** Vision Enrichment for /v1/classify
+# Vision Enrichment for /v1/classify
 
 This document explains how Vision enrichment works in the classify endpoint and how to configure it
 for production.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The `/v1/classify` endpoint has two independent Vision-related configurations:
 
@@ -18,7 +18,7 @@ The `/v1/classify` endpoint has two independent Vision-related configurations:
 **Key Insight:** These are INDEPENDENT. You can use `mock` classifier with `google` Vision
 enrichment. This is useful when you want rich attributes but don't need category mapping.
 
-***REMOVED******REMOVED*** Response Structure
+## Response Structure
 
 When `enrichAttributes=true`:
 
@@ -43,7 +43,7 @@ When `enrichAttributes=true`:
   "visualFacts": {
     "itemId": "uuid",
     "dominantColors": [
-      { "name": "blue", "rgbHex": "***REMOVED***1E40AF", "pct": 45 }
+      { "name": "blue", "rgbHex": "#1E40AF", "pct": 45 }
     ],
     "ocrSnippets": [
       { "text": "IKEA", "confidence": 0.95 }
@@ -63,7 +63,7 @@ When `enrichAttributes=true`:
   },
 
   "visionAttributes": {
-    "colors": [{ "name": "blue", "hex": "***REMOVED***1E40AF", "score": 0.45 }],
+    "colors": [{ "name": "blue", "hex": "#1E40AF", "score": 0.45 }],
     "ocrText": "IKEA\nKALLAX\nMade in Sweden",
     "logos": [{ "name": "IKEA", "score": 0.85 }],
     "labels": [{ "name": "Furniture", "score": 0.92 }],
@@ -95,9 +95,9 @@ When `enrichAttributes=true`:
 }
 ```
 
-***REMOVED******REMOVED*** Environment Configuration
+## Environment Configuration
 
-***REMOVED******REMOVED******REMOVED*** Development (Mock Everything)
+### Development (Mock Everything)
 
 ```bash
 SCANIUM_CLASSIFIER_PROVIDER=mock
@@ -105,13 +105,13 @@ VISION_PROVIDER=mock
 CLASSIFIER_ENABLE_ATTRIBUTE_ENRICHMENT=true
 ```
 
-***REMOVED******REMOVED******REMOVED*** Production (Real Vision Enrichment)
+### Production (Real Vision Enrichment)
 
 ```bash
-***REMOVED*** Classification (mock or google based on need)
+# Classification (mock or google based on need)
 SCANIUM_CLASSIFIER_PROVIDER=mock
 
-***REMOVED*** Vision enrichment (MUST be google for real attributes)
+# Vision enrichment (MUST be google for real attributes)
 VISION_PROVIDER=google
 VISION_ENABLED=true
 VISION_ENABLE_OCR=true
@@ -120,19 +120,19 @@ VISION_ENABLE_LOGOS=true
 VISION_ENABLE_COLORS=true
 VISION_OCR_MODE=TEXT_DETECTION
 
-***REMOVED*** Enable enrichment in classify endpoint
+# Enable enrichment in classify endpoint
 CLASSIFIER_ENABLE_ATTRIBUTE_ENRICHMENT=true
 
-***REMOVED*** Feature configuration for classification provider
+# Feature configuration for classification provider
 VISION_FEATURE=LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION
 
-***REMOVED*** Google credentials (REQUIRED for VISION_PROVIDER=google)
+# Google credentials (REQUIRED for VISION_PROVIDER=google)
 GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp-vision.json
 ```
 
-***REMOVED******REMOVED*** NAS Deployment
+## NAS Deployment
 
-***REMOVED******REMOVED******REMOVED*** 1. Ensure GCP Credentials Are Mounted
+### 1. Ensure GCP Credentials Are Mounted
 
 In `docker-compose.yml`:
 
@@ -143,10 +143,10 @@ volumes:
 
 Place your service account JSON at `backend/secrets/gcp-vision.json`.
 
-***REMOVED******REMOVED******REMOVED*** 2. Update .env on NAS
+### 2. Update .env on NAS
 
 ```bash
-***REMOVED*** Add these to /volume1/docker/scanium/backend/.env
+# Add these to /volume1/docker/scanium/backend/.env
 
 VISION_PROVIDER=google
 VISION_ENABLED=true
@@ -158,7 +158,7 @@ CLASSIFIER_ENABLE_ATTRIBUTE_ENRICHMENT=true
 GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp-vision.json
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Redeploy
+### 3. Redeploy
 
 ```bash
 cd /volume1/docker/scanium/backend
@@ -168,10 +168,10 @@ docker compose build --no-cache api
 docker compose up -d api
 ```
 
-***REMOVED******REMOVED******REMOVED*** 4. Verify
+### 4. Verify
 
 ```bash
-***REMOVED*** Test with enrichAttributes=true
+# Test with enrichAttributes=true
 curl -X POST "https://scanium.gtemp1.com/v1/classify?enrichAttributes=true" \
   -H "X-API-Key: YOUR_KEY" \
   -F "image=@test-image.jpg" \
@@ -184,9 +184,9 @@ Expected response includes:
 - `visualFacts` with real OCR text, colors, logos
 - `enrichedAttributes` derived from Vision data
 
-***REMOVED******REMOVED*** Error Responses
+## Error Responses
 
-***REMOVED******REMOVED******REMOVED*** 400 INVALID_IMAGE
+### 400 INVALID_IMAGE
 
 Returned when the uploaded image is corrupted or cannot be processed:
 
@@ -202,7 +202,7 @@ Returned when the uploaded image is corrupted or cannot be processed:
 
 This replaces the previous 500 error for corrupted images.
 
-***REMOVED******REMOVED******REMOVED*** 400 VALIDATION_ERROR
+### 400 VALIDATION_ERROR
 
 Returned for validation failures:
 
@@ -211,18 +211,18 @@ Returned for validation failures:
 - Invalid hints JSON
 - Unknown domainPackId
 
-***REMOVED******REMOVED*** Testing with curl
+## Testing with curl
 
-***REMOVED******REMOVED******REMOVED*** Basic Classification with Enrichment
+### Basic Classification with Enrichment
 
 ```bash
-***REMOVED*** Replace YOUR_API_KEY with your actual API key
+# Replace YOUR_API_KEY with your actual API key
 curl -X POST "https://scanium.gtemp1.com/v1/classify?enrichAttributes=true" \
   -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@/path/to/image.jpg;type=image/jpeg"
 ```
 
-***REMOVED******REMOVED******REMOVED*** Full Request with All Options
+### Full Request with All Options
 
 ```bash
 curl -X POST "https://scanium.gtemp1.com/v1/classify" \
@@ -233,40 +233,40 @@ curl -X POST "https://scanium.gtemp1.com/v1/classify" \
   -F 'hints={"category":"furniture","condition":"used"}'
 ```
 
-***REMOVED******REMOVED******REMOVED*** Download and Test a Sample Image
+### Download and Test a Sample Image
 
 ```bash
-***REMOVED*** Download a random test image
+# Download a random test image
 curl -L -o /tmp/test.jpg "https://picsum.photos/640/480.jpg"
 
-***REMOVED*** Classify with enrichment
+# Classify with enrichment
 curl -X POST "https://scanium.gtemp1.com/v1/classify?enrichAttributes=true" \
   -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@/tmp/test.jpg;type=image/jpeg" | jq .
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** visionProvider shows "mock" instead of "google-vision"
+### visionProvider shows "mock" instead of "google-vision"
 
 **Cause:** `VISION_PROVIDER=mock` in environment.
 
 **Fix:** Set `VISION_PROVIDER=google` and ensure credentials are mounted.
 
-***REMOVED******REMOVED******REMOVED*** providerUnavailable: true
+### providerUnavailable: true
 
 **Cause:** This is expected when `SCANIUM_CLASSIFIER_PROVIDER=mock`.
 
 **Explanation:** The `provider` field refers to the classification provider, not Vision enrichment.
 Vision enrichment status is in `visionStats.visionProvider`.
 
-***REMOVED******REMOVED******REMOVED*** No visualFacts in response
+### No visualFacts in response
 
 **Cause:** `enrichAttributes` not enabled or `CLASSIFIER_ENABLE_ATTRIBUTE_ENRICHMENT=false`.
 
 **Fix:** Add `?enrichAttributes=true` to request URL and ensure env var is set.
 
-***REMOVED******REMOVED******REMOVED*** Vision extraction errors
+### Vision extraction errors
 
 Check logs:
 
@@ -280,7 +280,7 @@ Common issues:
 - `GOOGLE_APPLICATION_CREDENTIALS` points to wrong path
 - Vision API quota exceeded
 
-***REMOVED******REMOVED*** Caching
+## Caching
 
 Vision extraction results are cached by image hash:
 
@@ -289,21 +289,21 @@ Vision extraction results are cached by image hash:
 
 On classifier cache hit, `visionStats.attempted: false` and no new Vision API call is made.
 
-***REMOVED******REMOVED*** Multi-Feature Configuration
+## Multi-Feature Configuration
 
-***REMOVED******REMOVED******REMOVED*** VISION_FEATURE (CSV Format)
+### VISION_FEATURE (CSV Format)
 
 The `VISION_FEATURE` environment variable controls which Google Vision API features are requested
 for classification. It supports CSV format:
 
 ```bash
-***REMOVED*** Single feature (backward compatible)
+# Single feature (backward compatible)
 VISION_FEATURE=LABEL_DETECTION
 
-***REMOVED*** Multiple features (comma-separated)
+# Multiple features (comma-separated)
 VISION_FEATURE=LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION
 
-***REMOVED*** All available features
+# All available features
 VISION_FEATURE=LABEL_DETECTION,OBJECT_LOCALIZATION,TEXT_DETECTION,DOCUMENT_TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION
 ```
 
@@ -317,10 +317,10 @@ VISION_FEATURE=LABEL_DETECTION,OBJECT_LOCALIZATION,TEXT_DETECTION,DOCUMENT_TEXT_
 | `LOGO_DETECTION` | Brand logos with confidence | Brand identification |
 | `OBJECT_LOCALIZATION` | Object bounding boxes | Classification signals |
 
-***REMOVED******REMOVED******REMOVED*** Recommended Production Config
+### Recommended Production Config
 
 ```bash
-***REMOVED*** Multi-feature Vision extraction (NAS production)
+# Multi-feature Vision extraction (NAS production)
 VISION_FEATURE=LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION
 ```
 
@@ -333,21 +333,21 @@ This enables:
 - **brandCandidates**: From logos + OCR token heuristics
 - **modelCandidates**: Regex patterns from OCR tokens
 
-***REMOVED******REMOVED*** Timeout and Retry Configuration
+## Timeout and Retry Configuration
 
 ```bash
-***REMOVED*** Vision API timeout (ms) - default 10000
+# Vision API timeout (ms) - default 10000
 VISION_TIMEOUT_MS=10000
 
-***REMOVED*** Max retries for transient failures - default 2
+# Max retries for transient failures - default 2
 VISION_MAX_RETRIES=2
 ```
 
 Retries use exponential backoff with jitter: `200ms * 2^attempt * (1 + random(0.3))`
 
-***REMOVED******REMOVED*** Logging and Observability
+## Logging and Observability
 
-***REMOVED******REMOVED******REMOVED*** Vision Counters in Response
+### Vision Counters in Response
 
 Every `/v1/classify` response includes `visionStats`:
 
@@ -369,7 +369,7 @@ Every `/v1/classify` response includes `visionStats`:
 | `visionCacheHits`   | Number of cache hits (no API call) |
 | `visionErrors`      | Number of extraction failures      |
 
-***REMOVED******REMOVED******REMOVED*** Server Logs
+### Server Logs
 
 Classifier response logs include these counters:
 
@@ -383,7 +383,7 @@ Classifier response logs include these counters:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Metrics
+### Metrics
 
 Metrics are recorded for:
 
@@ -391,7 +391,7 @@ Metrics are recorded for:
 - `scanium_attribute_extractions_total` - Attribute extraction count by type
 - `scanium_attribute_confidence` - Confidence distribution
 
-***REMOVED******REMOVED*** Cost Considerations
+## Cost Considerations
 
 Google Vision API pricing (per 1000 images):
 
@@ -404,59 +404,59 @@ With all features enabled: ~$6 per 1000 unique images.
 
 Caching significantly reduces costs for repeated image uploads.
 
-***REMOVED******REMOVED*** Complete .env Example (NAS Production)
+## Complete .env Example (NAS Production)
 
 ```bash
-***REMOVED*** =============================================================================
-***REMOVED*** Vision Enrichment Configuration (NAS Production)
-***REMOVED*** =============================================================================
+# =============================================================================
+# Vision Enrichment Configuration (NAS Production)
+# =============================================================================
 
-***REMOVED*** Classifier provider (mock = no real classification, google = Vision labels)
+# Classifier provider (mock = no real classification, google = Vision labels)
 SCANIUM_CLASSIFIER_PROVIDER=mock
 
-***REMOVED*** Vision features for classification (CSV format)
+# Vision features for classification (CSV format)
 VISION_FEATURE=LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION
 
-***REMOVED*** Vision enrichment provider (must be 'google' for real attributes)
+# Vision enrichment provider (must be 'google' for real attributes)
 VISION_PROVIDER=google
 VISION_ENABLED=true
 
-***REMOVED*** Enable individual Vision features for enrichment
+# Enable individual Vision features for enrichment
 VISION_ENABLE_OCR=true
 VISION_ENABLE_LABELS=true
 VISION_ENABLE_LOGOS=true
 VISION_ENABLE_COLORS=true
 
-***REMOVED*** OCR mode: TEXT_DETECTION (general) or DOCUMENT_TEXT_DETECTION (dense text)
+# OCR mode: TEXT_DETECTION (general) or DOCUMENT_TEXT_DETECTION (dense text)
 VISION_OCR_MODE=TEXT_DETECTION
 
-***REMOVED*** Enable attribute enrichment in classify endpoint
+# Enable attribute enrichment in classify endpoint
 CLASSIFIER_ENABLE_ATTRIBUTE_ENRICHMENT=true
 
-***REMOVED*** Timeout and retry settings
+# Timeout and retry settings
 VISION_TIMEOUT_MS=10000
 VISION_MAX_RETRIES=2
 
-***REMOVED*** Google Cloud credentials (required for VISION_PROVIDER=google)
+# Google Cloud credentials (required for VISION_PROVIDER=google)
 GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp-vision.json
 
-***REMOVED*** Caching settings
+# Caching settings
 VISION_CACHE_TTL_SECONDS=21600
 CLASSIFIER_CACHE_TTL_SECONDS=300
 
-***REMOVED*** Confidence thresholds (0.0 - 1.0)
+# Confidence thresholds (0.0 - 1.0)
 VISION_MIN_OCR_CONFIDENCE=0.5
 VISION_MIN_LABEL_CONFIDENCE=0.5
 VISION_MIN_LOGO_CONFIDENCE=0.5
 
-***REMOVED*** Feature limits
+# Feature limits
 VISION_MAX_OCR_SNIPPETS=10
 VISION_MAX_LABEL_HINTS=10
 VISION_MAX_LOGO_HINTS=5
 VISION_MAX_COLORS=5
 ```
 
-***REMOVED******REMOVED*** Sample JSON Response
+## Sample JSON Response
 
 Complete response with all features enabled:
 
@@ -486,9 +486,9 @@ Complete response with all features enabled:
   "visualFacts": {
     "itemId": "550e8400-e29b-41d4-a716-446655440000",
     "dominantColors": [
-      { "name": "white", "rgbHex": "***REMOVED***FFFFFF", "pct": 35 },
-      { "name": "brown", "rgbHex": "***REMOVED***8B5A2B", "pct": 28 },
-      { "name": "gray", "rgbHex": "***REMOVED***2D2D2D", "pct": 15 }
+      { "name": "white", "rgbHex": "#FFFFFF", "pct": 35 },
+      { "name": "brown", "rgbHex": "#8B5A2B", "pct": 28 },
+      { "name": "gray", "rgbHex": "#2D2D2D", "pct": 15 }
     ],
     "ocrSnippets": [
       { "text": "IKEA", "confidence": 0.95 },
@@ -521,8 +521,8 @@ Complete response with all features enabled:
 
   "visionAttributes": {
     "colors": [
-      { "name": "white", "hex": "***REMOVED***FFFFFF", "score": 0.35 },
-      { "name": "brown", "hex": "***REMOVED***8B5A2B", "score": 0.28 }
+      { "name": "white", "hex": "#FFFFFF", "score": 0.35 },
+      { "name": "brown", "hex": "#8B5A2B", "score": 0.28 }
     ],
     "ocrText": "IKEA\nKALLAX\n77x77 cm\nArt. 802.758.87",
     "logos": [

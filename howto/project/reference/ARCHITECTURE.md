@@ -1,13 +1,13 @@
-***REMOVED*** Architecture
+# Architecture
 
 Single source of truth for how Scanium is structured and how we evolve it. Scanium is a **full-stack
 mobile application** with Android client, backend services, and observability infrastructure.
 
 ---
 
-***REMOVED******REMOVED*** Full System Architecture
+## Full System Architecture
 
-***REMOVED******REMOVED******REMOVED*** System Overview
+### System Overview
 
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
@@ -41,7 +41,7 @@ mobile application** with Android client, backend services, and observability in
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
-***REMOVED******REMOVED******REMOVED*** Component Responsibilities
+### Component Responsibilities
 
 | Component       | Technology                   | Purpose                                      | Ports                    |
 |-----------------|------------------------------|----------------------------------------------|--------------------------|
@@ -55,7 +55,7 @@ mobile application** with Android client, backend services, and observability in
 | **Tempo**       | Tempo 2.3.1 (Docker)         | Distributed tracing backend                  | 3200 (internal)          |
 | **Mimir**       | Mimir 2.11.0 (Docker)        | Prometheus-compatible metrics                | 9009 (internal)          |
 
-***REMOVED******REMOVED******REMOVED*** Data Flow
+### Data Flow
 
 **Mobile App → Backend:**
 
@@ -76,7 +76,7 @@ mobile application** with Android client, backend services, and observability in
 
 ---
 
-***REMOVED******REMOVED*** Android Application Architecture (Current State)
+## Android Application Architecture (Current State)
 
 - **Build/tooling:** Java 17 toolchain; AGP 8.6.0; Kotlin 2.0.0 + Compose compiler 2.0.0; Compose
   BOM 2024.05.00 in `androidApp`; KSP 2.0.0-1.0.24. `./gradlew assembleDebug` is the main gate;
@@ -111,7 +111,7 @@ mobile application** with Android client, backend services, and observability in
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** Developer Options & Diagnostics (Debug-only)
+### Developer Options & Diagnostics (Debug-only)
 
 The `androidApp/diagnostics/` package provides runtime health checks and system diagnostics,
 accessible via Developer Options in Settings:
@@ -149,7 +149,7 @@ data class DiagnosticsState(
 
 ---
 
-***REMOVED******REMOVED*** Target Architecture (layers)
+## Target Architecture (layers)
 
 - **Presentation (platform-specific):** Compose UI (Android), future SwiftUI (iOS). Pure UI + state
   wiring only.
@@ -177,7 +177,7 @@ flowchart TD
 
 ---
 
-***REMOVED******REMOVED*** Data Flow (stable items only for cloud)
+## Data Flow (stable items only for cloud)
 
 1. Camera frame (with ViewPort-aligned cropRect) → ML Kit detector → **geometry filtering** (drop
    detections outside visible viewport + edge inset) → `RawDetection` (normalized bbox, coarse
@@ -218,7 +218,7 @@ flowchart LR
 
 ---
 
-***REMOVED******REMOVED*** Deduplication & Detection Quality Configuration
+## Deduplication & Detection Quality Configuration
 
 **WYSIWYG Viewport Alignment:**
 
@@ -280,7 +280,7 @@ flowchart LR
 
 ---
 
-***REMOVED******REMOVED*** Module/Package Boundaries & Dependency Rules
+## Module/Package Boundaries & Dependency Rules
 
 - Shared modules (`shared/*`) are Android-free; enforced by `checkPortableModules`.
 - Platform modules (`android-*`) do not depend on each other except adapters can be a leaf helper;
@@ -289,7 +289,7 @@ flowchart LR
 - `core-domainpack` depends on shared models but not on platform code.
 - Shell modules (`core-contracts`, `core-scan`) stay lightweight; no Android types.
 
-***REMOVED******REMOVED*** Security posture (concise)
+## Security posture (concise)
 
 - Network + classification defaults keep processing on-device; cloud classification only activates
   when `SCANIUM_API_BASE_URL`/`SCANIUM_API_KEY` are set (via `local.properties` or environment). See
@@ -302,7 +302,7 @@ flowchart LR
 
 ---
 
-***REMOVED******REMOVED*** Cloud Classification Flow (Google Vision via backend proxy)
+## Cloud Classification Flow (Google Vision via backend proxy)
 
 - **Trigger:** Only stable aggregated items with thumbnails.
 - **Config:** `CloudClassifierConfig` + `CloudConfigProvider` (Android impl reads BuildConfig from
@@ -316,12 +316,12 @@ flowchart LR
 
 ---
 
-***REMOVED******REMOVED*** Vision → Classification → Assistant Pipeline
+## Vision → Classification → Assistant Pipeline
 
 This section describes the end-to-end flow from camera scan to assistant output, including attribute
 extraction and enrichment.
 
-***REMOVED******REMOVED******REMOVED*** Pipeline Overview
+### Pipeline Overview
 
 ```
 [Camera Scan]
@@ -337,7 +337,7 @@ extraction and enrichment.
 [Assistant Context] ────────── ItemContextSnapshot with all extracted attributes
 ```
 
-***REMOVED******REMOVED******REMOVED*** Key Concepts
+### Key Concepts
 
 **itemType vs category:**
 
@@ -362,7 +362,7 @@ extraction and enrichment.
 - Fallback to template-based generation when LLM unavailable
 - LLM NEVER used for attribute extraction (pure Vision-first approach)
 
-***REMOVED******REMOVED******REMOVED*** Step-by-Step Sequence
+### Step-by-Step Sequence
 
 1. **Camera captures frame** → `CameraScreen.kt` triggers `addItemsWithVisionPrefill()`
 2. **Item created** → `ItemsStateManager.addItemsSync()` assigns `aggregatedId`
@@ -379,7 +379,7 @@ extraction and enrichment.
 13. **Context sent** → `ItemContextSnapshot` includes itemType, detectedText, brand, color
 14. **Description generated** → Assistant uses structured context for specific output
 
-***REMOVED******REMOVED******REMOVED*** Key Files
+### Key Files
 
 | Component          | File                                                | Purpose                             |
 |--------------------|-----------------------------------------------------|-------------------------------------|
@@ -392,7 +392,7 @@ extraction and enrichment.
 | Backend Vision     | `backend/src/modules/vision/routes.ts`              | `deriveItemType()`, Vision API      |
 | Backend Enrichment | `backend/src/modules/enrich/pipeline.ts`            | 3-stage enrichment pipeline         |
 
-***REMOVED******REMOVED******REMOVED*** Attribute Schema
+### Attribute Schema
 
 ```kotlin
 // VisionAttributes (raw Vision data)
@@ -422,7 +422,7 @@ enum class DraftFieldKey {
 
 ---
 
-***REMOVED******REMOVED*** Vision Golden Tests Strategy
+## Vision Golden Tests Strategy
 
 Golden tests validate the complete Vision extraction pipeline using real product images, ensuring:
 
@@ -432,14 +432,14 @@ Golden tests validate the complete Vision extraction pipeline using real product
 - Label detection provides category hints
 - itemType derivation produces concrete sellable nouns
 
-***REMOVED******REMOVED******REMOVED*** Why Golden Images Exist
+### Why Golden Images Exist
 
 1. **Regression protection:** Detect silent failures in Vision API or derivation logic
 2. **End-to-end validation:** Test full pipeline from image to structured attributes
 3. **Deterministic verification:** Compare actual output against expected attributes
 4. **CI integration:** Run without external API calls using cached/mock responses
 
-***REMOVED******REMOVED******REMOVED*** What They Protect Against
+### What They Protect Against
 
 - Vision API response format changes
 - Derivation logic regressions (e.g., itemType mapping)
@@ -447,7 +447,7 @@ Golden tests validate the complete Vision extraction pipeline using real product
 - Confidence threshold changes affecting output
 - OCR/logo/color extraction quality degradation
 
-***REMOVED******REMOVED******REMOVED*** Image Selection Criteria
+### Image Selection Criteria
 
 Golden images should be:
 
@@ -457,7 +457,7 @@ Golden images should be:
 - **Compressed:** Max 800px longest side, ≤200KB to minimize Git footprint
 - **Diverse:** Cover target categories (cosmetics, household, apparel, electronics)
 
-***REMOVED******REMOVED******REMOVED*** Validation Approach
+### Validation Approach
 
 ```typescript
 // Example golden test assertions (backend)
@@ -474,7 +474,7 @@ const itemTypeLower = body.itemType.toLowerCase();
 expect(itemTypeLower.includes('tissue') || itemTypeLower.includes('box')).toBe(true);
 ```
 
-***REMOVED******REMOVED******REMOVED*** Golden Test Files
+### Golden Test Files
 
 | File                                               | Purpose                         |
 |----------------------------------------------------|---------------------------------|
@@ -485,7 +485,7 @@ expect(itemTypeLower.includes('tissue') || itemTypeLower.includes('box')).toBe(t
 
 ---
 
-***REMOVED******REMOVED*** Build Guardrails
+## Build Guardrails
 
 - Java 17 toolchain (root + androidApp).
 - Commands: `./gradlew assembleDebug` (must stay green), `./gradlew test` (fast, offline),
@@ -494,7 +494,7 @@ expect(itemTypeLower.includes('tissue') || itemTypeLower.includes('box')).toBe(t
 
 ---
 
-***REMOVED******REMOVED*** Cross-Platform Readiness (iOS Prep)
+## Cross-Platform Readiness (iOS Prep)
 
 - Contracts and models live in shared modules; no Android imports.
 - Future iOS will implement:
@@ -505,9 +505,9 @@ expect(itemTypeLower.includes('tissue') || itemTypeLower.includes('box')).toBe(t
 
 ---
 
-***REMOVED******REMOVED*** Backend Services Architecture
+## Backend Services Architecture
 
-***REMOVED******REMOVED******REMOVED*** Technology Stack
+### Technology Stack
 
 - **Runtime:** Node.js 20+ with TypeScript 5.x
 - **Framework:** Fastify for HTTP server
@@ -516,30 +516,30 @@ expect(itemTypeLower.includes('tissue') || itemTypeLower.includes('box')).toBe(t
 - **Dev Tools:** ngrok for mobile device tunneling
 - **Telemetry:** OpenTelemetry SDK for logs, traces, metrics
 
-***REMOVED******REMOVED******REMOVED*** Directory Structure
+### Directory Structure
 
 ```
 backend/
 ├── src/
-│   ├── index.ts              ***REMOVED*** Fastify server entry point
-│   ├── routes/               ***REMOVED*** API endpoint definitions
-│   │   ├── items.ts          ***REMOVED*** Item CRUD operations
-│   │   ├── auth/             ***REMOVED*** Authentication endpoints
-│   │   └── health.ts         ***REMOVED*** Health check endpoint
-│   ├── services/             ***REMOVED*** Business logic layer
-│   ├── middleware/           ***REMOVED*** Fastify plugins (auth, validation)
-│   └── types/                ***REMOVED*** TypeScript type definitions
+│   ├── index.ts              # Fastify server entry point
+│   ├── routes/               # API endpoint definitions
+│   │   ├── items.ts          # Item CRUD operations
+│   │   ├── auth/             # Authentication endpoints
+│   │   └── health.ts         # Health check endpoint
+│   ├── services/             # Business logic layer
+│   ├── middleware/           # Fastify plugins (auth, validation)
+│   └── types/                # TypeScript type definitions
 ├── prisma/
-│   ├── schema.prisma         ***REMOVED*** Database schema (models, relations)
-│   ├── migrations/           ***REMOVED*** Version-controlled schema changes
-│   └── seed.ts               ***REMOVED*** Database seeding script
-├── docker-compose.yml        ***REMOVED*** PostgreSQL container definition
+│   ├── schema.prisma         # Database schema (models, relations)
+│   ├── migrations/           # Version-controlled schema changes
+│   └── seed.ts               # Database seeding script
+├── docker-compose.yml        # PostgreSQL container definition
 ├── package.json
 ├── tsconfig.json
-└── .env                      ***REMOVED*** Environment vars (gitignored)
+└── .env                      # Environment vars (gitignored)
 ```
 
-***REMOVED******REMOVED******REMOVED*** API Endpoints (Current)
+### API Endpoints (Current)
 
 - `GET /healthz` - Health check (used by startup scripts)
 - `POST /auth/ebay/start` - Initiate eBay OAuth flow
@@ -547,7 +547,7 @@ backend/
 - `GET /auth/ebay/status` - Check eBay connection status
 - *(Additional endpoints to be documented as implemented)*
 
-***REMOVED******REMOVED******REMOVED*** Database Schema (Prisma)
+### Database Schema (Prisma)
 
 - **Items:** Scanned objects with metadata, category, pricing
 - **Users:** User accounts and authentication
@@ -556,9 +556,9 @@ backend/
 
 ---
 
-***REMOVED******REMOVED*** Observability Stack Architecture
+## Observability Stack Architecture
 
-***REMOVED******REMOVED******REMOVED*** LGTM Stack Components
+### LGTM Stack Components
 
 **Grafana Alloy (OTLP Router):**
 
@@ -599,29 +599,29 @@ backend/
 - Anonymous admin access for local dev (disable in production)
 - Persistent storage: `monitoring/data/grafana/`
 
-***REMOVED******REMOVED******REMOVED*** Monitoring Stack Management
+### Monitoring Stack Management
 
 **Startup:**
 
 ```bash
-***REMOVED*** Integrated with backend
-scripts/backend/start-dev.sh              ***REMOVED*** Starts backend + monitoring
+# Integrated with backend
+scripts/backend/start-dev.sh              # Starts backend + monitoring
 
-***REMOVED*** Standalone monitoring
-scripts/monitoring/start-monitoring.sh    ***REMOVED*** Monitoring only
+# Standalone monitoring
+scripts/monitoring/start-monitoring.sh    # Monitoring only
 ```
 
 **Status & URLs:**
 
 ```bash
-scripts/monitoring/print-urls.sh          ***REMOVED*** Health checks, access URLs
+scripts/monitoring/print-urls.sh          # Health checks, access URLs
 ```
 
 **Shutdown:**
 
 ```bash
-scripts/backend/stop-dev.sh --with-monitoring  ***REMOVED*** Stop everything
-scripts/monitoring/stop-monitoring.sh          ***REMOVED*** Stop monitoring only
+scripts/backend/stop-dev.sh --with-monitoring  # Stop everything
+scripts/monitoring/stop-monitoring.sh          # Stop monitoring only
 ```
 
 **Container Management:**
@@ -631,7 +631,7 @@ scripts/monitoring/stop-monitoring.sh          ***REMOVED*** Stop monitoring onl
 - Logs: `docker compose -p scanium-monitoring logs -f [service]`
 - Restart: `docker compose -p scanium-monitoring restart [service]`
 
-***REMOVED******REMOVED******REMOVED*** Data Persistence
+### Data Persistence
 
 - All data stored in `monitoring/data/` (gitignored)
 - Grafana settings, users, dashboards persist across restarts
@@ -640,9 +640,9 @@ scripts/monitoring/stop-monitoring.sh          ***REMOVED*** Stop monitoring onl
 
 ---
 
-***REMOVED******REMOVED*** Development Workflow
+## Development Workflow
 
-***REMOVED******REMOVED******REMOVED*** One-Command Dev Environment
+### One-Command Dev Environment
 
 The `scripts/backend/start-dev.sh` script provides integrated startup:
 
@@ -675,7 +675,7 @@ The `scripts/backend/start-dev.sh` script provides integrated startup:
 - Grafana: http://localhost:3000 (if monitoring enabled)
 - OTLP: localhost:4317 (gRPC), localhost:4318 (HTTP)
 
-***REMOVED******REMOVED******REMOVED*** Mobile Device Testing Workflow
+### Mobile Device Testing Workflow
 
 1. Run `scripts/backend/start-dev.sh`
 2. Note the ngrok URL (e.g., https://abc123.ngrok-free.dev)
@@ -684,7 +684,7 @@ The `scripts/backend/start-dev.sh` script provides integrated startup:
 5. App communicates with backend via ngrok tunnel
 6. View telemetry in Grafana dashboards
 
-***REMOVED******REMOVED******REMOVED*** Debugging & Troubleshooting
+### Debugging & Troubleshooting
 
 **Backend logs:**
 
@@ -708,16 +708,16 @@ docker compose -p scanium-monitoring logs -f alloy
 **Health checks:**
 
 ```bash
-curl http://localhost:8080/healthz          ***REMOVED*** Backend
-curl http://localhost:3000/api/health       ***REMOVED*** Grafana
-curl http://localhost:3100/ready            ***REMOVED*** Loki
-curl http://localhost:3200/ready            ***REMOVED*** Tempo
-curl http://localhost:9009/ready            ***REMOVED*** Mimir
+curl http://localhost:8080/healthz          # Backend
+curl http://localhost:3000/api/health       # Grafana
+curl http://localhost:3100/ready            # Loki
+curl http://localhost:3200/ready            # Tempo
+curl http://localhost:9009/ready            # Mimir
 ```
 
 ---
 
-***REMOVED******REMOVED*** Roadmap (high level)
+## Roadmap (high level)
 
 - ✅ Backend API server with PostgreSQL (done)
 - ✅ Observability stack with LGTM + Alloy (done)

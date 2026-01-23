@@ -1,4 +1,4 @@
-***REMOVED*** Full Monitoring Stack Restart Test
+# Full Monitoring Stack Restart Test
 
 **Date:** 2026-01-10
 **Test Type:** Controlled Full Stack Restart
@@ -8,7 +8,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 Successfully restarted the entire monitoring stack (Grafana, Loki, Tempo, Mimir, Alloy) and
 verified:
@@ -24,7 +24,7 @@ power cycles.
 
 ---
 
-***REMOVED******REMOVED*** Test Timeline
+## Test Timeline
 
 | Time (CET)        | Event                             | Details                                                  |
 |-------------------|-----------------------------------|----------------------------------------------------------|
@@ -42,9 +42,9 @@ power cycles.
 
 ---
 
-***REMOVED******REMOVED*** Pre-Restart Baseline
+## Pre-Restart Baseline
 
-***REMOVED******REMOVED******REMOVED*** Container Status (15:42:25)
+### Container Status (15:42:25)
 
 ```
 scanium-alloy           Up About an hour (healthy)
@@ -54,7 +54,7 @@ scanium-loki            Up 8 hours (healthy)
 scanium-tempo           Up 8 hours (healthy)
 ```
 
-***REMOVED******REMOVED******REMOVED*** Alloy Storage State
+### Alloy Storage State
 
 ```
 /volume1/docker/scanium/repo/monitoring/data/alloy/
@@ -71,9 +71,9 @@ scanium-tempo           Up 8 hours (healthy)
 
 ---
 
-***REMOVED******REMOVED*** Post-Restart Results
+## Post-Restart Results
 
-***REMOVED******REMOVED******REMOVED*** Container Health Status (15:43:54, +74 seconds)
+### Container Health Status (15:43:54, +74 seconds)
 
 | Container       | Status | Health    | Recovery Time |
 |-----------------|--------|-----------|---------------|
@@ -85,7 +85,7 @@ scanium-tempo           Up 8 hours (healthy)
 
 **Result:** All containers achieved HEALTHY status within 30-60 seconds
 
-***REMOVED******REMOVED******REMOVED*** Alloy Storage Persistence ✅
+### Alloy Storage Persistence ✅
 
 **Position File Status:**
 
@@ -107,9 +107,9 @@ scanium-tempo           Up 8 hours (healthy)
 
 ---
 
-***REMOVED******REMOVED*** Replay Storm Analysis
+## Replay Storm Analysis
 
-***REMOVED******REMOVED******REMOVED*** Error Count by Phase
+### Error Count by Phase
 
 | Phase                              | Duration | Errors | Rate    | Status                   |
 |------------------------------------|----------|--------|---------|--------------------------|
@@ -117,7 +117,7 @@ scanium-tempo           Up 8 hours (healthy)
 | **Catch-up (15:43:10-15:43:25)**   | 15s      | 33     | 132/min | Brief backlog processing |
 | **Stabilized (15:43:25-15:44:45)** | 80s      | 0      | 0/min   | ✅ **No errors**          |
 
-***REMOVED******REMOVED******REMOVED*** Error Breakdown During Catch-Up (33 total)
+### Error Breakdown During Catch-Up (33 total)
 
 **"Entry too far behind" errors:** 30
 
@@ -131,7 +131,7 @@ scanium-tempo           Up 8 hours (healthy)
 - Duration: 3 warnings over 15 seconds
 - Impact: Alloy retried and succeeded
 
-***REMOVED******REMOVED******REMOVED*** Comparison to Pre-Fix Behavior
+### Comparison to Pre-Fix Behavior
 
 | Metric                  | Before Priority 1 Fix    | After Priority 1 Fix | Improvement         |
 |-------------------------|--------------------------|----------------------|---------------------|
@@ -146,9 +146,9 @@ container restarts were processed, not days/weeks of logs.
 
 ---
 
-***REMOVED******REMOVED*** Historical Data Verification
+## Historical Data Verification
 
-***REMOVED******REMOVED******REMOVED*** Loki Data Retention ✅
+### Loki Data Retention ✅
 
 ```
 /volume1/docker/scanium/repo/monitoring/data/loki/chunks/fake/
@@ -156,7 +156,7 @@ container restarts were processed, not days/weeks of logs.
 - Status: Intact, accessible
 ```
 
-***REMOVED******REMOVED******REMOVED*** Mimir Data Retention ✅
+### Mimir Data Retention ✅
 
 ```
 /volume1/docker/scanium/repo/monitoring/data/mimir/tsdb/
@@ -164,7 +164,7 @@ container restarts were processed, not days/weeks of logs.
 - Status: Intact, ingestion resumed
 ```
 
-***REMOVED******REMOVED******REMOVED*** Grafana Configuration ✅
+### Grafana Configuration ✅
 
 - Dashboards: Present and accessible
 - Datasources: Auto-provisioned on startup
@@ -174,7 +174,7 @@ container restarts were processed, not days/weeks of logs.
 
 ---
 
-***REMOVED******REMOVED*** Root Cause Analysis: Why Only 33 Errors?
+## Root Cause Analysis: Why Only 33 Errors?
 
 **Before Fix:** Every restart replayed ALL Docker logs from container creation (days/weeks old)
 
@@ -199,9 +199,9 @@ container restarts were processed, not days/weeks of logs.
 
 ---
 
-***REMOVED******REMOVED*** Success Criteria Verification
+## Success Criteria Verification
 
-| ***REMOVED*** | Criterion                                         | Result | Evidence                                              |
+| # | Criterion                                         | Result | Evidence                                              |
 |---|---------------------------------------------------|--------|-------------------------------------------------------|
 | 1 | Alloy container becomes HEALTHY                   | ✅ PASS | Healthy in 20s (was UNHEALTHY with 319 failures)      |
 | 2 | Alloy storage directory exists and mounted        | ✅ PASS | `/volume1/.../data/alloy/` present, 8 files persisted |
@@ -213,9 +213,9 @@ container restarts were processed, not days/weeks of logs.
 
 ---
 
-***REMOVED******REMOVED*** Comparison: Before vs After Priority 1 Fixes
+## Comparison: Before vs After Priority 1 Fixes
 
-***REMOVED******REMOVED******REMOVED*** Healthcheck Status
+### Healthcheck Status
 
 **Before:**
 
@@ -235,7 +235,7 @@ scanium-alloy  Up 40 seconds (healthy)
 Health check passed
 ```
 
-***REMOVED******REMOVED******REMOVED*** Restart Behavior
+### Restart Behavior
 
 **Before (No Persistence):**
 
@@ -257,22 +257,22 @@ Health check passed
 
 ---
 
-***REMOVED******REMOVED*** Recommendations
+## Recommendations
 
-***REMOVED******REMOVED******REMOVED*** Completed ✅
+### Completed ✅
 
 - ✅ Priority 1 fixes implemented and verified working
 - ✅ Alloy storage persistence operational
 - ✅ Healthcheck fixed and reliable
 - ✅ Stack restart resilience achieved
 
-***REMOVED******REMOVED******REMOVED*** Not Currently Needed ❌
+### Not Currently Needed ❌
 
 - ❌ **Loki rate limit increase** - Current 4MB/sec sufficient (only 3 transient warnings)
 - ❌ **Alloy batch tuning** - Current settings work well (small backlog cleared in 45s)
 - ❌ **Out-of-order ingestion** - Not needed (position tracking prevents replay storms)
 
-***REMOVED******REMOVED******REMOVED*** Future Considerations (Optional)
+### Future Considerations (Optional)
 
 1. **Monitor for sustained rate-limiting:** If you add many more containers (>20-30) with high log
    volume
@@ -281,9 +281,9 @@ Health check passed
 
 ---
 
-***REMOVED******REMOVED*** Operational Readiness Assessment
+## Operational Readiness Assessment
 
-***REMOVED******REMOVED******REMOVED*** Stack Resilience: ✅ PRODUCTION READY
+### Stack Resilience: ✅ PRODUCTION READY
 
 | Scenario                         | Expected Behavior                             | Verified |
 |----------------------------------|-----------------------------------------------|----------|
@@ -292,20 +292,20 @@ Health check passed
 | **Full stack restart**           | All services healthy in <1 min, data intact   | ✅ Yes    |
 | **Monitoring during restart**    | ~45s gap (expected), no prolonged outage      | ✅ Yes    |
 
-***REMOVED******REMOVED******REMOVED*** Known Limitations (Acceptable)
+### Known Limitations (Acceptable)
 
 1. **5-60 second data gap during restart** - Expected, unavoidable during container stop/start
 2. **Brief backlog processing (15-45s)** - Normal when containers restart during the day
 3. **Position tracking per container ID** - New container IDs require new position (by design)
 
-***REMOVED******REMOVED******REMOVED*** No Further Action Required ✅
+### No Further Action Required ✅
 
 The monitoring stack is now resilient to NAS power cycles. Priority 1 fixes have eliminated the root
 causes of post-restart failures.
 
 ---
 
-***REMOVED******REMOVED*** Test Evidence Files
+## Test Evidence Files
 
 1. **This report:** `monitoring/incident_data/RESTART_TEST_full_stack_20260110.md`
 2. **Pre-fix baseline logs:** `monitoring/incident_data/alloy_before.log` (121KB of errors)
@@ -316,7 +316,7 @@ causes of post-restart failures.
 
 ---
 
-***REMOVED******REMOVED*** Conclusion
+## Conclusion
 
 **Full monitoring stack restart test: SUCCESSFUL ✅**
 

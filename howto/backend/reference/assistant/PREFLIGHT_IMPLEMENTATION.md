@@ -1,22 +1,22 @@
-***REMOVED*** Assistant Preflight Implementation
+# Assistant Preflight Implementation
 
 This document describes the assistant preflight/warmup mechanism and how it determines UI
 availability state.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The assistant preflight check verifies backend connectivity and authentication before the user
 attempts to send a chat message. It runs on screen entry and can be re-triggered on connectivity
 changes.
 
-***REMOVED******REMOVED*** Endpoint
+## Endpoint
 
 **Endpoint**: `POST {BASE_URL}/v1/assist/chat`
 
 The preflight now uses the actual chat endpoint instead of a separate health endpoint. This ensures
 we test the exact same authentication and routing path that real chat requests use.
 
-***REMOVED******REMOVED******REMOVED*** Request Payload
+### Request Payload
 
 Minimal valid JSON payload:
 
@@ -53,7 +53,7 @@ With `encodeDefaults = true`:
 {"message": "ping", "items": [], "history": []}
 ```
 
-***REMOVED******REMOVED******REMOVED*** Headers
+### Headers
 
 | Header                | Value                 | Purpose                              |
 |-----------------------|-----------------------|--------------------------------------|
@@ -65,7 +65,7 @@ With `encodeDefaults = true`:
 
 The device ID is hashed locally using SHA-256 before sending to protect user privacy.
 
-***REMOVED******REMOVED*** State Derivation
+## State Derivation
 
 The UI availability state is derived from the preflight result as follows:
 
@@ -81,7 +81,7 @@ The UI availability state is derived from the preflight result as follows:
 | `NOT_CONFIGURED`          | Unavailable (NOT_CONFIGURED)     | No                | No backend URL configured                  |
 | `ENDPOINT_NOT_FOUND`      | Unavailable (ENDPOINT_NOT_FOUND) | No                | Wrong URL or tunnel route                  |
 
-***REMOVED******REMOVED******REMOVED*** Key Behavior: Preflight Failures Don't Block Chat
+### Key Behavior: Preflight Failures Don't Block Chat
 
 The implementation ensures preflight failures **cannot permanently mark the assistant as unavailable
 ** when chat might still work:
@@ -93,7 +93,7 @@ The implementation ensures preflight failures **cannot permanently mark the assi
 The actual chat request has a longer timeout (10-15s vs 2s for preflight) and may succeed even when
 preflight failed.
 
-***REMOVED******REMOVED******REMOVED*** Chat Success Overrides Preflight State
+### Chat Success Overrides Preflight State
 
 When a chat request returns HTTP 200, the UI immediately marks the assistant as "Available"
 regardless of the previous preflight state. This ensures that:
@@ -101,7 +101,7 @@ regardless of the previous preflight state. This ensures that:
 - A temporary preflight failure doesn't permanently block the user
 - The assistant state reflects actual capability, not a cached failure
 
-***REMOVED******REMOVED*** Error Mapping
+## Error Mapping
 
 | HTTP Status                                           | Preflight Status        | Reason Code          | Blocks UI? |
 |-------------------------------------------------------|-------------------------|----------------------|------------|
@@ -116,9 +116,9 @@ regardless of the previous preflight state. This ensures that:
 | DNS failure                                           | OFFLINE                 | dns_failure          | Yes        |
 | Connection refused                                    | OFFLINE                 | connection_refused   | Yes        |
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
-***REMOVED******REMOVED******REMOVED*** Logcat Filters
+### Logcat Filters
 
 To monitor preflight activity:
 
@@ -133,7 +133,7 @@ I/AssistantPreflight: Preflight: host=api.scanium.app path=/v1/assist/chat statu
 I/AssistantPreflight: Preflight: AVAILABLE latency=234ms reason=null
 ```
 
-***REMOVED******REMOVED******REMOVED*** curl Command
+### curl Command
 
 Test preflight with curl:
 
@@ -153,7 +153,7 @@ Expected response for success:
 {"content": "...assistant response..."}
 ```
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 - `androidApp/src/main/java/com/scanium/app/network/DeviceIdProvider.kt` - New utility for device ID
 - `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantPreflight.kt` - Updated

@@ -102,7 +102,7 @@ class PriceEstimationOrchestrator(
             attributesKey,
             request.region,
             request.currencyCode,
-        ).joinToString("***REMOVED***")
+        ).joinToString("#")
     }
 
     companion object {

@@ -1,4 +1,4 @@
-***REMOVED*** Phase D Verification Checklist - Production Readiness
+# Phase D Verification Checklist - Production Readiness
 
 **Date:** 2026-01-13
 **Status:** ✅ Implementation Complete
@@ -6,7 +6,7 @@
 
 ---
 
-***REMOVED******REMOVED*** Implementation Summary
+## Implementation Summary
 
 Phase D adds comprehensive account deletion functionality to meet Google Play requirements for apps
 with user accounts (Google Sign-In). This includes in-app deletion, web-based deletion, privacy
@@ -14,11 +14,11 @@ policy updates, and Play Console documentation.
 
 ---
 
-***REMOVED******REMOVED*** 🎯 Deliverables
+## 🎯 Deliverables
 
-***REMOVED******REMOVED******REMOVED*** ✅ Backend Implementation
+### ✅ Backend Implementation
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Account Deletion Service
+#### Account Deletion Service
 
 - **File:** `backend/src/modules/account/deletion-service.ts`
 - **Features:**
@@ -27,7 +27,7 @@ policy updates, and Play Console documentation.
     - Token-based confirmation flow (1-hour expiry)
     - Automatic cleanup of expired verification tokens
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Account Deletion Endpoints
+#### Account Deletion Endpoints
 
 - **File:** `backend/src/modules/account/routes.ts`
 - **Endpoints:**
@@ -36,7 +36,7 @@ policy updates, and Play Console documentation.
     - `POST /v1/account/delete-by-email` - Web deletion request (rate-limited)
     - `POST /v1/account/delete/confirm` - Confirm deletion via token
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Data Deleted on Account Deletion
+#### Data Deleted on Account Deletion
 
 - ✅ User profile (googleSub, email, displayName, pictureUrl)
 - ✅ All sessions (access tokens, refresh tokens)
@@ -44,7 +44,7 @@ policy updates, and Play Console documentation.
 - ✅ All listings (drafts and published)
 - ✅ Related data via CASCADE delete
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Security Features
+#### Security Features
 
 - ✅ Rate limiting on email-based deletion (3 requests per 15 minutes per IP)
 - ✅ Email verification with secure random tokens (32 bytes base64url)
@@ -53,9 +53,9 @@ policy updates, and Play Console documentation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** ✅ Android Implementation
+### ✅ Android Implementation
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** In-App Deletion UI
+#### In-App Deletion UI
 
 - **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/SettingsGeneralScreen.kt`
 - **Features:**
@@ -65,17 +65,17 @@ policy updates, and Play Console documentation.
     - Error handling and success feedback via Snackbar
     - Red warning color for destructive action
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Auth Repository
+#### Auth Repository
 
 - **File:** `androidApp/src/main/java/com/scanium/app/auth/AuthRepository.kt`
 - **New method:** `deleteAccount()` - calls backend and clears local state
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** API Client
+#### API Client
 
 - **File:** `androidApp/src/main/java/com/scanium/app/auth/GoogleAuthApi.kt`
 - **New method:** `deleteAccount(accessToken)` - HTTP POST to backend
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** String Resources
+#### String Resources
 
 - **File:** `androidApp/src/main/res/values/strings.xml`
 - **Added:**
@@ -89,9 +89,9 @@ policy updates, and Play Console documentation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** ✅ Web Deletion Resource
+### ✅ Web Deletion Resource
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Account Deletion Page
+#### Account Deletion Page
 
 - **File:** `scanium-site/account-deletion.html`
 - **Features:**
@@ -108,9 +108,9 @@ policy updates, and Play Console documentation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** ✅ Privacy Policy Updates
+### ✅ Privacy Policy Updates
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Privacy Policy
+#### Privacy Policy
 
 - **File:** `scanium-site/PRIVACY.html`
 - **Updates (2026-01-13):**
@@ -126,9 +126,9 @@ policy updates, and Play Console documentation.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** ✅ Play Console Documentation
+### ✅ Play Console Documentation
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Data Safety Form Mapping
+#### Data Safety Form Mapping
 
 - **File:** `howto/project/play-data-safety.md`
 - **Contents:**
@@ -140,7 +140,7 @@ policy updates, and Play Console documentation.
     - Declaration checklist
     - Common mistakes to avoid
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** OAuth Production Readiness
+#### OAuth Production Readiness
 
 - **File:** `howto/project/oauth-production-readiness.md`
 - **Contents:**
@@ -152,7 +152,7 @@ policy updates, and Play Console documentation.
     - Pre-submission checklist
     - Troubleshooting guide
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Play Review Access
+#### Play Review Access
 
 - **File:** `howto/project/play-review-access.md`
 - **Contents:**
@@ -164,9 +164,9 @@ policy updates, and Play Console documentation.
 
 ---
 
-***REMOVED******REMOVED*** 🧪 Testing
+## 🧪 Testing
 
-***REMOVED******REMOVED******REMOVED*** Backend Tests
+### Backend Tests
 
 - **File:** `backend/src/modules/account/routes.test.ts`
 - **Status:** ⚠️ Implemented but requires Postgres database to run
@@ -187,7 +187,7 @@ policy updates, and Play Console documentation.
 cd backend && npm test -- src/modules/account/routes.test.ts
 ```
 
-***REMOVED******REMOVED******REMOVED*** Android Tests
+### Android Tests
 
 - **Status:** ⚠️ Not implemented (unit tests for deletion flow recommended)
 - **Recommended tests:**
@@ -202,22 +202,22 @@ cd backend && npm test -- src/modules/account/routes.test.ts
 cd androidApp && ./gradlew :androidApp:test
 ```
 
-***REMOVED******REMOVED******REMOVED*** Manual Testing Required
+### Manual Testing Required
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Backend Deletion (curl)
+#### Backend Deletion (curl)
 
 ```bash
-***REMOVED*** 1. Get auth token (sign in first)
+# 1. Get auth token (sign in first)
 ACCESS_TOKEN="your-access-token"
 
-***REMOVED*** 2. Delete account
+# 2. Delete account
 curl -X POST https://scanium.gtemp1.com/v1/account/delete \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 
-***REMOVED*** Expected: 200 OK, status: DELETED
+# Expected: 200 OK, status: DELETED
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Web Deletion
+#### Web Deletion
 
 1. Open: `https://scanium-site-url/account-deletion.html`
 2. Enter email address
@@ -226,7 +226,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 5. Click link (redirects back with token)
 6. Verify success message
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** In-App Deletion
+#### In-App Deletion
 
 1. Open Scanium app
 2. Sign in with Google
@@ -240,9 +240,9 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 
 ---
 
-***REMOVED******REMOVED*** 📋 Pre-Submission Checklist
+## 📋 Pre-Submission Checklist
 
-***REMOVED******REMOVED******REMOVED*** Backend
+### Backend
 
 - [ ] Account deletion endpoints deployed to production
 - [ ] Rate limiting configured (3 req/15min for email deletion)
@@ -250,7 +250,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 - [ ] All user data deleted via CASCADE (verify in DB schema)
 - [ ] Session cleanup job running
 
-***REMOVED******REMOVED******REMOVED*** Android
+### Android
 
 - [ ] Delete Account button visible in Settings (signed-in users only)
 - [ ] Confirmation dialog explains what gets deleted
@@ -258,7 +258,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 - [ ] Tokens cleared after deletion
 - [ ] Build production APK/AAB to test
 
-***REMOVED******REMOVED******REMOVED*** Web
+### Web
 
 - [ ] account-deletion.html deployed and accessible
 - [ ] HTTPS enabled
@@ -266,14 +266,14 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 - [ ] Token confirmation redirects correctly
 - [ ] Privacy policy link works
 
-***REMOVED******REMOVED******REMOVED*** Privacy & Compliance
+### Privacy & Compliance
 
 - [ ] PRIVACY.html updated (2026-01-13) and deployed
 - [ ] Account deletion section (6) complete
 - [ ] Privacy policy URL live: `https://scanium-site-url/PRIVACY.html`
 - [ ] Deletion URL live: `https://scanium-site-url/account-deletion.html`
 
-***REMOVED******REMOVED******REMOVED*** OAuth Production
+### OAuth Production
 
 - [ ] Production OAuth clients created (backend + Android)
 - [ ] Backend GOOGLE_OAUTH_CLIENT_ID updated in production .env
@@ -282,7 +282,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 - [ ] OAuth consent screen set to "In production"
 - [ ] Test sign-in with fresh Google account
 
-***REMOVED******REMOVED******REMOVED*** Play Console
+### Play Console
 
 - [ ] Data Safety form filled out (use `play-data-safety.md`)
 - [ ] Account deletion URL added to appropriate field
@@ -292,30 +292,30 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 
 ---
 
-***REMOVED******REMOVED*** 🚀 Deployment Order
+## 🚀 Deployment Order
 
 1. **Deploy backend changes:**
    ```bash
    cd backend
    npm run build
-   ***REMOVED*** Deploy to production server
-   ***REMOVED*** Update .env with GOOGLE_OAUTH_CLIENT_ID
-   ***REMOVED*** Restart backend service
+   # Deploy to production server
+   # Update .env with GOOGLE_OAUTH_CLIENT_ID
+   # Restart backend service
    ```
 
 2. **Deploy website changes:**
    ```bash
    cd ../scanium-site
-   ***REMOVED*** Upload PRIVACY.html and account-deletion.html
-   ***REMOVED*** Verify HTTPS works
+   # Upload PRIVACY.html and account-deletion.html
+   # Verify HTTPS works
    ```
 
 3. **Build Android production release:**
    ```bash
    cd ../androidApp
-   ***REMOVED*** Update AuthRepository.kt with production OAuth client
+   # Update AuthRepository.kt with production OAuth client
    ./gradlew :androidApp:assembleProdRelease
-   ***REMOVED*** Or create AAB for Play Console
+   # Or create AAB for Play Console
    ./gradlew :androidApp:bundleProdRelease
    ```
 
@@ -328,9 +328,9 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 
 ---
 
-***REMOVED******REMOVED*** 📊 API Contract Reference
+## 📊 API Contract Reference
 
-***REMOVED******REMOVED******REMOVED*** POST /v1/account/delete
+### POST /v1/account/delete
 
 **Auth:** Required (Bearer token)
 **Request:** Empty body
@@ -344,7 +344,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** GET /v1/account/deletion-status
+### GET /v1/account/deletion-status
 
 **Auth:** Required
 **Response (200 OK):**
@@ -356,7 +356,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** POST /v1/account/delete-by-email
+### POST /v1/account/delete-by-email
 
 **Auth:** None (rate-limited by IP)
 **Request:**
@@ -378,7 +378,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** POST /v1/account/delete/confirm
+### POST /v1/account/delete/confirm
 
 **Auth:** None
 **Request:**
@@ -401,7 +401,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 
 ---
 
-***REMOVED******REMOVED*** 🔗 Important URLs
+## 🔗 Important URLs
 
 | Resource          | Local Path                                    | Production URL                                   |
 |-------------------|-----------------------------------------------|--------------------------------------------------|
@@ -414,7 +414,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 
 ---
 
-***REMOVED******REMOVED*** ✅ Phase D Completion Status
+## ✅ Phase D Completion Status
 
 **Implementation:** ✅ Complete
 **Documentation:** ✅ Complete

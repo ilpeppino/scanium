@@ -1,20 +1,20 @@
-***REMOVED*** Errors & Failures Dashboard - Root Cause Analysis
+# Errors & Failures Dashboard - Root Cause Analysis
 
-***REMOVED******REMOVED*** Dashboard
+## Dashboard
 
 **File:** `monitoring/grafana/dashboards/errors.json`
 **Title:** "Scanium - Errors & Failures"
 **Status:** ❌ **BLOCKED** - Cannot show real data due to broken log ingestion infrastructure
 
-***REMOVED******REMOVED*** Executive Summary
+## Executive Summary
 
 The dashboard is correctly configured but **cannot work** because mobile telemetry logs are not
 being ingested into Loki. The root cause is a **bug in Grafana Alloy v1.0.0's `loki.source.docker`
 component** that prevents it from reading Docker container logs.
 
-***REMOVED******REMOVED*** Root Cause (Evidence-Based)
+## Root Cause (Evidence-Based)
 
-***REMOVED******REMOVED******REMOVED*** What the Dashboard Expects
+### What the Dashboard Expects
 
 The dashboard queries Loki for mobile telemetry events with these labels:
 
@@ -30,9 +30,9 @@ The dashboard queries Loki for mobile telemetry events with these labels:
 {source="scanium-mobile", platform=~"$platform", env=~"$env"} | json | event_name=~"error.*"
 ```
 
-***REMOVED******REMOVED******REMOVED*** What Actually Exists
+### What Actually Exists
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Mobile telemetry events exist in backend stdout
+#### ✅ Mobile telemetry events exist in backend stdout
 
 ```bash
 docker logs scanium-backend | grep event_name
@@ -46,7 +46,7 @@ docker logs scanium-backend | grep event_name
 {"source":"scanium-mobile","event_name":"crash_marker","platform":"android","app_version":"1.0.0","build_type":"beta","timestamp_ms":1768083320568,"session_id":"fresh-session-3","attributes":{"crash_type":"uncaught_exception"}}
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** ❌ Mobile telemetry events DO NOT exist in Loki
+#### ❌ Mobile telemetry events DO NOT exist in Loki
 
 ```bash
 curl -G "http://localhost:3100/loki/api/v1/query" \
@@ -56,9 +56,9 @@ curl -G "http://localhost:3100/loki/api/v1/query" \
 **Output:** `{"status":"success","data":{"resultType":"streams","result":[]}}`
 **Result count:** `0`
 
-***REMOVED******REMOVED******REMOVED*** Why Logs Are Not in Loki
+### Why Logs Are Not in Loki
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Alloy Configuration (monitoring/alloy/config.alloy)
+#### Alloy Configuration (monitoring/alloy/config.alloy)
 
 The pipeline is correctly configured to:
 
@@ -95,7 +95,7 @@ loki.process "backend_logs" {
 }
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Alloy v1.0.0 Bug: "context canceled" Errors
+#### Alloy v1.0.0 Bug: "context canceled" Errors
 
 **Evidence from Alloy logs (2026-01-10 22:14:49 UTC):**
 
@@ -113,7 +113,7 @@ level=warn msg="could not transfer logs" component_id=loki.source.docker.backend
 This is a **known bug in Grafana Alloy v1.0.0** (released April 2024, very outdated). The component
 cannot reliably read Docker container logs.
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Additional Issue: Missing Relabel Rules
+#### Additional Issue: Missing Relabel Rules
 
 `loki.source.docker.backend` currently scrapes **ALL Docker containers** (mimir, loki, tempo, alloy,
 backend, postgres, etc.) because `discovery.docker.backend` has no filters.
@@ -138,7 +138,7 @@ relabel_rules {
 `loki.source.docker` does not support relabel_rules in the expected format or has broken
 implementation.
 
-***REMOVED******REMOVED*** Secondary Issue: Dashboard Label Mismatch
+## Secondary Issue: Dashboard Label Mismatch
 
 **Dashboard uses:** `env` label
 **Mobile telemetry schema specifies:** `build_type` label (per
@@ -157,15 +157,15 @@ schema.
 - Replace all instances of `env=~"$env"` with `build_type=~"$env"`
 - OR rename variable from `env` to `build_type`
 
-***REMOVED******REMOVED*** Attempted Fixes & Results
+## Attempted Fixes & Results
 
-***REMOVED******REMOVED******REMOVED*** 1. Verified Backend Logging (✅ Working)
+### 1. Verified Backend Logging (✅ Working)
 
 - Mobile telemetry endpoint `/v1/telemetry/mobile` returns 202 Accepted
 - Backend logs events to stdout as single-line JSON
 - Logs confirmed via `docker logs scanium-backend`
 
-***REMOVED******REMOVED******REMOVED*** 2. Restarted Alloy (❌ No Effect)
+### 2. Restarted Alloy (❌ No Effect)
 
 ```bash
 docker restart scanium-alloy
@@ -175,14 +175,14 @@ docker restart scanium-alloy
 - Still produces "context canceled" errors
 - No logs transferred (written=0)
 
-***REMOVED******REMOVED******REMOVED*** 3. Added Relabel Rules (❌ No Effect)
+### 3. Added Relabel Rules (❌ No Effect)
 
 - Added filtering to only scrape scanium-backend container
 - Alloy v1.0.0 accepts config without errors
 - But relabel_rules do not work (still scrapes wrong containers)
 - Reverted change
 
-***REMOVED******REMOVED******REMOVED*** 4. Sent Fresh Events After Restart (❌ No Ingestion)
+### 4. Sent Fresh Events After Restart (❌ No Ingestion)
 
 - Sent 10 mobile telemetry events (app_launch, scan_started, error_shown, crash_marker)
 - All returned 202 Accepted
@@ -190,9 +190,9 @@ docker restart scanium-alloy
 - Waited 90 seconds for ingestion
 - Events still not in Loki (zero results)
 
-***REMOVED******REMOVED*** What DOES Work
+## What DOES Work
 
-***REMOVED******REMOVED******REMOVED*** OTLP Backend Logs in Loki
+### OTLP Backend Logs in Loki
 
 Loki contains backend HTTP request logs via OTLP pipeline:
 
@@ -217,11 +217,11 @@ curl -G "http://localhost:3100/loki/api/v1/query" \
 **These are backend's own request logs, NOT the mobile telemetry events.** The actual events (with
 error_code, crash_type, etc.) are only in backend stdout, which is not being ingested.
 
-***REMOVED******REMOVED*** Minimal Fix Required
+## Minimal Fix Required
 
 The dashboard **cannot** be fixed without fixing the log ingestion pipeline. Three options:
 
-***REMOVED******REMOVED******REMOVED*** Option A: Upgrade Alloy (Recommended)
+### Option A: Upgrade Alloy (Recommended)
 
 Upgrade from v1.0.0 (April 2024) to latest stable (v1.5.0+ as of Dec 2024)
 
@@ -230,7 +230,7 @@ Upgrade from v1.0.0 (April 2024) to latest stable (v1.5.0+ as of Dec 2024)
 - **Con:** Requires testing and validation
 - **Scope:** Out of scope per task instructions
 
-***REMOVED******REMOVED******REMOVED*** Option B: Switch to OTLP Logs
+### Option B: Switch to OTLP Logs
 
 Modify backend to send mobile telemetry via OTLP instead of stdout
 
@@ -239,7 +239,7 @@ Modify backend to send mobile telemetry via OTLP instead of stdout
 - **Con:** Requires backend code changes
 - **Scope:** Out of scope per task instructions ("Do NOT change backend instrumentation code")
 
-***REMOVED******REMOVED******REMOVED*** Option C: Use Alternative Log Shipper
+### Option C: Use Alternative Log Shipper
 
 Replace `loki.source.docker` with Promtail or Fluent Bit
 
@@ -248,7 +248,7 @@ Replace `loki.source.docker` with Promtail or Fluent Bit
 - **Con:** Requires significant Alloy config changes
 - **Scope:** Out of scope for dashboard fix
 
-***REMOVED******REMOVED*** Conclusion
+## Conclusion
 
 **The "Scanium - Errors & Failures" dashboard is correctly configured and will work once logs are
 ingested.**
@@ -266,32 +266,32 @@ ingested.**
 - OR implement Option B (OTLP logs)
 - OR implement Option C (alternative shipper)
 
-***REMOVED******REMOVED*** Verification Commands
+## Verification Commands
 
 Once log ingestion is fixed, verify with:
 
 ```bash
-***REMOVED*** 1. Check mobile telemetry events exist in Loki
+# 1. Check mobile telemetry events exist in Loki
 curl -G "http://localhost:3100/loki/api/v1/query" \
   --data-urlencode 'query={source="scanium-mobile", event_name="error_shown"}' \
   | jq '.data.result | length'
-***REMOVED*** Expected: > 0
+# Expected: > 0
 
-***REMOVED*** 2. Check labels are extracted correctly
+# 2. Check labels are extracted correctly
 curl -G "http://localhost:3100/loki/api/v1/query" \
   --data-urlencode 'query={source="scanium-mobile", platform="android", build_type="beta"}' \
   | jq -r '.data.result[0].stream'
-***REMOVED*** Expected: Shows source, platform, app_version, build_type, event_name labels
+# Expected: Shows source, platform, app_version, build_type, event_name labels
 
-***REMOVED*** 3. Verify dashboard query works
+# 3. Verify dashboard query works
 curl -G "http://localhost:3100/loki/api/v1/query_range" \
   --data-urlencode 'query=sum(count_over_time({source="scanium-mobile", event_name=~"error.*"} [5m]))' \
   --data-urlencode 'start=now-1h' --data-urlencode 'end=now' \
   | jq '.data.result[0].values'
-***REMOVED*** Expected: Time series data with error counts
+# Expected: Time series data with error counts
 ```
 
-***REMOVED******REMOVED*** Test Traffic Used
+## Test Traffic Used
 
 **Minimal error events (13 total across 2 runs):**
 

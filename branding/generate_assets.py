@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """Generate all Scanium branding PNG assets from SVG sources."""
 
 import os
@@ -9,10 +9,10 @@ LOGO_DIR = os.path.join(BASE_DIR, "logo")
 ICON_DIR = os.path.join(BASE_DIR, "icon")
 RASTER_DIR = os.path.join(BASE_DIR, "raster")
 
-***REMOVED*** General raster sizes
+# General raster sizes
 RASTER_SIZES = [1024, 512, 256, 128, 64, 32]
 
-***REMOVED*** Android mipmap densities: density -> size in pixels
+# Android mipmap densities: density -> size in pixels
 ANDROID_DENSITIES = {
     "mdpi": 48,
     "hdpi": 72,
@@ -21,10 +21,10 @@ ANDROID_DENSITIES = {
     "xxxhdpi": 192,
 }
 
-***REMOVED*** iOS sizes
+# iOS sizes
 IOS_SIZES = [1024, 180, 167, 152, 120]
 
-***REMOVED*** Logo variants to export
+# Logo variants to export
 LOGO_VARIANTS = [
     "scanium-logo-primary",
     "scanium-logo-negative",
@@ -75,23 +75,23 @@ def generate_android_assets():
     android_dir = os.path.join(ICON_DIR, "android")
     ensure_dir(android_dir)
 
-    ***REMOVED*** Use the icon mark as the source for app icon
+    # Use the icon mark as the source for app icon
     icon_svg = os.path.join(LOGO_DIR, "scanium-icon-mark.svg")
 
-    ***REMOVED*** Generate Play Store icon (512x512)
+    # Generate Play Store icon (512x512)
     play_store_path = os.path.join(android_dir, "play-store-512.png")
     convert_svg_to_png(icon_svg, play_store_path, 512)
 
-    ***REMOVED*** Generate mipmap densities
+    # Generate mipmap densities
     for density, size in ANDROID_DENSITIES.items():
         density_dir = os.path.join(android_dir, f"mipmap-{density}")
         ensure_dir(density_dir)
 
-        ***REMOVED*** Full icon (for legacy launcher icons)
+        # Full icon (for legacy launcher icons)
         icon_path = os.path.join(density_dir, "ic_launcher.png")
         convert_svg_to_png(icon_svg, icon_path, size)
 
-        ***REMOVED*** Round icon variant
+        # Round icon variant
         round_path = os.path.join(density_dir, "ic_launcher_round.png")
         convert_svg_to_png(icon_svg, round_path, size)
 
@@ -103,15 +103,15 @@ def generate_ios_assets():
     ios_dir = os.path.join(ICON_DIR, "ios", "AppIcon.appiconset")
     ensure_dir(ios_dir)
 
-    ***REMOVED*** Use the icon mark as the source
+    # Use the icon mark as the source
     icon_svg = os.path.join(LOGO_DIR, "scanium-icon-mark.svg")
 
-    ***REMOVED*** Generate all iOS sizes
+    # Generate all iOS sizes
     for size in IOS_SIZES:
         icon_path = os.path.join(ios_dir, f"icon-{size}.png")
         convert_svg_to_png(icon_svg, icon_path, size)
 
-    ***REMOVED*** Generate Contents.json for Xcode
+    # Generate Contents.json for Xcode
     contents_json = """{
   "images" : [
     {
@@ -162,12 +162,12 @@ def main():
     print("Scanium Branding Asset Generator")
     print("=" * 40)
 
-    ***REMOVED*** Ensure output directories exist
+    # Ensure output directories exist
     ensure_dir(RASTER_DIR)
     ensure_dir(os.path.join(ICON_DIR, "android"))
     ensure_dir(os.path.join(ICON_DIR, "ios"))
 
-    ***REMOVED*** Generate all assets
+    # Generate all assets
     generate_raster_exports()
     generate_android_assets()
     generate_ios_assets()

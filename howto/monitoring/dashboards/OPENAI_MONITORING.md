@@ -1,9 +1,9 @@
-***REMOVED*** OpenAI Monitoring Implementation
+# OpenAI Monitoring Implementation
 
 This document describes the OpenAI metrics monitoring implementation for Scanium, including runtime
 per-request metrics collection and visualization in Grafana.
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 **Implementation Strategy: Runtime Per-Request Metrics (Option A)**
 
@@ -22,7 +22,7 @@ with OpenTelemetry metrics. This provides operational visibility into:
 - Cost tracking can be derived from token usage
 - Keeps implementation simple and low-risk
 
-***REMOVED******REMOVED*** Architecture
+## Architecture
 
 ```
 OpenAI Provider (backend)
@@ -34,22 +34,22 @@ Mimir (Prometheus storage)
 Grafana (visualization)
 ```
 
-***REMOVED******REMOVED*** What Was Implemented
+## What Was Implemented
 
-***REMOVED******REMOVED******REMOVED*** 1. Backend Changes
+### 1. Backend Changes
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** New Files
+#### New Files
 
 - `backend/src/infra/telemetry/index.ts` - OpenTelemetry initialization
 - `backend/src/infra/telemetry/openai-metrics.ts` - OpenAI-specific metrics
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Modified Files
+#### Modified Files
 
 - `backend/package.json` - Added OpenTelemetry dependencies
 - `backend/src/main.ts` - Initialize telemetry on startup
 - `backend/src/modules/assistant/openai-provider.ts` - Instrumented with metrics
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Metrics Exposed
+#### Metrics Exposed
 
 | Metric Name                            | Type      | Labels                          | Description        |
 |----------------------------------------|-----------|---------------------------------|--------------------|
@@ -66,7 +66,7 @@ Grafana (visualization)
 - `token_type`: `input`, `output`, `total`
 - `model`: OpenAI model name (e.g., `gpt-4o-mini`)
 
-***REMOVED******REMOVED******REMOVED*** 2. Grafana Dashboard
+### 2. Grafana Dashboard
 
 **New Dashboard:** `monitoring/grafana/dashboards/openai-runtime.json`
 
@@ -80,9 +80,9 @@ Grafana (visualization)
 4. **Token Usage** - Token rate by type and model
 5. **Rate Limits** - Remaining requests and tokens
 
-***REMOVED******REMOVED*** Environment Variables
+## Environment Variables
 
-***REMOVED******REMOVED******REMOVED*** Required on NAS
+### Required on NAS
 
 The following environment variables must be set in the backend service:
 
@@ -97,22 +97,22 @@ The following environment variables must be set in the backend service:
 \* Must point to Alloy's HTTP endpoint (typically `http://scanium-alloy:4318` in Docker)
 \*\* Only if using OpenAI assistant provider
 
-***REMOVED******REMOVED******REMOVED*** Example .env on NAS
+### Example .env on NAS
 
 ```bash
-***REMOVED*** Telemetry
+# Telemetry
 OTEL_ENABLED=true
 OTEL_SERVICE_NAME=scanium-backend
 OTEL_EXPORTER_OTLP_ENDPOINT=http://scanium-alloy:4318
 
-***REMOVED*** OpenAI (existing)
+# OpenAI (existing)
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-***REMOVED******REMOVED*** Deployment Steps
+## Deployment Steps
 
-***REMOVED******REMOVED******REMOVED*** 1. Install Dependencies on NAS
+### 1. Install Dependencies on NAS
 
 SSH to NAS and navigate to the backend directory:
 
@@ -122,13 +122,13 @@ cd /volume1/docker/scanium/repo/backend
 npm install
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Build Backend
+### 2. Build Backend
 
 ```bash
 npm run build
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Update Environment Variables
+### 3. Update Environment Variables
 
 Edit the `.env` file in the compose directory:
 
@@ -139,13 +139,13 @@ vi .env
 
 Add the OTEL environment variables shown above.
 
-***REMOVED******REMOVED******REMOVED*** 4. Restart Backend Container
+### 4. Restart Backend Container
 
 ```bash
 /usr/local/bin/docker restart scanium-backend
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Verify Telemetry Initialization
+### 5. Verify Telemetry Initialization
 
 Check backend logs for telemetry initialization:
 
@@ -160,15 +160,15 @@ Expected output:
    Exporting to: http://scanium-alloy:4318
 ```
 
-***REMOVED******REMOVED******REMOVED*** 6. Restart Grafana (to load new dashboard)
+### 6. Restart Grafana (to load new dashboard)
 
 ```bash
 /usr/local/bin/docker restart scanium-grafana
 ```
 
-***REMOVED******REMOVED*** Validation
+## Validation
 
-***REMOVED******REMOVED******REMOVED*** 1. Verify Metrics in Grafana Explore
+### 1. Verify Metrics in Grafana Explore
 
 1. Open Grafana: `http://<nas-ip>:3000`
 2. Navigate to **Explore** (compass icon)
@@ -178,12 +178,12 @@ Expected output:
 **Expected:** You should see metric series with labels like `model="gpt-4o-mini"`,
 `status="success"`
 
-***REMOVED******REMOVED******REMOVED*** 2. Generate Test Request
+### 2. Generate Test Request
 
 Make an OpenAI assistant request through the Scanium backend:
 
 ```bash
-***REMOVED*** From your dev machine or NAS
+# From your dev machine or NAS
 curl -X POST http://<nas-ip>:8080/api/assistant/chat \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
@@ -196,13 +196,13 @@ curl -X POST http://<nas-ip>:8080/api/assistant/chat \
   }'
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Check Dashboard
+### 3. Check Dashboard
 
 1. Navigate to **Dashboards** → **Scanium** folder
 2. Open **Scanium - OpenAI Runtime**
 3. Verify panels show data (may take 30-60s for first metrics to appear)
 
-***REMOVED******REMOVED******REMOVED*** 4. Verify in Alloy Logs
+### 4. Verify in Alloy Logs
 
 Check that Alloy is receiving and forwarding metrics:
 
@@ -210,7 +210,7 @@ Check that Alloy is receiving and forwarding metrics:
 /usr/local/bin/docker logs scanium-alloy 2>&1 | grep -i "openai\|metrics"
 ```
 
-***REMOVED******REMOVED******REMOVED*** 5. Verify in Mimir Logs
+### 5. Verify in Mimir Logs
 
 Check that Mimir is ingesting metrics:
 
@@ -218,9 +218,9 @@ Check that Mimir is ingesting metrics:
 /usr/local/bin/docker logs scanium-mimir 2>&1 | tail -50
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "No data" in Grafana Dashboard
+### "No data" in Grafana Dashboard
 
 **Possible causes:**
 
@@ -246,7 +246,7 @@ Check that Mimir is ingesting metrics:
     - Verify metrics exist: `openai_requests_total` in Grafana Explore
     - Check for typos in dashboard queries
 
-***REMOVED******REMOVED******REMOVED*** Backend not exporting metrics
+### Backend not exporting metrics
 
 1. **Check dependencies installed:**
    ```bash
@@ -269,7 +269,7 @@ Check that Mimir is ingesting metrics:
    docker exec scanium-backend wget -O- http://scanium-alloy:4318/v1/metrics --post-data=''
    ```
 
-***REMOVED******REMOVED******REMOVED*** Rate limit metrics not showing
+### Rate limit metrics not showing
 
 **Note:** Rate limit metrics (`openai_rate_limit_*`) require OpenAI SDK to expose response headers.
 These may not be available in all SDK versions.
@@ -282,7 +282,7 @@ These may not be available in all SDK versions.
 
 **Alternative:** Monitor rate limits via error rate spikes (`error_type="RATE_LIMITED"`)
 
-***REMOVED******REMOVED*** Cost Estimation
+## Cost Estimation
 
 While we don't poll the Usage API, you can estimate costs from token metrics:
 
@@ -304,16 +304,16 @@ cost = (input_tokens * input_price_per_1k) + (output_tokens * output_price_per_1
 
 *(Adjust prices based on current OpenAI pricing)*
 
-***REMOVED******REMOVED*** Maintenance
+## Maintenance
 
-***REMOVED******REMOVED******REMOVED*** Regular Checks
+### Regular Checks
 
 1. **Monitor error rate** - Alert if > 5%
 2. **Monitor p95 latency** - Alert if > 5s
 3. **Monitor rate limit headroom** - Alert if < 10% remaining
 4. **Monitor token consumption trends** - Budget planning
 
-***REMOVED******REMOVED******REMOVED*** Dashboard Updates
+### Dashboard Updates
 
 To update the dashboard:
 
@@ -325,7 +325,7 @@ To update the dashboard:
 *Note: With `allowUiUpdates: true`, you can also edit in Grafana UI, but changes will be overwritten
 on restart unless saved to JSON.*
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
 Potential improvements (not implemented):
 
@@ -348,7 +348,7 @@ Potential improvements (not implemented):
     - Add OpenAI request IDs to logs
     - Link logs to Loki for debugging
 
-***REMOVED******REMOVED*** References
+## References
 
 - OpenTelemetry Node SDK: https://opentelemetry.io/docs/languages/js/
 - OpenAI API: https://platform.openai.com/docs/api-reference

@@ -1,16 +1,16 @@
 > Archived on 2025-12-20: backend notes kept for reference; see docs/ARCHITECTURE.md for current
 > state.
 
-***REMOVED*** SEC-003: API Key TLS Security Implementation
+# SEC-003: API Key TLS Security Implementation
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 This document describes the security improvements implemented to address SEC-003, which identified
 vulnerabilities in API key transmission and TLS verification.
 
-***REMOVED******REMOVED*** Security Issues Addressed
+## Security Issues Addressed
 
-***REMOVED******REMOVED******REMOVED*** 1. API Keys Transmitted Without TLS Verification
+### 1. API Keys Transmitted Without TLS Verification
 
 **Problem**: API keys were transmitted in X-API-Key headers but TLS certificate validation was not
 explicitly enforced.
@@ -22,7 +22,7 @@ explicitly enforced.
 - Logs security violations for monitoring
 - Respects the `X-Forwarded-Proto` header for proxy/load balancer setups
 
-***REMOVED******REMOVED******REMOVED*** 2. No API Key Rotation Mechanism
+### 2. No API Key Rotation Mechanism
 
 **Problem**: No mechanism existed to rotate API keys, making it difficult to respond to potential
 key compromises.
@@ -35,7 +35,7 @@ key compromises.
 - Expiration and revocation capabilities
 - Usage statistics and audit logging
 
-***REMOVED******REMOVED******REMOVED*** 3. Insufficient Security Monitoring
+### 3. Insufficient Security Monitoring
 
 **Problem**: No logging of API key usage for security monitoring and incident response.
 
@@ -47,7 +47,7 @@ key compromises.
 - Failed authentication attempts are logged at WARN level
 - Successful authentications logged at INFO level
 
-***REMOVED******REMOVED******REMOVED*** 4. Missing Security Headers
+### 4. Missing Security Headers
 
 **Problem**: Application did not set security headers to protect against common web vulnerabilities.
 
@@ -61,9 +61,9 @@ key compromises.
 - `Referrer-Policy`: Controls referrer information leakage
 - `Permissions-Policy`: Restricts browser features
 
-***REMOVED******REMOVED*** Implementation Details
+## Implementation Details
 
-***REMOVED******REMOVED******REMOVED*** Files Modified
+### Files Modified
 
 1. **backend/src/infra/http/plugins/security.ts** (NEW)
     - Security plugin for HTTPS enforcement
@@ -88,22 +88,22 @@ key compromises.
     - Added security configuration schema
     - Environment variable mappings for security settings
 
-***REMOVED******REMOVED******REMOVED*** Configuration
+### Configuration
 
 New environment variables added:
 
 ```bash
-***REMOVED*** HTTPS Enforcement
-SECURITY_ENFORCE_HTTPS=true          ***REMOVED*** Reject HTTP requests in production
-SECURITY_ENABLE_HSTS=true            ***REMOVED*** Enable HSTS header
+# HTTPS Enforcement
+SECURITY_ENFORCE_HTTPS=true          # Reject HTTP requests in production
+SECURITY_ENABLE_HSTS=true            # Enable HSTS header
 
-***REMOVED*** API Key Management
+# API Key Management
 SECURITY_API_KEY_ROTATION_ENABLED=true
-SECURITY_API_KEY_EXPIRATION_DAYS=90  ***REMOVED*** Default: 90 days
-SECURITY_LOG_API_KEY_USAGE=true      ***REMOVED*** Log all API key usage
+SECURITY_API_KEY_EXPIRATION_DAYS=90  # Default: 90 days
+SECURITY_LOG_API_KEY_USAGE=true      # Log all API key usage
 ```
 
-***REMOVED******REMOVED******REMOVED*** Default Values
+### Default Values
 
 - `SECURITY_ENFORCE_HTTPS`: `true` (enabled by default)
 - `SECURITY_ENABLE_HSTS`: `true` (enabled by default)
@@ -111,9 +111,9 @@ SECURITY_LOG_API_KEY_USAGE=true      ***REMOVED*** Log all API key usage
 - `SECURITY_API_KEY_EXPIRATION_DAYS`: `90` days
 - `SECURITY_LOG_API_KEY_USAGE`: `true` (enabled by default)
 
-***REMOVED******REMOVED*** API Key Management
+## API Key Management
 
-***REMOVED******REMOVED******REMOVED*** Key Generation
+### Key Generation
 
 Keys are generated using `crypto.randomBytes(32)` and encoded as base64url for safe transmission in
 HTTP headers. This provides 256 bits of entropy.
@@ -122,7 +122,7 @@ HTTP headers. This provides 256 bits of entropy.
 const key = randomBytes(32).toString('base64url');
 ```
 
-***REMOVED******REMOVED******REMOVED*** Key Rotation
+### Key Rotation
 
 To rotate an API key:
 
@@ -137,7 +137,7 @@ This will:
 3. Set the old key to expire in 30 days (transition period)
 4. Return the new key metadata
 
-***REMOVED******REMOVED******REMOVED*** Key Revocation
+### Key Revocation
 
 To immediately revoke a key:
 
@@ -147,7 +147,7 @@ apiKeyManager.revokeKey(apiKey);
 
 This marks the key as inactive and sets expiration to now.
 
-***REMOVED******REMOVED******REMOVED*** Usage Statistics
+### Usage Statistics
 
 Get usage statistics for a key:
 
@@ -156,7 +156,7 @@ const stats = apiKeyManager.getKeyUsageStats(apiKey);
 // Returns: { totalRequests, successfulRequests, failedRequests, lastUsed, recentFailures }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Cleanup
+### Cleanup
 
 Periodically clean up expired keys:
 
@@ -164,9 +164,9 @@ Periodically clean up expired keys:
 const removedCount = apiKeyManager.cleanupExpiredKeys();
 ```
 
-***REMOVED******REMOVED*** Security Headers Explained
+## Security Headers Explained
 
-***REMOVED******REMOVED******REMOVED*** Strict-Transport-Security (HSTS)
+### Strict-Transport-Security (HSTS)
 
 ```
 Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
@@ -176,7 +176,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 - Applies to all subdomains
 - Eligible for browser HSTS preload list
 
-***REMOVED******REMOVED******REMOVED*** Content-Security-Policy (CSP)
+### Content-Security-Policy (CSP)
 
 ```
 Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
@@ -186,7 +186,7 @@ Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; base-uri 's
 - Prevent framing (clickjacking protection)
 - Restrict base URI and form actions
 
-***REMOVED******REMOVED******REMOVED*** X-Content-Type-Options
+### X-Content-Type-Options
 
 ```
 X-Content-Type-Options: nosniff
@@ -194,7 +194,7 @@ X-Content-Type-Options: nosniff
 
 - Prevents MIME type sniffing attacks
 
-***REMOVED******REMOVED******REMOVED*** X-Frame-Options
+### X-Frame-Options
 
 ```
 X-Frame-Options: DENY
@@ -202,7 +202,7 @@ X-Frame-Options: DENY
 
 - Prevents the page from being framed (clickjacking protection)
 
-***REMOVED******REMOVED******REMOVED*** X-XSS-Protection
+### X-XSS-Protection
 
 ```
 X-XSS-Protection: 1; mode=block
@@ -210,7 +210,7 @@ X-XSS-Protection: 1; mode=block
 
 - Enables browser XSS filter in blocking mode
 
-***REMOVED******REMOVED******REMOVED*** Referrer-Policy
+### Referrer-Policy
 
 ```
 Referrer-Policy: strict-origin-when-cross-origin
@@ -218,7 +218,7 @@ Referrer-Policy: strict-origin-when-cross-origin
 
 - Controls referrer information sent to other sites
 
-***REMOVED******REMOVED******REMOVED*** Permissions-Policy
+### Permissions-Policy
 
 ```
 Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
@@ -226,9 +226,9 @@ Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
 
 - Restricts access to sensitive browser features
 
-***REMOVED******REMOVED*** HTTPS Enforcement
+## HTTPS Enforcement
 
-***REMOVED******REMOVED******REMOVED*** Production Behavior
+### Production Behavior
 
 When `SECURITY_ENFORCE_HTTPS=true` and `NODE_ENV=production`:
 
@@ -237,12 +237,12 @@ When `SECURITY_ENFORCE_HTTPS=true` and `NODE_ENV=production`:
 3. HTTP requests are rejected with 403 Forbidden
 4. Security violations are logged with IP address and endpoint
 
-***REMOVED******REMOVED******REMOVED*** Development Behavior
+### Development Behavior
 
 HTTPS enforcement is **disabled** in development mode (`NODE_ENV=development`) to allow local
 testing.
 
-***REMOVED******REMOVED******REMOVED*** Load Balancer/Proxy Setup
+### Load Balancer/Proxy Setup
 
 If your application runs behind a load balancer or reverse proxy that terminates TLS, ensure the
 proxy sets the `X-Forwarded-Proto` header:
@@ -265,9 +265,9 @@ Automatically sets `X-Forwarded-Proto`
 **Cloudflare:**
 Automatically sets `X-Forwarded-Proto`
 
-***REMOVED******REMOVED*** Logging and Monitoring
+## Logging and Monitoring
 
-***REMOVED******REMOVED******REMOVED*** API Key Usage Events
+### API Key Usage Events
 
 All API key usage is logged with structured data:
 
@@ -283,7 +283,7 @@ All API key usage is logged with structured data:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Failed Authentication
+### Failed Authentication
 
 Failed authentication attempts are logged at WARN level:
 
@@ -297,7 +297,7 @@ Failed authentication attempts are logged at WARN level:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** Successful Authentication
+### Successful Authentication
 
 Successful requests are logged at INFO level:
 
@@ -312,7 +312,7 @@ Successful requests are logged at INFO level:
 }
 ```
 
-***REMOVED******REMOVED******REMOVED*** HTTPS Violations
+### HTTPS Violations
 
 HTTP requests in production are logged at WARN level:
 
@@ -327,7 +327,7 @@ HTTP requests in production are logged at WARN level:
 }
 ```
 
-***REMOVED******REMOVED*** Testing
+## Testing
 
 Comprehensive test suites have been added:
 
@@ -348,9 +348,9 @@ Run tests with:
 npm test
 ```
 
-***REMOVED******REMOVED*** Migration Guide
+## Migration Guide
 
-***REMOVED******REMOVED******REMOVED*** Existing Deployments
+### Existing Deployments
 
 1. **Update Environment Variables**
 
@@ -383,7 +383,7 @@ npm test
     - Communicate rotation to API clients
     - Use the rotation feature to generate new keys
 
-***REMOVED******REMOVED******REMOVED*** New Deployments
+### New Deployments
 
 All security features are enabled by default. Simply ensure:
 
@@ -391,7 +391,7 @@ All security features are enabled by default. Simply ensure:
 2. `X-Forwarded-Proto` header is set correctly
 3. `NODE_ENV=production` for production deployments
 
-***REMOVED******REMOVED*** Security Best Practices
+## Security Best Practices
 
 1. **API Key Rotation**
     - Rotate API keys every 90 days (configurable)
@@ -420,7 +420,7 @@ All security features are enabled by default. Simply ensure:
     - Monitor rate limit violations
     - Adjust limits based on legitimate usage patterns
 
-***REMOVED******REMOVED*** Threat Model
+## Threat Model
 
 This implementation addresses the following threats:
 
@@ -445,7 +445,7 @@ This implementation addresses the following threats:
     - CSP prevents XSS attacks
     - X-Frame-Options prevents clickjacking
 
-***REMOVED******REMOVED*** Compliance
+## Compliance
 
 This implementation helps meet requirements for:
 
@@ -454,7 +454,7 @@ This implementation helps meet requirements for:
 - **GDPR**: Security of processing, data protection by design
 - **OWASP Top 10**: Addresses broken authentication, security misconfiguration
 
-***REMOVED******REMOVED*** Future Enhancements
+## Future Enhancements
 
 Potential future security improvements:
 
@@ -478,7 +478,7 @@ Potential future security improvements:
     - Encrypt API keys in storage
     - Hardware security module (HSM) integration
 
-***REMOVED******REMOVED*** Support
+## Support
 
 For questions or issues related to these security features:
 
@@ -487,7 +487,7 @@ For questions or issues related to these security features:
 3. Review application logs for security events
 4. Open an issue in the repository
 
-***REMOVED******REMOVED*** References
+## References
 
 - [OWASP API Security Top 10](https://owasp.org/www-project-api-security/)
 - [Mozilla Security Headers](https://infosec.mozilla.org/guidelines/web_security)

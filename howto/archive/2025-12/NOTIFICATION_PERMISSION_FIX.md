@@ -1,10 +1,10 @@
-***REMOVED*** Notification Permission Fix - DEV Flavor Only
+# Notification Permission Fix - DEV Flavor Only
 
 **Date:** 2026-01-11
 **Commit:** `8065317d5c21465e23cc5b778c28063319eb6492`
 **Status:** ✅ **FIXED AND DEPLOYED**
 
-***REMOVED******REMOVED*** Problem Statement
+## Problem Statement
 
 In DEV flavor, notifications were blocked and the system "Allow notifications" toggle was greyed out
 after a fresh install on Android 13+. No permission prompt was shown, preventing the Background
@@ -12,16 +12,16 @@ Health Monitor from sending notifications.
 
 ---
 
-***REMOVED******REMOVED*** Root Cause Analysis
+## Root Cause Analysis
 
-***REMOVED******REMOVED******REMOVED*** Issue
+### Issue
 
 1. ❌ `POST_NOTIFICATIONS` permission was **NOT declared** in AndroidManifest.xml
 2. ❌ No runtime permission request existed for notifications
 3. ✅ Target SDK = 35 (Android 15), which **requires** POST_NOTIFICATIONS on Android 13+
 4. ✅ Code already had permission checks (`hasNotificationPermission()`) but never requested it
 
-***REMOVED******REMOVED******REMOVED*** Why This Matters
+### Why This Matters
 
 On Android 13+ (API 33+), apps must:
 
@@ -32,9 +32,9 @@ On Android 13+ (API 33+), apps must:
 
 ---
 
-***REMOVED******REMOVED*** Solution Implemented
+## Solution Implemented
 
-***REMOVED******REMOVED******REMOVED*** 1. DEV-Only Manifest with POST_NOTIFICATIONS ✅
+### 1. DEV-Only Manifest with POST_NOTIFICATIONS ✅
 
 **File:** `androidApp/src/dev/AndroidManifest.xml` (NEW)
 
@@ -54,7 +54,7 @@ On Android 13+ (API 33+), apps must:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 2. Permission Request UI in DeveloperOptionsScreen ✅
+### 2. Permission Request UI in DeveloperOptionsScreen ✅
 
 **File:** `androidApp/src/main/java/com/scanium/app/ui/settings/DeveloperOptionsScreen.kt`
 
@@ -109,7 +109,7 @@ On Android 13+ (API 33+), apps must:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 3. Notification Diagnostics in Health Monitor Section ✅
+### 3. Notification Diagnostics in Health Monitor Section ✅
 
 **Location:** Inside the "Background Health Monitor" card (Android 13+ only)
 
@@ -138,7 +138,7 @@ On Android 13+ (API 33+), apps must:
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** 4. Unit Tests for Permission Logic ✅
+### 4. Unit Tests for Permission Logic ✅
 
 **File:** `androidApp/src/test/java/com/scanium/app/monitoring/NotificationPermissionLogicTest.kt` (
 NEW)
@@ -174,9 +174,9 @@ NEW)
 
 ---
 
-***REMOVED******REMOVED*** Safety & Isolation
+## Safety & Isolation
 
-***REMOVED******REMOVED******REMOVED*** DEV-Only Guarantees
+### DEV-Only Guarantees
 
 **1. Manifest Permission (DEV-only)**
 
@@ -199,13 +199,13 @@ NEW)
 
 ---
 
-***REMOVED******REMOVED*** Validation
+## Validation
 
-***REMOVED******REMOVED******REMOVED*** Build Verification ✅
+### Build Verification ✅
 
 ```bash
 ./gradlew :androidApp:assembleDevDebug
-***REMOVED*** Result: BUILD SUCCESSFUL in 14s
+# Result: BUILD SUCCESSFUL in 14s
 ```
 
 **APK Generated:**
@@ -214,24 +214,24 @@ NEW)
 - Size: ~50 MB
 - POST_NOTIFICATIONS permission included in manifest
 
-***REMOVED******REMOVED******REMOVED*** Test Verification ✅
+### Test Verification ✅
 
 ```bash
 ./gradlew :androidApp:testDevDebugUnitTest
-***REMOVED*** Result: BUILD SUCCESSFUL in 26s
-***REMOVED*** Tests: 11/11 passed
+# Result: BUILD SUCCESSFUL in 26s
+# Tests: 11/11 passed
 ```
 
-***REMOVED******REMOVED******REMOVED*** Repo Alignment ✅
+### Repo Alignment ✅
 
 **Mac:** `8065317d5c21465e23cc5b778c28063319eb6492` ✅
 **NAS:** `8065317d5c21465e23cc5b778c28063319eb6492` ✅
 
 ---
 
-***REMOVED******REMOVED*** User Experience Flow
+## User Experience Flow
 
-***REMOVED******REMOVED******REMOVED*** Fresh Install (Android 13+)
+### Fresh Install (Android 13+)
 
 **Before Fix:**
 
@@ -252,7 +252,7 @@ NEW)
 7. **Permission card turns green** ✓
 8. Background monitor can now send notifications
 
-***REMOVED******REMOVED******REMOVED*** Permission Denied
+### Permission Denied
 
 **User Flow:**
 
@@ -263,7 +263,7 @@ NEW)
     - Click **"Grant Permission"** to try again
     - Click **"Open Settings"** to manually enable in system settings
 
-***REMOVED******REMOVED******REMOVED*** System-Level Block
+### System-Level Block
 
 **User Flow:**
 
@@ -278,9 +278,9 @@ NEW)
 
 ---
 
-***REMOVED******REMOVED*** Technical Details
+## Technical Details
 
-***REMOVED******REMOVED******REMOVED*** Permission Request Implementation
+### Permission Request Implementation
 
 **Uses:** Accompanist Permissions library (already used for camera permissions)
 
@@ -309,7 +309,7 @@ private fun NotificationPermissionSection() {
 - Handles Android permission complexities
 - Automatically manages permission launcher
 
-***REMOVED******REMOVED******REMOVED*** Settings Deep Link Implementation
+### Settings Deep Link Implementation
 
 ```kotlin
 val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -332,7 +332,7 @@ context.startActivity(intent)
 
 ---
 
-***REMOVED******REMOVED*** Files Changed
+## Files Changed
 
 ```
 androidApp/src/dev/AndroidManifest.xml                                    (NEW)
@@ -348,9 +348,9 @@ androidApp/src/test/java/com/scanium/app/monitoring/NotificationPermissionLogicT
 
 ---
 
-***REMOVED******REMOVED*** Verification Checklist
+## Verification Checklist
 
-***REMOVED******REMOVED******REMOVED*** ✅ DEV Flavor (Android 13+)
+### ✅ DEV Flavor (Android 13+)
 
 - [x] Fresh install shows permission card
 - [x] "Grant Permission" button works
@@ -363,13 +363,13 @@ androidApp/src/test/java/com/scanium/app/monitoring/NotificationPermissionLogicT
 - [x] Notifications appear in notification shade
 - [x] Notifications are actionable (tap to open dev options)
 
-***REMOVED******REMOVED******REMOVED*** ✅ DEV Flavor (Android 12 and below)
+### ✅ DEV Flavor (Android 12 and below)
 
 - [x] Permission card does NOT appear
 - [x] Notifications work without permission request
 - [x] No changes to existing behavior
 
-***REMOVED******REMOVED******REMOVED*** ✅ Beta/Prod Flavors (All Android Versions)
+### ✅ Beta/Prod Flavors (All Android Versions)
 
 - [x] Permission card does NOT appear
 - [x] POST_NOTIFICATIONS permission NOT in manifest
@@ -377,7 +377,7 @@ androidApp/src/test/java/com/scanium/app/monitoring/NotificationPermissionLogicT
 - [x] No changes to existing behavior
 - [x] Developer Options still blocked/hidden (as expected)
 
-***REMOVED******REMOVED******REMOVED*** ✅ Compilation & Tests
+### ✅ Compilation & Tests
 
 - [x] DEV debug build succeeds
 - [x] DEV release build succeeds
@@ -388,9 +388,9 @@ androidApp/src/test/java/com/scanium/app/monitoring/NotificationPermissionLogicT
 
 ---
 
-***REMOVED******REMOVED*** Known Limitations
+## Known Limitations
 
-***REMOVED******REMOVED******REMOVED*** Android Version Requirements
+### Android Version Requirements
 
 **POST_NOTIFICATIONS Required:** Android 13+ (API 33+)
 
@@ -408,7 +408,7 @@ androidApp/src/test/java/com/scanium/app/monitoring/NotificationPermissionLogicT
 - Notification diagnostics only show on Android 13+
 - This is intentional - older versions don't need this UI
 
-***REMOVED******REMOVED******REMOVED*** Device-Specific Behavior
+### Device-Specific Behavior
 
 **OEM Modifications:**
 
@@ -426,7 +426,7 @@ androidApp/src/test/java/com/scanium/app/monitoring/NotificationPermissionLogicT
 
 ---
 
-***REMOVED******REMOVED*** Future Enhancements (Optional)
+## Future Enhancements (Optional)
 
 These are NOT required now, but could be added later:
 
@@ -449,9 +449,9 @@ These are NOT required now, but could be added later:
 
 ---
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** "Grant Permission" button doesn't work
+### "Grant Permission" button doesn't work
 
 **Cause:** Android blocked repeated requests (user denied 2+ times)
 
@@ -461,7 +461,7 @@ These are NOT required now, but could be added later:
 2. Manually enable notifications in system settings
 3. Return to app - permission card will update
 
-***REMOVED******REMOVED******REMOVED*** Permission granted but notifications still don't appear
+### Permission granted but notifications still don't appear
 
 **Possible Causes:**
 
@@ -478,7 +478,7 @@ These are NOT required now, but could be added later:
 2. If red, follow instructions to check permission
 3. Use "Open Settings" button for direct access
 
-***REMOVED******REMOVED******REMOVED*** Beta/prod showing permission request
+### Beta/prod showing permission request
 
 **This should NOT happen.** If it does:
 
@@ -493,9 +493,9 @@ These are NOT required now, but could be added later:
 
 ---
 
-***REMOVED******REMOVED*** Testing Performed
+## Testing Performed
 
-***REMOVED******REMOVED******REMOVED*** Manual Testing
+### Manual Testing
 
 **Device:** Android 13 (API 33) emulator
 **Build:** devDebug
@@ -511,7 +511,7 @@ These are NOT required now, but could be added later:
 7. ✅ Run health check → notification appears
 8. ✅ Simulate failure → notification appears with error
 
-***REMOVED******REMOVED******REMOVED*** Automated Testing
+### Automated Testing
 
 **Command:** `./gradlew :androidApp:testDevDebugUnitTest`
 **Result:** 11/11 tests passed
@@ -524,7 +524,7 @@ These are NOT required now, but could be added later:
 
 ---
 
-***REMOVED******REMOVED*** Summary
+## Summary
 
 **Problem:** Notifications were blocked in DEV flavor on Android 13+ due to missing
 POST_NOTIFICATIONS permission declaration and runtime request.

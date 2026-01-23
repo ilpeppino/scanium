@@ -1,28 +1,28 @@
-***REMOVED***!/usr/bin/env bash
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium NAS Vision Preflight
-***REMOVED*** =============================================================================
-***REMOVED*** Verifies backend vision wiring on Synology via SSH:
-***REMOVED*** - Compose file exists
-***REMOVED*** - Vision service account file exists
-***REMOVED*** - Backend container is running
-***REMOVED*** - Vision/assistant env flags present
-***REMOVED*** - Vision insights route is reachable (not 404)
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   ./scripts/ops/nas_vision_preflight.sh --help
-***REMOVED***   ./scripts/ops/nas_vision_preflight.sh --host nas
-***REMOVED***
-***REMOVED*** =============================================================================
+#!/usr/bin/env bash
+# =============================================================================
+# Scanium NAS Vision Preflight
+# =============================================================================
+# Verifies backend vision wiring on Synology via SSH:
+# - Compose file exists
+# - Vision service account file exists
+# - Backend container is running
+# - Vision/assistant env flags present
+# - Vision insights route is reachable (not 404)
+#
+# Usage:
+#   ./scripts/ops/nas_vision_preflight.sh --help
+#   ./scripts/ops/nas_vision_preflight.sh --host nas
+#
+# =============================================================================
 
-***REMOVED*** Source common library
+# Source common library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-***REMOVED*** shellcheck source=lib/common.sh
+# shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Defaults
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Defaults
+# -----------------------------------------------------------------------------
 HOST="nas"
 REMOTE_REPO="/volume1/docker/scanium/repo"
 REMOTE_COMPOSE=""
@@ -31,9 +31,9 @@ CONTAINER="scanium-backend"
 BASE_URL="http://127.0.0.1:8080"
 FAILED=0
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Help
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Help
+# -----------------------------------------------------------------------------
 show_help() {
   cat <<EOF
 nas_vision_preflight.sh - Verify NAS backend vision configuration via SSH
@@ -56,10 +56,10 @@ Examples:
 EOF
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Parse arguments
-***REMOVED*** -----------------------------------------------------------------------------
-while [[ $***REMOVED*** -gt 0 ]]; do
+# -----------------------------------------------------------------------------
+# Parse arguments
+# -----------------------------------------------------------------------------
+while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
       show_help
@@ -70,7 +70,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --host=*)
-      HOST="${1***REMOVED****=}"
+      HOST="${1#*=}"
       shift
       ;;
     --remote-repo)
@@ -78,7 +78,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --remote-repo=*)
-      REMOTE_REPO="${1***REMOVED****=}"
+      REMOTE_REPO="${1#*=}"
       shift
       ;;
     --compose-file)
@@ -86,7 +86,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --compose-file=*)
-      REMOTE_COMPOSE="${1***REMOVED****=}"
+      REMOTE_COMPOSE="${1#*=}"
       shift
       ;;
     --service)
@@ -94,7 +94,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --service=*)
-      SERVICE="${1***REMOVED****=}"
+      SERVICE="${1#*=}"
       shift
       ;;
     --container)
@@ -102,7 +102,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --container=*)
-      CONTAINER="${1***REMOVED****=}"
+      CONTAINER="${1#*=}"
       shift
       ;;
     --base-url)
@@ -110,7 +110,7 @@ while [[ $***REMOVED*** -gt 0 ]]; do
       shift 2
       ;;
     --base-url=*)
-      BASE_URL="${1***REMOVED****=}"
+      BASE_URL="${1#*=}"
       shift
       ;;
     *)
@@ -125,9 +125,9 @@ fi
 
 require_cmd ssh
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** SSH helper
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# SSH helper
+# -----------------------------------------------------------------------------
 ssh_run() {
   local cmd="$1"
   ssh "$HOST" "$cmd"
@@ -138,9 +138,9 @@ ssh_run_silent() {
   ssh "$HOST" "$cmd" 2>/dev/null
 }
 
-***REMOVED*** -----------------------------------------------------------------------------
-***REMOVED*** Checks
-***REMOVED*** -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Checks
+# -----------------------------------------------------------------------------
 log_info "Running NAS vision preflight on ${HOST}"
 log_info "Remote compose: ${REMOTE_COMPOSE}"
 log_info "Backend container: ${CONTAINER}"

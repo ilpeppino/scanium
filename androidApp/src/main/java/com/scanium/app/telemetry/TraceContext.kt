@@ -10,7 +10,7 @@ import com.scanium.telemetry.ports.SpanContext
  * through method parameters. When a span is set as active, HTTP requests made on that
  * thread will automatically include W3C trace context headers.
  *
- * ***REMOVED******REMOVED*** Usage Pattern
+ * ## Usage Pattern
  * ```kotlin
  * val span = telemetry.beginSpan("operation.name")
  * TraceContext.setActiveSpan(span)
@@ -23,14 +23,14 @@ import com.scanium.telemetry.ports.SpanContext
  * }
  * ```
  *
- * ***REMOVED******REMOVED*** Alternative: Explicit Parameter Passing
+ * ## Alternative: Explicit Parameter Passing
  * Instead of ThreadLocal, spans could be passed explicitly to repositories.
  * ThreadLocal was chosen for:
  * - Simplicity: No need to change repository method signatures
  * - Backwards compatibility: Existing code continues to work
  * - Transparency: Trace propagation happens automatically
  *
- * ***REMOVED******REMOVED*** Thread Safety
+ * ## Thread Safety
  * Each thread maintains its own active span. This is safe for concurrent operations
  * but requires proper cleanup to avoid span leaks.
  */

@@ -1,9 +1,9 @@
-***REMOVED***!/bin/bash
-***REMOVED*** scripts/ci/doctor.sh - Verify prerequisites for local CI
+#!/bin/bash
+# scripts/ci/doctor.sh - Verify prerequisites for local CI
 
 set -euo pipefail
 
-***REMOVED*** Colors
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -25,7 +25,7 @@ check_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; WARNINGS=$((WARNINGS + 1)); }
 check_fail() { echo -e "${RED}[FAIL]${NC} $1"; ERRORS=$((ERRORS + 1)); }
 check_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 
-***REMOVED*** 1. Java/JDK 17
+# 1. Java/JDK 17
 echo -e "${BLUE}--- Java ---${NC}"
 if command -v java &>/dev/null; then
     JAVA_VER=$(java -version 2>&1 | head -1)
@@ -40,7 +40,7 @@ if command -v java &>/dev/null; then
         check_warn "JDK version may not match CI (expects 17)"
     fi
 
-    ***REMOVED*** Check for JDK 17 availability on macOS
+    # Check for JDK 17 availability on macOS
     if [[ "$OSTYPE" == "darwin"* ]]; then
         if /usr/libexec/java_home -v 17 &>/dev/null; then
             JDK17_HOME=$(/usr/libexec/java_home -v 17)
@@ -55,11 +55,11 @@ else
 fi
 echo ""
 
-***REMOVED*** 2. Gradle wrapper
+# 2. Gradle wrapper
 echo -e "${BLUE}--- Gradle ---${NC}"
 if [[ -x "$REPO_ROOT/gradlew" ]]; then
     check_ok "Gradle wrapper found and executable"
-    ***REMOVED*** Don't run ./gradlew --version here as it downloads dependencies
+    # Don't run ./gradlew --version here as it downloads dependencies
 else
     if [[ -f "$REPO_ROOT/gradlew" ]]; then
         check_warn "Gradle wrapper exists but not executable"
@@ -70,7 +70,7 @@ else
 fi
 echo ""
 
-***REMOVED*** 3. jq (for security scan JSON parsing)
+# 3. jq (for security scan JSON parsing)
 echo -e "${BLUE}--- jq (JSON parser) ---${NC}"
 if command -v jq &>/dev/null; then
     JQ_VER=$(jq --version 2>/dev/null || echo "unknown")
@@ -81,7 +81,7 @@ else
 fi
 echo ""
 
-***REMOVED*** 4. Docker (optional for act mode)
+# 4. Docker (optional for act mode)
 echo -e "${BLUE}--- Docker (optional) ---${NC}"
 if command -v docker &>/dev/null; then
     if docker info &>/dev/null 2>&1; then
@@ -95,7 +95,7 @@ else
 fi
 echo ""
 
-***REMOVED*** 5. act (optional)
+# 5. act (optional)
 echo -e "${BLUE}--- act (optional GitHub Actions runner) ---${NC}"
 if command -v act &>/dev/null; then
     ACT_VER=$(act --version 2>/dev/null || echo "unknown")
@@ -106,7 +106,7 @@ else
 fi
 echo ""
 
-***REMOVED*** 6. Environment variables
+# 6. Environment variables
 echo -e "${BLUE}--- Environment Variables ---${NC}"
 if [[ -n "${NVD_API_KEY:-}" ]]; then
     check_ok "NVD_API_KEY set (faster CVE database downloads)"
@@ -117,7 +117,7 @@ else
 fi
 echo ""
 
-***REMOVED*** 7. Output directories
+# 7. Output directories
 echo -e "${BLUE}--- Output Directories ---${NC}"
 OUTPUT_DIR="$REPO_ROOT/tmp/ci"
 if [[ -d "$OUTPUT_DIR" ]]; then
@@ -128,7 +128,7 @@ else
 fi
 echo ""
 
-***REMOVED*** Summary
+# Summary
 echo -e "${BLUE}=== Summary ===${NC}"
 if [[ $ERRORS -gt 0 ]]; then
     echo -e "${RED}$ERRORS error(s), $WARNINGS warning(s)${NC}"
@@ -142,8 +142,8 @@ else
     echo -e "${GREEN}All checks passed!${NC}"
     echo ""
     echo "Run local CI:"
-    echo "  ./scripts/ci/local-ci.sh coverage   ***REMOVED*** Run coverage checks"
-    echo "  ./scripts/ci/local-ci.sh security   ***REMOVED*** Run CVE scan"
-    echo "  ./scripts/ci/local-ci.sh all        ***REMOVED*** Run both"
+    echo "  ./scripts/ci/local-ci.sh coverage   # Run coverage checks"
+    echo "  ./scripts/ci/local-ci.sh security   # Run CVE scan"
+    echo "  ./scripts/ci/local-ci.sh all        # Run both"
     exit 0
 fi

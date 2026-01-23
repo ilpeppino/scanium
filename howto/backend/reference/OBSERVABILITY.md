@@ -1,16 +1,16 @@
-***REMOVED*** Backend Observability Guide
+# Backend Observability Guide
 
 Complete guide to metrics, logs, and traces in the Scanium backend.
 
-***REMOVED******REMOVED*** Table of Contents
+## Table of Contents
 
-- [Overview](***REMOVED***overview)
-- [Metrics](***REMOVED***metrics)
-- [Traces](***REMOVED***traces)
-- [Logs](***REMOVED***logs)
-- [Best Practices](***REMOVED***best-practices)
+- [Overview](#overview)
+- [Metrics](#metrics)
+- [Traces](#traces)
+- [Logs](#logs)
+- [Best Practices](#best-practices)
 
-***REMOVED******REMOVED*** Overview
+## Overview
 
 The Scanium backend is fully instrumented with OpenTelemetry for comprehensive observability:
 
@@ -20,16 +20,16 @@ The Scanium backend is fully instrumented with OpenTelemetry for comprehensive o
 
 All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Tempo, Mimir).
 
-***REMOVED******REMOVED*** Metrics
+## Metrics
 
-***REMOVED******REMOVED******REMOVED*** Available Metrics
+### Available Metrics
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** HTTP Metrics
+#### HTTP Metrics
 
 - `scanium_http_requests_total` - Total HTTP requests by method, route, status code
 - `scanium_http_request_duration_ms` - HTTP request duration histogram
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Enrichment Pipeline
+#### Enrichment Pipeline
 
 - `scanium_enrich_requests_total` - Enrichment requests by status and error type
 - `scanium_enrich_stage_transitions_total` - Stage transitions (vision → attributes → draft)
@@ -39,7 +39,7 @@ All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Temp
 - `scanium_enrich_active_jobs` - Current number of active enrichment jobs
 - `scanium_enrich_total_latency_seconds` - End-to-end enrichment latency
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Assistant/LLM
+#### Assistant/LLM
 
 - `scanium_assistant_requests_total` - Assistant requests by provider, status, cache hit
 - `scanium_assistant_request_latency_ms` - Assistant request latency
@@ -47,20 +47,20 @@ All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Temp
 - `scanium_assistant_tokens_used` - Token usage histogram by provider and type
 - `scanium_assistant_cache_hit_rate` - Cache hit rate gauge (0-1)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Classification
+#### Classification
 
 - `scanium_classifier_requests_total` - Classification requests by provider, status, category
 - `scanium_classifier_request_latency_ms` - Classification latency
 - `scanium_classifier_confidence` - Confidence score distribution
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Vision Extraction
+#### Vision Extraction
 
 - `scanium_vision_requests_total` - Vision API requests by provider and status
 - `scanium_vision_extraction_latency_ms` - Vision extraction latency by feature
 - `scanium_vision_cost_estimate_millicents` - Estimated API cost tracking
 - `scanium_vision_cache_size` - Current vision cache entries
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Business Metrics
+#### Business Metrics
 
 - `scanium_items_by_category_total` - Items processed by eBay category
 - `scanium_api_quota_usage_total` - API quota usage by key, endpoint, status
@@ -68,17 +68,17 @@ All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Temp
 - `scanium_cache_operations_total` - Cache operations (get/set/delete) with hit/miss
 - `scanium_business_errors_total` - Business logic errors by type, operation, severity
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Database
+#### Database
 
 - `scanium_database_queries_total` - Database queries by operation, table, status
 - `scanium_database_query_duration_ms` - Query duration histogram
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** External APIs
+#### External APIs
 
 - `scanium_external_api_calls_total` - External API calls by service, operation, status
 - `scanium_external_api_duration_ms` - External API call duration
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Infrastructure
+#### Infrastructure
 
 - `scanium_rate_limit_hits_total` - Rate limit hits by limiter type and endpoint
 - `scanium_quota_exhausted_total` - Daily quota exhaustions by type
@@ -88,9 +88,9 @@ All telemetry flows through Grafana Alloy to the LGTM stack (Loki, Grafana, Temp
 All Node.js process metrics are also collected with the `scanium_` prefix (memory, CPU, event loop,
 etc.).
 
-***REMOVED******REMOVED******REMOVED*** Using Metrics
+### Using Metrics
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Recording Business Metrics
+#### Recording Business Metrics
 
 ```typescript
 import {
@@ -126,7 +126,7 @@ const response = await openai.chat.completions.create(/* ... */);
 recordExternalApiCall('openai', 'chat.completions', Date.now() - apiStart, 'success');
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Recording Enrichment Metrics
+#### Recording Enrichment Metrics
 
 Enrichment metrics are automatically recorded by the enrichment manager, but you can also record
 them manually:
@@ -165,9 +165,9 @@ recordVisionCache(false); // miss
 updateActiveJobs(5);
 ```
 
-***REMOVED******REMOVED*** Traces
+## Traces
 
-***REMOVED******REMOVED******REMOVED*** Automatic Tracing
+### Automatic Tracing
 
 HTTP requests are automatically traced by `HttpInstrumentation` and `FastifyInstrumentation`:
 
@@ -175,7 +175,7 @@ HTTP requests are automatically traced by `HttpInstrumentation` and `FastifyInst
 - Outgoing HTTP requests generate child spans
 - Spans include method, URL, status code, duration
 
-***REMOVED******REMOVED******REMOVED*** Custom Tracing
+### Custom Tracing
 
 Use the tracing utilities for adding custom spans to business flows:
 
@@ -219,9 +219,9 @@ addSpanAttribute('user.tier', 'premium');
 addSpanAttribute('items.count', 42);
 ```
 
-***REMOVED******REMOVED******REMOVED*** Specialized Tracing Helpers
+### Specialized Tracing Helpers
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Vision Extraction
+#### Vision Extraction
 
 ```typescript
 const visionData = await traceVisionExtraction(
@@ -234,7 +234,7 @@ const visionData = await traceVisionExtraction(
 );
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Classification
+#### Classification
 
 ```typescript
 const classification = await traceClassification(
@@ -246,7 +246,7 @@ const classification = await traceClassification(
 );
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Draft Generation
+#### Draft Generation
 
 ```typescript
 const draft = await traceDraftGeneration(
@@ -258,7 +258,7 @@ const draft = await traceDraftGeneration(
 );
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** Database Operations
+#### Database Operations
 
 ```typescript
 const users = await traceDatabase('select', 'user', async () => {
@@ -273,7 +273,7 @@ await traceDatabase('update', 'item', async () => {
 });
 ```
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** External API Calls
+#### External API Calls
 
 ```typescript
 const completion = await traceExternalApi(
@@ -286,7 +286,7 @@ const completion = await traceExternalApi(
 );
 ```
 
-***REMOVED******REMOVED******REMOVED*** Trace Context Propagation
+### Trace Context Propagation
 
 Traces automatically propagate through:
 
@@ -304,9 +304,9 @@ const ctx = getCurrentContext();
 await queueJob({ data, context: ctx });
 ```
 
-***REMOVED******REMOVED*** Logs
+## Logs
 
-***REMOVED******REMOVED******REMOVED*** Structured Logging
+### Structured Logging
 
 All logs are structured JSON with automatic redaction of sensitive data:
 
@@ -326,7 +326,7 @@ app.log.error({
 });
 ```
 
-***REMOVED******REMOVED******REMOVED*** Log Levels
+### Log Levels
 
 - `trace` - Very detailed debugging
 - `debug` - Development debugging
@@ -335,7 +335,7 @@ app.log.error({
 - `error` - Error conditions
 - `fatal` - Fatal errors
 
-***REMOVED******REMOVED******REMOVED*** Automatic Redaction
+### Automatic Redaction
 
 The following headers are automatically redacted:
 
@@ -345,7 +345,7 @@ The following headers are automatically redacted:
 - `x-admin-key`
 - `x-scanium-device-id`
 
-***REMOVED******REMOVED******REMOVED*** Correlation IDs
+### Correlation IDs
 
 Use the `x-scanium-correlation-id` header to track requests across services:
 
@@ -359,7 +359,7 @@ app.log.info({
 });
 ```
 
-***REMOVED******REMOVED******REMOVED*** OpenTelemetry Integration
+### OpenTelemetry Integration
 
 Logs are automatically sent to OpenTelemetry via `pino-opentelemetry-transport`:
 
@@ -367,9 +367,9 @@ Logs are automatically sent to OpenTelemetry via `pino-opentelemetry-transport`:
 - Automatic trace correlation (trace_id, span_id added to logs)
 - Structured attributes preserved
 
-***REMOVED******REMOVED*** Best Practices
+## Best Practices
 
-***REMOVED******REMOVED******REMOVED*** Metrics
+### Metrics
 
 1. **Use Labels Wisely**: Keep label cardinality low (< 1000 unique combinations)
     - ✅ Good: `category_name="Electronics"`
@@ -394,7 +394,7 @@ Logs are automatically sent to OpenTelemetry via `pino-opentelemetry-transport`:
    updateApiQuotaRemaining(keyId, remaining);
    ```
 
-***REMOVED******REMOVED******REMOVED*** Traces
+### Traces
 
 1. **Add Meaningful Spans**: Span operations that take >10ms
    ```typescript
@@ -425,7 +425,7 @@ Logs are automatically sent to OpenTelemetry via `pino-opentelemetry-transport`:
    });
    ```
 
-***REMOVED******REMOVED******REMOVED*** Logs
+### Logs
 
 1. **Use Structured Logging**:
    ```typescript
@@ -462,7 +462,7 @@ Logs are automatically sent to OpenTelemetry via `pino-opentelemetry-transport`:
    app.log.info({ msg: 'Auth success', apiKey: apiKey });
    ```
 
-***REMOVED******REMOVED*** Dashboards
+## Dashboards
 
 Pre-built Grafana dashboards are available in `monitoring/grafana/dashboards/`:
 
@@ -473,22 +473,22 @@ Pre-built Grafana dashboards are available in `monitoring/grafana/dashboards/`:
 - `logs-explorer.json` - Log search and analysis
 - `traces-drilldown.json` - Trace exploration and service map
 
-***REMOVED******REMOVED*** Verification
+## Verification
 
 Use the monitoring scripts to verify telemetry:
 
 ```bash
-***REMOVED*** Comprehensive verification with proof of data
+# Comprehensive verification with proof of data
 bash ./scripts/monitoring/prove-telemetry.sh
 
-***REMOVED*** CI/CD regression guard
+# CI/CD regression guard
 bash ./scripts/monitoring/verify-ingestion.sh
 bash ./scripts/monitoring/verify-ingestion.sh --strict
 ```
 
-***REMOVED******REMOVED*** Troubleshooting
+## Troubleshooting
 
-***REMOVED******REMOVED******REMOVED*** No Metrics Showing
+### No Metrics Showing
 
 1. Check if metrics endpoint is accessible:
    ```bash
@@ -505,7 +505,7 @@ bash ./scripts/monitoring/verify-ingestion.sh --strict
    curl "http://localhost:9009/prometheus/api/v1/label/job/values"
    ```
 
-***REMOVED******REMOVED******REMOVED*** No Logs Appearing
+### No Logs Appearing
 
 1. Check Pino is using OTLP transport (in production):
    ```bash
@@ -522,7 +522,7 @@ bash ./scripts/monitoring/verify-ingestion.sh --strict
    curl http://localhost:3100/loki/api/v1/labels
    ```
 
-***REMOVED******REMOVED******REMOVED*** No Traces Appearing
+### No Traces Appearing
 
 1. Verify OpenTelemetry is initialized:
    ```bash
@@ -539,7 +539,7 @@ bash ./scripts/monitoring/verify-ingestion.sh --strict
    curl http://localhost:3200/api/search/tag/service.name/values
    ```
 
-***REMOVED******REMOVED*** Further Reading
+## Further Reading
 
 - [OpenTelemetry JavaScript Documentation](https://opentelemetry.io/docs/instrumentation/js/)
 - [Prometheus Best Practices](https://prometheus.io/docs/practices/)

@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -7,7 +7,7 @@ cd "$ROOT"
 mkdir -p "$ROOT/tmp"
 LOG_PATH="$ROOT/tmp/gradle_test.log"
 
-if [ "$***REMOVED***" -eq 0 ]; then
+if [ "$#" -eq 0 ]; then
   set -- test
 fi
 

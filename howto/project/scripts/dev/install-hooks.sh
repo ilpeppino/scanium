@@ -1,6 +1,6 @@
-***REMOVED***!/bin/bash
-***REMOVED*** Install git hooks for Scanium development
-***REMOVED*** Run this script once after cloning the repository
+#!/bin/bash
+# Install git hooks for Scanium development
+# Run this script once after cloning the repository
 
 set -euo pipefail
 
@@ -10,7 +10,7 @@ GIT_HOOKS_DIR="$(git rev-parse --git-dir)/hooks"
 
 echo "Installing git hooks..."
 
-***REMOVED*** Install pre-commit hook (ktlint - DX-002)
+# Install pre-commit hook (ktlint - DX-002)
 if [ -f "$HOOK_TEMPLATE_DIR/pre-commit" ]; then
     cp "$HOOK_TEMPLATE_DIR/pre-commit" "$GIT_HOOKS_DIR/pre-commit"
     chmod +x "$GIT_HOOKS_DIR/pre-commit"
@@ -20,7 +20,7 @@ else
     exit 1
 fi
 
-***REMOVED*** Install pre-push hook
+# Install pre-push hook
 if [ -f "$HOOK_TEMPLATE_DIR/pre-push" ]; then
     cp "$HOOK_TEMPLATE_DIR/pre-push" "$GIT_HOOKS_DIR/pre-push"
     chmod +x "$GIT_HOOKS_DIR/pre-push"

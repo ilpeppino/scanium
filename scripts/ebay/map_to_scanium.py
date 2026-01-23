@@ -1,4 +1,4 @@
-***REMOVED***!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Map eBay categories to Scanium subtypes.
 Inputs:
@@ -18,7 +18,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
-***REMOVED*** Synonym mappings for matching eBay categories to Scanium subtypes
+# Synonym mappings for matching eBay categories to Scanium subtypes
 SYNONYMS = {
     "laptop": ["notebook", "computer", "macbook", "chromebook"],
     "monitor": ["display", "screen", "lcd"],
@@ -47,21 +47,21 @@ SYNONYMS = {
     "mechanical keyboard": ["gaming keyboard", "keyboard"],
 }
 
-***REMOVED*** Build reverse mapping for faster lookup
+# Build reverse mapping for faster lookup
 REVERSE_SYNONYMS = {}
 for primary, synonyms in SYNONYMS.items():
     for syn in synonyms:
         if syn not in REVERSE_SYNONYMS:
             REVERSE_SYNONYMS[syn] = primary
 
-***REMOVED*** Confidence levels
+# Confidence levels
 CONFIDENCE_HIGH = "high"
 CONFIDENCE_MEDIUM = "medium"
 CONFIDENCE_LOW = "low"
 
 def tokenize(text: str) -> List[str]:
     """Tokenize text into words."""
-    ***REMOVED*** Convert to lowercase and split on whitespace/special chars
+    # Convert to lowercase and split on whitespace/special chars
     tokens = re.split(r'[\s\-_]+', text.lower())
     return [t for t in tokens if t]
 
@@ -74,29 +74,29 @@ def match_confidence(ebay_name: str, scanium_id: str, scanium_name: str) -> Tupl
     scanium_tokens = tokenize(scanium_name)
     scanium_tokens_from_id = tokenize(scanium_id.replace("_", " "))
 
-    ***REMOVED*** Exact match
+    # Exact match
     if ebay_name.lower() == scanium_name.lower():
         return True, CONFIDENCE_HIGH, "Exact name match"
 
-    ***REMOVED*** Check if primary keywords match
+    # Check if primary keywords match
     for ebay_token in ebay_tokens:
-        ***REMOVED*** Direct token match
+        # Direct token match
         if ebay_token in scanium_tokens or ebay_token in scanium_tokens_from_id:
             return True, CONFIDENCE_HIGH, f"Direct token match: '{ebay_token}'"
 
-        ***REMOVED*** Synonym match
+        # Synonym match
         if ebay_token in REVERSE_SYNONYMS:
             primary = REVERSE_SYNONYMS[ebay_token]
             if primary in scanium_id.lower():
                 return True, CONFIDENCE_MEDIUM, f"Synonym match: '{ebay_token}' -> '{primary}'"
 
-    ***REMOVED*** Partial token match (at least 2 consecutive tokens match)
+    # Partial token match (at least 2 consecutive tokens match)
     for i in range(len(ebay_tokens) - 1):
         two_token = f"{ebay_tokens[i]} {ebay_tokens[i+1]}"
         if two_token in scanium_name.lower() or two_token in scanium_id.lower():
             return True, CONFIDENCE_MEDIUM, f"Multi-token match: '{two_token}'"
 
-    ***REMOVED*** Weak match: significant overlap in tokens
+    # Weak match: significant overlap in tokens
     matching_tokens = sum(1 for t in ebay_tokens if t in scanium_tokens or t in scanium_tokens_from_id)
     if matching_tokens >= 1 and len(ebay_tokens) <= 3:
         return True, CONFIDENCE_LOW, f"Weak token overlap: {matching_tokens}/{len(ebay_tokens)} tokens"
@@ -110,7 +110,7 @@ def map_categories() -> int:
     scanium_subtypes_path = repo_root / "scripts/output/ebay/scanium_subtypes_all.json"
     output_dir = repo_root / "scripts/output/ebay/uk"
 
-    ***REMOVED*** Load data
+    # Load data
     if not ebay_cats_path.exists():
         print(f"❌ ERROR: {ebay_cats_path} not found", file=sys.stderr)
         print(f"   Run 'python3 scripts/ebay/flatten_taxonomy.py' first.", file=sys.stderr)
@@ -133,10 +133,10 @@ def map_categories() -> int:
     ebay_categories = ebay_data.get("categories", [])
     scanium_subtypes = scanium_data.get("subtypes", [])
 
-    ***REMOVED*** Build lookup for Scanium subtypes
+    # Build lookup for Scanium subtypes
     scanium_by_id = {s["id"]: s for s in scanium_subtypes}
 
-    ***REMOVED*** Perform mapping
+    # Perform mapping
     mappings = []
     unmapped = []
 
@@ -145,7 +145,7 @@ def map_categories() -> int:
         ebay_name = ebay_cat.get("name")
         ebay_path = ebay_cat.get("path", [])
 
-        ***REMOVED*** Try to find matching Scanium subtype
+        # Try to find matching Scanium subtype
         best_match = None
         best_confidence = None
 
@@ -157,7 +157,7 @@ def map_categories() -> int:
             )
 
             if match_found:
-                ***REMOVED*** Prefer higher confidence or more specific matches
+                # Prefer higher confidence or more specific matches
                 if best_match is None or (
                     confidence in [CONFIDENCE_HIGH] and
                     (best_confidence is None or best_confidence == CONFIDENCE_LOW)
@@ -181,7 +181,7 @@ def map_categories() -> int:
                 "ebayPath": ebay_path,
             })
 
-    ***REMOVED*** Write mappings
+    # Write mappings
     mappings_output = {
         "source": "eBay categories + Scanium subtypes",
         "totalMapped": len(mappings),
@@ -192,7 +192,7 @@ def map_categories() -> int:
     with open(output_dir / "mapping_suggestions.json", 'w') as f:
         json.dump(mappings_output, f, indent=2)
 
-    ***REMOVED*** Write unmapped
+    # Write unmapped
     unmapped_output = {
         "source": "eBay categories not matched to Scanium subtypes",
         "totalUnmapped": len(unmapped),
@@ -202,7 +202,7 @@ def map_categories() -> int:
     with open(output_dir / "unmapped_categories.json", 'w') as f:
         json.dump(unmapped_output, f, indent=2)
 
-    ***REMOVED*** Print summary
+    # Print summary
     high_conf = sum(1 for m in mappings if m["confidence"] == CONFIDENCE_HIGH)
     med_conf = sum(1 for m in mappings if m["confidence"] == CONFIDENCE_MEDIUM)
     low_conf = sum(1 for m in mappings if m["confidence"] == CONFIDENCE_LOW)
