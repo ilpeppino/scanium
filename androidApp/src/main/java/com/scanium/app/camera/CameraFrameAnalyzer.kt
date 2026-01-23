@@ -180,8 +180,41 @@ internal class CameraFrameAnalyzer(
                     "rotation=$rotationDegrees°"
             )
 
-            // Convert normalized bbox to pixel coordinates
-            val pixelBbox = normalizedBbox.toRect(sourceBitmap.width, sourceBitmap.height)
+            // CRITICAL FIX: normalizedBbox is in UPRIGHT (display-oriented) coordinates,
+            // but sourceBitmap is in SENSOR (pre-rotation) coordinates.
+            // We need to apply inverse rotation to get sensor-space normalized coordinates.
+            val (sensorNormLeft, sensorNormTop, sensorNormRight, sensorNormBottom) =
+                when (rotationDegrees) {
+                    0 -> {
+                        listOf(normalizedBbox.left, normalizedBbox.top, normalizedBbox.right, normalizedBbox.bottom)
+                    }
+                    90 -> {
+                        // Inverse of 90° clockwise rotation
+                        // Upright (x, y) -> Sensor (y, 1-x)
+                        listOf(normalizedBbox.top, 1f - normalizedBbox.right, normalizedBbox.bottom, 1f - normalizedBbox.left)
+                    }
+                    180 -> {
+                        // Inverse of 180°
+                        listOf(1f - normalizedBbox.right, 1f - normalizedBbox.bottom, 1f - normalizedBbox.left, 1f - normalizedBbox.top)
+                    }
+                    270 -> {
+                        // Inverse of 270° clockwise rotation
+                        // Upright (x, y) -> Sensor (1-y, x)
+                        listOf(1f - normalizedBbox.bottom, normalizedBbox.left, 1f - normalizedBbox.top, normalizedBbox.right)
+                    }
+                    else -> {
+                        listOf(normalizedBbox.left, normalizedBbox.top, normalizedBbox.right, normalizedBbox.bottom)
+                    }
+                }
+
+            // Convert sensor-space normalized bbox to pixel coordinates
+            val sensorBbox = NormalizedRect(
+                left = sensorNormLeft,
+                top = sensorNormTop,
+                right = sensorNormRight,
+                bottom = sensorNormBottom
+            )
+            val pixelBbox = sensorBbox.toRect(sourceBitmap.width, sourceBitmap.height)
 
             // Ensure bounding box is within bitmap bounds
             val left = pixelBbox.left.coerceIn(0, sourceBitmap.width - 1)
