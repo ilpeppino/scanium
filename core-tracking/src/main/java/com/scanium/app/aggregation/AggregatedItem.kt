@@ -125,6 +125,7 @@ data class AggregatedItem(
         return ScannedItem(
             id = aggregatedId,
             thumbnail = thumbnail,
+            thumbnailRef = thumbnail,  // Set both fields to ensure consistency
             category = enhancedCategory ?: category,
             priceRange = enhancedPriceRange ?: priceRange,
             estimatedPriceRange = estimatedPriceRange,
@@ -190,24 +191,17 @@ data class AggregatedItem(
             labelText = detection.labelText ?: labelText
         }
 
-        // Update thumbnail logic: Prefer higher quality scores
-        // If current thumbnail is missing, take the new one
-        // If new one has significantly better quality score, take it
-        // If quality is similar, default to high confidence check (already handled implicitly if we track maxConfidence separately? No)
-
-        val newThumbnail = detection.thumbnail
-        if (newThumbnail != null) {
-            val isBetterQuality = detection.qualityScore > thumbnailQuality
-            val isFirstThumbnail = thumbnail == null
-
-            // Allow update if better quality OR it's the first one
-            // Also consider confidence: don't replace a high-confidence sharp image with a low-confidence sharp image?
-            // Actually, quality score (sharpness) is usually king for visual search.
-            if (isFirstThumbnail || isBetterQuality) {
-                thumbnail = newThumbnail
-                thumbnailQuality = detection.qualityScore
-            }
+        // CRITICAL: NEVER replace existing thumbnail during aggregation
+        // Each captured thumbnail represents a specific moment and should be preserved.
+        // WYSIWYG principle: thumbnail matches what user saw in the camera bbox at capture time.
+        // Only set thumbnail if this is the first detection (no thumbnail exists yet).
+        val newThumbnail = detection.thumbnailRef ?: detection.thumbnail
+        if (newThumbnail != null && thumbnail == null) {
+            thumbnail = newThumbnail
+            thumbnailQuality = detection.qualityScore
         }
+        // Note: Future enhancement could add new thumbnails to additionalPhotos list
+        // instead of discarding them, but for now we preserve the original thumbnail.
 
         // Always update bounding box to latest position (object may have moved)
         detection.boundingBox?.let { boundingBox = it }

@@ -189,7 +189,7 @@ class ItemAggregator(
             category = detection.category,
             labelText = detection.labelText ?: "",
             boundingBox = detection.boundingBox ?: NormalizedRect(0f, 0f, 0f, 0f),
-            thumbnail = detection.thumbnail,
+            thumbnail = detection.thumbnailRef ?: detection.thumbnail,  // Prefer thumbnailRef (WYSIWYG)
             maxConfidence = detection.confidence,
             averageConfidence = detection.confidence,
             priceRange = detection.priceRange,
@@ -199,6 +199,7 @@ class ItemAggregator(
             sourceDetectionIds = mutableSetOf(detection.id),
             fullImageUri = detection.fullImageUri,
             fullImagePath = detection.fullImagePath,
+            thumbnailQuality = detection.qualityScore,  // Initialize quality score
         )
     }
 
