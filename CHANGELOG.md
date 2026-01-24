@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0 / backend-1.2.0] - 2026-01-24
+
+### Added
+- **Smart Merge Suggestions**: Automatic detection of duplicate items with merge review UI
+- **Category Validation**: Auto-corrects classification mismatches (e.g., electronics incorrectly classified as fashion)
+- **Enhanced Scan Zone**: Increased ROI from 65% to 80% for better object detection coverage
+- **Localized Smart Merge Labels**: Proper internationalization for merge suggestions
+
+### Fixed
+- **Test Infrastructure**: Resolved 51 test failures by fixing mock configurations and aggregation settings
+- **Domain Pack Classification**: Proper wiring of domain pack categories and vision enrichment
+- **Duplicate Detection**: Prevented race condition causing duplicates from single capture frame
+- **Category/Attribute Consistency**: Added validation to detect and log backend classification errors
+
+### Changed
+- Disabled item aggregation - each capture now creates a unique item (WYSIWYG behavior)
+- Disabled long-press scanning on camera shutter for cleaner UX
+
+### Technical Details
+- Android: v1.8.0 (build 100023)
+- Backend: v1.2.0
+- Test pass rate improved from 95.1% to 98.9%
+- Added defensive validation layer for classification responses
+
 ## [1.7.0 / backend-1.1.0] - 2026-01-21
 
 ### Added
