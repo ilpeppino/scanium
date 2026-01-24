@@ -222,6 +222,26 @@ class ItemsUiFacade(
     }
 
     /**
+     * Add a single item and trigger vision enrichment using its thumbnail.
+     *
+     * This is the primary path for detection-flow items where a thumbnail
+     * is available but no Activity context is accessible. The enrichment
+     * runs asynchronously and updates the item's visionAttributes when complete.
+     */
+    fun addItemWithThumbnailEnrichment(item: ScannedItem, thumbnail: com.scanium.shared.core.models.model.ImageRef?) {
+        stateManager.addItem(item)
+        if (thumbnail != null) {
+            visionInsightsPrefiller.extractAndApplyFromThumbnail(
+                scope = scope,
+                stateManager = stateManager,
+                itemId = item.id,
+                thumbnail = thumbnail,
+            )
+        }
+        emitNavigateToItemListIfEnabled(1)
+    }
+
+    /**
      * Add multiple items to the list.
      */
     fun addItems(newItems: List<ScannedItem>) {

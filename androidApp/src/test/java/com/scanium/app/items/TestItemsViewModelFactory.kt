@@ -31,11 +31,12 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
  */
 object NoopVisionInsightsPrefiller {
     fun create(): VisionInsightsPrefiller {
+        val mockContext = mockk<android.content.Context>(relaxed = true)
         val mockVisionRepository = mockk<VisionInsightsRepository>(relaxed = true)
         val mockLocalExtractor = mockk<LocalVisionExtractor>(relaxed = true)
         val mockEnrichmentRepository = mockk<EnrichmentRepository>(relaxed = true)
         val mockEnrichmentPolicy = mockk<EnrichmentPolicy>(relaxed = true)
-        return VisionInsightsPrefiller(mockVisionRepository, mockLocalExtractor, mockEnrichmentRepository, mockEnrichmentPolicy)
+        return VisionInsightsPrefiller(mockContext, mockVisionRepository, mockLocalExtractor, mockEnrichmentRepository, mockEnrichmentPolicy)
     }
 }
 

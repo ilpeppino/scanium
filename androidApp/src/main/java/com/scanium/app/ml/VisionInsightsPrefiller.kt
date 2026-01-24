@@ -17,6 +17,7 @@ import com.scanium.shared.core.models.items.VisionColor
 import com.scanium.shared.core.models.items.VisionLabel
 import com.scanium.shared.core.models.items.VisionLogo
 import com.scanium.shared.core.models.model.ImageRef
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -62,6 +63,7 @@ import javax.inject.Singleton
 class VisionInsightsPrefiller
     @Inject
     constructor(
+        @ApplicationContext private val appContext: Context,
         private val visionInsightsRepository: VisionInsightsRepository,
         private val localVisionExtractor: LocalVisionExtractor,
         private val enrichmentRepository: EnrichmentRepository,
@@ -224,6 +226,33 @@ class VisionInsightsPrefiller
             synchronized(inFlightExtractions) {
                 extractionJobs[itemId] = job
             }
+        }
+
+        /**
+         * Extract vision insights using the thumbnail (no external Context needed).
+         *
+         * This overload uses the injected application context and is intended for
+         * the detection flow where a thumbnail is available but no Activity context is.
+         *
+         * @param scope Coroutine scope for the extraction
+         * @param stateManager ItemsStateManager to apply results
+         * @param itemId The item ID to update
+         * @param thumbnail Thumbnail cropped to the item's bounding box
+         */
+        fun extractAndApplyFromThumbnail(
+            scope: CoroutineScope,
+            stateManager: ItemsStateManager,
+            itemId: String,
+            thumbnail: ImageRef,
+        ) {
+            extractAndApply(
+                context = appContext,
+                scope = scope,
+                stateManager = stateManager,
+                itemId = itemId,
+                imageUri = null,
+                thumbnail = thumbnail,
+            )
         }
 
         /**

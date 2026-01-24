@@ -25,8 +25,12 @@ import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.model.toBitmap
+import com.scanium.app.domain.DomainPackProvider
+import com.scanium.app.domain.category.CategorySelectionInput
 import com.scanium.core.export.ExportPayload
 import com.scanium.core.models.scanning.ScanRoi
+import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.telemetry.facade.Telemetry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -1105,30 +1109,136 @@ class ItemsViewModel
             Log.i(TAG, "createItemFromDetection: detectionId=$detectionId hypothesis=${hypothesis?.categoryName}")
 
             try {
+                // Resolve category from hypothesis or domain pack fallback
+                val resolvedCategory = resolveItemCategory(hypothesis, rawDetection)
+
+                // Resolve label: hypothesis name, domain pack name, or on-device fallback
+                val resolvedLabel = resolveItemLabel(hypothesis, rawDetection)
+
+                // Convert hypothesis attributes to ItemAttribute map
+                val resolvedAttributes = hypothesis?.attributes
+                    ?.filter { it.value.isNotBlank() }
+                    ?.mapValues { (_, value) ->
+                        ItemAttribute(
+                            value = value,
+                            confidence = hypothesis.confidence,
+                            source = "cloud_hypothesis"
+                        )
+                    } ?: emptyMap()
+
                 val item = ScannedItem(
                     id = UUID.randomUUID().toString(),
-                    labelText = hypothesis?.categoryName ?: rawDetection.onDeviceLabel,
-                    category = hypothesis?.let {
-                        // TODO Phase 2: Map domainCategoryId to ItemCategory properly
-                        rawDetection.onDeviceCategory
-                    } ?: rawDetection.onDeviceCategory,
+                    labelText = resolvedLabel,
+                    category = resolvedCategory,
                     priceRange = 0.0 to 0.0, // Will be estimated by PricingEngine later
                     confidence = hypothesis?.confidence ?: rawDetection.confidence,
                     boundingBox = rawDetection.boundingBox,
                     thumbnail = rawDetection.thumbnailRef,
                     classificationStatus = if (hypothesis != null) "CONFIRMED" else "FALLBACK",
                     timestamp = System.currentTimeMillis(),
-                    attributes = emptyMap()
+                    attributes = resolvedAttributes
                 )
 
                 withContext(mainDispatcher) {
-                    facade.addItem(item)
-                    Log.i(TAG, "Item created from detection: ${item.id} - ${item.labelText}")
+                    facade.addItemWithThumbnailEnrichment(item, rawDetection.thumbnailRef)
+                    Log.i(TAG, "Item created from detection: ${item.id} - ${item.labelText} (enrichment triggered)")
                 }
             } finally {
-                // Clean up bitmap after classification and item creation
+                // Clean up full-frame bitmap after classification and item creation.
+                // Note: thumbnailRef (ImageRef) is independent and used by the enrichment pipeline.
                 rawDetection.fullFrameBitmap?.recycle()
             }
+        }
+
+        /**
+         * Resolve the ItemCategory from a hypothesis or domain pack fallback.
+         *
+         * Priority:
+         * 1. Hypothesis categoryId → domain pack lookup → itemCategoryName → ItemCategory
+         * 2. Domain pack BasicCategoryEngine using ML Kit label
+         * 3. Raw on-device category from ML Kit
+         */
+        private suspend fun resolveItemCategory(
+            hypothesis: ClassificationHypothesis?,
+            rawDetection: RawDetection
+        ): ItemCategory {
+            // If hypothesis provides a domain category ID, map it through the domain pack
+            if (hypothesis != null && hypothesis.categoryId.isNotBlank()) {
+                try {
+                    if (DomainPackProvider.isInitialized) {
+                        val domainPack = DomainPackProvider.repository.getActiveDomainPack()
+                        val domainCategory = domainPack.categories.find { it.id == hypothesis.categoryId }
+                        if (domainCategory != null) {
+                            val mapped = ItemCategory.fromClassifierLabel(domainCategory.itemCategoryName)
+                            if (mapped != ItemCategory.UNKNOWN) {
+                                Log.d(TAG, "Resolved category from hypothesis: ${hypothesis.categoryId} → $mapped")
+                                return mapped
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to resolve category from hypothesis: ${e.message}")
+                }
+            }
+
+            // Fallback: use domain pack engine with ML Kit label
+            if (DomainPackProvider.isInitialized) {
+                try {
+                    val input = CategorySelectionInput(
+                        mlKitLabel = rawDetection.onDeviceLabel,
+                        mlKitConfidence = rawDetection.confidence
+                    )
+                    val domainCategory = DomainPackProvider.categoryEngine.selectCategory(input)
+                    if (domainCategory != null) {
+                        val mapped = ItemCategory.fromClassifierLabel(domainCategory.itemCategoryName)
+                        if (mapped != ItemCategory.UNKNOWN) {
+                            Log.d(TAG, "Resolved category from domain pack: ${domainCategory.id} → $mapped")
+                            return mapped
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Domain pack category selection failed: ${e.message}")
+                }
+            }
+
+            return rawDetection.onDeviceCategory
+        }
+
+        /**
+         * Resolve the display label for an item.
+         *
+         * Priority:
+         * 1. Hypothesis categoryName (e.g., "Sofa", "Laptop")
+         * 2. Domain pack category displayName
+         * 3. Raw on-device label from ML Kit
+         */
+        private suspend fun resolveItemLabel(
+            hypothesis: ClassificationHypothesis?,
+            rawDetection: RawDetection
+        ): String {
+            // Hypothesis provides a fine-grained label
+            if (hypothesis != null && hypothesis.categoryName.isNotBlank()) {
+                return hypothesis.categoryName
+            }
+
+            // Try domain pack for a better label than ML Kit's coarse category
+            if (DomainPackProvider.isInitialized) {
+                try {
+                    val input = CategorySelectionInput(
+                        mlKitLabel = rawDetection.onDeviceLabel,
+                        mlKitConfidence = rawDetection.confidence
+                    )
+                    val domainCategory = DomainPackProvider.categoryEngine.selectCategory(input)
+                    if (domainCategory != null) {
+                        Log.d(TAG, "Resolved label from domain pack: ${domainCategory.displayName}")
+                        return domainCategory.displayName
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Domain pack label resolution failed: ${e.message}")
+                }
+            }
+
+            return rawDetection.onDeviceLabel
         }
 
         /**
