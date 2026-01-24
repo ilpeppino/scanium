@@ -95,7 +95,8 @@ data class PreflightResult(
                     PreflightStatus.TEMPORARILY_UNAVAILABLE,
                     PreflightStatus.OFFLINE,
                     PreflightStatus.RATE_LIMITED,
-                    PreflightStatus.CLIENT_ERROR, // Client error should allow chat attempt
+                    // Client error should allow chat attempt
+                    PreflightStatus.CLIENT_ERROR,
                 )
 }
 
@@ -160,7 +161,8 @@ class AssistantPreflightManagerImpl(
     private val client: OkHttpClient =
         AssistantOkHttpClientFactory.create(
             config = preflightConfig,
-            logStartupPolicy = false, // Don't log for preflight, let chat client log
+            // Don't log for preflight, let chat client log
+            logStartupPolicy = false,
         )
 
     // Lazy-init warmup client only when needed

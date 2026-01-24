@@ -125,7 +125,8 @@ data class AggregatedItem(
         return ScannedItem(
             id = aggregatedId,
             thumbnail = thumbnail,
-            thumbnailRef = thumbnail,  // Set both fields to ensure consistency
+            // Set both fields to ensure consistency
+            thumbnailRef = thumbnail,
             category = enhancedCategory ?: category,
             priceRange = enhancedPriceRange ?: priceRange,
             estimatedPriceRange = estimatedPriceRange,

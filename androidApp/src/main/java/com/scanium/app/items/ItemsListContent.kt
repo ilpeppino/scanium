@@ -122,28 +122,30 @@ internal fun ItemsListContent(
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
+                                colors =
+                                    CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    ),
                             ) {
                                 Row(
                                     modifier = Modifier.padding(16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.HourglassEmpty,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
                                     Text(
-                                        text = pluralStringResource(
-                                            R.plurals.items_pending_detection,
-                                            pendingDetectionCount,
-                                            pendingDetectionCount,
-                                        ),
+                                        text =
+                                            pluralStringResource(
+                                                R.plurals.items_pending_detection,
+                                                pendingDetectionCount,
+                                                pendingDetectionCount,
+                                            ),
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
                                 }
                             }
@@ -409,11 +411,12 @@ internal fun ItemRow(
                 ) {
                     Text(
                         stringResource(R.string.common_question_mark),
-                        style = if (FeatureFlags.showItemDiagnostics) {
-                            MaterialTheme.typography.headlineMedium
-                        } else {
-                            MaterialTheme.typography.headlineLarge
-                        },
+                        style =
+                            if (FeatureFlags.showItemDiagnostics) {
+                                MaterialTheme.typography.headlineMedium
+                            } else {
+                                MaterialTheme.typography.headlineLarge
+                            },
                     )
                 }
             }
@@ -430,11 +433,12 @@ internal fun ItemRow(
                 ) {
                     Text(
                         text = displayTitle,
-                        style = if (FeatureFlags.showItemDiagnostics) {
-                            MaterialTheme.typography.titleMedium
-                        } else {
-                            MaterialTheme.typography.titleLarge
-                        },
+                        style =
+                            if (FeatureFlags.showItemDiagnostics) {
+                                MaterialTheme.typography.titleMedium
+                            } else {
+                                MaterialTheme.typography.titleLarge
+                            },
                     )
                     // Diagnostic badges only shown in dev builds
                     if (FeatureFlags.showItemDiagnostics) {

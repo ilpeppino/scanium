@@ -984,7 +984,8 @@ fun TypingIndicator(
         dots.forEach { delay ->
             val offset by transition.animateFloat(
                 initialValue = 0f,
-                targetValue = -6f, // Bounce up by 6 pixels
+                // Bounce up by 6 pixels
+                targetValue = -6f,
                 animationSpec =
                     infiniteRepeatable(
                         animation = tween(300, delayMillis = delay, easing = androidx.compose.animation.core.FastOutSlowInEasing),
@@ -1022,7 +1023,8 @@ private fun ProgressStageRow(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.height(24.dp), // Increased height for bounce
+            // Increased height for bounce
+            modifier = Modifier.height(24.dp),
         ) {
             if (showSpinner) {
                 if (label.contains("Thinking") || label.contains("Drafting")) {
@@ -1254,8 +1256,12 @@ private fun AssistantModeBanner(
     val detail =
         when {
             errorInfo != null -> errorInfo.explanation
-            mode == AssistantMode.OFFLINE -> "You're offline. Only local suggestions based on your draft are available. No external lookups will be performed."
-            mode == AssistantMode.LIMITED -> "The online assistant is temporarily unavailable. Only local suggestions based on your draft are shown."
+            mode == AssistantMode.OFFLINE ->
+                "You're offline. Only local suggestions based on your draft are available. " +
+                    "No external lookups will be performed."
+            mode == AssistantMode.LIMITED ->
+                "The online assistant is temporarily unavailable. " +
+                    "Only local suggestions based on your draft are shown."
             else -> ""
         }
 

@@ -44,31 +44,31 @@ object TestConfigOverride {
     private var _baseUrl: String? = null
     private var _apiKey: String? = null
     private var _forceCloudMode: Boolean = false
-    private var _initialized = false
+    private var initialized = false
 
     /**
      * Override base URL for backend API (null = use BuildConfig default).
      */
     val baseUrl: String?
-        get() = if (_initialized && BuildConfig.DEBUG) _baseUrl else null
+        get() = if (initialized && BuildConfig.DEBUG) _baseUrl else null
 
     /**
      * Override API key for backend authentication (null = use secure store default).
      */
     val apiKey: String?
-        get() = if (_initialized && BuildConfig.DEBUG) _apiKey else null
+        get() = if (initialized && BuildConfig.DEBUG) _apiKey else null
 
     /**
      * Whether cloud mode should be forced enabled for tests.
      */
     val forceCloudMode: Boolean
-        get() = if (_initialized && BuildConfig.DEBUG) _forceCloudMode else false
+        get() = if (initialized && BuildConfig.DEBUG) _forceCloudMode else false
 
     /**
      * Whether test configuration has been applied.
      */
     val isActive: Boolean
-        get() = _initialized && BuildConfig.DEBUG && (_baseUrl != null || _apiKey != null || _forceCloudMode)
+        get() = initialized && BuildConfig.DEBUG && (_baseUrl != null || _apiKey != null || _forceCloudMode)
 
     /**
      * Initialize from instrumentation arguments (called from HiltTestRunner or Application).
@@ -86,7 +86,7 @@ object TestConfigOverride {
             _apiKey = args.getString(ARG_API_KEY)?.takeIf { it.isNotBlank() }
             _forceCloudMode = args.getString(ARG_FORCE_CLOUD_MODE)?.toBoolean() ?: false
 
-            _initialized = true
+            initialized = true
             _isTestMode.value = _baseUrl != null || _apiKey != null
 
             Log.i(
@@ -121,7 +121,7 @@ object TestConfigOverride {
         _baseUrl = null
         _apiKey = null
         _forceCloudMode = false
-        _initialized = false
+        initialized = false
         _isTestMode.value = false
     }
 }

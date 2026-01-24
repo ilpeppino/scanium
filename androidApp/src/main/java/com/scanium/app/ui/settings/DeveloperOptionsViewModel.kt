@@ -1,6 +1,7 @@
 package com.scanium.app.ui.settings
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -79,7 +80,7 @@ class DeveloperOptionsViewModel
         private val _assistantDiagnosticsState = MutableStateFlow(AssistantDiagnosticsState())
         val assistantDiagnosticsState: StateFlow<AssistantDiagnosticsState> = _assistantDiagnosticsState.asStateFlow()
 
-        private val _assistantDiagnosticsRefreshing = MutableStateFlow(false)
+        private val assistantDiagnosticsRefreshing = MutableStateFlow(false)
 
         // Preflight diagnostics
         val preflightState: StateFlow<PreflightResult> =
@@ -239,10 +240,10 @@ class DeveloperOptionsViewModel
          * Refresh assistant-specific diagnostics.
          */
         fun refreshAssistantDiagnostics() {
-            if (_assistantDiagnosticsRefreshing.value) return
+            if (assistantDiagnosticsRefreshing.value) return
 
             viewModelScope.launch {
-                _assistantDiagnosticsRefreshing.value = true
+                assistantDiagnosticsRefreshing.value = true
                 _assistantDiagnosticsState.value =
                     _assistantDiagnosticsState.value.copy(
                         isChecking = true,
@@ -262,7 +263,7 @@ class DeveloperOptionsViewModel
                         lastChecked = System.currentTimeMillis(),
                     )
 
-                _assistantDiagnosticsRefreshing.value = false
+                assistantDiagnosticsRefreshing.value = false
             }
         }
 
@@ -651,6 +652,7 @@ class DeveloperOptionsViewModel
             lastErrorState = currentErrors
         }
 
+        @SuppressLint("MissingPermission", "NotificationPermission") // Permission checked in method body (line 675-682)
         private fun sendErrorNotification(message: String) {
             val context = getApplication<Application>()
             val channelId = "scanium_dev_monitoring"

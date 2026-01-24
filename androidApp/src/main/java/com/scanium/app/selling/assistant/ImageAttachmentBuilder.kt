@@ -191,7 +191,8 @@ object ImageAttachmentBuilder {
                         ItemImageAttachment(
                             itemId = itemId,
                             imageBytes = recompressedBytes,
-                            mimeType = "image/jpeg", // Always JPEG after recompression
+                            // Always JPEG after recompression
+                            mimeType = "image/jpeg",
                             filename = "image_$index.jpg",
                         ),
                     wasRecompressed = true,

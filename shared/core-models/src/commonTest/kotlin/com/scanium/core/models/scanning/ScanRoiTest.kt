@@ -11,13 +11,13 @@ class ScanRoiTest {
     // =========================================================================
 
     @Test
-    fun `DEFAULT is centered with 65 percent size`() {
+    fun `DEFAULT is centered with 80 percent size`() {
         val roi = ScanRoi.DEFAULT
 
         assertEquals(0.5f, roi.centerXNorm)
         assertEquals(0.5f, roi.centerYNorm)
-        assertEquals(0.65f, roi.widthNorm)
-        assertEquals(0.65f, roi.heightNorm)
+        assertEquals(0.80f, roi.widthNorm)
+        assertEquals(0.80f, roi.heightNorm)
     }
 
     @Test
@@ -123,7 +123,7 @@ class ScanRoiTest {
         val roi = ScanRoi.DEFAULT
 
         assertTrue(roi.containsBoxCenter(0.5f, 0.5f))
-        assertFalse(roi.containsBoxCenter(0.1f, 0.1f))
+        assertFalse(roi.containsBoxCenter(0.05f, 0.05f))
     }
 
     // =========================================================================
@@ -312,7 +312,7 @@ class ScanRoiTest {
     fun `ScanRoiConfig has sensible defaults`() {
         val config = ScanRoiConfig()
 
-        assertEquals(0.65f, config.initialSize)
+        assertEquals(0.80f, config.initialSize)
         assertEquals(ScanRoi.MIN_SIZE_NORM, config.minSize)
         assertEquals(ScanRoi.MAX_SIZE_NORM, config.maxSize)
         assertTrue(config.tooCloseAreaThreshold > config.tooFarAreaThreshold)

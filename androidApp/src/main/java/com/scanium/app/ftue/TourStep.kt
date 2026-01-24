@@ -27,21 +27,29 @@ enum class TourStepKey {
     CAMERA_FLIP,
     CAMERA_ITEMS,
     CAMERA_SETTINGS,
+
     // Legacy keys kept for reference (no longer used in tour)
     @Deprecated("Removed in streamlined tour")
     TAKE_FIRST_PHOTO,
+
     @Deprecated("Removed in streamlined tour")
     OPEN_ITEM_LIST,
+
     @Deprecated("Removed in streamlined tour")
     ADD_EXTRA_PHOTOS,
+
     @Deprecated("Removed in streamlined tour")
     EDIT_ATTRIBUTES,
+
     @Deprecated("Removed in streamlined tour")
     USE_AI_ASSISTANT,
+
     @Deprecated("Removed in streamlined tour")
     SAVE_CHANGES,
+
     @Deprecated("Removed in streamlined tour")
     SHARE_BUNDLE,
+
     @Deprecated("Removed in streamlined tour")
     COMPLETION,
 }

@@ -149,15 +149,16 @@ class CloudClassifier(
             maybeSaveDebugCrop(input)
 
             // Fetch recent corrections for local learning overlay
-            val recentCorrectionsJson = correctionDao?.let { dao ->
-                try {
-                    val corrections = dao.getRecentCorrections(limit = 20)
-                    com.scanium.app.classification.persistence.CorrectionHistoryHelper.toBackendJson(corrections)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to fetch recent corrections", e)
-                    null
+            val recentCorrectionsJson =
+                correctionDao?.let { dao ->
+                    try {
+                        val corrections = dao.getRecentCorrections(limit = 20)
+                        com.scanium.app.classification.persistence.CorrectionHistoryHelper.toBackendJson(corrections)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to fetch recent corrections", e)
+                        null
+                    }
                 }
-            }
 
             // Begin telemetry span
             val classifySpan = telemetryHelper.beginClassificationSpan()
@@ -250,15 +251,16 @@ class CloudClassifier(
             }
 
             // Fetch recent corrections for local learning overlay
-            val recentCorrectionsJson = correctionDao?.let { dao ->
-                try {
-                    val corrections = dao.getRecentCorrections(limit = 20)
-                    com.scanium.app.classification.persistence.CorrectionHistoryHelper.toBackendJson(corrections)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to fetch recent corrections", e)
-                    null
+            val recentCorrectionsJson =
+                correctionDao?.let { dao ->
+                    try {
+                        val corrections = dao.getRecentCorrections(limit = 20)
+                        com.scanium.app.classification.persistence.CorrectionHistoryHelper.toBackendJson(corrections)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to fetch recent corrections", e)
+                        null
+                    }
                 }
-            }
 
             try {
                 // Execute API request with mode=multi-hypothesis
@@ -378,16 +380,17 @@ class CloudClassifier(
      * Parse multi-hypothesis API response into MultiHypothesisResult.
      */
     private fun parseMultiHypothesisResponse(apiResponse: CloudClassificationResponse): MultiHypothesisResult? {
-        val hypotheses = apiResponse.hypotheses?.take(3)?.map { h ->
-            ClassificationHypothesis(
-                categoryId = h.categoryId,
-                categoryName = h.categoryName,
-                explanation = h.explanation,
-                confidence = h.confidence,
-                confidenceBand = h.confidenceBand,
-                attributes = h.attributes
-            )
-        } ?: emptyList()
+        val hypotheses =
+            apiResponse.hypotheses?.take(3)?.map { h ->
+                ClassificationHypothesis(
+                    categoryId = h.categoryId,
+                    categoryName = h.categoryName,
+                    explanation = h.explanation,
+                    confidence = h.confidence,
+                    confidenceBand = h.confidenceBand,
+                    attributes = h.attributes,
+                )
+            } ?: emptyList()
 
         if (hypotheses.isEmpty()) {
             Log.w(TAG, "No hypotheses in multi-hypothesis response")
@@ -398,7 +401,7 @@ class CloudClassifier(
             hypotheses = hypotheses,
             globalConfidence = apiResponse.globalConfidence ?: 0f,
             needsRefinement = apiResponse.needsRefinement ?: false,
-            requestId = apiResponse.requestId ?: ""
+            requestId = apiResponse.requestId ?: "",
         )
     }
 

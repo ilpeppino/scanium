@@ -108,9 +108,13 @@ object AssistantOkHttpClientFactory {
                 appendLine("Assistant HTTP Policy Initialized:")
                 appendLine("  Version: ${BuildConfig.VERSION_NAME}")
                 appendLine("  Timeouts: ${config.toLogString()}")
-                appendLine(
-                    "  Retry: ${if (config.retryCount > 0) "${config.retryCount}x on transient errors (502/503/504, timeout, network)" else "disabled"}",
-                )
+                val retryInfo =
+                    if (config.retryCount > 0) {
+                        "${config.retryCount}x on transient errors (502/503/504, timeout, network)"
+                    } else {
+                        "disabled"
+                    }
+                appendLine("  Retry: $retryInfo")
                 appendLine("  Non-retryable: 400/401/403/404/429")
             }
         Log.i(TAG, policyInfo)

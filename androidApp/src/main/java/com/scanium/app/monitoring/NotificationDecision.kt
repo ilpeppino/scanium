@@ -85,9 +85,8 @@ object NotificationDecision {
                 // Different failure signature - notify immediately
                 if (previousFailureSignature != null && currentSignature != previousFailureSignature) {
                     Decision.NotifyFailure(currentResult.failures.firstOrNull()?.failureReason ?: "Health check failed")
-                }
-                // Same signature - check rate limit
-                else if (shouldSendReminder(lastNotifiedAt, currentTimeMs, reminderIntervalMs)) {
+                } else if (shouldSendReminder(lastNotifiedAt, currentTimeMs, reminderIntervalMs)) {
+                    // Same signature - check rate limit
                     Decision.NotifyFailure(currentResult.failures.firstOrNull()?.failureReason ?: "Health check still failing")
                 } else {
                     Decision.NoNotification

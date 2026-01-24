@@ -60,7 +60,6 @@ import com.scanium.app.ftue.CameraFtueViewModel
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.HintType
 import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.media.StorageHelper
 import com.scanium.app.ml.classification.ClassificationMetrics
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.settings.ClassificationModeViewModel
@@ -1143,7 +1142,7 @@ fun CameraScreen(
                 },
                 onDismiss = {
                     itemsViewModel.dismissPendingDetection(state.itemId)
-                }
+                },
             )
         }
     }

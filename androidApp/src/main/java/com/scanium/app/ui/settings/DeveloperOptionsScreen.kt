@@ -579,7 +579,8 @@ private fun OverlayAccuracySliderRow(
                 }
             },
             valueRange = 0f..(stepCount - 1).toFloat(),
-            steps = stepCount - 2, // steps parameter is intermediate steps, so (count - 2)
+            // steps parameter is intermediate steps, so (count - 2)
+            steps = stepCount - 2,
             modifier = Modifier.fillMaxWidth(),
         )
 

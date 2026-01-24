@@ -9,7 +9,6 @@ import kotlinx.serialization.json.Json
  * Part of the local learning overlay feature (Delta A4).
  */
 object CorrectionHistoryHelper {
-
     /**
      * Convert recent corrections to JSON for backend classification API.
      *
@@ -19,21 +18,22 @@ object CorrectionHistoryHelper {
      */
     fun toBackendJson(
         corrections: List<ClassificationCorrectionEntity>,
-        limit: Int = 20
+        limit: Int = 20,
     ): String? {
         if (corrections.isEmpty()) return null
 
-        val recentCorrections = corrections
-            .take(limit)
-            .map { entity ->
-                RecentCorrectionPayload(
-                    originalCategoryId = entity.originalCategoryId ?: "unknown",
-                    correctedCategoryId = entity.correctedCategoryId,
-                    correctedCategoryName = entity.correctedCategoryName,
-                    correctedAt = entity.correctedAt,
-                    visualFingerprint = entity.visualContext // Use visual context as fingerprint
-                )
-            }
+        val recentCorrections =
+            corrections
+                .take(limit)
+                .map { entity ->
+                    RecentCorrectionPayload(
+                        originalCategoryId = entity.originalCategoryId ?: "unknown",
+                        correctedCategoryId = entity.correctedCategoryId,
+                        correctedCategoryName = entity.correctedCategoryName,
+                        correctedAt = entity.correctedAt,
+                        visualFingerprint = entity.visualContext, // Use visual context as fingerprint
+                    )
+                }
 
         return Json.encodeToString(recentCorrections)
     }
@@ -48,7 +48,7 @@ object CorrectionHistoryHelper {
         val correctedCategoryId: String,
         val correctedCategoryName: String,
         val correctedAt: Long,
-        val visualFingerprint: String? = null
+        val visualFingerprint: String? = null,
     )
 }
 

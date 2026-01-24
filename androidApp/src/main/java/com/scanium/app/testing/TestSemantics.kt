@@ -14,6 +14,7 @@ package com.scanium.app.testing
  */
 object TestSemantics {
     // ========== CameraScreen ==========
+
     /** Root container for camera screen */
     const val CAMERA_SCREEN = "camera_screen"
 

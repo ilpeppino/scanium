@@ -14,8 +14,8 @@ import java.util.UUID
     indices = [
         Index(value = ["itemId"]),
         Index(value = ["correctedAt"]),
-        Index(value = ["syncedToBackend"])
-    ]
+        Index(value = ["syncedToBackend"]),
+    ],
 )
 data class ClassificationCorrectionEntity(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
@@ -31,5 +31,5 @@ data class ClassificationCorrectionEntity(
     val visualContext: String, // JSON string of perception signals
     val correctedAt: Long = System.currentTimeMillis(),
     val syncedToBackend: Boolean = false,
-    val syncedAt: Long? = null
+    val syncedAt: Long? = null,
 )

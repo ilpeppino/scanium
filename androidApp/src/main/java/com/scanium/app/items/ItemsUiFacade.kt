@@ -79,6 +79,7 @@ class ItemsUiFacade(
     telemetry: Telemetry?,
     private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    aggregationConfig: com.scanium.app.AggregationConfig = AggregationPresets.NO_AGGREGATION,
 ) {
     companion object {
         private const val TAG = "ItemsUiFacade"
@@ -95,7 +96,7 @@ class ItemsUiFacade(
             itemsStore = itemsStore,
             initialWorkerDispatcher = workerDispatcher,
             initialMainDispatcher = mainDispatcher,
-            aggregationConfig = AggregationPresets.NO_AGGREGATION,  // Each capture = unique item
+            aggregationConfig = aggregationConfig,
         )
 
     /**
@@ -228,7 +229,10 @@ class ItemsUiFacade(
      * is available but no Activity context is accessible. The enrichment
      * runs asynchronously and updates the item's visionAttributes when complete.
      */
-    fun addItemWithThumbnailEnrichment(item: ScannedItem, thumbnail: com.scanium.shared.core.models.model.ImageRef?) {
+    fun addItemWithThumbnailEnrichment(
+        item: ScannedItem,
+        thumbnail: com.scanium.shared.core.models.model.ImageRef?,
+    ) {
         stateManager.addItem(item)
         if (thumbnail != null) {
             visionInsightsPrefiller.extractAndApplyFromThumbnail(

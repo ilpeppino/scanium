@@ -80,6 +80,7 @@ class ItemsStateManager(
 
     // Vision API quota exceeded event
     data class QuotaExceededEvent(val quotaLimit: Int?, val resetTime: String?)
+
     private val _quotaExceededEvent = MutableStateFlow<QuotaExceededEvent?>(null)
     val quotaExceededEvent: StateFlow<QuotaExceededEvent?> = _quotaExceededEvent.asStateFlow()
 

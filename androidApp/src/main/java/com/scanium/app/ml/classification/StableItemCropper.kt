@@ -129,12 +129,13 @@ class StableItemCropper(
         val bboxArea = rect.width() * rect.height()
         val areaRatio = if (frameArea > 0) bboxArea.toFloat() / frameArea.toFloat() else 0f
 
-        val adaptivePaddingRatio = when {
-            areaRatio > 0.50f -> paddingRatio * 0.3f  // Large objects: 3.6% padding (was 12%)
-            areaRatio > 0.35f -> paddingRatio * 0.5f  // Medium-large: 6% padding
-            areaRatio > 0.20f -> paddingRatio * 0.75f // Medium: 9% padding
-            else -> paddingRatio                       // Small objects: full 12% padding
-        }
+        val adaptivePaddingRatio =
+            when {
+                areaRatio > 0.50f -> paddingRatio * 0.3f // Large objects: 3.6% padding (was 12%)
+                areaRatio > 0.35f -> paddingRatio * 0.5f // Medium-large: 6% padding
+                areaRatio > 0.20f -> paddingRatio * 0.75f // Medium: 9% padding
+                else -> paddingRatio // Small objects: full 12% padding
+            }
 
         Log.d(
             TAG,

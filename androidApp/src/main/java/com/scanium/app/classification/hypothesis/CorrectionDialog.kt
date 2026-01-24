@@ -30,7 +30,7 @@ fun CorrectionDialog(
     predictedConfidence: Float?,
     onDismiss: () -> Unit,
     onCorrectionSubmitted: (correctedCategory: String, notes: String?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var correctedCategory by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
@@ -42,10 +42,11 @@ fun CorrectionDialog(
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // Explanation
                 Text(stringResource(R.string.correction_dialog_explanation))
@@ -57,7 +58,7 @@ fun CorrectionDialog(
                     label = { Text(stringResource(R.string.correction_dialog_category_label)) },
                     placeholder = { Text(stringResource(R.string.correction_dialog_category_hint)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
 
                 // Optional notes
@@ -68,19 +69,20 @@ fun CorrectionDialog(
                     placeholder = { Text(stringResource(R.string.correction_dialog_notes_hint)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
-                    maxLines = 4
+                    maxLines = 4,
                 )
 
                 // Show predicted category if available
                 if (predictedCategory != null) {
                     Text(
-                        text = stringResource(
-                            R.string.correction_dialog_predicted,
-                            predictedCategory,
-                            (predictedConfidence?.times(100))?.toInt() ?: 0
-                        ),
+                        text =
+                            stringResource(
+                                R.string.correction_dialog_predicted,
+                                predictedCategory,
+                                (predictedConfidence?.times(100))?.toInt() ?: 0,
+                            ),
                         style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -91,11 +93,11 @@ fun CorrectionDialog(
                     if (correctedCategory.isNotBlank()) {
                         onCorrectionSubmitted(
                             correctedCategory.trim(),
-                            notes.trim().takeIf { it.isNotEmpty() }
+                            notes.trim().takeIf { it.isNotEmpty() },
                         )
                     }
                 },
-                enabled = correctedCategory.isNotBlank()
+                enabled = correctedCategory.isNotBlank(),
             ) {
                 Text(stringResource(R.string.correction_dialog_submit))
             }
@@ -105,6 +107,6 @@ fun CorrectionDialog(
                 Text(stringResource(R.string.correction_dialog_cancel))
             }
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }

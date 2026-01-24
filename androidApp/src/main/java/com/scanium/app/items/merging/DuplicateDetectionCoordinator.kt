@@ -60,28 +60,29 @@ class DuplicateDetectionCoordinator(
      */
     fun triggerDetection() {
         detectionJob?.cancel()
-        detectionJob = scope.launch(workerDispatcher) {
-            delay(500) // Debounce rapid additions
+        detectionJob =
+            scope.launch(workerDispatcher) {
+                delay(500) // Debounce rapid additions
 
-            // Check if feature is enabled
-            val enabled = settingsRepository.smartMergeSuggestionsEnabledFlow.first()
-            if (!enabled) return@launch
+                // Check if feature is enabled
+                val enabled = settingsRepository.smartMergeSuggestionsEnabledFlow.first()
+                if (!enabled) return@launch
 
-            // Need at least 2 items to detect duplicates
-            val allItems = stateManager.getScannedItems()
-            if (allItems.size < 2) return@launch
+                // Need at least 2 items to detect duplicates
+                val allItems = stateManager.getScannedItems()
+                if (allItems.size < 2) return@launch
 
-            // Run detection (CPU-bound work)
-            val groups = detector.findDuplicateGroups(allItems)
+                // Run detection (CPU-bound work)
+                val groups = detector.findDuplicateGroups(allItems)
 
-            // Emit results if any groups found
-            if (groups.isNotEmpty()) {
-                _mergeSuggestionState.value = MergeSuggestionState.Available(groups)
-            } else {
-                // No duplicates found, clear any existing suggestions
-                _mergeSuggestionState.value = MergeSuggestionState.None
+                // Emit results if any groups found
+                if (groups.isNotEmpty()) {
+                    _mergeSuggestionState.value = MergeSuggestionState.Available(groups)
+                } else {
+                    // No duplicates found, clear any existing suggestions
+                    _mergeSuggestionState.value = MergeSuggestionState.None
+                }
             }
-        }
     }
 
     /**
@@ -103,11 +104,12 @@ class DuplicateDetectionCoordinator(
         val current = _mergeSuggestionState.value
         if (current is MergeSuggestionState.Available) {
             val remaining = current.groups.filterNot { it == group }
-            _mergeSuggestionState.value = if (remaining.isEmpty()) {
-                MergeSuggestionState.None
-            } else {
-                MergeSuggestionState.Available(remaining)
-            }
+            _mergeSuggestionState.value =
+                if (remaining.isEmpty()) {
+                    MergeSuggestionState.None
+                } else {
+                    MergeSuggestionState.Available(remaining)
+                }
         }
     }
 

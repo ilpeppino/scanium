@@ -16,7 +16,7 @@ import com.scanium.app.selling.persistence.ListingDraftEntity
         ScannedItemEntity::class,
         ScannedItemHistoryEntity::class,
         ListingDraftEntity::class,
-        ClassificationCorrectionEntity::class
+        ClassificationCorrectionEntity::class,
     ],
     version = 11,
     exportSchema = false,
@@ -330,8 +330,12 @@ abstract class ScannedItemDatabase : RoomDatabase() {
 
                     // Create indexes for efficient queries
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_classification_corrections_itemId ON classification_corrections(itemId)")
-                    db.execSQL("CREATE INDEX IF NOT EXISTS index_classification_corrections_correctedAt ON classification_corrections(correctedAt)")
-                    db.execSQL("CREATE INDEX IF NOT EXISTS index_classification_corrections_syncedToBackend ON classification_corrections(syncedToBackend)")
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS index_classification_corrections_correctedAt ON classification_corrections(correctedAt)",
+                    )
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS index_classification_corrections_syncedToBackend ON classification_corrections(syncedToBackend)",
+                    )
                 }
             }
     }

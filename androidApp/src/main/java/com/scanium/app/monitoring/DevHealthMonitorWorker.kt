@@ -1,6 +1,7 @@
 package com.scanium.app.monitoring
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -122,6 +123,7 @@ class DevHealthMonitorWorker(
         }
     }
 
+    @SuppressLint("MissingPermission", "NotificationPermission") // Permission checked by hasNotificationPermission()
     private fun sendFailureNotification(reason: String) {
         ensureNotificationChannel()
 
@@ -161,6 +163,7 @@ class DevHealthMonitorWorker(
         }
     }
 
+    @SuppressLint("MissingPermission", "NotificationPermission") // Permission checked by hasNotificationPermission()
     private fun sendRecoveryNotification() {
         ensureNotificationChannel()
 

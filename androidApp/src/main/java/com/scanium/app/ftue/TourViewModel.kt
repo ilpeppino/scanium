@@ -137,7 +137,6 @@ class TourViewModel
             }
         }
 
-
         companion object {
             /**
              * Complete ordered list of tour steps.

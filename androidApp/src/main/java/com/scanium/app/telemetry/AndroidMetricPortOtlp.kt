@@ -1,6 +1,18 @@
 package com.scanium.app.telemetry
 
-import com.scanium.app.telemetry.otlp.*
+import com.scanium.app.telemetry.otlp.AnyValue
+import com.scanium.app.telemetry.otlp.ExportMetricsServiceRequest
+import com.scanium.app.telemetry.otlp.Gauge
+import com.scanium.app.telemetry.otlp.Histogram
+import com.scanium.app.telemetry.otlp.HistogramDataPoint
+import com.scanium.app.telemetry.otlp.InstrumentationScope
+import com.scanium.app.telemetry.otlp.KeyValue
+import com.scanium.app.telemetry.otlp.Metric
+import com.scanium.app.telemetry.otlp.NumberDataPoint
+import com.scanium.app.telemetry.otlp.OtlpHttpExporter
+import com.scanium.app.telemetry.otlp.ResourceMetrics
+import com.scanium.app.telemetry.otlp.ScopeMetrics
+import com.scanium.app.telemetry.otlp.Sum
 import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.ports.MetricPort
 import kotlinx.coroutines.CoroutineScope
@@ -166,8 +178,8 @@ class AndroidMetricPortOtlp(
                                             },
                                     ),
                                 ),
+                            // CUMULATIVE
                             aggregationTemporality = 2,
-// CUMULATIVE
                             isMonotonic = true,
                         ),
                 ),
@@ -243,7 +255,8 @@ class AndroidMetricPortOtlp(
                                             },
                                     ),
                                 ),
-                            aggregationTemporality = 2, // CUMULATIVE
+                            // CUMULATIVE
+                            aggregationTemporality = 2,
                         ),
                 ),
             )

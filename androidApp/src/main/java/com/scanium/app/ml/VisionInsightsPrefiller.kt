@@ -198,7 +198,7 @@ class VisionInsightsPrefiller
                                 withContext(Dispatchers.Main) {
                                     stateManager.notifyQuotaExceeded(
                                         quotaLimit = error.quotaLimit,
-                                        resetTime = error.quotaResetAt
+                                        resetTime = error.quotaResetAt,
                                     )
                                 }
                             } else {

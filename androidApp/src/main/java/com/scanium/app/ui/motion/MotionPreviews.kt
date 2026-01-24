@@ -29,6 +29,8 @@ import com.scanium.app.ui.theme.LightningYellow
 import com.scanium.app.ui.theme.ScaniumBluePrimary
 import kotlinx.coroutines.delay
 
+// ==================== ScanFrameAppear Previews ====================
+
 /**
  * Compose preview showcase for Scanium motion language components.
  *
@@ -37,8 +39,6 @@ import kotlinx.coroutines.delay
  * - LightningScanPulse: Single yellow pulse (200-300ms)
  * - PriceCountUp: Animated price display (1.0-1.5s)
  */
-
-// ==================== ScanFrameAppear Previews ====================
 
 @Preview(
     name = "ScanFrameAppear - Visible",

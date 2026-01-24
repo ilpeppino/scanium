@@ -376,7 +376,6 @@ data class CloudClassificationResponse(
     val enrichedAttributes: EnrichedAttributesResponse? = null,
     val visionAttributes: VisionAttributesResponse? = null,
     val requestId: String? = null,
-
     // Multi-hypothesis fields (new)
     val hypotheses: List<HypothesisResponse>? = null,
     val globalConfidence: Float? = null,

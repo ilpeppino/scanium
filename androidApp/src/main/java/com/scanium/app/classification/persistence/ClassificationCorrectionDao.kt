@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface ClassificationCorrectionDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(correction: ClassificationCorrectionEntity): Long
 
@@ -23,7 +22,10 @@ interface ClassificationCorrectionDao {
     suspend fun getUnsyncedCorrections(): List<ClassificationCorrectionEntity>
 
     @Query("UPDATE classification_corrections SET syncedToBackend = 1, syncedAt = :syncedAt WHERE id = :id")
-    suspend fun markAsSynced(id: String, syncedAt: Long)
+    suspend fun markAsSynced(
+        id: String,
+        syncedAt: Long,
+    )
 
     @Query("SELECT COUNT(*) FROM classification_corrections WHERE syncedToBackend = 0")
     fun observeUnsyncedCount(): Flow<Int>

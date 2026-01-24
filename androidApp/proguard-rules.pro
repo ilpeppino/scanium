@@ -1,66 +1,66 @@
-***REMOVED*** Add project specific ProGuard rules here.
-***REMOVED*** You can control the set of applied configuration files using the
-***REMOVED*** proguardFiles setting in build.gradle.
-***REMOVED***
-***REMOVED*** Security hardening (SEC-013, SEC-017):
-***REMOVED*** - Enable code obfuscation
-***REMOVED*** - Strip debug logging
-***REMOVED*** - Remove unused resources
+# Add project specific ProGuard rules here.
+# You can control the set of applied configuration files using the
+# proguardFiles setting in build.gradle.
+#
+# Security hardening (SEC-013, SEC-017):
+# - Enable code obfuscation
+# - Strip debug logging
+# - Remove unused resources
 
-***REMOVED*** =============================================================================
-***REMOVED*** Core Android & Kotlin
-***REMOVED*** =============================================================================
+# =============================================================================
+# Core Android & Kotlin
+# =============================================================================
 
-***REMOVED*** Avoid broad keep rules that block obfuscation
-***REMOVED*** Framework/AndroidX classes are handled by the default Android rules; only app-specific
-***REMOVED*** entry points are kept below.
+# Avoid broad keep rules that block obfuscation
+# Framework/AndroidX classes are handled by the default Android rules; only app-specific
+# entry points are kept below.
 
-***REMOVED*** Keep Kotlin coroutines
+# Keep Kotlin coroutines
 -keep class kotlinx.coroutines.** { *; }
 -dontwarn kotlinx.coroutines.**
 
-***REMOVED*** =============================================================================
-***REMOVED*** ML Kit & CameraX (Required for functionality)
-***REMOVED*** =============================================================================
+# =============================================================================
+# ML Kit & CameraX (Required for functionality)
+# =============================================================================
 
-***REMOVED*** Keep ML Kit classes (required for proper inference)
+# Keep ML Kit classes (required for proper inference)
 -keep class com.google.mlkit.** { *; }
 -dontwarn com.google.mlkit.**
 
-***REMOVED*** Keep CameraX classes
+# Keep CameraX classes
 -keep class androidx.camera.** { *; }
 -dontwarn androidx.camera.**
 
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium App Classes
-***REMOVED*** =============================================================================
+# =============================================================================
+# Scanium App Classes
+# =============================================================================
 
-***REMOVED*** Keep MainActivity (entry point)
+# Keep MainActivity (entry point)
 -keep class com.scanium.app.MainActivity { *; }
 
-***REMOVED*** Keep ScaniumApp composable
+# Keep ScaniumApp composable
 -keep class com.scanium.app.ScaniumAppKt { *; }
 
-***REMOVED*** Obfuscate all internal classes while preserving structure
+# Obfuscate all internal classes while preserving structure
 -keep,allowobfuscation class com.scanium.app.** { *; }
 
-***REMOVED*** Keep data classes and enums (for serialization)
+# Keep data classes and enums (for serialization)
 -keep class com.scanium.app.**.domain.** { *; }
 -keep class com.scanium.app.**.model.** { *; }
 -keep class com.scanium.app.items.ScannedItem { *; }
 
-***REMOVED*** Keep Jetpack Compose
+# Keep Jetpack Compose
 -keep class androidx.compose.** { *; }
 -dontwarn androidx.compose.**
 
-***REMOVED*** =============================================================================
-***REMOVED*** Serialization (Kotlinx Serialization)
-***REMOVED*** =============================================================================
+# =============================================================================
+# Serialization (Kotlinx Serialization)
+# =============================================================================
 
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt
 
-***REMOVED*** Keep Serializer classes
+# Keep Serializer classes
 -keep,includedescriptorclasses class com.scanium.app.**$$serializer { *; }
 -keepclassmembers class com.scanium.app.** {
     *** Companion;
@@ -69,12 +69,12 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Security: Strip Debug Logging (SEC-017)
-***REMOVED*** =============================================================================
+# =============================================================================
+# Security: Strip Debug Logging (SEC-017)
+# =============================================================================
 
-***REMOVED*** Remove all android.util.Log calls in release builds
-***REMOVED*** This strips 304 log statements identified in the security assessment
+# Remove all android.util.Log calls in release builds
+# This strips 304 log statements identified in the security assessment
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
     public static *** v(...);
@@ -84,37 +84,37 @@
     public static *** wtf(...);
 }
 
-***REMOVED*** Remove println statements
+# Remove println statements
 -assumenosideeffects class java.io.PrintStream {
     public void println(...);
     public void print(...);
 }
 
-***REMOVED*** Remove printStackTrace calls (security leak)
+# Remove printStackTrace calls (security leak)
 -assumenosideeffects class java.lang.Throwable {
     public void printStackTrace();
 }
 
-***REMOVED*** =============================================================================
-***REMOVED*** Optimization
-***REMOVED*** =============================================================================
+# =============================================================================
+# Optimization
+# =============================================================================
 
-***REMOVED*** Enable aggressive optimization
+# Enable aggressive optimization
 -optimizationpasses 5
 -allowaccessmodification
 -dontpreverify
 
-***REMOVED*** Remove unused code
+# Remove unused code
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
 
-***REMOVED*** =============================================================================
-***REMOVED*** Debugging Support (Crash Reports)
-***REMOVED*** =============================================================================
+# =============================================================================
+# Debugging Support (Crash Reports)
+# =============================================================================
 
-***REMOVED*** Keep line numbers for crash reports (minimal info leak, high debugging value)
+# Keep line numbers for crash reports (minimal info leak, high debugging value)
 -keepattributes SourceFile,LineNumberTable
 
-***REMOVED*** Rename source file attribute to hide real file names
+# Rename source file attribute to hide real file names
 -renamesourcefileattribute SourceFile

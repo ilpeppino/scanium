@@ -113,12 +113,14 @@ private fun TooltipBubbleSettings(
                     .offset {
                         // Calculate position: center horizontally on target, position above it
                         val tooltipWidth = 260.dp.toPx()
-                        val x = (targetOptionRect.center.x - tooltipWidth / 2)
-                            .coerceIn(16.dp.toPx(), containerWidth - tooltipWidth - 16.dp.toPx())
+                        val x =
+                            (targetOptionRect.center.x - tooltipWidth / 2)
+                                .coerceIn(16.dp.toPx(), containerWidth - tooltipWidth - 16.dp.toPx())
 
                         // Position tooltip above target with some spacing
-                        val y = (targetOptionRect.top - 80.dp.toPx())
-                            .coerceAtLeast(16.dp.toPx())
+                        val y =
+                            (targetOptionRect.top - 80.dp.toPx())
+                                .coerceAtLeast(16.dp.toPx())
 
                         androidx.compose.ui.unit.IntOffset(x.toInt(), y.toInt())
                     },

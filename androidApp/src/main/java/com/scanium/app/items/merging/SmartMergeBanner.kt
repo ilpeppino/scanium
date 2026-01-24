@@ -42,14 +42,16 @@ fun SmartMergeBanner(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -66,11 +68,12 @@ fun SmartMergeBanner(
                 )
                 Column {
                     Text(
-                        text = pluralStringResource(
-                            R.plurals.smart_merge_banner_title,
-                            suggestedMergeCount,
-                            suggestedMergeCount,
-                        ),
+                        text =
+                            pluralStringResource(
+                                R.plurals.smart_merge_banner_title,
+                                suggestedMergeCount,
+                                suggestedMergeCount,
+                            ),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                     )

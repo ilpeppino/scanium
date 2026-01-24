@@ -159,7 +159,8 @@ class OtlpHttpExporter(
                             // Server error or other, retry
                             Log.w(
                                 tag,
-                                "Failed to export $signalType: HTTP ${response.code} (attempt ${attempt + 1}/${telemetryConfig.maxRetries + 1})",
+                                "Failed to export $signalType: HTTP ${response.code} " +
+                                    "(attempt ${attempt + 1}/${telemetryConfig.maxRetries + 1})",
                             )
                         }
                     }

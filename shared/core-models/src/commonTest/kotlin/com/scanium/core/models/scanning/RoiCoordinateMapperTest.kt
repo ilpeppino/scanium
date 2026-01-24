@@ -12,16 +12,16 @@ class RoiCoordinateMapperTest {
 
     @Test
     fun `toPreviewPixels maps centered ROI correctly`() {
-        val roi = ScanRoi.DEFAULT // centered at 0.5, 0.5 with 65% size
+        val roi = ScanRoi.DEFAULT // centered at 0.5, 0.5 with 80% size
         val result = RoiCoordinateMapper.toPreviewPixels(roi, 1000, 1000)
 
-        // Expected: center at 500, 500 with 650 width/height
-        assertEquals(175, result.left)
-        assertEquals(175, result.top)
-        assertEquals(825, result.right)
-        assertEquals(825, result.bottom)
-        assertEquals(650, result.width)
-        assertEquals(650, result.height)
+        // Expected: center at 500, 500 with 800 width/height
+        assertEquals(100, result.left)
+        assertEquals(100, result.top)
+        assertEquals(900, result.right)
+        assertEquals(900, result.bottom)
+        assertEquals(800, result.width)
+        assertEquals(800, result.height)
     }
 
     @Test
@@ -57,10 +57,10 @@ class RoiCoordinateMapperTest {
         val roi = ScanRoi.DEFAULT
         val result = RoiCoordinateMapper.toPreviewFloats(roi, 1000f, 1000f)
 
-        assertEquals(175f, result.left, 0.1f)
-        assertEquals(175f, result.top, 0.1f)
-        assertEquals(825f, result.right, 0.1f)
-        assertEquals(825f, result.bottom, 0.1f)
+        assertEquals(100f, result.left, 0.1f)
+        assertEquals(100f, result.top, 0.1f)
+        assertEquals(900f, result.right, 0.1f)
+        assertEquals(900f, result.bottom, 0.1f)
     }
 
     @Test

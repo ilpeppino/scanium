@@ -34,7 +34,7 @@ sealed class PendingDetectionState {
         val detectionId: String,
         val rawDetection: RawDetection,
         val thumbnailRef: ImageRef?,
-        val timestamp: Long
+        val timestamp: Long,
     ) : PendingDetectionState()
 
     /**
@@ -49,7 +49,7 @@ sealed class PendingDetectionState {
         val detectionId: String,
         val rawDetection: RawDetection,
         val hypothesisResult: MultiHypothesisResult,
-        val thumbnailRef: ImageRef?
+        val thumbnailRef: ImageRef?,
     ) : PendingDetectionState()
 }
 
@@ -78,7 +78,7 @@ data class RawDetection(
     val frameSharpness: Float,
     val captureType: CaptureType,
     val thumbnailRef: ImageRef? = null,
-    val fullFrameBitmap: android.graphics.Bitmap? = null
+    val fullFrameBitmap: android.graphics.Bitmap? = null,
 )
 
 /**
@@ -89,5 +89,5 @@ enum class CaptureType {
     SINGLE_SHOT,
 
     /** Continuous tracking mode (ObjectTracker confirmed) */
-    TRACKING
+    TRACKING,
 }

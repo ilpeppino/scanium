@@ -59,11 +59,12 @@ class DuplicateDetector(
             // Only create a group if we found at least 1 similar item
             if (similarItems.isNotEmpty()) {
                 val avgSimilarity = similarItems.map { it.second }.average().toFloat()
-                val group = MergeGroup(
-                    primaryItem = primaryCandidate,
-                    similarItems = similarItems.map { it.first },
-                    averageSimilarity = avgSimilarity,
-                )
+                val group =
+                    MergeGroup(
+                        primaryItem = primaryCandidate,
+                        similarItems = similarItems.map { it.first },
+                        averageSimilarity = avgSimilarity,
+                    )
                 groups.add(group)
 
                 // Mark all items in this group as assigned
@@ -212,8 +213,8 @@ class DuplicateDetector(
                 val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
                 dp[i][j] =
                     minOf(
-                        dp[i - 1][j] + 1,     // deletion
-                        dp[i][j - 1] + 1,     // insertion
+                        dp[i - 1][j] + 1, // deletion
+                        dp[i][j - 1] + 1, // insertion
                         dp[i - 1][j - 1] + cost, // substitution
                     )
             }

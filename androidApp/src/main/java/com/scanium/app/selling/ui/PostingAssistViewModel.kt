@@ -143,7 +143,8 @@ class PostingAssistViewModel
             val correlationId = CorrelationIds.newDraftRequestId()
             ScaniumLog.i(
                 TAG,
-                "Posting assist plan built correlationId=$correlationId itemId=${draft.itemId} profile=${profile.id.value} missing=${plan.missingRequired.size}",
+                "Posting assist plan built correlationId=$correlationId itemId=${draft.itemId} " +
+                    "profile=${profile.id.value} missing=${plan.missingRequired.size}",
             )
             _uiState.update { it.copy(plan = plan) }
         }

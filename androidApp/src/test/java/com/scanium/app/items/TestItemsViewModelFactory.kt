@@ -36,7 +36,13 @@ object NoopVisionInsightsPrefiller {
         val mockLocalExtractor = mockk<LocalVisionExtractor>(relaxed = true)
         val mockEnrichmentRepository = mockk<EnrichmentRepository>(relaxed = true)
         val mockEnrichmentPolicy = mockk<EnrichmentPolicy>(relaxed = true)
-        return VisionInsightsPrefiller(mockContext, mockVisionRepository, mockLocalExtractor, mockEnrichmentRepository, mockEnrichmentPolicy)
+        return VisionInsightsPrefiller(
+            mockContext,
+            mockVisionRepository,
+            mockLocalExtractor,
+            mockEnrichmentRepository,
+            mockEnrichmentPolicy,
+        )
     }
 }
 
@@ -59,6 +65,9 @@ object NoopCropBasedEnricher {
  * The production ViewModel relies on several injected dependencies, so tests
  * use this factory to supply default no-op implementations unless specific
  * collaborators need to be overridden.
+ *
+ * Note: Tests use REALTIME aggregation by default (threshold 0.55) to maintain
+ * compatibility with existing tests. Production uses NO_AGGREGATION (threshold 2.0).
  */
 fun createTestItemsViewModel(
     classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
@@ -69,9 +78,11 @@ fun createTestItemsViewModel(
     stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     visionInsightsPrefiller: VisionInsightsPrefiller = NoopVisionInsightsPrefiller.create(),
     cropBasedEnricher: CropBasedEnricher = NoopCropBasedEnricher.create(),
+    aggregationConfig: com.scanium.app.AggregationConfig = com.scanium.app.AggregationPresets.REALTIME,
     settingsRepository: SettingsRepository =
         mockk<SettingsRepository>(relaxed = true).also {
             every { it.openItemListAfterScanFlow } returns flowOf(false)
+            every { it.smartMergeSuggestionsEnabledFlow } returns flowOf(false)
         },
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
@@ -90,6 +101,7 @@ fun createTestItemsViewModel(
         telemetry = telemetry,
         workerDispatcher = workerDispatcher,
         mainDispatcher = mainDispatcher,
+        aggregationConfig = aggregationConfig,
     )
 }
 

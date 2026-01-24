@@ -301,28 +301,30 @@ class VisionInsightsRepository(
 
                         response.code == 429 -> {
                             // Parse error response to check if it's a quota exceeded error
-                            val errorResponse = responseBody?.let {
-                                try {
-                                    json.decodeFromString<VisionInsightsResponse>(it)
-                                } catch (e: Exception) {
-                                    null
+                            val errorResponse =
+                                responseBody?.let {
+                                    try {
+                                        json.decodeFromString<VisionInsightsResponse>(it)
+                                    } catch (e: Exception) {
+                                        null
+                                    }
                                 }
-                            }
 
                             val isQuotaExceeded = errorResponse?.error?.code == "QUOTA_EXCEEDED"
 
                             // Extract rate limit headers
                             val quotaLimit = response.header("X-RateLimit-Limit")?.toIntOrNull()
-                            val quotaResetAt = response.header("X-RateLimit-Reset")?.let { resetUnix ->
-                                try {
-                                    val resetMillis = resetUnix.toLong() * 1000
-                                    java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(
-                                        java.util.Date(resetMillis)
-                                    )
-                                } catch (e: Exception) {
-                                    null
+                            val quotaResetAt =
+                                response.header("X-RateLimit-Reset")?.let { resetUnix ->
+                                    try {
+                                        val resetMillis = resetUnix.toLong() * 1000
+                                        java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(
+                                            java.util.Date(resetMillis),
+                                        )
+                                    } catch (e: Exception) {
+                                        null
+                                    }
                                 }
-                            }
 
                             if (isQuotaExceeded) {
                                 Log.w(TAG, "SCAN_ENRICH: Daily quota exceeded (429) - limit=$quotaLimit resetAt=$quotaResetAt")

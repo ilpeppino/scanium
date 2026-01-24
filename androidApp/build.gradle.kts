@@ -362,10 +362,15 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlin {
         jvmToolchain(17)
+    }
+
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 
     buildFeatures {
@@ -511,6 +516,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.documentfile:documentfile:1.0.1")
+
+    // Core library desugaring for java.time APIs on API < 26
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))

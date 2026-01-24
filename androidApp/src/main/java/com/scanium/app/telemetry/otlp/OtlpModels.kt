@@ -2,6 +2,10 @@ package com.scanium.app.telemetry.otlp
 
 import kotlinx.serialization.Serializable
 
+// ============================================================================
+// Common Models
+// ============================================================================
+
 /**
  * Lightweight OTLP JSON models for exporting telemetry data.
  *
@@ -10,10 +14,6 @@ import kotlinx.serialization.Serializable
  *
  * Only includes fields necessary for basic observability export.
  */
-
-// ============================================================================
-// Common Models
-// ============================================================================
 
 @Serializable
 data class KeyValue(
@@ -136,7 +136,8 @@ data class Gauge(
 @Serializable
 data class Histogram(
     val dataPoints: List<HistogramDataPoint>,
-    val aggregationTemporality: Int = 2, // CUMULATIVE
+    // CUMULATIVE
+    val aggregationTemporality: Int = 2,
 )
 
 @Serializable

@@ -45,8 +45,10 @@ object DetectionMapping {
     // Rate-limited logging for dropped detections
     @Volatile
     private var lastEdgeDropLogTime = 0L
+
     @Volatile
     private var lastOversizedDropLogTime = 0L
+
     @Volatile
     private var lastAspectRatioDropLogTime = 0L
     private const val EDGE_DROP_LOG_INTERVAL_MS = 5000L
@@ -91,17 +93,18 @@ object DetectionMapping {
         // For smaller detections, only require center inside (less strict)
         val requireAllCorners = areaRatio > 0.40f
 
-        val isInside = if (requireAllCorners) {
-            // All four corners must be inside safe zone
-            bbox.left >= safeLeft && bbox.right <= safeRight &&
-                bbox.top >= safeTop && bbox.bottom <= safeBottom
-        } else {
-            // Only center needs to be inside (original behavior for small objects)
-            val centerX = (bbox.left + bbox.right) / 2
-            val centerY = (bbox.top + bbox.bottom) / 2
-            centerX >= safeLeft && centerX <= safeRight &&
-                centerY >= safeTop && centerY <= safeBottom
-        }
+        val isInside =
+            if (requireAllCorners) {
+                // All four corners must be inside safe zone
+                bbox.left >= safeLeft && bbox.right <= safeRight &&
+                    bbox.top >= safeTop && bbox.bottom <= safeBottom
+            } else {
+                // Only center needs to be inside (original behavior for small objects)
+                val centerX = (bbox.left + bbox.right) / 2
+                val centerY = (bbox.top + bbox.bottom) / 2
+                centerX >= safeLeft && centerX <= safeRight &&
+                    centerY >= safeTop && centerY <= safeBottom
+            }
 
         // Rate-limited logging for edge drops
         if (!isInside) {

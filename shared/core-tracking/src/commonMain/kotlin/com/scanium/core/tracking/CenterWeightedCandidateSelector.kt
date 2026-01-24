@@ -289,12 +289,13 @@ class CenterWeightedCandidateSelector(
         // Rule 1: ROI containment gate
         // Reject if ENTIRE bounding box is not fully inside ROI (unless very high confidence)
         // This ensures background objects outside guideline overlay are excluded
-        val isInsideRoi = scanRoi.containsBox(
-            boundingBox.left,
-            boundingBox.top,
-            boundingBox.right,
-            boundingBox.bottom,
-        )
+        val isInsideRoi =
+            scanRoi.containsBox(
+                boundingBox.left,
+                boundingBox.top,
+                boundingBox.right,
+                boundingBox.bottom,
+            )
         if (!isInsideRoi && detection.confidence < config.highConfidenceOverride) {
             return GatingResult(
                 passed = false,

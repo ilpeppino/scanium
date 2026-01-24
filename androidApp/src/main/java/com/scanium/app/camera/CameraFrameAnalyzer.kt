@@ -6,28 +6,27 @@ import android.util.Log
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
 import com.scanium.android.platform.adapters.toImageRefJpeg
+import com.scanium.android.platform.adapters.toRect
 import com.scanium.app.BuildConfig
 import com.scanium.app.ObjectTracker
-import com.scanium.app.ScannedItem
-import com.scanium.app.items.CaptureType
-import com.scanium.app.items.RawDetection
 import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DocumentCandidate
 import com.scanium.app.camera.detection.DocumentCandidateDetector
 import com.scanium.app.camera.detection.DocumentCandidateState
+import com.scanium.app.items.CaptureType
+import com.scanium.app.items.RawDetection
 import com.scanium.app.ml.BarcodeDetectorClient
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.DocumentTextRecognitionClient
 import com.scanium.app.ml.ObjectDetectorClient
 import com.scanium.app.perf.PerformanceMonitor
-import com.scanium.android.platform.adapters.toRect
-import com.scanium.shared.core.models.model.NormalizedRect
 import com.scanium.core.models.scanning.GuidanceState
 import com.scanium.core.models.scanning.ScanGuidanceState
 import com.scanium.core.tracking.CandidateInfo
 import com.scanium.core.tracking.ScanGuidanceManager
 import com.scanium.shared.core.models.model.ImageRef
+import com.scanium.shared.core.models.model.NormalizedRect
 import com.scanium.telemetry.facade.Telemetry
 
 internal class CameraFrameAnalyzer(
@@ -177,7 +176,7 @@ internal class CameraFrameAnalyzer(
                 "WYSIWYG: Creating thumbnail from ${sourceBitmap.width}x${sourceBitmap.height} bitmap, " +
                     "bbox=(${"%.3f".format(normalizedBbox.left)},${"%.3f".format(normalizedBbox.top)})-" +
                     "(${"%.3f".format(normalizedBbox.right)},${"%.3f".format(normalizedBbox.bottom)}), " +
-                    "rotation=$rotationDegrees°"
+                    "rotation=$rotationDegrees°",
             )
 
             // CRITICAL FIX: normalizedBbox is in UPRIGHT (display-oriented) coordinates,
@@ -208,12 +207,13 @@ internal class CameraFrameAnalyzer(
                 }
 
             // Convert sensor-space normalized bbox to pixel coordinates
-            val sensorBbox = NormalizedRect(
-                left = sensorNormLeft,
-                top = sensorNormTop,
-                right = sensorNormRight,
-                bottom = sensorNormBottom
-            )
+            val sensorBbox =
+                NormalizedRect(
+                    left = sensorNormLeft,
+                    top = sensorNormTop,
+                    right = sensorNormRight,
+                    bottom = sensorNormBottom,
+                )
             val pixelBbox = sensorBbox.toRect(sourceBitmap.width, sourceBitmap.height)
 
             // Ensure bounding box is within bitmap bounds
@@ -224,7 +224,7 @@ internal class CameraFrameAnalyzer(
 
             Log.d(
                 TAG,
-                "WYSIWYG: Pixel bbox ($left,$top) ${width}x$height from ${sourceBitmap.width}x${sourceBitmap.height} frame"
+                "WYSIWYG: Pixel bbox ($left,$top) ${width}x$height from ${sourceBitmap.width}x${sourceBitmap.height} frame",
             )
 
             // Limit thumbnail size to save memory (match ML Kit's MAX_THUMBNAIL_DIMENSION_PX)
@@ -241,23 +241,25 @@ internal class CameraFrameAnalyzer(
             canvas.drawBitmap(sourceBitmap, srcRect, dstRect, null)
 
             // Rotate thumbnail to match display orientation
-            val rotatedBitmap = if (rotationDegrees != 0) {
-                val matrix = android.graphics.Matrix()
-                matrix.postRotate(rotationDegrees.toFloat())
-                val rotated = Bitmap.createBitmap(
-                    croppedBitmap,
-                    0,
-                    0,
-                    croppedBitmap.width,
-                    croppedBitmap.height,
-                    matrix,
-                    true
-                )
-                croppedBitmap.recycle() // Free the unrotated bitmap
-                rotated
-            } else {
-                croppedBitmap
-            }
+            val rotatedBitmap =
+                if (rotationDegrees != 0) {
+                    val matrix = android.graphics.Matrix()
+                    matrix.postRotate(rotationDegrees.toFloat())
+                    val rotated =
+                        Bitmap.createBitmap(
+                            croppedBitmap,
+                            0,
+                            0,
+                            croppedBitmap.width,
+                            croppedBitmap.height,
+                            matrix,
+                            true,
+                        )
+                    croppedBitmap.recycle() // Free the unrotated bitmap
+                    rotated
+                } else {
+                    croppedBitmap
+                }
 
             // Convert to ImageRef.Bytes
             val imageRef = rotatedBitmap.toImageRefJpeg(quality = 85)
@@ -265,7 +267,7 @@ internal class CameraFrameAnalyzer(
 
             Log.d(
                 TAG,
-                "Created WYSIWYG thumbnail: ${imageRef.width}x${imageRef.height} (rotation: $rotationDegrees°)"
+                "Created WYSIWYG thumbnail: ${imageRef.width}x${imageRef.height} (rotation: $rotationDegrees°)",
             )
             imageRef
         } catch (e: Exception) {
@@ -274,6 +276,7 @@ internal class CameraFrameAnalyzer(
         }
     }
 
+    @androidx.camera.core.ExperimentalGetImage
     suspend fun processImageProxy(
         imageProxy: ImageProxy,
         scanMode: ScanMode,
@@ -418,39 +421,44 @@ internal class CameraFrameAnalyzer(
             val captureId = java.util.UUID.randomUUID().toString()
 
             // Convert ScannedItems to RawDetections for pending state
-            val rawDetections = response.scannedItems.map { item ->
-                // CRITICAL: Each detection needs its OWN copy of the bitmap
-                // If multiple detections share the same bitmap reference, deleting one item
-                // will recycle the bitmap that other pending detections are still using,
-                // causing thumbnail corruption. Create a separate copy for each detection.
-                val bitmapCopy = fullFrameBitmap?.copy(
-                    fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888,
-                    false
-                )
+            val rawDetections =
+                response.scannedItems.map { item ->
+                    // CRITICAL: Each detection needs its OWN copy of the bitmap
+                    // If multiple detections share the same bitmap reference, deleting one item
+                    // will recycle the bitmap that other pending detections are still using,
+                    // causing thumbnail corruption. Create a separate copy for each detection.
+                    val bitmapCopy =
+                        fullFrameBitmap?.copy(
+                            fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888,
+                            false,
+                        )
 
-                // WYSIWYG FIX: Create thumbnail from exact bounding box (no tightening)
-                // This ensures thumbnail matches what user sees in camera overlay
-                val bbox = item.boundingBox
-                val wysiwygThumbnail = if (fullFrameBitmap != null && bbox != null) {
-                    createWysiwygThumbnail(
-                        sourceBitmap = fullFrameBitmap,
-                        normalizedBbox = bbox,
-                        rotationDegrees = inputImage.rotationDegrees
+                    // WYSIWYG FIX: Create thumbnail from exact bounding box (no tightening)
+                    // This ensures thumbnail matches what user sees in camera overlay
+                    val bbox = item.boundingBox
+                    val wysiwygThumbnail =
+                        if (fullFrameBitmap != null && bbox != null) {
+                            createWysiwygThumbnail(
+                                sourceBitmap = fullFrameBitmap,
+                                normalizedBbox = bbox,
+                                rotationDegrees = inputImage.rotationDegrees,
+                            )
+                        } else {
+                            null
+                        }
+
+                    RawDetection(
+                        boundingBox = item.boundingBox,
+                        confidence = item.confidence,
+                        onDeviceLabel = item.labelText ?: "Unknown",
+                        onDeviceCategory = item.category,
+                        trackingId = item.id, // Use item ID as tracking ID
+                        frameSharpness = 1.0f, // TODO: Get actual sharpness if available
+                        captureType = CaptureType.SINGLE_SHOT,
+                        thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
+                        fullFrameBitmap = bitmapCopy,
                     )
-                } else null
-
-                RawDetection(
-                    boundingBox = item.boundingBox,
-                    confidence = item.confidence,
-                    onDeviceLabel = item.labelText ?: "Unknown",
-                    onDeviceCategory = item.category,
-                    trackingId = item.id, // Use item ID as tracking ID
-                    frameSharpness = 1.0f, // TODO: Get actual sharpness if available
-                    captureType = CaptureType.SINGLE_SHOT,
-                    thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
-                    fullFrameBitmap = bitmapCopy
-                )
-            }
+                }
 
             // Detection router gets empty list since items don't exist yet (pending state)
             val event = detectionRouter.processObjectResults(emptyList(), response.detectionResults)
@@ -612,35 +620,40 @@ internal class CameraFrameAnalyzer(
                         // If multiple detections share the same bitmap reference, deleting one item
                         // will recycle the bitmap that other pending detections are still using,
                         // causing thumbnail corruption. Create a separate copy for each detection.
-                        val bitmapCopy = fullFrameBitmap?.copy(
-                            fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888,
-                            false
-                        )
+                        val bitmapCopy =
+                            fullFrameBitmap?.copy(
+                                fullFrameBitmap.config ?: android.graphics.Bitmap.Config.ARGB_8888,
+                                false,
+                            )
 
                         // WYSIWYG FIX: Create thumbnail from exact bounding box (no tightening)
                         // This ensures thumbnail matches what user sees in camera overlay
                         val candidateBbox = candidate.boundingBox
-                        val wysiwygThumbnail = if (fullFrameBitmap != null && candidateBbox != null) {
-                            createWysiwygThumbnail(
-                                sourceBitmap = fullFrameBitmap,
-                                normalizedBbox = candidateBbox,
-                                rotationDegrees = inputImage.rotationDegrees
-                            )
-                        } else null
+                        val wysiwygThumbnail =
+                            if (fullFrameBitmap != null && candidateBbox != null) {
+                                createWysiwygThumbnail(
+                                    sourceBitmap = fullFrameBitmap,
+                                    normalizedBbox = candidateBbox,
+                                    rotationDegrees = inputImage.rotationDegrees,
+                                )
+                            } else {
+                                null
+                            }
 
                         // Create raw detection instead of ScannedItem
                         // Item will be created later after user confirms hypothesis
-                        val rawDetection = RawDetection(
-                            boundingBox = candidate.boundingBox,
-                            confidence = candidate.maxConfidence,
-                            onDeviceLabel = candidate.labelText.takeIf { it.isNotBlank() } ?: "Unknown",
-                            onDeviceCategory = candidate.category,
-                            trackingId = candidate.internalId,
-                            frameSharpness = frameSharpness,
-                            captureType = CaptureType.TRACKING,
-                            thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
-                            fullFrameBitmap = bitmapCopy
-                        )
+                        val rawDetection =
+                            RawDetection(
+                                boundingBox = candidate.boundingBox,
+                                confidence = candidate.maxConfidence,
+                                onDeviceLabel = candidate.labelText.takeIf { it.isNotBlank() } ?: "Unknown",
+                                onDeviceCategory = candidate.category,
+                                trackingId = candidate.internalId,
+                                frameSharpness = frameSharpness,
+                                captureType = CaptureType.TRACKING,
+                                thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
+                                fullFrameBitmap = bitmapCopy,
+                            )
                         objectTracker.markCandidateConsumed(candidate.internalId)
                         Log.i(TAG, ">>> Created RawDetection from candidate ${candidate.internalId}, marked as consumed")
                         rawDetection
@@ -659,7 +672,10 @@ internal class CameraFrameAnalyzer(
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${detectionsToAdd.size} RawDetections (gated by LOCKED=$isLocked)")
         detectionsToAdd.forEachIndexed { index, detection ->
-            Log.i(TAG, "    RawDetection $index: label=${detection.onDeviceLabel}, category=${detection.onDeviceCategory}, confidence=${detection.confidence}")
+            Log.i(
+                TAG,
+                "    RawDetection $index: label=${detection.onDeviceLabel}, category=${detection.onDeviceCategory}, confidence=${detection.confidence}",
+            )
         }
 
         Log.i(

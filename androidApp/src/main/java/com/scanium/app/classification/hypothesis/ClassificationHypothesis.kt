@@ -11,7 +11,7 @@ data class ClassificationHypothesis(
     val explanation: String,
     val confidence: Float, // 0.0-1.0
     val confidenceBand: String = "MED", // "HIGH", "MED", "LOW"
-    val attributes: Map<String, String> = emptyMap()
+    val attributes: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -21,7 +21,7 @@ data class MultiHypothesisResult(
     val hypotheses: List<ClassificationHypothesis>,
     val globalConfidence: Float, // 0.0-1.0
     val needsRefinement: Boolean,
-    val requestId: String
+    val requestId: String,
 )
 
 /**
@@ -33,7 +33,7 @@ sealed class HypothesisSelectionState {
     data class Showing(
         val result: MultiHypothesisResult,
         val itemId: String,
-        val thumbnailRef: ImageRef?
+        val thumbnailRef: ImageRef?,
     ) : HypothesisSelectionState()
 }
 
@@ -44,5 +44,5 @@ data class CorrectionDialogData(
     val itemId: String,
     val imageHash: String,
     val predictedCategory: String?,
-    val predictedConfidence: Float?
+    val predictedConfidence: Float?,
 )

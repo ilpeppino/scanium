@@ -72,8 +72,8 @@ class ScanGuidanceManagerTest {
                 currentTimeMs = 1000L,
             )
 
-        // Should be close to default initial size (0.65)
-        assertTrue(state.scanRoi.widthNorm in 0.6f..0.7f)
+        // Should be close to default initial size (0.80)
+        assertTrue(state.scanRoi.widthNorm in 0.75f..0.85f)
     }
 
     // ===========================================

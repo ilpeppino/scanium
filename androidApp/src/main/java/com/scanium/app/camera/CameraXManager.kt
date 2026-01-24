@@ -28,8 +28,6 @@ import com.google.mlkit.vision.common.InputImage
 import com.scanium.app.BuildConfig
 import com.scanium.app.ObjectTracker
 import com.scanium.app.ScannedItem
-import com.scanium.app.items.CaptureType
-import com.scanium.app.items.RawDetection
 import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DetectionRouterConfig
@@ -37,6 +35,7 @@ import com.scanium.app.camera.detection.DetectorType
 import com.scanium.app.camera.detection.DocumentCandidateDetector
 import com.scanium.app.camera.detection.DocumentCandidateState
 import com.scanium.app.camera.detection.ScanPipelineDiagnostics
+import com.scanium.app.items.RawDetection
 import com.scanium.app.ml.BarcodeDetectorClient
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.DocumentTextRecognitionClient
@@ -61,11 +60,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.concurrent.atomic.AtomicBoolean
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -651,6 +650,7 @@ class CameraXManager(
      * Captures a single frame and runs detection based on the current scan mode.
      * Single-frame captures bypass the candidate tracker for immediate results.
      */
+    @androidx.camera.core.ExperimentalGetImage
     fun captureSingleFrame(
         scanMode: ScanMode,
         onResult: (List<RawDetection>) -> Unit,
@@ -1075,6 +1075,7 @@ class CameraXManager(
      * This is called either directly from startPreviewDetection() or from startCamera()
      * when the pending callback is applied after binding.
      */
+    @androidx.camera.core.ExperimentalGetImage
     private fun applyPreviewDetectionAnalyzer(
         onDetectionResult: (List<DetectionResult>) -> Unit,
         onFrameSize: (Size) -> Unit,

@@ -329,12 +329,13 @@ class CropBasedEnricher
             // Adaptive padding: reduce padding for larger objects to avoid capturing too much background
             // Calculate bbox area ratio to determine appropriate padding
             val bboxArea = bboxWidth * bboxHeight
-            val adaptivePadding = when {
-                bboxArea > 0.50f -> padding * 0.2f  // Large objects (>50%): 5% padding (was 25%)
-                bboxArea > 0.35f -> padding * 0.4f  // Medium-large: 10% padding
-                bboxArea > 0.20f -> padding * 0.6f  // Medium: 15% padding
-                else -> padding                      // Small objects: full 25% padding
-            }
+            val adaptivePadding =
+                when {
+                    bboxArea > 0.50f -> padding * 0.2f // Large objects (>50%): 5% padding (was 25%)
+                    bboxArea > 0.35f -> padding * 0.4f // Medium-large: 10% padding
+                    bboxArea > 0.20f -> padding * 0.6f // Medium: 15% padding
+                    else -> padding // Small objects: full 25% padding
+                }
 
             Log.d(
                 TAG,

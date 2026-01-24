@@ -57,7 +57,8 @@ class EnrichmentPolicy
             val similarityThreshold: Float = DEFAULT_SIMILARITY_THRESHOLD,
             val skipIfComplete: Boolean = true,
             val skipIfRecentlyEnriched: Boolean = true,
-            val recentEnrichmentWindowMs: Long = 5 * 60 * 1000, // 5 minutes
+            // 5 minutes
+            val recentEnrichmentWindowMs: Long = 5 * 60 * 1000,
         )
 
         /**

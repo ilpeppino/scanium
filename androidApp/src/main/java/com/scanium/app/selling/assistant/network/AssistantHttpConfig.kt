@@ -113,7 +113,8 @@ data class AssistantHttpConfig(
                 readTimeoutSeconds = 5L,
                 writeTimeoutSeconds = 5L,
                 callTimeoutSeconds = 10L,
-                retryCount = 0, // Tests should control retry behavior explicitly
+                // Tests should control retry behavior explicitly
+                retryCount = 0,
             )
     }
 

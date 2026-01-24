@@ -100,12 +100,16 @@ sealed class TtsLanguageChoice {
  */
 data class UnifiedSettingsState(
     // Primary settings (source of truth)
-    val primaryRegionCountry: String, // ISO 2-letter country code ("NL", "DE", etc.)
-    val primaryLanguage: String, // Language tag ("en", "nl", "it", "fr", "de", "pt-BR")
+    // ISO 2-letter country code ("NL", "DE", etc.)
+    val primaryRegionCountry: String,
+    // Language tag ("en", "nl", "it", "fr", "de", "pt-BR")
+    val primaryLanguage: String,
     // Override wrappers (follow primary or customize)
-    val appLanguageSetting: FollowOrCustom<String>, // Language tag
+    // Language tag
+    val appLanguageSetting: FollowOrCustom<String>,
     val aiLanguageSetting: FollowOrCustom<AiLanguageChoice>,
-    val marketplaceCountrySetting: FollowOrCustom<String>, // Country code
+    // Country code
+    val marketplaceCountrySetting: FollowOrCustom<String>,
     // TTS alignment
     val ttsLanguageSetting: TtsLanguageChoice,
     // Optional: Last detected spoken language for AutoDetect fallback
