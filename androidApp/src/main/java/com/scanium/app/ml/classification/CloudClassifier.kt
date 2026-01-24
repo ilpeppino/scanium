@@ -361,10 +361,19 @@ class CloudClassifier(
         // Convert vision attributes
         val visionAttributes = parseVisionAttributes(apiResponse.visionAttributes)
 
+        // Validate category/attribute consistency
+        val validatedCategory = validateCategoryAttributeConsistency(
+            category = itemCategory,
+            attributes = attributes,
+            domainCategoryId = domainCategoryId,
+            label = label,
+            requestId = requestId
+        )
+
         return ClassificationResult(
             label = label,
             confidence = confidence,
-            category = itemCategory,
+            category = validatedCategory,
             mode = ClassificationMode.CLOUD,
             domainCategoryId = domainCategoryId,
             attributes = attributes,
@@ -374,6 +383,72 @@ class CloudClassifier(
             errorMessage = null,
             requestId = requestId,
         )
+    }
+
+    /**
+     * Validate category/attribute consistency and correct obvious mismatches.
+     *
+     * Detects cases where attributes contradict the assigned category
+     * (e.g., category=FASHION but attributes contain "segment: electronics").
+     * Logs warnings for debugging and optionally corrects the category.
+     *
+     * @param category The category derived from domain pack itemCategoryName
+     * @param attributes Static attributes from domain pack
+     * @param domainCategoryId Domain category ID for debugging
+     * @param label Classification label for debugging
+     * @param requestId Backend request ID for tracing
+     * @return Validated (and potentially corrected) ItemCategory
+     */
+    private fun validateCategoryAttributeConsistency(
+        category: ItemCategory,
+        attributes: Map<String, String>?,
+        domainCategoryId: String?,
+        label: String?,
+        requestId: String?
+    ): ItemCategory {
+        if (attributes == null) return category
+
+        // Check for electronics attributes
+        val segment = attributes["segment"]
+        val itemType = attributes["item_type"]
+
+        // Detect electronics mismatch
+        val hasElectronicsAttribute = segment?.contains("electronics", ignoreCase = true) == true ||
+                                       itemType?.contains("electronics", ignoreCase = true) == true ||
+                                       itemType?.contains("electronic device", ignoreCase = true) == true
+
+        if (hasElectronicsAttribute && category != ItemCategory.ELECTRONICS) {
+            Log.e(TAG, """
+                ⚠️ CATEGORY/ATTRIBUTE MISMATCH DETECTED
+                Category: $category (WRONG - should be ELECTRONICS)
+                Attributes: segment=$segment, item_type=$itemType
+                DomainCategoryId: $domainCategoryId
+                Label: $label
+                RequestId: $requestId
+
+                This indicates the backend assigned an incorrect domain category.
+                Auto-correcting to ELECTRONICS based on attributes.
+            """.trimIndent())
+
+            // Auto-correct based on attributes (source of truth)
+            return ItemCategory.ELECTRONICS
+        }
+
+        // Check for fashion attributes mismatched with non-fashion category
+        val hasFashionAttribute = segment?.contains("fashion", ignoreCase = true) == true ||
+                                  itemType?.contains("clothing", ignoreCase = true) == true ||
+                                  itemType?.contains("apparel", ignoreCase = true) == true
+
+        if (hasFashionAttribute && category != ItemCategory.FASHION) {
+            Log.w(TAG, """
+                Category/attribute mismatch: category=$category but attributes suggest FASHION
+                Attributes: segment=$segment, item_type=$itemType
+                DomainCategoryId: $domainCategoryId, RequestId: $requestId
+                Keeping original category (may be correct if domain pack is more specific)
+            """.trimIndent())
+        }
+
+        return category
     }
 
     /**
