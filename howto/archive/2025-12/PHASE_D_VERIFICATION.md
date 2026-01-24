@@ -363,7 +363,7 @@ curl -X POST https://scanium.gtemp1.com/v1/account/delete \
 
 ```json
 {
-  "email": "user@example.com"
+  "email": "scanium@gtemp1.com"
 }
 ```
 

@@ -213,7 +213,7 @@ All user-provided attributes are automatically sanitized:
 ```kotlin
 telemetry.info("user.login", mapOf(
     "username" to "john_doe",       // Will be redacted
-    "email" to "john@example.com",  // Will be redacted
+    "email" to "scanium@gtemp1.com",  // Will be redacted
     "login_method" to "oauth"       // Safe, will be preserved
 ))
 

@@ -128,7 +128,7 @@ Create or edit `local.properties` in the project root:
 
 ```properties
 # Sentry DSN for crash reporting
-sentry.dsn=https://your-sentry-dsn@sentry.io/project-id
+sentry.dsn=https://scanium@gtemp1.com/project-id
 ```
 
 ### Method 2: Environment Variable (Recommended for CI/CD)
@@ -136,7 +136,7 @@ sentry.dsn=https://your-sentry-dsn@sentry.io/project-id
 Set the environment variable before building:
 
 ```bash
-export SENTRY_DSN="https://your-sentry-dsn@sentry.io/project-id"
+export SENTRY_DSN="https://scanium@gtemp1.com/project-id"
 ./gradlew assembleDebug
 ```
 

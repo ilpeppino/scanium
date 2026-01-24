@@ -852,10 +852,10 @@ environment:
   # Email (requires SMTP configuration)
   - GF_SMTP_ENABLED=true
   - GF_SMTP_HOST=smtp.example.com:587
-  - GF_SMTP_USER=alerts@example.com
+  - GF_SMTP_USER=scanium@gtemp1.com
   - GF_SMTP_PASSWORD=${SMTP_PASSWORD}  # Use Docker secrets in production
-  - GF_SMTP_FROM_ADDRESS=alerts@example.com
-  - SCANIUM_ALERT_EMAIL=team@example.com
+  - GF_SMTP_FROM_ADDRESS=scanium@gtemp1.com
+  - SCANIUM_ALERT_EMAIL=scanium@gtemp1.com
 ```
 
 **Important:** Never commit secrets to the repository. Use environment variables, Docker secrets, or

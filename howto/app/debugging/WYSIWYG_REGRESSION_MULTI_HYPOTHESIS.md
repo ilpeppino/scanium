@@ -672,4 +672,4 @@ git log --oneline f0699ba4b80c9db7ff16e033b41f951c5e4ecfae..HEAD
 
 ---
 
-**Co-Authored-By:** Claude Sonnet 4.5 <noreply@anthropic.com>
+**Co-Authored-By:** Claude Sonnet 4.5 <scanium@gtemp1.com>

@@ -136,7 +136,7 @@ npx prisma migrate deploy
 vi.spyOn(tokenVerifier.GoogleOAuth2Verifier.prototype, 'verify')
   .mockResolvedValue({
     sub: 'google-sub-123',
-    email: 'test@example.com',
+    email: 'scanium@gtemp1.com',
     name: 'Test User',
     picture: 'https://example.com/avatar.jpg',
   });

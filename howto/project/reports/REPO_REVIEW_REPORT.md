@@ -33,7 +33,7 @@
 
 - **Branch:** main (up to date with origin)
 - **Git Status:** Clean working tree
-- **Remote:** git@github.com:ilpeppino/scanium.git
+- **Remote:** scanium@gtemp1.com:ilpeppino/scanium.git
 
 ### GitHub CLI
 

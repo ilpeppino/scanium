@@ -373,7 +373,7 @@ Logs are automatically sent to OpenTelemetry via `pino-opentelemetry-transport`:
 
 1. **Use Labels Wisely**: Keep label cardinality low (< 1000 unique combinations)
     - ✅ Good: `category_name="Electronics"`
-    - ❌ Bad: `user_email="user@example.com"` (high cardinality)
+    - ❌ Bad: `user_email="scanium@gtemp1.com"` (high cardinality)
 
 2. **Increment Counters at Business Events**:
    ```typescript

@@ -342,7 +342,7 @@ ngrok http 8080
 ngrok
 
 Session Status                online
-Account                       your@email.com (Plan: Free)
+Account                       scanium@gtemp1.com (Plan: Free)
 Version                       3.34.1
 Region                        United States (us)
 Latency                       -

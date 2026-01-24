@@ -19,7 +19,7 @@ We take the security of Scanium seriously. If you believe you have found a secur
 **Please DO NOT report security vulnerabilities through public GitHub issues.**
 
 Instead, please report them via email to:
-- **Email**: ilpeppino@gmail.com
+- **Email**: scanium@gtemp1.com
 - **Subject**: [SECURITY] Brief description of the issue
 
 ### What to Include
@@ -166,7 +166,7 @@ Subscribe to security updates:
 ## Questions?
 
 If you have questions about this security policy, please contact:
-- **Email**: ilpeppino@gmail.com
+- **Email**: scanium@gtemp1.com
 - **Subject**: [SECURITY POLICY] Your question
 
 ---

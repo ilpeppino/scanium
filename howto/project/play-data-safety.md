@@ -14,7 +14,7 @@ production-ready with Google OAuth and account deletion).
 - **Privacy Policy URL:** `https://scanium-site-url/PRIVACY.html` (update with actual deployed URL)
 - **Account Deletion URL:** `https://scanium-site-url/account-deletion.html` (for Play Console
   field)
-- **Support Email:** `contact@scanium.app` (update if different)
+- **Support Email:** `scanium@gtemp1.com` (update if different)
 
 ---
 

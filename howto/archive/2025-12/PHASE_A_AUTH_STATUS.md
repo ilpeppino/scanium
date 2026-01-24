@@ -300,7 +300,7 @@ adb install androidApp/build/outputs/apk/dev/debug/*.apk
   "expiresIn": 2592000,
   "user": {
     "id": "uuid",
-    "email": "user@example.com",
+    "email": "scanium@gtemp1.com",
     "displayName": "John Doe",
     "pictureUrl": "https://lh3.googleusercontent.com/..."
   },

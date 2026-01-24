@@ -263,7 +263,7 @@ ACTION REQUIRED:
    rm -rf scanium
 
 3. Re-clone the repository:
-   git clone git@github.com:yourusername/scanium.git
+   git clone scanium@gtemp1.com:yourusername/scanium.git
 
 4. DO NOT attempt to pull, rebase, or merge your old clone!
 

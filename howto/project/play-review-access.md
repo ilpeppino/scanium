@@ -98,7 +98,7 @@ Some reviewers may still request access details. Provide this:
 
 **Alternative:** If Play Console form requires an email, provide:
 
-- **Email:** `scanium.reviewer@gmail.com` (create a dedicated test account if needed)
+- **Email:** `scanium@gtemp1.com` (create a dedicated test account if needed)
 - **Password:** Not applicable (OAuth flow)
 
 ---
@@ -142,8 +142,8 @@ If kept in "Testing" mode:
 ### Required Fields
 
 - ✅ App name: "Scanium"
-- ✅ User support email: `contact@scanium.app`
-- ✅ Developer contact email: `your-dev-email@example.com`
+- ✅ User support email: `scanium@gtemp1.com`
+- ✅ Developer contact email: `scanium@gtemp1.com`
 - ✅ App logo (120x120px)
 - ✅ Privacy Policy URL: `https://scanium-site-url/PRIVACY.html`
 

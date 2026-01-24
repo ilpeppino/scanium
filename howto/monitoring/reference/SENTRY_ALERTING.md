@@ -242,7 +242,7 @@ Filters (If):
 
 Actions (Then):
   - Send notification to: #scanium-alerts (Slack)
-  - Send email to: team@example.com
+  - Send email to: scanium@gtemp1.com
 
 Frequency: Alert once per 30 minutes per issue
 ```

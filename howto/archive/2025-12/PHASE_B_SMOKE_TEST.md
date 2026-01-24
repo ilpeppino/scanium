@@ -148,7 +148,7 @@ psql postgresql://user:pass@localhost:5432/scanium
 INSERT INTO "User" (id, email, "displayName", "googleId", "createdAt", "updatedAt")
 VALUES (
   gen_random_uuid(),
-  'test@example.com',
+  'scanium@gtemp1.com',
   'Test User',
   'test-google-id-123',
   NOW(),

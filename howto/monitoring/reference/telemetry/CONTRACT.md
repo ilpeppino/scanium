@@ -152,7 +152,7 @@ The following attribute keys are **automatically redacted** (case-insensitive, s
 // Sanitize a raw attributes map
 val raw = mapOf(
     "scan_duration_ms" to "1234",
-    "email" to "user@example.com"
+    "email" to "scanium@gtemp1.com"
 )
 val sanitized = AttributeSanitizer.sanitize(raw)
 // Result: {"scan_duration_ms": "1234", "email": "[REDACTED]"}

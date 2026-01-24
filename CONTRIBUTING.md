@@ -37,7 +37,7 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ### Enforcement
 
-Violations of the Code of Conduct should be reported to ilpeppino@gmail.com. All complaints will be reviewed and investigated promptly and fairly.
+Violations of the Code of Conduct should be reported to scanium@gtemp1.com. All complaints will be reviewed and investigated promptly and fairly.
 
 ## Getting Started
 
@@ -58,12 +58,12 @@ Violations of the Code of Conduct should be reported to ilpeppino@gmail.com. All
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone git@github.com:YOUR_USERNAME/scanium.git
+   git clone scanium@gtemp1.com:YOUR_USERNAME/scanium.git
    cd scanium
    ```
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream git@github.com:ilpeppino/scanium.git
+   git remote add upstream scanium@gtemp1.com:ilpeppino/scanium.git
    ```
 
 ## Development Setup
@@ -440,7 +440,7 @@ If your PR changes:
 
 - **Questions**: Open a [Discussion](https://github.com/ilpeppino/scanium/discussions)
 - **Bugs**: Open an [Issue](https://github.com/ilpeppino/scanium/issues)
-- **Security**: Email ilpeppino@gmail.com (see [SECURITY.md](SECURITY.md))
+- **Security**: Email scanium@gtemp1.com (see [SECURITY.md](SECURITY.md))
 
 ### Getting Help
 
@@ -462,4 +462,4 @@ Thank you for contributing to Scanium! 🎉
 ---
 
 **Last Updated**: 2026-01-23
-**Questions?** Open a [Discussion](https://github.com/ilpeppino/scanium/discussions) or email ilpeppino@gmail.com
+**Questions?** Open a [Discussion](https://github.com/ilpeppino/scanium/discussions) or email scanium@gtemp1.com
