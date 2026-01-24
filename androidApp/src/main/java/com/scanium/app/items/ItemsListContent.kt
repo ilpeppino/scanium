@@ -136,7 +136,11 @@ internal fun ItemsListContent(
                                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Text(
-                                        text = "$pendingDetectionCount ${if (pendingDetectionCount == 1) "item" else "items"} awaiting confirmation",
+                                        text = pluralStringResource(
+                                            R.plurals.items_pending_detection,
+                                            pendingDetectionCount,
+                                            pendingDetectionCount,
+                                        ),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )

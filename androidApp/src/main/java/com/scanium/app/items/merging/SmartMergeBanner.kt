@@ -90,7 +90,7 @@ fun SmartMergeBanner(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Dismiss",
+                        contentDescription = stringResource(R.string.common_dismiss),
                         tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     )
                 }

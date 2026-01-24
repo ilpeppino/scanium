@@ -167,6 +167,10 @@
     <string name="smart_merge_banner_subtitle">Review merges?</string>
     <string name="smart_merge_accept_all">Accept All</string>
     <string name="smart_merge_review">Review</string>
+    <plurals name="items_pending_detection">
+        <item quantity="one">%d item awaiting confirmation</item>
+        <item quantity="other">%d items awaiting confirmation</item>
+    </plurals>
     <string name="smart_merge_review_title">Review Merge Suggestions</string>
     <string name="smart_merge_review_subtitle">%d suggested merge groups. Review each below.</string>
     <string name="smart_merge_primary_item">Primary Item</string>
