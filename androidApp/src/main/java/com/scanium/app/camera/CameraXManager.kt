@@ -61,6 +61,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -666,7 +667,15 @@ class CameraXManager(
         }
         // Clear any previous analyzer to avoid mixing modes
         imageAnalysis?.clearAnalyzer()
+        // Guard: ensure only one frame is processed per capture.
+        // STRATEGY_KEEP_ONLY_LATEST delivers the next frame as soon as imageProxy is closed,
+        // which races with clearAnalyzer() in the coroutine's finally block.
+        val singleFrameCaptured = AtomicBoolean(false)
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
+            if (!singleFrameCaptured.compareAndSet(false, true)) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
             val mediaImage = imageProxy.image
             if (mediaImage == null) {
                 imageProxy.close()
