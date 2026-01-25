@@ -83,10 +83,13 @@ object ItemLocalizer {
     @StringRes
     fun getConditionStringRes(condition: ItemCondition): Int =
         when (condition) {
-            ItemCondition.NEW -> R.string.item_condition_new
-            ItemCondition.AS_GOOD_AS_NEW -> R.string.item_condition_as_good_as_new
-            ItemCondition.USED -> R.string.item_condition_used
-            ItemCondition.REFURBISHED -> R.string.item_condition_refurbished
+            ItemCondition.NEW_SEALED -> R.string.item_condition_new_sealed
+            ItemCondition.NEW_WITH_TAGS -> R.string.item_condition_new_with_tags
+            ItemCondition.NEW_WITHOUT_TAGS -> R.string.item_condition_new_without_tags
+            ItemCondition.LIKE_NEW -> R.string.item_condition_like_new
+            ItemCondition.GOOD -> R.string.item_condition_good
+            ItemCondition.FAIR -> R.string.item_condition_fair
+            ItemCondition.POOR -> R.string.item_condition_poor
         }
 
     /**
@@ -109,10 +112,13 @@ object ItemLocalizer {
     @StringRes
     fun getConditionDescriptionStringRes(condition: ItemCondition): Int =
         when (condition) {
-            ItemCondition.NEW -> R.string.item_condition_new_desc
-            ItemCondition.AS_GOOD_AS_NEW -> R.string.item_condition_as_good_as_new_desc
-            ItemCondition.USED -> R.string.item_condition_used_desc
-            ItemCondition.REFURBISHED -> R.string.item_condition_refurbished_desc
+            ItemCondition.NEW_SEALED -> R.string.item_condition_new_sealed_desc
+            ItemCondition.NEW_WITH_TAGS -> R.string.item_condition_new_with_tags_desc
+            ItemCondition.NEW_WITHOUT_TAGS -> R.string.item_condition_new_without_tags_desc
+            ItemCondition.LIKE_NEW -> R.string.item_condition_like_new_desc
+            ItemCondition.GOOD -> R.string.item_condition_good_desc
+            ItemCondition.FAIR -> R.string.item_condition_fair_desc
+            ItemCondition.POOR -> R.string.item_condition_poor_desc
         }
 
     /**

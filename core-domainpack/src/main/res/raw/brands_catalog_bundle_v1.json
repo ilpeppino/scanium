@@ -56,6 +56,63 @@
       "Siemens",
       "Thomas"
     ],
+    "appliance_washing_machine": [
+      "AEG",
+      "Beko",
+      "Bosch",
+      "Electrolux",
+      "Hotpoint",
+      "LG",
+      "Miele",
+      "Samsung",
+      "Siemens",
+      "Whirlpool"
+    ],
+    "appliance_dryer": [
+      "AEG",
+      "Beko",
+      "Bosch",
+      "Electrolux",
+      "Hotpoint",
+      "LG",
+      "Miele",
+      "Samsung",
+      "Siemens",
+      "Whirlpool"
+    ],
+    "appliance_dishwasher": [
+      "AEG",
+      "Beko",
+      "Bosch",
+      "Electrolux",
+      "LG",
+      "Miele",
+      "Samsung",
+      "Siemens",
+      "Whirlpool"
+    ],
+    "appliance_refrigerator": [
+      "AEG",
+      "Beko",
+      "Bosch",
+      "Electrolux",
+      "LG",
+      "Miele",
+      "Samsung",
+      "Siemens",
+      "Whirlpool"
+    ],
+    "appliance_oven": [
+      "AEG",
+      "Beko",
+      "Bosch",
+      "Electrolux",
+      "Miele",
+      "Samsung",
+      "Siemens",
+      "Whirlpool",
+      "Zanussi"
+    ],
     "auto_bluetooth_receiver": [
       "Anker",
       "JBL",
@@ -460,10 +517,12 @@
       "Billy",
       "Detolf",
       "Eket",
+      "Habitat",
       "Herman Miller",
-      "Ikea",
+      "IKEA",
       "Ivar",
       "Kallax",
+      "Made.com",
       "Montana",
       "Muuto",
       "Norm",
@@ -476,6 +535,7 @@
       "AKRacing",
       "Argos",
       "Brunner",
+      "BoConcept",
       "Corsair",
       "DXRacer",
       "Eames",
@@ -484,9 +544,10 @@
       "Haworth",
       "Herman Miller",
       "Humanscale",
-      "Ikea",
+      "IKEA",
       "Kinnarps",
       "Knoll",
+      "Made.com",
       "Next",
       "Noblechairs",
       "Recaro",
@@ -504,15 +565,17 @@
       "Artek",
       "B&B Italia",
       "Bodema",
+      "BoConcept",
       "Cassina",
       "COR",
       "Design Within Reach",
       "DFS",
       "Hay",
       "Herman Miller",
-      "Ikea",
+      "IKEA",
       "John Lewis",
       "Knoll",
+      "Made.com",
       "Muuto",
       "Next",
       "Normann Copenhagen",
@@ -529,12 +592,14 @@
       "Artek",
       "B&B Italia",
       "Cassina",
+      "BoConcept",
       "Design Within Reach",
       "Hay",
       "Herman Miller",
-      "Ikea",
+      "IKEA",
       "Kinnarps",
       "Knoll",
+      "Made.com",
       "Montana",
       "Muuto",
       "Naver",
@@ -708,6 +773,38 @@
       "Cuisinart",
       "KitchenAid"
     ],
+    "small_app_rice_cooker": [
+      "Aroma",
+      "Cuckoo",
+      "Instant Pot",
+      "Panasonic",
+      "Tiger",
+      "Zojirushi"
+    ],
+    "small_app_slow_cooker": [
+      "Crock-Pot",
+      "Hamilton Beach",
+      "Instant Pot",
+      "KitchenAid",
+      "Russell Hobbs"
+    ],
+    "small_app_sous_vide": [
+      "Anova",
+      "Breville",
+      "ChefSteps",
+      "Instant Pot",
+      "KitchenAid"
+    ],
+    "small_app_toaster": [
+      "Breville",
+      "Dualit",
+      "KitchenAid",
+      "Philips",
+      "Russell Hobbs",
+      "Sage",
+      "Smeg",
+      "Tefal"
+    ],
     "smart_security_camera": [
       "Canon",
       "Fujifilm",
@@ -750,56 +847,99 @@
       "Bosch",
       "DeWalt",
       "Festool",
-      "Makita"
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
     ],
     "tools_circular_saw": [
       "Black+Decker",
       "Bosch",
       "DeWalt",
       "Festool",
-      "Makita"
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
     ],
     "tools_drill": [
       "Black+Decker",
       "Bosch",
       "DeWalt",
       "Festool",
-      "Makita"
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
     ],
     "tools_impact_driver": [
       "Black+Decker",
       "Bosch",
       "DeWalt",
       "Festool",
-      "Makita"
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
+    ],
+    "tools_jigsaw": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
     ],
     "tools_measuring_tape": [
       "Black+Decker",
       "Bosch",
       "DeWalt",
       "Festool",
-      "Makita"
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
     ],
     "tools_nail_gun": [
       "Black+Decker",
       "Bosch",
       "DeWalt",
       "Festool",
-      "Makita"
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
     ],
     "tools_power_washer": [
       "Black+Decker",
       "Bosch",
       "DeWalt",
       "Festool",
-      "Makita"
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
     ],
     "tools_rotary_tool": [
       "Black+Decker",
       "Bosch",
       "DeWalt",
       "Festool",
-      "Makita"
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
+    ],
+    "tools_sander": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
+    ],
+    "tools_table_saw": [
+      "Black+Decker",
+      "Bosch",
+      "DeWalt",
+      "Festool",
+      "Makita",
+      "Milwaukee",
+      "Ryobi"
     ]
   },
   "description": "Brand catalog for Scanium domain pack subtypes",

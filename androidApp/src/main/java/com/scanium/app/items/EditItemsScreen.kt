@@ -493,7 +493,16 @@ private fun ConditionDropdown(
             // All condition options
             ItemCondition.entries.forEach { condition ->
                 DropdownMenuItem(
-                    text = { Text(ItemLocalizer.getConditionName(condition)) },
+                    text = {
+                        Column {
+                            Text(ItemLocalizer.getConditionName(condition))
+                            Text(
+                                text = ItemLocalizer.getConditionDescription(condition),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                     onClick = {
                         onConditionSelected(condition)
                         expanded = false

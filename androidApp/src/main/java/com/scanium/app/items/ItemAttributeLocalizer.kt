@@ -215,10 +215,13 @@ object ItemAttributeLocalizer {
      */
     private val conditionResourceMap: Map<String, Int> =
         mapOf(
-            "new" to R.string.item_condition_new,
-            "as_good_as_new" to R.string.item_condition_as_good_as_new,
-            "used" to R.string.item_condition_used,
-            "refurbished" to R.string.item_condition_refurbished,
+            "new_sealed" to R.string.item_condition_new_sealed,
+            "new_with_tags" to R.string.item_condition_new_with_tags,
+            "new_without_tags" to R.string.item_condition_new_without_tags,
+            "like_new" to R.string.item_condition_like_new,
+            "good" to R.string.item_condition_good,
+            "fair" to R.string.item_condition_fair,
+            "poor" to R.string.item_condition_poor,
         )
 
     /**
@@ -402,6 +405,13 @@ object ItemAttributeLocalizer {
             "fabric",
             // Conditions
             "new",
+            "sealed",
+            "tags",
+            "tag",
+            "like",
+            "good",
+            "fair",
+            "poor",
             "used",
             "refurbished",
         )

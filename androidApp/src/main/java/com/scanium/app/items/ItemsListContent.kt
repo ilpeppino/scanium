@@ -740,20 +740,32 @@ internal fun ClassificationStatusBadge(status: String) {
 internal fun ConditionBadge(condition: ItemCondition) {
     val (backgroundColor, textColor) =
         when (condition) {
-            ItemCondition.NEW -> {
+            ItemCondition.NEW_SEALED -> {
                 MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
             }
 
-            ItemCondition.AS_GOOD_AS_NEW -> {
+            ItemCondition.NEW_WITH_TAGS -> {
+                MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+            }
+
+            ItemCondition.NEW_WITHOUT_TAGS -> {
+                MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+            }
+
+            ItemCondition.LIKE_NEW -> {
                 MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
             }
 
-            ItemCondition.USED -> {
+            ItemCondition.GOOD -> {
                 MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
             }
 
-            ItemCondition.REFURBISHED -> {
+            ItemCondition.FAIR -> {
                 MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+            }
+
+            ItemCondition.POOR -> {
+                MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
             }
         }
 

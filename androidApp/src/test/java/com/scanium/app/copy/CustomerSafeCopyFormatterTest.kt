@@ -69,7 +69,7 @@ class CustomerSafeCopyFormatterTest {
             )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.title).isEqualTo("leather handbag with details")
+        assertThat(output.title).isEqualTo(titleCap("leather handbag with details"))
         assertThat(output.title).doesNotContain("unknown")
     }
 
@@ -123,7 +123,7 @@ class CustomerSafeCopyFormatterTest {
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).doesNotContain("%")
-        assertThat(output.title).isEqualTo("backpack")
+        assertThat(output.title).isEqualTo(titleCap("backpack"))
     }
 
     @Test
@@ -159,7 +159,7 @@ class CustomerSafeCopyFormatterTest {
             val output = CustomerSafeCopyFormatter.format(input)!!
 
             assertThat(output.title).isNotEmpty()
-            assertThat(output.title).isEqualTo(title)
+            assertThat(output.title).isEqualTo(titleCap(title))
         }
     }
 
@@ -201,7 +201,7 @@ class CustomerSafeCopyFormatterTest {
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).contains("leather")
-        assertThat(output.title).contains("brown")
+        assertThat(output.title).contains("Brown")
     }
 
     @Test
@@ -215,7 +215,7 @@ class CustomerSafeCopyFormatterTest {
             )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.title).isEqualTo("hiking boots")
+        assertThat(output.title).isEqualTo(titleCap("hiking boots"))
     }
 
     @Test
@@ -229,7 +229,7 @@ class CustomerSafeCopyFormatterTest {
         val output = CustomerSafeCopyFormatter.format(input)!!
 
         assertThat(output.title).contains("ceramic")
-        assertThat(output.title).contains("blue")
+        assertThat(output.title).contains("Blue")
     }
 
     // ====== Pricing Format Tests ======
@@ -368,7 +368,7 @@ class CustomerSafeCopyFormatterTest {
         val output = CustomerSafeCopyFormatter.format(input, dropIfWeak = true)
 
         assertThat(output).isNotNull()
-        assertThat(output!!.title).isEqualTo("leather handbag")
+        assertThat(output!!.title).isEqualTo(titleCap("leather handbag"))
     }
 
     // ====== Display Mode Tests ======
@@ -504,9 +504,9 @@ class CustomerSafeCopyFormatterTest {
         val outputs = CustomerSafeCopyFormatter.formatBatch(inputs)
 
         assertThat(outputs).hasSize(3)
-        assertThat(outputs[0].title).isEqualTo("hiking boots")
-        assertThat(outputs[1].title).isEqualTo("leather jacket")
-        assertThat(outputs[2].title).isEqualTo("wool sweater")
+        assertThat(outputs[0].title).isEqualTo(titleCap("hiking boots"))
+        assertThat(outputs[1].title).isEqualTo(titleCap("leather jacket"))
+        assertThat(outputs[2].title).isEqualTo(titleCap("wool sweater"))
     }
 
     @Test
@@ -523,8 +523,8 @@ class CustomerSafeCopyFormatterTest {
         val outputs = CustomerSafeCopyFormatter.formatBatch(inputs, dropIfWeak = true)
 
         assertThat(outputs).hasSize(2)
-        assertThat(outputs[0].title).isEqualTo("hiking boots")
-        assertThat(outputs[1].title).isEqualTo("leather jacket")
+        assertThat(outputs[0].title).isEqualTo(titleCap("hiking boots"))
+        assertThat(outputs[1].title).isEqualTo(titleCap("leather jacket"))
     }
 
     // ====== Edge Cases ======
@@ -540,7 +540,7 @@ class CustomerSafeCopyFormatterTest {
             )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.title).isEqualTo("leather jacket")
+        assertThat(output.title).isEqualTo(titleCap("leather jacket"))
     }
 
     @Test
@@ -553,7 +553,7 @@ class CustomerSafeCopyFormatterTest {
             )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.title).isEqualTo("leather jacket")
+        assertThat(output.title).isEqualTo(titleCap("leather jacket"))
     }
 
     @Test
@@ -565,7 +565,7 @@ class CustomerSafeCopyFormatterTest {
             )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.title).isEqualTo("leather jacket")
+        assertThat(output.title).isEqualTo(titleCap("leather jacket"))
     }
 
     @Test
@@ -605,7 +605,7 @@ class CustomerSafeCopyFormatterTest {
             )!!
 
         // Verify all fields
-        assertThat(output.title).isEqualTo("leather hiking boots")
+        assertThat(output.title).isEqualTo(titleCap("leather hiking boots"))
         // Verify structured pricing (UI renders "Typical resale value: €60–€150")
         assertThat(output.pricing).isNotNull()
         assertThat(output.pricing!!.min).isEqualTo(60)
@@ -619,5 +619,15 @@ class CustomerSafeCopyFormatterTest {
         // Verify no banned tokens or confidence indicators
         assertThat(output.title).doesNotContain("unknown")
         assertThat(output.title).doesNotContain("%")
+    }
+
+    private fun titleCap(text: String): String {
+        if (text.isEmpty()) return text
+        val first = text[0].uppercaseChar()
+        return if (text.length == 1) {
+            first.toString()
+        } else {
+            first.toString() + text.substring(1)
+        }
     }
 }

@@ -8,20 +8,32 @@ enum class ItemCondition(
     val displayName: String,
     val description: String,
 ) {
-    NEW(
-        displayName = "New",
-        description = "Brand new, never used",
+    NEW_SEALED(
+        displayName = "New, Sealed",
+        description = "Factory sealed, never opened",
     ),
-    AS_GOOD_AS_NEW(
-        displayName = "As good as new",
-        description = "Like new condition with minimal signs of use",
+    NEW_WITH_TAGS(
+        displayName = "New with Tags",
+        description = "New with original tags attached",
     ),
-    USED(
-        displayName = "Used",
-        description = "Previously used with visible wear",
+    NEW_WITHOUT_TAGS(
+        displayName = "New without Tags",
+        description = "New, no tags, never used",
     ),
-    REFURBISHED(
-        displayName = "Refurbished",
-        description = "Restored to working condition",
+    LIKE_NEW(
+        displayName = "Like New",
+        description = "Used briefly, no visible wear",
+    ),
+    GOOD(
+        displayName = "Good",
+        description = "Normal use, minor wear",
+    ),
+    FAIR(
+        displayName = "Fair",
+        description = "Noticeable wear, fully functional",
+    ),
+    POOR(
+        displayName = "Poor",
+        description = "Heavy wear, may have defects",
     ),
 }

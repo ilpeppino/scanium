@@ -85,14 +85,18 @@ class ItemAttributeLocalizerTest {
 
     @Test
     fun whenConditionIsKnown_thenIsKnownConditionReturnsTrue() {
-        assertThat(ItemAttributeLocalizer.isKnownCondition("new")).isTrue()
-        assertThat(ItemAttributeLocalizer.isKnownCondition("used")).isTrue()
-        assertThat(ItemAttributeLocalizer.isKnownCondition("refurbished")).isTrue()
-        assertThat(ItemAttributeLocalizer.isKnownCondition("as_good_as_new")).isTrue()
+        assertThat(ItemAttributeLocalizer.isKnownCondition("new_sealed")).isTrue()
+        assertThat(ItemAttributeLocalizer.isKnownCondition("new_with_tags")).isTrue()
+        assertThat(ItemAttributeLocalizer.isKnownCondition("new_without_tags")).isTrue()
+        assertThat(ItemAttributeLocalizer.isKnownCondition("like_new")).isTrue()
+        assertThat(ItemAttributeLocalizer.isKnownCondition("good")).isTrue()
+        assertThat(ItemAttributeLocalizer.isKnownCondition("fair")).isTrue()
+        assertThat(ItemAttributeLocalizer.isKnownCondition("poor")).isTrue()
     }
 
     @Test
     fun whenConditionIsUnknown_thenIsKnownConditionReturnsFalse() {
+        assertThat(ItemAttributeLocalizer.isKnownCondition("used")).isFalse()
         assertThat(ItemAttributeLocalizer.isKnownCondition("excellent")).isFalse()
         assertThat(ItemAttributeLocalizer.isKnownCondition("mint")).isFalse()
     }
@@ -115,8 +119,9 @@ class ItemAttributeLocalizerTest {
 
     @Test
     fun whenValueContainsEnglishConditionWords_thenContainsEnglishVocabularyReturnsTrue() {
-        assertThat(ItemAttributeLocalizer.containsEnglishVocabulary("new")).isTrue()
-        assertThat(ItemAttributeLocalizer.containsEnglishVocabulary("used")).isTrue()
+        assertThat(ItemAttributeLocalizer.containsEnglishVocabulary("new sealed")).isTrue()
+        assertThat(ItemAttributeLocalizer.containsEnglishVocabulary("like new")).isTrue()
+        assertThat(ItemAttributeLocalizer.containsEnglishVocabulary("good")).isTrue()
     }
 
     @Test
@@ -169,7 +174,7 @@ class ItemAttributeLocalizerTest {
             mapOf(
                 "color" to "orange",
                 "material" to "plastic",
-                "condition" to "used",
+                "condition" to "good",
             )
 
         // Act
@@ -202,7 +207,7 @@ class ItemAttributeLocalizerTest {
             mapOf(
                 "color" to "orange",
                 "material" to "plastic",
-                "condition" to "used",
+                "condition" to "good",
             )
 
         // Act

@@ -71,7 +71,7 @@ class FeatureFlagsTest {
             // AI Assistant is now enabled in beta/prod (no subscription required)
             assertThat(FeatureFlags.allowAiAssistant).isTrue()
             assertThat(FeatureFlags.maxImageResolution).isEqualTo("HIGH")
-            assertThat(FeatureFlags.showItemDiagnostics).isTrue()
+            assertThat(FeatureFlags.showItemDiagnostics).isFalse()
             assertThat(FeatureFlags.allowHighResolution).isTrue()
         }
     }

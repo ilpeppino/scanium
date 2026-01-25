@@ -106,7 +106,7 @@ class ItemDetailPhase3Test {
                         "color" to ItemAttribute("Black", 0.85f, "vision"),
                     ),
                 category = ItemCategory.FASHION,
-                condition = ItemCondition.USED,
+                condition = ItemCondition.GOOD,
             )
 
         // Act
@@ -121,7 +121,7 @@ class ItemDetailPhase3Test {
         // Assert
         assertThat(generatedSummary).contains("Brand: Nike")
         assertThat(generatedSummary).contains("Color: Black")
-        assertThat(generatedSummary).contains("Condition: Used")
+        assertThat(generatedSummary).contains("Condition: Good")
     }
 
     // ==================== Test B: Edit Protection ====================
@@ -338,7 +338,7 @@ class ItemDetailPhase3Test {
             recognizedText = null,
             barcodeValue = null,
             estimatedPriceRange = null,
-            condition = ItemCondition.USED,
+            condition = ItemCondition.GOOD,
             thumbnail = null,
             thumbnailRef = null,
             fullImageUri = mockk<Uri>(),

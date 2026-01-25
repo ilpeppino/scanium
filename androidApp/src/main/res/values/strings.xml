@@ -784,14 +784,20 @@
     <string name="category_unknown">Unknown</string>
 
     <!-- Item Conditions (localized display names) -->
-    <string name="item_condition_new">New</string>
-    <string name="item_condition_new_desc">Brand new, never used</string>
-    <string name="item_condition_as_good_as_new">As good as new</string>
-    <string name="item_condition_as_good_as_new_desc">Like new condition with minimal signs of use</string>
-    <string name="item_condition_used">Used</string>
-    <string name="item_condition_used_desc">Previously used with visible wear</string>
-    <string name="item_condition_refurbished">Refurbished</string>
-    <string name="item_condition_refurbished_desc">Restored to working condition</string>
+    <string name="item_condition_new_sealed">New, Sealed</string>
+    <string name="item_condition_new_sealed_desc">Factory sealed, never opened</string>
+    <string name="item_condition_new_with_tags">New with Tags</string>
+    <string name="item_condition_new_with_tags_desc">New with original tags attached</string>
+    <string name="item_condition_new_without_tags">New without Tags</string>
+    <string name="item_condition_new_without_tags_desc">New, no tags, never used</string>
+    <string name="item_condition_like_new">Like New</string>
+    <string name="item_condition_like_new_desc">Used briefly, no visible wear</string>
+    <string name="item_condition_good">Good</string>
+    <string name="item_condition_good_desc">Normal use, minor wear</string>
+    <string name="item_condition_fair">Fair</string>
+    <string name="item_condition_fair_desc">Noticeable wear, fully functional</string>
+    <string name="item_condition_poor">Poor</string>
+    <string name="item_condition_poor_desc">Heavy wear, may have defects</string>
 
     <!-- Attribute Value Vocabulary: Colors -->
     <string name="attr_color_red">Red</string>
