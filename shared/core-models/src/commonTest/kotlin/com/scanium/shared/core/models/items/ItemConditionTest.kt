@@ -3,6 +3,12 @@ package com.scanium.shared.core.models.items
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/**
+ * Tests for ItemCondition enum.
+ *
+ * Note: Display names and descriptions are localized via ItemLocalizer
+ * in the Android app layer, not in this shared module.
+ */
 class ItemConditionTest {
     @Test
     fun whenEnumeratingConditions_thenAllSevenValuesPresent() {
@@ -20,13 +26,5 @@ class ItemConditionTest {
             ),
             names,
         )
-    }
-
-    @Test
-    fun whenReadingConditionMetadata_thenDisplayNameAndDescriptionMatch() {
-        val condition = ItemCondition.NEW_SEALED
-
-        assertEquals("New, Sealed", condition.displayName)
-        assertEquals("Factory sealed, never opened", condition.description)
     }
 }

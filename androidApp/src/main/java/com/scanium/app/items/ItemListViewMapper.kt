@@ -109,10 +109,10 @@ object ItemListViewMapper {
                 )
             }
 
-        // Build pricing context from item condition if available
+        // Build pricing context from item condition if available (use canonical name)
         val pricingContextHint =
             item.condition?.let { condition ->
-                "condition: ${condition.displayName.lowercase()}"
+                "condition: ${condition.name.lowercase()}"
             }
 
         return ItemInput(

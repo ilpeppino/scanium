@@ -760,14 +760,20 @@
     <string name="category_unknown">Desconocido</string>
 
     <!-- Item Conditions (localized display names) -->
-    <string name="item_condition_new">Nuevo</string>
-    <string name="item_condition_new_desc">Completamente nuevo, nunca usado</string>
-    <string name="item_condition_as_good_as_new">Como nuevo</string>
-    <string name="item_condition_as_good_as_new_desc">Condición como nuevo con señales mínimas de uso</string>
-    <string name="item_condition_used">Usado</string>
-    <string name="item_condition_used_desc">Usado previamente con desgaste visible</string>
-    <string name="item_condition_refurbished">Reacondicionado</string>
-    <string name="item_condition_refurbished_desc">Restaurado a condición de funcionamiento</string>
+    <string name="item_condition_new_sealed">Nuevo, Sellado</string>
+    <string name="item_condition_new_sealed_desc">Sellado de fábrica, nunca abierto</string>
+    <string name="item_condition_new_with_tags">Nuevo con Etiquetas</string>
+    <string name="item_condition_new_with_tags_desc">Nuevo con etiquetas originales</string>
+    <string name="item_condition_new_without_tags">Nuevo sin Etiquetas</string>
+    <string name="item_condition_new_without_tags_desc">Nuevo, sin etiquetas, nunca usado</string>
+    <string name="item_condition_like_new">Como Nuevo</string>
+    <string name="item_condition_like_new_desc">Usado brevemente, sin desgaste visible</string>
+    <string name="item_condition_good">Bueno</string>
+    <string name="item_condition_good_desc">Uso normal, desgaste menor</string>
+    <string name="item_condition_fair">Regular</string>
+    <string name="item_condition_fair_desc">Desgaste notable, completamente funcional</string>
+    <string name="item_condition_poor">Pobre</string>
+    <string name="item_condition_poor_desc">Desgaste severo, puede tener defectos</string>
 
     <!-- Attribute Value Vocabulary: Colors -->
     <string name="attr_color_red">Rojo</string>

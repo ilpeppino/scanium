@@ -885,14 +885,20 @@
     <string name="category_unknown">Onbekend</string>
 
     <!-- Item Conditions (localized display names) -->
-    <string name="item_condition_new">Nieuw</string>
-    <string name="item_condition_new_desc">Gloednieuw, nooit gebruikt</string>
-    <string name="item_condition_as_good_as_new">Als nieuw</string>
-    <string name="item_condition_as_good_as_new_desc">Zoals nieuwe conditie met minimale gebruikssporen</string>
-    <string name="item_condition_used">Gebruikt</string>
-    <string name="item_condition_used_desc">Eerder gebruikt met zichtbare slijtage</string>
-    <string name="item_condition_refurbished">Gereviseerd</string>
-    <string name="item_condition_refurbished_desc">Hersteld naar werkende conditie</string>
+    <string name="item_condition_new_sealed">Nieuw, Verzegeld</string>
+    <string name="item_condition_new_sealed_desc">Fabrieksverzegeld, nooit geopend</string>
+    <string name="item_condition_new_with_tags">Nieuw met Labels</string>
+    <string name="item_condition_new_with_tags_desc">Nieuw met originele labels</string>
+    <string name="item_condition_new_without_tags">Nieuw zonder Labels</string>
+    <string name="item_condition_new_without_tags_desc">Nieuw, geen labels, nooit gebruikt</string>
+    <string name="item_condition_like_new">Als Nieuw</string>
+    <string name="item_condition_like_new_desc">Kort gebruikt, geen zichtbare slijtage</string>
+    <string name="item_condition_good">Goed</string>
+    <string name="item_condition_good_desc">Normaal gebruik, lichte slijtage</string>
+    <string name="item_condition_fair">Redelijk</string>
+    <string name="item_condition_fair_desc">Zichtbare slijtage, volledig functioneel</string>
+    <string name="item_condition_poor">Slecht</string>
+    <string name="item_condition_poor_desc">Sterke slijtage, kan defecten hebben</string>
 
     <!-- Attribute Value Vocabulary: Colors -->
     <string name="attr_color_red">Rood</string>

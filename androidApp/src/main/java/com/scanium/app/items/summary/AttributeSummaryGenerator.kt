@@ -73,7 +73,8 @@ object AttributeSummaryGenerator {
             for (key in ATTRIBUTE_ORDER) {
                 if (key == "category") continue // Already handled
                 if (key == "condition") {
-                    appendField("Condition", condition?.displayName, includeEmptyFields)
+                    // Use canonical enum name (localization happens at UI layer)
+                    appendField("Condition", condition?.name, includeEmptyFields)
                     continue
                 }
                 if (key == "notes") continue // Handle at the end

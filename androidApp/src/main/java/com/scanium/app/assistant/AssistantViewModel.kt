@@ -298,13 +298,13 @@ private fun ScannedItem.toContextSnapshot(): ItemContextSnapshot {
                 }
             }
 
-            // Condition if set
+            // Condition if set (use canonical enum name for API)
             this@toContextSnapshot.condition?.let { condition ->
                 if ("condition" !in existingKeys) {
                     add(
                         ItemAttributeSnapshot(
                             key = "condition",
-                            value = condition.displayName,
+                            value = condition.name,
                             confidence = null,
                         ),
                     )

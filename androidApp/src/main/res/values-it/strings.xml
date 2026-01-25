@@ -758,14 +758,20 @@
     <string name="category_unknown">Sconosciuto</string>
 
     <!-- Item Conditions (localized display names) -->
-    <string name="item_condition_new">Nuovo</string>
-    <string name="item_condition_new_desc">Nuovo di zecca, mai usato</string>
-    <string name="item_condition_as_good_as_new">Come nuovo</string>
-    <string name="item_condition_as_good_as_new_desc">Condizioni come nuovo con minimi segni d\'uso</string>
-    <string name="item_condition_used">Usato</string>
-    <string name="item_condition_used_desc">Usato in precedenza con usura visibile</string>
-    <string name="item_condition_refurbished">Ricondizionato</string>
-    <string name="item_condition_refurbished_desc">Ripristinato in condizioni di funzionamento</string>
+    <string name="item_condition_new_sealed">Nuovo, Sigillato</string>
+    <string name="item_condition_new_sealed_desc">Sigillato in fabbrica, mai aperto</string>
+    <string name="item_condition_new_with_tags">Nuovo con Etichette</string>
+    <string name="item_condition_new_with_tags_desc">Nuovo con etichette originali</string>
+    <string name="item_condition_new_without_tags">Nuovo senza Etichette</string>
+    <string name="item_condition_new_without_tags_desc">Nuovo, senza etichette, mai usato</string>
+    <string name="item_condition_like_new">Come Nuovo</string>
+    <string name="item_condition_like_new_desc">Usato brevemente, nessuna usura visibile</string>
+    <string name="item_condition_good">Buono</string>
+    <string name="item_condition_good_desc">Uso normale, usura minima</string>
+    <string name="item_condition_fair">Discreto</string>
+    <string name="item_condition_fair_desc">Usura visibile, completamente funzionante</string>
+    <string name="item_condition_poor">Scadente</string>
+    <string name="item_condition_poor_desc">Usura pesante, può avere difetti</string>
 
     <!-- Attribute Value Vocabulary: Colors -->
     <string name="attr_color_red">Rosso</string>
