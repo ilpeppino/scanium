@@ -156,6 +156,7 @@ class AndroidRemoteConfigProvider(
             "enableAssistant" -> current.featureFlags.enableAssistant
             "enableProfiles" -> current.featureFlags.enableProfiles
             "enablePostingAssist" -> current.featureFlags.enablePostingAssist
+            "enablePricingV3" -> current.featureFlags.enablePricingV3
             else -> default
         }
     }

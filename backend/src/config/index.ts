@@ -517,6 +517,8 @@ export function loadConfig(): Config {
   console.log('[Config] Reasoning provider:', result.data.reasoning.provider);
   console.log('[Config] Reasoning model:', result.data.reasoning.model);
   console.log('[Config] OpenAI key present:', !!result.data.assistant.openaiApiKey);
+  console.log('[Config] Pricing v3 enabled:', result.data.pricing.v3Enabled);
+  console.log('[Config] Pricing v3 prompt version:', result.data.pricing.v3PromptVersion);
 
   return result.data;
 }

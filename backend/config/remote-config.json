@@ -5,7 +5,8 @@
     "enableAssistant": true,
     "enableCloud": true,
     "enableProfiles": true,
-    "enablePostingAssist": true
+    "enablePostingAssist": true,
+    "enablePricingV3": false
   },
   "limits": {
     "cloudDailyCap": 100,
@@ -16,4 +17,3 @@
   "experiments": {},
   "rollouts": {}
 }
-

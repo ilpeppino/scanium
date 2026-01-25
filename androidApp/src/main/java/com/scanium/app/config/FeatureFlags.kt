@@ -41,6 +41,14 @@ object FeatureFlags {
         get() = BuildConfig.FEATURE_AI_ASSISTANT
 
     /**
+     * Whether Pricing V3 UI is available.
+     * - DEV: true - Pricing V3 can be surfaced for testing
+     * - BETA/PROD: false - Pricing V3 UI hidden unless gated elsewhere
+     */
+    val allowPricingV3: Boolean
+        get() = BuildConfig.FEATURE_PRICING_V3
+
+    /**
      * Maximum allowed image resolution tier.
      * - DEV: HIGH - All resolution options available
      * - BETA/PROD: NORMAL - High resolution capped/hidden

@@ -34,7 +34,8 @@ class RemoteConfigParsingTest {
                 "enableAssistant": true,
                 "enableCloud": true,
                 "enableProfiles": true,
-                "enablePostingAssist": true
+                "enablePostingAssist": true,
+                "enablePricingV3": true
               },
               "limits": {
                 "cloudDailyCap": 100,
@@ -53,6 +54,7 @@ class RemoteConfigParsingTest {
         assertTrue("enableCloud should be true", config.featureFlags.enableCloud)
         assertTrue("enableProfiles should be true", config.featureFlags.enableProfiles)
         assertTrue("enablePostingAssist should be true", config.featureFlags.enablePostingAssist)
+        assertTrue("enablePricingV3 should be true", config.featureFlags.enablePricingV3)
 
         // Verify limits are parsed correctly
         assertEquals(100, config.limits.cloudDailyCap)
