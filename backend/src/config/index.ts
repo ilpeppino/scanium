@@ -281,6 +281,16 @@ export const configSchema = z.object({
       openaiApiKey: z.string().optional(),
       /** OpenAI model for pricing (default gpt-4o-mini) */
       openaiModel: z.string().default('gpt-4o-mini'),
+      /** Pricing V3: Enable dedicated pricing endpoint */
+      v3Enabled: z.coerce.boolean().default(false),
+      /** Pricing V3: Timeout in milliseconds (default 15s) */
+      v3TimeoutMs: z.coerce.number().int().min(1000).max(30000).default(15000),
+      /** Pricing V3: Cache TTL in seconds (default 24h) */
+      v3CacheTtlSeconds: z.coerce.number().int().min(60).max(86400).default(86400),
+      /** Pricing V3: Daily quota per API key (default 1000) */
+      v3DailyQuota: z.coerce.number().int().min(1).default(1000),
+      /** Pricing V3: Prompt version for A/B testing */
+      v3PromptVersion: z.string().default('1.0.0'),
     })
     .default({}),
 
@@ -460,6 +470,11 @@ export function loadConfig(): Config {
       maxResults: process.env.ASSIST_PRICE_LOOKUP_MAX_RESULTS,
       openaiApiKey: process.env.OPENAI_API_KEY,
       openaiModel: process.env.OPENAI_MODEL,
+      v3Enabled: process.env.PRICING_V3_ENABLED,
+      v3TimeoutMs: process.env.PRICING_V3_TIMEOUT_MS,
+      v3CacheTtlSeconds: process.env.PRICING_V3_CACHE_TTL_SECONDS,
+      v3DailyQuota: process.env.PRICING_V3_DAILY_QUOTA,
+      v3PromptVersion: process.env.PRICING_V3_PROMPT_VERSION,
     },
     ebay: {
       env: process.env.EBAY_ENV,
