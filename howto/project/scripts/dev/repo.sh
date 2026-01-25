@@ -346,9 +346,9 @@ main() {
   printf "%sBranch:%s %s\n" "$C_DIM" "$C_RESET" "$(git rev-parse --abbrev-ref HEAD)"
   printf "%sAction:%s %s\n" "$C_DIM" "$C_RESET" "${last_action:-none}"
 
-  # Show last commit SHA with date/time
+  # Show last commit SHA with description and date/time
   local commit_info
-  commit_info=$(git log -1 --format='%h - %ci' 2>/dev/null || echo "unknown")
+  commit_info=$(git log -1 --format='%h - %s - %ci' 2>/dev/null || echo "unknown")
   printf "%sCommit:%s %s\n" "$C_DIM" "$C_RESET" "$commit_info"
 
   # Show uncommitted files if any
