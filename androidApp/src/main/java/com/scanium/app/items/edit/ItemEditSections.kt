@@ -61,7 +61,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.ScannedItem
@@ -69,6 +68,8 @@ import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemLocalizer
 import com.scanium.app.model.toImageBitmap
+import com.scanium.app.pricing.PricingMissingField
+import com.scanium.app.pricing.PricingUiState
 import com.scanium.shared.core.models.items.ItemCondition
 
 @Composable
@@ -78,6 +79,13 @@ fun ItemEditSections(
     focusManager: FocusManager,
     onAddPhotos: (String) -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    pricingUiState: PricingUiState,
+    missingPricingFields: Set<PricingMissingField>,
+    pricingRegionLabel: String,
+    onGetPriceEstimate: () -> Unit,
+    onUsePriceEstimate: (Double) -> Unit,
+    onRefreshPriceEstimate: () -> Unit,
+    onRetryPriceEstimate: () -> Unit,
     onFirstFieldBoundsChanged: ((Rect?) -> Unit)? = null,
     onConditionPriceBoundsChanged: ((Rect?) -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -343,13 +351,17 @@ fun ItemEditSections(
                 ),
         )
 
-        if (state.pricingInsights?.status?.uppercase() == "OK") {
-            Spacer(Modifier.height(8.dp))
-            PriceInsightsCompactCard(
-                insights = state.pricingInsights!!,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        Spacer(Modifier.height(8.dp))
+        PriceEstimateCard(
+            uiState = pricingUiState,
+            missingFields = missingPricingFields,
+            regionLabel = pricingRegionLabel,
+            onGetEstimate = onGetPriceEstimate,
+            onUsePrice = onUsePriceEstimate,
+            onRefresh = onRefreshPriceEstimate,
+            onRetry = onRetryPriceEstimate,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         Spacer(Modifier.height(12.dp))
 
@@ -653,110 +665,6 @@ private fun AddPhotoButtonV3(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PriceInsightsCompactCard(
-    insights: com.scanium.shared.core.models.assistant.PricingInsights,
-    modifier: Modifier = Modifier,
-) {
-    val range = insights.range ?: return
-    val marketplacesById =
-        remember(insights.marketplacesUsed) {
-            insights.marketplacesUsed.associateBy { it.id }
-        }
-
-    var showComparables by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = modifier,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-            ),
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text(
-                        text = "AI Market Price",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                    Text(
-                        text = "${range.currency} ${range.low.toInt()}-${range.high.toInt()}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                Text(
-                    text = "Based on ${insights.results.size} listings",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            if (insights.results.isNotEmpty()) {
-                OutlinedButton(
-                    onClick = { showComparables = !showComparables },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        if (showComparables) {
-                            "Hide matches (${insights.results.size})"
-                        } else {
-                            "Show matches (${insights.results.size})"
-                        },
-                    )
-                }
-
-                if (showComparables) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        insights.results.forEach { comparable ->
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = comparable.title,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    Text(
-                                        text =
-                                            marketplacesById[comparable.sourceMarketplaceId]?.name
-                                                ?: comparable.sourceMarketplaceId,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                Text(
-                                    text = "${comparable.price.currency} ${comparable.price.amount.toInt()}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
     }

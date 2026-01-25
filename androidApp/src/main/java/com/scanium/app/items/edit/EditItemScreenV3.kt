@@ -55,6 +55,7 @@ import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.pricing.PricingUiState
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemCondition
 
@@ -94,6 +95,7 @@ fun EditItemScreenV3(
     // shows "AI disabled" before flow emits actual value. Defense-in-depth check
     // in ExportAssistantViewModel.generateExport() handles truly disabled case.
     val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = true)
+    val primaryRegionCountry by settingsRepository.primaryRegionCountryFlow.collectAsState(initial = "")
 
     // FTUE Tour State
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -128,6 +130,10 @@ fun EditItemScreenV3(
                 val successState = exportState as ExportAssistantState.Success
                 // Update pricing insights
                 editState.pricingInsights = successState.pricingInsights
+                successState.pricingInsights?.let { insights ->
+                    editState.lastPricingInputs = editState.pricingInputs
+                    editState.pricingUiState = PricingUiState.Success(insights, isStale = false)
+                }
 
                 // Auto-populate price with median (USER DECISION)
                 val range = editState.pricingInsights?.range
@@ -137,6 +143,23 @@ fun EditItemScreenV3(
                 }
             }
         }
+    }
+
+    LaunchedEffect(
+        editState.brandField,
+        editState.productTypeField,
+        editState.modelField,
+        editState.conditionField,
+    ) {
+        val inputs = editState.pricingInputs
+        val missing = inputs.missingFields()
+        val currentState = editState.pricingUiState
+        editState.pricingUiState =
+            when (currentState) {
+                is PricingUiState.Success -> currentState.copy(isStale = inputs.isStaleComparedTo(editState.lastPricingInputs))
+                PricingUiState.Loading -> currentState
+                else -> if (missing.isEmpty()) PricingUiState.Ready else PricingUiState.InsufficientData
+            }
     }
 
     // Initialize Edit Item FTUE when screen is first shown
@@ -334,6 +357,29 @@ fun EditItemScreenV3(
             focusManager = focusManager,
             onAddPhotos = onAddPhotos,
             tourViewModel = tourViewModel,
+            pricingUiState = editState.pricingUiState,
+            missingPricingFields = editState.pricingInputs.missingFields(),
+            pricingRegionLabel =
+                if (primaryRegionCountry.isBlank()) {
+                    stringResource(R.string.pricing_region_generic)
+                } else {
+                    primaryRegionCountry
+                },
+            onGetPriceEstimate = {
+                editState.lastPricingInputs = editState.pricingInputs
+                editState.pricingUiState = PricingUiState.Loading
+            },
+            onUsePriceEstimate = { median ->
+                editState.priceField = "%.2f".format(median)
+            },
+            onRefreshPriceEstimate = {
+                editState.lastPricingInputs = editState.pricingInputs
+                editState.pricingUiState = PricingUiState.Loading
+            },
+            onRetryPriceEstimate = {
+                val missing = editState.pricingInputs.missingFields()
+                editState.pricingUiState = if (missing.isEmpty()) PricingUiState.Ready else PricingUiState.InsufficientData
+            },
             onFirstFieldBoundsChanged = { bounds -> firstFieldRect = bounds },
             onConditionPriceBoundsChanged = { bounds -> conditionPriceFieldRect = bounds },
             modifier =
