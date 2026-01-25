@@ -391,6 +391,7 @@ class ItemAggregator(
             firstSeenTimestamp = detection.timestampMs,
             lastSeenTimestamp = detection.timestampMs,
             sourceDetectionIds = detection.sourceDetectionIds.toMutableSet().ifEmpty { mutableSetOf(detection.id) },
+            mlKitLabels = detection.mlKitLabels, // Preserve ML Kit labels for category refinement
         )
     }
 
@@ -461,6 +462,11 @@ data class AggregatedItem(
     var domainCategoryId: String? = null,
     var classificationErrorMessage: String? = null,
     var classificationRequestId: String? = null,
+    /**
+     * Original ML Kit labels with confidences (for category refinement).
+     * Preserved from initial detection for use during enrichment.
+     */
+    var mlKitLabels: List<com.scanium.core.models.ml.LabelWithConfidence> = emptyList(),
 ) {
     fun merge(detection: ScannedItem) {
         mergeCount++
@@ -513,6 +519,7 @@ data class AggregatedItem(
             domainCategoryId = domainCategoryId,
             classificationErrorMessage = classificationErrorMessage,
             classificationRequestId = classificationRequestId,
+            mlKitLabels = mlKitLabels, // Preserve ML Kit labels for category refinement
         )
     }
 

@@ -257,21 +257,20 @@ object DetectionMapping {
     }
 
     /**
-     * Extracts the best category from ML Kit labels.
+     * Extracts the best category from ML Kit labels using multi-label consensus.
      * ML Kit provides a list of labels with confidence scores.
+     *
+     * Previously used only the highest-confidence label, which could be incorrect
+     * (e.g., "T-shirt" at 0.45 instead of "Laptop" at 0.42).
+     * Now uses CategoryResolver to consider top N labels for better accuracy.
+     *
+     * See: howto/app/debugging/RCA_MACBOOK_TSHIRT_MISCLASSIFICATION.md
      */
     fun extractCategory(detectedObject: DetectedObject): ItemCategory {
-        // Get the label with highest confidence
-        val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
-        val labelConfidence = bestLabel?.confidence ?: 0f
-
-        return if (labelConfidence >= CONFIDENCE_THRESHOLD) {
-            Log.d(TAG, "Using label: ${bestLabel?.text} (confidence: $labelConfidence)")
-            ItemCategory.fromMlKitLabel(bestLabel?.text)
-        } else {
-            Log.d(TAG, "No confident label found (best: ${bestLabel?.text}:$labelConfidence)")
-            ItemCategory.UNKNOWN
-        }
+        return CategoryResolver.resolveCategoryFromLabels(
+            detectedObject = detectedObject,
+            confidenceThreshold = CONFIDENCE_THRESHOLD,
+        )
     }
 
     /**
@@ -384,6 +383,7 @@ object DetectionMapping {
                 thumbnail = thumbnailRef,
                 normalizedBoxArea = normalizedBoxArea,
                 qualityScore = thumbnailQuality,
+                labels = labels, // Preserve all labels for enrichment-based category refinement
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error extracting detection info", e)
@@ -444,6 +444,16 @@ object DetectionMapping {
             val labelConfidence = bestLabel?.confidence ?: 0f
             val category = extractCategory(detectedObject)
 
+            // Preserve all labels for category refinement during enrichment
+            val labels =
+                detectedObject.labels.mapIndexed { index, label ->
+                    LabelWithConfidence(
+                        text = label.text,
+                        confidence = label.confidence,
+                        index = index,
+                    )
+                }
+
             // Use effective confidence (fallback for objects without classification)
             val confidence =
                 labelConfidence.takeIf { it > 0f } ?: run {
@@ -470,6 +480,7 @@ object DetectionMapping {
                 boundingBox = normalizedBox,
                 labelText = bestLabel?.text,
                 qualityScore = thumbnailQuality,
+                mlKitLabels = labels, // Preserve all labels for category refinement
             )
         } catch (e: Exception) {
             // If cropping or processing fails, skip this object
@@ -598,6 +609,7 @@ object DetectionMapping {
             barcodeValue = null,
             boundingBox = candidate.boundingBox,
             labelText = candidate.labelText.takeIf { it.isNotBlank() },
+            mlKitLabels = candidate.labels, // Preserve labels from candidate
         )
 }
 

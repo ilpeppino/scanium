@@ -495,6 +495,41 @@ class CropBasedEnricher
             // Use draft title as suggested label if available
             val suggestedLabel = status.draft?.title?.takeIf { it.isNotBlank() }
 
+            // Compute refined category based on enrichment attributes and logos
+            val refinedCategory =
+                if (attributesMap.isNotEmpty() || visionAttributes?.logos?.isNotEmpty() == true) {
+                    val currentItem = stateManager.getItem(itemId)
+                    if (currentItem != null) {
+                        val brand = attributesMap["brand"]?.value
+                        val brandConfidence = attributesMap["brand"]?.confidence ?: 0f
+                        val itemType = attributesMap["itemType"]?.value
+                        val itemTypeConfidence = attributesMap["itemType"]?.confidence ?: 0f
+
+                        // Check for high-confidence logo detection (overrides other signals)
+                        val logoCategory =
+                            visionAttributes?.logos?.maxByOrNull { it.score }?.let { logo ->
+                                com.scanium.app.ml.detector.CategoryResolver.getCategoryFromBrand(
+                                    brand = logo.name,
+                                    confidence = logo.score,
+                                )
+                            }
+
+                        // Use logo override if available, otherwise use multi-signal refinement
+                        logoCategory ?: com.scanium.app.ml.detector.CategoryResolver.refineCategoryWithEnrichment(
+                            initialCategory = currentItem.category,
+                            mlKitLabels = currentItem.mlKitLabels,
+                            enrichmentBrand = brand,
+                            enrichmentItemType = itemType,
+                            brandConfidence = brandConfidence,
+                            itemTypeConfidence = itemTypeConfidence,
+                        )
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
+
             // Apply to state manager
             if (visionAttributes != null || attributesMap.isNotEmpty() || suggestedLabel != null) {
                 stateManager.applyVisionInsights(
@@ -508,7 +543,7 @@ class CropBasedEnricher
                 if (attributesMap.isNotEmpty()) {
                     stateManager.applyEnhancedClassification(
                         aggregatedId = itemId,
-                        category = null,
+                        category = refinedCategory, // Use refined category from enrichment
                         label = suggestedLabel,
                         priceRange = null,
                         classificationConfidence = null,
@@ -518,7 +553,11 @@ class CropBasedEnricher
                     )
                 }
 
-                Log.i(TAG, "CROP_ENRICH: Applied enrichment - label=$suggestedLabel, attrs=${attributesMap.keys}")
+                Log.i(
+                    TAG,
+                    "CROP_ENRICH: Applied enrichment - label=$suggestedLabel, " +
+                        "refinedCategory=$refinedCategory, attrs=${attributesMap.keys}",
+                )
             }
         }
     }

@@ -189,6 +189,12 @@ data class ScannedItem<FullImageUri>(
      * True when completenessScore >= threshold (default 70%).
      */
     val isReadyForListing: Boolean = false,
+    /**
+     * Original ML Kit labels with confidences (for category refinement).
+     * Preserves top N labels to support multi-label consensus during enrichment.
+     * See: howto/app/debugging/RCA_MACBOOK_TSHIRT_MISCLASSIFICATION.md
+     */
+    val mlKitLabels: List<com.scanium.shared.core.models.ml.LabelWithConfidence> = emptyList(),
 ) {
     /**
      * Formatted price range string for display.

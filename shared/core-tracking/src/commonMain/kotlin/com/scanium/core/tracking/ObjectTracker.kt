@@ -724,6 +724,7 @@ class ObjectTracker(
             firstSeenFrame = currentFrame,
             averageBoxArea = detection.normalizedBoxArea,
             qualityScore = detection.qualityScore,
+            labels = detection.labels, // Preserve ML Kit labels for category refinement
         )
     }
 
@@ -917,6 +918,7 @@ class ObjectTracker(
  * Uses portable types for cross-platform compatibility:
  * - NormalizedRect for bounding boxes (0-1 coordinates)
  * - ImageRef for thumbnails (platform-agnostic image reference)
+ * - LabelWithConfidence for multi-label support (category refinement)
  */
 data class DetectionInfo(
     val trackingId: String?,
@@ -928,6 +930,12 @@ data class DetectionInfo(
     val normalizedBoxArea: Float,
     val boundingBoxNorm: NormalizedRect? = null,
     val qualityScore: Float = 0f,
+    /**
+     * All ML Kit labels with confidences (for category refinement).
+     * Preserves top N labels to support multi-label consensus during enrichment.
+     * See: howto/app/debugging/RCA_MACBOOK_TSHIRT_MISCLASSIFICATION.md
+     */
+    val labels: List<com.scanium.core.models.ml.LabelWithConfidence> = emptyList(),
 )
 
 /**

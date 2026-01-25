@@ -35,6 +35,11 @@ data class ScannedItem(
     var domainCategoryId: String? = null,
     var classificationErrorMessage: String? = null,
     var classificationRequestId: String? = null,
+    /**
+     * Original ML Kit labels with confidences (for category refinement).
+     * Preserved from initial detection for use during enrichment.
+     */
+    var mlKitLabels: List<com.scanium.core.models.ml.LabelWithConfidence> = emptyList(),
 ) {
     val id: String
         get() = aggregatedId

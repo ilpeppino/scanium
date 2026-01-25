@@ -36,6 +36,11 @@ data class ObjectCandidate(
     val firstSeenFrame: Long = lastSeenFrame,
     var averageBoxArea: Float = 0f,
     var qualityScore: Float = 0f,
+    /**
+     * Original ML Kit labels with confidences (for category refinement).
+     * Preserved from initial detection for use during enrichment.
+     */
+    var labels: List<com.scanium.core.models.ml.LabelWithConfidence> = emptyList(),
 ) {
     /**
      * Update this candidate with new detection information from the current frame.
