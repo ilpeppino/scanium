@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import com.scanium.app.ScannedItem
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.shared.core.models.assistant.PricingInsights
+import com.scanium.app.pricing.PricingInputs
+import com.scanium.app.pricing.PricingUiState
 import com.scanium.shared.core.models.items.ItemCondition
 
 @Stable
@@ -57,6 +59,17 @@ class ItemEditState(
     )
 
     var pricingInsights by mutableStateOf<PricingInsights?>(null)
+    var pricingUiState by mutableStateOf<PricingUiState>(PricingUiState.Idle)
+    var lastPricingInputs by mutableStateOf<PricingInputs?>(null)
+
+    val pricingInputs: PricingInputs
+        get() =
+            PricingInputs(
+                brand = brandField,
+                productType = productTypeField,
+                model = modelField,
+                condition = conditionField,
+            )
 }
 
 @Composable
