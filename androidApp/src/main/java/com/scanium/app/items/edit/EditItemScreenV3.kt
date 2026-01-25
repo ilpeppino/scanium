@@ -36,6 +36,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
+import com.scanium.app.data.AndroidRemoteConfigProvider
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.EditHintType
 import com.scanium.app.ftue.EditItemFtueOverlay
@@ -56,6 +58,7 @@ import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.pricing.PricingUiState
+import com.scanium.app.model.config.RemoteConfig
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemCondition
 
@@ -91,11 +94,15 @@ fun EditItemScreenV3(
 
     // Observe AI assistant enabled setting
     val settingsRepository = remember { SettingsRepository(context) }
+    val configScope = rememberCoroutineScope()
+    val configProvider = remember { AndroidRemoteConfigProvider(context, configScope) }
+    val remoteConfig by configProvider.config.collectAsState(initial = RemoteConfig())
     // ISSUE-1 FIX: Use initial=true to avoid double-click bug where first click
     // shows "AI disabled" before flow emits actual value. Defense-in-depth check
     // in ExportAssistantViewModel.generateExport() handles truly disabled case.
     val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = true)
     val primaryRegionCountry by settingsRepository.primaryRegionCountryFlow.collectAsState(initial = "")
+    val showPricingV3 = FeatureFlags.allowPricingV3 && remoteConfig.featureFlags.enablePricingV3
 
     // FTUE Tour State
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -357,6 +364,7 @@ fun EditItemScreenV3(
             focusManager = focusManager,
             onAddPhotos = onAddPhotos,
             tourViewModel = tourViewModel,
+            showPricingV3 = showPricingV3,
             pricingUiState = editState.pricingUiState,
             missingPricingFields = editState.pricingInputs.missingFields(),
             pricingRegionLabel =

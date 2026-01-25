@@ -79,6 +79,7 @@ fun ItemEditSections(
     focusManager: FocusManager,
     onAddPhotos: (String) -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    showPricingV3: Boolean,
     pricingUiState: PricingUiState,
     missingPricingFields: Set<PricingMissingField>,
     pricingRegionLabel: String,
@@ -351,17 +352,19 @@ fun ItemEditSections(
                 ),
         )
 
-        Spacer(Modifier.height(8.dp))
-        PriceEstimateCard(
-            uiState = pricingUiState,
-            missingFields = missingPricingFields,
-            regionLabel = pricingRegionLabel,
-            onGetEstimate = onGetPriceEstimate,
-            onUsePrice = onUsePriceEstimate,
-            onRefresh = onRefreshPriceEstimate,
-            onRetry = onRetryPriceEstimate,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (showPricingV3) {
+            Spacer(Modifier.height(8.dp))
+            PriceEstimateCard(
+                uiState = pricingUiState,
+                missingFields = missingPricingFields,
+                regionLabel = pricingRegionLabel,
+                onGetEstimate = onGetPriceEstimate,
+                onUsePrice = onUsePriceEstimate,
+                onRefresh = onRefreshPriceEstimate,
+                onRetry = onRetryPriceEstimate,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         Spacer(Modifier.height(12.dp))
 
