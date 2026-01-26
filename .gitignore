@@ -9,6 +9,7 @@
 .idea/
 *.iml
 .DS_Store
+.kotlin/
 
 ***REMOVED*** macOS resource forks and metadata
 ._*
@@ -84,4 +85,3 @@ deploy/nas/cloudflared/.env
 
 keystore.properties
 keystore/*.jks
-
