@@ -391,7 +391,8 @@ class ItemAggregator(
             firstSeenTimestamp = detection.timestampMs,
             lastSeenTimestamp = detection.timestampMs,
             sourceDetectionIds = detection.sourceDetectionIds.toMutableSet().ifEmpty { mutableSetOf(detection.id) },
-            mlKitLabels = detection.mlKitLabels, // Preserve ML Kit labels for category refinement
+            // Preserve ML Kit labels for category refinement
+            mlKitLabels = detection.mlKitLabels,
         )
     }
 
@@ -519,7 +520,8 @@ data class AggregatedItem(
             domainCategoryId = domainCategoryId,
             classificationErrorMessage = classificationErrorMessage,
             classificationRequestId = classificationRequestId,
-            mlKitLabels = mlKitLabels, // Preserve ML Kit labels for category refinement
+            // Preserve ML Kit labels for category refinement
+            mlKitLabels = mlKitLabels,
         )
     }
 

@@ -126,7 +126,7 @@ internal fun BoxScope.CameraOverlay(
             onClick = { showSupportSheet = true },
         ) {
             Image(
-                painter = painterResource(id = R.drawable.scanium_logo),
+                painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                 contentDescription = stringResource(R.string.cd_scanium_logo),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,

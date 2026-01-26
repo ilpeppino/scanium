@@ -145,7 +145,7 @@ class DevHealthMonitorWorker(
         val notification =
             NotificationCompat
                 .Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_monochrome_lightning)
+                .setSmallIcon(R.mipmap.ic_launcher_monochrome)
                 .setContentTitle("Scanium backend issue")
                 .setContentText(reason)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -184,7 +184,7 @@ class DevHealthMonitorWorker(
         val notification =
             NotificationCompat
                 .Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_monochrome_lightning)
+                .setSmallIcon(R.mipmap.ic_launcher_monochrome)
                 .setContentTitle("Scanium backend recovered")
                 .setContentText("All checks passing")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)

@@ -724,7 +724,8 @@ class ObjectTracker(
             firstSeenFrame = currentFrame,
             averageBoxArea = detection.normalizedBoxArea,
             qualityScore = detection.qualityScore,
-            labels = detection.labels, // Preserve ML Kit labels for category refinement
+            // Preserve ML Kit labels for category refinement
+            labels = detection.labels,
         )
     }
 
