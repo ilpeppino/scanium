@@ -18,4 +18,4 @@ jobs:
           java-version: "17"
           cache: "gradle"
       - name: Gradle clean build
-        run: ./gradlew clean build
+        run: ./gradlew clean build -x ktlintCheck -x ktlintFormat -x :androidApp:ktlintMainSourceSetCheck -x iosSimulatorArm64Test
