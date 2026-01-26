@@ -121,7 +121,7 @@ class ItemDetailPhase3Test {
         // Assert
         assertThat(generatedSummary).contains("Brand: Nike")
         assertThat(generatedSummary).contains("Color: Black")
-        assertThat(generatedSummary).contains("Condition: Good")
+        assertThat(generatedSummary).contains("Condition: ${ItemCondition.GOOD.name}")
     }
 
     // ==================== Test B: Edit Protection ====================
