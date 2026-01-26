@@ -234,6 +234,24 @@ android {
     // Product flavors for side-by-side installation (prod/dev/beta)
     // Each flavor has a distinct applicationId suffix for coexistence on same device
     flavorDimensions += "distribution"
+    val googleServerClientIdProd =
+        localPropertyOrEnv(
+            "scanium.google.server.client.id.prod",
+            "GOOGLE_SERVER_CLIENT_ID_PROD",
+            "REDACTED_GOOGLE_OAUTH_CLIENT_ID",
+        )
+    val googleServerClientIdDev =
+        localPropertyOrEnv(
+            "scanium.google.server.client.id.dev",
+            "GOOGLE_SERVER_CLIENT_ID_DEV",
+            "REDACTED_GOOGLE_OAUTH_CLIENT_ID",
+        )
+    val googleServerClientIdBeta =
+        localPropertyOrEnv(
+            "scanium.google.server.client.id.beta",
+            "GOOGLE_SERVER_CLIENT_ID_BETA",
+            "REDACTED_GOOGLE_OAUTH_CLIENT_ID",
+        )
     productFlavors {
         // Production flavor - stable release, listed first to be the default
         create("prod") {
@@ -257,7 +275,7 @@ android {
             buildConfigField(
                 "String",
                 "GOOGLE_SERVER_CLIENT_ID",
-                "\"REDACTED_GOOGLE_OAUTH_CLIENT_ID\"",
+                "\"$googleServerClientIdProd\"",
             )
         }
         create("dev") {
@@ -281,7 +299,7 @@ android {
             buildConfigField(
                 "String",
                 "GOOGLE_SERVER_CLIENT_ID",
-                "\"REDACTED_GOOGLE_OAUTH_CLIENT_ID\"",
+                "\"$googleServerClientIdDev\"",
             )
         }
         create("beta") {
@@ -305,7 +323,7 @@ android {
             buildConfigField(
                 "String",
                 "GOOGLE_SERVER_CLIENT_ID",
-                "\"REDACTED_GOOGLE_OAUTH_CLIENT_ID\"",
+                "\"$googleServerClientIdBeta\"",
             )
         }
     }

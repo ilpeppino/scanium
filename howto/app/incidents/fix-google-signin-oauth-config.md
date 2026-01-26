@@ -67,6 +67,22 @@ productFlavors {
 }
 ```
 
+**Note:** If client IDs are redacted by gitleaks, keep placeholders in the file and inject the real values via `local.properties` or environment variables.
+
+Example `local.properties` (not committed):
+```
+scanium.google.server.client.id.prod=123456-abc.apps.googleusercontent.com
+scanium.google.server.client.id.dev=123456-def.apps.googleusercontent.com
+scanium.google.server.client.id.beta=123456-ghi.apps.googleusercontent.com
+```
+
+CI env var equivalents:
+```
+GOOGLE_SERVER_CLIENT_ID_PROD=123456-abc.apps.googleusercontent.com
+GOOGLE_SERVER_CLIENT_ID_DEV=123456-def.apps.googleusercontent.com
+GOOGLE_SERVER_CLIENT_ID_BETA=123456-ghi.apps.googleusercontent.com
+```
+
 **Example (DO NOT use these IDs):**
 ```kotlin
 "\"480326569434-nhp9a4ups5sb3i5ualtuc67h2865qhdo.apps.googleusercontent.com\""
