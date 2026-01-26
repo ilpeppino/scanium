@@ -112,6 +112,12 @@ class SettingsRepository(
         generalSettings.setSoundsEnabled(enabled)
     }
 
+    val showItemInfoChipsFlow: Flow<Boolean> = generalSettings.showItemInfoChipsFlow
+
+    suspend fun setShowItemInfoChips(enabled: Boolean) {
+        generalSettings.setShowItemInfoChips(enabled)
+    }
+
     val assistantLanguageFlow: Flow<String> = assistantSettings.assistantLanguageFlow
 
     suspend fun setAssistantLanguage(language: String) {

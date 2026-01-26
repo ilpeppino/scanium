@@ -125,6 +125,10 @@ class SettingsViewModel
             settingsRepository.soundsEnabledFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+        val showItemInfoChips: StateFlow<Boolean> =
+            settingsRepository.showItemInfoChipsFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
         val showDetectionBoxes: StateFlow<Boolean> =
             settingsRepository.showDetectionBoxesFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -332,6 +336,10 @@ class SettingsViewModel
 
         fun setSoundsEnabled(enabled: Boolean) {
             viewModelScope.launch { settingsRepository.setSoundsEnabled(enabled) }
+        }
+
+        fun setShowItemInfoChips(enabled: Boolean) {
+            viewModelScope.launch { settingsRepository.setShowItemInfoChips(enabled) }
         }
 
         fun setShowDetectionBoxes(enabled: Boolean) {

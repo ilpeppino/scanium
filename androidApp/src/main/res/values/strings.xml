@@ -253,6 +253,8 @@
     <string name="settings_section_notifications">Notifications &amp; feedback</string>
     <string name="settings_sounds_title">Enable sounds</string>
     <string name="settings_sounds_subtitle">Play subtle cues for key actions</string>
+    <string name="settings_show_item_info_chips_title">Show item details</string>
+    <string name="settings_show_item_info_chips_subtitle">Display condition and attributes on item cards</string>
     <string name="settings_assistant_haptics_title">Assistant haptics</string>
     <string name="settings_assistant_haptics_subtitle">Vibrate on send/apply/copy actions</string>
 

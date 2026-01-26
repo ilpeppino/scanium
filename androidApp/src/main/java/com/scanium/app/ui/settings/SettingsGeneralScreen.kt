@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
@@ -72,6 +73,7 @@ fun SettingsGeneralScreen(
     val currentEdition by viewModel.currentEdition.collectAsState()
     val entitlementState by viewModel.entitlementState.collectAsState()
     val soundsEnabled by viewModel.soundsEnabled.collectAsState()
+    val showItemInfoChips by viewModel.showItemInfoChips.collectAsState()
 
     // Unified settings state
     val primaryRegionCountry by viewModel.primaryRegionCountry.collectAsState()
@@ -413,6 +415,15 @@ fun SettingsGeneralScreen(
                 icon = Icons.AutoMirrored.Filled.VolumeUp,
                 checked = soundsEnabled,
                 onCheckedChange = viewModel::setSoundsEnabled,
+            )
+
+            // Item info chips toggle
+            SettingSwitchRow(
+                title = stringResource(R.string.settings_show_item_info_chips_title),
+                subtitle = stringResource(R.string.settings_show_item_info_chips_subtitle),
+                icon = Icons.Filled.Label,
+                checked = showItemInfoChips,
+                onCheckedChange = viewModel::setShowItemInfoChips,
             )
 
             // First-time guide replay

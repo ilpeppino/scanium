@@ -270,6 +270,37 @@ fun ItemEditSections(
         Spacer(Modifier.height(12.dp))
 
         LabeledTextField(
+            label = stringResource(R.string.edit_item_field_price),
+            value = state.priceField,
+            onValueChange = { state.priceField = it },
+            onClear = { state.priceField = "" },
+            imeAction = ImeAction.Next,
+            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next,
+                ),
+            onBoundsChanged = onConditionPriceBoundsChanged,
+        )
+
+        if (showPricingV3) {
+            Spacer(Modifier.height(8.dp))
+            PriceEstimateCard(
+                uiState = pricingUiState,
+                missingFields = missingPricingFields,
+                regionLabel = pricingRegionLabel,
+                onGetEstimate = onGetPriceEstimate,
+                onUsePrice = onUsePriceEstimate,
+                onRefresh = onRefreshPriceEstimate,
+                onRetry = onRetryPriceEstimate,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        LabeledTextField(
             label = stringResource(R.string.edit_item_field_product_type),
             value = state.productTypeField,
             onValueChange = { state.productTypeField = it },
@@ -333,38 +364,7 @@ fun ItemEditSections(
             label = stringResource(R.string.edit_item_field_condition),
             selectedCondition = state.conditionField,
             onConditionSelected = { state.conditionField = it },
-            onBoundsChanged = onConditionPriceBoundsChanged,
         )
-
-        Spacer(Modifier.height(12.dp))
-
-        LabeledTextField(
-            label = stringResource(R.string.edit_item_field_price),
-            value = state.priceField,
-            onValueChange = { state.priceField = it },
-            onClear = { state.priceField = "" },
-            imeAction = ImeAction.Next,
-            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            keyboardOptions =
-                KeyboardOptions(
-                    keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Next,
-                ),
-        )
-
-        if (showPricingV3) {
-            Spacer(Modifier.height(8.dp))
-            PriceEstimateCard(
-                uiState = pricingUiState,
-                missingFields = missingPricingFields,
-                regionLabel = pricingRegionLabel,
-                onGetEstimate = onGetPriceEstimate,
-                onUsePrice = onUsePriceEstimate,
-                onRefresh = onRefreshPriceEstimate,
-                onRetry = onRetryPriceEstimate,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
 
         Spacer(Modifier.height(12.dp))
 

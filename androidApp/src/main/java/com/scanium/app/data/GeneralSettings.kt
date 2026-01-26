@@ -116,4 +116,15 @@ internal class GeneralSettings(
             preferences[SettingsKeys.General.SOUNDS_ENABLED_KEY] = enabled
         }
     }
+
+    val showItemInfoChipsFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[SettingsKeys.General.SHOW_ITEM_INFO_CHIPS_KEY] ?: true
+        }
+
+    suspend fun setShowItemInfoChips(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SettingsKeys.General.SHOW_ITEM_INFO_CHIPS_KEY] = enabled
+        }
+    }
 }

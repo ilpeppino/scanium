@@ -149,6 +149,9 @@ fun ItemsListScreen(
     // Effective value: only allow if both feature flag AND user preference are true
     val allowScreenshots = FeatureFlags.allowScreenshots && userAllowScreenshots
 
+    // Item info chips setting
+    val showItemInfoChips by settingsRepository.showItemInfoChipsFlow.collectAsState(initial = true)
+
     // Quota exceeded dialog state
     val quotaExceededEvent by itemsViewModel.quotaExceededEvent.collectAsState()
     var showQuotaDialog by remember { mutableStateOf(false) }
@@ -485,6 +488,7 @@ fun ItemsListScreen(
                     showMergeReviewSheet = true
                 },
                 tourViewModel = tourViewModel,
+                showItemInfoChips = showItemInfoChips,
                 modifier =
                     Modifier
                         .fillMaxSize()

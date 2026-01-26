@@ -15,6 +15,7 @@ internal object SettingsKeys {
         val SAVE_DIRECTORY_URI_KEY = stringPreferencesKey("save_directory_uri")
         val EXPORT_FORMAT_KEY = stringPreferencesKey("export_format")
         val SOUNDS_ENABLED_KEY = booleanPreferencesKey("sounds_enabled")
+        val SHOW_ITEM_INFO_CHIPS_KEY = booleanPreferencesKey("show_item_info_chips")
     }
 
     object Assistant {

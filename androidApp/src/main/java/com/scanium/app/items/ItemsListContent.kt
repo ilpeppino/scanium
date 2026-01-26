@@ -89,6 +89,7 @@ internal fun ItemsListContent(
     onAcceptAllMerges: (List<com.scanium.app.items.merging.MergeGroup>) -> Unit,
     onShowMergeReview: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    showItemInfoChips: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     // Map items to formatted display models using CustomerSafeCopyFormatter
@@ -251,6 +252,7 @@ internal fun ItemsListContent(
                                 onClick = { onItemClick(item) },
                                 onLongPress = { onItemLongPress(item) },
                                 onRetryClassification = { onRetryClassification(item) },
+                                showItemInfoChips = showItemInfoChips,
                             )
                         }
                     }
@@ -287,6 +289,7 @@ internal fun ItemRow(
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     onRetryClassification: () -> Unit,
+    showItemInfoChips: Boolean = true,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val confidenceLabel =
@@ -304,8 +307,11 @@ internal fun ItemRow(
     val toggleSelectionLabel = stringResource(R.string.items_accessibility_tap_toggle_selection)
     val tapEditLabel = stringResource(R.string.items_accessibility_tap_edit_long_press)
 
-    // Use formatted display title, fall back to displayLabel if not available
-    val displayTitle = displayItem?.title ?: item.displayLabel
+    // Use brand as title when available, fall back to formatted display title, then displayLabel
+    val displayTitle = item.attributes["brand"]?.value?.trim()?.takeIf { it.isNotEmpty() }
+        ?: item.visionAttributes.primaryBrand?.trim()?.takeIf { it.isNotEmpty() }
+        ?: displayItem?.title
+        ?: item.displayLabel
 
     val contentDescription =
         buildString {
@@ -449,18 +455,19 @@ internal fun ItemRow(
                     EnrichmentStatusBadge(status = item.enrichmentStatus)
                 }
 
-                // Condition badge (more prominent in beta/prod)
-                item.condition?.let { condition ->
-                    ConditionBadge(condition = condition)
-                }
+                // Condition badge and attribute chips (controlled by setting)
+                if (showItemInfoChips) {
+                    item.condition?.let { condition ->
+                        ConditionBadge(condition = condition)
+                    }
 
-                // Attribute chips (show more in beta/prod with additional space)
-                if (item.attributes.isNotEmpty()) {
-                    AttributeChipsRow(
-                        attributes = item.attributes,
-                        maxVisible = if (FeatureFlags.showItemDiagnostics) 3 else 5,
-                        compact = true,
-                    )
+                    if (item.attributes.isNotEmpty()) {
+                        AttributeChipsRow(
+                            attributes = item.attributes,
+                            maxVisible = if (FeatureFlags.showItemDiagnostics) 3 else 5,
+                            compact = true,
+                        )
+                    }
                 }
 
                 // Timestamp and confidence percentage (only shown in dev builds)
