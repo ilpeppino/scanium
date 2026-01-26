@@ -1,0 +1,21 @@
+name: Gradle Test (No Ktlint)
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          cache: "gradle"
+      - name: Gradle test (exclude ktlint)
+        run: ./gradlew test -x ktlint -x ktlintCheck -x ktlintFormat
