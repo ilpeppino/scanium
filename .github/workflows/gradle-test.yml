@@ -18,4 +18,4 @@ jobs:
           java-version: "17"
           cache: "gradle"
       - name: Gradle test (exclude ktlint)
-        run: ./gradlew test -x ktlint -x ktlintCheck -x ktlintFormat
+        run: ./gradlew test -x ktlintCheck -x ktlintFormat
