@@ -3,6 +3,7 @@ name: Gradle Test (No Ktlint)
 on:
   schedule:
     - cron: "0 9-23/2 * * *"
+      timezone: "Europe/Amsterdam"
 
 jobs:
   test:
