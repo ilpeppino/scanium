@@ -203,13 +203,18 @@ android {
 
     signingConfigs {
         create("release") {
-            if (!keystorePropertiesFile.exists()) {
+            val isReleaseTask = gradle.startParameter.taskNames.any { it.contains("Release") }
+            if (isReleaseTask && !keystorePropertiesFile.exists()) {
                 throw GradleException("keystore.properties not found at: ${keystorePropertiesFile.absolutePath}")
             }
 
             val storeFilePath =
                 keystoreProperties.getProperty("storeFile")
-                    ?: throw GradleException("keystore.properties missing 'storeFile'")
+                    ?: if (isReleaseTask) {
+                        throw GradleException("keystore.properties missing 'storeFile'")
+                    } else {
+                        return@create
+                    }
             val storePasswordValue =
                 keystoreProperties.getProperty("storePassword")
                     ?: throw GradleException("keystore.properties missing 'storePassword'")
