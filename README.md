@@ -1,3 +1,5 @@
+[![Gradle Test (No Ktlint)](https://github.com/ilpeppino/scanium/actions/workflows/gradle-test.yml/badge.svg?branch=main)](https://github.com/ilpeppino/scanium/actions/workflows/gradle-test.yml)
+
 # Scanium
 
 An Android application that uses on-device machine learning to detect objects through the camera and
