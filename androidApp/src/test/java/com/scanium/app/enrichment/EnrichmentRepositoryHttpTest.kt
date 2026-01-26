@@ -20,6 +20,7 @@ class EnrichmentRepositoryHttpTest {
             // Create repository without API key
             val repository =
                 EnrichmentRepository(
+                    baseUrlProvider = { "https://example.com" },
                     apiKeyProvider = { null },
                     getDeviceId = { "test-device" },
                 )
@@ -42,6 +43,7 @@ class EnrichmentRepositoryHttpTest {
         runBlocking {
             val repository =
                 EnrichmentRepository(
+                    baseUrlProvider = { "https://example.com" },
                     apiKeyProvider = { "" },
                     getDeviceId = { "test-device" },
                 )
@@ -62,6 +64,7 @@ class EnrichmentRepositoryHttpTest {
         runBlocking {
             val repository =
                 EnrichmentRepository(
+                    baseUrlProvider = { "https://example.com" },
                     apiKeyProvider = { null },
                     getDeviceId = { "test-device" },
                 )

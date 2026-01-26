@@ -35,6 +35,7 @@ import java.security.MessageDigest
  * @param getDeviceId Provider for the device ID (for rate limiting)
  */
 class EnrichmentRepository(
+    private val baseUrlProvider: () -> String = { BuildConfig.SCANIUM_API_BASE_URL },
     private val apiKeyProvider: () -> String? = { null },
     private val getDeviceId: () -> String = { "" },
 ) {
@@ -124,7 +125,7 @@ class EnrichmentRepository(
         itemId: String,
     ): Result<String> =
         withContext(Dispatchers.IO) {
-            val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
+            val baseUrlRaw = baseUrlProvider()
             val baseUrl =
                 baseUrlRaw.takeIf { it.isNotBlank() }
                     ?: return@withContext Result.failure(
@@ -319,7 +320,7 @@ class EnrichmentRepository(
      */
     suspend fun getStatus(requestId: String): Result<EnrichmentStatus> =
         withContext(Dispatchers.IO) {
-            val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
+            val baseUrlRaw = baseUrlProvider()
             val baseUrl =
                 baseUrlRaw.takeIf { it.isNotBlank() }
                     ?: return@withContext Result.failure(
