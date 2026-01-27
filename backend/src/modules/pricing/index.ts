@@ -68,3 +68,12 @@ export type {
   PricingStepV2,
   MarketAdjustment,
 } from './types-v2.js';
+
+// V4 types (verifiable marketplace pricing)
+export type {
+  PricingV4Request,
+  PricingV4Response,
+  PricingV4Insights,
+  MarketplaceSource,
+  SampleListing,
+} from './types-v4.js';

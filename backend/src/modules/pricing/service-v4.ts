@@ -1,0 +1,428 @@
+import { Config } from '../../config/index.js';
+import {
+  PricingV4Request,
+  PricingV4Insights,
+  PricingV4CacheKeyComponents,
+  MarketplaceAdapter,
+  FetchedListing,
+  NormalizedListing,
+} from './types-v4.js';
+import { sha256Hex } from '../../infra/observability/hash.js';
+import { EbayBrowseAdapter } from '../marketplaces/adapters/ebay-adapter.js';
+import { MarktplaatsAdapter } from '../marketplaces/adapters/marktplaats-adapter.js';
+import { filterListings } from './normalization/filters.js';
+import { AiClusterer } from './normalization/ai-clusterer.js';
+import { aggregatePrices } from './normalization/aggregator.js';
+import {
+  recordPricingV4AdapterResult,
+  recordPricingV4CacheHit,
+  recordPricingV4ListingsFetched,
+} from '../../infra/observability/metrics.js';
+import { PricingV3Service } from './service-v3.js';
+import { PricingV3Insights } from './types-v3.js';
+
+/**
+ * Pricing V4 Service (skeleton)
+ *
+ * Verifiable price range based on marketplace listings.
+ * Placeholder implementation until adapters and normalization pipeline land.
+ */
+export class PricingV4Service {
+  private cache: Map<string, { insights: PricingV4Insights; expiresAt: number }>;
+  private cleanupInterval: NodeJS.Timeout | null = null;
+  private readonly adapters: MarketplaceAdapter[];
+  private readonly aiClusterer: AiClusterer;
+  private readonly timeWindowDays = 30;
+  private readonly v3Service: PricingV3Service | null;
+
+  constructor(
+    private readonly config: Config,
+    options: {
+      adapters?: MarketplaceAdapter[];
+      aiClusterer?: AiClusterer;
+      v3Service?: PricingV3Service;
+    } = {}
+  ) {
+    this.cache = new Map();
+    this.adapters = options.adapters ?? [new MarktplaatsAdapter(), new EbayBrowseAdapter(config)];
+    this.aiClusterer =
+      options.aiClusterer ??
+      new AiClusterer({
+        enabled: config.pricing.v4AiNormEnabled ?? true,
+        openaiApiKey: config.pricing.openaiApiKey,
+        openaiModel: config.pricing.openaiModel,
+        timeoutMs: config.pricing.v4TimeoutMs ?? 20000,
+      });
+    this.v3Service =
+      options.v3Service ??
+      (config.pricing.v4FallbackToV3 && config.pricing.v3Enabled
+        ? new PricingV3Service({
+            enabled: config.pricing.v3Enabled ?? false,
+            timeoutMs: config.pricing.v3TimeoutMs ?? 15000,
+            cacheTtlSeconds: config.pricing.v3CacheTtlSeconds ?? 86400,
+            dailyQuota: config.pricing.v3DailyQuota ?? 1000,
+            promptVersion: config.pricing.v3PromptVersion ?? '1.0.0',
+            openaiApiKey: config.pricing.openaiApiKey,
+            openaiModel: config.pricing.openaiModel,
+            catalogPath: config.pricing.catalogPath,
+          })
+        : null);
+
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupExpiredCache();
+    }, 5 * 60 * 1000);
+  }
+
+  stop(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+    this.cache.clear();
+    if (this.v3Service) {
+      this.v3Service.stop();
+    }
+  }
+
+  getCacheStats(): { size: number; maxTtlSeconds: number } {
+    return {
+      size: this.cache.size,
+      maxTtlSeconds: this.config.pricing.v4CacheTtlSeconds ?? 86400,
+    };
+  }
+
+  async estimateVerifiableRange(request: PricingV4Request): Promise<PricingV4Insights> {
+    if (!this.config.pricing.v4Enabled) {
+      return {
+        status: 'ERROR',
+        countryCode: request.countryCode,
+        sources: [],
+        totalListingsAnalyzed: 0,
+        timeWindowDays: this.timeWindowDays,
+        confidence: 'LOW',
+        fallbackReason: 'Pricing V4 disabled',
+      };
+    }
+
+    const cacheKey = this.buildCacheKey({
+      brand: request.brand,
+      productType: request.productType,
+      model: request.model,
+      condition: request.condition,
+      countryCode: request.countryCode,
+    });
+
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      recordPricingV4CacheHit(true);
+      return cached.insights;
+    }
+    recordPricingV4CacheHit(false);
+
+    const preferred = request.preferredMarketplaces?.map((id) => id.toLowerCase());
+    const activeAdapters = preferred?.length
+      ? this.adapters.filter((adapter) => preferred.includes(adapter.id))
+      : this.adapters;
+
+    const adapterResults = await Promise.all(
+      activeAdapters.map((adapter) => this.fetchWithTimeout(adapter, request))
+    );
+
+    const sources = adapterResults.map((result) => ({
+      id: result.adapter.id,
+      name: result.adapter.name,
+      baseUrl: this.getMarketplaceBaseUrl(result.adapter.id),
+      listingCount: result.listings.length,
+      searchUrl: result.adapter.buildSearchUrl(this.buildListingQuery(request)),
+    }));
+
+    const combinedListings = adapterResults.flatMap((result) => result.listings);
+    recordPricingV4ListingsFetched(combinedListings.length);
+    const hadErrors = adapterResults.some((result) => result.error);
+    const hadTimeouts = adapterResults.some((result) => result.timedOut);
+
+    if (combinedListings.length === 0) {
+      if ((hadErrors || hadTimeouts) && this.config.pricing.v4FallbackToV3 && this.v3Service) {
+        const fallback = await this.estimateFallbackFromV3(request, sources);
+        this.storeCache(cacheKey, fallback);
+        return fallback;
+      }
+
+      const status = hadTimeouts ? 'TIMEOUT' : hadErrors ? 'FALLBACK' : 'NO_RESULTS';
+      const insights: PricingV4Insights = {
+        status,
+        countryCode: request.countryCode,
+        sources,
+        totalListingsAnalyzed: 0,
+        timeWindowDays: this.timeWindowDays,
+        confidence: 'LOW',
+        fallbackReason: status === 'FALLBACK' ? 'Marketplace adapters failed' : undefined,
+      };
+      this.storeCache(cacheKey, insights);
+      return insights;
+    }
+
+    const filtered = filterListings(combinedListings);
+    const noiseRatio =
+      combinedListings.length > 0
+        ? (combinedListings.length - filtered.length) / combinedListings.length
+        : 0;
+
+    const shouldNormalize =
+      (this.config.pricing.v4AiNormEnabled ?? true) && noiseRatio > 0.3;
+
+    const normalized = shouldNormalize
+      ? await this.aiClusterer.normalize({
+          listings: filtered,
+          targetBrand: request.brand,
+          targetModel: request.model,
+          targetProductType: request.productType,
+        })
+      : {
+          relevantListings: filtered,
+          excludedListings: [],
+          clusterSummary: 'AI normalization skipped',
+        };
+
+    const relevantListings = normalized.relevantListings;
+    const aggregation = aggregatePrices(relevantListings);
+
+    if (!aggregation) {
+      const insights: PricingV4Insights = {
+        status: 'NO_RESULTS',
+        countryCode: request.countryCode,
+        sources,
+        totalListingsAnalyzed: relevantListings.length,
+        timeWindowDays: this.timeWindowDays,
+        confidence: 'LOW',
+      };
+      this.storeCache(cacheKey, insights);
+      return insights;
+    }
+
+    const currency = this.pickCurrency(relevantListings);
+    const sampleListings = this.selectSampleListings(relevantListings, 3);
+    const confidence = this.deriveConfidence(aggregation.sampleSize, noiseRatio);
+
+    const insights: PricingV4Insights = {
+      status: 'OK',
+      countryCode: request.countryCode,
+      sources,
+      totalListingsAnalyzed: aggregation.sampleSize,
+      timeWindowDays: this.timeWindowDays,
+      range: {
+        low: aggregation.low,
+        median: aggregation.median,
+        high: aggregation.high,
+        currency,
+      },
+      sampleListings,
+      confidence,
+    };
+
+    this.storeCache(cacheKey, insights);
+
+    return insights;
+  }
+
+  private buildCacheKey(components: PricingV4CacheKeyComponents): string {
+    const normalized = JSON.stringify({
+      brand: components.brand.trim().toLowerCase(),
+      productType: components.productType.trim().toLowerCase(),
+      model: components.model.trim().toLowerCase(),
+      condition: components.condition,
+      countryCode: components.countryCode.trim().toUpperCase(),
+    });
+
+    return `pricing:v4:${sha256Hex(normalized)}`;
+  }
+
+  private buildListingQuery(request: PricingV4Request) {
+    return {
+      brand: request.brand,
+      model: request.model,
+      productType: request.productType,
+      condition: request.condition,
+      countryCode: request.countryCode,
+      maxResults: 30,
+    };
+  }
+
+  private async fetchWithTimeout(
+    adapter: MarketplaceAdapter,
+    request: PricingV4Request
+  ): Promise<{
+    adapter: MarketplaceAdapter;
+    listings: FetchedListing[];
+    error?: string;
+    timedOut?: boolean;
+  }> {
+    const query = this.buildListingQuery(request);
+    const timeoutMs = 5000;
+
+    const startTime = Date.now();
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      const timer = setTimeout(() => {
+        clearTimeout(timer);
+        reject(new Error('Adapter timeout'));
+      }, timeoutMs);
+    });
+
+    try {
+      const listings = await Promise.race([adapter.fetchListings(query), timeoutPromise]);
+      const latencyMs = Date.now() - startTime;
+      recordPricingV4AdapterResult(adapter.id, 'success', latencyMs);
+      return { adapter, listings };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      const latencyMs = Date.now() - startTime;
+      const status = message.toLowerCase().includes('timeout') ? 'timeout' : 'error';
+      recordPricingV4AdapterResult(adapter.id, status, latencyMs);
+      return {
+        adapter,
+        listings: [],
+        error: message,
+        timedOut: message.toLowerCase().includes('timeout'),
+      };
+    }
+  }
+
+  private getMarketplaceBaseUrl(id: string): string {
+    switch (id) {
+      case 'marktplaats':
+        return 'https://www.marktplaats.nl';
+      case 'ebay':
+        return 'https://www.ebay.nl';
+      default:
+        return '';
+    }
+  }
+
+  private selectSampleListings(listings: NormalizedListing[], max: number) {
+    const picked: NormalizedListing[] = [];
+    const seenConditions = new Set<string>();
+
+    for (const listing of listings) {
+      const condition = listing.normalizedCondition ?? listing.condition ?? 'UNKNOWN';
+      if (!seenConditions.has(condition) || picked.length === 0) {
+        picked.push(listing);
+        seenConditions.add(condition);
+      }
+      if (picked.length >= max) break;
+    }
+
+    if (picked.length < max) {
+      for (const listing of listings) {
+        if (picked.includes(listing)) continue;
+        picked.push(listing);
+        if (picked.length >= max) break;
+      }
+    }
+
+    return picked.slice(0, max).map((listing) => ({
+      title: listing.title,
+      price: listing.price,
+      currency: listing.currency,
+      condition: listing.normalizedCondition ?? listing.condition,
+      url: listing.url,
+      marketplace: listing.marketplace,
+    }));
+  }
+
+  private pickCurrency(listings: NormalizedListing[]): string {
+    return listings[0]?.currency ?? 'EUR';
+  }
+
+  private deriveConfidence(sampleSize: number, noiseRatio: number): 'HIGH' | 'MED' | 'LOW' {
+    if (sampleSize >= 10 && noiseRatio < 0.3) return 'HIGH';
+    if (sampleSize >= 5) return 'MED';
+    return 'LOW';
+  }
+
+  private storeCache(key: string, insights: PricingV4Insights): void {
+    this.cache.set(key, {
+      insights,
+      expiresAt: Date.now() + (this.config.pricing.v4CacheTtlSeconds ?? 86400) * 1000,
+    });
+  }
+
+  private async estimateFallbackFromV3(
+    request: PricingV4Request,
+    sources: PricingV4Insights['sources']
+  ): Promise<PricingV4Insights> {
+    const v3Request = {
+      itemId: request.itemId,
+      brand: request.brand,
+      productType: request.productType,
+      model: request.model,
+      condition: request.condition,
+      countryCode: request.countryCode,
+    };
+
+    const v3 = await this.v3Service!.estimateResalePrice(v3Request);
+    return this.mapV3ToV4(v3, request.countryCode, sources);
+  }
+
+  private mapV3ToV4(
+    v3: PricingV3Insights,
+    countryCode: string,
+    sources: PricingV4Insights['sources']
+  ): PricingV4Insights {
+    if (v3.status === 'NO_RESULTS') {
+      return {
+        status: 'NO_RESULTS',
+        countryCode,
+        sources,
+        totalListingsAnalyzed: v3.resultCount ?? 0,
+        timeWindowDays: this.timeWindowDays,
+        confidence: 'LOW',
+        fallbackReason: 'Fallback to V3 yielded no results',
+      };
+    }
+
+    if (v3.status !== 'OK' || !v3.range) {
+      return {
+        status: v3.status === 'TIMEOUT' ? 'TIMEOUT' : 'ERROR',
+        countryCode,
+        sources,
+        totalListingsAnalyzed: v3.resultCount ?? 0,
+        timeWindowDays: this.timeWindowDays,
+        confidence: 'LOW',
+        fallbackReason: 'Fallback to V3 failed',
+      };
+    }
+
+    const median = (v3.range.low + v3.range.high) / 2;
+    return {
+      status: 'FALLBACK',
+      countryCode,
+      sources,
+      totalListingsAnalyzed: v3.resultCount ?? 0,
+      timeWindowDays: this.timeWindowDays,
+      range: {
+        low: v3.range.low,
+        median,
+        high: v3.range.high,
+        currency: v3.range.currency,
+      },
+      confidence: v3.confidence ?? 'LOW',
+      fallbackReason: 'Marketplace adapters failed; V3 estimate used',
+    };
+  }
+
+  private cleanupExpiredCache(): void {
+    const now = Date.now();
+    let removed = 0;
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt <= now) {
+        this.cache.delete(key);
+        removed++;
+      }
+    }
+
+    if (removed > 0) {
+      console.log(`[PricingV4Service] Cleaned up ${removed} expired cache entries`);
+    }
+  }
+}

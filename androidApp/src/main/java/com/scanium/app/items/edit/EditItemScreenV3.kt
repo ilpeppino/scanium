@@ -57,10 +57,20 @@ import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.pricing.PricingV3Exception
+import com.scanium.app.pricing.PricingV3Request
+import com.scanium.app.pricing.PricingV3Repository
+import com.scanium.app.pricing.PricingV4Exception
+import com.scanium.app.pricing.PricingV4Request
+import com.scanium.app.pricing.PricingV4Repository
 import com.scanium.app.pricing.PricingUiState
 import com.scanium.app.model.config.RemoteConfig
+import com.scanium.app.di.PricingV3RepositoryEntryPoint
+import com.scanium.app.di.PricingV4RepositoryEntryPoint
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemCondition
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.launch
 
 /**
  * Redesigned Edit Item screen with structured labeled fields (Phase 3 UX redesign).
@@ -102,7 +112,27 @@ fun EditItemScreenV3(
     // in ExportAssistantViewModel.generateExport() handles truly disabled case.
     val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = true)
     val primaryRegionCountry by settingsRepository.primaryRegionCountryFlow.collectAsState(initial = "")
+    val showPricingV4 = FeatureFlags.allowPricingV4 && remoteConfig.featureFlags.enablePricingV4
     val showPricingV3 = FeatureFlags.allowPricingV3 && remoteConfig.featureFlags.enablePricingV3
+    val showPricing = showPricingV4 || showPricingV3
+
+    val pricingV3Repository: PricingV3Repository =
+        remember(context) {
+            EntryPointAccessors
+                .fromApplication(
+                    context.applicationContext,
+                    PricingV3RepositoryEntryPoint::class.java,
+                ).pricingV3Repository()
+        }
+
+    val pricingV4Repository: PricingV4Repository =
+        remember(context) {
+            EntryPointAccessors
+                .fromApplication(
+                    context.applicationContext,
+                    PricingV4RepositoryEntryPoint::class.java,
+                ).pricingV4Repository()
+        }
 
     // FTUE Tour State
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -167,6 +197,75 @@ fun EditItemScreenV3(
                 PricingUiState.Loading -> currentState
                 else -> if (missing.isEmpty()) PricingUiState.Ready else PricingUiState.InsufficientData
             }
+    }
+
+    fun submitPricingRequest() {
+        val inputs = editState.pricingInputs
+        if (!inputs.isComplete()) {
+            editState.pricingUiState = PricingUiState.InsufficientData
+            return
+        }
+
+        val condition = inputs.condition ?: return
+        val countryCode = primaryRegionCountry.ifBlank { "NL" }.uppercase()
+
+        editState.lastPricingInputs = inputs
+        editState.pricingUiState = PricingUiState.Loading
+
+        configScope.launch {
+            val result =
+                if (showPricingV4) {
+                    pricingV4Repository.estimatePrice(
+                        PricingV4Request(
+                            itemId = itemId,
+                            brand = inputs.brand,
+                            productType = inputs.productType,
+                            model = inputs.model,
+                            condition = condition.name,
+                            countryCode = countryCode,
+                        ),
+                    )
+                } else {
+                    pricingV3Repository.estimatePrice(
+                        PricingV3Request(
+                            itemId = itemId,
+                            brand = inputs.brand,
+                            productType = inputs.productType,
+                            model = inputs.model,
+                            condition = condition.name,
+                            countryCode = countryCode,
+                        ),
+                    )
+                }
+
+            result.onSuccess { insights ->
+                editState.pricingInsights = insights
+                editState.pricingUiState = PricingUiState.Success(insights, isStale = false)
+                insights.range?.let { range ->
+                    if (insights.status.uppercase() == "OK") {
+                        val median = range.median ?: (range.low + range.high) / 2.0
+                        editState.priceField = "%.2f".format(median)
+                    }
+                }
+            }.onFailure { error ->
+                val (message, retryable, retryAfter) =
+                    when (error) {
+                        is PricingV4Exception -> Triple(error.userMessage, error.retryable, error.retryAfterSeconds)
+                        is PricingV3Exception -> Triple(error.userMessage, error.retryable, error.retryAfterSeconds)
+                        else -> Triple(
+                            context.getString(R.string.pricing_error_network),
+                            true,
+                            null,
+                        )
+                    }
+                editState.pricingUiState =
+                    PricingUiState.Error(
+                        message = message,
+                        retryable = retryable,
+                        retryAfterSeconds = retryAfter,
+                    )
+            }
+        }
     }
 
     // Initialize Edit Item FTUE when screen is first shown
@@ -364,7 +463,7 @@ fun EditItemScreenV3(
             focusManager = focusManager,
             onAddPhotos = onAddPhotos,
             tourViewModel = tourViewModel,
-            showPricingV3 = showPricingV3,
+            showPricingV3 = showPricing,
             pricingUiState = editState.pricingUiState,
             missingPricingFields = editState.pricingInputs.missingFields(),
             pricingRegionLabel =
@@ -374,15 +473,13 @@ fun EditItemScreenV3(
                     primaryRegionCountry
                 },
             onGetPriceEstimate = {
-                editState.lastPricingInputs = editState.pricingInputs
-                editState.pricingUiState = PricingUiState.Loading
+                submitPricingRequest()
             },
             onUsePriceEstimate = { median ->
                 editState.priceField = "%.2f".format(median)
             },
             onRefreshPriceEstimate = {
-                editState.lastPricingInputs = editState.pricingInputs
-                editState.pricingUiState = PricingUiState.Loading
+                submitPricingRequest()
             },
             onRetryPriceEstimate = {
                 val missing = editState.pricingInputs.missingFields()

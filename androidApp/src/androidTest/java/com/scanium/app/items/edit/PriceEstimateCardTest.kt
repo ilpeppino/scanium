@@ -8,9 +8,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.scanium.app.pricing.PricingMissingField
 import com.scanium.app.pricing.PricingUiState
+import com.scanium.shared.core.models.assistant.MarketplaceUsed
+import com.scanium.shared.core.models.assistant.PriceInfo
 import com.scanium.shared.core.models.assistant.PriceRange
 import com.scanium.shared.core.models.assistant.PricingConfidence
 import com.scanium.shared.core.models.assistant.PricingInsights
+import com.scanium.shared.core.models.assistant.SampleListing
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,5 +88,54 @@ class PriceEstimateCardTest {
 
         composeTestRule.onNodeWithText("Estimated Resale Price").assertIsDisplayed()
         composeTestRule.onNodeWithText("Use €98", substring = true).assertExists()
+    }
+
+    @Test
+    fun successState_showsSourcesAndSampleListings() {
+        val insights =
+            PricingInsights(
+                status = "OK",
+                countryCode = "NL",
+                marketplacesUsed =
+                    listOf(
+                        MarketplaceUsed(
+                            id = "marktplaats",
+                            name = "Marktplaats",
+                            baseUrl = "https://www.marktplaats.nl",
+                            listingCount = 2,
+                            searchUrl = "https://www.marktplaats.nl/q/test/",
+                        ),
+                    ),
+                range = PriceRange(low = 75.0, median = 90.0, high = 120.0, currency = "EUR"),
+                confidence = PricingConfidence.MED,
+                sampleListings =
+                    listOf(
+                        SampleListing(
+                            title = "Philips 3200 koffiemachine",
+                            price = PriceInfo(amount = 199.0, currency = "EUR"),
+                            marketplace = "marktplaats",
+                        ),
+                    ),
+                totalListingsAnalyzed = 2,
+                timeWindowDays = 30,
+            )
+
+        composeTestRule.setContent {
+            PriceEstimateCard(
+                uiState = PricingUiState.Success(insights, isStale = false),
+                missingFields = emptySet(),
+                regionLabel = "NL",
+                onGetEstimate = {},
+                onUsePrice = {},
+                onRefresh = {},
+                onRetry = {},
+            )
+        }
+
+        composeTestRule.onNodeWithText("Based on real listings from:").assertIsDisplayed()
+        composeTestRule.onNodeWithText("2 listings").assertIsDisplayed()
+        composeTestRule.onNodeWithText("View listings").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Sample listings").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Philips 3200 koffiemachine", substring = true).assertExists()
     }
 }

@@ -1137,6 +1137,7 @@
     <string name="pricing_top_results">Top results</string>
     <string name="pricing_typical_resale_value">Typical resale value: %1$s</string>
     <string name="pricing_based_on_conditions">Based on current market conditions</string>
+    <string name="pricing_based_on_sources">Based on real listings from:</string>
     <string name="pricing_hide_matches">Hide matches (%1$d)</string>
     <string name="pricing_show_matches">Show matches (%1$d)</string>
     <string name="pricing_card_title">Price Estimate</string>
@@ -1156,6 +1157,7 @@
     <string name="pricing_confidence_med">MEDIUM</string>
     <string name="pricing_confidence_low">LOW</string>
     <string name="pricing_low_confidence_warning">Wide range - limited data available</string>
+    <string name="pricing_fallback_warning">Limited data available. Range is estimated.</string>
     <string name="pricing_stale_badge">STALE</string>
     <string name="pricing_stale_warning">Price may be outdated (%1$s changed)</string>
     <string name="pricing_stale_reason_generic">details</string>
@@ -1164,10 +1166,17 @@
     <string name="pricing_error_region">Price estimates not available for %1$s</string>
     <string name="pricing_no_results_title">No comparable listings found</string>
     <string name="pricing_no_results_subtitle">Try a more specific model name</string>
+    <string name="pricing_view_listings">View listings</string>
+    <string name="pricing_time_window">Last %1$d days</string>
+    <string name="pricing_sample_listings">Sample listings</string>
 
     <!-- Pricing Display (localized rendering of structured PricingDisplay) -->
     <string name="pricing_range_value">€%1$d–€%2$d</string>
     <string name="pricing_context_current_market">Based on current market conditions</string>
+    <plurals name="pricing_listing_count">
+        <item quantity="one">%d listing</item>
+        <item quantity="other">%d listings</item>
+    </plurals>
 
     <!-- Copy Labels and Categories -->
     <string name="copy_label_title">Title</string>

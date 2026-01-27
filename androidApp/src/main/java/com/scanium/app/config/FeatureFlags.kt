@@ -49,6 +49,14 @@ object FeatureFlags {
         get() = BuildConfig.FEATURE_PRICING_V3
 
     /**
+     * Whether Pricing V4 UI is available.
+     * - DEV: true - Pricing V4 can be surfaced for testing
+     * - BETA/PROD: false - Pricing V4 UI hidden unless gated elsewhere
+     */
+    val allowPricingV4: Boolean
+        get() = BuildConfig.FEATURE_PRICING_V4
+
+    /**
      * Maximum allowed image resolution tier.
      * - DEV: HIGH - All resolution options available
      * - BETA/PROD: NORMAL - High resolution capped/hidden

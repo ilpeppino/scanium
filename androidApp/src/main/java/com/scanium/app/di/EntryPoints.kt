@@ -8,6 +8,8 @@ import com.scanium.app.selling.persistence.ListingDraftRepository
 import com.scanium.app.selling.ui.DraftReviewViewModel
 import com.scanium.app.selling.ui.ListingViewModel
 import com.scanium.app.selling.ui.PostingAssistViewModel
+import com.scanium.app.pricing.PricingV3Repository
+import com.scanium.app.pricing.PricingV4Repository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -90,4 +92,22 @@ interface ListingViewModelFactoryEntryPoint {
 @InstallIn(SingletonComponent::class)
 interface ExportAssistantViewModelFactoryEntryPoint {
     fun exportAssistantViewModelFactory(): ExportAssistantViewModel.Factory
+}
+
+/**
+ * Entry point for accessing Pricing V3 repository in composables.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface PricingV3RepositoryEntryPoint {
+    fun pricingV3Repository(): PricingV3Repository
+}
+
+/**
+ * Entry point for accessing Pricing V4 repository in composables.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface PricingV4RepositoryEntryPoint {
+    fun pricingV4Repository(): PricingV4Repository
 }

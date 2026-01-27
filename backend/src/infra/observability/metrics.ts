@@ -239,6 +239,57 @@ export const pricingCacheHitsCounter = new Counter({
   registers: [metricsRegistry],
 });
 
+/**
+ * Counter for pricing v4 cache hits vs misses.
+ */
+export const pricingV4CacheHitsCounter = new Counter({
+  name: 'scanium_pricing_v4_cache_hits_total',
+  help: 'Total number of pricing v4 cache hits and misses',
+  labelNames: ['result'] as const, // 'hit' or 'miss'
+  registers: [metricsRegistry],
+});
+
+/**
+ * Histogram for pricing v4 listings fetched.
+ */
+export const pricingV4ListingsFetchedHistogram = new Histogram({
+  name: 'scanium_pricing_v4_listings_fetched',
+  help: 'Number of listings fetched across adapters for pricing v4',
+  buckets: [0, 1, 2, 3, 5, 10, 20, 30, 50, 100],
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for pricing v4 adapter requests.
+ */
+export const pricingV4AdapterRequestsCounter = new Counter({
+  name: 'scanium_pricing_v4_adapter_requests_total',
+  help: 'Total number of pricing v4 adapter requests',
+  labelNames: ['adapter', 'status'] as const, // status: success | error | timeout
+  registers: [metricsRegistry],
+});
+
+/**
+ * Histogram for pricing v4 adapter latency in milliseconds.
+ */
+export const pricingV4AdapterLatencyHistogram = new Histogram({
+  name: 'scanium_pricing_v4_adapter_latency_ms',
+  help: 'Pricing v4 adapter latency in milliseconds',
+  labelNames: ['adapter', 'status'] as const,
+  buckets: [25, 50, 100, 250, 500, 1000, 2500, 5000, 10000],
+  registers: [metricsRegistry],
+});
+
+/**
+ * Gauge for pricing v4 adapter success (last result).
+ */
+export const pricingV4AdapterSuccessGauge = new Gauge({
+  name: 'scanium_pricing_v4_adapter_success',
+  help: 'Last observed pricing v4 adapter success (1=success, 0=failure)',
+  labelNames: ['adapter'] as const,
+  registers: [metricsRegistry],
+});
+
 // =============================================================================
 // Authentication Metrics (Phase C)
 // =============================================================================
@@ -596,6 +647,33 @@ export function recordPricingRequest(
  */
 export function updatePricingCacheSize(size: number): void {
   pricingCacheSizeGauge.set(size);
+}
+
+/**
+ * Record pricing v4 adapter metrics.
+ */
+export function recordPricingV4AdapterResult(
+  adapter: string,
+  status: 'success' | 'error' | 'timeout',
+  latencyMs: number
+): void {
+  pricingV4AdapterRequestsCounter.inc({ adapter, status });
+  pricingV4AdapterLatencyHistogram.observe({ adapter, status }, latencyMs);
+  pricingV4AdapterSuccessGauge.set({ adapter }, status === 'success' ? 1 : 0);
+}
+
+/**
+ * Record pricing v4 cache result.
+ */
+export function recordPricingV4CacheHit(hit: boolean): void {
+  pricingV4CacheHitsCounter.inc({ result: hit ? 'hit' : 'miss' });
+}
+
+/**
+ * Record pricing v4 listings fetched count.
+ */
+export function recordPricingV4ListingsFetched(count: number): void {
+  pricingV4ListingsFetchedHistogram.observe(count);
 }
 
 /**

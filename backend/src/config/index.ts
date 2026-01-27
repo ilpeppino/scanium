@@ -291,6 +291,16 @@ export const configSchema = z.object({
       v3DailyQuota: z.coerce.number().int().min(1).default(1000),
       /** Pricing V3: Prompt version for A/B testing */
       v3PromptVersion: z.string().default('1.0.0'),
+      /** Pricing V4: Enable verifiable pricing endpoint */
+      v4Enabled: z.coerce.boolean().default(false),
+      /** Pricing V4: Timeout in milliseconds (default 20s) */
+      v4TimeoutMs: z.coerce.number().int().min(1000).max(30000).default(20000),
+      /** Pricing V4: Cache TTL in seconds (default 24h) */
+      v4CacheTtlSeconds: z.coerce.number().int().min(60).max(86400).default(86400),
+      /** Pricing V4: Enable AI normalization stage */
+      v4AiNormEnabled: z.coerce.boolean().default(true),
+      /** Pricing V4: Fallback to V3 when adapters fail */
+      v4FallbackToV3: z.coerce.boolean().default(true),
     })
     .default({}),
 
@@ -475,6 +485,11 @@ export function loadConfig(): Config {
       v3CacheTtlSeconds: process.env.PRICING_V3_CACHE_TTL_SECONDS,
       v3DailyQuota: process.env.PRICING_V3_DAILY_QUOTA,
       v3PromptVersion: process.env.PRICING_V3_PROMPT_VERSION,
+      v4Enabled: process.env.PRICING_V4_ENABLED,
+      v4TimeoutMs: process.env.PRICING_V4_TIMEOUT_MS,
+      v4CacheTtlSeconds: process.env.PRICING_V4_CACHE_TTL_SECONDS,
+      v4AiNormEnabled: process.env.PRICING_V4_AI_NORM_ENABLED,
+      v4FallbackToV3: process.env.PRICING_V4_FALLBACK_V3,
     },
     ebay: {
       env: process.env.EBAY_ENV,
@@ -519,6 +534,7 @@ export function loadConfig(): Config {
   console.log('[Config] OpenAI key present:', !!result.data.assistant.openaiApiKey);
   console.log('[Config] Pricing v3 enabled:', result.data.pricing.v3Enabled);
   console.log('[Config] Pricing v3 prompt version:', result.data.pricing.v3PromptVersion);
+  console.log('[Config] Pricing v4 enabled:', result.data.pricing.v4Enabled);
 
   return result.data;
 }

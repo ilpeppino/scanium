@@ -14,11 +14,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -28,6 +31,7 @@ import com.scanium.app.pricing.PricingUiState
 import com.scanium.app.ui.shimmerEffect
 import com.scanium.shared.core.models.assistant.PricingConfidence
 import com.scanium.shared.core.models.assistant.PricingInsights
+import com.scanium.shared.core.models.assistant.SampleListing
 import kotlin.math.roundToInt
 
 @Composable
@@ -175,7 +179,14 @@ private fun SuccessState(
     val insights = uiState.insights
     when (insights.status.uppercase()) {
         "NO_RESULTS" -> NoResultsState(onRetry = onRetry)
-        "OK" -> PricingResultState(insights = insights, isStale = uiState.isStale, onUsePrice = onUsePrice, onRefresh = onRefresh)
+        "OK", "FALLBACK" ->
+            PricingResultState(
+                insights = insights,
+                isStale = uiState.isStale,
+                onUsePrice = onUsePrice,
+                onRefresh = onRefresh,
+                showFallbackWarning = insights.status.uppercase() == "FALLBACK",
+            )
         else -> ErrorState(
             uiState = PricingUiState.Error(
                 message = stringResource(R.string.pricing_error_region, insights.countryCode),
@@ -192,12 +203,13 @@ private fun PricingResultState(
     isStale: Boolean,
     onUsePrice: (Double) -> Unit,
     onRefresh: () -> Unit,
+    showFallbackWarning: Boolean,
 ) {
     val range = insights.range ?: return
     val currencySymbol = remember(range.currency) { getCurrencySymbol(range.currency) }
     val lowValue = range.low.roundToInt()
     val highValue = range.high.roundToInt()
-    val median = (range.low + range.high) / 2.0
+    val median = range.median ?: (range.low + range.high) / 2.0
     val marketplaceNames =
         remember(insights.marketplacesUsed) {
             insights.marketplacesUsed.map { it.name }.filter { it.isNotBlank() }
@@ -233,7 +245,7 @@ private fun PricingResultState(
 
     ConfidenceRow(confidence = insights.confidence)
 
-    val resultCount = insights.results.size
+    val resultCount = insights.totalListingsAnalyzed ?: insights.results.size
     Text(
         text =
             if (resultCount > 0) {
@@ -251,6 +263,22 @@ private fun PricingResultState(
         overflow = TextOverflow.Ellipsis,
     )
 
+    insights.timeWindowDays?.let { windowDays ->
+        Text(
+            text = stringResource(R.string.pricing_time_window, windowDays),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+
+    if (showFallbackWarning) {
+        Text(
+            text = stringResource(R.string.pricing_fallback_warning),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+
     if (insights.confidence == PricingConfidence.LOW) {
         Text(
             text = stringResource(R.string.pricing_low_confidence_warning),
@@ -265,6 +293,14 @@ private fun PricingResultState(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
         )
+    }
+
+    if (insights.marketplacesUsed.isNotEmpty()) {
+        VerifiableSourcesSection(sources = insights.marketplacesUsed)
+    }
+
+    if (insights.sampleListings.isNotEmpty()) {
+        SampleListingsSection(sampleListings = insights.sampleListings, currencySymbol = currencySymbol)
     }
 
     Row(
@@ -282,6 +318,67 @@ private fun PricingResultState(
             modifier = Modifier.weight(1f),
         ) {
             Text(stringResource(R.string.pricing_button_refresh))
+        }
+    }
+}
+
+@Composable
+private fun VerifiableSourcesSection(
+    sources: List<com.scanium.shared.core.models.assistant.MarketplaceUsed>,
+) {
+    val context = LocalContext.current
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(R.string.pricing_based_on_sources),
+            style = MaterialTheme.typography.labelMedium,
+        )
+        sources.forEach { source ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = source.name)
+                source.listingCount?.let { count ->
+                    Text(
+                        text = pluralStringResource(
+                            R.plurals.pricing_listing_count,
+                            count,
+                            count,
+                        ),
+                    )
+                }
+            }
+            source.searchUrl?.let { url ->
+                TextButton(onClick = { openUrl(context, url) }) {
+                    Text(stringResource(R.string.pricing_view_listings))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SampleListingsSection(
+    sampleListings: List<SampleListing>,
+    currencySymbol: String,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(R.string.pricing_sample_listings),
+            style = MaterialTheme.typography.labelMedium,
+        )
+        sampleListings.take(3).forEach { listing ->
+            Text(
+                text =
+                    listOfNotNull(
+                        listing.title,
+                        listing.price.amount.takeIf { it > 0 }?.let { "$currencySymbol${it.roundToInt()}" },
+                    ).joinToString(" — "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -372,3 +469,16 @@ private fun getCurrencySymbol(currencyCode: String): String =
         "CHF" -> "CHF "
         else -> "$currencyCode "
     }
+
+private fun openUrl(
+    context: android.content.Context,
+    url: String,
+) {
+    try {
+        val intent =
+            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        android.util.Log.e("PriceEstimateCard", "Failed to open URL: $url", e)
+    }
+}

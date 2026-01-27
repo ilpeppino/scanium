@@ -207,6 +207,8 @@ data class PriceInfo(
 data class PriceRange(
     /** Lowest price found */
     val low: Double,
+    /** Median price (v4) */
+    val median: Double? = null,
     /** Highest price found */
     val high: Double,
     /** Currency code (e.g., 'EUR', 'USD') */
@@ -239,6 +241,27 @@ data class MarketplaceUsed(
     val name: String,
     /** Base URL/domain */
     val baseUrl: String,
+    /** Listing count for v4 sources */
+    val listingCount: Int? = null,
+    /** Optional search URL for verification */
+    val searchUrl: String? = null,
+)
+
+/**
+ * Sample listing for verification (v4).
+ */
+@Serializable
+data class SampleListing(
+    /** Listing title */
+    val title: String,
+    /** Price information */
+    val price: PriceInfo,
+    /** Condition label if available */
+    val condition: String? = null,
+    /** Direct listing URL if available */
+    val url: String? = null,
+    /** Marketplace identifier */
+    val marketplace: String,
 )
 
 /**
@@ -262,6 +285,14 @@ data class PricingInsights(
     val confidence: PricingConfidence? = null,
     /** Error code if status is ERROR/TIMEOUT/NO_RESULTS */
     val errorCode: String? = null,
+    /** Total listings analyzed (v4) */
+    val totalListingsAnalyzed: Int? = null,
+    /** Time window in days (v4) */
+    val timeWindowDays: Int? = null,
+    /** Sample listings for verification (v4) */
+    val sampleListings: List<SampleListing> = emptyList(),
+    /** Fallback reason if status=FALLBACK (v4) */
+    val fallbackReason: String? = null,
 )
 
 /**
