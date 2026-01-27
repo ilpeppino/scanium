@@ -23,6 +23,7 @@ import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.core.export.ExportPayload
 import com.scanium.core.models.scanning.ScanRoi
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -472,6 +473,45 @@ class ItemsUiFacade(
         barcodeValue: String? = null,
     ) {
         stateManager.updateItemFields(itemId, labelText, recognizedText, barcodeValue)
+    }
+
+    /**
+     * Apply a user-confirmed classification to an existing item.
+     */
+    fun applyUserClassification(
+        itemId: String,
+        category: ItemCategory?,
+        label: String?,
+        confidence: Float? = null,
+        attributes: Map<String, com.scanium.shared.core.models.items.ItemAttribute>? = null,
+    ) {
+        stateManager.applyUserClassification(
+            itemId = itemId,
+            category = category,
+            label = label,
+            classificationConfidence = confidence,
+            attributes = attributes,
+        )
+    }
+
+    /**
+     * Update classification status for an item and refresh state.
+     */
+    fun updateClassificationStatus(
+        itemId: String,
+        status: String,
+        domainCategoryId: String? = null,
+        errorMessage: String? = null,
+        requestId: String? = null,
+    ) {
+        stateManager.updateClassificationStatus(
+            aggregatedId = itemId,
+            status = status,
+            domainCategoryId = domainCategoryId,
+            errorMessage = errorMessage,
+            requestId = requestId,
+        )
+        stateManager.refreshItemsFromAggregator()
     }
 
     /**

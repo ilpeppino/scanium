@@ -525,6 +525,7 @@
     <string name="items_accessibility_confidence">Confidence: %1$s</string>
     <string name="items_accessibility_classification_in_progress">Classification in progress</string>
     <string name="items_accessibility_classification_failed">Classification failed</string>
+    <string name="items_accessibility_classification_needs_review">Needs review</string>
     <string name="items_accessibility_selected">Selected</string>
     <string name="items_accessibility_tap_toggle_selection">Tap to toggle selection</string>
     <string name="items_accessibility_tap_edit_long_press">Tap to edit, long press to select</string>
@@ -538,6 +539,7 @@
     <string name="items_status_classifying">Classifying...</string>
     <string name="items_status_cloud">Cloud</string>
     <string name="items_status_failed">Failed</string>
+    <string name="items_status_needs_review">Needs review</string>
     <string name="items_status_enriching">Enriching...</string>
     <string name="items_status_enriched">Enriched</string>
     <string name="items_list_header_ready_for_resale">%1$d items ready for resale</string>

@@ -42,7 +42,7 @@ class HypothesisSelectionFlowTest {
     }
 
     @Test
-    fun whenMultiHypothesisResultReceived_thenNoItemCreatedUntilConfirmed() = runTest(dispatcher) {
+    fun whenMultiHypothesisResultReceived_thenItemIsPersistedImmediately() = runTest(dispatcher) {
         val settingsRepository = mockk<SettingsRepository>(relaxed = true).also {
             every { it.openItemListAfterScanFlow } returns flowOf(false)
             every { it.smartMergeSuggestionsEnabledFlow } returns flowOf(false)
@@ -113,7 +113,8 @@ class HypothesisSelectionFlowTest {
         assertTrue(selectionState is com.scanium.app.classification.hypothesis.HypothesisSelectionState.Showing)
 
         val items = itemsViewModel.awaitItems(dispatcher)
-        assertTrue(items.isEmpty())
+        assertEquals(1, items.size)
+        assertEquals("PENDING", items.first().classificationStatus)
     }
 
     @Test
@@ -194,5 +195,6 @@ class HypothesisSelectionFlowTest {
         val items = itemsViewModel.awaitItems(dispatcher)
         assertEquals(1, items.size)
         assertEquals("Vintage Lamp", items.first().labelText)
+        assertEquals("CONFIRMED", items.first().classificationStatus)
     }
 }

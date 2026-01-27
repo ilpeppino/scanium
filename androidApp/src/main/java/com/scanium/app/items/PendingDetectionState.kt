@@ -7,15 +7,15 @@ import com.scanium.shared.core.models.model.ImageRef
 /**
  * Represents the state of a detection awaiting user confirmation.
  *
- * This sealed class implements the "no items before confirmation" principle:
- * detections are held in pending state until user explicitly confirms a hypothesis,
- * preventing premature commitment to incorrect classifications.
+ * This sealed class tracks in-flight classification for a capture that has
+ * already been persisted as an item. Classification and correction UI are
+ * optional follow-ups and never gate saving.
  *
  * State transitions:
  * ```
  * None → AwaitingClassification (detection received)
  *     → ShowingHypotheses (backend returns hypotheses)
- *     → None (user confirms or dismisses)
+ *     → None (user confirms, dismisses, or classification ends)
  * ```
  */
 sealed class PendingDetectionState {
@@ -25,7 +25,7 @@ sealed class PendingDetectionState {
     /**
      * Detection received from camera, waiting for backend classification.
      *
-     * @property detectionId Unique identifier for this pending detection
+     * @property detectionId Item ID created at capture time (used to correlate classification)
      * @property rawDetection Raw detection data from ML Kit/ObjectTracker
      * @property thumbnailRef Optional reference to detection thumbnail
      * @property timestamp Epoch milliseconds when detection was created

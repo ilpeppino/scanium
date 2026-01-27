@@ -329,6 +329,27 @@ class ItemsStateManager(
         )
     }
 
+    fun applyUserClassification(
+        itemId: String,
+        category: ItemCategory?,
+        label: String?,
+        classificationConfidence: Float? = null,
+        attributes: Map<String, com.scanium.shared.core.models.items.ItemAttribute>? = null,
+    ) {
+        itemAggregator.applyEnhancedClassification(
+            aggregatedId = itemId,
+            category = category,
+            label = label,
+            priceRange = null,
+            classificationConfidence = classificationConfidence,
+            attributes = attributes,
+            visionAttributes = null,
+            isFromBackend = false,
+        )
+
+        updateItemsState(notifyNewItems = false)
+    }
+
     fun updateClassificationStatus(
         aggregatedId: String,
         status: String,

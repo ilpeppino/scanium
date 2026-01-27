@@ -10,6 +10,7 @@ import com.scanium.app.classification.hypothesis.MultiHypothesisResult
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.logging.ScaniumLog
+import com.scanium.app.testing.TestConfigOverride
 import com.scanium.shared.core.models.config.CloudClassifierConfig
 import com.scanium.shared.core.models.items.ItemAttribute
 import kotlinx.coroutines.Dispatchers
@@ -302,8 +303,8 @@ class CloudClassifier(
 
     private fun currentConfig(): CloudClassifierConfig =
         CloudClassifierConfig(
-            baseUrl = BuildConfig.SCANIUM_API_BASE_URL,
-            apiKey = apiKeyStore?.getApiKey(),
+            baseUrl = TestConfigOverride.baseUrl ?: BuildConfig.SCANIUM_API_BASE_URL,
+            apiKey = TestConfigOverride.apiKey ?: apiKeyStore?.getApiKey(),
             domainPackId = domainPackId,
         )
 

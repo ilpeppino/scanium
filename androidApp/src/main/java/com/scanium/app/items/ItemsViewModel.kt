@@ -806,6 +806,11 @@ class ItemsViewModel
                     predictedConfidence = predictedConfidence,
                 )
             _showCorrectionDialog.value = true
+            _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
+            viewModelScope.launch(workerDispatcher) {
+                removeFromPendingQueue(itemId)
+                markNeedsReview(itemId, "User requested correction")
+            }
         }
 
         /**
@@ -845,23 +850,27 @@ class ItemsViewModel
                             }
 
                         if (rawDetection != null) {
-                            val hypothesis =
-                                ClassificationHypothesis(
-                                    categoryId = "",
-                                    categoryName = correctedCategory,
-                                    explanation = "",
-                                    confidence = predictedConfidence ?: rawDetection.confidence,
-                                    confidenceBand = "LOW",
-                                    attributes = emptyMap(),
-                                )
-                            createItemFromDetection(itemId, rawDetection, hypothesis)
+                            val resolvedCategory = ItemCategory.fromClassifierLabel(correctedCategory)
+                            facade.applyUserClassification(
+                                itemId = itemId,
+                                category = resolvedCategory,
+                                label = correctedCategory,
+                                confidence = predictedConfidence ?: rawDetection.confidence,
+                                attributes = emptyMap(),
+                            )
+                            facade.updateClassificationStatus(itemId = itemId, status = "CONFIRMED")
                         }
                     } else {
                         // Update the item with the corrected category
-                        facade.updateItemFields(
+                        val resolvedCategory = ItemCategory.fromClassifierLabel(correctedCategory)
+                        facade.applyUserClassification(
                             itemId = itemId,
-                            labelText = correctedCategory,
+                            category = resolvedCategory,
+                            label = correctedCategory,
+                            confidence = predictedConfidence,
+                            attributes = emptyMap(),
                         )
+                        facade.updateClassificationStatus(itemId = itemId, status = "CONFIRMED")
                     }
 
                     withContext(mainDispatcher) {
@@ -896,10 +905,9 @@ class ItemsViewModel
         // ==================== Pending Detection Handlers ====================
 
         /**
-         * Handle new detection from camera - add to pending queue and trigger classification.
+         * Handle new detection from camera - persist item immediately and trigger classification.
          *
-         * This implements the "no items before confirmation" principle:
-         * detections are held in pending state until user confirms a hypothesis.
+         * Items are always saved on capture; classification is a follow-up update.
          *
          * @param rawDetection Raw detection data from ML Kit/ObjectTracker
          */
@@ -918,8 +926,13 @@ class ItemsViewModel
                 if (forceHypothesisSheet) {
                     settingsRepository.setDevForceHypothesisSelection(false)
                 }
+
+                // Persist item immediately (classification is a follow-up update)
+                createItemFromDetection(detectionId, rawDetection, hypothesis = null)
+
                 // Add to queue (max 5 to prevent memory issues)
                 val currentQueue = _pendingDetections.value
+                val dropped = if (currentQueue.size >= 5) currentQueue.firstOrNull() else null
                 val trimmedQueue =
                     if (currentQueue.size >= 5) {
                         Log.w(TAG, "Pending queue full, dropping oldest detection without auto-confirm")
@@ -930,6 +943,13 @@ class ItemsViewModel
 
                 withContext(mainDispatcher) {
                     _pendingDetections.value = trimmedQueue + pendingState
+                }
+
+                if (dropped is PendingDetectionState.AwaitingClassification) {
+                    markNeedsReview(
+                        detectionId = dropped.detectionId,
+                        message = "Pending queue overflow",
+                    )
                 }
 
                 // Trigger classification for this detection
@@ -1020,7 +1040,21 @@ class ItemsViewModel
                     return@launch
                 }
 
-                createItemFromDetection(detectionId, pending.rawDetection, hypothesis)
+                val resolvedCategory = resolveItemCategory(hypothesis, pending.rawDetection)
+                val resolvedLabel = resolveItemLabel(hypothesis, pending.rawDetection)
+                val resolvedAttributes = buildHypothesisAttributes(hypothesis)
+
+                facade.applyUserClassification(
+                    itemId = detectionId,
+                    category = resolvedCategory,
+                    label = resolvedLabel,
+                    confidence = hypothesis.confidence,
+                    attributes = resolvedAttributes,
+                )
+                facade.updateClassificationStatus(
+                    itemId = detectionId,
+                    status = "CONFIRMED",
+                )
 
                 withContext(mainDispatcher) {
                     // Remove from queue
@@ -1043,6 +1077,7 @@ class ItemsViewModel
         fun dismissPendingDetection(detectionId: String) {
             viewModelScope.launch(workerDispatcher) {
                 removeFromPendingQueue(detectionId)
+                markNeedsReview(detectionId, "User dismissed hypotheses")
                 withContext(mainDispatcher) {
                     _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
                 }
@@ -1089,18 +1124,9 @@ class ItemsViewModel
             detectionId: String,
             rawDetection: RawDetection,
         ) {
-            val predictedCategory =
-                rawDetection.onDeviceLabel.takeIf { isValidCategoryName(it) }
-            val predictedConfidence =
-                rawDetection.confidence.takeIf { it > 0f && predictedCategory != null }
-
+            markNeedsReview(detectionId, "No valid hypotheses")
+            removeFromPendingQueue(detectionId)
             withContext(mainDispatcher) {
-                showCorrectionDialog(
-                    itemId = detectionId,
-                    imageHash = "",
-                    predictedCategory = predictedCategory,
-                    predictedConfidence = predictedConfidence,
-                )
                 _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
             }
         }
@@ -1178,27 +1204,18 @@ class ItemsViewModel
                 val resolvedLabel = resolveItemLabel(hypothesis, rawDetection)
 
                 // Convert hypothesis attributes to ItemAttribute map
-                val resolvedAttributes =
-                    hypothesis?.attributes
-                        ?.filter { it.value.isNotBlank() }
-                        ?.mapValues { (_, value) ->
-                            ItemAttribute(
-                                value = value,
-                                confidence = hypothesis.confidence,
-                                source = "cloud_hypothesis",
-                            )
-                        } ?: emptyMap()
+                val resolvedAttributes = buildHypothesisAttributes(hypothesis)
 
                 val item =
                     ScannedItem(
-                        id = UUID.randomUUID().toString(),
+                        id = detectionId,
                         labelText = resolvedLabel,
                         category = resolvedCategory,
                         priceRange = 0.0 to 0.0, // Will be estimated by PricingEngine later
                         confidence = hypothesis?.confidence ?: rawDetection.confidence,
                         boundingBox = rawDetection.boundingBox,
                         thumbnail = rawDetection.thumbnailRef,
-                        classificationStatus = if (hypothesis != null) "CONFIRMED" else "FALLBACK",
+                        classificationStatus = if (hypothesis != null) "CONFIRMED" else "PENDING",
                         timestamp = System.currentTimeMillis(),
                         attributes = resolvedAttributes,
                     )
@@ -1320,6 +1337,32 @@ class ItemsViewModel
                             else -> false
                         }
                     }
+            }
+        }
+
+        private fun buildHypothesisAttributes(
+            hypothesis: ClassificationHypothesis?,
+        ): Map<String, ItemAttribute> =
+            hypothesis?.attributes
+                ?.filter { it.value.isNotBlank() }
+                ?.mapValues { (_, value) ->
+                    ItemAttribute(
+                        value = value,
+                        confidence = hypothesis.confidence,
+                        source = "cloud_hypothesis",
+                    )
+                } ?: emptyMap()
+
+        private suspend fun markNeedsReview(
+            detectionId: String,
+            message: String,
+        ) {
+            withContext(mainDispatcher) {
+                facade.updateClassificationStatus(
+                    itemId = detectionId,
+                    status = "NEEDS_REVIEW",
+                    errorMessage = message,
+                )
             }
         }
     }

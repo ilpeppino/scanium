@@ -303,6 +303,7 @@ internal fun ItemRow(
         }
     val classificationInProgress = stringResource(R.string.items_accessibility_classification_in_progress)
     val classificationFailed = stringResource(R.string.items_accessibility_classification_failed)
+    val classificationNeedsReview = stringResource(R.string.items_accessibility_classification_needs_review)
     val selectedLabel = stringResource(R.string.items_accessibility_selected)
     val toggleSelectionLabel = stringResource(R.string.items_accessibility_tap_toggle_selection)
     val tapEditLabel = stringResource(R.string.items_accessibility_tap_edit_long_press)
@@ -330,6 +331,10 @@ internal fun ItemRow(
 
                     "FAILED" -> {
                         append(". $classificationFailed")
+                    }
+
+                    "NEEDS_REVIEW" -> {
+                        append(". $classificationNeedsReview")
                     }
 
                     else -> {}
@@ -714,6 +719,14 @@ internal fun ClassificationStatusBadge(status: String) {
                     MaterialTheme.colorScheme.errorContainer,
                     MaterialTheme.colorScheme.onErrorContainer,
                     stringResource(R.string.items_status_failed),
+                )
+            }
+
+            "NEEDS_REVIEW" -> {
+                Triple(
+                    MaterialTheme.colorScheme.tertiaryContainer,
+                    MaterialTheme.colorScheme.onTertiaryContainer,
+                    stringResource(R.string.items_status_needs_review),
                 )
             }
 
