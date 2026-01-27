@@ -129,7 +129,6 @@ class ItemsViewModel
         companion object {
             private const val TAG = "ItemsViewModel"
             private const val QR_URL_TTL_MS = 2000L
-            private const val CLASSIFICATION_TIMEOUT_MS = 10_000L
         }
 
         // ==================== Facade ====================
@@ -980,21 +979,20 @@ class ItemsViewModel
                     )
 
                     // Call cloud classifier with multi-hypothesis mode
-                    val result =
-                        kotlinx.coroutines.withTimeoutOrNull(CLASSIFICATION_TIMEOUT_MS) {
-                            cloudClassifierImpl.classifyMultiHypothesis(bitmap)
-                        }
+                    val result = cloudClassifierImpl.classifyMultiHypothesis(bitmap)
 
                     if (result != null && result.hypotheses.isNotEmpty()) {
                         Log.d(TAG, "Received ${result.hypotheses.size} hypotheses for detection $detectionId")
                         showHypothesisSelectionFromResult(detectionId, rawDetection, result)
                     } else {
-                        Log.w(TAG, "No valid hypotheses returned for detection $detectionId, opening manual entry")
-                        showManualEntryFallback(detectionId, rawDetection)
+                        // Fallback: No hypotheses returned, create with on-device label
+                        Log.w(TAG, "No hypotheses returned for detection $detectionId, using fallback")
+                        showFallbackHypothesisSheet(detectionId, rawDetection)
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Classification failed for detection $detectionId", e)
-                    showManualEntryFallback(detectionId, rawDetection)
+                    // Fallback: Show hypothesis sheet with on-device label
+                    showFallbackHypothesisSheet(detectionId, rawDetection)
                 }
             }
         }
@@ -1053,10 +1051,6 @@ class ItemsViewModel
             detectionId: String,
             rawDetection: RawDetection,
         ) {
-            if (!isValidCategoryName(rawDetection.onDeviceLabel) || rawDetection.confidence <= 0f) {
-                showManualEntryFallback(detectionId, rawDetection)
-                return
-            }
             val fallback =
                 MultiHypothesisResult(
                     hypotheses =
@@ -1077,53 +1071,11 @@ class ItemsViewModel
             showHypothesisSelectionFromResult(detectionId, rawDetection, fallback)
         }
 
-        private fun isValidCategoryName(value: String?): Boolean {
-            val trimmed = value?.trim().orEmpty()
-            return trimmed.isNotEmpty() && !trimmed.equals("Unknown", ignoreCase = true)
-        }
-
-        private fun isValidHypothesis(hypothesis: ClassificationHypothesis): Boolean =
-            isValidCategoryName(hypothesis.categoryName) && hypothesis.confidence > 0f
-
-        private suspend fun showManualEntryFallback(
-            detectionId: String,
-            rawDetection: RawDetection,
-        ) {
-            val predictedCategory =
-                rawDetection.onDeviceLabel.takeIf { isValidCategoryName(it) }
-            val predictedConfidence =
-                rawDetection.confidence.takeIf { it > 0f && predictedCategory != null }
-
-            withContext(mainDispatcher) {
-                showCorrectionDialog(
-                    itemId = detectionId,
-                    imageHash = "",
-                    predictedCategory = predictedCategory,
-                    predictedConfidence = predictedConfidence,
-                )
-                _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
-            }
-        }
-
         private suspend fun showHypothesisSelectionFromResult(
             detectionId: String,
             rawDetection: RawDetection,
             result: MultiHypothesisResult,
         ) {
-            val validHypotheses = result.hypotheses.filter(::isValidHypothesis)
-            if (validHypotheses.isEmpty()) {
-                Log.w(TAG, "All hypotheses invalid for detection $detectionId, opening manual entry")
-                showManualEntryFallback(detectionId, rawDetection)
-                return
-            }
-
-            val filteredResult =
-                if (validHypotheses.size == result.hypotheses.size) {
-                    result
-                } else {
-                    result.copy(hypotheses = validHypotheses)
-                }
-
             withContext(mainDispatcher) {
                 val updatedQueue =
                     _pendingDetections.value.map { pending ->
@@ -1131,7 +1083,7 @@ class ItemsViewModel
                             PendingDetectionState.ShowingHypotheses(
                                 detectionId = detectionId,
                                 rawDetection = rawDetection,
-                                hypothesisResult = filteredResult,
+                                hypothesisResult = result,
                                 thumbnailRef = rawDetection.thumbnailRef,
                             )
                         } else {
@@ -1146,7 +1098,7 @@ class ItemsViewModel
                     currentPending.detectionId == detectionId
                 ) {
                     showHypothesisSelection(
-                        result = filteredResult,
+                        result = result,
                         itemId = detectionId,
                         thumbnailRef = rawDetection.thumbnailRef,
                     )
