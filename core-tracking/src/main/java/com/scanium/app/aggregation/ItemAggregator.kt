@@ -202,6 +202,13 @@ class ItemAggregator(
             fullImagePath = detection.fullImagePath,
             // Initialize quality score
             thumbnailQuality = detection.qualityScore,
+            classificationStatus = detection.classificationStatus,
+            domainCategoryId = detection.domainCategoryId,
+            classificationErrorMessage = detection.classificationErrorMessage,
+            classificationRequestId = detection.classificationRequestId,
+            enrichedAttributes = detection.attributes,
+            visionAttributes = detection.visionAttributes,
+            detectedAttributes = detection.detectedAttributes,
         )
     }
 

@@ -306,10 +306,21 @@ class ItemsStateManager(
         visionAttributes: VisionAttributes? = null,
         isFromBackend: Boolean = true,
     ) {
+        val existingItem = itemAggregator.getAggregatedItems().find { it.aggregatedId == aggregatedId }
+        val lockConfirmedFields = existingItem?.classificationStatus == "CONFIRMED" && isFromBackend
+
+        if (lockConfirmedFields && (category != null || label != null)) {
+            Log.w(
+                TAG,
+                "SCAN_ENRICH: Skipping category/label update for confirmed item $aggregatedId " +
+                    "(category=$category, label=$label)",
+            )
+        }
+
         itemAggregator.applyEnhancedClassification(
             aggregatedId = aggregatedId,
-            category = category,
-            label = label,
+            category = if (lockConfirmedFields) null else category,
+            label = if (lockConfirmedFields) null else label,
             priceRange = priceRange,
             classificationConfidence = classificationConfidence,
             attributes = attributes,
@@ -325,6 +336,11 @@ class ItemsStateManager(
         errorMessage: String? = null,
         requestId: String? = null,
     ) {
+        val existingItem = itemAggregator.getAggregatedItems().find { it.aggregatedId == aggregatedId }
+        if (existingItem?.classificationStatus == "CONFIRMED") {
+            Log.w(TAG, "SCAN_ENRICH: Skipping classification status update for confirmed item $aggregatedId")
+            return
+        }
         itemAggregator.updateClassificationStatus(
             aggregatedId = aggregatedId,
             status = status,
@@ -349,8 +365,20 @@ class ItemsStateManager(
             return
         }
 
+        val lockConfirmedFields = existingItem.classificationStatus == "CONFIRMED"
+        val lockedLabel = if (lockConfirmedFields) null else suggestedLabel
+        val lockedCategoryHint = if (lockConfirmedFields) null else categoryHint
+
+        if (lockConfirmedFields && (suggestedLabel != null || categoryHint != null)) {
+            Log.w(
+                TAG,
+                "SCAN_ENRICH: Skipping suggested label/category for confirmed item $aggregatedId " +
+                    "(label=$suggestedLabel, categoryHint=$categoryHint)",
+            )
+        }
+
         Log.i(TAG, "SCAN_ENRICH: Applying vision insights to item $aggregatedId")
-        Log.i(TAG, "SCAN_ENRICH:   suggestedLabel=$suggestedLabel")
+        Log.i(TAG, "SCAN_ENRICH:   suggestedLabel=$lockedLabel")
         Log.i(TAG, "SCAN_ENRICH:   brand=${visionAttributes.primaryBrand}")
         Log.i(TAG, "SCAN_ENRICH:   colors=${visionAttributes.colors.map { it.name }}")
         Log.i(TAG, "SCAN_ENRICH:   hasOCR=${!visionAttributes.ocrText.isNullOrBlank()}")
@@ -360,14 +388,14 @@ class ItemsStateManager(
         itemAggregator.applyEnhancedClassification(
             aggregatedId = aggregatedId,
             category =
-                categoryHint?.let { hint ->
+                lockedCategoryHint?.let { hint ->
                     try {
                         ItemCategory.entries.find { it.name.equals(hint, ignoreCase = true) }
                     } catch (e: Exception) {
                         null
                     }
                 },
-            label = suggestedLabel,
+            label = lockedLabel,
             priceRange = null,
             classificationConfidence = null,
             attributes = visionAttributeMap,
@@ -473,7 +501,13 @@ class ItemsStateManager(
     }
 
     fun markClassificationPending(aggregatedIds: List<String>) {
-        itemAggregator.markClassificationPending(aggregatedIds)
+        val filtered =
+            aggregatedIds.filter { id ->
+                itemAggregator.getAggregatedItems().find { it.aggregatedId == id }?.classificationStatus != "CONFIRMED"
+            }
+        if (filtered.isNotEmpty()) {
+            itemAggregator.markClassificationPending(filtered)
+        }
     }
 
     fun updateThumbnail(
