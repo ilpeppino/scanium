@@ -57,6 +57,14 @@ object FeatureFlags {
         get() = BuildConfig.FEATURE_PRICING_V4
 
     /**
+     * Whether Pricing Assistant UI is available.
+     * - DEV: true - Pricing assistant wizard can be surfaced for testing
+     * - BETA/PROD: false - Wizard hidden unless gated elsewhere
+     */
+    val allowPricingAssistant: Boolean
+        get() = BuildConfig.FEATURE_PRICING_ASSISTANT
+
+    /**
      * Maximum allowed image resolution tier.
      * - DEV: HIGH - All resolution options available
      * - BETA/PROD: NORMAL - High resolution capped/hidden

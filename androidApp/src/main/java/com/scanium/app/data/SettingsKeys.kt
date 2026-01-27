@@ -52,6 +52,7 @@ internal object SettingsKeys {
         val DEV_MOTION_OVERLAYS_ENABLED_KEY = booleanPreferencesKey("dev_motion_overlays_enabled")
         val DEV_OVERLAY_ACCURACY_STEP_KEY = intPreferencesKey("dev_overlay_accuracy_step")
         val DEV_SHOW_BUILD_WATERMARK_KEY = booleanPreferencesKey("dev_show_build_watermark")
+        val DEV_FORCE_HYPOTHESIS_SHEET_KEY = booleanPreferencesKey("dev_force_hypothesis_sheet")
     }
 
     object Scanning {

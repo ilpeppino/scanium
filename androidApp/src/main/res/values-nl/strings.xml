@@ -453,6 +453,14 @@
     <string name="assistant_disabled_message">Schakel het in via Instellingen om marketplace-klare beschrijvingen te genereren.</string>
     <string name="assistant_disabled_error_message">AI-assistent is uitgeschakeld. Schakel het in via Instellingen om door te gaan.</string>
     <string name="assistant_disabled_open_settings">Instellingen openen</string>
+    <string name="ai_chooser_title">AI-assistent</string>
+    <string name="ai_chooser_subtitle">Kies hoe je AI wilt inzetten voor dit item.</string>
+    <string name="ai_chooser_price_title">Prijs mijn item</string>
+    <string name="ai_chooser_price_body">Krijg een verifieerbare prijsvork op basis van echte listings.</string>
+    <string name="ai_chooser_price_cta">Prijs mijn item</string>
+    <string name="ai_chooser_listing_title">Listingtekst genereren</string>
+    <string name="ai_chooser_listing_body">Maak een titel, beschrijving en highlights.</string>
+    <string name="ai_chooser_listing_cta">Listingtekst genereren</string>
 
     <!-- Assistant Auth Dialog -->
     <string name="assistant_auth_required_title">Aanmelden vereist</string>
@@ -810,10 +818,13 @@
     <string name="pricing_based_on_conditions">Gebaseerd op huidige marktomstandigheden</string>
     <string name="pricing_hide_matches">Overeenkomsten verbergen (%1$d)</string>
     <string name="pricing_show_matches">Overeenkomsten tonen (%1$d)</string>
+    <string name="pricing_button_get_estimate">Verifieerbare prijs berekenen</string>
 
     <!-- Pricing Display (localized rendering of structured PricingDisplay) -->
     <string name="pricing_range_value">€%1$d–€%2$d</string>
     <string name="pricing_context_current_market">Gebaseerd op huidige marktomstandigheden</string>
+    <string name="pricing_unavailable_title">Prijsbepaling niet beschikbaar</string>
+    <string name="pricing_unavailable_body">Prijsbepaling is nog niet beschikbaar in deze build. Probeer een nieuwere build.</string>
 
     <!-- Copy Labels and Categories -->
     <string name="copy_label_title">Titel</string>
@@ -1019,6 +1030,9 @@
     <string name="settings_developer_options_save_cloud_crops_subtitle">Schrijft uitgaande classifier-crops naar cache (gewist bij deïnstallatie)</string>
     <string name="settings_developer_options_verbose_classifier_logging_title">Uitgebreide classifier-logging</string>
     <string name="settings_developer_options_verbose_classifier_logging_subtitle">Voegt extra classifierdetails toe aan Logcat (alleen debug-builds)</string>
+    <string name="settings_dev_force_hypothesis_title">Hypothesescherm forceren</string>
+    <string name="settings_dev_force_hypothesis_subtitle">Toon de hypothesekiezer bij de volgende scan</string>
+    <string name="settings_dev_force_hypothesis_queued">Bij de volgende scan wordt de hypothesekiezer getoond</string>
     <string name="settings_developer_options_section_testing_debug">Testen en debug</string>
     <string name="settings_developer_options_test_crash_reporting_title">Crashrapportage testen</string>
     <string name="settings_developer_options_test_crash_reporting_subtitle">Testgebeurtenis naar Sentry sturen (afgehandelde uitzondering)</string>

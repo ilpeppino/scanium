@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -825,13 +826,54 @@ class ItemsViewModel
 
                     Log.i(TAG, "Correction submitted for item $itemId: $correctedCategory")
 
-                    // Update the item with the corrected category
-                    facade.updateItemFields(
-                        itemId = itemId,
-                        labelText = correctedCategory,
-                    )
+                    val pending =
+                        _pendingDetections.value.find {
+                            when (it) {
+                                is PendingDetectionState.AwaitingClassification -> it.detectionId == itemId
+                                is PendingDetectionState.ShowingHypotheses -> it.detectionId == itemId
+                                else -> false
+                            }
+                        }
+
+                    if (pending != null) {
+                        val rawDetection =
+                            when (pending) {
+                                is PendingDetectionState.AwaitingClassification -> pending.rawDetection
+                                is PendingDetectionState.ShowingHypotheses -> pending.rawDetection
+                                else -> null
+                            }
+
+                        if (rawDetection != null) {
+                            val hypothesis =
+                                ClassificationHypothesis(
+                                    categoryId = "",
+                                    categoryName = correctedCategory,
+                                    explanation = "",
+                                    confidence = predictedConfidence ?: rawDetection.confidence,
+                                    confidenceBand = "LOW",
+                                    attributes = emptyMap(),
+                                )
+                            createItemFromDetection(itemId, rawDetection, hypothesis)
+                        }
+                    } else {
+                        // Update the item with the corrected category
+                        facade.updateItemFields(
+                            itemId = itemId,
+                            labelText = correctedCategory,
+                        )
+                    }
 
                     withContext(mainDispatcher) {
+                        if (pending != null) {
+                            _pendingDetections.value =
+                                _pendingDetections.value.filterNot {
+                                    when (it) {
+                                        is PendingDetectionState.AwaitingClassification -> it.detectionId == itemId
+                                        is PendingDetectionState.ShowingHypotheses -> it.detectionId == itemId
+                                        else -> false
+                                    }
+                                }
+                        }
                         _showCorrectionDialog.value = false
                         _correctionDialogData.value = null
                         _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
@@ -871,20 +913,31 @@ class ItemsViewModel
                 )
 
             viewModelScope.launch(workerDispatcher) {
+                val forceHypothesisSheet = settingsRepository.devForceHypothesisSelectionFlow.first()
+                if (forceHypothesisSheet) {
+                    settingsRepository.setDevForceHypothesisSelection(false)
+                }
                 // Add to queue (max 5 to prevent memory issues)
                 val currentQueue = _pendingDetections.value
-                if (currentQueue.size >= 5) {
-                    Log.w(TAG, "Pending queue full, auto-confirming oldest with fallback")
-                    // Auto-confirm oldest with on-device label
-                    confirmPendingWithFallback(currentQueue.first())
-                }
+                val trimmedQueue =
+                    if (currentQueue.size >= 5) {
+                        Log.w(TAG, "Pending queue full, dropping oldest detection without auto-confirm")
+                        currentQueue.drop(1)
+                    } else {
+                        currentQueue
+                    }
 
                 withContext(mainDispatcher) {
-                    _pendingDetections.value = currentQueue + pendingState
+                    _pendingDetections.value = trimmedQueue + pendingState
                 }
 
                 // Trigger classification for this detection
-                triggerMultiHypothesisClassification(detectionId, rawDetection)
+                if (forceHypothesisSheet) {
+                    Log.d(TAG, "DEV: Forcing hypothesis sheet for detection $detectionId")
+                    showFallbackHypothesisSheet(detectionId, rawDetection)
+                } else {
+                    triggerMultiHypothesisClassification(detectionId, rawDetection)
+                }
             }
         }
 
@@ -908,8 +961,7 @@ class ItemsViewModel
                     val bitmap = rawDetection.thumbnailRef?.toBitmap()
                     if (bitmap == null) {
                         Log.w(TAG, "No WYSIWYG thumbnail available for classification, using fallback")
-                        createItemFromDetection(detectionId, rawDetection, hypothesis = null)
-                        removeFromPendingQueue(detectionId)
+                        showFallbackHypothesisSheet(detectionId, rawDetection)
                         return@withContext
                     }
 
@@ -917,8 +969,7 @@ class ItemsViewModel
                     val cloudClassifierImpl = cloudClassifier as? com.scanium.app.ml.classification.CloudClassifier
                     if (cloudClassifierImpl == null) {
                         Log.w(TAG, "Cloud classifier not available, using fallback")
-                        createItemFromDetection(detectionId, rawDetection, hypothesis = null)
-                        removeFromPendingQueue(detectionId)
+                        showFallbackHypothesisSheet(detectionId, rawDetection)
                         return@withContext
                     }
 
@@ -932,99 +983,16 @@ class ItemsViewModel
 
                     if (result != null && result.hypotheses.isNotEmpty()) {
                         Log.d(TAG, "Received ${result.hypotheses.size} hypotheses for detection $detectionId")
-
-                        // Phase 4: Check if we should auto-commit (high confidence single hypothesis)
-                        val topHypothesis = result.hypotheses.first()
-                        val shouldAutoCommit =
-                            result.globalConfidence >= 0.9f &&
-                                result.hypotheses.size == 1 &&
-                                topHypothesis.confidenceBand == "HIGH"
-
-                        if (shouldAutoCommit) {
-                            // Auto-commit: Show hypothesis sheet briefly (700ms) then auto-confirm
-                            Log.d(
-                                TAG,
-                                "Auto-committing high-confidence hypothesis for detection $detectionId (confidence=${result.globalConfidence})",
-                            )
-
-                            withContext(mainDispatcher) {
-                                // Update pending state to ShowingHypotheses
-                                val updatedQueue =
-                                    _pendingDetections.value.map { pending ->
-                                        if ((pending as? PendingDetectionState.AwaitingClassification)?.detectionId == detectionId) {
-                                            PendingDetectionState.ShowingHypotheses(
-                                                detectionId = detectionId,
-                                                rawDetection = rawDetection,
-                                                hypothesisResult = result,
-                                                thumbnailRef = rawDetection.thumbnailRef,
-                                            )
-                                        } else {
-                                            pending
-                                        }
-                                    }
-                                _pendingDetections.value = updatedQueue
-
-                                // Show hypothesis sheet briefly for visual confirmation
-                                if (updatedQueue.firstOrNull() is PendingDetectionState.ShowingHypotheses &&
-                                    (updatedQueue.firstOrNull() as PendingDetectionState.ShowingHypotheses).detectionId == detectionId
-                                ) {
-                                    showHypothesisSelection(
-                                        result = result,
-                                        itemId = detectionId,
-                                        thumbnailRef = rawDetection.thumbnailRef,
-                                    )
-                                }
-                            }
-
-                            // Wait 700ms for visual confirmation
-                            kotlinx.coroutines.delay(700)
-
-                            // Auto-confirm with the top hypothesis
-                            withContext(mainDispatcher) {
-                                confirmPendingDetection(detectionId, topHypothesis)
-                            }
-                        } else {
-                            // Normal flow: Show hypothesis sheet and wait for user interaction
-                            withContext(mainDispatcher) {
-                                val updatedQueue =
-                                    _pendingDetections.value.map { pending ->
-                                        if ((pending as? PendingDetectionState.AwaitingClassification)?.detectionId == detectionId) {
-                                            PendingDetectionState.ShowingHypotheses(
-                                                detectionId = detectionId,
-                                                rawDetection = rawDetection,
-                                                hypothesisResult = result,
-                                                thumbnailRef = rawDetection.thumbnailRef,
-                                            )
-                                        } else {
-                                            pending
-                                        }
-                                    }
-                                _pendingDetections.value = updatedQueue
-
-                                // Show hypothesis sheet if this is the first in queue
-                                val currentPending = updatedQueue.firstOrNull()
-                                if (currentPending is PendingDetectionState.ShowingHypotheses &&
-                                    currentPending.detectionId == detectionId
-                                ) {
-                                    showHypothesisSelection(
-                                        result = result,
-                                        itemId = detectionId, // Using detectionId as itemId temporarily
-                                        thumbnailRef = rawDetection.thumbnailRef,
-                                    )
-                                }
-                            }
-                        }
+                        showHypothesisSelectionFromResult(detectionId, rawDetection, result)
                     } else {
                         // Fallback: No hypotheses returned, create with on-device label
                         Log.w(TAG, "No hypotheses returned for detection $detectionId, using fallback")
-                        createItemFromDetection(detectionId, rawDetection, hypothesis = null)
-                        removeFromPendingQueue(detectionId)
+                        showFallbackHypothesisSheet(detectionId, rawDetection)
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Classification failed for detection $detectionId", e)
-                    // Fallback: Create with on-device label
-                    createItemFromDetection(detectionId, rawDetection, hypothesis = null)
-                    removeFromPendingQueue(detectionId)
+                    // Fallback: Show hypothesis sheet with on-device label
+                    showFallbackHypothesisSheet(detectionId, rawDetection)
                 }
             }
         }
@@ -1072,51 +1040,69 @@ class ItemsViewModel
          */
         fun dismissPendingDetection(detectionId: String) {
             viewModelScope.launch(workerDispatcher) {
-                val pending =
-                    _pendingDetections.value.find {
-                        when (it) {
-                            is PendingDetectionState.AwaitingClassification -> it.detectionId == detectionId
-                            is PendingDetectionState.ShowingHypotheses -> it.detectionId == detectionId
-                            else -> false
-                        }
-                    }
-
-                if (pending != null) {
-                    confirmPendingWithFallback(pending)
+                removeFromPendingQueue(detectionId)
+                withContext(mainDispatcher) {
+                    _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
                 }
             }
         }
 
-        /**
-         * Create item with on-device label fallback (user dismissed or classification failed).
-         */
-        private suspend fun confirmPendingWithFallback(pending: PendingDetectionState) {
-            val rawDetection =
-                when (pending) {
-                    is PendingDetectionState.AwaitingClassification -> pending.rawDetection
-                    is PendingDetectionState.ShowingHypotheses -> pending.rawDetection
-                    else -> return
-                }
+        private suspend fun showFallbackHypothesisSheet(
+            detectionId: String,
+            rawDetection: RawDetection,
+        ) {
+            val fallback =
+                MultiHypothesisResult(
+                    hypotheses =
+                        listOf(
+                            ClassificationHypothesis(
+                                categoryId = "",
+                                categoryName = rawDetection.onDeviceLabel,
+                                explanation = "",
+                                confidence = rawDetection.confidence,
+                                confidenceBand = "LOW",
+                                attributes = emptyMap(),
+                            ),
+                        ),
+                    globalConfidence = rawDetection.confidence,
+                    needsRefinement = true,
+                    requestId = "fallback",
+                )
+            showHypothesisSelectionFromResult(detectionId, rawDetection, fallback)
+        }
 
-            val detectionId =
-                when (pending) {
-                    is PendingDetectionState.AwaitingClassification -> pending.detectionId
-                    is PendingDetectionState.ShowingHypotheses -> pending.detectionId
-                    else -> return
-                }
-
-            createItemFromDetection(detectionId, rawDetection, hypothesis = null)
-
+        private suspend fun showHypothesisSelectionFromResult(
+            detectionId: String,
+            rawDetection: RawDetection,
+            result: MultiHypothesisResult,
+        ) {
             withContext(mainDispatcher) {
-                _pendingDetections.value =
-                    _pendingDetections.value.filterNot {
-                        when (it) {
-                            is PendingDetectionState.AwaitingClassification -> it.detectionId == detectionId
-                            is PendingDetectionState.ShowingHypotheses -> it.detectionId == detectionId
-                            else -> false
+                val updatedQueue =
+                    _pendingDetections.value.map { pending ->
+                        if ((pending as? PendingDetectionState.AwaitingClassification)?.detectionId == detectionId) {
+                            PendingDetectionState.ShowingHypotheses(
+                                detectionId = detectionId,
+                                rawDetection = rawDetection,
+                                hypothesisResult = result,
+                                thumbnailRef = rawDetection.thumbnailRef,
+                            )
+                        } else {
+                            pending
                         }
                     }
-                _hypothesisSelectionState.value = HypothesisSelectionState.Hidden
+                _pendingDetections.value = updatedQueue
+
+                // Show hypothesis sheet if this is the first in queue
+                val currentPending = updatedQueue.firstOrNull()
+                if (currentPending is PendingDetectionState.ShowingHypotheses &&
+                    currentPending.detectionId == detectionId
+                ) {
+                    showHypothesisSelection(
+                        result = result,
+                        itemId = detectionId,
+                        thumbnailRef = rawDetection.thumbnailRef,
+                    )
+                }
             }
         }
 

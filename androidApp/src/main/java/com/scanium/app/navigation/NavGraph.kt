@@ -98,6 +98,8 @@ fun ScaniumNavGraph(
     tourViewModel: com.scanium.app.ftue.TourViewModel,
     /** Factory for creating ExportAssistantViewModel - null disables the feature */
     exportAssistantViewModelFactory: ExportAssistantViewModel.Factory? = null,
+    /** Factory for creating PricingAssistantViewModel - null disables the feature */
+    pricingAssistantViewModelFactory: com.scanium.app.items.edit.PricingAssistantViewModel.Factory? = null,
 ) {
     NavHost(
         navController = navController,
@@ -321,6 +323,7 @@ fun ScaniumNavGraph(
                     },
                     itemsViewModel = itemsViewModel,
                     exportAssistantViewModelFactory = exportAssistantViewModelFactory,
+                    pricingAssistantViewModelFactory = pricingAssistantViewModelFactory,
                     tourViewModel = tourViewModel,
                     onNavigateToSettings = {
                         navController.navigate(Routes.SETTINGS_ASSISTANT)

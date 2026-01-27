@@ -185,4 +185,15 @@ internal class DeveloperSettings(
             preferences[SettingsKeys.Developer.DEV_SHOW_BUILD_WATERMARK_KEY] = enabled
         }
     }
+
+    val devForceHypothesisSelectionFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[SettingsKeys.Developer.DEV_FORCE_HYPOTHESIS_SHEET_KEY] ?: false
+        }
+
+    suspend fun setDevForceHypothesisSelection(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SettingsKeys.Developer.DEV_FORCE_HYPOTHESIS_SHEET_KEY] = enabled
+        }
+    }
 }

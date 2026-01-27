@@ -21,11 +21,14 @@ class ItemEditState(
     val itemId: String,
     val itemsViewModel: com.scanium.app.items.ItemsViewModel,
     exportAssistantViewModelFactory: ExportAssistantViewModel.Factory?,
+    pricingAssistantViewModelFactory: PricingAssistantViewModel.Factory?,
     item: ScannedItem?,
 ) {
     val exportAssistantViewModel = exportAssistantViewModelFactory?.create(itemId, itemsViewModel)
+    val pricingAssistantViewModel = pricingAssistantViewModelFactory?.create(itemId, itemsViewModel)
 
     var showExportAssistantSheet by mutableStateOf(false)
+    var showPricingAssistantSheet by mutableStateOf(false)
     var showAiDisabledInlay by mutableStateOf(false)
     var showPhotoGallery by mutableStateOf(false)
     var galleryStartIndex by mutableStateOf(0)
@@ -78,18 +81,20 @@ fun rememberItemEditState(
     itemId: String,
     itemsViewModel: com.scanium.app.items.ItemsViewModel,
     exportAssistantViewModelFactory: ExportAssistantViewModel.Factory?,
+    pricingAssistantViewModelFactory: PricingAssistantViewModel.Factory?,
 ): ItemEditState {
     val context = LocalContext.current
     // ISSUE-1/2 FIX: Do NOT include `item` in remember key.
     // Including `item` causes the entire state (including ViewModel) to be recreated
     // when item loads, leading to timing issues with generation on first click.
     // The ViewModel fetches item data internally via itemsViewModel.getItem().
-    return remember(itemId, itemsViewModel, exportAssistantViewModelFactory, context) {
+    return remember(itemId, itemsViewModel, exportAssistantViewModelFactory, pricingAssistantViewModelFactory, context) {
         ItemEditState(
             context = context,
             itemId = itemId,
             itemsViewModel = itemsViewModel,
             exportAssistantViewModelFactory = exportAssistantViewModelFactory,
+            pricingAssistantViewModelFactory = pricingAssistantViewModelFactory,
             item = item,
         )
     }

@@ -302,6 +302,12 @@ class SettingsRepository(
         developerSettings.setDevShowBuildWatermark(enabled)
     }
 
+    val devForceHypothesisSelectionFlow: Flow<Boolean> = developerSettings.devForceHypothesisSelectionFlow
+
+    suspend fun setDevForceHypothesisSelection(enabled: Boolean) {
+        developerSettings.setDevForceHypothesisSelection(enabled)
+    }
+
     val openItemListAfterScanFlow: Flow<Boolean> = scanningSettings.openItemListAfterScanFlow
 
     suspend fun setOpenItemListAfterScan(enabled: Boolean) {

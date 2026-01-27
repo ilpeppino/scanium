@@ -441,6 +441,14 @@
     <string name="assistant_disabled_message">L\'assistant IA nécessite une configuration</string>
     <string name="assistant_disabled_error_message">L\'assistant IA n\'est pas disponible</string>
     <string name="assistant_disabled_open_settings">Ouvrir les paramètres</string>
+    <string name="ai_chooser_title">AI Assistant</string>
+    <string name="ai_chooser_subtitle">Choose how you want AI to help with this item.</string>
+    <string name="ai_chooser_price_title">Price my item</string>
+    <string name="ai_chooser_price_body">Get a verifiable price range from real listings.</string>
+    <string name="ai_chooser_price_cta">Price my item</string>
+    <string name="ai_chooser_listing_title">Generate listing text</string>
+    <string name="ai_chooser_listing_body">Create a title, description, and highlights.</string>
+    <string name="ai_chooser_listing_cta">Generate listing text</string>
     <string name="assistant_speaking_status">L\'assistant parle...</string>
     <string name="assistant_confidence_high">Très probable</string>
     <string name="assistant_confidence_likely">Probable</string>
@@ -685,6 +693,8 @@
     <string name="pricing_show_matches">Afficher les correspondances</string>
     <string name="pricing_range_value">%s - %s</string>
     <string name="pricing_context_current_market">Marché actuel</string>
+    <string name="pricing_unavailable_title">Pricing not available</string>
+    <string name="pricing_unavailable_body">Pricing is not available in this build yet. Please try a newer build.</string>
     <string name="copy_label_title">Titre</string>
     <string name="copy_label_description">Description</string>
     <string name="copy_label_price">Prix</string>
@@ -972,6 +982,9 @@
     <string name="settings_developer_options_save_cloud_crops_subtitle">Enregistre les recadrages sortants dans le cache (effacé à la désinstallation)</string>
     <string name="settings_developer_options_verbose_classifier_logging_title">Journalisation détaillée du classificateur</string>
     <string name="settings_developer_options_verbose_classifier_logging_subtitle">Ajoute des détails supplémentaires du classificateur dans Logcat (builds debug uniquement)</string>
+    <string name="settings_dev_force_hypothesis_title">Force hypothesis sheet</string>
+    <string name="settings_dev_force_hypothesis_subtitle">Show the hypothesis chooser on the next scan</string>
+    <string name="settings_dev_force_hypothesis_queued">Next scan will show the hypothesis chooser</string>
     <string name="settings_developer_options_section_testing_debug">Tests et débogage</string>
     <string name="settings_developer_options_test_crash_reporting_title">Tester les rapports de crash</string>
     <string name="settings_developer_options_test_crash_reporting_subtitle">Envoyer un événement de test à Sentry (exception gérée)</string>

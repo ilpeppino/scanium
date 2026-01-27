@@ -11,6 +11,9 @@ data class PricingV4Request(
     val condition: String,
     val countryCode: String,
     val preferredMarketplaces: List<String> = emptyList(),
+    val variantAttributes: Map<String, String> = emptyMap(),
+    val completeness: List<String> = emptyList(),
+    val identifier: String? = null,
 )
 
 @Serializable

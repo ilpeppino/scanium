@@ -83,6 +83,7 @@ fun createTestItemsViewModel(
         mockk<SettingsRepository>(relaxed = true).also {
             every { it.openItemListAfterScanFlow } returns flowOf(false)
             every { it.smartMergeSuggestionsEnabledFlow } returns flowOf(false)
+            every { it.devForceHypothesisSelectionFlow } returns flowOf(false)
         },
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),

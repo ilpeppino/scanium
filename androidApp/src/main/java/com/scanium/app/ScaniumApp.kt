@@ -16,6 +16,7 @@ import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.di.DraftStoreEntryPoint
 import com.scanium.app.di.ExportAssistantViewModelFactoryEntryPoint
+import com.scanium.app.di.PricingAssistantViewModelFactoryEntryPoint
 import com.scanium.app.di.SettingsRepositoryEntryPoint
 import com.scanium.app.di.TourViewModelFactoryEntryPoint
 import com.scanium.app.ftue.TourViewModel
@@ -74,6 +75,11 @@ fun ScaniumApp() {
         hiltEntryPoint<ExportAssistantViewModelFactoryEntryPoint>(context)
             .exportAssistantViewModelFactory()
 
+    // PricingAssistantViewModel factory for Pricing Assistant wizard
+    val pricingAssistantViewModelFactory =
+        hiltEntryPoint<PricingAssistantViewModelFactoryEntryPoint>(context)
+            .pricingAssistantViewModelFactory()
+
     // Sound manager needs SettingsRepository for the enabled flow
     val settingsRepository: SettingsRepository = hiltEntryPoint<SettingsRepositoryEntryPoint>(context).settingsRepository()
     val soundManager =
@@ -107,6 +113,7 @@ fun ScaniumApp() {
             draftStore = draftStore,
             tourViewModel = tourViewModel,
             exportAssistantViewModelFactory = exportAssistantViewModelFactory,
+            pricingAssistantViewModelFactory = pricingAssistantViewModelFactory,
         )
     }
 }

@@ -201,6 +201,8 @@ fun CameraScreen(
 
     // Hypothesis selection state
     val hypothesisSelectionState by itemsViewModel.hypothesisSelectionState.collectAsState()
+    val showCorrectionDialog by itemsViewModel.showCorrectionDialog.collectAsState()
+    val correctionDialogData by itemsViewModel.correctionDialogData.collectAsState()
     val lowDataMode by classificationModeViewModel.lowDataMode.collectAsState()
     val verboseLogging by classificationModeViewModel.verboseLogging.collectAsState()
     val analysisFps by cameraManager.analysisFps.collectAsState()
@@ -1142,6 +1144,27 @@ fun CameraScreen(
                 },
                 onDismiss = {
                     itemsViewModel.dismissPendingDetection(state.itemId)
+                },
+            )
+        }
+
+        val correctionData = correctionDialogData
+        if (showCorrectionDialog && correctionData != null) {
+            com.scanium.app.classification.hypothesis.CorrectionDialog(
+                itemId = correctionData.itemId,
+                imageHash = correctionData.imageHash,
+                predictedCategory = correctionData.predictedCategory,
+                predictedConfidence = correctionData.predictedConfidence,
+                onDismiss = { itemsViewModel.dismissCorrectionDialog() },
+                onCorrectionSubmitted = { correctedCategory, notes ->
+                    itemsViewModel.submitCorrection(
+                        itemId = correctionData.itemId,
+                        imageHash = correctionData.imageHash,
+                        predictedCategory = correctionData.predictedCategory,
+                        predictedConfidence = correctionData.predictedConfidence,
+                        correctedCategory = correctedCategory,
+                        notes = notes,
+                    )
                 },
             )
         }

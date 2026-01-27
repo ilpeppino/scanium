@@ -92,6 +92,7 @@ fun EditItemScreenV3(
     onAiGenerate: (String) -> Unit,
     itemsViewModel: ItemsViewModel,
     exportAssistantViewModelFactory: ExportAssistantViewModel.Factory? = null,
+    pricingAssistantViewModelFactory: PricingAssistantViewModel.Factory? = null,
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSettingsGeneral: () -> Unit = {},
@@ -115,6 +116,7 @@ fun EditItemScreenV3(
     val showPricingV4 = FeatureFlags.allowPricingV4 && remoteConfig.featureFlags.enablePricingV4
     val showPricingV3 = FeatureFlags.allowPricingV3 && remoteConfig.featureFlags.enablePricingV3
     val showPricing = showPricingV4 || showPricingV3
+    val showPricingAssistant = FeatureFlags.allowPricingAssistant && showPricingV4
 
     val pricingV3Repository: PricingV3Repository =
         remember(context) {
@@ -148,6 +150,9 @@ fun EditItemScreenV3(
     val editFtueShowDetailsHint by editItemFtueViewModel.showDetailsHint.collectAsState()
     val editFtueShowConditionPriceHint by editItemFtueViewModel.showConditionPriceHint.collectAsState()
 
+    var showAiAssistantChooser by remember { mutableStateOf(false) }
+    var showPricingUnavailableSheet by remember { mutableStateOf(false) }
+
     var firstFieldRect by remember { mutableStateOf<Rect?>(null) }
     var conditionPriceFieldRect by remember { mutableStateOf<Rect?>(null) }
 
@@ -157,30 +162,8 @@ fun EditItemScreenV3(
             itemId = itemId,
             itemsViewModel = itemsViewModel,
             exportAssistantViewModelFactory = exportAssistantViewModelFactory,
+            pricingAssistantViewModelFactory = pricingAssistantViewModelFactory,
         )
-
-    // Observe Export Assistant state and extract pricing insights (Phase 2)
-    if (editState.exportAssistantViewModel != null) {
-        val exportState by editState.exportAssistantViewModel.state.collectAsState()
-        LaunchedEffect(exportState) {
-            if (exportState is ExportAssistantState.Success) {
-                val successState = exportState as ExportAssistantState.Success
-                // Update pricing insights
-                editState.pricingInsights = successState.pricingInsights
-                successState.pricingInsights?.let { insights ->
-                    editState.lastPricingInputs = editState.pricingInputs
-                    editState.pricingUiState = PricingUiState.Success(insights, isStale = false)
-                }
-
-                // Auto-populate price with median (USER DECISION)
-                val range = editState.pricingInsights?.range
-                if (editState.pricingInsights?.status?.uppercase() == "OK" && range != null) {
-                    val median = (range.low + range.high) / 2.0
-                    editState.priceField = "%.2f".format(median)
-                }
-            }
-        }
-    }
 
     LaunchedEffect(
         editState.brandField,
@@ -382,11 +365,7 @@ fun EditItemScreenV3(
                                     notesField = editState.notesField,
                                 )
 
-                                if (editState.exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
-                                    editState.showExportAssistantSheet = true
-                                } else {
-                                    onAiGenerate(itemId)
-                                }
+                                showAiAssistantChooser = true
                             }
                         },
                         enabled = true, // Always clickable to show inlay when disabled
@@ -569,6 +548,32 @@ fun EditItemScreenV3(
         )
     }
 
+    if (showAiAssistantChooser) {
+        AiAssistantChooserSheet(
+            onDismiss = { showAiAssistantChooser = false },
+            onChoosePrice = {
+                showAiAssistantChooser = false
+                android.util.Log.d("EditItemScreenV3", "AI chooser: Price my item selected")
+                if (showPricingAssistant && editState.pricingAssistantViewModel != null) {
+                    editState.pricingAssistantViewModel.refreshFromItem()
+                    editState.showPricingAssistantSheet = true
+                } else {
+                    showPricingUnavailableSheet = true
+                }
+            },
+            onChooseListing = {
+                showAiAssistantChooser = false
+                android.util.Log.d("EditItemScreenV3", "AI chooser: Generate listing text selected")
+                if (editState.exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
+                    editState.showExportAssistantSheet = true
+                } else {
+                    onAiGenerate(itemId)
+                }
+            },
+            highlightPrice = true,
+        )
+    }
+
     // Export Assistant Bottom Sheet
     if (editState.showExportAssistantSheet && editState.exportAssistantViewModel != null) {
         val settingsRepository = remember { SettingsRepository(context) }
@@ -604,6 +609,30 @@ fun EditItemScreenV3(
             },
             onNavigateToSettingsAssistant = onNavigateToSettings,
             onNavigateToSettingsGeneral = onNavigateToSettingsGeneral,
+        )
+    }
+
+    // Pricing Assistant Bottom Sheet
+    if (editState.showPricingAssistantSheet && editState.pricingAssistantViewModel != null) {
+        PricingAssistantSheet(
+            viewModel = editState.pricingAssistantViewModel,
+            countryCode = primaryRegionCountry,
+            onDismiss = { editState.showPricingAssistantSheet = false },
+            onUsePrice = { price ->
+                editState.priceField = "%.2f".format(price)
+            },
+            onOpenListingAssistant = {
+                if (editState.exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
+                    editState.showPricingAssistantSheet = false
+                    editState.showExportAssistantSheet = true
+                }
+            },
+        )
+    }
+
+    if (showPricingUnavailableSheet) {
+        PricingUnavailableSheet(
+            onDismiss = { showPricingUnavailableSheet = false },
         )
     }
 

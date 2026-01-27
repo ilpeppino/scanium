@@ -481,6 +481,13 @@ class DeveloperOptionsViewModel
             }
         }
 
+        fun forceHypothesisSheetOnce() {
+            viewModelScope.launch {
+                settingsRepository.setDevForceHypothesisSelection(true)
+                _copyResult.value = getApplication<Application>().getString(R.string.settings_dev_force_hypothesis_queued)
+            }
+        }
+
         /**
          * Reset all FTUE flags to replay first-time experiences.
          */

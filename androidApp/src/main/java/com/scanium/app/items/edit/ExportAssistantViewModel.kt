@@ -265,15 +265,19 @@ class ExportAssistantViewModel
             // Phase 2: Start with DraftingListing state
             _state.update { ExportAssistantState.Loading.DraftingListing(correlationId = correlationId) }
 
-            // Phase 2: Auto-transition to CheckingPrices after 3 seconds (USER DECISION)
-            progressTransitionJob?.cancel()
-            progressTransitionJob =
-                viewModelScope.launch {
-                    delay(3000)
-                    if (_state.value is ExportAssistantState.Loading.DraftingListing) {
-                        _state.update { ExportAssistantState.Loading.CheckingPrices(correlationId = correlationId) }
+            val includePricing = false
+
+            if (includePricing) {
+                // Phase 2: Auto-transition to CheckingPrices after 3 seconds (USER DECISION)
+                progressTransitionJob?.cancel()
+                progressTransitionJob =
+                    viewModelScope.launch {
+                        delay(3000)
+                        if (_state.value is ExportAssistantState.Loading.DraftingListing) {
+                            _state.update { ExportAssistantState.Loading.CheckingPrices(correlationId = correlationId) }
+                        }
                     }
-                }
+            }
 
             try {
                 // Get assistant preferences (language now comes from unified settings via SettingsRepository)
@@ -308,7 +312,7 @@ class ExportAssistantViewModel
                         correlationId = correlationId,
                         imageAttachments = imageAttachments,
                         assistantPrefs = assistantPrefs,
-                        includePricing = true,
+                        includePricing = includePricing,
                         pricingCountryCode = pricingCountryCode,
                     )
 

@@ -7,6 +7,8 @@ import com.scanium.app.pricing.PricingV3Api
 import com.scanium.app.pricing.PricingV3Repository
 import com.scanium.app.pricing.PricingV4Api
 import com.scanium.app.pricing.PricingV4Repository
+import com.scanium.app.pricing.VariantSchemaApi
+import com.scanium.app.pricing.VariantSchemaRepository
 import com.scanium.app.selling.assistant.network.AssistantHttpConfig
 import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import dagger.Module
@@ -63,6 +65,31 @@ object PricingModule {
         api: PricingV4Api,
     ): PricingV4Repository =
         PricingV4Repository(
+            api = api,
+            apiKeyProvider = { apiKeyStore.getApiKey() },
+            authTokenProvider = { apiKeyStore.getAuthToken() },
+            getDeviceId = { DeviceIdProvider.getHashedDeviceId(context) },
+        )
+
+    @Provides
+    @Singleton
+    fun provideVariantSchemaApi(): VariantSchemaApi =
+        VariantSchemaApi(
+            client =
+                AssistantOkHttpClientFactory.create(
+                    config = AssistantHttpConfig.DEFAULT,
+                    logStartupPolicy = false,
+                ),
+        )
+
+    @Provides
+    @Singleton
+    fun provideVariantSchemaRepository(
+        @ApplicationContext context: Context,
+        apiKeyStore: SecureApiKeyStore,
+        api: VariantSchemaApi,
+    ): VariantSchemaRepository =
+        VariantSchemaRepository(
             api = api,
             apiKeyProvider = { apiKeyStore.getApiKey() },
             authTokenProvider = { apiKeyStore.getAuthToken() },

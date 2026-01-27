@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Cloud
@@ -448,6 +449,13 @@ fun DeveloperOptionsScreen(
                 subtitle = stringResource(R.string.settings_developer_options_test_diagnostics_bundle_subtitle),
                 icon = Icons.Default.BugReport,
                 onClick = { viewModel.triggerDiagnosticsTest() },
+            )
+
+            SettingActionRow(
+                title = stringResource(R.string.settings_dev_force_hypothesis_title),
+                subtitle = stringResource(R.string.settings_dev_force_hypothesis_subtitle),
+                icon = Icons.Default.AutoAwesome,
+                onClick = { viewModel.forceHypothesisSheetOnce() },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

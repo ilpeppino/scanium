@@ -482,6 +482,14 @@
     <string name="assistant_disabled_message">Enable it in Settings to generate marketplace-ready descriptions.</string>
     <string name="assistant_disabled_error_message">AI assistant is disabled. Enable it in Settings to continue.</string>
     <string name="assistant_disabled_open_settings">Open settings</string>
+    <string name="ai_chooser_title">AI Assistant</string>
+    <string name="ai_chooser_subtitle">Choose how you want AI to help with this item.</string>
+    <string name="ai_chooser_price_title">Price my item</string>
+    <string name="ai_chooser_price_body">Get a verifiable price range from real listings.</string>
+    <string name="ai_chooser_price_cta">Price my item</string>
+    <string name="ai_chooser_listing_title">Generate listing text</string>
+    <string name="ai_chooser_listing_body">Create a title, description, and highlights.</string>
+    <string name="ai_chooser_listing_cta">Generate listing text</string>
 
     <!-- Items -->
     <string name="items_snackbar_item_deleted">Item deleted</string>
@@ -920,6 +928,9 @@
     <string name="settings_developer_options_save_cloud_crops_subtitle">Writes outgoing classifier crops to cache (cleared on uninstall)</string>
     <string name="settings_developer_options_verbose_classifier_logging_title">Verbose classifier logging</string>
     <string name="settings_developer_options_verbose_classifier_logging_subtitle">Adds extra classifier details to Logcat (debug builds only)</string>
+    <string name="settings_dev_force_hypothesis_title">Force hypothesis sheet</string>
+    <string name="settings_dev_force_hypothesis_subtitle">Show the hypothesis chooser on the next scan</string>
+    <string name="settings_dev_force_hypothesis_queued">Next scan will show the hypothesis chooser</string>
     <string name="settings_developer_options_section_testing_debug">Testing &amp; Debug</string>
     <string name="settings_developer_options_test_crash_reporting_title">Test Crash Reporting</string>
     <string name="settings_developer_options_test_crash_reporting_subtitle">Send test event to Sentry (handled exception)</string>
@@ -1142,7 +1153,7 @@
     <string name="pricing_show_matches">Show matches (%1$d)</string>
     <string name="pricing_card_title">Price Estimate</string>
     <string name="pricing_estimated_title">Estimated Resale Price</string>
-    <string name="pricing_button_get_estimate">Get Price Estimate</string>
+    <string name="pricing_button_get_estimate">Calculate verifiable price</string>
     <string name="pricing_button_use_price">Use %1$s</string>
     <string name="pricing_button_refresh">Refresh</string>
     <string name="pricing_button_retry">Retry</string>
@@ -1169,6 +1180,26 @@
     <string name="pricing_view_listings">View listings</string>
     <string name="pricing_time_window">Last %1$d days</string>
     <string name="pricing_sample_listings">Sample listings</string>
+    <string name="pricing_assistant_title">Pricing Assistant</string>
+    <string name="pricing_assistant_intro_title">Find a verifiable price range</string>
+    <string name="pricing_assistant_intro_body">Answer a few quick questions so we can match the right listings and show a trustworthy range.</string>
+    <string name="pricing_assistant_variants_title">Pick the variant details</string>
+    <string name="pricing_assistant_variants_placeholder">Enter details</string>
+    <string name="pricing_assistant_completeness_title">What’s included?</string>
+    <string name="pricing_assistant_completeness_subtitle">Select any accessories or extras that are included.</string>
+    <string name="pricing_assistant_identifier_title">Barcode or identifier</string>
+    <string name="pricing_assistant_identifier_subtitle">Confirm the identifier we detected to improve matching.</string>
+    <string name="pricing_assistant_identifier_label">Identifier</string>
+    <string name="pricing_assistant_confirm_title">Confirm and estimate</string>
+    <string name="pricing_assistant_open_listing_assistant">Open Listing Assistant</string>
+    <string name="pricing_assistant_summary_brand">Brand</string>
+    <string name="pricing_assistant_summary_model">Model</string>
+    <string name="pricing_assistant_summary_type">Type</string>
+    <string name="pricing_assistant_summary_variants">Variant</string>
+    <string name="pricing_assistant_summary_completeness">Included</string>
+    <string name="pricing_assistant_summary_identifier">Identifier</string>
+    <string name="pricing_unavailable_title">Pricing not available</string>
+    <string name="pricing_unavailable_body">Pricing is not available in this build yet. Please try a newer build.</string>
 
     <!-- Pricing Display (localized rendering of structured PricingDisplay) -->
     <string name="pricing_range_value">€%1$d–€%2$d</string>

@@ -5,7 +5,9 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.scanium.app.R
 import com.scanium.app.pricing.PricingMissingField
 import com.scanium.app.pricing.PricingUiState
 import com.scanium.shared.core.models.assistant.MarketplaceUsed
@@ -25,6 +27,7 @@ class PriceEstimateCardTest {
 
     @Test
     fun readyState_enablesGetEstimateButton() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         composeTestRule.setContent {
             PriceEstimateCard(
                 uiState = PricingUiState.Ready,
@@ -38,13 +41,14 @@ class PriceEstimateCardTest {
         }
 
         composeTestRule
-            .onNodeWithText("Get Price Estimate")
+            .onNodeWithText(context.getString(R.string.pricing_button_get_estimate))
             .assertIsDisplayed()
             .assertIsEnabled()
     }
 
     @Test
     fun insufficientData_disablesGetEstimateButton() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         composeTestRule.setContent {
             PriceEstimateCard(
                 uiState = PricingUiState.InsufficientData,
@@ -58,7 +62,7 @@ class PriceEstimateCardTest {
         }
 
         composeTestRule
-            .onNodeWithText("Get Price Estimate")
+            .onNodeWithText(context.getString(R.string.pricing_button_get_estimate))
             .assertIsDisplayed()
             .assertIsNotEnabled()
     }

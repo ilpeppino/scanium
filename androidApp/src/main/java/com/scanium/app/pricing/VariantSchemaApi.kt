@@ -2,124 +2,83 @@ package com.scanium.app.pricing
 
 import com.scanium.app.BuildConfig
 import com.scanium.app.network.security.RequestSigner
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.net.SocketTimeoutException
 
 @Serializable
-data class PricingV4Request(
-    val itemId: String,
-    val brand: String,
-    val productType: String,
-    val model: String,
-    val condition: String,
-    val countryCode: String,
-    val preferredMarketplaces: List<String> = emptyList(),
-    val variantAttributes: Map<String, String> = emptyMap(),
-    val completeness: List<String> = emptyList(),
-    val identifier: String? = null,
+data class VariantField(
+    val key: String,
+    val label: String,
+    val type: String,
+    val options: List<String>? = null,
+    val required: Boolean = false,
 )
 
 @Serializable
-data class PricingV4Response(
+data class VariantSchema(
+    val fields: List<VariantField> = emptyList(),
+    val completenessOptions: List<String> = emptyList(),
+)
+
+@Serializable
+data class VariantSchemaResponse(
     val success: Boolean,
-    val pricing: PricingV4PricingDto? = null,
-    val cached: Boolean? = null,
-    val processingTimeMs: Long? = null,
+    val fields: List<VariantField> = emptyList(),
+    val completenessOptions: List<String> = emptyList(),
     val error: PricingV4ErrorDto? = null,
 )
 
 @Serializable
-data class PricingV4PricingDto(
-    val status: String,
-    val countryCode: String,
-    val sources: List<PricingV4SourceDto> = emptyList(),
-    val totalListingsAnalyzed: Int = 0,
-    val timeWindowDays: Int = 0,
-    val range: PricingV4RangeDto? = null,
-    val sampleListings: List<PricingV4SampleListingDto> = emptyList(),
-    val confidence: String? = null,
-    val fallbackReason: String? = null,
-)
-
-@Serializable
-data class PricingV4SourceDto(
-    val id: String,
-    val name: String,
-    val baseUrl: String,
-    val listingCount: Int,
-    val searchUrl: String? = null,
-)
-
-@Serializable
-data class PricingV4SampleListingDto(
-    val title: String,
-    val price: Double,
-    val currency: String,
-    val condition: String? = null,
-    val url: String? = null,
-    val marketplace: String,
-)
-
-@Serializable
-data class PricingV4RangeDto(
-    val low: Double,
-    val median: Double,
-    val high: Double,
-    val currency: String,
-)
-
-@Serializable
-data class PricingV4ErrorDto(
-    val code: String,
-    val message: String? = null,
-    val resetAt: String? = null,
-)
-
-@Serializable
-private data class PricingV4ErrorResponseDto(
+private data class VariantSchemaErrorResponseDto(
     val error: PricingV4ErrorDto? = null,
 )
 
-class PricingV4Api(
+class VariantSchemaApi(
     private val client: OkHttpClient,
     private val json: Json = DEFAULT_JSON,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
-    suspend fun estimatePrice(
+    suspend fun getSchema(
         endpoint: String,
-        requestPayload: PricingV4Request,
+        productType: String,
         apiKey: String,
         correlationId: String,
         deviceId: String? = null,
         authToken: String? = null,
-    ): PricingV4Response =
-        withContext(ioDispatcher) {
-            val payloadJson = json.encodeToString(PricingV4Request.serializer(), requestPayload)
-            val requestBody = payloadJson.toRequestBody(JSON_MEDIA_TYPE)
+    ): VariantSchema =
+        withContext(Dispatchers.IO) {
+            val httpUrl =
+                endpoint
+                    .toHttpUrl()
+                    .newBuilder()
+                    .addQueryParameter("productType", productType)
+                    .build()
+
+            val urlPath = buildString {
+                append(httpUrl.encodedPath)
+                httpUrl.encodedQuery?.let { query -> append("?").append(query) }
+            }
 
             val requestBuilder =
                 Request
                     .Builder()
-                    .url(endpoint)
-                    .post(requestBody)
+                    .url(httpUrl)
+                    .get()
                     .header("X-API-Key", apiKey)
                     .header("X-Scanium-Correlation-Id", correlationId)
                     .header("X-Client", "Scanium-Android")
                     .header("X-App-Version", BuildConfig.VERSION_NAME)
 
-            RequestSigner.addSignatureHeaders(
+            RequestSigner.addSignatureHeadersForGet(
                 builder = requestBuilder,
                 apiKey = apiKey,
-                requestBody = payloadJson,
+                urlPath = urlPath,
             )
 
             if (!deviceId.isNullOrBlank()) {
@@ -137,14 +96,27 @@ class PricingV4Api(
                     val responseBody = response.body?.string()
 
                     if (response.isSuccessful && responseBody != null) {
-                        return@use json.decodeFromString(PricingV4Response.serializer(), responseBody)
+                        val payload =
+                            json.decodeFromString(VariantSchemaResponse.serializer(), responseBody)
+                        if (!payload.success) {
+                            throw PricingV4Exception(
+                                errorCode = payload.error?.code ?: "UNKNOWN_ERROR",
+                                userMessage = payload.error?.message ?: "Variant schema request failed",
+                                retryable = false,
+                            )
+                        }
+
+                        return@use VariantSchema(
+                            fields = payload.fields,
+                            completenessOptions = payload.completenessOptions,
+                        )
                     }
 
                     val errorDetails =
                         responseBody
                             ?.let {
                                 runCatching {
-                                    json.decodeFromString(PricingV4ErrorResponseDto.serializer(), it)
+                                    json.decodeFromString(VariantSchemaErrorResponseDto.serializer(), it)
                                 }.getOrNull()
                             }?.error
 
@@ -161,7 +133,7 @@ class PricingV4Api(
             } catch (error: SocketTimeoutException) {
                 throw PricingV4Exception(
                     errorCode = "TIMEOUT",
-                    userMessage = "Pricing request timed out",
+                    userMessage = "Variant schema request timed out",
                     retryable = true,
                     cause = error,
                 )
@@ -190,7 +162,6 @@ class PricingV4Api(
         }
 
     companion object {
-        private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private val DEFAULT_JSON =
             Json {
                 ignoreUnknownKeys = true
@@ -213,12 +184,12 @@ class PricingV4Api(
 
         private fun httpErrorMessage(statusCode: Int): String =
             when (statusCode) {
-                400 -> "Pricing request invalid"
+                400 -> "Variant schema request invalid"
                 401 -> "Not authorized to use pricing"
                 403 -> "Access to pricing denied"
-                404 -> "Pricing endpoint not found"
+                404 -> "Variant schema endpoint not found"
                 429 -> "Pricing rate limit exceeded"
-                504 -> "Pricing request timed out"
+                504 -> "Variant schema request timed out"
                 in 500..599 -> "Pricing service unavailable"
                 else -> "Pricing service error"
             }

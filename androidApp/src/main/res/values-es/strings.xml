@@ -450,6 +450,14 @@
     <string name="assistant_disabled_message">Actívalo en Configuración para generar descripciones listas para el marketplace.</string>
     <string name="assistant_disabled_error_message">El asistente IA está desactivado. Actívalo en Configuración para continuar.</string>
     <string name="assistant_disabled_open_settings">Abrir configuración</string>
+    <string name="ai_chooser_title">AI Assistant</string>
+    <string name="ai_chooser_subtitle">Choose how you want AI to help with this item.</string>
+    <string name="ai_chooser_price_title">Price my item</string>
+    <string name="ai_chooser_price_body">Get a verifiable price range from real listings.</string>
+    <string name="ai_chooser_price_cta">Price my item</string>
+    <string name="ai_chooser_listing_title">Generate listing text</string>
+    <string name="ai_chooser_listing_body">Create a title, description, and highlights.</string>
+    <string name="ai_chooser_listing_cta">Generate listing text</string>
 
     <!-- Assistant Auth Dialog -->
     <string name="assistant_auth_required_title">Inicio de sesión requerido</string>
@@ -894,6 +902,9 @@
     <string name="settings_developer_options_save_cloud_crops_subtitle">Guarda recortes del clasificador en caché (se limpia al desinstalar)</string>
     <string name="settings_developer_options_verbose_classifier_logging_title">Registro detallado del clasificador</string>
     <string name="settings_developer_options_verbose_classifier_logging_subtitle">Agrega detalles adicionales del clasificador a Logcat (solo compilaciones de depuración)</string>
+    <string name="settings_dev_force_hypothesis_title">Force hypothesis sheet</string>
+    <string name="settings_dev_force_hypothesis_subtitle">Show the hypothesis chooser on the next scan</string>
+    <string name="settings_dev_force_hypothesis_queued">Next scan will show the hypothesis chooser</string>
     <string name="settings_developer_options_section_testing_debug">Pruebas y depuración</string>
     <string name="settings_developer_options_test_crash_reporting_title">Probar informes de fallos</string>
     <string name="settings_developer_options_test_crash_reporting_subtitle">Enviar evento de prueba a Sentry (excepción controlada)</string>
@@ -1117,6 +1128,8 @@
     <!-- Pricing Display (localized rendering of structured PricingDisplay) -->
     <string name="pricing_range_value">€%1$d–€%2$d</string>
     <string name="pricing_context_current_market">Basado en las condiciones actuales del mercado</string>
+    <string name="pricing_unavailable_title">Pricing not available</string>
+    <string name="pricing_unavailable_body">Pricing is not available in this build yet. Please try a newer build.</string>
 
     <!-- Copy Labels and Categories -->
     <string name="copy_label_title">Título</string>

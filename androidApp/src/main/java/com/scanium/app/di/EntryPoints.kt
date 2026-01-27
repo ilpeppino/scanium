@@ -95,6 +95,15 @@ interface ExportAssistantViewModelFactoryEntryPoint {
 }
 
 /**
+ * Entry point for accessing PricingAssistantViewModel's assisted factory.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface PricingAssistantViewModelFactoryEntryPoint {
+    fun pricingAssistantViewModelFactory(): com.scanium.app.items.edit.PricingAssistantViewModel.Factory
+}
+
+/**
  * Entry point for accessing Pricing V3 repository in composables.
  */
 @EntryPoint

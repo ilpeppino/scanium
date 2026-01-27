@@ -12,11 +12,13 @@ import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
 import com.scanium.app.ml.classification.NoopClassifier
 import com.scanium.telemetry.facade.Telemetry
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Helper for creating [ItemsViewModel] instances inside instrumentation tests where
@@ -47,7 +49,10 @@ fun createAndroidTestItemsViewModel(
     stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     visionInsightsPrefiller: VisionInsightsPrefiller = NoopVisionInsightsPrefiller.create(),
     cropBasedEnricher: CropBasedEnricher = NoopCropBasedEnricher.create(),
-    settingsRepository: com.scanium.app.data.SettingsRepository = mockk(relaxed = true),
+    settingsRepository: com.scanium.app.data.SettingsRepository =
+        mockk(relaxed = true).also {
+            every { it.devForceHypothesisSelectionFlow } returns flowOf(false)
+        },
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     mainDispatcher: CoroutineDispatcher = workerDispatcher,
