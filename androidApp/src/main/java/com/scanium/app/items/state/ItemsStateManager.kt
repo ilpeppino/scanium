@@ -235,6 +235,18 @@ class ItemsStateManager(
     fun updateItemsFields(updates: Map<String, ItemFieldUpdate>) {
         if (updates.isEmpty()) return
 
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            val priceUpdates =
+                updates.mapValues { (_, update) ->
+                    when {
+                        update.clearUserPriceCents -> "clear"
+                        update.userPriceCents != null -> update.userPriceCents
+                        else -> "no-change"
+                    }
+                }
+            Log.d(TAG, "updateItemsFields price updates: $priceUpdates")
+        }
+
         val updatedItems =
             stateStore.getItems().map { item ->
                 val update = updates[item.id]

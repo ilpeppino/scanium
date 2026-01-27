@@ -686,6 +686,31 @@ class ItemsStateManagerTest {
         }
 
     @Test
+    fun whenUserPriceUpdated_thenPersistsAndReloads() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            val item = createTestItem(id = "item-1", category = ItemCategory.FASHION, userPriceCents = 500)
+            manager.addItem(item)
+            advanceUntilIdle()
+
+            val itemId = manager.items.first().first().id
+
+            // Act
+            manager.updateItemsFields(
+                mapOf(
+                    itemId to ItemFieldUpdate(userPriceCents = 1299),
+                ),
+            )
+            advanceUntilIdle()
+
+            // Assert
+            val persistedItems = fakeStore.loadAll()
+            val persistedItem = persistedItems.first { it.id == itemId }
+            assertThat(persistedItem.userPriceCents).isEqualTo(1299)
+        }
+
+    @Test
     fun whenClearAllItems_thenDeleteAllCalled() =
         runTest {
             // Arrange
@@ -1050,6 +1075,7 @@ class ItemsStateManagerTest {
         id: String,
         category: ItemCategory,
         confidence: Float = 0.8f,
+        userPriceCents: Long? = null,
     ): ScannedItem {
         return ScannedItem(
             id = id,
@@ -1060,6 +1086,7 @@ class ItemsStateManagerTest {
             timestamp = System.currentTimeMillis(),
             boundingBox = NormalizedRect(0.1f, 0.1f, 0.5f, 0.5f),
             labelText = category.name,
+            userPriceCents = userPriceCents,
         )
     }
 }

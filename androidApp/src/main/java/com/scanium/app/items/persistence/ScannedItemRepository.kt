@@ -47,7 +47,11 @@ class ScannedItemRepository(
 
     override suspend fun loadAll(): List<ScannedItem> =
         runPersistence("load items", emptyList()) {
-            dao.getAll().map { it.toModel() }
+            val items = dao.getAll().map { it.toModel() }
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, "Loaded items userPriceCents: ${items.associate { it.id to it.userPriceCents }}")
+            }
+            items
         }
 
     override suspend fun upsertAll(items: List<ScannedItem>) {
@@ -57,6 +61,10 @@ class ScannedItemRepository(
                 dao.deleteAllHistory()
                 syncer.sync(emptyList())
                 return@runPersistence
+            }
+
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, "Persisting items userPriceCents: ${items.associate { it.id to it.userPriceCents }}")
             }
 
             val entities = items.map { it.toEntity() }

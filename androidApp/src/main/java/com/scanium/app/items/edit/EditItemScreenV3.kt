@@ -57,6 +57,7 @@ import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.items.state.ItemFieldUpdate
 import com.scanium.app.pricing.PricingV3Exception
 import com.scanium.app.pricing.PricingV3Request
 import com.scanium.app.pricing.PricingV3Repository
@@ -362,6 +363,7 @@ fun EditItemScreenV3(
                                     sizeField = editState.sizeField,
                                     materialField = editState.materialField,
                                     conditionField = editState.conditionField,
+                                    priceField = editState.priceField,
                                     notesField = editState.notesField,
                                 )
 
@@ -413,6 +415,7 @@ fun EditItemScreenV3(
                                 sizeField = editState.sizeField,
                                 materialField = editState.materialField,
                                 conditionField = editState.conditionField,
+                                priceField = editState.priceField,
                                 notesField = editState.notesField,
                             )
                             // Advance tour if on SAVE_CHANGES step
@@ -723,8 +726,35 @@ private fun saveFieldsToAttributes(
     sizeField: String,
     materialField: String,
     conditionField: ItemCondition?,
+    priceField: String,
     notesField: String,
 ) {
+    val priceCents = parsePriceToCents(priceField)
+    if (android.util.Log.isLoggable("EditItemScreenV3", android.util.Log.DEBUG)) {
+        android.util.Log.d("EditItemScreenV3", "Saving price for $itemId: '$priceField' -> $priceCents")
+    }
+    when {
+        priceField.isBlank() -> {
+            itemsViewModel.updateItemsFields(
+                mapOf(
+                    itemId to ItemFieldUpdate(clearUserPriceCents = true),
+                ),
+            )
+        }
+        priceCents != null -> {
+            itemsViewModel.updateItemsFields(
+                mapOf(
+                    itemId to ItemFieldUpdate(userPriceCents = priceCents),
+                ),
+            )
+        }
+        else -> {
+            if (android.util.Log.isLoggable("EditItemScreenV3", android.util.Log.WARN)) {
+                android.util.Log.w("EditItemScreenV3", "Invalid price for $itemId: '$priceField' (skipping persistence)")
+            }
+        }
+    }
+
     // Update each attribute if value is non-blank
     if (brandField.isNotBlank()) {
         itemsViewModel.updateItemAttribute(
@@ -794,4 +824,21 @@ private fun saveFieldsToAttributes(
         summaryText = notesField,
         userEdited = notesField.isNotBlank(),
     )
+}
+
+private fun parsePriceToCents(priceText: String): Long? {
+    if (priceText.isBlank()) return null
+
+    val normalized = priceText.replace(',', '.')
+
+    return try {
+        val euros = normalized.toDouble()
+        if (euros < 0 || euros > 1_000_000) {
+            null
+        } else {
+            (euros * 100).toLong()
+        }
+    } catch (e: NumberFormatException) {
+        null
+    }
 }
