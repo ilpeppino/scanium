@@ -24,6 +24,7 @@ import { enrichRoutes } from './modules/enrich/routes.js';
 import { pricingRoutes } from './modules/pricing/routes.js';
 import { pricingV3Routes } from './modules/pricing/routes-v3.js';
 import { pricingV4Routes } from './modules/pricing/routes-v4.js';
+import { pricingVariantSchemaRoutes } from './modules/pricing/routes-variant-schema.js';
 import { mobileTelemetryRoutes } from './modules/mobile-telemetry/routes.js';
 import { marketplacesRoutes } from './modules/marketplaces/routes.js';
 import { itemsRoutes } from './modules/items/routes.js';
@@ -227,6 +228,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Pricing V4 (verifiable range from marketplaces)
   await app.register(pricingV4Routes, { prefix: '/v1', config });
+
+  // Pricing V4 variant schemas
+  await app.register(pricingVariantSchemaRoutes, { prefix: '/v1', config });
 
   // Billing verification stub
   await app.register(billingRoutes, { prefix: '/v1' });

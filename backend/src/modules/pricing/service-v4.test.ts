@@ -39,6 +39,55 @@ const request: PricingV4Request = {
 };
 
 describe('PricingV4Service', () => {
+  it('builds listing queries with variants and identifier', async () => {
+    const service = new PricingV4Service(baseConfig, {
+      adapters: [],
+    });
+
+    const enrichedRequest: PricingV4Request = {
+      ...request,
+      variantAttributes: { storage: '256GB', color: 'Blue' },
+      completeness: ['Charger', 'Box'],
+      identifier: '1234567890123',
+    };
+
+    const queries = (service as any).buildListingQueries(enrichedRequest);
+    expect(queries[0].model).toContain('256GB');
+    expect(queries[0].model).toContain('Blue');
+    expect(queries[1].model).toBe('1234567890123');
+    expect(queries[1].brand).toBe('');
+  });
+
+  it('changes cache key when variant attributes change', async () => {
+    const service = new PricingV4Service(baseConfig, {
+      adapters: [],
+    });
+
+    const baseKey = (service as any).buildCacheKey({
+      brand: request.brand,
+      productType: request.productType,
+      model: request.model,
+      condition: request.condition,
+      countryCode: request.countryCode,
+      variantAttributes: undefined,
+      completeness: undefined,
+      identifier: undefined,
+    });
+
+    const variantKey = (service as any).buildCacheKey({
+      brand: request.brand,
+      productType: request.productType,
+      model: request.model,
+      condition: request.condition,
+      countryCode: request.countryCode,
+      variantAttributes: { storage: '256GB' },
+      completeness: undefined,
+      identifier: undefined,
+    });
+
+    expect(baseKey).not.toBe(variantKey);
+  });
+
   it('falls back to V3 when adapters fail', async () => {
     const badAdapter: MarketplaceAdapter = {
       id: 'marktplaats',

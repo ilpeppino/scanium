@@ -25,6 +25,12 @@ export const pricingV4RequestSchema = z.object({
   countryCode: z.string().length(2).toUpperCase(),
   /** Optional: preferred marketplaces to query */
   preferredMarketplaces: z.array(z.string().min(1).max(50)).optional(),
+  /** Optional: variant attributes (e.g., storage, color) */
+  variantAttributes: z.record(z.string().min(1).max(100), z.string().min(1).max(100)).optional(),
+  /** Optional: completeness hints (charger, box, etc.) */
+  completeness: z.array(z.string().min(1).max(100)).optional(),
+  /** Optional: identifier (EAN/UPC) */
+  identifier: z.string().min(1).max(100).optional(),
 });
 
 export type PricingV4Request = z.infer<typeof pricingV4RequestSchema>;
@@ -120,6 +126,9 @@ export interface PricingV4CacheKeyComponents {
   model: string;
   condition: z.infer<typeof itemConditionSchema>;
   countryCode: string;
+  variantAttributes?: Record<string, string>;
+  completeness?: string[];
+  identifier?: string;
 }
 
 /**
@@ -155,6 +164,9 @@ export interface NormalizationInput {
   targetBrand: string;
   targetModel: string;
   targetProductType: string;
+  variantAttributes?: Record<string, string>;
+  completeness?: string[];
+  identifier?: string;
 }
 
 export interface NormalizationOutput {

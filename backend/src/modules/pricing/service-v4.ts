@@ -6,6 +6,7 @@ import {
   MarketplaceAdapter,
   FetchedListing,
   NormalizedListing,
+  ListingQuery,
 } from './types-v4.js';
 import { sha256Hex } from '../../infra/observability/hash.js';
 import { EbayBrowseAdapter } from '../marketplaces/adapters/ebay-adapter.js';
@@ -110,6 +111,9 @@ export class PricingV4Service {
       model: request.model,
       condition: request.condition,
       countryCode: request.countryCode,
+      variantAttributes: request.variantAttributes,
+      completeness: request.completeness,
+      identifier: request.identifier,
     });
 
     const cached = this.cache.get(cacheKey);
@@ -124,8 +128,17 @@ export class PricingV4Service {
       ? this.adapters.filter((adapter) => preferred.includes(adapter.id))
       : this.adapters;
 
+    const listingQueries = this.buildListingQueries(request);
     const adapterResults = await Promise.all(
-      activeAdapters.map((adapter) => this.fetchWithTimeout(adapter, request))
+      activeAdapters.map(async (adapter) => {
+        const queryResults = await Promise.all(
+          listingQueries.map((query) => this.fetchWithTimeout(adapter, query))
+        );
+        const listings = queryResults.flatMap((result) => result.listings);
+        const error = queryResults.find((result) => result.error)?.error;
+        const timedOut = queryResults.some((result) => result.timedOut);
+        return { adapter, listings, error, timedOut };
+      })
     );
 
     const sources = adapterResults.map((result) => ({
@@ -133,7 +146,7 @@ export class PricingV4Service {
       name: result.adapter.name,
       baseUrl: this.getMarketplaceBaseUrl(result.adapter.id),
       listingCount: result.listings.length,
-      searchUrl: result.adapter.buildSearchUrl(this.buildListingQuery(request)),
+      searchUrl: result.adapter.buildSearchUrl(listingQueries[0]),
     }));
 
     const combinedListings = adapterResults.flatMap((result) => result.listings);
@@ -175,8 +188,11 @@ export class PricingV4Service {
       ? await this.aiClusterer.normalize({
           listings: filtered,
           targetBrand: request.brand,
-          targetModel: request.model,
+          targetModel: this.buildModelWithVariants(request),
           targetProductType: request.productType,
+          variantAttributes: request.variantAttributes,
+          completeness: request.completeness,
+          identifier: request.identifier,
         })
       : {
           relevantListings: filtered,
@@ -226,21 +242,26 @@ export class PricingV4Service {
   }
 
   private buildCacheKey(components: PricingV4CacheKeyComponents): string {
+    const normalizedVariantAttributes = this.normalizeVariantAttributes(components.variantAttributes);
+    const normalizedCompleteness = this.normalizeCompleteness(components.completeness);
     const normalized = JSON.stringify({
       brand: components.brand.trim().toLowerCase(),
       productType: components.productType.trim().toLowerCase(),
       model: components.model.trim().toLowerCase(),
       condition: components.condition,
       countryCode: components.countryCode.trim().toUpperCase(),
+      variantAttributes: normalizedVariantAttributes,
+      completeness: normalizedCompleteness,
+      identifier: components.identifier?.trim().toLowerCase() ?? undefined,
     });
 
     return `pricing:v4:${sha256Hex(normalized)}`;
   }
 
-  private buildListingQuery(request: PricingV4Request) {
+  private buildListingQuery(request: PricingV4Request): ListingQuery {
     return {
       brand: request.brand,
-      model: request.model,
+      model: this.buildModelWithVariants(request),
       productType: request.productType,
       condition: request.condition,
       countryCode: request.countryCode,
@@ -248,16 +269,71 @@ export class PricingV4Service {
     };
   }
 
+  private buildListingQueries(request: PricingV4Request): ListingQuery[] {
+    const baseQuery = this.buildListingQuery(request);
+    const queries = [baseQuery];
+    const identifier = request.identifier?.trim();
+    if (identifier) {
+      queries.push({
+        ...baseQuery,
+        brand: '',
+        productType: '',
+        model: identifier,
+      });
+    }
+    return queries;
+  }
+
+  private buildModelWithVariants(request: PricingV4Request): string {
+    const variantText = this.buildVariantText(request.variantAttributes);
+    return [request.model, variantText].filter(Boolean).join(' ').trim();
+  }
+
+  private buildVariantText(variantAttributes?: Record<string, string>): string {
+    if (!variantAttributes) {
+      return '';
+    }
+    const entries = Object.entries(variantAttributes)
+      .map(([key, value]) => [key.trim(), value.trim()] as const)
+      .filter(([, value]) => Boolean(value))
+      .sort(([a], [b]) => a.localeCompare(b));
+    const values = entries.map(([, value]) => value);
+    const unique = Array.from(new Set(values));
+    return unique.join(' ');
+  }
+
+  private normalizeVariantAttributes(
+    variantAttributes?: Record<string, string>
+  ): Record<string, string> | undefined {
+    if (!variantAttributes) {
+      return undefined;
+    }
+    const entries = Object.entries(variantAttributes)
+      .map(([key, value]) => [key.trim().toLowerCase(), value.trim().toLowerCase()] as const)
+      .filter(([key, value]) => Boolean(key && value))
+      .sort(([a], [b]) => a.localeCompare(b));
+    return entries.length ? Object.fromEntries(entries) : undefined;
+  }
+
+  private normalizeCompleteness(completeness?: string[]): string[] | undefined {
+    if (!completeness) {
+      return undefined;
+    }
+    const normalized = completeness
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+    return normalized.length ? normalized : undefined;
+  }
+
   private async fetchWithTimeout(
     adapter: MarketplaceAdapter,
-    request: PricingV4Request
+    query: ListingQuery
   ): Promise<{
-    adapter: MarketplaceAdapter;
     listings: FetchedListing[];
     error?: string;
     timedOut?: boolean;
   }> {
-    const query = this.buildListingQuery(request);
     const timeoutMs = 5000;
 
     const startTime = Date.now();
@@ -272,14 +348,13 @@ export class PricingV4Service {
       const listings = await Promise.race([adapter.fetchListings(query), timeoutPromise]);
       const latencyMs = Date.now() - startTime;
       recordPricingV4AdapterResult(adapter.id, 'success', latencyMs);
-      return { adapter, listings };
+      return { listings };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       const latencyMs = Date.now() - startTime;
       const status = message.toLowerCase().includes('timeout') ? 'timeout' : 'error';
       recordPricingV4AdapterResult(adapter.id, status, latencyMs);
       return {
-        adapter,
         listings: [],
         error: message,
         timedOut: message.toLowerCase().includes('timeout'),

@@ -55,6 +55,9 @@ export class AiClusterer {
       brand: input.targetBrand,
       model: input.targetModel,
       productType: input.targetProductType,
+      variantAttributes: input.variantAttributes,
+      completeness: input.completeness,
+      identifier: input.identifier,
       listings: indexed,
     });
 

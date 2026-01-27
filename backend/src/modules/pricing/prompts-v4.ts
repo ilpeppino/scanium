@@ -10,6 +10,9 @@ export function buildPricingV4NormalizationPrompt(params: {
   brand: string;
   model: string;
   productType: string;
+  variantAttributes?: Record<string, string>;
+  completeness?: string[];
+  identifier?: string;
   listings: Array<{ id: number; listing: FetchedListing }>;
 }): string {
   const listingPayload = params.listings.map(({ id, listing }) => ({
@@ -21,7 +24,24 @@ export function buildPricingV4NormalizationPrompt(params: {
     url: listing.url,
   }));
 
+  const variantValues = params.variantAttributes
+    ? Object.entries(params.variantAttributes)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ')
+    : '';
+  const completeness = params.completeness?.length ? params.completeness.join(', ') : '';
+  const identifier = params.identifier?.trim() ?? '';
+
+  const extraContext = [
+    variantValues ? `Variant attributes: ${variantValues}` : null,
+    completeness ? `Completeness: ${completeness}` : null,
+    identifier ? `Identifier: ${identifier}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
   return `Target: ${params.brand} ${params.model} (${params.productType})\n\n` +
+    (extraContext ? `${extraContext}\n\n` : '') +
     `Listings to analyze:\n${JSON.stringify(listingPayload)}\n\n` +
     'Output JSON object: { "results": [ ... ] }\n' +
     'Each result:\n' +
