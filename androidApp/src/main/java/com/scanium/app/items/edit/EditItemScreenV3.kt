@@ -47,9 +47,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.catalog.CatalogSearch
+import com.scanium.app.catalog.CatalogType
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.AndroidRemoteConfigProvider
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.di.CatalogSearchEntryPoint
 import com.scanium.app.di.PricingV3RepositoryEntryPoint
 import com.scanium.app.di.PricingV4RepositoryEntryPoint
 import com.scanium.app.ftue.EditHintType
@@ -140,6 +143,15 @@ fun EditItemScreenV3(
                 ).pricingV4Repository()
         }
 
+    val catalogSearch: CatalogSearch =
+        remember(context) {
+            EntryPointAccessors
+                .fromApplication(
+                    context.applicationContext,
+                    CatalogSearchEntryPoint::class.java,
+                ).catalogSearch()
+        }
+
     // FTUE Tour State
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
     val isTourActive by tourViewModel?.isTourActive?.collectAsState() ?: remember { mutableStateOf(false) }
@@ -172,6 +184,20 @@ fun EditItemScreenV3(
             exportAssistantViewModelFactory = exportAssistantViewModelFactory,
             pricingAssistantViewModelFactory = pricingAssistantViewModelFactory,
         )
+
+    val brandSuggestionsFlow =
+        remember(catalogSearch, editState.brandQueryFlow) {
+            catalogSearch.searchFlow(CatalogType.BRANDS, editState.brandQueryFlow)
+        }
+    val productTypeSuggestionsFlow =
+        remember(catalogSearch, editState.productTypeQueryFlow) {
+            catalogSearch.searchFlow(CatalogType.PRODUCT_TYPES, editState.productTypeQueryFlow)
+        }
+    val brandSuggestions by brandSuggestionsFlow.collectAsState(emptyList())
+    val productTypeSuggestions by productTypeSuggestionsFlow.collectAsState(emptyList())
+
+    LaunchedEffect(brandSuggestions) { editState.brandSuggestions = brandSuggestions }
+    LaunchedEffect(productTypeSuggestions) { editState.productTypeSuggestions = productTypeSuggestions }
 
     LaunchedEffect(
         editState.brandField,
@@ -365,7 +391,9 @@ fun EditItemScreenV3(
                                     itemsViewModel = itemsViewModel,
                                     itemId = itemId,
                                     brandField = editState.brandField,
+                                    brandId = editState.brandId,
                                     productTypeField = editState.productTypeField,
+                                    productTypeId = editState.productTypeId,
                                     modelField = editState.modelField,
                                     colorField = editState.colorField,
                                     sizeField = editState.sizeField,
@@ -417,7 +445,9 @@ fun EditItemScreenV3(
                                 itemsViewModel = itemsViewModel,
                                 itemId = itemId,
                                 brandField = editState.brandField,
+                                brandId = editState.brandId,
                                 productTypeField = editState.productTypeField,
+                                productTypeId = editState.productTypeId,
                                 modelField = editState.modelField,
                                 colorField = editState.colorField,
                                 sizeField = editState.sizeField,
@@ -776,7 +806,9 @@ private fun saveFieldsToAttributes(
     itemsViewModel: ItemsViewModel,
     itemId: String,
     brandField: String,
+    brandId: String?,
     productTypeField: String,
+    productTypeId: String?,
     modelField: String,
     colorField: String,
     sizeField: String,
@@ -818,6 +850,12 @@ private fun saveFieldsToAttributes(
             "brand",
             ItemAttribute(value = brandField, confidence = 1.0f, source = "USER"),
         )
+        val resolvedBrandId = brandId ?: "custom:${normalizeCatalogId(brandField)}"
+        itemsViewModel.updateItemAttribute(
+            itemId,
+            "brandId",
+            ItemAttribute(value = resolvedBrandId, confidence = 1.0f, source = "USER"),
+        )
     }
 
     if (productTypeField.isNotBlank()) {
@@ -825,6 +863,12 @@ private fun saveFieldsToAttributes(
             itemId,
             "itemType",
             ItemAttribute(value = productTypeField, confidence = 1.0f, source = "USER"),
+        )
+        val resolvedProductTypeId = productTypeId ?: "custom:${normalizeCatalogId(productTypeField)}"
+        itemsViewModel.updateItemAttribute(
+            itemId,
+            "itemTypeId",
+            ItemAttribute(value = resolvedProductTypeId, confidence = 1.0f, source = "USER"),
         )
     }
 
@@ -898,3 +942,10 @@ private fun parsePriceToCents(priceText: String): Long? {
         null
     }
 }
+
+private fun normalizeCatalogId(rawValue: String): String =
+    rawValue
+        .trim()
+        .lowercase()
+        .replace(Regex("\\s+"), "_")
+        .replace(Regex("[^a-z0-9_]"), "")

@@ -1,15 +1,16 @@
 package com.scanium.app.di
 
+import com.scanium.app.catalog.CatalogSearch
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.TourViewModel
 import com.scanium.app.items.edit.ExportAssistantViewModel
+import com.scanium.app.pricing.PricingV3Repository
+import com.scanium.app.pricing.PricingV4Repository
 import com.scanium.app.selling.assistant.AssistantViewModel
 import com.scanium.app.selling.persistence.ListingDraftRepository
 import com.scanium.app.selling.ui.DraftReviewViewModel
 import com.scanium.app.selling.ui.ListingViewModel
 import com.scanium.app.selling.ui.PostingAssistViewModel
-import com.scanium.app.pricing.PricingV3Repository
-import com.scanium.app.pricing.PricingV4Repository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -119,4 +120,13 @@ interface PricingV3RepositoryEntryPoint {
 @InstallIn(SingletonComponent::class)
 interface PricingV4RepositoryEntryPoint {
     fun pricingV4Repository(): PricingV4Repository
+}
+
+/**
+ * Entry point for accessing CatalogSearch in composables.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface CatalogSearchEntryPoint {
+    fun catalogSearch(): CatalogSearch
 }

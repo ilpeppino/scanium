@@ -66,6 +66,7 @@ import com.scanium.app.ScannedItem
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemLocalizer
+import com.scanium.app.items.edit.components.CatalogAutocompleteField
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.pricing.PricingMissingField
 import com.scanium.app.pricing.PricingUiState
@@ -250,15 +251,25 @@ fun ItemEditSections(
             modifier = Modifier.padding(bottom = 12.dp),
         )
 
-        LabeledTextField(
+        CatalogAutocompleteField(
             label = stringResource(R.string.edit_item_field_brand),
             value = state.brandField,
-            onValueChange = { state.brandField = it },
-            onClear = { state.brandField = "" },
-            visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "brand"),
+            onValueChange = {
+                state.brandField = it
+                state.brandId = null
+            },
+            suggestions = state.brandSuggestions,
+            onQueryChange = { query -> state.brandQueryFlow.value = query },
+            onSuggestionSelected = { result ->
+                state.brandField = result.entry.displayLabel
+                state.brandId = result.entry.id
+            },
+            onClear = {
+                state.brandField = ""
+                state.brandId = null
+            },
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            onBoundsChanged = onFirstFieldBoundsChanged,
             isError = assistantMissingFields.contains(PricingMissingField.BRAND),
             modifier =
                 if (tourViewModel != null) {
@@ -301,12 +312,23 @@ fun ItemEditSections(
 
         Spacer(Modifier.height(12.dp))
 
-        LabeledTextField(
+        CatalogAutocompleteField(
             label = stringResource(R.string.edit_item_field_product_type),
             value = state.productTypeField,
-            onValueChange = { state.productTypeField = it },
-            onClear = { state.productTypeField = "" },
-            visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "itemType"),
+            onValueChange = {
+                state.productTypeField = it
+                state.productTypeId = null
+            },
+            suggestions = state.productTypeSuggestions,
+            onQueryChange = { query -> state.productTypeQueryFlow.value = query },
+            onSuggestionSelected = { result ->
+                state.productTypeField = result.entry.displayLabel
+                state.productTypeId = result.entry.id
+            },
+            onClear = {
+                state.productTypeField = ""
+                state.productTypeId = null
+            },
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
             isError = assistantMissingFields.contains(PricingMissingField.PRODUCT_TYPE),

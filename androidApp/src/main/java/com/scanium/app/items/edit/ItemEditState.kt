@@ -9,11 +9,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.scanium.app.ScannedItem
+import com.scanium.app.catalog.CatalogSearchResult
 import com.scanium.app.items.ItemAttributeLocalizer
-import com.scanium.shared.core.models.assistant.PricingInsights
 import com.scanium.app.pricing.PricingInputs
 import com.scanium.app.pricing.PricingUiState
+import com.scanium.shared.core.models.assistant.PricingInsights
 import com.scanium.shared.core.models.items.ItemCondition
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @Stable
 class ItemEditState(
@@ -38,7 +40,9 @@ class ItemEditState(
     var isDeletingPhotos by mutableStateOf(false)
 
     var brandField by mutableStateOf(item?.attributes?.get("brand")?.value ?: "")
+    var brandId by mutableStateOf(item?.attributes?.get("brandId")?.value)
     var productTypeField by mutableStateOf(item?.attributes?.get("itemType")?.value ?: "")
+    var productTypeId by mutableStateOf(item?.attributes?.get("itemTypeId")?.value)
     var modelField by mutableStateOf(item?.attributes?.get("model")?.value ?: "")
     var colorField by mutableStateOf(
         item?.attributes?.get("color")?.value?.takeIf { it.isNotEmpty() }?.let { rawColor ->
@@ -60,6 +64,11 @@ class ItemEditState(
     var priceField by mutableStateOf(
         item?.userPriceCents?.let { cents -> "%.2f".format(cents / 100.0) } ?: "",
     )
+
+    val brandQueryFlow = MutableStateFlow("")
+    val productTypeQueryFlow = MutableStateFlow("")
+    var brandSuggestions by mutableStateOf<List<CatalogSearchResult>>(emptyList())
+    var productTypeSuggestions by mutableStateOf<List<CatalogSearchResult>>(emptyList())
 
     var pricingInsights by mutableStateOf<PricingInsights?>(null)
     var pricingUiState by mutableStateOf<PricingUiState>(PricingUiState.Idle)
