@@ -273,8 +273,8 @@ android {
             buildConfigField("boolean", "FEATURE_SCREENSHOTS", "true")
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("boolean", "FEATURE_PRICING_V3", "false")
-            buildConfigField("boolean", "FEATURE_PRICING_V4", "false")
-            buildConfigField("boolean", "FEATURE_PRICING_ASSISTANT", "false")
+            buildConfigField("boolean", "FEATURE_PRICING_V4", "true")
+            buildConfigField("boolean", "FEATURE_PRICING_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
 
@@ -325,8 +325,8 @@ android {
             buildConfigField("boolean", "FEATURE_SCREENSHOTS", "true")
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("boolean", "FEATURE_PRICING_V3", "false")
-            buildConfigField("boolean", "FEATURE_PRICING_V4", "false")
-            buildConfigField("boolean", "FEATURE_PRICING_ASSISTANT", "false")
+            buildConfigField("boolean", "FEATURE_PRICING_V4", "true")
+            buildConfigField("boolean", "FEATURE_PRICING_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
 

@@ -6,7 +6,8 @@
     "enableCloud": true,
     "enableProfiles": true,
     "enablePostingAssist": true,
-    "enablePricingV3": false
+    "enablePricingV3": false,
+    "enablePricingV4": true
   },
   "limits": {
     "cloudDailyCap": 100,
