@@ -1,3 +1,5 @@
+package com.scanium.app.items.edit
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
