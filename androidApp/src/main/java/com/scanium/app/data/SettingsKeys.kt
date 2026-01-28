@@ -26,6 +26,7 @@ internal object SettingsKeys {
         val ASSISTANT_REGION_KEY = stringPreferencesKey("assistant_region")
         val ASSISTANT_UNITS_KEY = stringPreferencesKey("assistant_units")
         val ASSISTANT_VERBOSITY_KEY = stringPreferencesKey("assistant_verbosity")
+        val PRICING_GUIDANCE_DISMISSED_KEY = booleanPreferencesKey("pricing_guidance_dismissed")
     }
 
     object Voice {

@@ -39,7 +39,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -82,6 +81,7 @@ fun ItemEditSections(
     showPricingV3: Boolean,
     pricingUiState: PricingUiState,
     missingPricingFields: Set<PricingMissingField>,
+    assistantMissingFields: Set<PricingMissingField>,
     pricingRegionLabel: String,
     onGetPriceEstimate: () -> Unit,
     onUsePriceEstimate: (Double) -> Unit,
@@ -259,6 +259,7 @@ fun ItemEditSections(
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
             onBoundsChanged = onFirstFieldBoundsChanged,
+            isError = assistantMissingFields.contains(PricingMissingField.BRAND),
             modifier =
                 if (tourViewModel != null) {
                     Modifier.tourTarget("edit_brand_field", tourViewModel)
@@ -308,6 +309,7 @@ fun ItemEditSections(
             visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "itemType"),
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            isError = assistantMissingFields.contains(PricingMissingField.PRODUCT_TYPE),
         )
 
         Spacer(Modifier.height(12.dp))
@@ -408,6 +410,7 @@ private fun LabeledTextField(
     onNext: () -> Unit = {},
     keyboardOptions: KeyboardOptions? = null,
     onBoundsChanged: ((Rect?) -> Unit)? = null,
+    isError: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -430,6 +433,7 @@ private fun LabeledTextField(
                         }
                     },
             visualTransformation = visualTransformation,
+            isError = isError,
             trailingIcon = {
                 if (value.isNotEmpty()) {
                     IconButton(onClick = onClear) {

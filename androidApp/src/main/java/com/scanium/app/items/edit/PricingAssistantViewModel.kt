@@ -5,10 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.scanium.app.pricing.PricingInputs
 import com.scanium.app.pricing.PricingUiState
 import com.scanium.app.pricing.PricingV4Exception
-import com.scanium.app.pricing.PricingV4Request
 import com.scanium.app.pricing.PricingV4Repository
+import com.scanium.app.pricing.PricingV4Request
 import com.scanium.app.pricing.VariantSchema
 import com.scanium.app.pricing.VariantSchemaRepository
+import com.scanium.app.items.state.ItemFieldUpdate
 import com.scanium.shared.core.models.items.ItemCondition
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -137,38 +138,41 @@ class PricingAssistantViewModel
             }
         }
 
-    fun updateVariantValue(key: String, value: String) {
-        _state.update { prev ->
-            val updated =
-                prev.variantValues
-                    .toMutableMap()
-                    .apply { if (value.isBlank()) remove(key) else put(key, value) }
-            val nextState = prev.copy(variantValues = updated, pricingUiState = PricingUiState.Idle)
-            nextState.copy(pricingUiState = deriveReadyState(nextState))
-        }
-    }
-
-    fun toggleCompleteness(option: String) {
-        _state.update { prev ->
-            val updated = prev.completenessValues.toMutableSet()
-            if (updated.contains(option)) {
-                updated.remove(option)
-            } else {
-                updated.add(option)
+        fun updateVariantValue(
+            key: String,
+            value: String,
+        ) {
+            _state.update { prev ->
+                val updated =
+                    prev.variantValues
+                        .toMutableMap()
+                        .apply { if (value.isBlank()) remove(key) else put(key, value) }
+                val nextState = prev.copy(variantValues = updated, pricingUiState = PricingUiState.Idle)
+                nextState.copy(pricingUiState = deriveReadyState(nextState))
             }
-            val nextState = prev.copy(completenessValues = updated, pricingUiState = PricingUiState.Idle)
-            nextState.copy(pricingUiState = deriveReadyState(nextState))
         }
-    }
 
-    fun updateIdentifier(value: String) {
-        _state.update { prev ->
-            val nextState =
-                prev.copy(identifier = value.ifBlank { null }, pricingUiState = PricingUiState.Idle)
-            nextState.copy(pricingUiState = deriveReadyState(nextState))
+        fun toggleCompleteness(option: String) {
+            _state.update { prev ->
+                val updated = prev.completenessValues.toMutableSet()
+                if (updated.contains(option)) {
+                    updated.remove(option)
+                } else {
+                    updated.add(option)
+                }
+                val nextState = prev.copy(completenessValues = updated, pricingUiState = PricingUiState.Idle)
+                nextState.copy(pricingUiState = deriveReadyState(nextState))
+            }
         }
-        updateSteps()
-    }
+
+        fun updateIdentifier(value: String) {
+            _state.update { prev ->
+                val nextState =
+                    prev.copy(identifier = value.ifBlank { null }, pricingUiState = PricingUiState.Idle)
+                nextState.copy(pricingUiState = deriveReadyState(nextState))
+            }
+            updateSteps()
+        }
 
         fun nextStep() {
             _state.update { prev ->
@@ -231,6 +235,15 @@ class PricingAssistantViewModel
                     }
                 }
             }
+        }
+
+        fun applyPrice(median: Double) {
+            val priceCents = (median * 100).toLong()
+            itemsViewModel.updateItemsFields(
+                mapOf(
+                    itemId to ItemFieldUpdate(userPriceCents = priceCents),
+                ),
+            )
         }
 
         fun resetPricingState() {

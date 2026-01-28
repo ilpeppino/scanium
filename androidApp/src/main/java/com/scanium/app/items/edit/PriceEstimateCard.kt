@@ -29,6 +29,7 @@ import com.scanium.app.R
 import com.scanium.app.pricing.PricingMissingField
 import com.scanium.app.pricing.PricingUiState
 import com.scanium.app.ui.shimmerEffect
+import com.scanium.app.util.openInAppBrowser
 import com.scanium.shared.core.models.assistant.PricingConfidence
 import com.scanium.shared.core.models.assistant.PricingInsights
 import com.scanium.shared.core.models.assistant.SampleListing
@@ -59,21 +60,24 @@ fun PriceEstimateCard(
             when (uiState) {
                 PricingUiState.Loading -> LoadingState()
                 PricingUiState.Ready -> ReadyState(regionLabel = regionLabel, onGetEstimate = onGetEstimate)
-                PricingUiState.InsufficientData -> InsufficientDataState(
-                    missingFields = missingFields,
-                    onGetEstimate = onGetEstimate,
-                )
-                PricingUiState.Idle -> InsufficientDataState(
-                    missingFields = missingFields,
-                    onGetEstimate = onGetEstimate,
-                )
+                PricingUiState.InsufficientData ->
+                    InsufficientDataState(
+                        missingFields = missingFields,
+                        onGetEstimate = onGetEstimate,
+                    )
+                PricingUiState.Idle ->
+                    InsufficientDataState(
+                        missingFields = missingFields,
+                        onGetEstimate = onGetEstimate,
+                    )
                 is PricingUiState.Error -> ErrorState(uiState = uiState, onRetry = onRetry)
-                is PricingUiState.Success -> SuccessState(
-                    uiState = uiState,
-                    onUsePrice = onUsePrice,
-                    onRefresh = onRefresh,
-                    onRetry = onRetry,
-                )
+                is PricingUiState.Success ->
+                    SuccessState(
+                        uiState = uiState,
+                        onUsePrice = onUsePrice,
+                        onRefresh = onRefresh,
+                        onRetry = onRetry,
+                    )
             }
         }
     }
@@ -187,13 +191,15 @@ private fun SuccessState(
                 onRefresh = onRefresh,
                 showFallbackWarning = insights.status.uppercase() == "FALLBACK",
             )
-        else -> ErrorState(
-            uiState = PricingUiState.Error(
-                message = stringResource(R.string.pricing_error_region, insights.countryCode),
-                retryable = false,
-            ),
-            onRetry = onRetry,
-        )
+        else ->
+            ErrorState(
+                uiState =
+                    PricingUiState.Error(
+                        message = stringResource(R.string.pricing_error_region, insights.countryCode),
+                        retryable = false,
+                    ),
+                onRetry = onRetry,
+            )
     }
 }
 
@@ -323,9 +329,7 @@ private fun PricingResultState(
 }
 
 @Composable
-private fun VerifiableSourcesSection(
-    sources: List<com.scanium.shared.core.models.assistant.MarketplaceUsed>,
-) {
+private fun VerifiableSourcesSection(sources: List<com.scanium.shared.core.models.assistant.MarketplaceUsed>) {
     val context = LocalContext.current
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
@@ -340,16 +344,17 @@ private fun VerifiableSourcesSection(
                 Text(text = source.name)
                 source.listingCount?.let { count ->
                     Text(
-                        text = pluralStringResource(
-                            R.plurals.pricing_listing_count,
-                            count,
-                            count,
-                        ),
+                        text =
+                            pluralStringResource(
+                                R.plurals.pricing_listing_count,
+                                count,
+                                count,
+                            ),
                     )
                 }
             }
             source.searchUrl?.let { url ->
-                TextButton(onClick = { openUrl(context, url) }) {
+                TextButton(onClick = { openInAppBrowser(context, url) }) {
                     Text(stringResource(R.string.pricing_view_listings))
                 }
             }
@@ -387,21 +392,24 @@ private fun SampleListingsSection(
 private fun ConfidenceRow(confidence: PricingConfidence?) {
     val (label, color, fraction) =
         when (confidence) {
-            PricingConfidence.HIGH -> Triple(
-                stringResource(R.string.pricing_confidence_high),
-                MaterialTheme.colorScheme.primary,
-                1f,
-            )
-            PricingConfidence.MED -> Triple(
-                stringResource(R.string.pricing_confidence_med),
-                MaterialTheme.colorScheme.tertiary,
-                0.66f,
-            )
-            PricingConfidence.LOW -> Triple(
-                stringResource(R.string.pricing_confidence_low),
-                MaterialTheme.colorScheme.error,
-                0.33f,
-            )
+            PricingConfidence.HIGH ->
+                Triple(
+                    stringResource(R.string.pricing_confidence_high),
+                    MaterialTheme.colorScheme.primary,
+                    1f,
+                )
+            PricingConfidence.MED ->
+                Triple(
+                    stringResource(R.string.pricing_confidence_med),
+                    MaterialTheme.colorScheme.tertiary,
+                    0.66f,
+                )
+            PricingConfidence.LOW ->
+                Triple(
+                    stringResource(R.string.pricing_confidence_low),
+                    MaterialTheme.colorScheme.error,
+                    0.33f,
+                )
             null -> Triple("", MaterialTheme.colorScheme.onSurfaceVariant, 0f)
         }
 
@@ -439,9 +447,7 @@ private fun ConfidenceRow(confidence: PricingConfidence?) {
 }
 
 @Composable
-private fun NoResultsState(
-    onRetry: () -> Unit,
-) {
+private fun NoResultsState(onRetry: () -> Unit) {
     Text(
         text = stringResource(R.string.pricing_card_title),
         style = MaterialTheme.typography.titleSmall,
@@ -470,15 +476,3 @@ private fun getCurrencySymbol(currencyCode: String): String =
         else -> "$currencyCode "
     }
 
-private fun openUrl(
-    context: android.content.Context,
-    url: String,
-) {
-    try {
-        val intent =
-            android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
-        context.startActivity(intent)
-    } catch (e: Exception) {
-        android.util.Log.e("PriceEstimateCard", "Failed to open URL: $url", e)
-    }
-}

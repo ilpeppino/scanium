@@ -1200,6 +1200,10 @@
     <string name="pricing_assistant_summary_variants">Variant</string>
     <string name="pricing_assistant_summary_completeness">Included</string>
     <string name="pricing_assistant_summary_identifier">Identifier</string>
+    <string name="pricing_assistant_missing_fields_error">Please fill in Brand and Product Type before pricing.</string>
+    <string name="pricing_guidance_title">Improve pricing accuracy</string>
+    <string name="pricing_guidance_body">For best results, fill in brand, product type, condition, and model before pricing.</string>
+    <string name="pricing_guidance_dont_show_again">Don’t show this again</string>
     <string name="pricing_unavailable_title">Pricing not available</string>
     <string name="pricing_unavailable_body">Pricing is not available in this build yet. Please try a newer build.</string>
 

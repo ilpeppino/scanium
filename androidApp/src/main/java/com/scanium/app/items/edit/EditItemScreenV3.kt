@@ -50,6 +50,8 @@ import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.AndroidRemoteConfigProvider
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.di.PricingV3RepositoryEntryPoint
+import com.scanium.app.di.PricingV4RepositoryEntryPoint
 import com.scanium.app.ftue.EditHintType
 import com.scanium.app.ftue.EditItemFtueOverlay
 import com.scanium.app.ftue.EditItemFtueViewModel
@@ -58,16 +60,15 @@ import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.state.ItemFieldUpdate
-import com.scanium.app.pricing.PricingV3Exception
-import com.scanium.app.pricing.PricingV3Request
-import com.scanium.app.pricing.PricingV3Repository
-import com.scanium.app.pricing.PricingV4Exception
-import com.scanium.app.pricing.PricingV4Request
-import com.scanium.app.pricing.PricingV4Repository
-import com.scanium.app.pricing.PricingUiState
 import com.scanium.app.model.config.RemoteConfig
-import com.scanium.app.di.PricingV3RepositoryEntryPoint
-import com.scanium.app.di.PricingV4RepositoryEntryPoint
+import com.scanium.app.pricing.PricingUiState
+import com.scanium.app.pricing.PricingMissingField
+import com.scanium.app.pricing.PricingV3Exception
+import com.scanium.app.pricing.PricingV3Repository
+import com.scanium.app.pricing.PricingV3Request
+import com.scanium.app.pricing.PricingV4Exception
+import com.scanium.app.pricing.PricingV4Repository
+import com.scanium.app.pricing.PricingV4Request
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemCondition
 import dagger.hilt.android.EntryPointAccessors
@@ -107,6 +108,7 @@ fun EditItemScreenV3(
     // Observe AI assistant enabled setting
     val settingsRepository = remember { SettingsRepository(context) }
     val configScope = rememberCoroutineScope()
+    val uiScope = rememberCoroutineScope()
     val configProvider = remember { AndroidRemoteConfigProvider(context, configScope) }
     val remoteConfig by configProvider.config.collectAsState(initial = RemoteConfig())
     // ISSUE-1 FIX: Use initial=true to avoid double-click bug where first click
@@ -114,6 +116,7 @@ fun EditItemScreenV3(
     // in ExportAssistantViewModel.generateExport() handles truly disabled case.
     val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = true)
     val primaryRegionCountry by settingsRepository.primaryRegionCountryFlow.collectAsState(initial = "")
+    val pricingGuidanceDismissed by settingsRepository.pricingGuidanceDismissedFlow.collectAsState(initial = false)
     val showPricingV4 = FeatureFlags.allowPricingV4 && remoteConfig.featureFlags.enablePricingV4
     val showPricingV3 = FeatureFlags.allowPricingV3 && remoteConfig.featureFlags.enablePricingV3
     val showPricing = showPricingV4 || showPricingV3
@@ -153,6 +156,10 @@ fun EditItemScreenV3(
 
     var showAiAssistantChooser by remember { mutableStateOf(false) }
     var showPricingUnavailableSheet by remember { mutableStateOf(false) }
+    var showPricingGuidanceDialog by remember { mutableStateOf(false) }
+    var pricingGuidanceDontShowAgain by remember { mutableStateOf(false) }
+    var aiChooserErrorMessage by remember { mutableStateOf<String?>(null) }
+    var showPricingAssistantFieldErrors by remember { mutableStateOf(false) }
 
     var firstFieldRect by remember { mutableStateOf<Rect?>(null) }
     var conditionPriceFieldRect by remember { mutableStateOf<Rect?>(null) }
@@ -236,11 +243,12 @@ fun EditItemScreenV3(
                     when (error) {
                         is PricingV4Exception -> Triple(error.userMessage, error.retryable, error.retryAfterSeconds)
                         is PricingV3Exception -> Triple(error.userMessage, error.retryable, error.retryAfterSeconds)
-                        else -> Triple(
-                            context.getString(R.string.pricing_error_network),
-                            true,
-                            null,
-                        )
+                        else ->
+                            Triple(
+                                context.getString(R.string.pricing_error_network),
+                                true,
+                                null,
+                            )
                     }
                 editState.pricingUiState =
                     PricingUiState.Error(
@@ -448,6 +456,14 @@ fun EditItemScreenV3(
             showPricingV3 = showPricing,
             pricingUiState = editState.pricingUiState,
             missingPricingFields = editState.pricingInputs.missingFields(),
+            assistantMissingFields =
+                if (showPricingAssistantFieldErrors) {
+                    editState.pricingInputs
+                        .missingFields()
+                        .intersect(setOf(PricingMissingField.BRAND, PricingMissingField.PRODUCT_TYPE))
+                } else {
+                    emptySet()
+                },
             pricingRegionLabel =
                 if (primaryRegionCountry.isBlank()) {
                     stringResource(R.string.pricing_region_generic)
@@ -553,19 +569,39 @@ fun EditItemScreenV3(
 
     if (showAiAssistantChooser) {
         AiAssistantChooserSheet(
-            onDismiss = { showAiAssistantChooser = false },
-            onChoosePrice = {
+            onDismiss = {
                 showAiAssistantChooser = false
+                aiChooserErrorMessage = null
+            },
+            onChoosePrice = {
                 android.util.Log.d("EditItemScreenV3", "AI chooser: Price my item selected")
+                val missing =
+                    editState.pricingInputs
+                        .missingFields()
+                        .intersect(setOf(PricingMissingField.BRAND, PricingMissingField.PRODUCT_TYPE))
+                if (missing.isNotEmpty()) {
+                    aiChooserErrorMessage =
+                        context.getString(R.string.pricing_assistant_missing_fields_error)
+                    showPricingAssistantFieldErrors = true
+                    return@AiAssistantChooserSheet
+                }
+                aiChooserErrorMessage = null
+                showAiAssistantChooser = false
                 if (showPricingAssistant && editState.pricingAssistantViewModel != null) {
                     editState.pricingAssistantViewModel.refreshFromItem()
-                    editState.showPricingAssistantSheet = true
+                    if (pricingGuidanceDismissed) {
+                        editState.showPricingAssistantSheet = true
+                    } else {
+                        pricingGuidanceDontShowAgain = false
+                        showPricingGuidanceDialog = true
+                    }
                 } else {
                     showPricingUnavailableSheet = true
                 }
             },
             onChooseListing = {
                 showAiAssistantChooser = false
+                aiChooserErrorMessage = null
                 android.util.Log.d("EditItemScreenV3", "AI chooser: Generate listing text selected")
                 if (editState.exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
                     editState.showExportAssistantSheet = true
@@ -574,6 +610,7 @@ fun EditItemScreenV3(
                 }
             },
             highlightPrice = true,
+            errorMessage = aiChooserErrorMessage,
         )
     }
 
@@ -622,7 +659,9 @@ fun EditItemScreenV3(
             countryCode = primaryRegionCountry,
             onDismiss = { editState.showPricingAssistantSheet = false },
             onUsePrice = { price ->
+                editState.pricingAssistantViewModel.applyPrice(price)
                 editState.priceField = "%.2f".format(price)
+                editState.showPricingAssistantSheet = false
             },
             onOpenListingAssistant = {
                 if (editState.exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
@@ -630,6 +669,23 @@ fun EditItemScreenV3(
                     editState.showExportAssistantSheet = true
                 }
             },
+        )
+    }
+
+    if (showPricingGuidanceDialog) {
+        PricingGuidanceDialog(
+            dontShowAgainChecked = pricingGuidanceDontShowAgain,
+            onDontShowAgainChange = { pricingGuidanceDontShowAgain = it },
+            onContinue = {
+                if (pricingGuidanceDontShowAgain) {
+                    uiScope.launch {
+                        settingsRepository.setPricingGuidanceDismissed(true)
+                    }
+                }
+                showPricingGuidanceDialog = false
+                editState.showPricingAssistantSheet = true
+            },
+            onDismiss = { showPricingGuidanceDialog = false },
         )
     }
 

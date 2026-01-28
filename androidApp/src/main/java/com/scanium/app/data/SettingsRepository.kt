@@ -64,6 +64,12 @@ class SettingsRepository(
         assistantSettings.setAllowAssistant(allow)
     }
 
+    val pricingGuidanceDismissedFlow: Flow<Boolean> = assistantSettings.pricingGuidanceDismissedFlow
+
+    suspend fun setPricingGuidanceDismissed(dismissed: Boolean) {
+        assistantSettings.setPricingGuidanceDismissed(dismissed)
+    }
+
     val shareDiagnosticsFlow: Flow<Boolean> = generalSettings.shareDiagnosticsFlow
 
     suspend fun setShareDiagnostics(share: Boolean) {

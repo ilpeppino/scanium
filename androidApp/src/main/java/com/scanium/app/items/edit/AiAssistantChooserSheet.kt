@@ -42,6 +42,7 @@ fun AiAssistantChooserSheet(
     onChoosePrice: () -> Unit,
     onChooseListing: () -> Unit,
     highlightPrice: Boolean,
+    errorMessage: String? = null,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
 ) {
     ModalBottomSheet(
@@ -65,6 +66,14 @@ fun AiAssistantChooserSheet(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
 
             AiChooserOptionCard(
                 title = stringResource(R.string.ai_chooser_price_title),

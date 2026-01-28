@@ -120,6 +120,17 @@ internal class AssistantSettings(
         }
     }
 
+    val pricingGuidanceDismissedFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[SettingsKeys.Assistant.PRICING_GUIDANCE_DISMISSED_KEY] ?: false
+        }
+
+    suspend fun setPricingGuidanceDismissed(dismissed: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SettingsKeys.Assistant.PRICING_GUIDANCE_DISMISSED_KEY] = dismissed
+        }
+    }
+
     val assistantPrefsFlow: Flow<AssistantPrefs> =
         combine(
             assistantLanguageFlow,

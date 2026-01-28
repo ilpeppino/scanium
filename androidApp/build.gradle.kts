@@ -548,6 +548,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation("androidx.browser:browser:1.8.0")
 
     // Core library desugaring for java.time APIs on API < 26
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
