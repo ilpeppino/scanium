@@ -1170,4 +1170,102 @@
     <string name="settings_dev_health_monitor_status_last_ok">Ativado - última verificação OK</string>
     <string name="settings_dev_health_monitor_status_last_fail">Ativado - última verificação FALHA</string>
     <string name="settings_dev_health_monitor_status_waiting">Ativado - aguardando a primeira verificação</string>
+    <!-- Pricing -->
+    <string name="pricing_button_get_estimate">Obter estimativa</string>
+
+    <!-- Smart Merge -->
+    <string name="settings_smart_merge_title">Fusão inteligente</string>
+    <string name="settings_smart_merge_subtitle">Fundir automaticamente itens semelhantes após a digitalização</string>
+    <string name="smart_merge_banner_subtitle">Itens semelhantes agrupados (%1$d)</string>
+    <string name="smart_merge_accept_all">Aceitar todos os grupos</string>
+    <string name="smart_merge_review">Revisar grupos</string>
+    <string name="smart_merge_review_title">Revisar grupos de fusão inteligente</string>
+    <string name="smart_merge_review_subtitle">Toque para editar grupos, deslize para recusar</string>
+    <string name="smart_merge_primary_item">Item principal</string>
+    <string name="smart_merge_similar_items">Itens semelhantes</string>
+    <string name="smart_merge_similarity">Similaridade: %1$d%%</string>
+    <string name="smart_merge_accept">Aceitar grupo</string>
+    <string name="smart_merge_reject">Rejeitar grupo</string>
+    <string name="smart_merge_no_groups">Nenhum grupo disponível</string>
+
+    <!-- Item Info Chips -->
+    <string name="settings_show_item_info_chips_title">Mostrar chips de informação do item</string>
+    <string name="settings_show_item_info_chips_subtitle">Exibir dicas rápidas e detalhes sobre itens digitalizados</string>
+
+    <!-- Items List Status -->
+    <string name="items_accessibility_classification_needs_review">A classificação precisa de revisão</string>
+    <string name="items_status_needs_review">Necessita de revisão</string>
+
+    <!-- Pricing Details -->
+    <string name="pricing_based_on_sources">Baseado em %1$d fontes</string>
+    <string name="pricing_card_title">Preços e venda</string>
+    <string name="pricing_estimated_title">Preço estimado</string>
+    <string name="pricing_button_use_price">Usar este preço</string>
+    <string name="pricing_button_refresh">Atualizar preços</string>
+    <string name="pricing_button_retry">Tentar novamente</string>
+    <string name="pricing_button_try_again">Tentar novamente</string>
+    <string name="pricing_loading">Carregando preços...</string>
+    <string name="pricing_based_on">Baseado em</string>
+    <string name="pricing_marketplaces_fallback">Os marketplaces podem não estar disponíveis para sua região.</string>
+    <string name="pricing_insufficient_data">Dados insuficientes para estimativa de preço</string>
+    <string name="pricing_ready_subtitle">Preço estimado com base nas condições atuais do mercado.</string>
+    <string name="pricing_region_generic">para sua região</string>
+    <string name="pricing_confidence_high">Alta confiança</string>
+    <string name="pricing_confidence_med">Confiança média</string>
+    <string name="pricing_confidence_low">Baixa confiança</string>
+    <string name="pricing_low_confidence_warning">Este preço tem baixa confiança.</string>
+    <string name="pricing_fallback_warning">O preço é uma estimativa inicial baseada em dados limitados.</string>
+    <string name="pricing_stale_badge">Desatualizado</string>
+    <string name="pricing_stale_warning">O preço pode não ser preciso.</string>
+    <string name="pricing_stale_reason_generic">Última atualização há %1$s</string>
+    <string name="pricing_error_network">Erro de rede. Verifique sua conexão e tente novamente.</string>
+    <string name="pricing_error_rate_limit">Limite de taxa excedido. Tente novamente mais tarde.</string>
+    <string name="pricing_error_region">O preço não está disponível para sua região.</string>
+    <string name="pricing_no_results_title">Nenhum resultado de preço</string>
+    <string name="pricing_no_results_subtitle">Tente atualizar os detalhes do item para uma busca melhor.</string>
+    <string name="pricing_view_listings">Ver anúncios</string>
+    <string name="pricing_time_window">%1$s em %2$s</string>
+    <string name="pricing_sample_listings">Anúncios de exemplo</string>
+
+    <!-- Pricing Assistant -->
+    <string name="pricing_assistant_title">Assistente de preços</string>
+    <string name="pricing_assistant_intro_title">Estime o valor do seu item</string>
+    <string name="pricing_assistant_intro_body">Responda a algumas perguntas para obter uma estimativa de preço mais precisa.</string>
+    <string name="pricing_assistant_variants_title">Qual é a variante ou estilo?</string>
+    <string name="pricing_assistant_variants_placeholder">(ex: edição limitada, cor, tamanho)</string>
+    <string name="pricing_assistant_completeness_title">Qual é a completude?</string>
+    <string name="pricing_assistant_completeness_subtitle">(ex: com caixa, acessórios, manual)</string>
+    <string name="pricing_assistant_identifier_title">Existem identificadores únicos?</string>
+    <string name="pricing_assistant_identifier_subtitle">(ex: número de série, ISBN, UPC)</string>
+    <string name="pricing_assistant_identifier_label">Identificador</string>
+    <string name="pricing_assistant_confirm_title">Confirmar detalhes do item</string>
+    <string name="pricing_assistant_open_listing_assistant">Abrir assistente de anúncio</string>
+    <string name="pricing_assistant_summary_brand">Marca: %1$s</string>
+    <string name="pricing_assistant_summary_model">Modelo: %1$s</string>
+    <string name="pricing_assistant_summary_type">Tipo: %1$s</string>
+    <string name="pricing_assistant_summary_variants">Variantes: %1$s</string>
+    <string name="pricing_assistant_summary_completeness">Completude: %1$s</string>
+    <string name="pricing_assistant_summary_identifier">Identificador: %1$s</string>
+    <string name="pricing_assistant_missing_fields_error">Por favor, preencha todos os campos antes de continuar.</string>
+
+    <!-- Pricing Guidance -->
+    <string name="pricing_guidance_title">Orientação de preços</string>
+    <string name="pricing_guidance_body">Os preços podem variar com base na condição do item, demanda e raridade. Considere ajustar seu preço.</string>
+    <string name="pricing_guidance_dont_show_again">Não mostrar novamente</string>
+
+    <!-- Hypothesis -->
+    <string name="hypothesis_header">Eu escolho...</string>
+    <string name="hypothesis_none_of_these">Nenhum destes</string>
+    <string name="hypothesis_add_photo_to_refine">Adicionar foto para refinar</string>
+
+    <!-- Correction Dialog -->
+    <string name="correction_dialog_title">Corrigir classificação</string>
+    <string name="correction_dialog_explanation">Ajude-nos a melhorar as classificações. Selecione a categoria correta abaixo.</string>
+    <string name="correction_dialog_category_label">Categoria correta</string>
+    <string name="correction_dialog_category_hint">Selecione uma categoria</string>
+    <string name="correction_dialog_notes_label">Notas adicionais</string>
+    <string name="correction_dialog_notes_hint">(Opcional) O que tornou difícil de classificar?</string>
+    <string name="correction_dialog_predicted">Previsto: %1$s</string>
+    <string name="correction_dialog_submit">Enviar</string>
+    <string name="correction_dialog_cancel">Cancelar</string>
 </resources>
