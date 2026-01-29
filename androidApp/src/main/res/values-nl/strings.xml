@@ -1170,4 +1170,102 @@
     <string name="settings_dev_health_monitor_status_last_ok">Ingeschakeld - laatste controle OK</string>
     <string name="settings_dev_health_monitor_status_last_fail">Ingeschakeld - laatste controle FOUT</string>
     <string name="settings_dev_health_monitor_status_waiting">Ingeschakeld - wachten op eerste controle</string>
+    <!-- Pricing -->
+    <string name="pricing_button_get_estimate">Krijg schatting</string>
+
+    <!-- Smart Merge -->
+    <string name="settings_smart_merge_title">Slim samenvoegen</string>
+    <string name="settings_smart_merge_subtitle">Voeg vergelijkbare items automatisch samen na het scannen</string>
+    <string name="smart_merge_banner_subtitle">Vergelijkbare items gegroepeerd (%1$d)</string>
+    <string name="smart_merge_accept_all">Accepteer alle groepen</string>
+    <string name="smart_merge_review">Groepen beoordelen</string>
+    <string name="smart_merge_review_title">Beoordeel slimme samenvoeggroepen</string>
+    <string name="smart_merge_review_subtitle">Tik om groepen te bewerken, veeg om te weigeren</string>
+    <string name="smart_merge_primary_item">Primair item</string>
+    <string name="smart_merge_similar_items">Vergelijkbare items</string>
+    <string name="smart_merge_similarity">Gelijkenis: %1$d%%</string>
+    <string name="smart_merge_accept">Accepteer groep</string>
+    <string name="smart_merge_reject">Weiger groep</string>
+    <string name="smart_merge_no_groups">Geen groepen beschikbaar</string>
+
+    <!-- Item Info Chips -->
+    <string name="settings_show_item_info_chips_title">Toon item info-chips</string>
+    <string name="settings_show_item_info_chips_subtitle">Toon snelle hints en details over gescande items</string>
+
+    <!-- Items List Status -->
+    <string name="items_accessibility_classification_needs_review">Classificatie moet worden beoordeeld</string>
+    <string name="items_status_needs_review">Moet worden beoordeeld</string>
+
+    <!-- Pricing Details -->
+    <string name="pricing_based_on_sources">Gebaseerd op %1$d bronnen</string>
+    <string name="pricing_card_title">Prijzen en verkoop</string>
+    <string name="pricing_estimated_title">Geschatte prijs</string>
+    <string name="pricing_button_use_price">Gebruik deze prijs</string>
+    <string name="pricing_button_refresh">Prijzen vernieuwen</string>
+    <string name="pricing_button_retry">Opnieuw proberen</string>
+    <string name="pricing_button_try_again">Probeer opnieuw</string>
+    <string name="pricing_loading">Prijzen laden...</string>
+    <string name="pricing_based_on">Gebaseerd op</string>
+    <string name="pricing_marketplaces_fallback">Marktplaatsen zijn mogelijk niet beschikbaar voor uw regio.</string>
+    <string name="pricing_insufficient_data">Onvoldoende gegevens voor prijsschatting</string>
+    <string name="pricing_ready_subtitle">Geschatte prijs gebaseerd op huidige marktomstandigheden.</string>
+    <string name="pricing_region_generic">voor uw regio</string>
+    <string name="pricing_confidence_high">Hoog vertrouwen</string>
+    <string name="pricing_confidence_med">Gemiddeld vertrouwen</string>
+    <string name="pricing_confidence_low">Laag vertrouwen</string>
+    <string name="pricing_low_confidence_warning">Deze prijs heeft een laag vertrouwen.</string>
+    <string name="pricing_fallback_warning">De prijs is een eerste schatting op basis van beperkte gegevens.</string>
+    <string name="pricing_stale_badge">Verouderd</string>
+    <string name="pricing_stale_warning">Prijs is mogelijk niet accuraat.</string>
+    <string name="pricing_stale_reason_generic">Laatst bijgewerkt %1$s geleden</string>
+    <string name="pricing_error_network">Netwerkfout. Controleer uw verbinding en probeer het opnieuw.</string>
+    <string name="pricing_error_rate_limit">Te veel verzoeken. Probeer het later opnieuw.</string>
+    <string name="pricing_error_region">Prijzen zijn niet beschikbaar voor uw regio.</string>
+    <string name="pricing_no_results_title">Geen prijsresultaten</string>
+    <string name="pricing_no_results_subtitle">Probeer de itemdetails bij te werken voor een betere zoekopdracht.</string>
+    <string name="pricing_view_listings">Bekijk advertenties</string>
+    <string name="pricing_time_window">%1$s in %2$s</string>
+    <string name="pricing_sample_listings">Voorbeeldadvertenties</string>
+
+    <!-- Pricing Assistant -->
+    <string name="pricing_assistant_title">Prijsassistent</string>
+    <string name="pricing_assistant_intro_title">Schat de waarde van uw item</string>
+    <string name="pricing_assistant_intro_body">Beantwoord een paar vragen voor een nauwkeurigere prijsschatting.</string>
+    <string name="pricing_assistant_variants_title">Wat is de variant of stijl?</string>
+    <string name="pricing_assistant_variants_placeholder">(bijv. beperkte oplage, kleur, maat)</string>
+    <string name="pricing_assistant_completeness_title">Wat is de volledigheid?</string>
+    <string name="pricing_assistant_completeness_subtitle">(bijv. met doos, accessoires, handleiding)</string>
+    <string name="pricing_assistant_identifier_title">Zijn er unieke identificatoren?</string>
+    <string name="pricing_assistant_identifier_subtitle">(bijv. serienummer, ISBN, UPC)</string>
+    <string name="pricing_assistant_identifier_label">Identificator</string>
+    <string name="pricing_assistant_confirm_title">Bevestig itemdetails</string>
+    <string name="pricing_assistant_open_listing_assistant">Open advertentie-assistent</string>
+    <string name="pricing_assistant_summary_brand">Merk: %1$s</string>
+    <string name="pricing_assistant_summary_model">Model: %1$s</string>
+    <string name="pricing_assistant_summary_type">Type: %1$s</string>
+    <string name="pricing_assistant_summary_variants">Varianten: %1$s</string>
+    <string name="pricing_assistant_summary_completeness">Volledigheid: %1$s</string>
+    <string name="pricing_assistant_summary_identifier">Identificator: %1$s</string>
+    <string name="pricing_assistant_missing_fields_error">Vul alstublieft alle velden in voordat u verdergaat.</string>
+
+    <!-- Pricing Guidance -->
+    <string name="pricing_guidance_title">Prijsadvies</string>
+    <string name="pricing_guidance_body">Prijzen kunnen variëren op basis van de staat van het item, de vraag en de zeldzaamheid. Overweeg uw prijs aan te passen.</string>
+    <string name="pricing_guidance_dont_show_again">Niet opnieuw weergeven</string>
+
+    <!-- Hypothesis -->
+    <string name="hypothesis_header">Ik kies...</string>
+    <string name="hypothesis_none_of_these">Geen van deze</string>
+    <string name="hypothesis_add_photo_to_refine">Voeg foto toe om te verfijnen</string>
+
+    <!-- Correction Dialog -->
+    <string name="correction_dialog_title">Classificatie corrigeren</string>
+    <string name="correction_dialog_explanation">Help ons de classificaties te verbeteren. Selecteer hieronder de juiste categorie.</string>
+    <string name="correction_dialog_category_label">Juiste categorie</string>
+    <string name="correction_dialog_category_hint">Selecteer een categorie</string>
+    <string name="correction_dialog_notes_label">Aanvullende opmerkingen</string>
+    <string name="correction_dialog_notes_hint">(Optioneel) Wat maakte het moeilijk te classificeren?</string>
+    <string name="correction_dialog_predicted">Voorspeld: %1$s</string>
+    <string name="correction_dialog_submit">Indienen</string>
+    <string name="correction_dialog_cancel">Annuleren</string>
 </resources>
