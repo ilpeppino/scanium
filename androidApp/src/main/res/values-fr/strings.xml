@@ -123,6 +123,29 @@
     <string name="settings_section_overlay">Superposition</string>
     <string name="settings_detection_boxes_title">Cadres de détection</string>
     <string name="settings_detection_boxes_subtitle">Afficher les zones détectées sur la caméra</string>
+    <string name="settings_smart_merge_title">Suggestions de fusion intelligente</string>
+    <string name="settings_smart_merge_subtitle">Détecter automatiquement les articles similaires et suggérer de les fusionner</string>
+
+    <!-- Smart Merge Banner & Review -->
+    <plurals name="smart_merge_banner_title">
+        <item quantity="one">%d article semble similaire</item>
+        <item quantity="other">%d articles semblent similaires</item>
+    </plurals>
+    <string name="smart_merge_banner_subtitle">Examiner les fusions ?</string>
+    <string name="smart_merge_accept_all">Tout accepter</string>
+    <string name="smart_merge_review">Examiner</string>
+    <plurals name="items_pending_detection">
+        <item quantity="one">%d article en attente de confirmation</item>
+        <item quantity="other">%d articles en attente de confirmation</item>
+    </plurals>
+    <string name="smart_merge_review_title">Examiner les suggestions de fusion</string>
+    <string name="smart_merge_review_subtitle">%d groupes de fusion suggérés. Examinez-les ci-dessous.</string>
+    <string name="smart_merge_primary_item">Article principal</string>
+    <string name="smart_merge_similar_items">Articles similaires (%d)</string>
+    <string name="smart_merge_similarity">%d%% de similarité</string>
+    <string name="smart_merge_accept">Accepter</string>
+    <string name="smart_merge_reject">Rejeter</string>
+    <string name="smart_merge_no_groups">Aucune suggestion de fusion disponible</string>
 
     <!-- Storage & Export -->
     <string name="settings_storage_title">Stockage et export</string>
@@ -214,6 +237,8 @@
     <string name="settings_section_notifications">Notifications et commentaires</string>
     <string name="settings_sounds_title">Activer les sons</string>
     <string name="settings_sounds_subtitle">Jouer des sons pour les actions clés</string>
+    <string name="settings_show_item_info_chips_title">Afficher les détails de l\'article</string>
+    <string name="settings_show_item_info_chips_subtitle">Afficher l\'état et les attributs sur les cartes d\'articles</string>
     <string name="settings_assistant_haptics_title">Haptique assistant</string>
     <string name="settings_assistant_haptics_subtitle">Vibrer lors de l\'envoi/application/copie</string>
 
@@ -449,6 +474,80 @@
     <string name="ai_chooser_listing_title">Generate listing text</string>
     <string name="ai_chooser_listing_body">Create a title, description, and highlights.</string>
     <string name="ai_chooser_listing_cta">Generate listing text</string>
+
+    <!-- Pricing -->
+    <string name="pricing_card_title">Estimation de prix</string>
+    <string name="pricing_estimated_title">Prix de revente estimé</string>
+    <string name="pricing_button_get_estimate">Calculer un prix vérifiable</string>
+    <string name="pricing_button_use_price">Utiliser %1$s</string>
+    <string name="pricing_button_refresh">Actualiser</string>
+    <string name="pricing_button_retry">Réessayer</string>
+    <string name="pricing_button_try_again">Réessayer</string>
+    <string name="pricing_loading">Vérification des prix du marché...</string>
+    <string name="pricing_based_on">Basé sur %1$d annonces similaires sur %2$s</string>
+    <string name="pricing_marketplaces_fallback">marketplaces</string>
+    <string name="pricing_insufficient_data">Remplissez la marque, le type, le modèle et l\'état pour obtenir une estimation de prix</string>
+    <string name="pricing_ready_subtitle">Obtenez un prix de revente estimé basé sur des articles similaires dans votre région (%1$s)</string>
+    <string name="pricing_region_generic">votre région</string>
+    <string name="pricing_confidence_high">ÉLEVÉE</string>
+    <string name="pricing_confidence_med">MOYENNE</string>
+    <string name="pricing_confidence_low">FAIBLE</string>
+    <string name="pricing_low_confidence_warning">Gamme large - données limitées disponibles</string>
+    <string name="pricing_fallback_warning">Données limitées disponibles. La fourchette est estimée.</string>
+    <string name="pricing_stale_badge">OBSOLÈTE</string>
+    <string name="pricing_stale_warning">Le prix peut être obsolète (%1$s modifié)</string>
+    <string name="pricing_stale_reason_generic">détails</string>
+    <string name="pricing_error_network">Erreur réseau. Veuillez réessayer.</string>
+    <string name="pricing_error_rate_limit">Trop de requêtes. Réessayez dans %1$d secondes.</string>
+    <string name="pricing_error_region">Estimations de prix non disponibles pour %1$s</string>
+    <string name="pricing_no_results_title">Aucune annonce comparable trouvée</string>
+    <string name="pricing_no_results_subtitle">Essayez un nom de modèle plus spécifique</string>
+    <string name="pricing_view_listings">Voir les annonces</string>
+    <string name="pricing_time_window">Derniers %1$d jours</string>
+    <string name="pricing_sample_listings">Exemples d\'annonces</string>
+    <string name="pricing_based_on_sources">Basé sur des annonces réelles de :</string>
+
+    <!-- Pricing Assistant Flow -->
+    <string name="pricing_assistant_title">Assistant de prix</string>
+    <string name="pricing_assistant_intro_title">Trouver une fourchette de prix vérifiable</string>
+    <string name="pricing_assistant_intro_body">Répondez à quelques questions rapides pour que nous puissions faire correspondre les bonnes annonces et afficher une fourchette fiable.</string>
+    <string name="pricing_assistant_variants_title">Choisissez les détails de la variante</string>
+    <string name="pricing_assistant_variants_placeholder">Entrer les détails</string>
+    <string name="pricing_assistant_completeness_title">Qu\'est-ce qui est inclus ?</string>
+    <string name="pricing_assistant_completeness_subtitle">Sélectionnez tous les accessoires ou extras inclus.</string>
+    <string name="pricing_assistant_identifier_title">Code-barres ou identifiant</string>
+    <string name="pricing_assistant_identifier_subtitle">Confirmez l\'identifiant que nous avons détecté pour améliorer la correspondance.</string>
+    <string name="pricing_assistant_identifier_label">Identifiant</string>
+    <string name="pricing_assistant_confirm_title">Confirmer et estimer</string>
+    <string name="pricing_assistant_open_listing_assistant">Ouvrir l\'assistant d\'annonce</string>
+    <string name="pricing_assistant_summary_brand">Marque</string>
+    <string name="pricing_assistant_summary_model">Modèle</string>
+    <string name="pricing_assistant_summary_type">Type</string>
+    <string name="pricing_assistant_summary_variants">Variante</string>
+    <string name="pricing_assistant_summary_completeness">Inclus</string>
+    <string name="pricing_assistant_summary_identifier">Identifiant</string>
+    <string name="pricing_assistant_missing_fields_error">Veuillez renseigner la marque et le type de produit avant l\'estimation.</string>
+    <string name="pricing_guidance_title">Améliorer la précision du prix</string>
+    <string name="pricing_guidance_body">Pour de meilleurs résultats, renseignez la marque, le type de produit, l\'état et le modèle avant l\'estimation.</string>
+    <string name="pricing_guidance_dont_show_again">Ne plus afficher</string>
+    <plurals name="pricing_listing_count">
+        <item quantity="one">%d annonce</item>
+        <item quantity="other">%d annonces</item>
+    </plurals>
+
+    <!-- Hypothesis & Correction -->
+    <string name="hypothesis_header">C\'est probablement :</string>
+    <string name="hypothesis_none_of_these">Aucun de ceux-là</string>
+    <string name="hypothesis_add_photo_to_refine">Ajouter une autre photo pour affiner</string>
+    <string name="correction_dialog_title">Aidez-moi à m\'améliorer</string>
+    <string name="correction_dialog_explanation">Qu\'est-ce que cet article ? Vos commentaires aident à rendre les classifications plus précises.</string>
+    <string name="correction_dialog_category_label">Catégorie correcte</string>
+    <string name="correction_dialog_category_hint">ex : Aspirateur robot, Machine à café</string>
+    <string name="correction_dialog_notes_label">Notes supplémentaires (optionnel)</string>
+    <string name="correction_dialog_notes_hint">Tout détail qui pourrait aider…</string>
+    <string name="correction_dialog_predicted">Nous avons deviné : %1$s (confiance %2$d%%)</string>
+    <string name="correction_dialog_submit">Envoyer</string>
+    <string name="correction_dialog_cancel">Annuler</string>
     <string name="assistant_speaking_status">L\'assistant parle...</string>
     <string name="assistant_confidence_high">Très probable</string>
     <string name="assistant_confidence_likely">Probable</string>
@@ -494,6 +593,7 @@
     <string name="items_accessibility_confidence">Confiance : %1$s</string>
     <string name="items_accessibility_classification_in_progress">Classification en cours</string>
     <string name="items_accessibility_classification_failed">Classification échouée</string>
+    <string name="items_accessibility_classification_needs_review">Nécessite examen</string>
     <string name="items_accessibility_selected">Sélectionné</string>
     <string name="items_accessibility_tap_toggle_selection">Touchez pour basculer la sélection</string>
     <string name="items_accessibility_tap_edit_long_press">Touchez pour modifier, appui long pour sélectionner</string>
@@ -507,6 +607,7 @@
     <string name="items_status_classifying">Classification...</string>
     <string name="items_status_cloud">Cloud</string>
     <string name="items_status_failed">Échoué</string>
+    <string name="items_status_needs_review">Nécessite examen</string>
     <string name="items_status_enriching">Enrichissement...</string>
     <string name="items_status_enriched">Enrichi</string>
     <string name="items_list_header_ready_for_resale">%1$d articles prêts à la revente</string>
