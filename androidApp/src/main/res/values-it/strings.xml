@@ -1165,4 +1165,102 @@
     <string name="quota_exceeded_reset">La tua quota si ripristinerà alle %1$s (mezzanotte UTC).</string>
     <string name="quota_exceeded_support">Ti piace Scanium? Sostieni l\'app per mantenerla funzionante!</string>
 
+    <!-- Pricing -->
+    <string name="pricing_button_get_estimate">Ottieni stima</string>
+
+    <!-- Smart Merge -->
+    <string name="settings_smart_merge_title">Fusione intelligente</string>
+    <string name="settings_smart_merge_subtitle">Unisci automaticamente elementi simili dopo la scansione</string>
+    <string name="smart_merge_banner_subtitle">Elementi simili raggruppati (%1$d)</string>
+    <string name="smart_merge_accept_all">Accetta tutti i gruppi</string>
+    <string name="smart_merge_review">Rivedi gruppi</string>
+    <string name="smart_merge_review_title">Rivedi i gruppi di fusione intelligente</string>
+    <string name="smart_merge_review_subtitle">Tocca per modificare i gruppi, scorri per rifiutare</string>
+    <string name="smart_merge_primary_item">Elemento principale</string>
+    <string name="smart_merge_similar_items">Elementi simili</string>
+    <string name="smart_merge_similarity">Similarità: %1$d%%</string>
+    <string name="smart_merge_accept">Accetta gruppo</string>
+    <string name="smart_merge_reject">Rifiuta gruppo</string>
+    <string name="smart_merge_no_groups">Nessun gruppo disponibile</string>
+
+    <!-- Item Info Chips -->
+    <string name="settings_show_item_info_chips_title">Mostra etichette informazioni articolo</string>
+    <string name="settings_show_item_info_chips_subtitle">Visualizza suggerimenti rapidi e dettagli sugli articoli scansionati</string>
+
+    <!-- Items List Status -->
+    <string name="items_accessibility_classification_needs_review">La classificazione richiede revisione</string>
+    <string name="items_status_needs_review">Richiede revisione</string>
+
+    <!-- Pricing Details -->
+    <string name="pricing_based_on_sources">Basato su %1$d fonti</string>
+    <string name="pricing_card_title">Prezzi e vendita</string>
+    <string name="pricing_estimated_title">Prezzo stimato</string>
+    <string name="pricing_button_use_price">Usa questo prezzo</string>
+    <string name="pricing_button_refresh">Aggiorna prezzi</string>
+    <string name="pricing_button_retry">Riprova</string>
+    <string name="pricing_button_try_again">Riprova</string>
+    <string name="pricing_loading">Caricamento prezzi...</string>
+    <string name="pricing_based_on">Basato su</string>
+    <string name="pricing_marketplaces_fallback">I marketplace potrebbero non essere disponibili per la tua regione.</string>
+    <string name="pricing_insufficient_data">Dati insufficienti per la stima del prezzo</string>
+    <string name="pricing_ready_subtitle">Prezzo stimato basato sulle condizioni di mercato attuali.</string>
+    <string name="pricing_region_generic">per la tua regione</string>
+    <string name="pricing_confidence_high">Alta confidenza</string>
+    <string name="pricing_confidence_med">Media confidenza</string>
+    <string name="pricing_confidence_low">Bassa confidenza</string>
+    <string name="pricing_low_confidence_warning">Questo prezzo ha una confidenza bassa.</string>
+    <string name="pricing_fallback_warning">Il prezzo è una stima iniziale basata su dati limitati.</string>
+    <string name="pricing_stale_badge">Non aggiornato</string>
+    <string name="pricing_stale_warning">Il prezzo potrebbe non essere accurato.</string>
+    <string name="pricing_stale_reason_generic">Ultimo aggiornamento %1$s fa</string>
+    <string name="pricing_error_network">Errore di rete. Controlla la tua connessione e riprova.</string>
+    <string name="pricing_error_rate_limit">Limite di richieste raggiunto. Riprova più tardi.</string>
+    <string name="pricing_error_region">Il prezzo non è disponibile per la tua regione.</string>
+    <string name="pricing_no_results_title">Nessun risultato di prezzo</string>
+    <string name="pricing_no_results_subtitle">Prova ad aggiornare i dettagli dell\'articolo per una migliore ricerca.</string>
+    <string name="pricing_view_listings">Visualizza inserzioni</string>
+    <string name="pricing_time_window">%1$s in %2$s</string>
+    <string name="pricing_sample_listings">Inserzioni di esempio</string>
+
+    <!-- Pricing Assistant -->
+    <string name="pricing_assistant_title">Assistente prezzi</string>
+    <string name="pricing_assistant_intro_title">Stima il valore del tuo articolo</string>
+    <string name="pricing_assistant_intro_body">Rispondi ad alcune domande per ottenere una stima di prezzo più accurata.</string>
+    <string name="pricing_assistant_variants_title">Qual è la variante o lo stile?</string>
+    <string name="pricing_assistant_variants_placeholder">(es. edizione limitata, colore, taglia)</string>
+    <string name="pricing_assistant_completeness_title">Qual è la completezza?</string>
+    <string name="pricing_assistant_completeness_subtitle">(es. con scatola, accessori, manuale)</string>
+    <string name="pricing_assistant_identifier_title">Ci sono identificatori unici?</string>
+    <string name="pricing_assistant_identifier_subtitle">(es. numero di serie, ISBN, UPC)</string>
+    <string name="pricing_assistant_identifier_label">Identificatore</string>
+    <string name="pricing_assistant_confirm_title">Conferma i dettagli dell\'articolo</string>
+    <string name="pricing_assistant_open_listing_assistant">Apri assistente inserzioni</string>
+    <string name="pricing_assistant_summary_brand">Marca: %1$s</string>
+    <string name="pricing_assistant_summary_model">Modello: %1$s</string>
+    <string name="pricing_assistant_summary_type">Tipo: %1$s</string>
+    <string name="pricing_assistant_summary_variants">Varianti: %1$s</string>
+    <string name="pricing_assistant_summary_completeness">Completezza: %1$s</string>
+    <string name="pricing_assistant_summary_identifier">Identificatore: %1$s</string>
+    <string name="pricing_assistant_missing_fields_error">Completare tutti i campi prima di procedere.</string>
+
+    <!-- Pricing Guidance -->
+    <string name="pricing_guidance_title">Suggerimento sul prezzo</string>
+    <string name="pricing_guidance_body">I prezzi possono variare in base alla condizione, alla domanda e alla rarità dell\'articolo. Considera di adeguare il tuo prezzo.</string>
+    <string name="pricing_guidance_dont_show_again">Non mostrare più</string>
+
+    <!-- Hypothesis -->
+    <string name="hypothesis_header">Scelgo...</string>
+    <string name="hypothesis_none_of_these">Nessuno di questi</string>
+    <string name="hypothesis_add_photo_to_refine">Aggiungi una foto per affinare</string>
+
+    <!-- Correction Dialog -->
+    <string name="correction_dialog_title">Correggi classificazione</string>
+    <string name="correction_dialog_explanation">Aiutaci a migliorare le classificazioni. Seleziona la categoria corretta qui sotto.</string>
+    <string name="correction_dialog_category_label">Categoria corretta</string>
+    <string name="correction_dialog_category_hint">Seleziona una categoria</string>
+    <string name="correction_dialog_notes_label">Note aggiuntive</string>
+    <string name="correction_dialog_notes_hint">(Opzionale) Cosa lo ha reso difficile da classificare?</string>
+    <string name="correction_dialog_predicted">Previsto: %1$s</string>
+    <string name="correction_dialog_submit">Invia</string>
+    <string name="correction_dialog_cancel">Annulla</string>
 </resources>
