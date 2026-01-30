@@ -36,7 +36,7 @@ data class PricingInputs(
         val missing = mutableSetOf<PricingMissingField>()
         if (brand.isBlank()) missing.add(PricingMissingField.BRAND)
         if (productType.isBlank()) missing.add(PricingMissingField.PRODUCT_TYPE)
-        if (model.isBlank()) missing.add(PricingMissingField.MODEL)
+        // Model is optional - not required for pricing
         if (condition == null) missing.add(PricingMissingField.CONDITION)
         return missing
     }

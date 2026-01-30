@@ -1,6 +1,9 @@
 package com.scanium.app.items.edit
 
 import android.graphics.BitmapFactory
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -30,6 +33,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -356,56 +361,135 @@ fun ItemEditSections(
 
         Spacer(Modifier.height(12.dp))
 
-        LabeledTextField(
-            label = stringResource(R.string.edit_item_field_model),
-            value = state.modelField,
-            onValueChange = { state.modelField = it },
-            onClear = { state.modelField = "" },
-            visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "model"),
-            imeAction = ImeAction.Next,
-            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        LabeledTextField(
-            label = stringResource(R.string.edit_item_field_size),
-            value = state.sizeField,
-            onValueChange = { state.sizeField = it },
-            onClear = { state.sizeField = "" },
-            visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "size"),
-            imeAction = ImeAction.Next,
-            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        Text(
-            text = stringResource(R.string.edit_item_field_notes),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-        OutlinedTextField(
-            value = state.notesField,
-            onValueChange = { state.notesField = it },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-            placeholder = { Text(stringResource(R.string.edit_item_notes_placeholder)) },
-            trailingIcon = {
-                if (state.notesField.isNotEmpty()) {
-                    IconButton(onClick = { state.notesField = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
-                    }
-                }
-            },
-            maxLines = 6,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
+        // More Details Accordion (Model, Size, Notes)
+        MoreDetailsAccordion(
+            state = state,
+            focusManager = focusManager,
         )
 
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun MoreDetailsAccordion(
+    state: ItemEditState,
+    focusManager: FocusManager,
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    // Count how many optional fields have values
+    val filledFieldsCount = listOfNotNull(
+        state.modelField.takeIf { it.isNotBlank() },
+        state.sizeField.takeIf { it.isNotBlank() },
+        state.notesField.takeIf { it.isNotBlank() },
+    ).size
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Accordion Header
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isExpanded = !isExpanded },
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.edit_item_more_details),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (filledFieldsCount > 0 && !isExpanded) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = filledFieldsCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                )
+                            }
+                        }
+                    }
+                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        // Accordion Content
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
+        ) {
+            Column(modifier = Modifier.padding(top = 12.dp)) {
+                LabeledTextField(
+                    label = stringResource(R.string.edit_item_field_model),
+                    value = state.modelField,
+                    onValueChange = { state.modelField = it },
+                    onClear = { state.modelField = "" },
+                    visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "model"),
+                    imeAction = ImeAction.Next,
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                LabeledTextField(
+                    label = stringResource(R.string.edit_item_field_size),
+                    value = state.sizeField,
+                    onValueChange = { state.sizeField = it },
+                    onClear = { state.sizeField = "" },
+                    visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "size"),
+                    imeAction = ImeAction.Next,
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = stringResource(R.string.edit_item_field_notes),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+                OutlinedTextField(
+                    value = state.notesField,
+                    onValueChange = { state.notesField = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    placeholder = { Text(stringResource(R.string.edit_item_notes_placeholder)) },
+                    trailingIcon = {
+                        if (state.notesField.isNotEmpty()) {
+                            IconButton(onClick = { state.notesField = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    },
+                    maxLines = 6,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
+                )
+            }
+        }
     }
 }
 

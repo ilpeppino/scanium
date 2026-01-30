@@ -751,6 +751,7 @@
     <string name="edit_item_field_price">Price</string>
     <string name="edit_item_field_notes">Notes</string>
     <string name="edit_item_notes_placeholder">Additional details…</string>
+    <string name="edit_item_more_details">More details</string>
 
     <!-- Generated Listing Screen -->
     <string name="generated_listing_title">Generated Listing</string>
