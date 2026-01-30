@@ -19,7 +19,7 @@ data class PricingV4Request(
     val itemId: String,
     val brand: String,
     val productType: String,
-    val model: String,
+    val model: String? = null,
     val condition: String,
     val countryCode: String,
     val preferredMarketplaces: List<String> = emptyList(),

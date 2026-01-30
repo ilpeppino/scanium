@@ -212,6 +212,74 @@ describe('Pricing V4 Routes', () => {
       }
     });
 
+    it('accepts request without model field (omitted)', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/pricing/v4',
+        headers: {
+          'x-api-key': 'test-key-123',
+        },
+        payload: {
+          itemId: 'test-123',
+          brand: 'Nike',
+          productType: 'apparel_sneakers',
+          condition: 'GOOD',
+          countryCode: 'NL',
+          // model field omitted
+        },
+      });
+
+      expect(response.statusCode).toBe(500); // Will be ERROR since pricing is disabled, but validation passes
+      const body = JSON.parse(response.body);
+      expect(body.pricing.status).toBe('ERROR'); // Pricing disabled, not validation error
+    });
+
+    it('accepts request with model as null', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/pricing/v4',
+        headers: {
+          'x-api-key': 'test-key-123',
+        },
+        payload: {
+          itemId: 'test-123',
+          brand: 'Nike',
+          productType: 'apparel_sneakers',
+          model: null,
+          condition: 'GOOD',
+          countryCode: 'NL',
+        },
+      });
+
+      expect(response.statusCode).toBe(500); // Will be ERROR since pricing is disabled, but validation passes
+      const body = JSON.parse(response.body);
+      expect(body.pricing.status).toBe('ERROR'); // Pricing disabled, not validation error
+    });
+
+    it('rejects request with model as empty string', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/pricing/v4',
+        headers: {
+          'x-api-key': 'test-key-123',
+        },
+        payload: {
+          itemId: 'test-123',
+          brand: 'Nike',
+          productType: 'apparel_sneakers',
+          model: '',
+          condition: 'GOOD',
+          countryCode: 'NL',
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('INVALID_REQUEST');
+      expect(body.error.message).toContain('String must contain at least 1 character');
+    });
+
     it('returns 200 with OK status when adapters provide listings', async () => {
       process.env.PRICING_V4_ENABLED = 'true';
       await app.close();

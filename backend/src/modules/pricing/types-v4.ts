@@ -17,8 +17,8 @@ export const pricingV4RequestSchema = z.object({
   brand: z.string().min(1).max(100),
   /** Product type from domainCategoryId (e.g., "electronics_laptop") */
   productType: z.string().min(1).max(100),
-  /** Model name/number */
-  model: z.string().min(1).max(200),
+  /** Model name/number (optional - can be omitted if unknown) */
+  model: z.string().min(1).max(200).optional(),
   /** Item condition (7 values) */
   condition: itemConditionSchema,
   /** ISO 2-letter country code */
@@ -123,7 +123,7 @@ export type PricingV4Response = z.infer<typeof pricingV4ResponseSchema>;
 export interface PricingV4CacheKeyComponents {
   brand: string;
   productType: string;
-  model: string;
+  model?: string;
   condition: z.infer<typeof itemConditionSchema>;
   countryCode: string;
   variantAttributes?: Record<string, string>;

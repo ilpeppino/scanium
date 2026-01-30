@@ -128,7 +128,7 @@ export async function pricingV3Routes(
         itemId: requestBody.itemId,
         brand: requestBody.brand.length, // Length only, not value (privacy)
         productType: requestBody.productType,
-        model: requestBody.model.length,
+        model: requestBody.model?.length ?? 0,
         condition: requestBody.condition,
         countryCode: requestBody.countryCode,
         status: insights.status,

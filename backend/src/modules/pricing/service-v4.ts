@@ -247,7 +247,7 @@ export class PricingV4Service {
     const normalized = JSON.stringify({
       brand: components.brand.trim().toLowerCase(),
       productType: components.productType.trim().toLowerCase(),
-      model: components.model.trim().toLowerCase(),
+      model: components.model?.trim().toLowerCase() ?? '',
       condition: components.condition,
       countryCode: components.countryCode.trim().toUpperCase(),
       variantAttributes: normalizedVariantAttributes,

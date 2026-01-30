@@ -18,7 +18,7 @@ data class PricingV3Request(
     val itemId: String,
     val brand: String,
     val productType: String,
-    val model: String,
+    val model: String? = null,
     val condition: String,
     val countryCode: String,
     val year: Int? = null,

@@ -97,7 +97,7 @@ export class PricingV3Service {
     const cached = this.cache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       console.log(
-        `[PricingV3Service] Cache hit for ${request.brand} ${request.model} (${Date.now() - startTime}ms)`
+        `[PricingV3Service] Cache hit for ${request.brand} ${request.model ?? '(no model)'} (${Date.now() - startTime}ms)`
       );
       return cached.insights;
     }
@@ -150,7 +150,7 @@ export class PricingV3Service {
       }
 
       console.log(
-        `[PricingV3Service] Pricing complete for ${request.brand} ${request.model}: ${insights.status} (${Date.now() - startTime}ms)`
+        `[PricingV3Service] Pricing complete for ${request.brand} ${request.model ?? '(no model)'}: ${insights.status} (${Date.now() - startTime}ms)`
       );
 
       return insights;
@@ -273,7 +273,7 @@ export class PricingV3Service {
     const normalizedInput = {
       brand: components.brand.toLowerCase().trim(),
       productType: components.productType.toLowerCase().trim(),
-      model: components.model.toLowerCase().trim(),
+      model: components.model?.toLowerCase().trim() ?? '',
       condition: components.condition,
       countryCode: components.countryCode,
     };

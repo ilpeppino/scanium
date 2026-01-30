@@ -90,7 +90,7 @@ export async function pricingV4Routes(
         itemId: requestBody.itemId,
         brand: requestBody.brand.length,
         productType: requestBody.productType,
-        model: requestBody.model.length,
+        model: requestBody.model?.length ?? 0,
         condition: requestBody.condition,
         countryCode: requestBody.countryCode,
         status: insights.status,

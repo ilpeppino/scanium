@@ -40,7 +40,7 @@ Rules:
 export function buildPricingV3UserPrompt(params: {
   brand: string;
   productType: string;
-  model: string;
+  model?: string;
   condition: ItemCondition;
   countryCode: string;
   marketplaceIds: string[];
@@ -53,7 +53,12 @@ export function buildPricingV3UserPrompt(params: {
   // Limit marketplaces to 3 for token efficiency
   const sitesStr = marketplaceIds.slice(0, 3).join(',');
 
-  return `${brand} ${productType.replace(/_/g, ' ')} ${model}
+  // Build product description with optional model
+  const productDesc = model
+    ? `${brand} ${productType.replace(/_/g, ' ')} ${model}`
+    : `${brand} ${productType.replace(/_/g, ' ')}`;
+
+  return `${productDesc}
 Cond: ${conditionShort}
 Cat: ${productType}
 Region: ${countryCode}
