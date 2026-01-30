@@ -1171,7 +1171,6 @@
     <string name="settings_dev_health_monitor_status_last_fail">Ingeschakeld - laatste controle FOUT</string>
     <string name="settings_dev_health_monitor_status_waiting">Ingeschakeld - wachten op eerste controle</string>
     <!-- Pricing -->
-    <string name="pricing_button_get_estimate">Krijg schatting</string>
 
     <!-- Smart Merge -->
     <string name="settings_smart_merge_title">Slim samenvoegen</string>
