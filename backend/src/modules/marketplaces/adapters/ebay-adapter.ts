@@ -132,7 +132,9 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
   }
 
   private buildSearchTerms(query: ListingQuery): string {
-    return [query.brand, query.model, query.productType].filter(Boolean).join(' ').trim();
+    // Only use brand and model for eBay searches
+    // productType (e.g., "electronics_smartphone") is from internal taxonomy and doesn't match eBay search patterns
+    return [query.brand, query.model].filter(Boolean).join(' ').trim();
   }
 
   private getBrowseEndpoint(): string {
