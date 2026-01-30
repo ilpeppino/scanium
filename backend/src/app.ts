@@ -33,6 +33,7 @@ import { authMiddleware } from './infra/http/plugins/auth-middleware.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { recordHttpRequest } from './infra/observability/metrics.js';
+import { catalogRoutes } from "./modules/catalog";
 
 /**
  * Build Fastify application instance
@@ -249,6 +250,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Items sync API (Phase E: Multi-device sync)
   await app.register(itemsRoutes, { prefix: '/v1/items', config });
+
+
+  await app.register(catalogRoutes);
 
   // Root endpoint
   app.get('/', async (_request, reply) => {

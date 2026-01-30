@@ -237,3 +237,31 @@ model ClassificationCorrection {
   @@index([correctedCategory])
   @@map("classification_corrections")
 }
+
+model CatalogBrandWikidataMap {
+  id          BigInt   @id @default(autoincrement())
+  subtype     String
+  brandString String
+  wikidataQid String
+  qidType     String
+  confidence  String
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@unique([subtype, brandString])
+  @@index([subtype, brandString])
+  @@index([subtype, wikidataQid])
+}
+
+model CatalogModel {
+  id         BigInt   @id @default(autoincrement())
+  subtype    String
+  brandQid   String
+  modelQid   String
+  modelLabel String
+  aliases    Json     @default("[]")
+  source     String
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@unique([subtype, brandQid, modelQid])
+  @@index([subtype, brandQid, modelLabel])
+}
