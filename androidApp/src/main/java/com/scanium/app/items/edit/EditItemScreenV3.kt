@@ -300,7 +300,6 @@ fun EditItemScreenV3(
         editState.modelField,
         editState.colorField,
         editState.sizeField,
-        editState.materialField,
     ) {
         if (editFtueCurrentStep == com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.DETAILS_HINT_SHOWN) {
             editItemFtueViewModel.onFieldEdited()
@@ -397,7 +396,6 @@ fun EditItemScreenV3(
                                     modelField = editState.modelField,
                                     colorField = editState.colorField,
                                     sizeField = editState.sizeField,
-                                    materialField = editState.materialField,
                                     conditionField = editState.conditionField,
                                     priceField = editState.priceField,
                                     notesField = editState.notesField,
@@ -451,7 +449,6 @@ fun EditItemScreenV3(
                                 modelField = editState.modelField,
                                 colorField = editState.colorField,
                                 sizeField = editState.sizeField,
-                                materialField = editState.materialField,
                                 conditionField = editState.conditionField,
                                 priceField = editState.priceField,
                                 notesField = editState.notesField,
@@ -812,7 +809,6 @@ private fun saveFieldsToAttributes(
     modelField: String,
     colorField: String,
     sizeField: String,
-    materialField: String,
     conditionField: ItemCondition?,
     priceField: String,
     notesField: String,
@@ -895,16 +891,6 @@ private fun saveFieldsToAttributes(
             itemId,
             "size",
             ItemAttribute(value = sizeField, confidence = 1.0f, source = "USER"),
-        )
-    }
-
-    // LOCALIZATION: Canonicalize material back to English before saving
-    if (materialField.isNotBlank()) {
-        val canonicalMaterial = ItemAttributeLocalizer.canonicalizeMaterial(context, materialField)
-        itemsViewModel.updateItemAttribute(
-            itemId,
-            "material",
-            ItemAttribute(value = canonicalMaterial, confidence = 1.0f, source = "USER"),
         )
     }
 

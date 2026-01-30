@@ -281,6 +281,50 @@ fun ItemEditSections(
 
         Spacer(Modifier.height(12.dp))
 
+        CatalogAutocompleteField(
+            label = stringResource(R.string.edit_item_field_product_type),
+            value = state.productTypeField,
+            onValueChange = {
+                state.productTypeField = it
+                state.productTypeId = null
+            },
+            suggestions = state.productTypeSuggestions,
+            onQueryChange = { query -> state.productTypeQueryFlow.value = query },
+            onSuggestionSelected = { result ->
+                state.productTypeField = result.entry.displayLabel
+                state.productTypeId = result.entry.id
+            },
+            onClear = {
+                state.productTypeField = ""
+                state.productTypeId = null
+            },
+            imeAction = ImeAction.Next,
+            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            isError = assistantMissingFields.contains(PricingMissingField.PRODUCT_TYPE),
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        LabeledTextField(
+            label = stringResource(R.string.edit_item_field_color),
+            value = state.colorField,
+            onValueChange = { state.colorField = it },
+            onClear = { state.colorField = "" },
+            visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "color"),
+            imeAction = ImeAction.Next,
+            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        LabeledConditionDropdown(
+            label = stringResource(R.string.edit_item_field_condition),
+            selectedCondition = state.conditionField,
+            onConditionSelected = { state.conditionField = it },
+        )
+
+        Spacer(Modifier.height(12.dp))
+
         LabeledTextField(
             label = stringResource(R.string.edit_item_field_price),
             value = state.priceField,
@@ -312,48 +356,12 @@ fun ItemEditSections(
 
         Spacer(Modifier.height(12.dp))
 
-        CatalogAutocompleteField(
-            label = stringResource(R.string.edit_item_field_product_type),
-            value = state.productTypeField,
-            onValueChange = {
-                state.productTypeField = it
-                state.productTypeId = null
-            },
-            suggestions = state.productTypeSuggestions,
-            onQueryChange = { query -> state.productTypeQueryFlow.value = query },
-            onSuggestionSelected = { result ->
-                state.productTypeField = result.entry.displayLabel
-                state.productTypeId = result.entry.id
-            },
-            onClear = {
-                state.productTypeField = ""
-                state.productTypeId = null
-            },
-            imeAction = ImeAction.Next,
-            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            isError = assistantMissingFields.contains(PricingMissingField.PRODUCT_TYPE),
-        )
-
-        Spacer(Modifier.height(12.dp))
-
         LabeledTextField(
             label = stringResource(R.string.edit_item_field_model),
             value = state.modelField,
             onValueChange = { state.modelField = it },
             onClear = { state.modelField = "" },
             visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "model"),
-            imeAction = ImeAction.Next,
-            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        LabeledTextField(
-            label = stringResource(R.string.edit_item_field_color),
-            value = state.colorField,
-            onValueChange = { state.colorField = it },
-            onClear = { state.colorField = "" },
-            visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "color"),
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
         )
@@ -368,26 +376,6 @@ fun ItemEditSections(
             visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "size"),
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        LabeledTextField(
-            label = stringResource(R.string.edit_item_field_material),
-            value = state.materialField,
-            onValueChange = { state.materialField = it },
-            onClear = { state.materialField = "" },
-            visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "material"),
-            imeAction = ImeAction.Next,
-            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        LabeledConditionDropdown(
-            label = stringResource(R.string.edit_item_field_condition),
-            selectedCondition = state.conditionField,
-            onConditionSelected = { state.conditionField = it },
         )
 
         Spacer(Modifier.height(12.dp))
