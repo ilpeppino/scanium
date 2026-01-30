@@ -15,6 +15,14 @@ export class MarktplaatsAdapter implements MarketplaceAdapter {
 
   async fetchListings(query: ListingQuery): Promise<FetchedListing[]> {
     const endpoint = this.buildRssUrl(query);
+    console.log('[Marktplaats] Fetching RSS feed', {
+      endpoint,
+      brand: query.brand,
+      model: query.model,
+      productType: query.productType,
+      maxResults: query.maxResults,
+    });
+
     const response = await this.fetcher(endpoint, {
       method: 'GET',
       headers: {
@@ -23,15 +31,29 @@ export class MarktplaatsAdapter implements MarketplaceAdapter {
       },
     });
 
+    console.log('[Marktplaats] RSS response', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      contentType: response.headers.get('content-type'),
+    });
+
     if (!response.ok) {
       const body = await response.text();
+      console.error('[Marktplaats] RSS error response:', body.substring(0, 500));
       throw new Error(`Marktplaats RSS error: ${response.status} ${body}`);
     }
 
     const xml = await response.text();
-    const items = this.parseRssItems(xml);
+    console.log('[Marktplaats] RSS body length:', xml.length);
+    console.log('[Marktplaats] RSS preview:', xml.substring(0, 200));
 
-    return items.slice(0, query.maxResults);
+    const items = this.parseRssItems(xml);
+    console.log('[Marktplaats] Parsed items', { count: items.length });
+
+    const result = items.slice(0, query.maxResults);
+    console.log('[Marktplaats] Returning listings', { count: result.length });
+    return result;
   }
 
   buildSearchUrl(query: ListingQuery): string {
