@@ -37,19 +37,40 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
   }
 
   async fetchListings(query: ListingQuery): Promise<FetchedListing[]> {
+    console.log('[eBay] fetchListings called', {
+      brand: query.brand,
+      model: query.model,
+      productType: query.productType,
+      countryCode: query.countryCode,
+      maxResults: query.maxResults,
+    });
+
     if (!this.config.ebay.clientId || !this.config.ebay.clientSecret) {
+      console.log('[eBay] Missing credentials, returning empty array');
       return [];
     }
 
+    console.log('[eBay] Credentials present, acquiring token...');
     const token = await this.getAccessToken();
     if (!token) {
+      console.log('[eBay] Failed to acquire token, returning empty array');
       return [];
     }
+    console.log('[eBay] Token acquired successfully');
 
     const endpoint = this.getBrowseEndpoint();
+    const searchTerms = this.buildSearchTerms(query);
     const params = new URLSearchParams({
-      q: this.buildSearchTerms(query),
+      q: searchTerms,
       limit: String(Math.max(1, Math.min(query.maxResults, 50))),
+    });
+    const marketplaceId = this.getMarketplaceId(query.countryCode);
+
+    console.log('[eBay] Making Browse API call', {
+      endpoint,
+      searchTerms,
+      limit: params.get('limit'),
+      marketplaceId,
     });
 
     const response = await this.fetcher(`${endpoint}?${params.toString()}`, {
@@ -57,19 +78,27 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
-        'X-EBAY-C-MARKETPLACE-ID': this.getMarketplaceId(query.countryCode),
+        'X-EBAY-C-MARKETPLACE-ID': marketplaceId,
       },
+    });
+
+    console.log('[eBay] Browse API response', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
     });
 
     if (!response.ok) {
       const body = await response.text();
+      console.error('[eBay] Browse API error response body:', body);
       throw new Error(`eBay Browse API error: ${response.status} ${body}`);
     }
 
     const data = (await response.json()) as EbaySearchResponse;
     const items = data.itemSummaries ?? [];
+    console.log('[eBay] Received items from API', { count: items.length });
 
-    return items
+    const listings = items
       .map((item) => ({
         title: item.title ?? 'Unknown',
         price: Number(item.price?.value ?? 0),
@@ -80,6 +109,9 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
       }))
       .filter((item) => item.price > 0 && item.url)
       .slice(0, query.maxResults);
+
+    console.log('[eBay] Returning filtered listings', { count: listings.length });
+    return listings;
   }
 
   buildSearchUrl(query: ListingQuery): string {
@@ -134,8 +166,16 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
     const cached = this.tokenCache;
     const now = this.now();
     if (cached && cached.expiresAt > now + 60_000) {
+      console.log('[eBay] Using cached token', {
+        expiresInSeconds: Math.floor((cached.expiresAt - now) / 1000),
+      });
       return cached.token;
     }
+
+    console.log('[eBay] Fetching new OAuth2 token', {
+      hasCachedToken: Boolean(cached),
+      cacheExpired: cached ? cached.expiresAt <= now + 60_000 : null,
+    });
 
     const endpoint = getEbayTokenEndpoint(this.config);
     const credentials = Buffer.from(
@@ -144,6 +184,14 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
     const body = new URLSearchParams({
       grant_type: 'client_credentials',
       scope: this.config.ebay.scopes,
+    });
+
+    console.log('[eBay] OAuth2 request details', {
+      endpoint,
+      clientId: this.config.ebay.clientId,
+      env: this.config.ebay.env,
+      scopes: this.config.ebay.scopes,
+      grantType: 'client_credentials',
     });
 
     const response = await this.fetcher(endpoint, {
@@ -155,13 +203,27 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
       body: body.toString(),
     });
 
+    console.log('[eBay] OAuth2 response', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+    });
+
     if (!response.ok) {
       const text = await response.text();
+      console.error('[eBay] OAuth2 error response:', text);
       throw new Error(`eBay token error: ${response.status} ${text}`);
     }
 
     const data = (await response.json()) as EbayTokenResponse;
+    console.log('[eBay] OAuth2 token response', {
+      hasAccessToken: Boolean(data.access_token),
+      tokenType: data.token_type,
+      expiresIn: data.expires_in,
+    });
+
     if (!data.access_token) {
+      console.error('[eBay] No access_token in response');
       return null;
     }
 
@@ -170,6 +232,10 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
       token: data.access_token,
       expiresAt: now + expiresIn * 1000,
     };
+
+    console.log('[eBay] Token cached successfully', {
+      expiresInSeconds: expiresIn,
+    });
 
     return data.access_token;
   }
