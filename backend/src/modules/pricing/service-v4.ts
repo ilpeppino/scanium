@@ -11,7 +11,7 @@ import {
 import { sha256Hex } from '../../infra/observability/hash.js';
 import { EbayBrowseAdapter } from '../marketplaces/adapters/ebay-adapter.js';
 import { MarktplaatsAdapter } from '../marketplaces/adapters/marktplaats-adapter.js';
-import { filterListings } from './normalization/filters.js';
+import { filterListings, ListingFilterOptions } from './normalization/filters.js';
 import { AiClusterer } from './normalization/ai-clusterer.js';
 import { aggregatePrices } from './normalization/aggregator.js';
 import {
@@ -21,6 +21,13 @@ import {
 } from '../../infra/observability/metrics.js';
 import { PricingV3Service } from './service-v3.js';
 import { PricingV3Insights } from './types-v3.js';
+import { SubtypeClassifier } from './query-policy/subtype-classifier.js';
+import { buildCatalogQueryContext } from './query-policy/catalog-query-context.js';
+import { buildQueryPlan } from './query-policy/query-plan.js';
+import { applyPostFilterRules } from './query-policy/post-filter-rules.js';
+import { CategoryResolver, NullCategoryResolver } from './query-policy/category-resolver.js';
+import { EbayCategoryResolver } from './query-policy/category-resolver-ebay.js';
+import { QueryPlan } from './query-policy/types.js';
 
 /**
  * Pricing V4 Service (skeleton)
@@ -35,6 +42,9 @@ export class PricingV4Service {
   private readonly aiClusterer: AiClusterer;
   private readonly timeWindowDays = 30;
   private readonly v3Service: PricingV3Service | null;
+  private readonly subtypeClassifier: SubtypeClassifier;
+  private readonly categoryResolvers: Map<string, CategoryResolver>;
+  private readonly nullCategoryResolver = new NullCategoryResolver();
 
   constructor(
     private readonly config: Config,
@@ -42,6 +52,8 @@ export class PricingV4Service {
       adapters?: MarketplaceAdapter[];
       aiClusterer?: AiClusterer;
       v3Service?: PricingV3Service;
+      subtypeClassifier?: SubtypeClassifier;
+      categoryResolvers?: Map<string, CategoryResolver>;
     } = {}
   ) {
     this.cache = new Map();
@@ -68,6 +80,10 @@ export class PricingV4Service {
             catalogPath: config.pricing.catalogPath,
           })
         : null);
+    this.subtypeClassifier = options.subtypeClassifier ?? new SubtypeClassifier();
+    this.categoryResolvers =
+      options.categoryResolvers ??
+      new Map<string, CategoryResolver>([['ebay', new EbayCategoryResolver()]]);
 
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredCache();
@@ -128,16 +144,18 @@ export class PricingV4Service {
       ? this.adapters.filter((adapter) => preferred.includes(adapter.id))
       : this.adapters;
 
-    const listingQueries = this.buildListingQueries(request);
     const adapterResults = await Promise.all(
       activeAdapters.map(async (adapter) => {
+        const queryPlan = await this.buildPlanForAdapter(request, adapter.id);
+        this.logQueryPlan(adapter.id, queryPlan);
+        const listingQueries = this.buildListingQueries(request, queryPlan);
         const queryResults = await Promise.all(
           listingQueries.map((query) => this.fetchWithTimeout(adapter, query))
         );
         const listings = queryResults.flatMap((result) => result.listings);
         const error = queryResults.find((result) => result.error)?.error;
         const timedOut = queryResults.some((result) => result.timedOut);
-        return { adapter, listings, error, timedOut };
+        return { adapter, listings, error, timedOut, queryPlan, listingQueries };
       })
     );
 
@@ -146,13 +164,14 @@ export class PricingV4Service {
       name: result.adapter.name,
       baseUrl: this.getMarketplaceBaseUrl(result.adapter.id),
       listingCount: result.listings.length,
-      searchUrl: result.adapter.buildSearchUrl(listingQueries[0]),
+      searchUrl: result.adapter.buildSearchUrl(result.listingQueries[0]),
     }));
 
     const combinedListings = adapterResults.flatMap((result) => result.listings);
     recordPricingV4ListingsFetched(combinedListings.length);
     const hadErrors = adapterResults.some((result) => result.error);
     const hadTimeouts = adapterResults.some((result) => result.timedOut);
+    const basePlan = adapterResults[0]?.queryPlan;
 
     if (combinedListings.length === 0) {
       if ((hadErrors || hadTimeouts) && this.config.pricing.v4FallbackToV3 && this.v3Service) {
@@ -175,10 +194,14 @@ export class PricingV4Service {
       return insights;
     }
 
-    const filtered = filterListings(combinedListings);
+    const filtered = filterListings(combinedListings, this.buildListingFilterOptions(basePlan));
+    const postFiltered = basePlan
+      ? applyPostFilterRules(filtered, basePlan.postFilterRules)
+      : { kept: filtered, excluded: [] };
+    const policyFiltered = postFiltered.kept;
     const noiseRatio =
       combinedListings.length > 0
-        ? (combinedListings.length - filtered.length) / combinedListings.length
+        ? (combinedListings.length - policyFiltered.length) / combinedListings.length
         : 0;
 
     const shouldNormalize =
@@ -186,7 +209,7 @@ export class PricingV4Service {
 
     const normalized = shouldNormalize
       ? await this.aiClusterer.normalize({
-          listings: filtered,
+          listings: policyFiltered,
           targetBrand: request.brand,
           targetModel: this.buildModelWithVariants(request),
           targetProductType: request.productType,
@@ -195,7 +218,7 @@ export class PricingV4Service {
           identifier: request.identifier,
         })
       : {
-          relevantListings: filtered,
+          relevantListings: policyFiltered,
           excludedListings: [],
           clusterSummary: 'AI normalization skipped',
         };
@@ -258,19 +281,27 @@ export class PricingV4Service {
     return `pricing:v4:${sha256Hex(normalized)}`;
   }
 
-  private buildListingQuery(request: PricingV4Request): ListingQuery {
+  private buildListingQueryFromPlan(
+    request: PricingV4Request,
+    queryPlan: QueryPlan | undefined
+  ): ListingQuery {
+    const modelWithVariants = this.buildModelWithVariants(request);
     return {
       brand: request.brand,
-      model: this.buildModelWithVariants(request),
+      model: modelWithVariants,
       productType: request.productType,
       condition: request.condition,
       countryCode: request.countryCode,
       maxResults: 30,
+      q: queryPlan?.q,
+      categoryId: queryPlan?.categoryId,
+      filters: queryPlan?.filters ?? [],
+      postFilterRules: queryPlan?.postFilterRules ?? [],
     };
   }
 
-  private buildListingQueries(request: PricingV4Request): ListingQuery[] {
-    const baseQuery = this.buildListingQuery(request);
+  private buildListingQueries(request: PricingV4Request, queryPlan: QueryPlan): ListingQuery[] {
+    const baseQuery = this.buildListingQueryFromPlan(request, queryPlan);
     const queries = [baseQuery];
     const identifier = request.identifier?.trim();
     if (identifier) {
@@ -279,6 +310,7 @@ export class PricingV4Service {
         brand: '',
         productType: '',
         model: identifier,
+        q: identifier,
       });
     }
     return queries;
@@ -499,5 +531,59 @@ export class PricingV4Service {
     if (removed > 0) {
       console.log(`[PricingV4Service] Cleaned up ${removed} expired cache entries`);
     }
+  }
+
+  private async buildPlanForAdapter(
+    request: PricingV4Request,
+    marketplaceId: string
+  ): Promise<QueryPlan> {
+    const modelWithVariants = this.buildModelWithVariants(request);
+    const variantText = this.buildVariantText(request.variantAttributes);
+    const freeText = request.model ? undefined : variantText || undefined;
+    const context = buildCatalogQueryContext(
+      {
+        subtype: request.productType,
+        brand: request.brand,
+        model: modelWithVariants,
+        freeText,
+        condition: request.condition,
+        identifier: request.identifier,
+      },
+      this.subtypeClassifier
+    );
+    const resolver = this.getCategoryResolver(marketplaceId);
+    return buildQueryPlan(context, marketplaceId, resolver);
+  }
+
+  private getCategoryResolver(marketplaceId: string): CategoryResolver {
+    return this.categoryResolvers.get(marketplaceId) ?? this.nullCategoryResolver;
+  }
+
+  private buildListingFilterOptions(queryPlan: QueryPlan | undefined): ListingFilterOptions {
+    if (!queryPlan) return {};
+    const options: ListingFilterOptions = {};
+    for (const filter of queryPlan.filters) {
+      if (filter.type === 'excludeParts') {
+        options.excludeParts = filter.value;
+      }
+      if (filter.type === 'excludeBundles') {
+        options.excludeBundles = filter.value;
+      }
+    }
+    return options;
+  }
+
+  private logQueryPlan(marketplaceId: string, queryPlan: QueryPlan): void {
+    console.log('[PricingV4Service] Query plan', {
+      marketplaceId,
+      q: queryPlan.q,
+      categoryId: queryPlan.categoryId,
+      filters: queryPlan.filters,
+      postFilterRules: queryPlan.postFilterRules,
+      subtypeClass: queryPlan.telemetry.subtypeClass,
+      categorySource: queryPlan.telemetry.categoryResolution.source,
+      categoryConfidence: queryPlan.telemetry.categoryResolution.confidence,
+      warnings: queryPlan.telemetry.warnings,
+    });
   }
 }

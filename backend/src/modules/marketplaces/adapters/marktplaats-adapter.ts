@@ -66,6 +66,9 @@ export class MarktplaatsAdapter implements MarketplaceAdapter {
   }
 
   private buildSearchTerms(query: ListingQuery): string {
+    if (query.q) {
+      return query.q;
+    }
     return [query.brand, query.model, query.productType].filter(Boolean).join(' ').trim();
   }
 

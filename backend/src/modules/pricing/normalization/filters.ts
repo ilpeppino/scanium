@@ -1,6 +1,6 @@
 import { FetchedListing } from '../types-v4.js';
 
-const EXCLUDE_PATTERNS = [
+export const EXCLUDE_PARTS_PATTERNS = [
   /parts only/i,
   /for parts/i,
   /defect/i,
@@ -10,16 +10,30 @@ const EXCLUDE_PATTERNS = [
   /broken/i,
 ];
 
-const BUNDLE_PATTERNS = [/\d+x\s/i, /set of/i];
+export const BUNDLE_PATTERNS = [/\d+x\s/i, /set of/i];
 
-export function filterListings(listings: FetchedListing[]): FetchedListing[] {
+export type ListingFilterOptions = {
+  excludeParts?: boolean;
+  excludeBundles?: boolean;
+};
+
+export function filterListings(
+  listings: FetchedListing[],
+  options: ListingFilterOptions = {}
+): FetchedListing[] {
+  const excludeParts = options.excludeParts ?? true;
+  const excludeBundles = options.excludeBundles ?? true;
   return listings.filter((listing) => {
     if (listing.price <= 0) return false;
     if (listing.price > 10000) return false;
 
     const title = listing.title ?? '';
-    if (EXCLUDE_PATTERNS.some((pattern) => pattern.test(title))) return false;
-    if (BUNDLE_PATTERNS.some((pattern) => pattern.test(title))) return false;
+    if (excludeParts && EXCLUDE_PARTS_PATTERNS.some((pattern) => pattern.test(title))) {
+      return false;
+    }
+    if (excludeBundles && BUNDLE_PATTERNS.some((pattern) => pattern.test(title))) {
+      return false;
+    }
 
     return true;
   });

@@ -28,7 +28,26 @@ describe('EbayBrowseAdapter', () => {
     const adapter = new EbayBrowseAdapter(baseConfig, { fetcher: vi.fn() });
     const url = adapter.buildSearchUrl(query);
     expect(url).toContain('https://www.ebay.nl/sch/i.html?_nkw=');
-    expect(url).toContain('Apple%20iPhone%2013%20smartphone');
+    expect(url).toContain('Apple%20iPhone%2013');
+  });
+
+  it('includes category id in Browse API params when provided', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: 'token', expires_in: 3600 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ itemSummaries: [] }),
+      });
+
+    const adapter = new EbayBrowseAdapter(baseConfig, { fetcher });
+    await adapter.fetchListings({ ...query, categoryId: '1234' });
+
+    const url = fetcher.mock.calls[1][0] as string;
+    expect(url).toContain('category_ids=1234');
   });
 
   it('returns empty list when credentials are missing', async () => {

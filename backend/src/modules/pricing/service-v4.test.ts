@@ -51,7 +51,8 @@ describe('PricingV4Service', () => {
       identifier: '1234567890123',
     };
 
-    const queries = (service as any).buildListingQueries(enrichedRequest);
+    const queryPlan = await (service as any).buildPlanForAdapter(enrichedRequest, 'marktplaats');
+    const queries = (service as any).buildListingQueries(enrichedRequest, queryPlan);
     expect(queries[0].model).toContain('256GB');
     expect(queries[0].model).toContain('Blue');
     expect(queries[1].model).toBe('1234567890123');
@@ -154,5 +155,57 @@ describe('PricingV4Service', () => {
     expect(result.status).toBe('OK');
     expect(result.range?.median).toBeGreaterThan(0);
     expect(result.sources[0].listingCount).toBe(2);
+  });
+
+  it('passes query plan category to adapters and filters accessory listings for devices', async () => {
+    let receivedQuery: any = null;
+    const adapter: MarketplaceAdapter = {
+      id: 'ebay',
+      name: 'eBay',
+      fetchListings: async (query) => {
+        receivedQuery = query;
+        return [
+          {
+            title: 'Apple iPhone 13 case',
+            price: 15,
+            currency: 'EUR',
+            url: 'https://example.com/case',
+            marketplace: 'ebay',
+          },
+          {
+            title: 'Apple iPhone 13',
+            price: 300,
+            currency: 'EUR',
+            url: 'https://example.com/phone',
+            marketplace: 'ebay',
+          },
+        ];
+      },
+      buildSearchUrl: () => 'https://example.com',
+      isHealthy: async () => true,
+    };
+
+    const categoryResolvers = new Map([
+      [
+        'ebay',
+        {
+          resolve: async () => ({
+            categoryId: '1234',
+            confidence: 'high',
+            source: 'override',
+          }),
+        },
+      ],
+    ]);
+
+    const service = new PricingV4Service(baseConfig, {
+      adapters: [adapter],
+      categoryResolvers,
+    });
+
+    const result = await service.estimateVerifiableRange(request);
+    expect(receivedQuery?.categoryId).toBe('1234');
+    expect(result.status).toBe('OK');
+    expect(result.sampleListings?.some((listing) => listing.title.includes('case'))).toBe(false);
   });
 });

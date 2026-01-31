@@ -41,6 +41,8 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
       brand: query.brand,
       model: query.model,
       productType: query.productType,
+      q: query.q,
+      categoryId: query.categoryId,
       countryCode: query.countryCode,
       maxResults: query.maxResults,
     });
@@ -64,6 +66,9 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
       q: searchTerms,
       limit: String(Math.max(1, Math.min(query.maxResults, 50))),
     });
+    if (query.categoryId) {
+      params.set('category_ids', query.categoryId);
+    }
     const marketplaceId = this.getMarketplaceId(query.countryCode);
 
     console.log('[eBay] Making Browse API call', {
@@ -116,7 +121,8 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
 
   buildSearchUrl(query: ListingQuery): string {
     const q = encodeURIComponent(this.buildSearchTerms(query));
-    return `https://www.ebay.nl/sch/i.html?_nkw=${q}`;
+    const categoryParam = query.categoryId ? `&_sacat=${encodeURIComponent(query.categoryId)}` : '';
+    return `https://www.ebay.nl/sch/i.html?_nkw=${q}${categoryParam}`;
   }
 
   async isHealthy(): Promise<boolean> {
@@ -132,6 +138,9 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
   }
 
   private buildSearchTerms(query: ListingQuery): string {
+    if (query.q) {
+      return query.q;
+    }
     // Only use brand and model for eBay searches
     // productType (e.g., "electronics_smartphone") is from internal taxonomy and doesn't match eBay search patterns
     return [query.brand, query.model].filter(Boolean).join(' ').trim();
