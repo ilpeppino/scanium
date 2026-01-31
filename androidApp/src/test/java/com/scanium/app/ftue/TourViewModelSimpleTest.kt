@@ -1,14 +1,10 @@
 package com.scanium.app.ftue
 
 import androidx.compose.ui.geometry.Rect
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.ViewModel
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.R
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.model.user.UserEdition
-import dagger.assisted.AssistedInject
-import dagger.assisted.AssistedFactory
-import dagger.hilt.android.lifecycle.HiltViewModelTest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -18,22 +14,19 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModelTest
-@RunWith(MockitoJUnitRunner::class)
-class TourViewModelTest {
-    @get:Rule
-    val instantTaskExecutorRule = InstantTaskExecutorRule()
-
+@RunWith(RobolectricTestRunner::class)
+class TourViewModelSimpleTest {
     @Mock
     private lateinit var mockFtueRepository: FtueRepository
 
@@ -43,14 +36,10 @@ class TourViewModelTest {
     private lateinit var viewModel: TourViewModel
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    @AssistedInject
-    constructor(assistedFactory: TourViewModel.Factory) {
-        viewModel = assistedFactory.create(mockItemsViewModel)
-    }
-
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        viewModel = TourViewModel(mockFtueRepository, mockItemsViewModel)
     }
 
     @After

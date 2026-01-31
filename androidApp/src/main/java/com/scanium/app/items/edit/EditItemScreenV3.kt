@@ -567,7 +567,6 @@ fun EditItemScreenV3(
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .windowInsetsPadding(WindowInsets.ime)
                     .padding(horizontal = 16.dp),
         )
     }

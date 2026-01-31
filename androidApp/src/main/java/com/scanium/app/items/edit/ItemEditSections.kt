@@ -20,12 +20,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -52,15 +55,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -68,6 +74,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -83,6 +90,7 @@ import com.scanium.app.model.toImageBitmap
 import com.scanium.app.pricing.PricingMissingField
 import com.scanium.app.pricing.PricingUiState
 import com.scanium.shared.core.models.items.ItemCondition
+import kotlinx.coroutines.launch
 
 @Composable
 fun ItemEditSections(
@@ -109,11 +117,16 @@ fun ItemEditSections(
     onConditionPriceBoundsChanged: ((Rect?) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val brandBringIntoViewRequester = remember { BringIntoViewRequester() }
+    val productTypeBringIntoViewRequester = remember { BringIntoViewRequester() }
+    val modelBringIntoViewRequester = remember { BringIntoViewRequester() }
+
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
     ) {
         Spacer(Modifier.height(16.dp))
 
@@ -288,6 +301,7 @@ fun ItemEditSections(
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
             isError = assistantMissingFields.contains(PricingMissingField.BRAND),
+            bringIntoViewRequester = brandBringIntoViewRequester,
             modifier =
                 if (tourViewModel != null) {
                     Modifier.tourTarget("edit_brand_field", tourViewModel)
@@ -318,6 +332,7 @@ fun ItemEditSections(
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
             isError = assistantMissingFields.contains(PricingMissingField.PRODUCT_TYPE),
+            bringIntoViewRequester = productTypeBringIntoViewRequester,
         )
 
         Spacer(Modifier.height(12.dp))
@@ -330,6 +345,11 @@ fun ItemEditSections(
             visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "color"),
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            keyboardOptions =
+                KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Words,
+                    imeAction = ImeAction.Next,
+                ),
         )
 
         Spacer(Modifier.height(12.dp))
@@ -388,6 +408,7 @@ fun ItemEditSections(
             onCustomCommit = onModelCustomCommitted,
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            bringIntoViewRequester = modelBringIntoViewRequester,
         )
 
         Spacer(Modifier.height(12.dp))
@@ -482,6 +503,11 @@ private fun MoreDetailsAccordion(
                     visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "size"),
                     imeAction = ImeAction.Next,
                     onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                    keyboardOptions =
+                        KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            imeAction = ImeAction.Next,
+                        ),
                 )
 
                 Spacer(Modifier.height(12.dp))
@@ -508,7 +534,11 @@ private fun MoreDetailsAccordion(
                         }
                     },
                     maxLines = 6,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
+                    keyboardOptions =
+                        KeyboardOptions(
+                            imeAction = ImeAction.Default,
+                            capitalization = KeyboardCapitalization.Sentences,
+                        ),
                 )
             }
         }
@@ -532,18 +562,43 @@ private fun ModelAutocompleteField(
     imeAction: ImeAction,
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
+    bringIntoViewRequester: BringIntoViewRequester? = null,
 ) {
     val trimmedValue = value.trim()
-    val shouldShowSuggestions by remember(trimmedValue, enabled, suggestions) {
-        derivedStateOf { enabled && trimmedValue.length >= 2 && suggestions.isNotEmpty() }
+    var isFocused by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    var allowAutoExpand by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+    val canExpand = enabled && trimmedValue.length >= 2 && suggestions.isNotEmpty()
+    val shouldShowSuggestions by remember(expanded, canExpand) {
+        derivedStateOf { expanded && canExpand }
     }
-    val showNoMatches by remember(trimmedValue, enabled, suggestions, isLoading, showOfflineHelper) {
+    val showNoMatches by remember(trimmedValue, enabled, suggestions, isLoading, showOfflineHelper, expanded) {
         derivedStateOf {
+            expanded &&
             enabled &&
                 trimmedValue.length >= 2 &&
                 suggestions.isEmpty() &&
                 !isLoading &&
                 !showOfflineHelper
+        }
+    }
+    val fieldBringIntoViewModifier =
+        if (bringIntoViewRequester != null) {
+            Modifier.bringIntoViewRequester(bringIntoViewRequester)
+        } else {
+            Modifier
+        }
+
+    LaunchedEffect(canExpand, allowAutoExpand, isFocused) {
+        if (allowAutoExpand) {
+            expanded = isFocused && canExpand
+        }
+    }
+
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            scope.launch { bringIntoViewRequester?.bringIntoView() }
         }
     }
 
@@ -556,9 +611,28 @@ private fun ModelAutocompleteField(
         )
         OutlinedTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = {
+                allowAutoExpand = true
+                onValueChange(it)
+            },
             enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(fieldBringIntoViewModifier)
+                    .onFocusChanged {
+                        isFocused = it.isFocused
+                        allowAutoExpand = true
+                        expanded =
+                            it.isFocused &&
+                                enabled &&
+                                trimmedValue.length >= 2 &&
+                                suggestions.isNotEmpty() &&
+                                allowAutoExpand
+                        if (it.isFocused) {
+                            scope.launch { bringIntoViewRequester?.bringIntoView() }
+                        }
+                    },
             placeholder = {
                 Text(
                     text =
@@ -597,20 +671,32 @@ private fun ModelAutocompleteField(
                         )
                     }
                     if (value.isNotEmpty()) {
-                        IconButton(onClick = onClear) {
+                        IconButton(
+                            onClick = {
+                                allowAutoExpand = false
+                                expanded = false
+                                onClear()
+                            },
+                        ) {
                             Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
                         }
                     }
                 }
             },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = imeAction),
+            keyboardOptions =
+                KeyboardOptions(
+                    imeAction = imeAction,
+                    capitalization = KeyboardCapitalization.Words,
+                ),
             keyboardActions =
                 KeyboardActions(
                     onNext = {
+                        expanded = false
                         onCustomCommit(trimmedValue.isNotBlank() && !showSelectedCheck)
                         onNext()
                     },
+                    onDone = { expanded = false },
                 ),
         )
 
@@ -654,7 +740,11 @@ private fun ModelAutocompleteField(
                                 Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = 48.dp)
-                                    .clickable { onSuggestionSelected(model) }
+                                    .clickable {
+                                        allowAutoExpand = false
+                                        expanded = false
+                                        onSuggestionSelected(model)
+                                    }
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
