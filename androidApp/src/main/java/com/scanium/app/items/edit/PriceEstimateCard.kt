@@ -276,7 +276,7 @@ private fun PricingResultState(
 
     insights.timeWindowDays?.let { windowDays ->
         Text(
-            text = stringResource(R.string.pricing_time_window, windowDays),
+            text = stringResource(R.string.pricing_time_window, windowDays, marketplacesLabel),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
