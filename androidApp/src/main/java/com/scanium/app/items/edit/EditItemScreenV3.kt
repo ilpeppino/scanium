@@ -64,8 +64,8 @@ import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.state.ItemFieldUpdate
 import com.scanium.app.model.config.RemoteConfig
-import com.scanium.app.pricing.PricingUiState
 import com.scanium.app.pricing.PricingMissingField
+import com.scanium.app.pricing.PricingUiState
 import com.scanium.app.pricing.PricingV3Exception
 import com.scanium.app.pricing.PricingV3Repository
 import com.scanium.app.pricing.PricingV3Request
@@ -404,7 +404,8 @@ fun EditItemScreenV3(
                                 showAiAssistantChooser = true
                             }
                         },
-                        enabled = true, // Always clickable to show inlay when disabled
+                        // Always clickable to show inlay when disabled
+                        enabled = true,
                         colors =
                             androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
                                 contentColor =

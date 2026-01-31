@@ -1,5 +1,6 @@
 package com.scanium.app.items.edit
 
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.pricing.PricingV4Repository
 import com.scanium.app.pricing.VariantSchema
@@ -8,7 +9,6 @@ import com.scanium.shared.core.models.assistant.PriceRange
 import com.scanium.shared.core.models.assistant.PricingInsights
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemCondition
-import com.scanium.app.ScannedItem
 import com.scanium.shared.core.models.ml.ItemCategory
 import io.mockk.coEvery
 import io.mockk.every

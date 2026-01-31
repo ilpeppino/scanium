@@ -379,25 +379,28 @@ private fun MoreDetailsAccordion(
     var isExpanded by remember { mutableStateOf(false) }
 
     // Count how many optional fields have values
-    val filledFieldsCount = listOfNotNull(
-        state.modelField.takeIf { it.isNotBlank() },
-        state.sizeField.takeIf { it.isNotBlank() },
-        state.notesField.takeIf { it.isNotBlank() },
-    ).size
+    val filledFieldsCount =
+        listOfNotNull(
+            state.modelField.takeIf { it.isNotBlank() },
+            state.sizeField.takeIf { it.isNotBlank() },
+            state.notesField.takeIf { it.isNotBlank() },
+        ).size
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Accordion Header
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { isExpanded = !isExpanded },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded },
             shape = RoundedCornerShape(8.dp),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -474,9 +477,10 @@ private fun MoreDetailsAccordion(
                 OutlinedTextField(
                     value = state.notesField,
                     onValueChange = { state.notesField = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
                     placeholder = { Text(stringResource(R.string.edit_item_notes_placeholder)) },
                     trailingIcon = {
                         if (state.notesField.isNotEmpty()) {

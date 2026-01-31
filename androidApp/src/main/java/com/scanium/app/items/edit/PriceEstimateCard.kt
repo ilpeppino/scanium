@@ -475,4 +475,3 @@ private fun getCurrencySymbol(currencyCode: String): String =
         "CHF" -> "CHF "
         else -> "$currencyCode "
     }
-

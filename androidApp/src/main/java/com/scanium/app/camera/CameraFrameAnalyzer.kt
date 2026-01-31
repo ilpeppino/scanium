@@ -452,10 +452,13 @@ internal class CameraFrameAnalyzer(
                         confidence = item.confidence,
                         onDeviceLabel = item.labelText ?: "Unknown",
                         onDeviceCategory = item.category,
-                        trackingId = item.id, // Use item ID as tracking ID
-                        frameSharpness = 1.0f, // TODO: Get actual sharpness if available
+                        // Use item ID as tracking ID
+                        trackingId = item.id,
+                        // TODO: Get actual sharpness if available
+                        frameSharpness = 1.0f,
                         captureType = CaptureType.SINGLE_SHOT,
-                        thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
+                        // WYSIWYG thumbnail from exact bbox
+                        thumbnailRef = wysiwygThumbnail,
                         fullFrameBitmap = bitmapCopy,
                     )
                 }
@@ -518,9 +521,12 @@ internal class CameraFrameAnalyzer(
                 edgeInsetRatio = edgeInsetRatio,
             )
 
+        val infoSize = trackingResponse.detectionInfos.size
+        val resultSize = trackingResponse.detectionResults.size
         Log.i(
             TAG,
-            ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass",
+            ">>> processObjectDetectionWithTracking: Got $infoSize DetectionInfo and $resultSize " +
+                "DetectionResult objects from a SINGLE detection pass",
         )
 
         // Capture bitmap for sharpness calculation and cloud classification
@@ -592,9 +598,11 @@ internal class CameraFrameAnalyzer(
         val detectionsToAdd =
             if (canAddItems && isLocked) {
                 val allConfirmedCandidates = objectTracker.getConfirmedCandidates()
+                val totalConfirmedSize = allConfirmedCandidates.size
+                val newlyConfirmedSize = confirmedCandidates.size
                 Log.i(
                     TAG,
-                    ">>> LOCKED state: checking ${allConfirmedCandidates.size} total confirmed candidates (${confirmedCandidates.size} newly confirmed)",
+                    ">>> LOCKED state: checking $totalConfirmedSize total confirmed candidates ($newlyConfirmedSize newly confirmed)",
                 )
 
                 // Generate unique capture ID for this lock event - all candidates share the same ID
@@ -607,9 +615,10 @@ internal class CameraFrameAnalyzer(
                     // Strict ROI check: entire bounding box must be inside ROI
                     val isInsideRoi = currentRoi.containsBox(bbox.left, bbox.top, bbox.right, bbox.bottom)
                     if (!isInsideRoi) {
+                        val candidateId = candidate.internalId
                         Log.e(
                             TAG,
-                            "!!! ASSERTION FAILED: Confirmed candidate ${candidate.internalId} is OUTSIDE ROI (bbox=$bbox, roi=$currentRoi)",
+                            "!!! ASSERTION FAILED: Confirmed candidate $candidateId is OUTSIDE ROI (bbox=$bbox, roi=$currentRoi)",
                         )
                         if (BuildConfig.DEBUG && Log.isLoggable(TAG, Log.ASSERT)) {
                             throw IllegalStateException("Confirmed candidate outside ROI - this should never happen")
@@ -651,7 +660,8 @@ internal class CameraFrameAnalyzer(
                                 trackingId = candidate.internalId,
                                 frameSharpness = frameSharpness,
                                 captureType = CaptureType.TRACKING,
-                                thumbnailRef = wysiwygThumbnail, // WYSIWYG thumbnail from exact bbox
+                                // WYSIWYG thumbnail from exact bbox
+                                thumbnailRef = wysiwygThumbnail,
                                 fullFrameBitmap = bitmapCopy,
                             )
                         objectTracker.markCandidateConsumed(candidate.internalId)
@@ -664,24 +674,25 @@ internal class CameraFrameAnalyzer(
                 if (totalConfirmed > 0) {
                     Log.d(
                         TAG,
-                        ">>> Waiting for LOCKED state: $totalConfirmed confirmed candidates pending (canAddItem=$canAddItems, isLocked=$isLocked)",
+                        ">>> Waiting for LOCKED state: $totalConfirmed confirmed candidates pending " +
+                            "(canAddItem=$canAddItems, isLocked=$isLocked)",
                     )
                 }
                 emptyList()
             }
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${detectionsToAdd.size} RawDetections (gated by LOCKED=$isLocked)")
+        val detectionCount = detectionsToAdd.size
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to $detectionCount RawDetections (gated by LOCKED=$isLocked)")
         detectionsToAdd.forEachIndexed { index, detection ->
-            Log.i(
-                TAG,
-                "    RawDetection $index: label=${detection.onDeviceLabel}, category=${detection.onDeviceCategory}, confidence=${detection.confidence}",
-            )
+            val label = detection.onDeviceLabel
+            val category = detection.onDeviceCategory
+            val confidence = detection.confidence
+            Log.i(TAG, "    RawDetection $index: label=$label, category=$category, confidence=$confidence")
         }
 
-        Log.i(
-            TAG,
-            ">>> processObjectDetectionWithTracking: RETURNING ${detectionsToAdd.size} detections and ${trackingResponse.detectionResults.size} detection results",
-        )
+        val addSize = detectionsToAdd.size
+        val resultSize2 = trackingResponse.detectionResults.size
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: RETURNING $addSize detections and $resultSize2 detection results")
         return Pair(detectionsToAdd, trackingResponse.detectionResults)
     }
 }

@@ -215,6 +215,7 @@ class ItemsViewModel
         val correctionDialogData: StateFlow<CorrectionDialogData?> = _correctionDialogData
 
         /** Pending detections awaiting classification/confirmation */
+        @Suppress("ktlint:standard:property-naming")
         private val _pendingDetections = MutableStateFlow<List<PendingDetectionState>>(emptyList())
 
         /** Count of pending detections for UI badge */
@@ -994,9 +995,10 @@ class ItemsViewModel
                         return@withContext
                     }
 
+                    val bitmapDims = "${bitmap.width}x${bitmap.height}"
                     Log.d(
                         TAG,
-                        "Triggering multi-hypothesis classification for detection $detectionId with WYSIWYG thumbnail ${bitmap.width}x${bitmap.height}",
+                        "Triggering multi-hypothesis classification for detection $detectionId with WYSIWYG thumbnail $bitmapDims",
                     )
 
                     // Call cloud classifier with multi-hypothesis mode
@@ -1211,7 +1213,8 @@ class ItemsViewModel
                         id = detectionId,
                         labelText = resolvedLabel,
                         category = resolvedCategory,
-                        priceRange = 0.0 to 0.0, // Will be estimated by PricingEngine later
+                        // Will be estimated by PricingEngine later
+                        priceRange = 0.0 to 0.0,
                         confidence = hypothesis?.confidence ?: rawDetection.confidence,
                         boundingBox = rawDetection.boundingBox,
                         thumbnail = rawDetection.thumbnailRef,
@@ -1340,9 +1343,7 @@ class ItemsViewModel
             }
         }
 
-        private fun buildHypothesisAttributes(
-            hypothesis: ClassificationHypothesis?,
-        ): Map<String, ItemAttribute> =
+        private fun buildHypothesisAttributes(hypothesis: ClassificationHypothesis?): Map<String, ItemAttribute> =
             hypothesis?.attributes
                 ?.filter { it.value.isNotBlank() }
                 ?.mapValues { (_, value) ->

@@ -206,8 +206,7 @@ class PricingV3Api(
                 else -> "Pricing service error"
             }
 
-        private fun isRetryableStatus(statusCode: Int): Boolean =
-            statusCode == 429 || statusCode == 504 || statusCode in 500..599
+        private fun isRetryableStatus(statusCode: Int): Boolean = statusCode == 429 || statusCode == 504 || statusCode in 500..599
 
         private fun parseRetryAfterSeconds(
             retryAfterHeader: String?,

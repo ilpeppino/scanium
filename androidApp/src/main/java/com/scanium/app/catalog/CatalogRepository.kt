@@ -4,9 +4,9 @@ import com.scanium.app.catalog.api.CatalogApi
 import com.scanium.app.catalog.model.CatalogModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 class CatalogRepository(
     private val api: CatalogApi,

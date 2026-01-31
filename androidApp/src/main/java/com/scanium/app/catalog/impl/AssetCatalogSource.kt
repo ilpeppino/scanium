@@ -30,62 +30,63 @@ private data class CatalogEntryDto(
 )
 
 class AssetCatalogSource
-@Inject
-constructor(
-    @ApplicationContext private val context: Context,
-    private val json: Json = DEFAULT_JSON,
-) : CatalogSource {
-    private val cache = mutableMapOf<CatalogType, CatalogPayload>()
-    private val entriesCache = mutableMapOf<CatalogType, List<CatalogEntry>>()
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+        private val json: Json = DEFAULT_JSON,
+    ) : CatalogSource {
+        private val cache = mutableMapOf<CatalogType, CatalogPayload>()
+        private val entriesCache = mutableMapOf<CatalogType, List<CatalogEntry>>()
 
-    override suspend fun loadCatalog(type: CatalogType): List<CatalogEntry> =
-        withContext(Dispatchers.IO) {
-            entriesCache[type]?.let { return@withContext it }
-            val payload = loadPayload(type) ?: return@withContext emptyList()
-            val entries = payload.entries.map { dto -> dto.toEntry() }
-            entriesCache[type] = entries
-            entries
-        }
-
-    override suspend fun hasUpdate(type: CatalogType): Boolean = false
-
-    override suspend fun getVersion(type: CatalogType): Int =
-        withContext(Dispatchers.IO) {
-            loadPayload(type)?.version ?: 0
-        }
-
-    private fun loadPayload(type: CatalogType): CatalogPayload? {
-        cache[type]?.let { return it }
-        return runCatching {
-            context.assets.open(type.assetPath).bufferedReader().use { reader ->
-                json.decodeFromString(CatalogPayload.serializer(), reader.readText())
+        override suspend fun loadCatalog(type: CatalogType): List<CatalogEntry> =
+            withContext(Dispatchers.IO) {
+                entriesCache[type]?.let { return@withContext it }
+                val payload = loadPayload(type) ?: return@withContext emptyList()
+                val entries = payload.entries.map { dto -> dto.toEntry() }
+                entriesCache[type] = entries
+                entries
             }
-        }.onFailure { error ->
-            Log.w("AssetCatalogSource", "Failed to load catalog ${type.assetPath}", error)
-        }.getOrNull()?.also { payload ->
-            cache[type] = payload
-        }
-    }
 
-    private fun CatalogEntryDto.toEntry(): CatalogEntry {
-        val metadata = buildMap {
-            category?.let { put("category", it) }
-            parentCategory?.let { put("parentCategory", it) }
-        }
-        return CatalogEntry(
-            id = id,
-            displayLabel = displayLabel,
-            aliases = aliases,
-            popularity = popularity,
-            metadata = metadata,
-        )
-    }
+        override suspend fun hasUpdate(type: CatalogType): Boolean = false
 
-    companion object {
-        private val DEFAULT_JSON =
-            Json {
-                ignoreUnknownKeys = true
-                isLenient = true
+        override suspend fun getVersion(type: CatalogType): Int =
+            withContext(Dispatchers.IO) {
+                loadPayload(type)?.version ?: 0
             }
+
+        private fun loadPayload(type: CatalogType): CatalogPayload? {
+            cache[type]?.let { return it }
+            return runCatching {
+                context.assets.open(type.assetPath).bufferedReader().use { reader ->
+                    json.decodeFromString(CatalogPayload.serializer(), reader.readText())
+                }
+            }.onFailure { error ->
+                Log.w("AssetCatalogSource", "Failed to load catalog ${type.assetPath}", error)
+            }.getOrNull()?.also { payload ->
+                cache[type] = payload
+            }
+        }
+
+        private fun CatalogEntryDto.toEntry(): CatalogEntry {
+            val metadata =
+                buildMap {
+                    category?.let { put("category", it) }
+                    parentCategory?.let { put("parentCategory", it) }
+                }
+            return CatalogEntry(
+                id = id,
+                displayLabel = displayLabel,
+                aliases = aliases,
+                popularity = popularity,
+                metadata = metadata,
+            )
+        }
+
+        companion object {
+            private val DEFAULT_JSON =
+                Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                }
+        }
     }
-}

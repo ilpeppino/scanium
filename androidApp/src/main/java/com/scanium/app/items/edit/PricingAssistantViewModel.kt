@@ -2,6 +2,7 @@ package com.scanium.app.items.edit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.items.state.ItemFieldUpdate
 import com.scanium.app.pricing.PricingInputs
 import com.scanium.app.pricing.PricingUiState
 import com.scanium.app.pricing.PricingV4Exception
@@ -9,7 +10,6 @@ import com.scanium.app.pricing.PricingV4Repository
 import com.scanium.app.pricing.PricingV4Request
 import com.scanium.app.pricing.VariantSchema
 import com.scanium.app.pricing.VariantSchemaRepository
-import com.scanium.app.items.state.ItemFieldUpdate
 import com.scanium.shared.core.models.items.ItemCondition
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory

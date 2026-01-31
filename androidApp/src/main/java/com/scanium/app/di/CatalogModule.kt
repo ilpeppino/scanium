@@ -26,9 +26,7 @@ object CatalogModule {
 
     @Provides
     @Singleton
-    fun provideCatalogSearch(
-        source: CatalogSource,
-    ): CatalogSearch = InMemoryCatalogSearch(source)
+    fun provideCatalogSearch(source: CatalogSource): CatalogSearch = InMemoryCatalogSearch(source)
 
     @Provides
     @Singleton
@@ -38,7 +36,5 @@ object CatalogModule {
 
     @Provides
     @Singleton
-    fun provideCatalogRepository(
-        api: CatalogApi,
-    ): CatalogRepository = CatalogRepository(api)
+    fun provideCatalogRepository(api: CatalogApi): CatalogRepository = CatalogRepository(api)
 }

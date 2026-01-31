@@ -1,11 +1,7 @@
 package com.scanium.app.catalog
 
 import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.catalog.CatalogEntry
-import com.scanium.app.catalog.CatalogSource
-import com.scanium.app.catalog.CatalogType
 import com.scanium.app.catalog.impl.AssetCatalogSource
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -28,24 +24,26 @@ class AssetCatalogSourceTest {
         source = mockk<AssetCatalogSource>()
 
         // Prepare stubbed data
-        val brandsList = listOf(
-            CatalogEntry(
-                id = "nike",
-                displayLabel = "Nike",
-                aliases = listOf("NIKE"),
-                popularity = 95,
-                metadata = mapOf("category" to "athletic")
+        val brandsList =
+            listOf(
+                CatalogEntry(
+                    id = "nike",
+                    displayLabel = "Nike",
+                    aliases = listOf("NIKE"),
+                    popularity = 95,
+                    metadata = mapOf("category" to "athletic"),
+                ),
             )
-        )
-        val productTypesList = listOf(
-            CatalogEntry(
-                id = "shoe",
-                displayLabel = "Shoe",
-                aliases = listOf("shoes"),
-                popularity = 80,
-                metadata = mapOf("category" to "footwear")
+        val productTypesList =
+            listOf(
+                CatalogEntry(
+                    id = "shoe",
+                    displayLabel = "Shoe",
+                    aliases = listOf("shoes"),
+                    popularity = 80,
+                    metadata = mapOf("category" to "footwear"),
+                ),
             )
-        )
 
         // Stub the suspend loadCatalog method for CatalogType.BRANDS using coEvery
         coEvery { source.loadCatalog(CatalogType.BRANDS) } returns brandsList

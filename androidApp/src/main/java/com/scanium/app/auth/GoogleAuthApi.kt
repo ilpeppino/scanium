@@ -21,8 +21,10 @@ data class GoogleAuthResponse(
     val tokenType: String,
     val expiresIn: Int,
     val user: UserResponse,
-    val refreshToken: String? = null, // Phase C
-    val refreshTokenExpiresIn: Int? = null, // Phase C
+    // Phase C
+    val refreshToken: String? = null,
+    // Phase C
+    val refreshTokenExpiresIn: Int? = null,
     val correlationId: String? = null,
 )
 
@@ -45,7 +47,8 @@ data class RefreshTokenResponse(
     val accessToken: String,
     val tokenType: String,
     val expiresIn: Int,
-    val refreshToken: String? = null, // Optional: new refresh token if rotated
+    // Optional: new refresh token if rotated
+    val refreshToken: String? = null,
     val refreshTokenExpiresIn: Int? = null,
     val correlationId: String? = null,
 )

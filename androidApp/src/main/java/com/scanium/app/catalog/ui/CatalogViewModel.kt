@@ -235,7 +235,8 @@ class CatalogViewModel
             when (error) {
                 is UnknownHostException,
                 is SocketTimeoutException,
-                is ConnectException -> true
+                is ConnectException,
+                -> true
 
                 is IOException -> error.message?.startsWith("Catalog ") != true
                 else -> false

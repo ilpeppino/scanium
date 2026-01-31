@@ -60,10 +60,11 @@ class VariantSchemaApi(
                     .addQueryParameter("productType", productType)
                     .build()
 
-            val urlPath = buildString {
-                append(httpUrl.encodedPath)
-                httpUrl.encodedQuery?.let { query -> append("?").append(query) }
-            }
+            val urlPath =
+                buildString {
+                    append(httpUrl.encodedPath)
+                    httpUrl.encodedQuery?.let { query -> append("?").append(query) }
+                }
 
             val requestBuilder =
                 Request
@@ -194,8 +195,7 @@ class VariantSchemaApi(
                 else -> "Pricing service error"
             }
 
-        private fun isRetryableStatus(statusCode: Int): Boolean =
-            statusCode == 429 || statusCode == 504 || statusCode in 500..599
+        private fun isRetryableStatus(statusCode: Int): Boolean = statusCode == 429 || statusCode == 504 || statusCode in 500..599
 
         private fun parseRetryAfterSeconds(
             retryAfterHeader: String?,

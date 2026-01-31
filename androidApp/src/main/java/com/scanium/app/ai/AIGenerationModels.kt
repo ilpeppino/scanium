@@ -68,13 +68,17 @@ sealed class AIGenerationStatus {
 /**
  * Extension to convert ScannedItem to AIGenerationRequest.
  */
-fun com.scanium.app.items.ScannedItem.toAIGenerationRequest(): AIGenerationRequest =
-    AIGenerationRequest(
+fun com.scanium.app.items.ScannedItem.toAIGenerationRequest(): AIGenerationRequest {
+    // +1 for primary photo
+    val photoCount = additionalPhotos.size + 1
+    return AIGenerationRequest(
         attributesStructured = attributes,
         attributesSummaryText = attributesSummaryText,
         summaryTextUserEdited = summaryTextUserEdited,
-        photosCount = additionalPhotos.size + 1, // +1 for primary photo
+        photosCount = photoCount,
         visionFacts = visionAttributes,
         category = category.displayName,
-        condition = null, // Populated by caller if available
+        // Populated by caller if available
+        condition = null,
     )
+}

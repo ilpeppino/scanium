@@ -243,12 +243,15 @@ class ObjectDetectorClient {
                 if (detectionResult != null) detectionResults.add(detectionResult)
             }
 
-            Log.i(TAG, ">>> Extracted ${detectionInfos.size} DetectionInfo objects and ${detectionResults.size} DetectionResult objects")
+            val infoCount = detectionInfos.size
+            val resultCount = detectionResults.size
+            Log.i(TAG, ">>> Extracted $infoCount DetectionInfo objects and $resultCount DetectionResult objects")
             detectionInfos.forEachIndexed { index, info ->
-                Log.i(
-                    TAG,
-                    "    DetectionInfo $index: trackingId=${info.trackingId}, category=${info.category}, confidence=${info.confidence}, area=${info.normalizedBoxArea}",
-                )
+                val trackingId = info.trackingId
+                val category = info.category
+                val confidence = info.confidence
+                val area = info.normalizedBoxArea
+                Log.i(TAG, "    DetectionInfo $index: trackingId=$trackingId, category=$category, confidence=$confidence, area=$area")
             }
 
             TrackingDetectionResponse(detectionInfos, detectionResults)

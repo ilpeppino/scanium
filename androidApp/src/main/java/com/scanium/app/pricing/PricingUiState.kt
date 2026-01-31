@@ -47,8 +47,7 @@ data class PricingInputs(
             normalize(model) == normalize(other.model) &&
             condition == other.condition
 
-    fun isStaleComparedTo(snapshot: PricingInputs?): Boolean =
-        snapshot != null && !snapshot.matches(this)
+    fun isStaleComparedTo(snapshot: PricingInputs?): Boolean = snapshot != null && !snapshot.matches(this)
 
     private fun normalize(value: String): String = value.trim().lowercase()
 }

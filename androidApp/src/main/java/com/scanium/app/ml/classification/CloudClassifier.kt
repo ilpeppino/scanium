@@ -363,13 +363,14 @@ class CloudClassifier(
         val visionAttributes = parseVisionAttributes(apiResponse.visionAttributes)
 
         // Validate category/attribute consistency
-        val validatedCategory = validateCategoryAttributeConsistency(
-            category = itemCategory,
-            attributes = attributes,
-            domainCategoryId = domainCategoryId,
-            label = label,
-            requestId = requestId
-        )
+        val validatedCategory =
+            validateCategoryAttributeConsistency(
+                category = itemCategory,
+                attributes = attributes,
+                domainCategoryId = domainCategoryId,
+                label = label,
+                requestId = requestId,
+            )
 
         return ClassificationResult(
             label = label,
@@ -405,7 +406,7 @@ class CloudClassifier(
         attributes: Map<String, String>?,
         domainCategoryId: String?,
         label: String?,
-        requestId: String?
+        requestId: String?,
     ): ItemCategory {
         if (attributes == null) return category
 
@@ -414,12 +415,15 @@ class CloudClassifier(
         val itemType = attributes["item_type"]
 
         // Detect electronics mismatch
-        val hasElectronicsAttribute = segment?.contains("electronics", ignoreCase = true) == true ||
-                                       itemType?.contains("electronics", ignoreCase = true) == true ||
-                                       itemType?.contains("electronic device", ignoreCase = true) == true
+        val hasElectronicsAttribute =
+            segment?.contains("electronics", ignoreCase = true) == true ||
+                itemType?.contains("electronics", ignoreCase = true) == true ||
+                itemType?.contains("electronic device", ignoreCase = true) == true
 
         if (hasElectronicsAttribute && category != ItemCategory.ELECTRONICS) {
-            Log.e(TAG, """
+            Log.e(
+                TAG,
+                """
                 ⚠️ CATEGORY/ATTRIBUTE MISMATCH DETECTED
                 Category: $category (WRONG - should be ELECTRONICS)
                 Attributes: segment=$segment, item_type=$itemType
@@ -429,24 +433,29 @@ class CloudClassifier(
 
                 This indicates the backend assigned an incorrect domain category.
                 Auto-correcting to ELECTRONICS based on attributes.
-            """.trimIndent())
+                """.trimIndent(),
+            )
 
             // Auto-correct based on attributes (source of truth)
             return ItemCategory.ELECTRONICS
         }
 
         // Check for fashion attributes mismatched with non-fashion category
-        val hasFashionAttribute = segment?.contains("fashion", ignoreCase = true) == true ||
-                                  itemType?.contains("clothing", ignoreCase = true) == true ||
-                                  itemType?.contains("apparel", ignoreCase = true) == true
+        val hasFashionAttribute =
+            segment?.contains("fashion", ignoreCase = true) == true ||
+                itemType?.contains("clothing", ignoreCase = true) == true ||
+                itemType?.contains("apparel", ignoreCase = true) == true
 
         if (hasFashionAttribute && category != ItemCategory.FASHION) {
-            Log.w(TAG, """
+            Log.w(
+                TAG,
+                """
                 Category/attribute mismatch: category=$category but attributes suggest FASHION
                 Attributes: segment=$segment, item_type=$itemType
                 DomainCategoryId: $domainCategoryId, RequestId: $requestId
                 Keeping original category (may be correct if domain pack is more specific)
-            """.trimIndent())
+                """.trimIndent(),
+            )
         }
 
         return category

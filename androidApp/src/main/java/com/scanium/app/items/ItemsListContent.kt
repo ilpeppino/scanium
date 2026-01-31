@@ -309,10 +309,11 @@ internal fun ItemRow(
     val tapEditLabel = stringResource(R.string.items_accessibility_tap_edit_long_press)
 
     // Use brand as title when available, fall back to formatted display title, then displayLabel
-    val displayTitle = item.attributes["brand"]?.value?.trim()?.takeIf { it.isNotEmpty() }
-        ?: item.visionAttributes.primaryBrand?.trim()?.takeIf { it.isNotEmpty() }
-        ?: displayItem?.title
-        ?: item.displayLabel
+    val displayTitle =
+        item.attributes["brand"]?.value?.trim()?.takeIf { it.isNotEmpty() }
+            ?: item.visionAttributes.primaryBrand?.trim()?.takeIf { it.isNotEmpty() }
+            ?: displayItem?.title
+            ?: item.displayLabel
 
     val contentDescription =
         buildString {

@@ -4,9 +4,7 @@ package com.scanium.app.model
  * Unified settings model for "Primary region & language" feature.
  * This model provides a single source of truth for region/language preferences,
  * with follow-or-customize overrides for app language, AI language, marketplace country, and TTS.
- */
-
-/**
+ *
  * Generic sealed class for settings that can either follow the primary value
  * or use a custom override.
  *

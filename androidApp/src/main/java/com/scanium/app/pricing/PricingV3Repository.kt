@@ -24,23 +24,25 @@ class PricingV3Repository(
     private val baseUrlProvider: () -> String = { BuildConfig.SCANIUM_API_BASE_URL },
 ) {
     suspend fun estimatePrice(request: PricingV3Request): Result<PricingInsights> {
-        val baseUrl = baseUrlProvider().takeIf { it.isNotBlank() }
-            ?: return Result.failure(
-                PricingV3Exception(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "Pricing service not configured",
-                    retryable = false,
-                ),
-            )
+        val baseUrl =
+            baseUrlProvider().takeIf { it.isNotBlank() }
+                ?: return Result.failure(
+                    PricingV3Exception(
+                        errorCode = "CONFIG_ERROR",
+                        userMessage = "Pricing service not configured",
+                        retryable = false,
+                    ),
+                )
 
-        val apiKey = apiKeyProvider()?.takeIf { it.isNotBlank() }
-            ?: return Result.failure(
-                PricingV3Exception(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "API key is missing",
-                    retryable = false,
-                ),
-            )
+        val apiKey =
+            apiKeyProvider()?.takeIf { it.isNotBlank() }
+                ?: return Result.failure(
+                    PricingV3Exception(
+                        errorCode = "CONFIG_ERROR",
+                        userMessage = "API key is missing",
+                        retryable = false,
+                    ),
+                )
 
         val endpoint = "${baseUrl.trimEnd('/')}/v1/pricing/v3"
         val correlationId = CorrelationIds.currentClassificationSessionId()
