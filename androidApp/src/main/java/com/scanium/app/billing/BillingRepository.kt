@@ -1,33 +1,29 @@
 package com.scanium.app.billing
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.model.billing.EntitlementSource
 import com.scanium.app.model.billing.EntitlementState
 import com.scanium.app.model.user.UserEdition
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.billingDataStore: DataStore<Preferences> by preferencesDataStore(name = "billing_prefs")
-
 class BillingRepository(
-    private val context: Context,
+    private val dataStore: DataStore<Preferences>,
 ) {
     companion object {
-        private val KEY_STATUS = stringPreferencesKey("entitlement_status")
-        private val KEY_SOURCE = stringPreferencesKey("entitlement_source")
-        private val KEY_LAST_UPDATED = longPreferencesKey("last_updated")
-        private val KEY_EXPIRES_AT = longPreferencesKey("expires_at")
-        private val KEY_PURCHASE_TOKENS = stringPreferencesKey("purchase_tokens") // Basic storage for validation
+        val KEY_STATUS = stringPreferencesKey("entitlement_status")
+        val KEY_SOURCE = stringPreferencesKey("entitlement_source")
+        val KEY_LAST_UPDATED = longPreferencesKey("last_updated")
+        val KEY_EXPIRES_AT = longPreferencesKey("expires_at")
+        val KEY_PURCHASE_TOKENS = stringPreferencesKey("purchase_tokens") // Basic storage for validation
     }
 
     val entitlementState: Flow<EntitlementState> =
-        context.billingDataStore.data.map { prefs ->
+        dataStore.data.map { prefs ->
             val status =
                 try {
                     UserEdition.valueOf(prefs[KEY_STATUS] ?: UserEdition.FREE.name)
@@ -55,7 +51,7 @@ class BillingRepository(
         source: EntitlementSource,
         purchaseToken: String? = null,
     ) {
-        context.billingDataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             prefs[KEY_STATUS] = status.name
             prefs[KEY_SOURCE] = source.name
             prefs[KEY_LAST_UPDATED] = System.currentTimeMillis()
@@ -69,7 +65,7 @@ class BillingRepository(
     }
 
     suspend fun clearEntitlement() {
-        context.billingDataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             prefs[KEY_STATUS] = UserEdition.FREE.name
             prefs[KEY_SOURCE] = EntitlementSource.LOCAL_CACHE.name
             prefs[KEY_LAST_UPDATED] = System.currentTimeMillis()

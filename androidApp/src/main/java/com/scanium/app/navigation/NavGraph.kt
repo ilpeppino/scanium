@@ -569,15 +569,10 @@ fun ObjectaNavGraph(
             com.scanium.app.data
                 .SettingsRepository(context)
         }
-    val billingRepository =
-        androidx.compose.runtime.remember {
-            com.scanium.app.billing
-                .BillingRepository(context)
-        }
     val billingProvider =
         androidx.compose.runtime.remember {
             com.scanium.app.billing
-                .FakeBillingProvider(billingRepository)
+                .FakeBillingProvider()
         }
     val entitlementManager =
         androidx.compose.runtime.remember {

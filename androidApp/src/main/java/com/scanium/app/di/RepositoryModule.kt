@@ -22,6 +22,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
+
+private const val BILLING_PREFS = "billing_prefs"
+private val Context.billingDataStore: DataStore<Preferences> by preferencesDataStore(name = BILLING_PREFS)
 
 /**
  * Hilt module providing repository dependencies.
@@ -30,6 +36,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+    @Provides
+    @Singleton
+    fun provideBillingDataStore(@ApplicationContext context: Context): DataStore<Preferences> {
+        return context.billingDataStore
+    }
+
     @Provides
     @Singleton
     fun provideSettingsRepository(
@@ -45,8 +57,8 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideBillingRepository(
-        @ApplicationContext context: Context,
-    ): BillingRepository = BillingRepository(context)
+        dataStore: DataStore<Preferences>,
+    ): BillingRepository = BillingRepository(dataStore)
 
     @Provides
     @Singleton

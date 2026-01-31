@@ -8,11 +8,12 @@ import com.scanium.app.model.billing.ProductDetails
 import com.scanium.app.model.user.UserEdition
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-class FakeBillingProvider(
-    private val repository: BillingRepository,
-) : BillingProvider {
-    override val entitlementState: Flow<EntitlementState> = repository.entitlementState
+class FakeBillingProvider : BillingProvider {
+    private val mutableEntitlementState = MutableStateFlow(EntitlementState.DEFAULT)
+    override val entitlementState: Flow<EntitlementState> = mutableEntitlementState.asStateFlow()
 
     override suspend fun refreshEntitlements() {
         Log.d(TAG, "Fake refreshing entitlements...")
@@ -27,11 +28,10 @@ class FakeBillingProvider(
         Log.d(TAG, "Fake purchasing $productId...")
         delay(1000) // Simulate network
 
-        repository.updateEntitlement(
-            UserEdition.PRO,
-            EntitlementSource.LOCAL_CACHE,
-// Fake source
-            "fake_purchase_token_$productId",
+        mutableEntitlementState.value = EntitlementState(
+            status = UserEdition.PRO,
+            source = EntitlementSource.LOCAL_CACHE, // Fake source
+            lastUpdatedAt = System.currentTimeMillis()
         )
         return Result.success(Unit)
     }
@@ -40,10 +40,10 @@ class FakeBillingProvider(
         Log.d(TAG, "Fake restoring purchases...")
         delay(1000)
         // Simulate finding a purchase
-        repository.updateEntitlement(
-            UserEdition.PRO,
-            EntitlementSource.LOCAL_CACHE,
-            "fake_restored_token",
+        mutableEntitlementState.value = EntitlementState(
+            status = UserEdition.PRO,
+            source = EntitlementSource.LOCAL_CACHE, // Fake source
+            lastUpdatedAt = System.currentTimeMillis()
         )
         return Result.success(Unit)
     }
