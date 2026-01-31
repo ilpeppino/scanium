@@ -284,6 +284,31 @@ fun ItemEditSections(
         )
 
         CatalogAutocompleteField(
+            label = stringResource(R.string.edit_item_field_product_type),
+            value = state.productTypeField,
+            onValueChange = {
+                state.productTypeField = it
+                state.productTypeId = null
+            },
+            suggestions = state.productTypeSuggestions,
+            onQueryChange = { query -> state.productTypeQueryFlow.value = query },
+            onSuggestionSelected = { result ->
+                state.productTypeField = result.entry.displayLabel
+                state.productTypeId = result.entry.id
+            },
+            onClear = {
+                state.productTypeField = ""
+                state.productTypeId = null
+            },
+            imeAction = ImeAction.Next,
+            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            isError = assistantMissingFields.contains(PricingMissingField.PRODUCT_TYPE),
+            bringIntoViewRequester = productTypeBringIntoViewRequester,
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        CatalogAutocompleteField(
             label = stringResource(R.string.edit_item_field_brand),
             value = state.brandField,
             onValueChange = {
@@ -314,27 +339,22 @@ fun ItemEditSections(
 
         Spacer(Modifier.height(12.dp))
 
-        CatalogAutocompleteField(
-            label = stringResource(R.string.edit_item_field_product_type),
-            value = state.productTypeField,
-            onValueChange = {
-                state.productTypeField = it
-                state.productTypeId = null
-            },
-            suggestions = state.productTypeSuggestions,
-            onQueryChange = { query -> state.productTypeQueryFlow.value = query },
-            onSuggestionSelected = { result ->
-                state.productTypeField = result.entry.displayLabel
-                state.productTypeId = result.entry.id
-            },
-            onClear = {
-                state.productTypeField = ""
-                state.productTypeId = null
-            },
+        ModelAutocompleteField(
+            label = stringResource(R.string.edit_item_field_model),
+            value = state.modelField,
+            isCustom = state.modelIsCustom,
+            enabled = state.brandField.isNotBlank(),
+            isLoading = catalogUiState.isLoading,
+            suggestions = catalogUiState.suggestions,
+            showOfflineHelper = catalogUiState.isOfflineMode || catalogUiState.error != null,
+            showSelectedCheck = catalogUiState.selectedModel?.modelLabel == state.modelField,
+            onValueChange = onModelQueryChanged,
+            onSuggestionSelected = onModelSuggestionSelected,
+            onClear = onModelClear,
+            onCustomCommit = onModelCustomCommitted,
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            isError = assistantMissingFields.contains(PricingMissingField.PRODUCT_TYPE),
-            bringIntoViewRequester = productTypeBringIntoViewRequester,
+            bringIntoViewRequester = modelBringIntoViewRequester,
         )
 
         Spacer(Modifier.height(12.dp))
@@ -392,26 +412,6 @@ fun ItemEditSections(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-
-        Spacer(Modifier.height(12.dp))
-
-        ModelAutocompleteField(
-            label = stringResource(R.string.edit_item_field_model),
-            value = state.modelField,
-            isCustom = state.modelIsCustom,
-            enabled = state.brandField.isNotBlank(),
-            isLoading = catalogUiState.isLoading,
-            suggestions = catalogUiState.suggestions,
-            showOfflineHelper = catalogUiState.isOfflineMode || catalogUiState.error != null,
-            showSelectedCheck = catalogUiState.selectedModel?.modelLabel == state.modelField,
-            onValueChange = onModelQueryChanged,
-            onSuggestionSelected = onModelSuggestionSelected,
-            onClear = onModelClear,
-            onCustomCommit = onModelCustomCommitted,
-            imeAction = ImeAction.Next,
-            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            bringIntoViewRequester = modelBringIntoViewRequester,
-        )
 
         Spacer(Modifier.height(12.dp))
 
@@ -605,12 +605,6 @@ private fun ModelAutocompleteField(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
         OutlinedTextField(
             value = value,
             onValueChange = {
@@ -635,6 +629,7 @@ private fun ModelAutocompleteField(
                             scope.launch { bringIntoViewRequester?.bringIntoView() }
                         }
                     },
+            label = { Text(label) },
             placeholder = {
                 Text(
                     text =
@@ -783,12 +778,6 @@ private fun LabeledTextField(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -801,6 +790,7 @@ private fun LabeledTextField(
                             onBoundsChanged(bounds)
                         }
                     },
+            label = { Text(label) },
             visualTransformation = visualTransformation,
             isError = isError,
             trailingIcon = {
@@ -831,13 +821,6 @@ private fun LabeledConditionDropdown(
     var expanded by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = it },
@@ -856,6 +839,7 @@ private fun LabeledConditionDropdown(
                                 onBoundsChanged(bounds)
                             }
                         },
+                label = { Text(label) },
                 trailingIcon = {
                     if (selectedCondition != null) {
                         IconButton(onClick = { onConditionSelected(null) }) {
