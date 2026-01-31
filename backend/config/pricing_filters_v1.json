@@ -1,0 +1,116 @@
+{
+  "version": "1.0.0",
+  "defaults": {
+    "fallback_min_results": 10,
+    "strong_exclude_keywords": [
+      "case",
+      "cover",
+      "screen protector",
+      "tempered glass",
+      "protector",
+      "hoesje",
+      "beschermhoes",
+      "screenprotector",
+      "displayfolie",
+      "folie",
+      "tempered glas"
+    ],
+    "exclude_keywords": [
+      "bumper",
+      "sleeve",
+      "skin",
+      "wallet case",
+      "flip cover",
+      "charger",
+      "charging",
+      "cable",
+      "kabel",
+      "adapter",
+      "dock",
+      "stand",
+      "houder",
+      "mount",
+      "mounting",
+      "strap",
+      "riem",
+      "screen guard",
+      "glass",
+      "protective"
+    ],
+    "negative_keywords": [
+      "case",
+      "cover",
+      "screen protector",
+      "tempered glass",
+      "hoesje",
+      "beschermhoes",
+      "screenprotector"
+    ],
+    "heuristic_keywords": [
+      "case",
+      "cover",
+      "protector",
+      "charger",
+      "cable",
+      "adapter",
+      "lens",
+      "controller",
+      "remote",
+      "stand",
+      "dock"
+    ],
+    "price_floor_ratio": 0.2,
+    "price_floor_min_listings": 8
+  },
+  "groups": {
+    "phones": {
+      "subtypes": ["electronics_phone", "electronics_smartphone"],
+      "exclude_keywords": [
+        "screen protector",
+        "tempered glass",
+        "camera lens",
+        "back cover",
+        "screen replacement",
+        "battery",
+        "charging cable",
+        "usb cable",
+        "usb-c",
+        "wireless charger",
+        "power bank",
+        "houder auto",
+        "autohouder"
+      ],
+      "negative_keywords": ["case", "cover", "screen protector", "tempered glass", "charger", "hoesje"]
+    },
+    "cameras": {
+      "subtypes": ["electronics_camera"],
+      "exclude_keywords": [
+        "lens",
+        "camera lens",
+        "filter",
+        "tripod",
+        "bag",
+        "strap",
+        "battery",
+        "charger",
+        "memory card",
+        "sd card"
+      ],
+      "negative_keywords": ["lens", "tripod", "bag", "strap", "filter"]
+    },
+    "consoles": {
+      "subtypes": ["electronics_console", "electronics_game_console"],
+      "exclude_keywords": [
+        "controller",
+        "gamepad",
+        "remote",
+        "charging dock",
+        "stand",
+        "cable",
+        "adapter"
+      ],
+      "negative_keywords": ["controller", "gamepad", "remote", "dock", "stand"]
+    }
+  },
+  "subtypes": {}
+}

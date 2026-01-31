@@ -140,11 +140,26 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
 
   private buildSearchTerms(query: ListingQuery): string {
     if (query.q) {
-      return query.q;
+      return this.appendNegativeKeywords(query.q, query.excludeKeywords);
     }
     // Only use brand and model for eBay searches
     // productType (e.g., "electronics_smartphone") is from internal taxonomy and doesn't match eBay search patterns
-    return [query.brand, query.model].filter(Boolean).join(' ').trim();
+    const base = [query.brand, query.model].filter(Boolean).join(' ').trim();
+    return this.appendNegativeKeywords(base, query.excludeKeywords);
+  }
+
+  private appendNegativeKeywords(base: string, keywords?: string[]): string {
+    const negatives = (keywords ?? [])
+      .map((keyword) => keyword.trim())
+      .filter(Boolean)
+      .map((keyword) => {
+        if (keyword.startsWith('-')) {
+          return keyword;
+        }
+        const token = keyword.includes(' ') ? `-"${keyword}"` : `-${keyword}`;
+        return token;
+      });
+    return [base, ...negatives].filter(Boolean).join(' ').trim();
   }
 
   private getBrowseEndpoint(): string {

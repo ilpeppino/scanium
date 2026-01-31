@@ -31,6 +31,15 @@ describe('EbayBrowseAdapter', () => {
     expect(url).toContain('Apple%20iPhone%2013');
   });
 
+  it('adds negative keywords to search terms when provided', () => {
+    const adapter = new EbayBrowseAdapter(baseConfig, { fetcher: vi.fn() });
+    const url = adapter.buildSearchUrl({
+      ...query,
+      excludeKeywords: ['case', 'hoesje'],
+    });
+    expect(url).toContain('Apple%20iPhone%2013%20-case%20-hoesje');
+  });
+
   it('includes category id in Browse API params when provided', async () => {
     const fetcher = vi
       .fn()

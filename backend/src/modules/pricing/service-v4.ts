@@ -29,6 +29,10 @@ import { CategoryResolver, NullCategoryResolver } from './query-policy/category-
 import { EbayCategoryResolver } from './query-policy/category-resolver-ebay.js';
 import { QueryPlan } from './query-policy/types.js';
 import { resolveEbayCategory } from '../catalog/marketplace-category-resolver.js';
+import {
+  applyAccessoryFilter,
+  getNegativeKeywordsForSubtype,
+} from './normalization/accessory-filter.js';
 
 /**
  * Pricing V4 Service (skeleton)
@@ -169,6 +173,22 @@ export class PricingV4Service {
     }));
 
     const combinedListings = adapterResults.flatMap((result) => result.listings);
+    const accessoryFilter = applyAccessoryFilter(combinedListings, request.productType);
+
+    if (accessoryFilter.diagnostics.removed > 0 || accessoryFilter.diagnostics.fallbackUsed) {
+      console.debug('[PricingV4] Accessory filter diagnostics', {
+        subtype: request.productType,
+        totalInput: accessoryFilter.diagnostics.totalInput,
+        kept: accessoryFilter.diagnostics.kept,
+        removed: accessoryFilter.diagnostics.removed,
+        removedByReason: accessoryFilter.diagnostics.removedByReason,
+        removedByKeyword: accessoryFilter.diagnostics.removedByKeyword,
+        fallbackUsed: accessoryFilter.diagnostics.fallbackUsed,
+        fallbackReason: accessoryFilter.diagnostics.fallbackReason,
+        fallbackMinResults: accessoryFilter.diagnostics.fallbackMinResults,
+      });
+    }
+
     recordPricingV4ListingsFetched(combinedListings.length);
     const hadErrors = adapterResults.some((result) => result.error);
     const hadTimeouts = adapterResults.some((result) => result.timedOut);
@@ -195,7 +215,7 @@ export class PricingV4Service {
       return insights;
     }
 
-    const filtered = filterListings(combinedListings, this.buildListingFilterOptions(basePlan));
+    const filtered = filterListings(accessoryFilter.listings, this.buildListingFilterOptions(basePlan));
     const postFiltered = basePlan
       ? applyPostFilterRules(filtered, basePlan.postFilterRules)
       : { kept: filtered, excluded: [] };
@@ -287,6 +307,8 @@ export class PricingV4Service {
     queryPlan: QueryPlan | undefined,
     marketplaceId: string
   ): ListingQuery {
+    const negativeKeywords =
+      marketplaceId === 'ebay' ? getNegativeKeywordsForSubtype(request.productType) : [];
     const modelWithVariants = this.buildModelWithVariants(request);
     return {
       brand: request.brand,
@@ -298,6 +320,7 @@ export class PricingV4Service {
       q: queryPlan?.q,
       categoryId: queryPlan?.categoryId,
       ebayCategory: marketplaceId === 'ebay' ? resolveEbayCategory(request.productType) : undefined,
+      excludeKeywords: negativeKeywords.length ? negativeKeywords : undefined,
       filters: queryPlan?.filters ?? [],
       postFilterRules: queryPlan?.postFilterRules ?? [],
     };

@@ -145,6 +145,7 @@ export interface ListingQuery {
   q?: string;
   categoryId?: string;
   ebayCategory?: { sacat?: string };
+  excludeKeywords?: string[];
   filters?: QueryFilter[];
   postFilterRules?: PostFilterRuleId[];
 }
