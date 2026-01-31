@@ -181,7 +181,12 @@ private fun SuccessState(
     onRetry: () -> Unit,
 ) {
     val insights = uiState.insights
-    when (insights.status.uppercase()) {
+    val status = insights.status.uppercase()
+    if ((status == "OK" || status == "FALLBACK") && insights.range == null) {
+        NoResultsState(onRetry = onRetry)
+        return
+    }
+    when (status) {
         "NO_RESULTS" -> NoResultsState(onRetry = onRetry)
         "OK", "FALLBACK" ->
             PricingResultState(
