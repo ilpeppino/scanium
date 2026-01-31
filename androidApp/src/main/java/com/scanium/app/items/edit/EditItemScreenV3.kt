@@ -26,6 +26,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -46,9 +48,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.scanium.app.R
 import com.scanium.app.catalog.CatalogSearch
 import com.scanium.app.catalog.CatalogType
+import com.scanium.app.catalog.ui.CatalogViewModel
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.AndroidRemoteConfigProvider
 import com.scanium.app.data.SettingsRepository
@@ -107,6 +111,10 @@ fun EditItemScreenV3(
     val item by remember(allItems, itemId) {
         derivedStateOf { allItems.find { it.id == itemId } }
     }
+
+    val catalogViewModel: CatalogViewModel = hiltViewModel()
+    val catalogUiState by catalogViewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Observe AI assistant enabled setting
     val settingsRepository = remember { SettingsRepository(context) }
@@ -198,6 +206,28 @@ fun EditItemScreenV3(
 
     LaunchedEffect(brandSuggestions) { editState.brandSuggestions = brandSuggestions }
     LaunchedEffect(productTypeSuggestions) { editState.productTypeSuggestions = productTypeSuggestions }
+
+    var lastBrandValue by remember { mutableStateOf(editState.brandField) }
+    var hasSyncedBrand by remember { mutableStateOf(false) }
+    LaunchedEffect(editState.brandField) {
+        val currentBrand = editState.brandField.trim()
+        if (!hasSyncedBrand) {
+            catalogViewModel.onBrandSelected(currentBrand.ifBlank { null })
+            lastBrandValue = currentBrand
+            hasSyncedBrand = true
+            return@LaunchedEffect
+        }
+        if (currentBrand != lastBrandValue) {
+            catalogViewModel.onBrandSelected(currentBrand.ifBlank { null })
+            if (editState.modelField.isNotBlank()) {
+                editState.modelField = ""
+                editState.modelIsCustom = false
+                catalogViewModel.onClearModel()
+                snackbarHostState.showSnackbar(context.getString(R.string.edit_item_model_cleared_snackbar))
+            }
+            lastBrandValue = currentBrand
+        }
+    }
 
     LaunchedEffect(
         editState.brandField,
@@ -346,6 +376,7 @@ fun EditItemScreenV3(
 
     Scaffold(
         contentWindowInsets = WindowInsets.statusBars.union(WindowInsets.navigationBars),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.edit_item_title)) },
@@ -492,6 +523,25 @@ fun EditItemScreenV3(
                 } else {
                     emptySet()
                 },
+            catalogUiState = catalogUiState,
+            onModelQueryChanged = { query ->
+                editState.modelField = query
+                editState.modelIsCustom = false
+                catalogViewModel.onModelQueryChanged(query)
+            },
+            onModelSuggestionSelected = { model ->
+                editState.modelField = model.modelLabel
+                editState.modelIsCustom = false
+                catalogViewModel.onModelSuggestionSelected(model)
+            },
+            onModelClear = {
+                editState.modelField = ""
+                editState.modelIsCustom = false
+                catalogViewModel.onClearModel()
+            },
+            onModelCustomCommitted = { isCustom ->
+                editState.modelIsCustom = isCustom
+            },
             pricingRegionLabel =
                 if (primaryRegionCountry.isBlank()) {
                     stringResource(R.string.pricing_region_generic)

@@ -44,6 +44,7 @@ class ItemEditState(
     var productTypeField by mutableStateOf(item?.attributes?.get("itemType")?.value ?: "")
     var productTypeId by mutableStateOf(item?.attributes?.get("itemTypeId")?.value)
     var modelField by mutableStateOf(item?.attributes?.get("model")?.value ?: "")
+    var modelIsCustom by mutableStateOf(false)
     var colorField by mutableStateOf(
         item?.attributes?.get("color")?.value?.takeIf { it.isNotEmpty() }?.let { rawColor ->
             ItemAttributeLocalizer.localizeColor(context, rawColor)

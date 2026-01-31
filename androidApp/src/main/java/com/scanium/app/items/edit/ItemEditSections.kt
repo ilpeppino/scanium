@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -33,8 +35,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -48,6 +52,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +73,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.ScannedItem
+import com.scanium.app.catalog.model.CatalogModel
+import com.scanium.app.catalog.ui.CatalogUiState
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemLocalizer
@@ -89,6 +96,11 @@ fun ItemEditSections(
     missingPricingFields: Set<PricingMissingField>,
     assistantMissingFields: Set<PricingMissingField>,
     pricingRegionLabel: String,
+    catalogUiState: CatalogUiState,
+    onModelQueryChanged: (String) -> Unit,
+    onModelSuggestionSelected: (CatalogModel) -> Unit,
+    onModelClear: () -> Unit,
+    onModelCustomCommitted: (Boolean) -> Unit,
     onGetPriceEstimate: () -> Unit,
     onUsePriceEstimate: (Double) -> Unit,
     onRefreshPriceEstimate: () -> Unit,
@@ -361,7 +373,26 @@ fun ItemEditSections(
 
         Spacer(Modifier.height(12.dp))
 
-        // More Details Accordion (Model, Size, Notes)
+        ModelAutocompleteField(
+            label = stringResource(R.string.edit_item_field_model),
+            value = state.modelField,
+            isCustom = state.modelIsCustom,
+            enabled = state.brandField.isNotBlank(),
+            isLoading = catalogUiState.isLoading,
+            suggestions = catalogUiState.suggestions,
+            showOfflineHelper = catalogUiState.isOfflineMode || catalogUiState.error != null,
+            showSelectedCheck = catalogUiState.selectedModel?.modelLabel == state.modelField,
+            onValueChange = onModelQueryChanged,
+            onSuggestionSelected = onModelSuggestionSelected,
+            onClear = onModelClear,
+            onCustomCommit = onModelCustomCommitted,
+            imeAction = ImeAction.Next,
+            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        // More Details Accordion (Size, Notes)
         MoreDetailsAccordion(
             state = state,
             focusManager = focusManager,
@@ -381,7 +412,6 @@ private fun MoreDetailsAccordion(
     // Count how many optional fields have values
     val filledFieldsCount =
         listOfNotNull(
-            state.modelField.takeIf { it.isNotBlank() },
             state.sizeField.takeIf { it.isNotBlank() },
             state.notesField.takeIf { it.isNotBlank() },
         ).size
@@ -445,18 +475,6 @@ private fun MoreDetailsAccordion(
         ) {
             Column(modifier = Modifier.padding(top = 12.dp)) {
                 LabeledTextField(
-                    label = stringResource(R.string.edit_item_field_model),
-                    value = state.modelField,
-                    onValueChange = { state.modelField = it },
-                    onClear = { state.modelField = "" },
-                    visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "model"),
-                    imeAction = ImeAction.Next,
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                )
-
-                Spacer(Modifier.height(12.dp))
-
-                LabeledTextField(
                     label = stringResource(R.string.edit_item_field_size),
                     value = state.sizeField,
                     onValueChange = { state.sizeField = it },
@@ -493,6 +511,167 @@ private fun MoreDetailsAccordion(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ModelAutocompleteField(
+    label: String,
+    value: String,
+    isCustom: Boolean,
+    enabled: Boolean,
+    isLoading: Boolean,
+    suggestions: List<CatalogModel>,
+    showOfflineHelper: Boolean,
+    showSelectedCheck: Boolean,
+    onValueChange: (String) -> Unit,
+    onSuggestionSelected: (CatalogModel) -> Unit,
+    onClear: () -> Unit,
+    onCustomCommit: (Boolean) -> Unit,
+    imeAction: ImeAction,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val trimmedValue = value.trim()
+    val shouldShowSuggestions by remember(trimmedValue, enabled, suggestions) {
+        derivedStateOf { enabled && trimmedValue.length >= 2 && suggestions.isNotEmpty() }
+    }
+    val showNoMatches by remember(trimmedValue, enabled, suggestions, isLoading, showOfflineHelper) {
+        derivedStateOf {
+            enabled &&
+                trimmedValue.length >= 2 &&
+                suggestions.isEmpty() &&
+                !isLoading &&
+                !showOfflineHelper
+        }
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text(
+                    text =
+                        if (enabled) {
+                            stringResource(R.string.edit_item_model_placeholder_start_typing)
+                        } else {
+                            stringResource(R.string.edit_item_model_placeholder_select_brand)
+                        },
+                )
+            },
+            trailingIcon = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                    if (showSelectedCheck && !isCustom) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = stringResource(R.string.edit_item_model_selected),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    if (isCustom) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = stringResource(R.string.edit_item_model_custom_info),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    if (value.isNotEmpty()) {
+                        IconButton(onClick = onClear) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = imeAction),
+            keyboardActions =
+                KeyboardActions(
+                    onNext = {
+                        onCustomCommit(trimmedValue.isNotBlank() && !showSelectedCheck)
+                        onNext()
+                    },
+                ),
+        )
+
+        when {
+            showOfflineHelper -> {
+                Text(
+                    text = stringResource(R.string.edit_item_model_helper_offline),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            enabled -> {
+                Text(
+                    text = stringResource(R.string.edit_item_model_helper_start_typing),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+
+        if (shouldShowSuggestions) {
+            Surface(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                shape = RoundedCornerShape(8.dp),
+                tonalElevation = 2.dp,
+            ) {
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 240.dp),
+                ) {
+                    items(suggestions.take(10)) { model ->
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .clickable { onSuggestionSelected(model) }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(text = model.modelLabel)
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showNoMatches) {
+            Text(
+                text = stringResource(R.string.edit_item_model_no_matches),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
     }
 }

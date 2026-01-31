@@ -744,6 +744,14 @@
     <string name="edit_item_field_brand">Brand</string>
     <string name="edit_item_field_product_type">Product/Type</string>
     <string name="edit_item_field_model">Model</string>
+    <string name="edit_item_model_placeholder_select_brand">Select a brand first</string>
+    <string name="edit_item_model_placeholder_start_typing">Start typing…</string>
+    <string name="edit_item_model_helper_start_typing">Start typing to search models</string>
+    <string name="edit_item_model_helper_offline">Can\'t load models - enter manually</string>
+    <string name="edit_item_model_no_matches">No matches - press Enter to save custom model</string>
+    <string name="edit_item_model_custom_info">Custom model</string>
+    <string name="edit_item_model_selected">Model selected</string>
+    <string name="edit_item_model_cleared_snackbar">Model cleared \u2014 brand changed</string>
     <string name="edit_item_field_color">Color</string>
     <string name="edit_item_field_size">Size</string>
     <string name="edit_item_field_material">Material</string>
