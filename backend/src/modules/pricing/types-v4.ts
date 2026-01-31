@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { itemConditionSchema } from './types-v3.js';
+import { PostFilterRuleId, QueryFilter } from './query-policy/types.js';
 
 /**
  * Pricing V4 Types
@@ -141,6 +142,10 @@ export interface ListingQuery {
   condition?: z.infer<typeof itemConditionSchema>;
   countryCode: string;
   maxResults: number;
+  q?: string;
+  categoryId?: string;
+  filters?: QueryFilter[];
+  postFilterRules?: PostFilterRuleId[];
 }
 
 export interface FetchedListing {
