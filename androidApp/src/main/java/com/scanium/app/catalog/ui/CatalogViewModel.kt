@@ -24,8 +24,8 @@ class CatalogViewModel
     @Inject
     constructor(
         private val repository: CatalogRepository,
-        private val subtype: String = DEFAULT_SUBTYPE,
     ) : ViewModel() {
+        private val subtype: String = DEFAULT_SUBTYPE
         private val _uiState = MutableStateFlow(CatalogUiState())
         val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
 

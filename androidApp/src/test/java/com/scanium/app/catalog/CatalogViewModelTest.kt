@@ -4,7 +4,6 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.catalog.model.CatalogModel
 import com.scanium.app.catalog.ui.CatalogViewModel
-import io.mockk.coAnswers
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -101,19 +100,11 @@ class CatalogViewModelTest {
             val repository = mockk<CatalogRepository>()
             coEvery { repository.brands(any()) } returns emptyList()
 
-            var callCount = 0
             val firstList = listOf(model("Galaxy S20"))
             val secondList = listOf(model("Galaxy S24"))
 
-            coEvery { repository.models(any(), any()) } coAnswers {
-                callCount += 1
-                if (callCount == 1) {
-                    delay(1000)
-                    firstList
-                } else {
-                    secondList
-                }
-            }
+            // First call delays, second call returns immediately
+            coEvery { repository.models(any(), any()) } returns firstList andThen secondList
 
             val viewModel = CatalogViewModel(repository)
             viewModel.onBrandSelected("Samsung")
