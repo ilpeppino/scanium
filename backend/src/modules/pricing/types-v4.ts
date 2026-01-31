@@ -144,6 +144,7 @@ export interface ListingQuery {
   maxResults: number;
   q?: string;
   categoryId?: string;
+  ebayCategory?: { sacat?: string };
   filters?: QueryFilter[];
   postFilterRules?: PostFilterRuleId[];
 }

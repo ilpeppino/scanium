@@ -28,6 +28,7 @@ import { applyPostFilterRules } from './query-policy/post-filter-rules.js';
 import { CategoryResolver, NullCategoryResolver } from './query-policy/category-resolver.js';
 import { EbayCategoryResolver } from './query-policy/category-resolver-ebay.js';
 import { QueryPlan } from './query-policy/types.js';
+import { resolveEbayCategory } from '../catalog/marketplace-category-resolver.js';
 
 /**
  * Pricing V4 Service (skeleton)
@@ -148,7 +149,7 @@ export class PricingV4Service {
       activeAdapters.map(async (adapter) => {
         const queryPlan = await this.buildPlanForAdapter(request, adapter.id);
         this.logQueryPlan(adapter.id, queryPlan);
-        const listingQueries = this.buildListingQueries(request, queryPlan);
+        const listingQueries = this.buildListingQueries(request, queryPlan, adapter.id);
         const queryResults = await Promise.all(
           listingQueries.map((query) => this.fetchWithTimeout(adapter, query))
         );
@@ -283,7 +284,8 @@ export class PricingV4Service {
 
   private buildListingQueryFromPlan(
     request: PricingV4Request,
-    queryPlan: QueryPlan | undefined
+    queryPlan: QueryPlan | undefined,
+    marketplaceId: string
   ): ListingQuery {
     const modelWithVariants = this.buildModelWithVariants(request);
     return {
@@ -295,13 +297,18 @@ export class PricingV4Service {
       maxResults: 30,
       q: queryPlan?.q,
       categoryId: queryPlan?.categoryId,
+      ebayCategory: marketplaceId === 'ebay' ? resolveEbayCategory(request.productType) : undefined,
       filters: queryPlan?.filters ?? [],
       postFilterRules: queryPlan?.postFilterRules ?? [],
     };
   }
 
-  private buildListingQueries(request: PricingV4Request, queryPlan: QueryPlan): ListingQuery[] {
-    const baseQuery = this.buildListingQueryFromPlan(request, queryPlan);
+  private buildListingQueries(
+    request: PricingV4Request,
+    queryPlan: QueryPlan,
+    marketplaceId: string
+  ): ListingQuery[] {
+    const baseQuery = this.buildListingQueryFromPlan(request, queryPlan, marketplaceId);
     const queries = [baseQuery];
     const identifier = request.identifier?.trim();
     if (identifier) {

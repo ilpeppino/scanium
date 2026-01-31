@@ -121,7 +121,8 @@ export class EbayBrowseAdapter implements MarketplaceAdapter {
 
   buildSearchUrl(query: ListingQuery): string {
     const q = encodeURIComponent(this.buildSearchTerms(query));
-    const categoryParam = query.categoryId ? `&_sacat=${encodeURIComponent(query.categoryId)}` : '';
+    const sacat = query.ebayCategory?.sacat ?? query.categoryId;
+    const categoryParam = sacat ? `&_sacat=${encodeURIComponent(sacat)}` : '';
     return `https://www.ebay.nl/sch/i.html?_nkw=${q}${categoryParam}`;
   }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PricingV4Service } from './service-v4.js';
 import { PricingV4Request } from './types-v4.js';
 import { MarketplaceAdapter } from './types-v4.js';
+import { EbayBrowseAdapter } from '../marketplaces/adapters/ebay-adapter.js';
 
 const baseConfig = {
   pricing: {
@@ -52,11 +53,49 @@ describe('PricingV4Service', () => {
     };
 
     const queryPlan = await (service as any).buildPlanForAdapter(enrichedRequest, 'marktplaats');
-    const queries = (service as any).buildListingQueries(enrichedRequest, queryPlan);
+    const queries = (service as any).buildListingQueries(enrichedRequest, queryPlan, 'marktplaats');
     expect(queries[0].model).toContain('256GB');
     expect(queries[0].model).toContain('Blue');
     expect(queries[1].model).toBe('1234567890123');
     expect(queries[1].brand).toBe('');
+  });
+
+  it('adds _sacat to eBay search URL for mapped subtype', async () => {
+    const service = new PricingV4Service(baseConfig, {
+      adapters: [],
+    });
+
+    const mappedRequest: PricingV4Request = {
+      ...request,
+      productType: 'electronics_phone',
+    };
+
+    const queryPlan = await (service as any).buildPlanForAdapter(mappedRequest, 'ebay');
+    const queries = (service as any).buildListingQueries(mappedRequest, queryPlan, 'ebay');
+
+    const adapter = new EbayBrowseAdapter(baseConfig);
+    const url = adapter.buildSearchUrl(queries[0]);
+
+    expect(url).toContain('_sacat=9355');
+  });
+
+  it('omits _sacat for unmapped subtype', async () => {
+    const service = new PricingV4Service(baseConfig, {
+      adapters: [],
+    });
+
+    const unmappedRequest: PricingV4Request = {
+      ...request,
+      productType: 'electronics_unknown',
+    };
+
+    const queryPlan = await (service as any).buildPlanForAdapter(unmappedRequest, 'ebay');
+    const queries = (service as any).buildListingQueries(unmappedRequest, queryPlan, 'ebay');
+
+    const adapter = new EbayBrowseAdapter(baseConfig);
+    const url = adapter.buildSearchUrl(queries[0]);
+
+    expect(url).not.toContain('_sacat=');
   });
 
   it('changes cache key when variant attributes change', async () => {
