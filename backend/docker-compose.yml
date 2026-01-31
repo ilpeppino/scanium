@@ -85,6 +85,8 @@ services:
     # Note: Port not exposed externally - accessed via Cloudflare Tunnel
     expose:
       - '8080'
+    ports:
+      - '8080:8080'
     healthcheck:
       test: [ 'CMD', 'node', '-e', "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" ]
       interval: 30s

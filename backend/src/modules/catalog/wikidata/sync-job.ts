@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import { prisma } from "../../../infra/db/prisma";
-import { buildBroadQuery, buildStrictQuery } from "./queries";
-import { runWdqs } from "./wdqs-client";
-import { resolveBrandQid } from "./brand-resolver";
+import { buildBroadQuery, buildStrictQuery } from "./queries.js";
+import { runWdqs } from "./wdqs-client.js";
+import { resolveBrandQid } from "./brand-resolver.js";
 
 type SubtypesConfig = {
   version: number;

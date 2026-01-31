@@ -4,12 +4,3 @@ const { PrismaClient } = prismaPkg as unknown as { PrismaClient: new (...args: a
 
 // Create a single PrismaClient instance for the process
 export const prisma = new PrismaClient();
-
-export async function disconnectPrisma() {
-  await prisma.$disconnect();
-}
-
-export async function checkDatabaseConnection() {
-  await prisma.$queryRaw`SELECT 1`;
-  return true;
-}

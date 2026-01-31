@@ -1,1 +1,1 @@
-export { catalogRoutes } from "./routes";
+export { catalogRoutes } from "./routes.js";

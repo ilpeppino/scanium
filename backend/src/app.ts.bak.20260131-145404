@@ -33,7 +33,7 @@ import { authMiddleware } from './infra/http/plugins/auth-middleware.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { recordHttpRequest } from './infra/observability/metrics.js';
-import { catalogRoutes } from "./modules/catalog/index.js";
+import { catalogRoutes } from "./modules/catalog";
 
 /**
  * Build Fastify application instance
