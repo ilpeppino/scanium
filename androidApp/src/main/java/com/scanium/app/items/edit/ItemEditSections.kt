@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.scanium.app.items.edit
 
 import android.graphics.BitmapFactory

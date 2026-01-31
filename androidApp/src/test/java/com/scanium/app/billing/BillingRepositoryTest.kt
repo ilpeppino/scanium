@@ -1,15 +1,16 @@
 package com.scanium.app.billing
 
 import android.content.Context
-import androidx.datastore.preferences.core.edit
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.model.billing.EntitlementSource
 import com.scanium.app.model.user.UserEdition
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -18,12 +19,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
 class BillingRepositoryTest {
-
     private val testScope = TestScope()
     private lateinit var testDataStore: DataStore<Preferences>
     private lateinit var billingRepository: BillingRepository
@@ -40,7 +38,7 @@ class BillingRepositoryTest {
     fun `updateEntitlement persists correct state`() = testScope.runTest {
         // Given
         val status = UserEdition.PRO
-        val source = com.scanium.app.model.billing.EntitlementSource.PLAY_BILLING
+        val source = EntitlementSource.PLAY_BILLING
         val token = "test_token_123"
 
         // When
@@ -56,7 +54,10 @@ class BillingRepositoryTest {
     @Test
     fun `clearEntitlement resets to FREE tier`() = testScope.runTest {
         // Given - an existing entitlement
-        billingRepository.updateEntitlement(UserEdition.PRO, com.scanium.app.model.billing.EntitlementSource.PLAY_BILLING)
+        billingRepository.updateEntitlement(
+            UserEdition.PRO,
+            EntitlementSource.PLAY_BILLING,
+        )
         val proState = billingRepository.entitlementState.first()
         assertThat(proState.status).isEqualTo(UserEdition.PRO)
 
@@ -66,7 +67,7 @@ class BillingRepositoryTest {
         // Then
         val clearedState = billingRepository.entitlementState.first()
         assertThat(clearedState.status).isEqualTo(UserEdition.FREE)
-        assertThat(clearedState.source).isEqualTo(com.scanium.app.model.billing.EntitlementSource.LOCAL_CACHE)
+        assertThat(clearedState.source).isEqualTo(EntitlementSource.LOCAL_CACHE)
     }
 
     @Test
@@ -75,9 +76,21 @@ class BillingRepositoryTest {
         val token2 = "token_two"
 
         // When
-        billingRepository.updateEntitlement(UserEdition.PRO, com.scanium.app.model.billing.EntitlementSource.PLAY_BILLING, token1)
-        billingRepository.updateEntitlement(UserEdition.PRO, com.scanium.app.model.billing.EntitlementSource.PLAY_BILLING, token2)
-        billingRepository.updateEntitlement(UserEdition.PRO, com.scanium.app.model.billing.EntitlementSource.PLAY_BILLING, token1) // Duplicate
+        billingRepository.updateEntitlement(
+            UserEdition.PRO,
+            EntitlementSource.PLAY_BILLING,
+            token1,
+        )
+        billingRepository.updateEntitlement(
+            UserEdition.PRO,
+            EntitlementSource.PLAY_BILLING,
+            token2,
+        )
+        billingRepository.updateEntitlement(
+            UserEdition.PRO,
+            EntitlementSource.PLAY_BILLING,
+            token1,
+        )
 
         // Then
         val prefs = testDataStore.data.first()
@@ -98,7 +111,7 @@ class BillingRepositoryTest {
 
         // Then
         assertThat(entitlementState.status).isEqualTo(UserEdition.FREE)
-        assertThat(entitlementState.source).isEqualTo(com.scanium.app.model.billing.EntitlementSource.LOCAL_CACHE)
+        assertThat(entitlementState.source).isEqualTo(EntitlementSource.LOCAL_CACHE)
     }
 
     @Test
@@ -108,7 +121,7 @@ class BillingRepositoryTest {
 
         // Then
         assertThat(entitlementState.status).isEqualTo(UserEdition.FREE)
-        assertThat(entitlementState.source).isEqualTo(com.scanium.app.model.billing.EntitlementSource.LOCAL_CACHE)
+        assertThat(entitlementState.source).isEqualTo(EntitlementSource.LOCAL_CACHE)
         assertThat(entitlementState.lastUpdatedAt).isEqualTo(0L)
         assertThat(entitlementState.expiresAt).isNull()
     }
