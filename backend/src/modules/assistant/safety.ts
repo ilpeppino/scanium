@@ -326,7 +326,14 @@ export function normalizeForSecurity(text: string): string {
   let normalized = text.normalize('NFKC');
 
   // Remove control characters except newlines and tabs
-  normalized = normalized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  normalized = Array.from(normalized)
+    .filter((char) => {
+      const code = char.codePointAt(0);
+      if (code === undefined) return false;
+      if (code === 0x0a || code === 0x09) return true;
+      return code >= 0x20 && code !== 0x7f;
+    })
+    .join('');
 
   // Collapse multiple whitespace into single space (preserve newlines)
   normalized = normalized.replace(/[^\S\n]+/g, ' ');

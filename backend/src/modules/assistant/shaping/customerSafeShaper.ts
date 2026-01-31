@@ -54,7 +54,7 @@ export function shapeCustomerSafeText(text: string, mode?: AssistantMode): strin
   shaped = shaped
     .replace(/\s+/g, ' ') // Collapse multiple spaces
     .replace(/\s+([.,;:!?)])/g, '$1') // Remove space before punctuation
-    .replace(/([(\[])\s+/g, '$1') // Remove space after opening brackets
+    .replace(/([([])\s+/g, '$1') // Remove space after opening brackets
     .replace(/\s*\(\s*\)/g, '') // Remove empty parentheses
     .replace(/\s*\[\s*\]/g, '') // Remove empty brackets
     .replace(/([.,;:])\s*\1+/g, '$1') // Remove consecutive duplicate punctuation (e.g., ",," -> ",")

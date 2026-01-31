@@ -102,7 +102,7 @@ const GENERIC_WORDS = new Set([
 /**
  * Pattern for SKU-like model numbers.
  */
-const MODEL_PATTERN = /^[A-Z]{0,3}[0-9]+[A-Z0-9\-\.]*$/i;
+const MODEL_PATTERN = /^[A-Z]{0,3}[0-9]+[A-Z0-9-.]*$/i;
 const MODEL_KEYWORD_PATTERN = /\b(model|type|ref|no|number|art|sku|serial)\b/i;
 
 /**
@@ -176,7 +176,7 @@ function looksLikeModel(text: string, allOcrText: string[]): boolean {
   const hasKeyword = allOcrText.some((t) => MODEL_KEYWORD_PATTERN.test(t));
 
   // Strong pattern (letters followed by numbers) or has keyword nearby
-  const strongPattern = /^[A-Z]{1,4}[0-9]{2,}[A-Z0-9\-\.]*$/i.test(text);
+  const strongPattern = /^[A-Z]{1,4}[0-9]{2,}[A-Z0-9-.]*$/i.test(text);
 
   return strongPattern || hasKeyword;
 }
@@ -322,7 +322,7 @@ function resolveModel(facts: VisualFacts): ResolvedAttribute | undefined {
 
       // Check for strong evidence (keyword nearby)
       const hasKeyword = allOcrText.some((t) => MODEL_KEYWORD_PATTERN.test(t));
-      const strongPattern = /^[A-Z]{1,4}[0-9]{2,}[A-Z0-9\-\.]*$/i.test(snippet.text);
+      const strongPattern = /^[A-Z]{1,4}[0-9]{2,}[A-Z0-9-.]*$/i.test(snippet.text);
 
       const confidence: AttributeConfidenceTier =
         (hasKeyword && strongPattern) ? 'HIGH' :

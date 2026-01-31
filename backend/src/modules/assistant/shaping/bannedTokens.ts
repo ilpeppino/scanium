@@ -38,5 +38,5 @@ export const BANNED_PATTERNS = [
   /\bconfidence\s+between\s+\d+\s*-\s*\d+%?/gi,
 
   // Pattern: "(confidence: ...)" or "[score: ...]"
-  /[(\[]\s*(?:confidence|score)\s*:?\s*[^\])]+[)\]]/gi,
+  /[([]\s*(?:confidence|score)\s*:?\s*[^\])]+[)\]]/gi,
 ] as const;

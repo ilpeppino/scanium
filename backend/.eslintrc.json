@@ -3,7 +3,7 @@
   "parserOptions": {
     "ecmaVersion": 2022,
     "sourceType": "module",
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.eslint.json"
   },
   "extends": [
     "eslint:recommended",
@@ -32,6 +32,7 @@
   "ignorePatterns": [
     "dist",
     "node_modules",
-    "*.config.ts"
+    "*.config.ts",
+    "**/*.test.ts"
   ]
 }
