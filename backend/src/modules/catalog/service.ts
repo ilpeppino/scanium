@@ -21,8 +21,15 @@ export async function getBrandsBySubtype(subtype: string): Promise<BrandsRespons
     orderBy: { brandString: 'asc' },
   });
 
-  // Extract brand strings from the results
-  const brands = brandMaps.map((b: { brandString: string }) => b.brandString);
+  // Extract brand strings from the results with defensive de-dupe
+  const seen = new Set<string>();
+  const brands: string[] = [];
+  for (const entry of brandMaps) {
+    if (!seen.has(entry.brandString)) {
+      seen.add(entry.brandString);
+      brands.push(entry.brandString);
+    }
+  }
 
   return {
     subtype,

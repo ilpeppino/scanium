@@ -11,7 +11,7 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../infra/db/prisma.js";
-import { ValidationError, NotFoundError } from "../../shared/errors/index.js";
+import { ValidationError } from "../../shared/errors/index.js";
 import {
   subtypeParamsSchema,
   modelsQuerySchema,
@@ -49,22 +49,9 @@ export async function catalogRoutes(app: FastifyInstance) {
 
     try {
       const result = await getBrandsBySubtype(subtype);
-
-      // If no brands found, return 404 (unknown subtype)
-      if (result.brands.length === 0) {
-        throw new NotFoundError(`No brands found for subtype: ${subtype}`);
-      }
-
+      reply.header("Cache-Control", "public, max-age=3600");
       return reply.status(200).send(result);
     } catch (error) {
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({
-          error: {
-            code: "NOT_FOUND",
-            message: error.message,
-          },
-        });
-      }
 
       req.log.error(
         {
@@ -123,7 +110,7 @@ export async function catalogRoutes(app: FastifyInstance) {
 
     try {
       const result = await getModelsBySubtypeAndBrand(subtype, brand);
-
+      reply.header("Cache-Control", "public, max-age=3600");
       return reply.status(200).send(result);
     } catch (error) {
       req.log.error(
