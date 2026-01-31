@@ -485,7 +485,7 @@ export function loadConfig(): Config {
       v3CacheTtlSeconds: process.env.PRICING_V3_CACHE_TTL_SECONDS,
       v3DailyQuota: process.env.PRICING_V3_DAILY_QUOTA,
       v3PromptVersion: process.env.PRICING_V3_PROMPT_VERSION,
-      v4Enabled: process.env.PRICING_V4_ENABLED,
+      v4Enabled: process.env.PRICING_V4_ENABLED ?? process.env.PRICING_ENABLED,
       v4TimeoutMs: process.env.PRICING_V4_TIMEOUT_MS,
       v4CacheTtlSeconds: process.env.PRICING_V4_CACHE_TTL_SECONDS,
       v4AiNormEnabled: process.env.PRICING_V4_AI_NORM_ENABLED,
