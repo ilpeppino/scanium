@@ -535,6 +535,14 @@ export function loadConfig(): Config {
   console.log('[Config] Pricing v3 enabled:', result.data.pricing.v3Enabled);
   console.log('[Config] Pricing v3 prompt version:', result.data.pricing.v3PromptVersion);
   console.log('[Config] Pricing v4 enabled:', result.data.pricing.v4Enabled);
+  if (
+    process.env.PRICING_ENABLED === 'true' &&
+    typeof process.env.PRICING_V4_ENABLED === 'undefined'
+  ) {
+    console.warn(
+      '[Config] PRICING_ENABLED=true but PRICING_V4_ENABLED is unset; defaulting v4 enabled to PRICING_ENABLED'
+    );
+  }
 
   return result.data;
 }
