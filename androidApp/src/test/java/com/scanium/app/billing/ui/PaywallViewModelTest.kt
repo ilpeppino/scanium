@@ -4,7 +4,6 @@ import android.app.Activity
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.billing.BillingSkus
 import com.scanium.app.model.billing.BillingProvider
-import com.scanium.app.model.billing.ProductDetails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -45,72 +44,78 @@ class PaywallViewModelTest {
     }
 
     @Test
-    fun `purchase calls billing provider with product ID`() = runTest {
-        whenever(mockBillingProvider.purchase(any(), any())).thenReturn(kotlin.Result.success(Unit))
+    fun `purchase calls billing provider with product ID`() =
+        runTest {
+            whenever(mockBillingProvider.purchase(any(), any())).thenReturn(kotlin.Result.success(Unit))
 
-        viewModel = PaywallViewModel(mockBillingProvider)
-        viewModel.purchase(mockActivity, BillingSkus.PRO_SUBSCRIPTION_MONTHLY)
+            viewModel = PaywallViewModel(mockBillingProvider)
+            viewModel.purchase(mockActivity, BillingSkus.PRO_SUBSCRIPTION_MONTHLY)
 
-        verify(mockBillingProvider).purchase(BillingSkus.PRO_SUBSCRIPTION_MONTHLY, mockActivity)
-    }
-
-    @Test
-    fun `purchase with failure sets error state`() = runTest {
-        val exception = Exception("Purchase failed")
-        whenever(mockBillingProvider.purchase(any(), any())).thenReturn(kotlin.Result.failure(exception))
-
-        viewModel = PaywallViewModel(mockBillingProvider)
-        viewModel.purchase(mockActivity, BillingSkus.PRO_SUBSCRIPTION_MONTHLY)
-
-        val error = viewModel.error.first()
-        assertThat(error).isEqualTo("Purchase failed: Purchase failed")
-    }
+            verify(mockBillingProvider).purchase(BillingSkus.PRO_SUBSCRIPTION_MONTHLY, mockActivity)
+        }
 
     @Test
-    fun `clearError clears error state`() = runTest {
-        val exception = Exception("Purchase failed")
-        whenever(mockBillingProvider.purchase(any(), any())).thenReturn(kotlin.Result.failure(exception))
+    fun `purchase with failure sets error state`() =
+        runTest {
+            val exception = Exception("Purchase failed")
+            whenever(mockBillingProvider.purchase(any(), any())).thenReturn(kotlin.Result.failure(exception))
 
-        viewModel = PaywallViewModel(mockBillingProvider)
-        viewModel.purchase(mockActivity, BillingSkus.PRO_SUBSCRIPTION_MONTHLY)
-        assertThat(viewModel.error.first()).isNotNull()
+            viewModel = PaywallViewModel(mockBillingProvider)
+            viewModel.purchase(mockActivity, BillingSkus.PRO_SUBSCRIPTION_MONTHLY)
 
-        viewModel.clearError()
-        assertThat(viewModel.error.first()).isNull()
-    }
-
-    @Test
-    fun `restorePurchases calls billing provider`() = runTest {
-        whenever(mockBillingProvider.restorePurchases()).thenReturn(kotlin.Result.success(Unit))
-
-        viewModel = PaywallViewModel(mockBillingProvider)
-        viewModel.restorePurchases()
-
-        verify(mockBillingProvider).restorePurchases()
-    }
+            val error = viewModel.error.first()
+            assertThat(error).isEqualTo("Purchase failed: Purchase failed")
+        }
 
     @Test
-    fun `restorePurchases sets loading to true initially`() = runTest {
-        viewModel = PaywallViewModel(mockBillingProvider)
+    fun `clearError clears error state`() =
+        runTest {
+            val exception = Exception("Purchase failed")
+            whenever(mockBillingProvider.purchase(any(), any())).thenReturn(kotlin.Result.failure(exception))
 
-        val isLoadingBefore = viewModel.isLoading.first()
-        assertThat(isLoadingBefore).isFalse()
+            viewModel = PaywallViewModel(mockBillingProvider)
+            viewModel.purchase(mockActivity, BillingSkus.PRO_SUBSCRIPTION_MONTHLY)
+            assertThat(viewModel.error.first()).isNotNull()
 
-        whenever(mockBillingProvider.restorePurchases()).thenReturn(kotlin.Result.success(Unit))
-        viewModel.restorePurchases()
-
-        val isLoadingAfter = viewModel.isLoading.first()
-        assertThat(isLoadingAfter).isFalse()
-    }
+            viewModel.clearError()
+            assertThat(viewModel.error.first()).isNull()
+        }
 
     @Test
-    fun `restorePurchases sets loading to false after completion`() = runTest {
-        whenever(mockBillingProvider.restorePurchases()).thenReturn(kotlin.Result.success(Unit))
+    fun `restorePurchases calls billing provider`() =
+        runTest {
+            whenever(mockBillingProvider.restorePurchases()).thenReturn(kotlin.Result.success(Unit))
 
-        viewModel = PaywallViewModel(mockBillingProvider)
-        viewModel.restorePurchases()
+            viewModel = PaywallViewModel(mockBillingProvider)
+            viewModel.restorePurchases()
 
-        val isLoading = viewModel.isLoading.first()
-        assertThat(isLoading).isFalse()
-    }
+            verify(mockBillingProvider).restorePurchases()
+        }
+
+    @Test
+    fun `restorePurchases sets loading to true initially`() =
+        runTest {
+            viewModel = PaywallViewModel(mockBillingProvider)
+
+            val isLoadingBefore = viewModel.isLoading.first()
+            assertThat(isLoadingBefore).isFalse()
+
+            whenever(mockBillingProvider.restorePurchases()).thenReturn(kotlin.Result.success(Unit))
+            viewModel.restorePurchases()
+
+            val isLoadingAfter = viewModel.isLoading.first()
+            assertThat(isLoadingAfter).isFalse()
+        }
+
+    @Test
+    fun `restorePurchases sets loading to false after completion`() =
+        runTest {
+            whenever(mockBillingProvider.restorePurchases()).thenReturn(kotlin.Result.success(Unit))
+
+            viewModel = PaywallViewModel(mockBillingProvider)
+            viewModel.restorePurchases()
+
+            val isLoading = viewModel.isLoading.first()
+            assertThat(isLoading).isFalse()
+        }
 }

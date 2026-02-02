@@ -12,9 +12,9 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -36,20 +36,22 @@ class SettingsFtueViewModelTest {
     }
 
     @Test
-    fun `initialize starts FTUE when enabled`() = runTest {
-        viewModel.initialize(shouldStartFtue = true)
+    fun `initialize starts FTUE when enabled`() =
+        runTest {
+            viewModel.initialize(shouldStartFtue = true)
 
-        val currentStep = viewModel.currentStep.first()
-        val isActive = viewModel.isActive.first()
+            val currentStep = viewModel.currentStep.first()
+            val isActive = viewModel.isActive.first()
 
-        assertThat(currentStep).isEqualTo(SettingsFtueViewModel.SettingsFtueStep.WAITING_LANGUAGE_HINT)
-        assertThat(isActive).isTrue()
-    }
+            assertThat(currentStep).isEqualTo(SettingsFtueViewModel.SettingsFtueStep.WAITING_LANGUAGE_HINT)
+            assertThat(isActive).isTrue()
+        }
 
     @Test
-    fun `dismiss marks settings FTUE as completed`() = runTest {
-        viewModel.dismiss()
+    fun `dismiss marks settings FTUE as completed`() =
+        runTest {
+            viewModel.dismiss()
 
-        verify(mockFtueRepository).setSettingsFtueCompleted(true)
-    }
+            verify(mockFtueRepository).setSettingsFtueCompleted(true)
+        }
 }

@@ -1176,9 +1176,17 @@
     <!-- Smart Merge -->
     <string name="settings_smart_merge_title">Fusão inteligente</string>
     <string name="settings_smart_merge_subtitle">Fundir automaticamente itens semelhantes após a digitalização</string>
+    <plurals name="smart_merge_banner_title">
+        <item quantity="one">%d item semelhante</item>
+        <item quantity="other">%d itens semelhantes</item>
+    </plurals>
     <string name="smart_merge_banner_subtitle">Itens semelhantes agrupados (%1$d)</string>
     <string name="smart_merge_accept_all">Aceitar todos os grupos</string>
     <string name="smart_merge_review">Revisar grupos</string>
+    <plurals name="items_pending_detection">
+        <item quantity="one">%d item aguardando confirmação</item>
+        <item quantity="other">%d itens aguardando confirmação</item>
+    </plurals>
     <string name="smart_merge_review_title">Revisar grupos de fusão inteligente</string>
     <string name="smart_merge_review_subtitle">Toque para editar grupos, deslize para recusar</string>
     <string name="smart_merge_primary_item">Item principal</string>
@@ -1224,7 +1232,7 @@
     <string name="pricing_no_results_title">Nenhum resultado de preço</string>
     <string name="pricing_no_results_subtitle">Tente atualizar os detalhes do item para uma busca melhor.</string>
     <string name="pricing_view_listings">Ver anúncios</string>
-    <string name="pricing_time_window">%1$s em %2$s</string>
+    <string name="pricing_time_window">Últimos %1$d dias</string>
     <string name="pricing_sample_listings">Anúncios de exemplo</string>
 
     <!-- Pricing Assistant -->

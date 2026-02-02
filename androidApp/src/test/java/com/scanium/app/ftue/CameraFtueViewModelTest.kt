@@ -12,9 +12,9 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -36,20 +36,22 @@ class CameraFtueViewModelTest {
     }
 
     @Test
-    fun `initialize marks FTUE as completed and inactive`() = runTest {
-        viewModel.initialize(shouldStartFtue = true, hasExistingItems = false)
+    fun `initialize marks FTUE as completed and inactive`() =
+        runTest {
+            viewModel.initialize(shouldStartFtue = true, hasExistingItems = false)
 
-        val currentStep = viewModel.currentStep.first()
-        val isActive = viewModel.isActive.first()
+            val currentStep = viewModel.currentStep.first()
+            val isActive = viewModel.isActive.first()
 
-        assertThat(currentStep).isEqualTo(CameraFtueViewModel.CameraFtueStep.COMPLETED)
-        assertThat(isActive).isFalse()
-    }
+            assertThat(currentStep).isEqualTo(CameraFtueViewModel.CameraFtueStep.COMPLETED)
+            assertThat(isActive).isFalse()
+        }
 
     @Test
-    fun `dismiss marks camera FTUE as completed`() = runTest {
-        viewModel.dismiss()
+    fun `dismiss marks camera FTUE as completed`() =
+        runTest {
+            viewModel.dismiss()
 
-        verify(mockFtueRepository).setCameraFtueCompleted(true)
-    }
+            verify(mockFtueRepository).setCameraFtueCompleted(true)
+        }
 }

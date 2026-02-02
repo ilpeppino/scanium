@@ -1175,9 +1175,17 @@
     <!-- Smart Merge -->
     <string name="settings_smart_merge_title">Slim samenvoegen</string>
     <string name="settings_smart_merge_subtitle">Voeg vergelijkbare items automatisch samen na het scannen</string>
+    <plurals name="smart_merge_banner_title">
+        <item quantity="one">%d item lijkt vergelijkbaar</item>
+        <item quantity="other">%d items lijken vergelijkbaar</item>
+    </plurals>
     <string name="smart_merge_banner_subtitle">Vergelijkbare items gegroepeerd (%1$d)</string>
     <string name="smart_merge_accept_all">Accepteer alle groepen</string>
     <string name="smart_merge_review">Groepen beoordelen</string>
+    <plurals name="items_pending_detection">
+        <item quantity="one">%d item wacht op bevestiging</item>
+        <item quantity="other">%d items wachten op bevestiging</item>
+    </plurals>
     <string name="smart_merge_review_title">Beoordeel slimme samenvoeggroepen</string>
     <string name="smart_merge_review_subtitle">Tik om groepen te bewerken, veeg om te weigeren</string>
     <string name="smart_merge_primary_item">Primair item</string>
@@ -1223,7 +1231,7 @@
     <string name="pricing_no_results_title">Geen prijsresultaten</string>
     <string name="pricing_no_results_subtitle">Probeer de itemdetails bij te werken voor een betere zoekopdracht.</string>
     <string name="pricing_view_listings">Bekijk advertenties</string>
-    <string name="pricing_time_window">%1$s in %2$s</string>
+    <string name="pricing_time_window">Laatste %1$d dagen</string>
     <string name="pricing_sample_listings">Voorbeeldadvertenties</string>
 
     <!-- Pricing Assistant -->

@@ -13,9 +13,9 @@ class PricingUiStateTest {
         val missing = inputs.missingFields()
 
         assertTrue(missing.contains(PricingMissingField.BRAND))
-        assertTrue(missing.contains(PricingMissingField.MODEL))
         assertTrue(missing.contains(PricingMissingField.CONDITION))
         assertFalse(missing.contains(PricingMissingField.PRODUCT_TYPE))
+        assertFalse(missing.contains(PricingMissingField.MODEL))
     }
 
     @Test
@@ -62,10 +62,10 @@ class PricingUiStateTest {
                 model = "3200",
                 condition = ItemCondition.GOOD,
             )
-        val incomplete = complete.copy(model = "")
+        val incomplete = complete.copy(condition = null)
 
         assertTrue(complete.isComplete())
         assertFalse(incomplete.isComplete())
-        assertEquals(setOf(PricingMissingField.MODEL), incomplete.missingFields())
+        assertEquals(setOf(PricingMissingField.CONDITION), incomplete.missingFields())
     }
 }

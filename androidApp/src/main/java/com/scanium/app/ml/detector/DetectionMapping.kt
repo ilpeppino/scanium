@@ -14,11 +14,11 @@ import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.tracking.DetectionInfo
 import com.scanium.core.models.ml.LabelWithConfidence
 import com.scanium.core.models.ml.RawDetection
-import java.util.UUID
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.UUID
+import kotlin.math.roundToInt
 
 /**
  * Pure mapping/conversion layer for ML Kit detections.

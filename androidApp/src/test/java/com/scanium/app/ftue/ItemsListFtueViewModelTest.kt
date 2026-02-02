@@ -12,9 +12,9 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -36,20 +36,22 @@ class ItemsListFtueViewModelTest {
     }
 
     @Test
-    fun `initialize starts FTUE when enabled and list has items`() = runTest {
-        viewModel.initialize(shouldStartFtue = true, itemCount = 1)
+    fun `initialize starts FTUE when enabled and list has items`() =
+        runTest {
+            viewModel.initialize(shouldStartFtue = true, itemCount = 1)
 
-        val currentStep = viewModel.currentStep.first()
-        val isActive = viewModel.isActive.first()
+            val currentStep = viewModel.currentStep.first()
+            val isActive = viewModel.isActive.first()
 
-        assertThat(currentStep).isEqualTo(ItemsListFtueViewModel.ItemsListFtueStep.WAITING_TAP_HINT)
-        assertThat(isActive).isTrue()
-    }
+            assertThat(currentStep).isEqualTo(ItemsListFtueViewModel.ItemsListFtueStep.WAITING_TAP_HINT)
+            assertThat(isActive).isTrue()
+        }
 
     @Test
-    fun `dismiss marks items list FTUE as completed`() = runTest {
-        viewModel.dismiss()
+    fun `dismiss marks items list FTUE as completed`() =
+        runTest {
+            viewModel.dismiss()
 
-        verify(mockFtueRepository).setListFtueCompleted(true)
-    }
+            verify(mockFtueRepository).setListFtueCompleted(true)
+        }
 }

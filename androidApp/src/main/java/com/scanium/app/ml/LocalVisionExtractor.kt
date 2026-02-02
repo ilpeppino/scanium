@@ -58,7 +58,7 @@ data class LocalVisionResult(
 class LocalVisionExtractor
     @Inject
     constructor(
-        private val debugger: ImageClassifierDebugger? = null,
+        private val debugger: ImageClassifierDebugger?,
     ) {
         companion object {
             private const val TAG = "LocalVisionExtractor"

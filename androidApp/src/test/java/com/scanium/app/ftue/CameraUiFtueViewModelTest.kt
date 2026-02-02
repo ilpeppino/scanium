@@ -3,8 +3,8 @@ package com.scanium.app.ftue
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -13,15 +13,17 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class CameraUiFtueViewModelTest {
     private val mockFtueRepository: FtueRepository = mock()
+    private val forceShowFlow = MutableStateFlow(false)
+    private val completedFlow = MutableStateFlow(false)
 
     private lateinit var viewModel: CameraUiFtueViewModel
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -29,6 +31,8 @@ class CameraUiFtueViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        whenever(mockFtueRepository.cameraUiFtueForceShowFlow).thenReturn(forceShowFlow)
+        whenever(mockFtueRepository.cameraUiFtueCompletedFlow).thenReturn(completedFlow)
         viewModel = CameraUiFtueViewModel(mockFtueRepository)
     }
 
@@ -38,38 +42,40 @@ class CameraUiFtueViewModelTest {
     }
 
     @Test
-    fun `initialize starts FTUE when conditions are met`() = runTest {
-        whenever(mockFtueRepository.cameraUiFtueForceShowFlow).thenReturn(MutableStateFlow(true))
-        whenever(mockFtueRepository.cameraUiFtueCompletedFlow).thenReturn(MutableStateFlow(false))
+    fun `initialize starts FTUE when conditions are met`() =
+        runTest {
+            forceShowFlow.value = true
+            completedFlow.value = false
 
-        viewModel.initialize(
-            cameraPermissionGranted = true,
-            previewVisible = true,
-            allAnchorsRegistered = true,
-        )
+            viewModel.initialize(
+                cameraPermissionGranted = true,
+                previewVisible = true,
+                allAnchorsRegistered = true,
+            )
 
-        val currentStep = viewModel.currentStep.first()
-        val isActive = viewModel.isActive.first()
+            val currentStep = viewModel.currentStep.first()
+            val isActive = viewModel.isActive.first()
 
-        assertThat(currentStep).isEqualTo(CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER)
-        assertThat(isActive).isTrue()
-    }
+            assertThat(currentStep).isEqualTo(CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER)
+            assertThat(isActive).isTrue()
+        }
 
     @Test
-    fun `nextStep completes and persists completion`() = runTest {
-        whenever(mockFtueRepository.cameraUiFtueForceShowFlow).thenReturn(MutableStateFlow(true))
-        whenever(mockFtueRepository.cameraUiFtueCompletedFlow).thenReturn(MutableStateFlow(false))
+    fun `nextStep completes and persists completion`() =
+        runTest {
+            forceShowFlow.value = true
+            completedFlow.value = false
 
-        viewModel.initialize(
-            cameraPermissionGranted = true,
-            previewVisible = true,
-            allAnchorsRegistered = true,
-        )
+            viewModel.initialize(
+                cameraPermissionGranted = true,
+                previewVisible = true,
+                allAnchorsRegistered = true,
+            )
 
-        repeat(4) { viewModel.nextStep() }
+            repeat(4) { viewModel.nextStep() }
 
-        val currentStep = viewModel.currentStep.first()
-        assertThat(currentStep).isEqualTo(CameraUiFtueViewModel.CameraUiFtueStep.COMPLETED)
-        verify(mockFtueRepository).setCameraUiFtueCompleted(true)
-    }
+            val currentStep = viewModel.currentStep.first()
+            assertThat(currentStep).isEqualTo(CameraUiFtueViewModel.CameraUiFtueStep.COMPLETED)
+            verify(mockFtueRepository).setCameraUiFtueCompleted(true)
+        }
 }

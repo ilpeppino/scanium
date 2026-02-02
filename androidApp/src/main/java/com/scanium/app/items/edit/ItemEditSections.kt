@@ -26,11 +26,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -43,9 +43,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -578,7 +578,7 @@ private fun ModelAutocompleteField(
     val showNoMatches by remember(trimmedValue, enabled, suggestions, isLoading, showOfflineHelper, expanded) {
         derivedStateOf {
             expanded &&
-            enabled &&
+                enabled &&
                 trimmedValue.length >= 2 &&
                 suggestions.isEmpty() &&
                 !isLoading &&
@@ -621,10 +621,10 @@ private fun ModelAutocompleteField(
                         allowAutoExpand = true
                         expanded =
                             it.isFocused &&
-                                enabled &&
-                                trimmedValue.length >= 2 &&
-                                suggestions.isNotEmpty() &&
-                                allowAutoExpand
+                            enabled &&
+                            trimmedValue.length >= 2 &&
+                            suggestions.isNotEmpty() &&
+                            allowAutoExpand
                         if (it.isFocused) {
                             scope.launch { bringIntoViewRequester?.bringIntoView() }
                         }

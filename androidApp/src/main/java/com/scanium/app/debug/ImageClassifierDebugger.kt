@@ -140,7 +140,7 @@ class ImageClassifierDebugger
             val itemPrefix = itemId?.let { "${it}_" } ?: ""
             val sourceSafe = source.replace(Regex("[^a-zA-Z0-9_-]"), "_")
             val hashPrefix = hash.take(8)
-            val filename = "${itemPrefix}${sourceSafe}_${timestamp}_${hashPrefix}.jpg"
+            val filename = "${itemPrefix}${sourceSafe}_${timestamp}_$hashPrefix.jpg"
 
             val file = File(debugDir, filename)
             FileOutputStream(file).use { out ->

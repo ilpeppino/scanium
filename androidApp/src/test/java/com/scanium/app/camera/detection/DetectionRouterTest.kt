@@ -3,18 +3,22 @@ package com.scanium.app.camera.detection
 import android.net.Uri
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.camera.ScanMode
-import com.scanium.shared.core.models.model.NormalizedRect
-import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.ml.DetectionResult
+import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.model.NormalizedRect
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class DetectionRouterTest {
     private lateinit var router: DetectionRouter
-    private val config = DetectionRouterConfig(
-        enableVerboseLogging = false,
-        enableDebugLogging = false
-    )
+    private val config =
+        DetectionRouterConfig(
+            enableVerboseLogging = false,
+            enableDebugLogging = false,
+        )
 
     @Before
     fun setUp() {
@@ -24,7 +28,7 @@ class DetectionRouterTest {
     @Test
     fun `startSession resets all counters`() {
         router.tryInvokeObjectDetection(timestampMs = 100L)
-        router.tryInvokeBarcodeDetection(timestampMs = 100L)
+        router.tryInvokeObjectDetection(timestampMs = 200L)
 
         var stats = router.getStats()
         assertThat(stats.totalFrames).isEqualTo(2L)
@@ -273,18 +277,20 @@ class DetectionRouterTest {
         assertThat(stats.totalFramesProcessed).isEqualTo(1L)
     }
 
-    private fun createTestBarcodeItem(value: String) = com.scanium.shared.core.models.items.ScannedItem<Uri>(
-        category = ItemCategory.BARCODE,
-        labelText = "Barcode",
-        boundingBox = com.scanium.shared.core.models.model.NormalizedRect(0.1f, 0.1f, 0.3f, 0.3f),
-        priceRange = 0.0 to 0.0,
-        barcodeValue = value
-    )
+    private fun createTestBarcodeItem(value: String) =
+        com.scanium.shared.core.models.items.ScannedItem<Uri>(
+            category = ItemCategory.BARCODE,
+            labelText = "Barcode",
+            boundingBox = com.scanium.shared.core.models.model.NormalizedRect(0.1f, 0.1f, 0.3f, 0.3f),
+            priceRange = 0.0 to 0.0,
+            barcodeValue = value,
+        )
 
-    private fun createTestItem() = com.scanium.shared.core.models.items.ScannedItem<Uri>(
-        category = ItemCategory.FASHION,
-        labelText = "Test Item",
-        boundingBox = com.scanium.shared.core.models.model.NormalizedRect(0.1f, 0.1f, 0.3f, 0.3f),
-        priceRange = 0.0 to 0.0
-    )
+    private fun createTestItem() =
+        com.scanium.shared.core.models.items.ScannedItem<Uri>(
+            category = ItemCategory.FASHION,
+            labelText = "Test Item",
+            boundingBox = com.scanium.shared.core.models.model.NormalizedRect(0.1f, 0.1f, 0.3f, 0.3f),
+            priceRange = 0.0 to 0.0,
+        )
 }

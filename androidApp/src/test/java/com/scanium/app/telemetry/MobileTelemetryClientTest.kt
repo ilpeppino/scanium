@@ -10,7 +10,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.util.concurrent.TimeUnit
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -24,7 +23,7 @@ class MobileTelemetryClientTest {
         MobileTelemetryClient.initialize(
             context = context,
             baseUrl = "https://test.example.com",
-            enabled = true
+            enabled = true,
         )
     }
 
@@ -50,7 +49,7 @@ class MobileTelemetryClientTest {
         MobileTelemetryClient.initialize(
             context = context,
             baseUrl = "https://test.example.com",
-            enabled = false
+            enabled = false,
         )
 
         val client = MobileTelemetryClient.getInstance()
@@ -63,12 +62,15 @@ class MobileTelemetryClientTest {
     fun `send with attributes sanitizes PII`() {
         val client = MobileTelemetryClient.getInstance()
 
-        client.send("test_event", mapOf(
-            "user_id" to "secret123",
-            "email" to "test@example.com",
-            "item_name" to "Product Name",
-            "category" to "valid_value"
-        ))
+        client.send(
+            "test_event",
+            mapOf(
+                "user_id" to "secret123",
+                "email" to "test@example.com",
+                "item_name" to "Product Name",
+                "category" to "valid_value",
+            ),
+        )
 
         assertThat(client).isNotNull()
     }
@@ -77,29 +79,30 @@ class MobileTelemetryClientTest {
     fun `sanitizeAttributes removes PII keys`() {
         val client = MobileTelemetryClient.getInstance()
 
-        val attributes = mapOf(
-            "user_id" to "secret",
-            "email" to "test@example.com",
-            "phone" to "1234567890",
-            "device_id" to "device123",
-            "imei" to "12345",
-            "android_id" to "android123",
-            "gps" to "40.7128,-74.0060",
-            "latitude" to "40.7128",
-            "longitude" to "-74.0060",
-            "location" to "New York",
-            "ip_address" to "192.168.1.1",
-            "city" to "NYC",
-            "item_name" to "Product",
-            "barcode" to "123456",
-            "receipt_text" to "Receipt",
-            "prompt" to "Test prompt",
-            "photo" to "photo_data",
-            "token" to "secret_token",
-            "password" to "secret_pass",
-            "api_key" to "key123",
-            "secret" to "secret_value"
-        )
+        val attributes =
+            mapOf(
+                "user_id" to "secret",
+                "email" to "test@example.com",
+                "phone" to "1234567890",
+                "device_id" to "device123",
+                "imei" to "12345",
+                "android_id" to "android123",
+                "gps" to "40.7128,-74.0060",
+                "latitude" to "40.7128",
+                "longitude" to "-74.0060",
+                "location" to "New York",
+                "ip_address" to "192.168.1.1",
+                "city" to "NYC",
+                "item_name" to "Product",
+                "barcode" to "123456",
+                "receipt_text" to "Receipt",
+                "prompt" to "Test prompt",
+                "photo" to "photo_data",
+                "token" to "secret_token",
+                "password" to "secret_pass",
+                "api_key" to "key123",
+                "secret" to "secret_value",
+            )
 
         client.send("test_event", attributes)
 
@@ -110,16 +113,17 @@ class MobileTelemetryClientTest {
     fun `sanitizeAttributes filters non-primitive values`() {
         val client = MobileTelemetryClient.getInstance()
 
-        val attributes = mapOf(
-            "string" to "value",
-            "int" to 123,
-            "long" to 456L,
-            "float" to 1.23f,
-            "double" to 4.56,
-            "boolean" to true,
-            "list" to listOf("a", "b"),
-            "map" to mapOf("key" to "value")
-        )
+        val attributes =
+            mapOf(
+                "string" to "value",
+                "int" to 123,
+                "long" to 456L,
+                "float" to 1.23f,
+                "double" to 4.56,
+                "boolean" to true,
+                "list" to listOf("a", "b"),
+                "map" to mapOf("key" to "value"),
+            )
 
         client.send("test_event", attributes)
 
@@ -131,7 +135,7 @@ class MobileTelemetryClientTest {
         MobileTelemetryClient.initialize(
             context = context,
             baseUrl = "https://test.example.com",
-            enabled = true
+            enabled = true,
         )
 
         val client1 = MobileTelemetryClient.getInstance()
@@ -141,7 +145,7 @@ class MobileTelemetryClientTest {
         MobileTelemetryClient.initialize(
             context = context,
             baseUrl = "https://test.example.com",
-            enabled = true
+            enabled = true,
         )
 
         val client2 = MobileTelemetryClient.getInstance()
@@ -165,7 +169,7 @@ class MobileTelemetryClientTest {
         MobileTelemetryClient.initialize(
             context = context,
             baseUrl = "https://test.example.com",
-            enabled = false
+            enabled = false,
         )
 
         val client = MobileTelemetryClient.getInstance()
@@ -204,15 +208,16 @@ class MobileTelemetryClientTest {
     }
 
     @Test
-    fun `send batches events when queue reaches batch size`() = runTest {
-        val client = MobileTelemetryClient.getInstance()
+    fun `send batches events when queue reaches batch size`() =
+        runTest {
+            val client = MobileTelemetryClient.getInstance()
 
-        repeat(15) {
-            client.send("test_event_$it")
+            repeat(15) {
+                client.send("test_event_$it")
+            }
+
+            assertThat(client).isNotNull()
         }
-
-        assertThat(client).isNotNull()
-    }
 
     @Test
     fun `send adds version and build type to events`() {
@@ -280,7 +285,7 @@ class MobileTelemetryClientTest {
         MobileTelemetryClient.initialize(
             context = context,
             baseUrl = "https://test.example.com",
-            enabled = true
+            enabled = true,
         )
 
         val client = MobileTelemetryClient.getInstance()

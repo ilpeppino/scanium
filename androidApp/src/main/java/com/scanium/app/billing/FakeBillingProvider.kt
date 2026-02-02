@@ -28,11 +28,12 @@ class FakeBillingProvider : BillingProvider {
         Log.d(TAG, "Fake purchasing $productId...")
         delay(1000) // Simulate network
 
-        mutableEntitlementState.value = EntitlementState(
-            status = UserEdition.PRO,
-            source = EntitlementSource.LOCAL_CACHE, // Fake source
-            lastUpdatedAt = System.currentTimeMillis()
-        )
+        mutableEntitlementState.value =
+            EntitlementState(
+                status = UserEdition.PRO,
+                source = EntitlementSource.LOCAL_CACHE, // Fake source
+                lastUpdatedAt = System.currentTimeMillis(),
+            )
         return Result.success(Unit)
     }
 
@@ -40,11 +41,12 @@ class FakeBillingProvider : BillingProvider {
         Log.d(TAG, "Fake restoring purchases...")
         delay(1000)
         // Simulate finding a purchase
-        mutableEntitlementState.value = EntitlementState(
-            status = UserEdition.PRO,
-            source = EntitlementSource.LOCAL_CACHE, // Fake source
-            lastUpdatedAt = System.currentTimeMillis()
-        )
+        mutableEntitlementState.value =
+            EntitlementState(
+                status = UserEdition.PRO,
+                source = EntitlementSource.LOCAL_CACHE, // Fake source
+                lastUpdatedAt = System.currentTimeMillis(),
+            )
         return Result.success(Unit)
     }
 

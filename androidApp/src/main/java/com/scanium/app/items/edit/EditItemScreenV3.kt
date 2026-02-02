@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -80,6 +79,8 @@ import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemCondition
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
+
+private const val EDIT_ITEM_SCREEN_LOG_TAG = "EditItemScreenV3"
 
 /**
  * Redesigned Edit Item screen with structured labeled fields (Phase 3 UX redesign).
@@ -651,7 +652,7 @@ fun EditItemScreenV3(
                 aiChooserErrorMessage = null
             },
             onChoosePrice = {
-                android.util.Log.d("EditItemScreenV3", "AI chooser: Price my item selected")
+                android.util.Log.d(EDIT_ITEM_SCREEN_LOG_TAG, "AI chooser: Price my item selected")
                 val missing =
                     editState.pricingInputs
                         .missingFields()
@@ -679,7 +680,7 @@ fun EditItemScreenV3(
             onChooseListing = {
                 showAiAssistantChooser = false
                 aiChooserErrorMessage = null
-                android.util.Log.d("EditItemScreenV3", "AI chooser: Generate listing text selected")
+                android.util.Log.d(EDIT_ITEM_SCREEN_LOG_TAG, "AI chooser: Generate listing text selected")
                 if (editState.exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
                     editState.showExportAssistantSheet = true
                 } else {
@@ -864,8 +865,8 @@ private fun saveFieldsToAttributes(
     notesField: String,
 ) {
     val priceCents = parsePriceToCents(priceField)
-    if (android.util.Log.isLoggable("EditItemScreenV3", android.util.Log.DEBUG)) {
-        android.util.Log.d("EditItemScreenV3", "Saving price for $itemId: '$priceField' -> $priceCents")
+    if (android.util.Log.isLoggable(EDIT_ITEM_SCREEN_LOG_TAG, android.util.Log.DEBUG)) {
+        android.util.Log.d(EDIT_ITEM_SCREEN_LOG_TAG, "Saving price for $itemId: '$priceField' -> $priceCents")
     }
     when {
         priceField.isBlank() -> {
@@ -883,8 +884,11 @@ private fun saveFieldsToAttributes(
             )
         }
         else -> {
-            if (android.util.Log.isLoggable("EditItemScreenV3", android.util.Log.WARN)) {
-                android.util.Log.w("EditItemScreenV3", "Invalid price for $itemId: '$priceField' (skipping persistence)")
+            if (android.util.Log.isLoggable(EDIT_ITEM_SCREEN_LOG_TAG, android.util.Log.WARN)) {
+                android.util.Log.w(
+                    EDIT_ITEM_SCREEN_LOG_TAG,
+                    "Invalid price for $itemId: '$priceField' (skipping persistence)",
+                )
             }
         }
     }

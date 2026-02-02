@@ -8,9 +8,9 @@ import com.scanium.app.ScannedItem
 import com.scanium.app.debug.ImageClassifierDebugger
 import com.scanium.app.ml.detector.DetectionMapping
 import com.scanium.app.ml.detector.ObjectDetectionEngine
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
 
 /**
  * Wrapper class containing both ScannedItems (for list) and DetectionResults (for overlay).

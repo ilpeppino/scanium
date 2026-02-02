@@ -1,6 +1,9 @@
 package com.scanium.app.di
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.billing.BillingRepository
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.data.AndroidFeatureFlagRepository
@@ -22,9 +25,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 
 private const val BILLING_PREFS = "billing_prefs"
 private val Context.billingDataStore: DataStore<Preferences> by preferencesDataStore(name = BILLING_PREFS)
@@ -38,7 +38,9 @@ private val Context.billingDataStore: DataStore<Preferences> by preferencesDataS
 object RepositoryModule {
     @Provides
     @Singleton
-    fun provideBillingDataStore(@ApplicationContext context: Context): DataStore<Preferences> {
+    fun provideBillingDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> {
         return context.billingDataStore
     }
 
@@ -56,9 +58,7 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideBillingRepository(
-        dataStore: DataStore<Preferences>,
-    ): BillingRepository = BillingRepository(dataStore)
+    fun provideBillingRepository(dataStore: DataStore<Preferences>): BillingRepository = BillingRepository(dataStore)
 
     @Provides
     @Singleton
