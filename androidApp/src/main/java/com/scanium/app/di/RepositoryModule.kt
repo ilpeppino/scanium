@@ -101,10 +101,12 @@ object RepositoryModule {
     fun provideVisionInsightsRepository(
         @ApplicationContext context: Context,
         apiKeyStore: SecureApiKeyStore,
+        debugger: com.scanium.app.debug.ImageClassifierDebugger,
     ): VisionInsightsRepository =
         VisionInsightsRepository(
             apiKeyProvider = { apiKeyStore.getApiKey() },
             getDeviceId = { DeviceIdProvider.getHashedDeviceId(context) },
+            debugger = debugger,
         )
 
     @Provides

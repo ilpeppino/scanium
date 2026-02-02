@@ -8,6 +8,7 @@ import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toNormalizedRect
 import com.scanium.app.ItemCategory
 import com.scanium.app.ScannedItem
+import com.scanium.app.debug.ImageClassifierDebugger
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.tracking.DetectionInfo
@@ -15,6 +16,9 @@ import com.scanium.core.models.ml.LabelWithConfidence
 import com.scanium.core.models.ml.RawDetection
 import java.util.UUID
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Pure mapping/conversion layer for ML Kit detections.
@@ -36,6 +40,9 @@ object DetectionMapping {
     const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
     const val MAX_THUMBNAIL_DIMENSION_PX = 512
     const val BOUNDING_BOX_TIGHTEN_RATIO = 0.04f
+
+    // Optional debugger for dev-only instrumentation
+    var debugger: ImageClassifierDebugger? = null
 
     // Bounding box validation thresholds
     private const val MAX_BBOX_AREA_RATIO = 0.70f // Reject if bbox > 70% of frame
@@ -583,6 +590,19 @@ object DetectionMapping {
                     TAG,
                     "Created thumbnail: ${rotatedBitmap.width}x${rotatedBitmap.height} (cropped: ${thumbnailWidth}x$thumbnailHeight, rotation: $rotationDegrees°)",
                 )
+
+                // DEV-ONLY: Log the generated thumbnail for debugging
+                debugger?.let { dbg ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        dbg.logClassifierInput(
+                            bitmap = rotatedBitmap,
+                            source = "Generated thumbnail (cropped from full frame)",
+                            itemId = null,
+                            originPath = "Cropped from bbox $boundingBox, rotated $rotationDegrees°",
+                        )
+                    }
+                }
+
                 rotatedBitmap
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to create thumbnail", e)

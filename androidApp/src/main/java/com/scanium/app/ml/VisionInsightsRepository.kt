@@ -3,6 +3,7 @@ package com.scanium.app.ml
 import android.graphics.Bitmap
 import android.util.Log
 import com.scanium.app.BuildConfig
+import com.scanium.app.debug.ImageClassifierDebugger
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.network.security.RequestSigner
 import com.scanium.app.selling.assistant.network.AssistantHttpConfig
@@ -109,10 +110,12 @@ data class VisionInsightsResult(
  *
  * @param apiKeyProvider Provider for the API key
  * @param getDeviceId Provider for the device ID (for rate limiting)
+ * @param debugger Optional debugger for dev-only instrumentation
  */
 class VisionInsightsRepository(
     private val apiKeyProvider: () -> String? = { null },
     private val getDeviceId: () -> String = { "" },
+    private val debugger: ImageClassifierDebugger? = null,
 ) {
     companion object {
         private const val TAG = "VisionInsightsRepo"
@@ -202,6 +205,15 @@ class VisionInsightsRepository(
             try {
                 // Prepare image - resize if needed and compress to JPEG
                 val processedBitmap = resizeIfNeeded(bitmap)
+
+                // DEV-ONLY: Log Cloud Vision input image for debugging
+                debugger?.logClassifierInput(
+                    bitmap = processedBitmap,
+                    source = "Cloud Vision request (Layer B)",
+                    itemId = itemId,
+                    originPath = "Resized from ${bitmap.width}x${bitmap.height}",
+                )
+
                 val imageBytes = processedBitmap.toJpegBytes()
 
                 // Build multipart request

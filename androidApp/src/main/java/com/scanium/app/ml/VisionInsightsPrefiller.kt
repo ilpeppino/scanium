@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import com.scanium.app.debug.ImageClassifierDebugger
 import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.enrichment.EnrichmentStatus
 import com.scanium.app.items.state.ItemsStateManager
@@ -68,6 +69,7 @@ class VisionInsightsPrefiller
         private val localVisionExtractor: LocalVisionExtractor,
         private val enrichmentRepository: EnrichmentRepository,
         private val enrichmentPolicy: EnrichmentPolicy,
+        private val debugger: ImageClassifierDebugger? = null,
     ) {
         companion object {
             private const val TAG = "VisionInsightsPrefiller"
@@ -128,6 +130,7 @@ class VisionInsightsPrefiller
                     try {
                         // IMPORTANT: Prefer thumbnail over full-frame image for per-item extraction
                         // This ensures each item gets its own brand/label instead of sharing results
+                        val usingThumbnail = thumbnail != null
                         val bitmap =
                             thumbnail?.toBitmap()
                                 ?: imageUri?.let { loadBitmapFromUri(context, it) }
@@ -135,9 +138,18 @@ class VisionInsightsPrefiller
                             Log.e(TAG, "SCAN_ENRICH: Failed to load image for item $itemId (no thumbnail or URI)")
                             return@launch
                         }
+                        val source = if (usingThumbnail) "thumbnail (cropped)" else "full image"
                         Log.i(
                             TAG,
-                            "SCAN_ENRICH: Using ${if (thumbnail != null) "thumbnail" else "full image"} for extraction (${bitmap.width}x${bitmap.height})",
+                            "SCAN_ENRICH: Using $source for extraction (${bitmap.width}x${bitmap.height})",
+                        )
+
+                        // DEV-ONLY: Log which image is used for Layer A/B/C extraction
+                        debugger?.logClassifierInput(
+                            bitmap = bitmap,
+                            source = "VisionInsightsPrefiller - $source (Layers A/B/C)",
+                            itemId = itemId,
+                            originPath = if (usingThumbnail) "Thumbnail ImageRef" else "URI: $imageUri",
                         )
 
                         // LAYER A: LOCAL EXTRACTION (fast, always available)

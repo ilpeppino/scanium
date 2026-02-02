@@ -5,8 +5,12 @@ import android.graphics.Rect
 import android.util.Log
 import com.google.mlkit.vision.common.InputImage
 import com.scanium.app.ScannedItem
+import com.scanium.app.debug.ImageClassifierDebugger
 import com.scanium.app.ml.detector.DetectionMapping
 import com.scanium.app.ml.detector.ObjectDetectionEngine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Wrapper class containing both ScannedItems (for list) and DetectionResults (for overlay).
@@ -35,7 +39,9 @@ data class TrackingDetectionResponse(
  * - Using [ObjectDetectionEngine] for ML Kit invocation
  * - Using [DetectionMapping] for result conversion
  */
-class ObjectDetectorClient {
+class ObjectDetectorClient(
+    private val debugger: ImageClassifierDebugger? = null,
+) {
     companion object {
         private const val TAG = "ObjectDetectorClient"
     }
@@ -73,7 +79,19 @@ class ObjectDetectorClient {
             // This avoids expensive bitmap allocation when no objects are detected
             val bitmap =
                 if (detectedObjects.isNotEmpty()) {
-                    sourceBitmap()
+                    val bmp = sourceBitmap()
+                    // DEV-ONLY: Log ML Kit input image for debugging
+                    if (bmp != null && debugger != null) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            debugger.logClassifierInput(
+                                bitmap = bmp,
+                                source = "ML Kit input (full frame)",
+                                itemId = null,
+                                originPath = "CameraX ImageProxy ${image.width}x${image.height}",
+                            )
+                        }
+                    }
+                    bmp
                 } else {
                     Log.d(TAG, "No detections - skipping bitmap generation")
                     null

@@ -158,10 +158,13 @@ fun CameraScreen(
     }
 
     // Initialize CameraX manager
+    val debugger = remember {
+        com.scanium.app.debug.ImageClassifierDebugger(context.applicationContext)
+    }
     val cameraManager =
         remember {
             val app = context.applicationContext as? com.scanium.app.ScaniumApplication
-            CameraXManager(context, lifecycleOwner, app?.telemetry)
+            CameraXManager(context, lifecycleOwner, app?.telemetry, debugger)
         }
 
     // Pipeline diagnostics (must be after cameraManager initialization)

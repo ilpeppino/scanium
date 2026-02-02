@@ -7,6 +7,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.scanium.app.debug.ImageClassifierDebugger
 import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.items.VisionColor
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +57,9 @@ data class LocalVisionResult(
 @Singleton
 class LocalVisionExtractor
     @Inject
-    constructor() {
+    constructor(
+        private val debugger: ImageClassifierDebugger? = null,
+    ) {
         companion object {
             private const val TAG = "LocalVisionExtractor"
             private const val MAX_OCR_TEXT_LENGTH = 2000 // Limit OCR text for performance
@@ -85,6 +88,14 @@ class LocalVisionExtractor
         suspend fun extract(bitmap: Bitmap): LocalVisionResult =
             withContext(Dispatchers.Default) {
                 val startTime = System.currentTimeMillis()
+
+                // DEV-ONLY: Log Local Vision input image for debugging
+                debugger?.logClassifierInput(
+                    bitmap = bitmap,
+                    source = "Local Vision extraction (Layer A)",
+                    itemId = null,
+                    originPath = "Source bitmap ${bitmap.width}x${bitmap.height}",
+                )
 
                 var ocrText: String? = null
                 var ocrSuccess = false

@@ -80,6 +80,7 @@ class CameraXManager(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
     private val telemetry: Telemetry? = null,
+    private val debugger: com.scanium.app.debug.ImageClassifierDebugger? = null,
 ) {
     companion object {
         private const val TAG = "CameraXManager"
@@ -141,7 +142,7 @@ class CameraXManager(
     @Volatile
     private var imageCapture: ImageCapture? = null
 
-    private val objectDetector = ObjectDetectorClient()
+    private val objectDetector = ObjectDetectorClient(debugger)
     private val barcodeDetector = BarcodeDetectorClient()
     private val textRecognizer = DocumentTextRecognitionClient()
 
